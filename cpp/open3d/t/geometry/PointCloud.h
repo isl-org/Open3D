@@ -273,11 +273,14 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a depth image.
-    static PointCloud CreateFromDepthImage(const Image &depth,
-                                           const core::Tensor &intrinsics,
-                                           double depth_scale = 1000.0,
-                                           double depth_max = 3.0,
-                                           int stride = 1);
+    static PointCloud CreateFromDepthImage(
+            const Image &depth,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            double depth_scale = 1000.0,
+            double depth_max = 3.0,
+            int stride = 1);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(

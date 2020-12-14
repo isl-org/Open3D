@@ -257,16 +257,13 @@ void CPUUnprojectKernel
     // Input
     Tensor depth = srcs.at("depth");
     Tensor intrinsics = srcs.at("intrinsics");
+    Tensor extrinsics = srcs.at("extrinsics");
     float depth_scale = srcs.at("depth_scale").Item<float>();
     float depth_max = srcs.at("depth_max").Item<float>();
     int64_t stride = srcs.at("stride").Item<int64_t>();
 
     NDArrayIndexer depth_indexer(depth, 2);
-    Tensor extrinsics =
-            Tensor(std::vector<float>{1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0, 0,
-                                      0, 0, 0, 1.0},
-                   {4, 4}, core::Dtype::Float32, core::Device("CPU:0"));
-    TransformIndexer ti(intrinsics, extrinsics, 1.0f);
+    TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
 
     // Output
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
@@ -301,10 +298,15 @@ void CPUUnprojectKernel
                           depth_scale;
                 if (d > 0 && d < depth_max) {
                     int idx = ATOMIC_ADD(count_ptr, 1);
+
+                    float x_c = 0, y_c = 0, z_c = 0;
+                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
+                                 d, &x_c, &y_c, &z_c);
+
                     float* vertex = static_cast<float*>(
                             point_indexer.GetDataPtrFromCoord(idx));
-                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
-                                 d, vertex + 0, vertex + 1, vertex + 2);
+                    ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
+                                      vertex + 2);
                 }
             });
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)

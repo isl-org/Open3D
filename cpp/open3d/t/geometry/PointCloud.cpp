@@ -138,6 +138,7 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 /// Create a PointCloud from a depth image
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
+                                            const core::Tensor &extrinsics,
                                             double depth_scale,
                                             double depth_max,
                                             int stride) {
@@ -145,6 +146,7 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"depth", depth.AsTensor()},
             {"intrinsics", intrinsics.Copy(device)},
+            {"extrinsics", extrinsics.Copy(device)},
             {"depth_scale",
              core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
                           {}, core::Dtype::Float32, device)},

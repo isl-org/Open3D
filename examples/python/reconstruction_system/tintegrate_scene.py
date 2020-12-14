@@ -65,6 +65,7 @@ if __name__ == '__main__':
 
         depth = o3d.io.read_image(depth_files[i])
         depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+        # print(depth.as_tensor())
 
         extrinsic = o3d.core.Tensor(np.linalg.inv(trajectory[i]),
                                     o3d.core.Dtype.Float32, device)

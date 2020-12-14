@@ -124,8 +124,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Unproject
     PointCloud pcd = PointCloud::CreateFromDepthImage(
-            depth, intrinsics, depth_scale, depth_max, 4);
-    pcd.Transform(extrinsics.Inverse());
+            depth, intrinsics, extrinsics, depth_scale, depth_max, 4);
 
     // Touch blocks
     std::unordered_map<std::string, core::Tensor> srcs = {
@@ -137,6 +136,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
             {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
                                        core::Dtype::Float32, device_)}};
     std::unordered_map<std::string, core::Tensor> dsts;
+
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFTouch);
     if (dsts.count("block_coords") == 0) {
@@ -190,7 +190,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     dsts = {{"block_values", block_hashmap_->GetValueTensor()}};
-
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
 }
