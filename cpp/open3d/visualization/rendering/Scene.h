@@ -158,15 +158,15 @@ public:
     virtual void EnableLightShadow(const std::string& light_name,
                                    bool cast_shadows) = 0;
 
-    virtual void SetDirectionalLight(const Eigen::Vector3f& direction,
+    virtual void SetSunLight(const Eigen::Vector3f& direction,
                                      const Eigen::Vector3f& color,
                                      float intensity) = 0;
-    virtual void EnableDirectionalLight(bool enable) = 0;
-    virtual void EnableDirectionalLightShadows(bool enable) = 0;
-    virtual float GetDirectionalLightIntensity() = 0;
-    virtual void SetDirectionalLightDirection(
+    virtual void EnableSunLight(bool enable) = 0;
+    virtual void EnableSunLightShadows(bool enable) = 0;
+    virtual float GetSunLightIntensity() = 0;
+    virtual void SetSunLightDirection(
             const Eigen::Vector3f& direction) = 0;
-    virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
+    virtual Eigen::Vector3f GetSunLightDirection() = 0;
 
     virtual bool SetIndirectLight(const std::string& ibl_name) = 0;
     virtual const std::string& GetIndirectLight() = 0;

@@ -1222,7 +1222,7 @@ void FilamentScene::CreateSunDirectionalLight() {
     }
 }
 
-void FilamentScene::SetDirectionalLight(const Eigen::Vector3f& direction,
+void FilamentScene::SetSunLight(const Eigen::Vector3f& direction,
                                         const Eigen::Vector3f& color,
                                         float intensity) {
     auto& light_mgr = engine_.getLightManager();
@@ -1233,7 +1233,7 @@ void FilamentScene::SetDirectionalLight(const Eigen::Vector3f& direction,
     light_mgr.setIntensity(inst, intensity);
 }
 
-void FilamentScene::EnableDirectionalLight(bool enable) {
+void FilamentScene::EnableSunLight(bool enable) {
     if (sun_.enabled != enable) {
         sun_.enabled = enable;
         if (enable) {
@@ -1244,18 +1244,18 @@ void FilamentScene::EnableDirectionalLight(bool enable) {
     }
 }
 
-void FilamentScene::EnableDirectionalLightShadows(bool enable) {
+void FilamentScene::EnableSunLightShadows(bool enable) {
     // TODO: Research. Not previously implemented
 }
 
-float FilamentScene::GetDirectionalLightIntensity() {
+float FilamentScene::GetSunLightIntensity() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
     return light_mgr.getIntensity(inst);
 }
 
-void FilamentScene::SetDirectionalLightDirection(
+void FilamentScene::SetSunLightDirection(
         const Eigen::Vector3f& direction) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
@@ -1263,7 +1263,7 @@ void FilamentScene::SetDirectionalLightDirection(
     light_mgr.setDirection(inst, {direction.x(), direction.y(), direction.z()});
 }
 
-Eigen::Vector3f FilamentScene::GetDirectionalLightDirection() {
+Eigen::Vector3f FilamentScene::GetSunLightDirection() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);

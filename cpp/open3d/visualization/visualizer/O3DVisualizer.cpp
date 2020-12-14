@@ -1094,7 +1094,7 @@ struct O3DVisualizer::Impl {
         ui_state_.ibl_intensity =
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
-                int(scene->GetScene()->GetDirectionalLightIntensity());
+                int(scene->GetScene()->GetSunLightIntensity());
         ui_state_.sun_dir = sun_dir;
         ui_state_.sun_color = {1.0f, 1.0f, 1.0f};
         SetUIState(ui_state_);
@@ -1213,8 +1213,8 @@ struct O3DVisualizer::Impl {
         auto *raw_scene = scene_->GetScene()->GetScene();
         raw_scene->EnableIndirectLight(ui_state_.use_ibl);
         raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
-        raw_scene->EnableDirectionalLight(ui_state_.use_sun);
-        raw_scene->SetDirectionalLight(ui_state_.sun_dir, ui_state_.sun_color,
+        raw_scene->EnableSunLight(ui_state_.use_sun);
+        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
                                        float(ui_state_.sun_intensity));
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
