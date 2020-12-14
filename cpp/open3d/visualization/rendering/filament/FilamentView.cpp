@@ -77,9 +77,9 @@ FilamentView::FilamentView(filament::Engine& engine,
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
     view_->setSampleCount(4);
-    view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
+    SetAntiAliasing(true, true);
     SetPostProcessing(true);
-    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
+    SetAmbientOcclusion(true, false);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
     SetShadowing(true, ShadowType::kPCF);
     ColorGradingParams cp(ColorGradingParams::Quality::kHigh,
@@ -170,10 +170,23 @@ void FilamentView::SetPostProcessing(bool enabled) {
     view_->setPostProcessingEnabled(enabled);
 }
 
-void FilamentView::SetSSAOEnabled(const bool enabled) {
-    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
-                                : filament::View::AmbientOcclusion::NONE;
-    view_->setAmbientOcclusion(option);
+void FilamentView::SetAmbientOcclusion(bool enabled,
+                                       bool ssct_enabled /* = false */) {
+    filament::View::AmbientOcclusionOptions options;
+    options.enabled = enabled;
+    options.ssct.enabled = ssct_enabled;
+    view_->setAmbientOcclusionOptions(options);
+}
+
+void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
+    if (enabled) {
+        filament::View::TemporalAntiAliasingOptions options;
+        options.enabled = temporal;
+        view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
+        view_->setTemporalAntiAliasingOptions(options);
+    } else {
+        view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
+    }
 }
 
 void FilamentView::SetShadowing(bool enabled, ShadowType type) {

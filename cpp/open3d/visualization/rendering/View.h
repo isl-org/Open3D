@@ -78,7 +78,9 @@ public:
     virtual std::array<int, 4> GetViewport() const = 0;
 
     virtual void SetPostProcessing(bool enabled) = 0;
-    virtual void SetSSAOEnabled(bool enabled) = 0;
+    virtual void SetAmbientOcclusion(bool enabled,
+                                     bool ssct_enabled = false) = 0;
+    virtual void SetAntiAliasing(bool enabled, bool temporal = false) = 0;
     virtual void SetShadowing(bool enabled, ShadowType type) = 0;
 
     virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
