@@ -1,0 +1,31 @@
+material {
+    name : defaultUnlitTransparency,
+    shadingModel : unlit,
+    blending : transparent,
+    transparency : twoPassesOneSide,
+
+    parameters : [
+        { type : float4,    name : baseColor },
+        { type : float,     name : pointSize },
+        { type : sampler2d, name : albedo }
+    ],
+    requires : [
+        color, uv0
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        // Pre-multiply alpha
+        material.baseColor.rgb = materialParams.baseColor.rgb*getColor().rgb * materialParams.baseColor.a;
+        material.baseColor.a = materialParams.baseColor.a;
+    }
+}
