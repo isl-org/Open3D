@@ -476,9 +476,9 @@ class AppWindow:
             self.settings.sun_color.red, self.settings.sun_color.green,
             self.settings.sun_color.blue
         ]
-        self._scene.scene.scene.set_directional_light(
-            self.settings.sun_dir, sun_color, self.settings.sun_intensity)
-        self._scene.scene.scene.enable_directional_light(self.settings.use_sun)
+        self._scene.scene.scene.set_sun_light(self.settings.sun_dir, sun_color,
+                                              self.settings.sun_intensity)
+        self._scene.scene.scene.enable_sun_light(self.settings.use_sun)
 
         if self.settings.apply_material:
             self._scene.scene.update_material(self.settings.material)
