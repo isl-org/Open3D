@@ -198,8 +198,8 @@ void PickPointsInteractor::SetPickableGeometry(
             auto mesh_color = CalcIndexColor(kMeshIndex);
             rendering::Material mat;
             mat.shader = "unlitSolidColor";  // ignore any vertex colors!
-            mat.base_color = {mesh_color.x(), mesh_color.y(), mesh_color.z(),
-                              1.0f};
+            mat.base_color = {float(mesh_color.x()), float(mesh_color.y()),
+                              float(mesh_color.z()), 1.0f};
             mat.sRGB_color = false;
             if (mesh) {
                 picking_scene_->AddGeometry(pg.name, mesh, mat);
@@ -315,8 +315,8 @@ void PickPointsInteractor::OnPickImageDone(
         auto *img = pick_image_.get();
         indices.clear();
         if (x1 - x0 == 1 && y1 - y0 == 1) {
-            struct Score {
-                float score;
+            struct Score {  // this is a struct to force a default value
+                float score = 0;
             };
             std::unordered_map<unsigned int, Score> candidates;
             auto clicked_idx = GetIndexForColor(img, x0, y0);
