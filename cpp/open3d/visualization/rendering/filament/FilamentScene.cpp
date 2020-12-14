@@ -1297,6 +1297,27 @@ void FilamentScene::SetSunLightDirection(
     light_mgr.setDirection(inst, {direction.x(), direction.y(), direction.z()});
 }
 
+void FilamentScene::SetSunAngularRadius(float radius) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunAngularRadius(inst, radius);
+}
+
+void FilamentScene::SetSunHaloSize(float size) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunHaloSize(inst, size);
+}
+
+void FilamentScene::SetSunHaloFalloff(float falloff) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunHaloFalloff(inst, falloff);
+}
+
 Eigen::Vector3f FilamentScene::GetSunLightDirection() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =

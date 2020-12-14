@@ -172,6 +172,9 @@ public:
     virtual void SetSunLightDirection(
             const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetSunLightDirection() = 0;
+    virtual void SetSunAngularRadius(float radius) = 0;
+    virtual void SetSunHaloSize(float size) = 0;
+    virtual void SetSunHaloFalloff(float falloff) = 0;
 
     virtual bool SetIndirectLight(const std::string& ibl_name) = 0;
     virtual const std::string& GetIndirectLight() = 0;

@@ -194,6 +194,9 @@ public:
     void SetSunLightDirection(
             const Eigen::Vector3f& direction) override;
     Eigen::Vector3f GetSunLightDirection() override;
+    void SetSunAngularRadius(float radius) override;
+    void SetSunHaloSize(float size) override;
+    void SetSunHaloFalloff(float falloff) override;
 
     bool SetIndirectLight(const std::string& ibl_name) override;
     const std::string& GetIndirectLight() override;
