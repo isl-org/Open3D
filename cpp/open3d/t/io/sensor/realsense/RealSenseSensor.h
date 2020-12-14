@@ -30,6 +30,7 @@
 
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/io/sensor/RGBDSensor.h"
+#include "open3d/t/io/sensor/RGBDVideoMetadata.h"
 #include "open3d/t/io/sensor/realsense/RealSenseSensorConfig.h"
 
 namespace rs2 {
@@ -55,9 +56,20 @@ public:
     virtual ~RealSenseSensor() override;
 
     /** Initialize sensor (optional).
-     * \p sensor_index is ignored if \p sensor_config contains a serial number
-     * If \p filename is given, frames will be saved to a bag file
-     * \return true if a sensor was initialized with the given settings
+     *
+     * Configure sensor with custom settings. If this is skipped, default
+     * settings will be used. You can enable recording to a bag file by
+     * specifying a filename.
+     * \param sensor_config Camera configuration, such as resolution and
+     * framerate. A serial number can be entered here to connect to a specific
+     * camera.
+     * \param sensor_index Connect to a camera at this position in the
+     * enumeration of RealSense cameras that are currently connected. Use
+     * EnumerateDevices() or ListDevices() to obtain a list of connected
+     * cameras. This is ignored if \p sensor_config contains a serial entry. If
+     * \param filename Save frames to a bag file
+     * \return true if a camera was found and initialized with the given
+     * settings, else false
      */
     virtual bool InitSensor(const RealSenseSensorConfig &sensor_config =
                                     RealSenseSensorConfig{},
@@ -72,10 +84,15 @@ public:
                 sensor_index, filename);
     }
 
+    /// Start capturing synchronized depth and color frames
+    /// \p start_record start recording to the specified bag file as well
     virtual bool StartCapture(bool start_record = false) override;
 
+    /// Pause recording to the bag file
     virtual void PauseRecord() override;
 
+    /// Resume recording to the bag file. The file will contain discontinuous
+    /// segments
     virtual void ResumeRecord() override;
 
     /** Acquire the next synchronized RGBD frameset from the camera.
@@ -87,8 +104,17 @@ public:
      */
     virtual geometry::RGBDImage CaptureFrame(
             bool wait = true, bool align_depth_to_color = true) override;
+    /// Get current timestamp (in us).
+    virtual uint64_t GetTimestamp() const override;
 
+    /// Stop capturing frames
     virtual void StopCapture() override;
+
+    /// Get const reference to the metadata of the RGBD video capture
+    virtual RGBDVideoMetadata &GetMetadata() const override;
+
+    /// Return filename being written
+    virtual std::string GetFilename() const override { return filename_; };
 
 private:
     bool enable_recording_ = false, is_recording_ = false,

@@ -103,11 +103,13 @@ public:
     /// any connected device
     bool IsValidConfig() const;
 
+public:
     /// Convert rs2_format enum to Open3D Dtype and number of channels
+    /// \param rs2_format_enum An int is accepted instead of rs2_format enum to
+    /// prevent dependence on the realsense headers.
     static std::pair<core::Dtype, size_t> get_dtype_channels(
             int rs2_format_enum);
 
-public:
     // To avoid including RealSense or json header, configs is stored in a map
     std::unordered_map<std::string, std::string> config_;
 };
