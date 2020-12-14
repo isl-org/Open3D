@@ -242,6 +242,8 @@ const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitWithTransparency =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
@@ -779,6 +781,14 @@ void FilamentResourceManager::LoadDefaults() {
     unlit_mat->setDefaultParameter("pointSize", 3.f);
     unlit_mat->setDefaultParameter("albedo", texture, default_sampler);
     materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
+
+    const auto unlit_trans_path = resource_root + "/defaultUnlitTransparency.filamat";
+    auto unlit_trans_mat = LoadMaterialFromFile(unlit_trans_path, engine_);
+    unlit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                   default_color);
+    unlit_trans_mat->setDefaultParameter("pointSize", 3.f);
+    unlit_trans_mat->setDefaultParameter("albedo", texture, default_sampler);
+    materials_[kDefaultUnlitWithTransparency] = BoxResource(unlit_trans_mat, engine_);
 
     const auto depth_path = resource_root + "/depth.filamat";
     auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
