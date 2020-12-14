@@ -40,6 +40,12 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#define ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#else
+#define ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#endif
+
 /// 8-byte voxel structure.
 /// Smallest struct we can get. float tsdf + uint16_t weight also requires
 /// 8-bytes for alignement, so not implemented anyway.
@@ -276,7 +282,8 @@ void CPUUnprojectKernel
                  depth.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 #else
-    std::atomic<int> counter(0);
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
     int64_t n = rows_strided * cols_strided;
@@ -293,12 +300,7 @@ void CPUUnprojectKernel
                                   depth_indexer.GetDataPtrFromCoord(x, y))) /
                           depth_scale;
                 if (d > 0 && d < depth_max) {
-
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                    int idx = atomicAdd(count_ptr, 1);
-#else
-            int idx = counter.fetch_add(1);
-#endif
+                    int idx = ATOMIC_ADD(count_ptr, 1);
                     float* vertex = static_cast<float*>(
                             point_indexer.GetDataPtrFromCoord(idx));
                     ti.Unproject(static_cast<float>(x), static_cast<float>(y),
@@ -308,7 +310,7 @@ void CPUUnprojectKernel
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     int total_pts_count = count.Item<int>();
 #else
-    int total_pts_count = counter.load();
+    int total_pts_count = (*count_ptr).load();
 #endif
     dsts.emplace("points", points.Slice(0, 0, total_pts_count));
 }
@@ -526,7 +528,8 @@ void CPUSurfaceExtractionKernel
                        block_values.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 #else
-    std::atomic<int> counter(0);
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
     DISPATCH_BYTESIZE_TO_VOXEL(
@@ -579,11 +582,7 @@ void CPUSurfaceExtractionKernel
                                 float weight_i = ptr->GetWeight();
 
                                 if (weight_i > 0 && tsdf_i * tsdf_o < 0) {
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                                    atomicAdd(count_ptr, 1);
-#else
-                                    counter.fetch_add(1);
-#endif
+                                    ATOMIC_ADD(count_ptr, 1);
                                 }
                             }
                         });
@@ -592,7 +591,7 @@ void CPUSurfaceExtractionKernel
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     int total_count = count.Item<int>();
 #else
-    int total_count = counter.load();
+    int total_count = (*count_ptr).load();
 #endif
 
     core::Tensor points({total_count, 3}, core::Dtype::Float32,
@@ -608,7 +607,7 @@ void CPUSurfaceExtractionKernel
                          block_values.GetDevice());
     count_ptr = static_cast<int*>(count.GetDataPtr());
 #else
-    counter = 0;
+    (*count_ptr) = 0;
 #endif
 
     DISPATCH_BYTESIZE_TO_VOXEL(
@@ -700,11 +699,7 @@ void CPUSurfaceExtractionKernel
                                     float ratio =
                                             (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                                    int idx = atomicAdd(count_ptr, 1);
-#else
-                                    int idx = counter.fetch_add(1);
-#endif
+                                    int idx = ATOMIC_ADD(count_ptr, 1);
 
                                     float* point_ptr = static_cast<float*>(
                                             point_indexer.GetDataPtrFromCoord(
@@ -918,7 +913,8 @@ void CPUMarchingCubesKernel
                            block_values.GetDevice());
     int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
 #else
-    std::atomic<int> vtx_counter(0);
+    std::atomic<int> vtx_count_atomic(0);
+    std::atomic<int>* vtx_count_ptr = &vtx_count_atomic;
 #endif
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -951,23 +947,19 @@ void CPUMarchingCubesKernel
                     int vertex_idx = mesh_struct_ptr[e];
                     if (vertex_idx != -1) continue;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                    atomicAdd(vtx_count_ptr, 1);
-#else
-            vtx_counter.fetch_add(1);
-#endif
+                    ATOMIC_ADD(vtx_count_ptr, 1);
                 }
             });
 
-    // Reset counter
+    // Reset count_ptr
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     int total_vtx_count = vtx_count.Item<int>();
     vtx_count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                              block_values.GetDevice());
     vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
 #else
-    int total_vtx_count = vtx_counter.load();
-    vtx_counter = 0;
+    int total_vtx_count = (*vtx_count_ptr).load();
+    (*vtx_count_ptr) = 0;
 #endif
 
     utility::LogInfo("Total vertex count = {}", total_vtx_count);
@@ -1076,11 +1068,7 @@ void CPUMarchingCubesKernel
                                 float tsdf_e = voxel_ptr_e->GetTSDF();
                                 float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                                int idx = atomicAdd(vtx_count_ptr, 1);
-#else
-                                int idx = vtx_counter.fetch_add(1);
-#endif
+                                int idx = ATOMIC_ADD(vtx_count_ptr, 1);
                                 mesh_struct_ptr[e] = idx;
 
                                 float ratio_x = ratio * int(e == 0);
@@ -1146,7 +1134,8 @@ void CPUMarchingCubesKernel
                                 block_values.GetDevice());
     int* tri_count_ptr = static_cast<int*>(triangle_count.GetDataPtr());
 #else
-    std::atomic<int> tri_counter(0);
+    std::atomic<int> tri_count_atomic(0);
+    std::atomic<int>* tri_count_ptr = &tri_count_atomic;
 #endif
 
     core::Tensor triangles({total_vtx_count * 3, 3}, core::Dtype::Int64,
@@ -1178,11 +1167,7 @@ void CPUMarchingCubesKernel
                 for (size_t tri = 0; tri < 16; tri += 3) {
                     if (tri_table[table_idx][tri] == -1) return;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                    int tri_idx = atomicAdd(tri_count_ptr, 1);
-#else
-            int tri_idx = tri_counter.fetch_add(1);
-#endif
+                    int tri_idx = ATOMIC_ADD(tri_count_ptr, 1);
 
                     for (size_t vertex = 0; vertex < 3; ++vertex) {
                         int edge = tri_table[table_idx][tri + vertex];
@@ -1218,7 +1203,7 @@ void CPUMarchingCubesKernel
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     int total_tri_count = triangle_count.Item<int>();
 #else
-    int total_tri_count = tri_counter.load();
+    int total_tri_count = (*tri_count_ptr).load();
 #endif
     utility::LogInfo("Total triangle count = {}", total_tri_count);
     triangles = triangles.Slice(0, 0, total_tri_count);
