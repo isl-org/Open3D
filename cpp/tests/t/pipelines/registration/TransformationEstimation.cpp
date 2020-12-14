@@ -45,21 +45,38 @@ INSTANTIATE_TEST_SUITE_P(
         testing::ValuesIn(
                 TransformationEstimationPermuteDevicePairs::TestCases()));
 
-TEST_P(TransformationEstimationPermuteDevices, PointToPointComputeRMSE) {
+TEST(TransformationEstimationPermuteDevices, DISABLED_Constructor) {
     NotImplemented();
 }
 
-TEST_P(TransformationEstimationPermuteDevices,
-       PointToPointComputeTransformation) {
+TEST(TransformationEstimationPermuteDevices, DISABLED_Destructor) {
     NotImplemented();
 }
 
-TEST_P(TransformationEstimationPermuteDevices, PointToPlaneComputeRMSE) {
+TEST(TransformationEstimationPermuteDevices, DISABLED_MemberData) {
     NotImplemented();
 }
 
-TEST_P(TransformationEstimationPermuteDevices,
-       PointToPlaneComputeTransformation) {
+TEST(TransformationEstimationPermuteDevices,
+     DISABLED_GetTransformationEstimationType) {
+    NotImplemented();
+}
+
+TEST(TransformationEstimationPermuteDevices, DISABLED_ComputeRMSE) {
+    NotImplemented();
+}
+
+TEST(TransformationEstimationPermuteDevices, DISABLED_ComputeTransformation) {
+    NotImplemented();
+}
+
+TEST(TransformationEstimationPermuteDevices,
+     DISABLED_TransformationEstimationPointToPoint) {
+    NotImplemented();
+}
+
+TEST(TransformationEstimationPermuteDevices,
+     DISABLED_TransformationEstimationPointToPlane) {
     NotImplemented();
 }
 
