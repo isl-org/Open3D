@@ -62,21 +62,23 @@ TEST(TransformationEstimationPermuteDevices,
     NotImplemented();
 }
 
-TEST(TransformationEstimationPermuteDevices, DISABLED_ComputeRMSE) {
-    NotImplemented();
-}
-
-TEST(TransformationEstimationPermuteDevices, DISABLED_ComputeTransformation) {
+TEST(TransformationEstimationPermuteDevices,
+     DISABLED_ComputeRMSE_PointToPoint) {
     NotImplemented();
 }
 
 TEST(TransformationEstimationPermuteDevices,
-     DISABLED_TransformationEstimationPointToPoint) {
+     DISABLED_ComputeTransformation_PointToPoint) {
     NotImplemented();
 }
 
 TEST(TransformationEstimationPermuteDevices,
-     DISABLED_TransformationEstimationPointToPlane) {
+     DISABLED_ComputeRMSE_PointToPlane) {
+    NotImplemented();
+}
+
+TEST(TransformationEstimationPermuteDevices,
+     DISABLED_ComputeTransformation_PointToPlane) {
     NotImplemented();
 }
 

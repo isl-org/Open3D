@@ -84,7 +84,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     int num_corres = evaluation.correspondence_set_.GetShape()[0];
     bool isCorrespondencestrue = (num_corres > 7400);
     bool isFitnesstrue = (evaluation.fitness_ > 0.037);
-    bool isInlierRMSEtrue = (evaluation.inlier_rmse_ > 0.011);
+    bool isInlierRMSEtrue = (evaluation.inlier_rmse_ < 0.011);
 
     EXPECT_TRUE(isCorrespondencestrue);
     EXPECT_TRUE(isFitnesstrue);
@@ -108,7 +108,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     num_corres = evaluation.correspondence_set_.GetShape()[0];
     isCorrespondencestrue = (num_corres > 34000);
     isFitnesstrue = (evaluation.fitness_ > 0.17);
-    isInlierRMSEtrue = (evaluation.inlier_rmse_ > 0.011);
+    isInlierRMSEtrue = (evaluation.inlier_rmse_ < 0.011);
 
     EXPECT_TRUE(isCorrespondencestrue);
     EXPECT_TRUE(isFitnesstrue);
@@ -170,7 +170,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICP) {
     int num_corres = reg_p2p.correspondence_set_.GetShape()[0];
     bool isCorrespondencestrue = (num_corres > 8300);
     bool isFitnesstrue = (reg_p2p.fitness_ > 0.04);
-    bool isInlierRMSEtrue = (reg_p2p.inlier_rmse_ > 0.011);
+    bool isInlierRMSEtrue = (reg_p2p.inlier_rmse_ < 0.011);
 
     EXPECT_TRUE(isCorrespondencestrue);
     EXPECT_TRUE(isFitnesstrue);
