@@ -28,6 +28,7 @@ void PrintHelp() {
     utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud.");
     utility::LogInfo("     [options]");
     utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
+    utility::LogInfo("     --device [CPU:0]");
     utility::LogInfo("     --output_filename [mesh]");
     utility::LogInfo("     --mesh");
     utility::LogInfo("     --pointcloud");
@@ -66,13 +67,14 @@ int main(int argc, char** argv) {
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
     // Intrinsics
-    std::string intrinsic_path =
-            utility::GetProgramOptionAsString(argc, argv, "--camera_intrinsic");
+    std::string intrinsic_path;
+    if (utility::ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
+        intrinsic_path = utility::GetProgramOptionAsString(
+                argc, argv, "--camera_intrinsic");
+    }
     camera::PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
         !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
-        utility::LogWarning(
-                "Failed to read intrinsic parameters for depth image.");
         utility::LogWarning("Using default value for Primesense camera.");
         intrinsic = camera::PinholeCameraIntrinsic(
                 camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
@@ -88,52 +90,54 @@ int main(int argc, char** argv) {
                                 0, 1}),
             {3, 3}, Dtype::Float32);
 
-    std::vector<Device> devices{Device("CUDA:0"), Device("CPU:0")};
-    for (auto device : devices) {
-        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                               {"weight", core::Dtype::UInt16},
-                                               {"color", core::Dtype::UInt16}},
-                                              3.0f / 512.f, 0.04f, 16, 100,
-                                              device);
+    std::string device_code = "CPU:0";
+    if (utility::ProgramOptionExists(argc, argv, "--device")) {
+        device_code = utility::GetProgramOptionAsString(argc, argv, "--device");
+    }
+    core::Device device(device_code);
+    utility::LogInfo("Using device: {}", device.ToString());
 
-        for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
-            // Load image
-            std::shared_ptr<geometry::Image> depth_legacy =
-                    io::CreateImageFromFile(depth_filenames[i]);
-            std::shared_ptr<geometry::Image> color_legacy =
-                    io::CreateImageFromFile(color_filenames[i]);
+    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
+                                           {"weight", core::Dtype::UInt16},
+                                           {"color", core::Dtype::UInt16}},
+                                          3.0f / 512.f, 0.04f, 16, 100, device);
 
-            t::geometry::Image depth =
-                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
-            t::geometry::Image color =
-                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
+    for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
+        // Load image
+        std::shared_ptr<geometry::Image> depth_legacy =
+                io::CreateImageFromFile(depth_filenames[i]);
+        std::shared_ptr<geometry::Image> color_legacy =
+                io::CreateImageFromFile(color_filenames[i]);
 
-            Eigen::Matrix4f extrinsic =
-                    trajectory->parameters_[i].extrinsic_.cast<float>();
-            Tensor extrinsic_t = FromEigen(extrinsic).Copy(device);
+        t::geometry::Image depth =
+                t::geometry::Image::FromLegacyImage(*depth_legacy, device);
+        t::geometry::Image color =
+                t::geometry::Image::FromLegacyImage(*color_legacy, device);
 
-            utility::Timer timer;
-            timer.Start();
-            voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
-            timer.Stop();
-            utility::LogInfo("{}: Integration takes {}", i,
-                             timer.GetDuration());
-        }
+        Eigen::Matrix4f extrinsic =
+                trajectory->parameters_[i].extrinsic_.cast<float>();
+        Tensor extrinsic_t = FromEigen(extrinsic).Copy(device);
 
-        if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
-            auto mesh = voxel_grid.ExtractSurfaceMesh();
-            auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                    mesh.ToLegacyTriangleMesh());
-            open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
-                                          *mesh_legacy);
-        }
+        utility::Timer timer;
+        timer.Start();
+        voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
+        timer.Stop();
+        utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
+    }
 
-        if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-            auto pcd = voxel_grid.ExtractSurfacePoints();
-            auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-                    pcd.ToLegacyPointCloud());
-            open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
-                                        *pcd_legacy);
-        }
+    if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+        auto mesh = voxel_grid.ExtractSurfaceMesh();
+        auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
+                mesh.ToLegacyTriangleMesh());
+        open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
+                                      *mesh_legacy);
+    }
+
+    if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
+        auto pcd = voxel_grid.ExtractSurfacePoints();
+        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+                pcd.ToLegacyPointCloud());
+        open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
+                                    *pcd_legacy);
     }
 }
