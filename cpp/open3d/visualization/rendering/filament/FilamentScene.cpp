@@ -1233,7 +1233,13 @@ void FilamentScene::UpdateLightConeAngles(const std::string& light_name,
 
 void FilamentScene::EnableLightShadow(const std::string& light_name,
                                       bool cast_shadows) {
-    // TODO: Research. Not previously implemented.
+    auto light = GetLightInternal(light_name);
+    if (light) {
+        auto& light_mgr = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                light_mgr.getInstance(light->filament_entity);
+        light_mgr.setShadowCaster(inst, cast_shadows);
+    }
 }
 
 void FilamentScene::CreateSunDirectionalLight() {
@@ -1279,7 +1285,10 @@ void FilamentScene::EnableSunLight(bool enable) {
 }
 
 void FilamentScene::EnableSunLightShadows(bool enable) {
-    // TODO: Research. Not previously implemented
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    return light_mgr.setShadowCaster(inst, enable);
 }
 
 float FilamentScene::GetSunLightIntensity() {
