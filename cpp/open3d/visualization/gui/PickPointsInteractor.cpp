@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/gui/PickPointsInteractor.h"
 
+#include <unordered_map>
+
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -54,15 +56,21 @@ static const Eigen::Vector4f kBackgroundColor = {1.0f, 1.0f, 1.0f, 1.0f};
 static const std::string kSelectablePointsName = "__selectable_points";
 // The maximum pickable point is one less than FFFFFF, because that would
 // be white, which is the color of the background.
-static const unsigned int kNoIndex = 0x00ffffff;
-static const unsigned int kMaxPickableIndex = 0x00fffffe;
+// static const unsigned int kNoIndex = 0x00ffffff;  // unused, but real
+static const unsigned int kMeshIndex = 0x00fffffe;
+static const unsigned int kMaxPickableIndex = 0x00fffffd;
 
-Eigen::Vector3d SetColorForIndex(uint32_t idx) {
-    idx = std::min(kMaxPickableIndex, idx);
+inline bool IsValidIndex(uint32_t idx) { return (idx <= kMaxPickableIndex); }
+
+Eigen::Vector3d CalcIndexColor(uint32_t idx) {
     const double red = double((idx & 0x00ff0000) >> 16) / 255.0;
     const double green = double((idx & 0x0000ff00) >> 8) / 255.0;
     const double blue = double((idx & 0x000000ff)) / 255.0;
     return {red, green, blue};
+}
+
+Eigen::Vector3d SetColorForIndex(uint32_t idx) {
+    return CalcIndexColor(std::min(kMaxPickableIndex, idx));
 }
 
 uint32_t GetIndexForColor(geometry::Image *image, int x, int y) {
@@ -185,10 +193,13 @@ void PickPointsInteractor::SetPickableGeometry(
             // If we draw unlit with the background color, then if the mesh is
             // drawn before the picking points the end effect is to just write
             // to the depth buffer,and if we draw after the points then we paint
-            // over the occluded points.
+            // over the occluded points. We paint with a special "mesh index"
+            // so that we can to enhanced picking if we hit a mesh index.
+            auto mesh_color = CalcIndexColor(kMeshIndex);
             rendering::Material mat;
             mat.shader = "unlitSolidColor";  // ignore any vertex colors!
-            mat.base_color = kBackgroundColor;
+            mat.base_color = {float(mesh_color.x()), float(mesh_color.y()),
+                              float(mesh_color.z()), 1.0f};
             mat.sRGB_color = false;
             if (mesh) {
                 picking_scene_->AddGeometry(pg.name, mesh, mat);
@@ -259,12 +270,12 @@ void PickPointsInteractor::Mouse(const MouseEvent &e) {
             picking_scene_->GetRenderer().RenderToImage(
                     view, picking_scene_->GetScene(),
                     [this](std::shared_ptr<geometry::Image> img) {
-                        this->OnPickImageDone(img);
 #if WANT_DEBUG_IMAGE
                         std::cout << "[debug] Writing pick image to "
                                   << "/tmp/debug.png" << std::endl;
                         io::WriteImage("/tmp/debug.png", *img);
 #endif  // WANT_DEBUG_IMAGE
+                        this->OnPickImageDone(img);
                     });
         } else {
             pending_.push({pick_rect, e.modifiers});
@@ -303,15 +314,65 @@ void PickPointsInteractor::OnPickImageDone(
         const int y1 = info.rect.GetBottom();
         auto *img = pick_image_.get();
         indices.clear();
-        for (int y = y0; y < y1; ++y) {
-            for (int x = x0; x < x1; ++x) {
-                unsigned int idx = GetIndexForColor(img, x, y);
-                if (idx < kNoIndex) {
-                    auto &o = lookup_->ObjectForIndex(idx);
-                    size_t obj_idx = idx - o.start_index;
-                    indices[o.name].push_back(
-                            std::pair<size_t, Eigen::Vector3d>(obj_idx,
-                                                               points_[idx]));
+        if (x1 - x0 == 1 && y1 - y0 == 1) {
+            struct Score {  // this is a struct to force a default value
+                float score = 0;
+            };
+            std::unordered_map<unsigned int, Score> candidates;
+            auto clicked_idx = GetIndexForColor(img, x0, y0);
+            int radius;
+            // HACK: the color for kMeshIndex doesn't come back quite right.
+            //       We shouldn't need to check if the index is out of range,
+            //       but it does work.
+            if (clicked_idx == kMeshIndex || clicked_idx >= points_.size()) {
+                // We hit the middle of a triangle, try to find a nearby point
+                radius = 5 * point_size_;
+            } else {
+                // We either hit a point or an empty spot, so use a smaller
+                // radius. It looks weird to click on nothing in a point cloud
+                // and have a point get selected unless the point is really
+                // close.
+                radius = 2 * point_size_;
+            }
+            for (int y = y0 - radius; y < y0 + radius; ++y) {
+                for (int x = x0 - radius; x < x0 + radius; ++x) {
+                    unsigned int idx = GetIndexForColor(img, x, y);
+                    if (IsValidIndex(idx) && idx < points_.size()) {
+                        float dist = std::sqrt(float((x - x0) * (x - x0) +
+                                                     (y - y0) * (y - y0)));
+                        candidates[idx].score += radius - dist;
+                    }
+                }
+            }
+            if (!candidates.empty()) {
+                // Note that scores are (radius - dist), and since we take from
+                // a square pattern, a score can be negative. And multiple
+                // pixels of a point scoring negatively can make the negative up
+                // to -point_size^2.
+                float best_score = -1e30f;
+                unsigned int best_idx = (unsigned int)-1;
+                for (auto &idx_score : candidates) {
+                    if (idx_score.second.score > best_score) {
+                        best_score = idx_score.second.score;
+                        best_idx = idx_score.first;
+                    }
+                }
+                auto &o = lookup_->ObjectForIndex(best_idx);
+                size_t obj_idx = best_idx - o.start_index;
+                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
+                        obj_idx, points_[best_idx]));
+            }
+        } else {
+            for (int y = y0; y < y1; ++y) {
+                for (int x = x0; x < x1; ++x) {
+                    unsigned int idx = GetIndexForColor(img, x, y);
+                    if (IsValidIndex(idx)) {
+                        auto &o = lookup_->ObjectForIndex(idx);
+                        size_t obj_idx = idx - o.start_index;
+                        indices[o.name].push_back(
+                                std::pair<size_t, Eigen::Vector3d>(
+                                        obj_idx, points_[idx]));
+                    }
                 }
             }
         }
