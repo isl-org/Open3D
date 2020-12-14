@@ -78,7 +78,7 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_ = engine_.createView();
     view_->setSampleCount(4);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
-    view_->setPostProcessingEnabled(true);
+    SetPostProcessing(true);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
     SetShadowing(true, ShadowType::kPCF);
@@ -272,11 +272,9 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
 
 void FilamentView::ConfigureForColorPicking() {
     view_->setSampleCount(1);
-    view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
-    view_->setPostProcessingEnabled(false);
+    SetPostProcessing(false);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::NONE);
     SetShadowing(false, ShadowType::kPCF);
-    view_->setToneMapping(filament::View::ToneMapping::LINEAR);
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
