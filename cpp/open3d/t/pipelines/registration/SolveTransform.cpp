@@ -181,7 +181,6 @@ core::Tensor SolvePointToPlaneTransformation(const geometry::PointCloud &source,
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-
     // A better implementation of this function
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     //     core::Tensor corres_select =
