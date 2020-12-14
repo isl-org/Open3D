@@ -186,13 +186,12 @@ public:
                            bool cast_shadows) override;
 
     void SetSunLight(const Eigen::Vector3f& direction,
-                             const Eigen::Vector3f& color,
-                             float intensity) override;
+                     const Eigen::Vector3f& color,
+                     float intensity) override;
     void EnableSunLight(bool enable) override;
     void EnableSunLightShadows(bool enable) override;
     float GetSunLightIntensity() override;
-    void SetSunLightDirection(
-            const Eigen::Vector3f& direction) override;
+    void SetSunLightDirection(const Eigen::Vector3f& direction) override;
     Eigen::Vector3f GetSunLightDirection() override;
     void SetSunAngularRadius(float radius) override;
     void SetSunHaloSize(float size) override;

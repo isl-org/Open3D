@@ -707,13 +707,12 @@ void SceneWidget::SetOnCameraChanged(
 void SceneWidget::SetOnSunDirectionChanged(
         std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
     impl_->on_light_dir_changed_ = on_dir_changed;
-    impl_->controls_->SetOnSunLightChanged(
-            [this](const Eigen::Vector3f& dir) {
-                impl_->scene_->GetScene()->SetSunLightDirection(dir);
-                if (impl_->on_light_dir_changed_) {
-                    impl_->on_light_dir_changed_(dir);
-                }
-            });
+    impl_->controls_->SetOnSunLightChanged([this](const Eigen::Vector3f& dir) {
+        impl_->scene_->GetScene()->SetSunLightDirection(dir);
+        if (impl_->on_light_dir_changed_) {
+            impl_->on_light_dir_changed_(dir);
+        }
+    });
 }
 
 void SceneWidget::ShowSkybox(bool is_on) {

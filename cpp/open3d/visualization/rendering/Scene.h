@@ -164,13 +164,12 @@ public:
                                    bool cast_shadows) = 0;
 
     virtual void SetSunLight(const Eigen::Vector3f& direction,
-                                     const Eigen::Vector3f& color,
-                                     float intensity) = 0;
+                             const Eigen::Vector3f& color,
+                             float intensity) = 0;
     virtual void EnableSunLight(bool enable) = 0;
     virtual void EnableSunLightShadows(bool enable) = 0;
     virtual float GetSunLightIntensity() = 0;
-    virtual void SetSunLightDirection(
-            const Eigen::Vector3f& direction) = 0;
+    virtual void SetSunLightDirection(const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetSunLightDirection() = 0;
     virtual void SetSunAngularRadius(float radius) = 0;
     virtual void SetSunHaloSize(float size) = 0;

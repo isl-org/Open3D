@@ -1215,7 +1215,7 @@ struct O3DVisualizer::Impl {
         raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
         raw_scene->EnableSunLight(ui_state_.use_sun);
         raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
-                                       float(ui_state_.sun_intensity));
+                               float(ui_state_.sun_intensity));
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {

@@ -1263,8 +1263,8 @@ void FilamentScene::CreateSunDirectionalLight() {
 }
 
 void FilamentScene::SetSunLight(const Eigen::Vector3f& direction,
-                                        const Eigen::Vector3f& color,
-                                        float intensity) {
+                                const Eigen::Vector3f& color,
+                                float intensity) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
@@ -1298,8 +1298,7 @@ float FilamentScene::GetSunLightIntensity() {
     return light_mgr.getIntensity(inst);
 }
 
-void FilamentScene::SetSunLightDirection(
-        const Eigen::Vector3f& direction) {
+void FilamentScene::SetSunLightDirection(const Eigen::Vector3f& direction) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
