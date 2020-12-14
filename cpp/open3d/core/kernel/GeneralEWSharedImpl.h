@@ -512,7 +512,7 @@ void CPUSurfaceExtractionKernel
     // Plain arrays that does not require indexers
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
 
-    int n_blocks = indices.GetShape()[0];
+    int64_t n_blocks = indices.GetShape()[0];
     int64_t n = n_blocks * resolution3;
 
     // Output
@@ -539,7 +539,8 @@ void CPUSurfaceExtractionKernel
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
                         return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, resolution,
+                                xo, yo, zo, curr_block_idx,
+                                static_cast<int>(resolution),
                                 nb_block_masks_indexer,
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
@@ -563,8 +564,10 @@ void CPUSurfaceExtractionKernel
 
                     for (int i = 0; i < 3; ++i) {
                         voxel_t* ptr = GetVoxelAt(
-                                xv + int64_t(i == 0), yv + int64_t(i == 1),
-                                zv + int64_t(i == 2), workload_block_idx);
+                                static_cast<int>(xv) + (i == 0),
+                                static_cast<int>(yv) + (i == 1),
+                                static_cast<int>(zv) + (i == 2),
+                                static_cast<int>(workload_block_idx));
                         if (ptr == nullptr) continue;
 
                         float tsdf_i = ptr->GetTSDF();
@@ -617,7 +620,8 @@ void CPUSurfaceExtractionKernel
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
                         return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, resolution,
+                                xo, yo, zo, curr_block_idx,
+                                static_cast<int>(resolution),
                                 nb_block_masks_indexer,
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
@@ -626,8 +630,9 @@ void CPUSurfaceExtractionKernel
                                                          int curr_block_idx,
                                                          float* n) {
                         return DeviceGetNormalAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, n, resolution,
-                                voxel_size, nb_block_masks_indexer,
+                                xo, yo, zo, curr_block_idx, n,
+                                static_cast<int>(resolution), voxel_size,
+                                nb_block_masks_indexer,
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
                     };
@@ -662,11 +667,15 @@ void CPUSurfaceExtractionKernel
                     int64_t z = zb * resolution + zv;
 
                     float no[3] = {0}, ni[3] = {0};
-                    GetNormalAt(xv, yv, zv, workload_block_idx, no);
+                    GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
+                                static_cast<int>(zv),
+                                static_cast<int>(workload_block_idx), no);
                     for (int i = 0; i < 3; ++i) {
                         voxel_t* ptr = GetVoxelAt(
-                                xv + int64_t(i == 0), yv + int64_t(i == 1),
-                                zv + int64_t(i == 2), workload_block_idx);
+                                static_cast<int>(xv) + (i == 0),
+                                static_cast<int>(yv) + (i == 1),
+                                static_cast<int>(zv) + (i == 2),
+                                static_cast<int>(workload_block_idx));
                         if (ptr == nullptr) continue;
 
                         float tsdf_i = ptr->GetTSDF();
@@ -685,18 +694,19 @@ void CPUSurfaceExtractionKernel
                                     voxel_size * (y + ratio * int(i == 1));
                             point_ptr[2] =
                                     voxel_size * (z + ratio * int(i == 2));
-                            GetNormalAt(xv + int64_t(i == 0),
-                                        yv + int64_t(i == 1),
-                                        zv + int64_t(i == 2),
-                                        workload_block_idx, ni);
+                            GetNormalAt(static_cast<int>(xv) + (i == 0),
+                                        static_cast<int>(yv) + (i == 1),
+                                        static_cast<int>(zv) + (i == 2),
+                                        static_cast<int>(workload_block_idx),
+                                        ni);
 
                             float* normal_ptr = static_cast<float*>(
                                     normal_indexer.GetDataPtrFromCoord(idx));
                             float nx = (1 - ratio) * no[0] + ratio * ni[0];
                             float ny = (1 - ratio) * no[1] + ratio * ni[1];
                             float nz = (1 - ratio) * no[2] + ratio * ni[2];
-                            float norm =
-                                    sqrt(nx * nx + ny * ny + nz * nz) + 1e-5;
+                            float norm = static_cast<float>(
+                                    sqrt(nx * nx + ny * ny + nz * nz) + 1e-5);
                             normal_ptr[0] = nx / norm;
                             normal_ptr[1] = ny / norm;
                             normal_ptr[2] = nz / norm;
@@ -778,7 +788,7 @@ void CPUMarchingCubesKernel
     CUDACachedMemoryManager::ReleaseCache();
 #endif
 
-    int n_blocks = indices.GetShape()[0];
+    int n_blocks = static_cast<int>(indices.GetShape()[0]);
     core::Tensor mesh_structure = core::Tensor::Zeros(
             {n_blocks, resolution, resolution, resolution, 4},
             core::Dtype::Int32, block_keys.GetDevice());
@@ -810,7 +820,8 @@ void CPUMarchingCubesKernel
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
                         return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, resolution,
+                                xo, yo, zo, curr_block_idx,
+                                static_cast<int>(resolution),
                                 nb_block_masks_indexer,
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
@@ -828,8 +839,10 @@ void CPUMarchingCubesKernel
                     int table_idx = 0;
                     for (int i = 0; i < 8; ++i) {
                         voxel_t* voxel_ptr_i = GetVoxelAt(
-                                xv + vtx_shifts[i][0], yv + vtx_shifts[i][1],
-                                zv + vtx_shifts[i][2], workload_block_idx);
+                                static_cast<int>(xv) + vtx_shifts[i][0],
+                                static_cast<int>(yv) + vtx_shifts[i][1],
+                                static_cast<int>(zv) + vtx_shifts[i][2],
+                                static_cast<int>(workload_block_idx));
                         if (voxel_ptr_i == nullptr) return;
 
                         float tsdf_i = voxel_ptr_i->GetTSDF();
@@ -855,9 +868,9 @@ void CPUMarchingCubesKernel
                             int64_t zv_i = zv + edge_shifts[i][2];
                             int edge_i = edge_shifts[i][3];
 
-                            int dxb = xv_i / resolution;
-                            int dyb = yv_i / resolution;
-                            int dzb = zv_i / resolution;
+                            int dxb = static_cast<int>(xv_i / resolution);
+                            int dyb = static_cast<int>(yv_i / resolution);
+                            int dzb = static_cast<int>(zv_i / resolution);
 
                             int nb_idx =
                                     (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
@@ -963,7 +976,8 @@ void CPUMarchingCubesKernel
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
                         return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, resolution,
+                                xo, yo, zo, curr_block_idx,
+                                static_cast<int>(resolution),
                                 nb_block_masks_indexer,
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
@@ -973,8 +987,9 @@ void CPUMarchingCubesKernel
                                                          int curr_block_idx,
                                                          float* n) {
                         return DeviceGetNormalAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, n, resolution,
-                                voxel_size, nb_block_masks_indexer,
+                                xo, yo, zo, curr_block_idx, n,
+                                static_cast<int>(resolution), voxel_size,
+                                nb_block_masks_indexer,
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
                     };
@@ -1017,7 +1032,9 @@ void CPUMarchingCubesKernel
                                     xv, yv, zv, block_idx));
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float no[3] = {0}, ne[3] = {0};
-                    GetNormalAt(xv, yv, zv, workload_block_idx, no);
+                    GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
+                                static_cast<int>(zv),
+                                static_cast<int>(workload_block_idx), no);
 
                     // Enumerate 3 edges in the voxel
                     for (int e = 0; e < 3; ++e) {
@@ -1025,8 +1042,10 @@ void CPUMarchingCubesKernel
                         if (vertex_idx != -1) continue;
 
                         voxel_t* voxel_ptr_e = GetVoxelAt(
-                                xv + int(e == 0), yv + int(e == 1),
-                                zv + int(e == 2), workload_block_idx);
+                                static_cast<int>(xv) + (e == 0),
+                                static_cast<int>(yv) + (e == 1),
+                                static_cast<int>(zv) + (e == 2),
+                                static_cast<int>(workload_block_idx));
                         float tsdf_e = voxel_ptr_e->GetTSDF();
                         float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
@@ -1045,12 +1064,15 @@ void CPUMarchingCubesKernel
 
                         float* normal_ptr = static_cast<float*>(
                                 normal_indexer.GetDataPtrFromCoord(idx));
-                        GetNormalAt(xv + int(e == 0), yv + int(e == 1),
-                                    zv + int(e == 2), workload_block_idx, ne);
+                        GetNormalAt(static_cast<int>(xv) + (e == 0),
+                                    static_cast<int>(yv) + (e == 1),
+                                    static_cast<int>(zv) + (e == 2),
+                                    static_cast<int>(workload_block_idx), ne);
                         float nx = (1 - ratio) * no[0] + ratio * ne[0];
                         float ny = (1 - ratio) * no[1] + ratio * ne[1];
                         float nz = (1 - ratio) * no[2] + ratio * ne[2];
-                        float norm = sqrt(nx * nx + ny * ny + nz * nz) + 1e-5;
+                        float norm = static_cast<float>(
+                                sqrt(nx * nx + ny * ny + nz * nz) + 1e-5);
                         normal_ptr[0] = nx / norm;
                         normal_ptr[1] = ny / norm;
                         normal_ptr[2] = nz / norm;
@@ -1066,11 +1088,11 @@ void CPUMarchingCubesKernel
                             float g_e = voxel_ptr_e->GetG();
                             float b_e = voxel_ptr_e->GetB();
                             color_ptr[0] =
-                                    ((1 - ratio) * r_o + ratio * r_e) / 255.0;
+                                    ((1 - ratio) * r_o + ratio * r_e) / 255.0f;
                             color_ptr[1] =
-                                    ((1 - ratio) * g_o + ratio * g_e) / 255.0;
+                                    ((1 - ratio) * g_o + ratio * g_e) / 255.0f;
                             color_ptr[2] =
-                                    ((1 - ratio) * b_o + ratio * b_e) / 255.0;
+                                    ((1 - ratio) * b_o + ratio * b_e) / 255.0f;
                         }
                     }
                 });
@@ -1131,9 +1153,9 @@ void CPUMarchingCubesKernel
                         int64_t zv_i = zv + edge_shifts[edge][2];
                         int64_t edge_i = edge_shifts[edge][3];
 
-                        int dxb = xv_i / resolution;
-                        int dyb = yv_i / resolution;
-                        int dzb = zv_i / resolution;
+                        int dxb = static_cast<int>(xv_i / resolution);
+                        int dyb = static_cast<int>(yv_i / resolution);
+                        int dzb = static_cast<int>(zv_i / resolution);
 
                         int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 

@@ -110,7 +110,8 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
         for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
             for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
                 for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
-                    set.emplace(xb, yb, zb);
+                    set.emplace(static_cast<int>(xb), static_cast<int>(yb),
+                                static_cast<int>(zb));
                 }
             }
         }
@@ -123,9 +124,9 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
         int64_t offset = count * 3;
-        block_coords_ptr[offset + 0] = (*it).x_;
-        block_coords_ptr[offset + 1] = (*it).y_;
-        block_coords_ptr[offset + 2] = (*it).z_;
+        block_coords_ptr[offset + 0] = static_cast<int>((*it).x_);
+        block_coords_ptr[offset + 1] = static_cast<int>((*it).y_);
+        block_coords_ptr[offset + 2] = static_cast<int>((*it).z_);
     }
 
     dsts.emplace("block_coords", block_coords);
