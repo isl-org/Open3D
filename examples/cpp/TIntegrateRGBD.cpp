@@ -93,7 +93,8 @@ int main(int argc, char** argv) {
         t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                                {"weight", core::Dtype::UInt16},
                                                {"color", core::Dtype::UInt16}},
-                                              3.0 / 512, 0.04, 16, 100, device);
+                                              3.0f / 512.f, 0.04f, 16, 100,
+                                              device);
 
         for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
             // Load image
