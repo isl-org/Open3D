@@ -286,7 +286,7 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
 void FilamentView::ConfigureForColorPicking() {
     view_->setSampleCount(1);
     SetPostProcessing(false);
-    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::NONE);
+    SetAmbientOcclusion(false, false);
     SetShadowing(false, ShadowType::kPCF);
 }
 
