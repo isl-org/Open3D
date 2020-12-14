@@ -60,6 +60,8 @@ public:
         ColorMapZ
     };
 
+    enum class ShadowType : std::uint8_t { kPCF, kVSM };
+
     virtual ~View() {}
 
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
@@ -75,7 +77,10 @@ public:
                              std::uint32_t h) = 0;
     virtual std::array<int, 4> GetViewport() const = 0;
 
+    virtual void SetPostProcessing(bool enabled) = 0;
     virtual void SetSSAOEnabled(bool enabled) = 0;
+    virtual void SetShadowing(bool enabled, ShadowType type) = 0;
+
     virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
 
     virtual void ConfigureForColorPicking() = 0;

@@ -81,6 +81,7 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_->setPostProcessingEnabled(true);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    SetShadowing(true, ShadowType::kPCF);
     ColorGradingParams cp(ColorGradingParams::Quality::kHigh,
                           ColorGradingParams::ToneMapping::kUchimura);
     SetColorGrading(cp);
@@ -165,10 +166,26 @@ std::array<int, 4> FilamentView::GetViewport() const {
     return {vp.left, vp.bottom, int(vp.width), int(vp.height)};
 }
 
+void FilamentView::SetPostProcessing(bool enabled) {
+    view_->setPostProcessingEnabled(enabled);
+}
+
 void FilamentView::SetSSAOEnabled(const bool enabled) {
     const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
                                 : filament::View::AmbientOcclusion::NONE;
     view_->setAmbientOcclusion(option);
+}
+
+void FilamentView::SetShadowing(bool enabled, ShadowType type) {
+    if (enabled) {
+        filament::View::ShadowType stype =
+                (type == ShadowType::kPCF) ? filament::View::ShadowType::PCF
+                                           : filament::View::ShadowType::VSM;
+        view_->setShadowType(stype);
+        view_->setShadowingEnabled(true);
+    } else {
+        view_->setShadowingEnabled(false);
+    }
 }
 
 static inline filament::math::float3 eigen_to_float3(const Eigen::Vector3f& v) {
@@ -258,7 +275,7 @@ void FilamentView::ConfigureForColorPicking() {
     view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
     view_->setPostProcessingEnabled(false);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::NONE);
-    view_->setShadowsEnabled(false);
+    SetShadowing(false, ShadowType::kPCF);
     view_->setToneMapping(filament::View::ToneMapping::LINEAR);
 }
 

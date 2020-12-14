@@ -75,7 +75,10 @@ public:
                      std::uint32_t h) override;
     std::array<int, 4> GetViewport() const override;
 
+    void SetPostProcessing(bool enabled) override;
     void SetSSAOEnabled(bool enabled) override;
+    void SetShadowing(bool enabled, ShadowType type) override;
+
     void SetColorGrading(const ColorGradingParams& color_grading) override;
 
     void ConfigureForColorPicking() override;
