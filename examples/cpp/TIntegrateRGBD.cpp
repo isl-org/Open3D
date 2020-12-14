@@ -25,7 +25,7 @@ void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
-    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud.");
+    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
     utility::LogInfo("     [options]");
     utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
     utility::LogInfo("     --device [CPU:0]");
