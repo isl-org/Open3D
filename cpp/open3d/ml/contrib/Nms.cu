@@ -39,13 +39,13 @@
 #include <thrust/sort.h>
 
 #include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/Nms.h"
-#include "open3d/ml/impl/misc/NmsImpl.h"
+#include "open3d/ml/contrib/IoUImpl.h"
+#include "open3d/ml/contrib/Nms.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
 template <typename T>
 static void SortIndices(T *values,
@@ -124,8 +124,9 @@ __global__ void NmsKernel(const float *boxes,
 
         uint64_t t = 0;
         while (dst_idx < col_size) {
-            if (IouBev(boxes + sort_indices[src_idx] * 5,
-                       block_boxes + dst_idx * 5) > nms_overlap_thresh) {
+            if (IoUBev2DWithMinAndMax(boxes + sort_indices[src_idx] * 5,
+                                      block_boxes + dst_idx * 5) >
+                nms_overlap_thresh) {
                 t |= 1ULL << dst_idx;
             }
             dst_idx++;
@@ -211,6 +212,6 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     return keep_indices;
 }
 
-}  // namespace impl
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d

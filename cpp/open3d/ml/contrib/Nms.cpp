@@ -33,19 +33,19 @@
 // Written by Shaoshuai Shi
 // All Rights Reserved 2019-2020.
 
-#include "open3d/ml/impl/misc/Nms.h"
+#include "open3d/ml/contrib/Nms.h"
 
 #include <tbb/parallel_for.h>
 
 #include <iostream>
 #include <numeric>
 
-#include "open3d/ml/impl/misc/NmsImpl.h"
+#include "open3d/ml/contrib/IoUImpl.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
 template <typename T>
 static std::vector<int64_t> SortIndexes(const T *values,
@@ -67,12 +67,12 @@ static std::vector<int64_t> SortIndexes(const T *values,
     return indices;
 }
 
-static void AllPairsIoU(const float *boxes,
-                        const float *scores,
-                        const int64_t *sort_indices,
-                        uint64_t *mask,
-                        int n,
-                        double nms_overlap_thresh) {
+static void AllPairsSortedIoU(const float *boxes,
+                              const float *scores,
+                              const int64_t *sort_indices,
+                              uint64_t *mask,
+                              int n,
+                              double nms_overlap_thresh) {
     const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
     const int num_block_rows = utility::DivUp(n, NMS_BLOCK_SIZE);
 
@@ -120,8 +120,9 @@ static void AllPairsIoU(const float *boxes,
                                 // dst_idx here are indexes to the global
                                 // memory. Thus we need to compute the local
                                 // index for dst_idx.
-                                if (IouBev(boxes + sort_indices[src_idx] * 5,
-                                           boxes + sort_indices[dst_idx] * 5) >
+                                if (IoUBev2DWithMinAndMax(
+                                            boxes + sort_indices[src_idx] * 5,
+                                            boxes + sort_indices[dst_idx] * 5) >
                                     nms_overlap_thresh) {
                                     t |= 1ULL
                                          << (dst_idx -
@@ -148,8 +149,8 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
     // mask:  (n, n/BS)
     std::vector<uint64_t> mask_vec(n * num_block_cols);
     uint64_t *mask = mask_vec.data();
-    AllPairsIoU(boxes, scores, sort_indices.data(), mask, n,
-                nms_overlap_thresh);
+    AllPairsSortedIoU(boxes, scores, sort_indices.data(), mask, n,
+                      nms_overlap_thresh);
 
     // Write to keep. remv_cpu has n bits in total. If the bit is 1, the
     // corresponding box will be removed.
@@ -177,6 +178,6 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
     return keep_indices;
 }
 
-}  // namespace impl
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d

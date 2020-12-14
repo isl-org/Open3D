@@ -54,31 +54,29 @@ FaissIndex::FaissIndex(const Tensor &dataset_points) {
 FaissIndex::~FaissIndex() {}
 
 bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
+    dataset_points_ = dataset_points.Contiguous();
+    size_t dataset_size = GetDatasetSize();
+    int dimension = GetDimension();
+
+    // Check dtype.
+    dataset_points_.AssertDtype(Dtype::Float32);
+
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
                 "[FaissIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
     }
-    dataset_points_ = dataset_points.Contiguous();
-    size_t dataset_size = GetDatasetSize();
-    int dimension = GetDimension();
-    Dtype dtype = GetDtype();
 
-    if (dtype != Dtype::Float32) {
-        utility::LogError(
-                "[FaissIndex::SetTensorData] Data type must be Float32.");
-    }
     if (dimension == 0 || dataset_size == 0) {
         utility::LogWarning(
                 "[FaissIndex::SetTensorData] Failed due to no data.");
     }
 
-    if (dataset_points_.GetBlob()->GetDevice().GetType() ==
-        Device::DeviceType::CUDA) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         res.reset(new faiss::gpu::StandardGpuResources());
         faiss::gpu::GpuIndexFlatConfig config;
-        config.device = dataset_points_.GetBlob()->GetDevice().GetID();
+        config.device = dataset_points_.GetDevice().GetID();
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
@@ -90,69 +88,52 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     } else {
         index.reset(new faiss::IndexFlatL2(dimension));
     }
-    float *_data_ptr =
-            static_cast<float *>(dataset_points_.GetBlob()->GetDataPtr());
+    float *_data_ptr = static_cast<float *>(dataset_points_.GetDataPtr());
     index->add(dataset_size, _data_ptr);
     return true;
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
-    if (query_points.GetDtype() != Dtype::Float32) {
-        utility::LogError("[FaissIndex::SearchKnn] Data type must be Float32.");
-    }
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[FaissIndex::SearchKnn] query must be 2D matrix, "
-                "with shape (n_query_points, d).");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[FaissIndex::SearchKnn] query has different "
-                "dimension with the dataset dimension.");
-    }
+    // Check dtype.
+    query_points.AssertDtype(Dtype::Float32);
+
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
     if (knn <= 0) {
         utility::LogError(
                 "[FaissIndex::SearchKnn] knn should be larger than 0.");
     }
 
-    SizeVector size = query_points.GetShape();
-    int64_t query_size = size[0];
+    int64_t num_query_points = query_points.GetShape()[0];
     knn = std::min(knn, (int)GetDatasetSize());
 
-    float *_data_ptr =
-            static_cast<float *>(query_points.GetBlob()->GetDataPtr());
+    auto *data_ptr = static_cast<const float *>(query_points.GetDataPtr());
 
-    std::vector<int64_t> indices;
-    std::vector<float> distance2;
-    indices.resize(knn * query_size);
-    distance2.resize(knn * query_size);
-    index->search(query_size, _data_ptr, knn, distance2.data(), indices.data());
+    Tensor indices = Tensor::Empty({num_query_points * knn}, Dtype::Int64,
+                                   dataset_points_.GetDevice());
+    Tensor distances = Tensor::Empty({num_query_points * knn}, Dtype::Float32,
+                                     dataset_points_.GetDevice());
 
-    Tensor result_indices_(indices, {query_size, knn}, Dtype::Int64,
-                           query_points.GetBlob()->GetDevice());
-    Tensor result_distance2_(distance2, {query_size, knn}, Dtype::Float32,
-                             query_points.GetBlob()->GetDevice());
-    return std::make_pair(result_indices_, result_distance2_);
+    index->search(num_query_points, data_ptr, knn,
+                  static_cast<float *>(distances.GetDataPtr()),
+                  static_cast<int64_t *>(indices.GetDataPtr()));
+
+    indices = indices.Reshape({num_query_points, knn});
+    distances = distances.Reshape({num_query_points, knn});
+    return std::make_pair(indices, distances);
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
                                                    float radius,
                                                    int max_knn) const {
-    if (query_points.GetDtype() != Dtype::Float32) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] Data type must be Float32.");
-    }
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] query must be 2D matrix, "
-                "with shape (n_query_points, d).");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] query has different "
-                "dimension with the dataset dimension.");
-    }
+    // Check dtype.
+    query_points.AssertDtype(Dtype::Float32);
+
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
     if (max_knn <= 0) {
         utility::LogError(
                 "[FaissIndex::SearchHybrid] max_knn should be larger than 0.");
@@ -162,32 +143,21 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
                 "[FaissIndex::SearchHybrid] radius should be larger than 0.");
     }
 
-    SizeVector size = query_points.GetShape();
-    int64_t query_size = size[0];
+    Tensor indices;
+    Tensor distances;
 
-    float *_data_ptr =
-            static_cast<float *>(query_points.GetBlob()->GetDataPtr());
+    std::tie(indices, distances) = SearchKnn(query_points, max_knn);
 
-    std::vector<int64_t> indices;
-    std::vector<float> distance2;
-    indices.resize(max_knn * query_size);
-    distance2.resize(max_knn * query_size);
-    index->search(query_size, _data_ptr, max_knn, distance2.data(),
-                  indices.data());
+    Tensor invalid = distances.Gt(radius);
+    Tensor invalid_indices = Tensor(std::vector<int64_t>({-1}), {1},
+                                    Dtype::Int64, indices.GetDevice());
+    Tensor invalid_distances = Tensor(std::vector<float>({-1}), {1},
+                                      Dtype::Float32, distances.GetDevice());
 
-    int64_t upper_ = max_knn * query_size;
-    for (int64_t i = 0; i < upper_; i++) {
-        if (distance2[i] > radius) {
-            distance2[i] = 0;
-            indices[i] = -1;
-        }
-    }
+    indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
+    distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
 
-    Tensor result_indices_(indices, {query_size, max_knn}, Dtype::Int64,
-                           query_points.GetBlob()->GetDevice());
-    Tensor result_distance2_(distance2, {query_size, max_knn}, Dtype::Float32,
-                             query_points.GetBlob()->GetDevice());
-    return std::make_pair(result_indices_, result_distance2_);
+    return std::make_pair(indices, distances);
 }
 
 }  // namespace nns
