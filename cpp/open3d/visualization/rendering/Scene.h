@@ -138,6 +138,11 @@ public:
                               float inner_cone_angle,
                               float outer_cone_angle,
                               bool cast_shadows) = 0;
+    virtual bool AddDirectionalLight(const std::string& light_name,
+                                     const Eigen::Vector3f& color,
+                                     const Eigen::Vector3f& direction,
+                                     float intensity,
+                                     bool cast_shadows) = 0;
     virtual Light& GetLight(const std::string& light_name) = 0;
     virtual void RemoveLight(const std::string& light_name) = 0;
     virtual void UpdateLight(const std::string& light_name,

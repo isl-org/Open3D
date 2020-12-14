@@ -1112,6 +1112,40 @@ bool FilamentScene::AddSpotLight(const std::string& light_name,
     return true;
 }
 
+bool FilamentScene::AddDirectionalLight(const std::string& light_name,
+                                        const Eigen::Vector3f& color,
+                                        const Eigen::Vector3f& direction,
+                                        float intensity,
+                                        bool cast_shadows) {
+    if (lights_.count(light_name) > 0) {
+        utility::LogWarning(
+                "Cannot add point light because {} has already been added",
+                light_name);
+        return false;
+    }
+
+    filament::LightManager::Type light_type =
+            filament::LightManager::Type::DIRECTIONAL;
+    auto light = utils::EntityManager::get().create();
+    auto result =
+            filament::LightManager::Builder(light_type)
+                    .castShadows(cast_shadows)
+                    .direction({direction.x(), direction.y(), direction.z()})
+                    .color({color.x(), color.y(), color.z()})
+                    .intensity(intensity)
+                    .build(engine_, light);
+
+    if (result == filament::LightManager::Builder::Success) {
+        lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+    } else {
+        utility::LogWarning("Failed to build Filament light resources for {}",
+                            light_name);
+        return false;
+    }
+
+    return true;
+}
+
 Light& FilamentScene::GetLight(const std::string& light_name) {
     // TODO: Not yet implemented. I still don't see any advantage to doing this
     static Light blah;

@@ -160,6 +160,11 @@ public:
                       float inner_cone_angle,
                       float outer_cone_angle,
                       bool cast_shadows) override;
+    bool AddDirectionalLight(const std::string& light_name,
+                             const Eigen::Vector3f& color,
+                             const Eigen::Vector3f& direction,
+                             float intensity,
+                             bool cast_shadows) override;
     Light& GetLight(const std::string& light_name) override;
     void RemoveLight(const std::string& light_name) override;
     void UpdateLight(const std::string& light_name,
