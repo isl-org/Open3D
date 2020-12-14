@@ -69,6 +69,10 @@ int main(int argc, char *argv[]) {
 
     max_correspondence_dist = max_correspondence_dist * max_correspondence_dist;
 
+    utility::LogInfo(" Source PointCloud size {}, Target PointCloud size {}",
+                     source_device.GetPoints().GetShape()[0],
+                     target_device.GetPoints().GetShape()[0]);
+
     for (int i = 0; i < itr; i++) {
         core::Tensor transformation = init_trans;
         utility::Timer hybrid_time;
@@ -82,7 +86,8 @@ int main(int argc, char *argv[]) {
         max_ = std::max(max_, time);
         min_ = std::min(min_, time);
     }
-    utility::LogInfo("\n\n   Average Time: {}, Max {}, Min {} \n", avg_, max_,
-                     min_);
+    avg_ = avg_ / (double)itr;
+
+    utility::LogInfo(" Average Time: {}, Max {}, Min {} ", avg_, max_, min_);
     return 0;
 }

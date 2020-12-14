@@ -51,39 +51,43 @@ void VisualizeRegistration(const open3d::t::geometry::PointCloud &source,
 
 void PrintHelp() {
     utility::LogInfo("Usage :");
-    utility::LogInfo("  > TensorPointCloudTransform <src_file> <target_file>");
+    utility::LogInfo(
+            "  > TensorPointCloudTransform <device> <src_file> <target_file>");
+    utility::LogInfo("  > Device Option: 'CPU:0' or 'CUDA:0' ");
 }
 
 int main(int argc, char *argv[]) {
     // TODO: Add argument input options for users and developers
-    if (argc < 2) {
+    if (argc < 3) {
         PrintHelp();
         return 1;
     }
+    // Argument 1: Device: 'CPU:0' for CPU, 'CUDA:0' for GPU
+    // Argument 2: Path to Source PointCloud
+    // Argument 3: Path to Target PointCloud
 
     // TODO: Take this input as arguments
-    auto device = core::Device("CUDA:0");
+    auto device = core::Device(argv[1]);
     auto dtype = core::Dtype::Float32;
 
     // TODO: Look for a neat method to import data on device
     // t::io::ReadPointCloud, changes the device to CPU and DType to Float64
     t::geometry::PointCloud source(device);
-    t::geometry::PointCloud source2(device);
     t::geometry::PointCloud target(device);
 
-    t::io::ReadPointCloud(argv[1], source, {"auto", false, false, true});
-    t::io::ReadPointCloud(argv[2], target, {"auto", false, false, true});
+    t::io::ReadPointCloud(argv[2], source, {"auto", false, false, true});
+    t::io::ReadPointCloud(argv[3], target, {"auto", false, false, true});
 
     core::Tensor source_points = source.GetPoints().To(dtype).Copy(device);
     t::geometry::PointCloud source_device(device);
     source_device.SetPoints(source_points);
+
     core::Tensor target_points = target.GetPoints().To(dtype).Copy(device);
     core::Tensor target_normals =
             target.GetPointNormals().To(dtype).Copy(device);
     t::geometry::PointCloud target_device(device);
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);
-    // TODO: Look for a way to make pointcloud data of Float32 (it's Float64)
 
     // For matching result with the Tutorial test case,
     // Comment out Case: 1 below [init_trans], and uncomment the Case: 2
@@ -160,16 +164,18 @@ int main(int argc, char *argv[]) {
     // ICP ConvergenceCriteria for both Point To Point and Point To Plane:
     double relative_fitness = 1e-6;
     double relative_rmse = 1e-6;
-    int max_iterations = 30;
+    int max_iterations = 5;
 
     // ICP: Point to Point
+    utility::Timer icp_p2p_time;
+    icp_p2p_time.Start();
     auto reg_p2p = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans,
             open3d::t::pipelines::registration::
                     TransformationEstimationPointToPoint(),
             open3d::t::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
-
+    icp_p2p_time.Stop();
     // Printing result for ICP Point to Point
     utility::LogInfo(" [ICP: Point to Point] ");
     utility::LogInfo("   Convergence Criteria: ");
@@ -188,18 +194,23 @@ int main(int argc, char *argv[]) {
             reg_p2p.correspondence_set_.GetShape()[0], max_correspondence_dist);
     utility::LogInfo("       Fitness: {} ", reg_p2p.fitness_);
     utility::LogInfo("       Inlier RMSE: {} ", reg_p2p.inlier_rmse_);
+    utility::LogInfo("     [Time]: {}", icp_p2p_time.GetDuration());
+    utility::LogInfo("     [Transformation Matrix]: \n{}",
+                     reg_p2p.transformation_.ToString());
 
     // auto transformation_point2point = reg_p2p.transformation_;
     // VisualizeRegistration(source, target, transformation_point2point);
 
     // ICP: Point to Plane
+    utility::Timer icp_p2plane_time;
+    icp_p2plane_time.Start();
     auto reg_p2plane = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans,
             open3d::t::pipelines::registration::
                     TransformationEstimationPointToPlane(),
             open3d::t::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
-
+    icp_p2plane_time.Stop();
     // Printing result for ICP Point to Plane
     utility::LogInfo(" [ICP: Point to Plane] ");
     utility::LogInfo("   Convergence Criteria: ");
@@ -215,9 +226,13 @@ int main(int argc, char *argv[]) {
     utility::LogInfo(
             "     [Correspondences]: {}, [maximum corrspondence distance = "
             "{}] ",
-            reg_p2p.correspondence_set_.GetShape()[0], max_correspondence_dist);
+            reg_p2plane.correspondence_set_.GetShape()[0],
+            max_correspondence_dist);
     utility::LogInfo("       Fitness: {} ", reg_p2plane.fitness_);
     utility::LogInfo("       Inlier RMSE: {} ", reg_p2plane.inlier_rmse_);
+    utility::LogInfo("     [Time]: {}", icp_p2plane_time.GetDuration());
+    utility::LogInfo("     [Transformation Matrix]: \n{}",
+                     reg_p2plane.transformation_.ToString());
 
     // auto transformation_point2plane = reg_p2plane.transformation_;
     // VisualizeRegistration(source2, target, transformation_point2plane);

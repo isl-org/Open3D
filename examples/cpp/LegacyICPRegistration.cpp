@@ -126,15 +126,18 @@ int main(int argc, char *argv[]) {
     // ICP ConvergenceCriteria for both Point To Point and Point To Plane:
     double relative_fitness = 1e-6;
     double relative_rmse = 1e-6;
-    int max_iterations = 30;
+    int max_iterations = 5;
 
     // ICP: Point to Point
+    utility::Timer icp_p2p_time;
+    icp_p2p_time.Start();
     auto reg_p2p = open3d::pipelines::registration::RegistrationICP(
             *source, *target, max_correspondence_dist, init_trans,
             open3d::pipelines::registration::
                     TransformationEstimationPointToPoint(),
             open3d::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
+    icp_p2p_time.Stop();
 
     // Printing result for ICP Point to Point
     utility::LogInfo(" [ICP: Point to Point] ");
@@ -149,18 +152,24 @@ int main(int argc, char *argv[]) {
             reg_p2p.correspondence_set_.size(), max_correspondence_dist);
     utility::LogInfo("     Fitness: {} ", reg_p2p.fitness_);
     utility::LogInfo("     Inlier RMSE: {} ", reg_p2p.inlier_rmse_);
+    utility::LogInfo("     [Time]: {}", icp_p2p_time.GetDuration());
+    utility::LogInfo("     [Tranformation Matrix]: ");
+    std::cout << reg_p2p.transformation_ << std::endl;
+    ;
 
     // auto transformation_point2point = reg_p2p.transformation_;
     // VisualizeRegistration(source, target, transformation_point2point);
 
     // ICP: Point to Plane
+    utility::Timer icp_p2plane_time;
+    icp_p2plane_time.Start();
     auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
             *source, *target, max_correspondence_dist, init_trans,
             open3d::pipelines::registration::
                     TransformationEstimationPointToPlane(),
             open3d::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
-
+    icp_p2plane_time.Stop();
     // Printing result for ICP Point to Plane
     utility::LogInfo(" [ICP: Point to Plane] ");
     utility::LogInfo(
@@ -174,6 +183,9 @@ int main(int argc, char *argv[]) {
             reg_p2plane.correspondence_set_.size(), max_correspondence_dist);
     utility::LogInfo("     Fitness: {} ", reg_p2plane.fitness_);
     utility::LogInfo("     Inlier RMSE: {} ", reg_p2plane.inlier_rmse_);
+    utility::LogInfo("     [Time]: {}", icp_p2plane_time.GetDuration());
+    utility::LogInfo("     [Tranformation Matrix]: ");
+    std::cout << reg_p2plane.transformation_;
 
     // auto transformation_point2plane = reg_p2plane.transformation_;
     // VisualizeRegistration(source2, target, transformation_point2plane);
