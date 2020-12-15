@@ -37,7 +37,9 @@ test_data_path = test_path + "../../examples/test_data/"
 
 from open3d_test import list_devices
 
+
 class CameraPose:
+
     def __init__(self, meta, mat):
         self.metadata = meta
         self.pose = mat
