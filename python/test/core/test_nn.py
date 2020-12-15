@@ -42,11 +42,11 @@ def test_knn_index(device):
     nns = o3c.nns.NearestNeighborSearch(t)
     assert nns.knn_index()
     assert nns.fixed_radius_index(0.1)
+    assert nns.hybrid_index()
 
-    # multi radii search and hybrid search are only supported on CPU.
+    # Multi radii search is only supported on CPU.
     if device.get_type() == o3d.core.Device.DeviceType.CPU:
         assert nns.multi_radius_index()
-        assert nns.hybrid_index()
 
 
 @pytest.mark.parametrize("device", list_devices())

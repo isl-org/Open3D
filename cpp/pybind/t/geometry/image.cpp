@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-/* #include "open3d/geometry/Image.h" */
 
 #include "open3d/t/geometry/Image.h"
 
@@ -42,9 +41,9 @@ namespace geometry {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"color", "The color image."},
-                {"convert_rgb_to_intensity",
-                 "Whether to convert RGB image to intensity image."},
                 {"depth", "The depth image."},
+                {"aligned",
+                 "Are the two images aligned (same viewpoint and resolution)?"},
                 {"image", "The Image object."},
                 {"tensor",
                  "Tensor of the image. The tensor must be contiguous. The "
@@ -64,11 +63,11 @@ static const std::unordered_map<std::string, std::string>
                 {"device", "Device where the image is stored."}};
 
 void pybind_image(py::module &m) {
-    py::class_<Image, PyGeometry2D<Image>, Geometry2D> image(
+    py::class_<Image, PyGeometry<Image>, Geometry> image(
             m, "Image", py::buffer_protocol(),
             "The Image class stores image with customizable rols, cols, "
-            "channels, dtype and device ");
-    // ctors
+            "channels, dtype and device.");
+    // Constructors
     image.def(py::init<int64_t, int64_t, int64_t, core::Dtype, core::Device>(),
               "Row-major storage is used, similar to OpenCV. Use (row, col, "
               "channel) indexing order for image creation and accessing. In "
@@ -84,34 +83,34 @@ void pybind_image(py::module &m) {
                  "tensor"_a);
     docstring::ClassMethodDocInject(m, "Image", "__init__",
                                     map_shared_argument_docstrings);
-    // buffer protocol
+    // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
         return py::buffer_info(I.GetDataPtr(), I.GetDtype().ByteSize(),
                                pybind_utils::DtypeToArrayFormat(I.GetDtype()),
                                I.AsTensor().NumDims(), I.AsTensor().GetShape(),
                                I.AsTensor().GetStrides());
     });
-    // info
+    // Info.
     image.def_property_readonly("dtype", &Image::GetDtype,
                                 "Get dtype of the image")
             .def_property_readonly("device", &Image::GetDevice,
-                                   "Get the device of the image")
+                                   "Get the device of the image.")
             .def_property_readonly("rows", &Image::GetRows,
-                                   "Get the number of rows of the image")
+                                   "Get the number of rows of the image.")
             .def_property_readonly("columns", &Image::GetCols,
-                                   "Get the number of columns of the image")
+                                   "Get the number of columns of the image.")
             .def_property_readonly("channels", &Image::GetChannels,
-                                   "Get the number of channels of the image")
+                                   "Get the number of channels of the image.")
             // functions
-            .def("clear", &Image::Clear, "Clear stored data")
+            .def("clear", &Image::Clear, "Clear stored data.")
             .def("is_empty", &Image::IsEmpty, "Is any data stored?")
             .def("get_min_bound", &Image::GetMinBound,
-                 "Compute min 2D coordinates for the data (always {0, 0})")
+                 "Compute min 2D coordinates for the data (always {0, 0}).")
             .def("get_max_bound", &Image::GetMaxBound,
-                 "Compute max 2D coordinates for the data ({cols, rows})")
+                 "Compute max 2D coordinates for the data ({rows, cols}).")
             .def("__repr__", &Image::ToString);
 
-    // conversion
+    // Conversion.
     image.def("to_legacy_image", &Image::ToLegacyImage,
               "Convert to legacy Image type.");
 
@@ -121,31 +120,37 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
     docstring::ClassMethodDocInject(m, "Image", "to_legacy_image");
 
-    py::class_<RGBDImage, PyGeometry2D<RGBDImage>, Geometry2D> rgbd_image(
+    py::class_<RGBDImage, PyGeometry<RGBDImage>, Geometry> rgbd_image(
             m, "RGBDImage",
-            "RGBDImage is for a pair of registered color and depth "
-            "images, viewed from the same view, of the same "
-            "resolution. If you have another format, convert it "
-            "first.");
+            "RGBDImage is a pair of color and depth images. For most "
+            "procesing, the image pair should be aligned (same viewpoint and  "
+            "resolution).");
     rgbd_image
-            // ctors
-            .def(py::init<>(), "Construct an empty RGBDImage")
-            .def(py::init<const Image &, const Image &>(),
-                 "Parameterized constructor", "color"_a, "depth"_a)
-            // depth and color images
+            // Constructors.
+            .def(py::init<>(), "Construct an empty RGBDImage.")
+            .def(py::init<const Image &, const Image &, bool>(),
+                 "Parameterized constructor", "color"_a, "depth"_a,
+                 "aligned"_a = true)
+            // Depth and color images.
             .def_readwrite("color", &RGBDImage::color_, "The color image.")
             .def_readwrite("depth", &RGBDImage::depth_, "The depth image.")
-            // functions
-            .def("clear", &RGBDImage::Clear, "Clear stored data")
+            .def_readwrite("aligned_", &RGBDImage::aligned_,
+                           "Are the depth and color images aligned (same "
+                           "viewpoint and resolution)?")
+            // Functions.
+            .def("clear", &RGBDImage::Clear, "Clear stored data.")
             .def("is_empty", &RGBDImage::IsEmpty, "Is any data stored?")
+            .def("are_aligned", &RGBDImage::AreAligned,
+                 "Are the depth and color images aligned (same viewpoint and "
+                 "resolution)?")
             .def("get_min_bound", &RGBDImage::GetMinBound,
-                 "Compute min 2D coordinates for the data (always {0, 0})")
+                 "Compute min 2D coordinates for the data (always {0, 0}).")
             .def("get_max_bound", &RGBDImage::GetMaxBound,
-                 "Compute max 2D coordinates for the data")
-            // conversion
+                 "Compute max 2D coordinates for the data.")
+            // Conversion.
             .def("to_legacy_rgbd_image", &RGBDImage::ToLegacyRGBDImage,
                  "Convert to legacy RGBDImage type.")
-            // description
+            // Description.
             .def("__repr__", &RGBDImage::ToString);
 
     docstring::ClassMethodDocInject(m, "RGBDImage", "get_min_bound");

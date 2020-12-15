@@ -27,60 +27,70 @@
 #pragma once
 
 #include "open3d/geometry/RGBDImage.h"
-#include "open3d/t/geometry/Geometry2D.h"
 #include "open3d/t/geometry/Image.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-/// \class RGBDImage
+/// \brief RGBDImage A pair of color and depth images.
 ///
-/// \brief RGBDImage is for a pair of registered color and depth images,
-///
-/// viewed from the same view, of the same resolution.
-/// If you have another format, convert it first.
-class RGBDImage : public Geometry2D {
+/// For most procesing, the image pair should be aligned (same viewpoint and
+/// resolution).
+class RGBDImage : public Geometry {
 public:
     /// \brief Default Comnstructor.
-    RGBDImage() : Geometry2D(Geometry::GeometryType::RGBDImage) {}
+    RGBDImage() : Geometry(Geometry::GeometryType::RGBDImage, 2) {}
     /// \brief Parameterized Constructor.
     ///
     /// \param color The color image.
     /// \param depth The depth image.
-    RGBDImage(const Image &color, const Image &depth)
-        : Geometry2D(Geometry::GeometryType::RGBDImage),
+    /// \param aligned Are the two images aligned (same viewpoint and
+    /// resolution)?
+    RGBDImage(const Image &color, const Image &depth, bool aligned = true)
+        : Geometry(Geometry::GeometryType::RGBDImage, 2),
           color_(color),
-          depth_(depth) {}
+          depth_(depth),
+          aligned_(aligned) {
+        if (color.GetRows() != depth.GetRows() ||
+            color.GetCols() != depth.GetCols()) {
+            aligned_ = false;
+            utility::LogWarning(
+                    "Aligned image pair must have the same resolution.");
+        }
+    }
 
-    ~RGBDImage() override {
-        color_.Clear();
-        depth_.Clear();
-    };
+    ~RGBDImage() override{};
 
-    /// Clear stored data
+    /// Clear stored data.
     RGBDImage &Clear() override;
+
     /// Is any data stored?
     bool IsEmpty() const override;
-    /// Compute min 2D coordinates for the data (always {0,0})
-    core::Tensor GetMinBound() const override {
+
+    /// Are the depth and color images aligned (same viewpoint and resolution)?
+    bool AreAligned() const { return aligned_; }
+
+    /// Compute min 2D coordinates for the data (always {0,0}).
+    core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
     };
-    /// Compute max 2D coordinates for the data
-    core::Tensor GetMaxBound() const override {
+
+    /// Compute max 2D coordinates for the data.
+    core::Tensor GetMaxBound() const {
         return core::Tensor(
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
                                      color_.GetRows()},
                 {2}, core::Dtype::Int64);
     };
 
-    /// Convert to the legacy RGBDImage format
+    /// Convert to the legacy RGBDImage format.
     open3d::geometry::RGBDImage ToLegacyRGBDImage() const {
         return open3d::geometry::RGBDImage(color_.ToLegacyImage(),
                                            depth_.ToLegacyImage());
     }
 
-    /// Text description
+    /// Text description.
     std::string ToString() const;
 
 public:
@@ -88,6 +98,8 @@ public:
     Image color_;
     /// The depth image.
     Image depth_;
+    /// Are the depth and color images aligned (same viewpoint and resolution)?
+    bool aligned_ = true;
 };
 
 }  // namespace geometry

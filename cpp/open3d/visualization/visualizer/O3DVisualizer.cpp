@@ -60,6 +60,7 @@
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
+#include "open3d/visualization/visualizer/Receiver.h"
 
 #define GROUPS_USE_TREE 1
 
@@ -303,6 +304,8 @@ struct O3DVisualizer::Impl {
 
     Window *window_ = nullptr;
     SceneWidget *scene_ = nullptr;
+
+    std::shared_ptr<Receiver> receiver_;
 
     struct {
         // We only keep pointers here because that way we don't have to release
@@ -1093,7 +1096,7 @@ struct O3DVisualizer::Impl {
         ui_state_.ibl_intensity =
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
-                int(scene->GetScene()->GetDirectionalLightIntensity());
+                int(scene->GetScene()->GetSunLightIntensity());
         ui_state_.sun_dir = sun_dir;
         ui_state_.sun_color = {1.0f, 1.0f, 1.0f};
         SetUIState(ui_state_);
@@ -1212,9 +1215,9 @@ struct O3DVisualizer::Impl {
         auto *raw_scene = scene_->GetScene()->GetScene();
         raw_scene->EnableIndirectLight(ui_state_.use_ibl);
         raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
-        raw_scene->EnableDirectionalLight(ui_state_.use_sun);
-        raw_scene->SetDirectionalLight(ui_state_.sun_dir, ui_state_.sun_color,
-                                       float(ui_state_.sun_intensity));
+        raw_scene->EnableSunLight(ui_state_.use_sun);
+        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
+                               float(ui_state_.sun_intensity));
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
@@ -1606,6 +1609,34 @@ O3DVisualizer::~O3DVisualizer() {}
 
 Open3DScene *O3DVisualizer::GetScene() const {
     return impl_->scene_->GetScene().get();
+}
+
+void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_ = std::make_shared<Receiver>(
+            this, impl_->scene_->GetScene(), address, timeout);
+    try {
+        utility::LogInfo("Starting to listen on {}", address);
+        impl_->receiver_->Start();
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to start RPC interface: {}", e.what());
+    }
+#else
+    utility::LogWarning(
+            "O3DVisualizer::StartRPCInterface: RPC interface not built");
+#endif
+}
+
+void O3DVisualizer::StopRPCInterface() {
+#ifdef BUILD_RPC_INTERFACE
+    if (impl_->receiver_) {
+        utility::LogInfo("Stopping RPC interface");
+    }
+    impl_->receiver_.reset();
+#else
+    utility::LogWarning(
+            "O3DVisualizer::StopRPCInterface: RPC interface not built");
+#endif
 }
 
 void O3DVisualizer::AddAction(const std::string &name,

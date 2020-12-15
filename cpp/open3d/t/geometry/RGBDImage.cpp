@@ -40,11 +40,12 @@ bool RGBDImage::IsEmpty() const { return color_.IsEmpty() && depth_.IsEmpty(); }
 
 std::string RGBDImage::ToString() const {
     return fmt::format(
-            "RGBD Image pair [size={{{},{}}}]\n"
-            "Color [channels={}, format={}, device={}]\n"
-            "Depth [channels={}, format={}, device={}]",
-            color_.GetCols(), color_.GetRows(), color_.GetChannels(),
-            color_.GetDtype().ToString(), color_.GetDevice().ToString(),
+            "RGBD Image pair [{}Aligned]\n"
+            "Color [size=({},{}), channels={}, format={}, device={}]\n"
+            "Depth [size=({},{}), channels={}, format={}, device={}]",
+            AreAligned() ? "" : "Not ", color_.GetCols(), color_.GetRows(),
+            color_.GetChannels(), color_.GetDtype().ToString(),
+            color_.GetDevice().ToString(), depth_.GetCols(), depth_.GetRows(),
             depth_.GetChannels(), depth_.GetDtype().ToString(),
             depth_.GetDevice().ToString());
 }
