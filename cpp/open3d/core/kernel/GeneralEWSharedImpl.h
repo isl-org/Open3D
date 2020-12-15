@@ -433,13 +433,6 @@ void CPUTSDFIntegrateKernel
                                   depth_scale;
 
                     // Compute multiplier
-                    float xc_unproj, yc_unproj, zc_unproj;
-                    transform_indexer.Unproject(
-                            static_cast<float>(u), static_cast<float>(v), 1.0,
-                            &xc_unproj, &yc_unproj, &zc_unproj);
-                    // float multiplier =
-                    //         sqrt(xc_unproj * xc_unproj +
-                    //              yc_unproj * yc_unproj + 1.0);
                     float sdf = (depth - zc);
                     if (depth <= 0 || depth > depth_max || zc <= 0 ||
                         sdf < -sdf_trunc) {
@@ -562,7 +555,7 @@ void CPUSurfaceExtractionKernel
                                     xv, yv, zv, block_idx));
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
-                    if (weight_o == 0) return;
+                    if (weight_o <= kWeightThreshold) return;
 
                     for (int i = 0; i < 3; ++i) {
                         voxel_t* ptr = GetVoxelAt(
@@ -575,7 +568,8 @@ void CPUSurfaceExtractionKernel
                         float tsdf_i = ptr->GetTSDF();
                         float weight_i = ptr->GetWeight();
 
-                        if (weight_i > 0 && tsdf_i * tsdf_o < 0) {
+                        if (weight_i > kWeightThreshold &&
+                            tsdf_i * tsdf_o < 0) {
                             ATOMIC_ADD(count_ptr, 1);
                         }
                     }
@@ -662,7 +656,7 @@ void CPUSurfaceExtractionKernel
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
 
-                    if (weight_o == 0) return;
+                    if (weight_o <= kWeightThreshold) return;
 
                     int64_t x = xb * resolution + xv;
                     int64_t y = yb * resolution + yv;
@@ -683,7 +677,8 @@ void CPUSurfaceExtractionKernel
                         float tsdf_i = ptr->GetTSDF();
                         float weight_i = ptr->GetWeight();
 
-                        if (weight_i > 0 && tsdf_i * tsdf_o < 0) {
+                        if (weight_i > kWeightThreshold &&
+                            tsdf_i * tsdf_o < 0) {
                             float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
                             int idx = ATOMIC_ADD(count_ptr, 1);
@@ -849,7 +844,7 @@ void CPUMarchingCubesKernel
 
                         float tsdf_i = voxel_ptr_i->GetTSDF();
                         float weight_i = voxel_ptr_i->GetWeight();
-                        if (weight_i == 0) return;
+                        if (weight_i <= kWeightThreshold) return;
 
                         table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
                     }

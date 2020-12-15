@@ -223,7 +223,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
     }
     auto pcd = PointCloud(dsts.at("points"));
     pcd.SetPointNormals(dsts.at("normals"));
-    if (attr_dtype_map_.count("colors") != 0) {
+    if (attr_dtype_map_.count("color") != 0) {
         pcd.SetPointColors(dsts.at("colors"));
     }
 

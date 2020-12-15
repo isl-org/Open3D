@@ -361,4 +361,6 @@ OPEN3D_DEVICE const int edge_to_vert[12][2] = {
 OPEN3D_HOST_DEVICE inline int sign(int x) {
     return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
 }
+
+OPEN3D_DEVICE const float kWeightThreshold = 3.0;
 }  // unnamed namespace
