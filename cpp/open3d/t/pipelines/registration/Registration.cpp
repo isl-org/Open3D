@@ -37,63 +37,7 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-static RegistrationResult GetCorrespondencesFromKNNSearch(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        open3d::core::nns::NearestNeighborSearch &target_nns,
-        double max_correspondence_distance,
-        const core::Tensor &transformation) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        open3d::utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
-    transformation.AssertDtype(dtype);
-
-    RegistrationResult result(transformation);
-    if (max_correspondence_distance <= 0.0) {
-        return result;
-    }
-
-    bool check = target_nns.KnnIndex();
-    if (!check) {
-        open3d::utility::LogError(
-                "[Tensor: EvaluateRegistration: "
-                "GetRegistrationResultAndCorrespondences: "
-                "NearestNeighborSearch::HybridSearch] "
-                "Index is not set.");
-    }
-
-    auto result_nns = target_nns.KnnSearch(source.GetPoints(), 1);
-
-    // This condition can be different for different search method used
-    result.correspondence_select_bool_ =
-            (result_nns.second.Le(max_correspondence_distance)).Reshape({-1});
-    result.correspondence_set_ =
-            result_nns.first.IndexGet({result.correspondence_select_bool_})
-                    .Reshape({-1});
-    core::Tensor dist_select =
-            result_nns.second.IndexGet({result.correspondence_select_bool_})
-                    .Reshape({-1});
-
-    // Reduction Sum of "distances"
-    // in KNN Distances is returned not DistancesSqaure, unlike HybridSearch
-    auto squared_error = ((dist_select).Sum({0})).Item<float_t>();
-    result.fitness_ = (float)result.correspondence_set_.GetShape()[0] /
-                      (float)result.correspondence_select_bool_.GetShape()[0];
-    result.inlier_rmse_ = std::sqrt(
-            squared_error / (float)result.correspondence_set_.GetShape()[0]);
-    result.transformation_ = transformation;
-    return result;
-}
-
-static RegistrationResult GetCorrespondencesFromHybridSearch(
+static RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         open3d::core::nns::NearestNeighborSearch &target_nns,
@@ -152,41 +96,6 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
             squared_error / (float)result.correspondence_set_.GetShape()[0]);
     result.transformation_ = transformation;
     return result;
-}
-
-static RegistrationResult GetRegistrationResultAndCorrespondences(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        open3d::core::nns::NearestNeighborSearch &target_nns,
-        double max_correspondence_distance,
-        const core::Tensor &transformation) {
-    // This function is a wrapper, to allow changing underlying
-    // search method without breaking the code.
-
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        open3d::utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
-    transformation.AssertDtype(dtype);
-
-    // condition because, otherwise, un-used function error comes up
-    bool condition = false;
-    if (condition) {
-        return GetCorrespondencesFromKNNSearch(source, target, target_nns,
-                                               max_correspondence_distance,
-                                               transformation);
-    } else {
-        return GetCorrespondencesFromHybridSearch(source, target, target_nns,
-                                                  max_correspondence_distance,
-                                                  transformation);
-    }
 }
 
 RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,

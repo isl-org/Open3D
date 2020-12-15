@@ -36,12 +36,12 @@
 
 namespace open3d {
 namespace t {
-namespace utility {
+namespace pipelines {
 
 // Utility functions
 // Accessible directly as
-// t::utility::ComputeTransformationFromRt
-// t::utility::ComputeTransformationFromPose
+// t::pipelines::ComputeTransformationFromRt
+// t::pipelines::ComputeTransformationFromPose
 
 /// \brief Functions for Computing Transformation Matrix {4,4}
 /// from Rotation {3,3} and Translation {3}
@@ -55,6 +55,6 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
 /// \param X Pose {6} Float32
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
 
-}  // namespace utility
+}  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

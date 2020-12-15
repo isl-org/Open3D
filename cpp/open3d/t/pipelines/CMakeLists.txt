@@ -1,5 +1,6 @@
 # Build
 set(SRC
+    SolveTransformation.cpp
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
 )

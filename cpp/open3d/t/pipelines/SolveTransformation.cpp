@@ -24,15 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/utility/SolveTransformation.h"
+#include "open3d/t/pipelines/SolveTransformation.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
 namespace t {
-namespace utility {
+namespace pipelines {
 
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
                                          const core::Tensor &t) {
@@ -89,6 +87,6 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     return transformation;
 }
 
-}  // namespace utility
+}  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
