@@ -80,6 +80,8 @@ public:
 
     void ConfigureForColorPicking() override;
 
+    void ConfigureForColorPicking() override;
+
     Camera* GetCamera() const override;
 
     // Copies available settings for view and camera
