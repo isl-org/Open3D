@@ -36,16 +36,18 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
+    core::Dtype dtype = core::Dtype::Float64;
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-
     double error;
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
-
+    // TODO: Revist to support Float32 and 64 without type conversion
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first}).To(dtype);
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second}).To(dtype);
     core::Tensor error_t = (source_select - target_select);
     error_t.Mul_(error_t);
     error = error_t.Sum({0, 1}).Item<double_t>();
@@ -58,15 +60,14 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    // Assert PointCloud to have Float32 Dtype,
-    // as the same is required by SVD Solver
-
-    // Remove hardcoded dtype
+    // Float32 Dtype, is required by SVD Solver
+    // TODO: Revist to support both Float32 and 64 wihtout
+    // type conversion on all data
     core::Dtype dtype = core::Dtype::Float32;
 
     core::Tensor source_select =
@@ -86,14 +87,15 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
-    if (det_(U) * det_(VT.T()) < 0) {
+    if (t::utility::det_(U) * t::utility::det_(VT.T()) < 0) {
         S[-1][-1] = -1;
     }
     core::Tensor R, t;
     R = U.Matmul(S.Matmul(VT)).To(dtype);
     t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1}).To(dtype);
 
-    return ComputeTransformationFromRt(R, t, dtype, device).To(dtype);
+    return t::utility::ComputeTransformationFromRt(R, t, dtype, device)
+            .To(dtype);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -103,20 +105,23 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     // TODO: Source Target Device Assert has been so frequently used,
     // that an op can be defined for this.
     core::Device device = source.GetDevice();
+    core::Dtype dtype = core::Dtype::Float64;
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
     if (!target.HasPointNormals()) return 0.0;
 
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first}).To(dtype);
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second}).To(dtype);
     core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second});
+            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
 
     core::Tensor error_t =
-            (source_select - target_select).Matmul(target_n_select);
+            (source_select - target_select).Mul_(target_n_select);
     error_t.Mul_(error_t);
     double error = error_t.Sum({0, 1}).Item<double_t>();
     return std::sqrt(error / (double)corres.second.GetShape()[0]);
@@ -128,14 +133,29 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         CorrespondenceSet &corres) const {
     // TODO: if corres empty throw Error
     core::Device device = source.GetDevice();
+    core::Dtype dtype = core::Dtype::Float32;
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-    // Remove hardcoded dtype
-    core::Dtype dtype = core::Dtype::Float32;
-    return SolvePointToPlaneTransformation(source, target, corres, dtype);
+
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first}).To(dtype);
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second}).To(dtype);
+    core::Tensor target_n_select =
+            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
+
+    // TODO: SANITY CHECKS
+    core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
+                             .Sum({1}, true)
+                             .To(dtype);
+    core::Tensor A =
+            t::utility::Compute_A(source_select, target_n_select, dtype, device)
+                    .To(dtype);
+    core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
+    return t::utility::ComputeTransformationFromPose(Pose, dtype, device);
 }
 
 }  // namespace registration

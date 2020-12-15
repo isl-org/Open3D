@@ -3,7 +3,6 @@ set(SRC
     registration/CorrespondenceChecker.cpp
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
-    registration/SolveTransform.cpp
 )
 
 # Create object library

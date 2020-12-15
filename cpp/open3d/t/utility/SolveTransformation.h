@@ -32,17 +32,16 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
 namespace t {
-namespace pipelines {
-namespace registration {
+namespace utility {
 
-typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
-
-// NOT A CLASS, only some helper functions for Solving Transformations
+// Utility functions
+// Accessible directly as
+// t::utility::ComputeTransformationFromRt
+// t::utility::ComputeTransformationFromPose
 
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
                                          const core::Tensor &t,
@@ -59,12 +58,6 @@ core::Tensor Compute_A(const core::Tensor &source_select,
                        const core::Dtype &dtype,
                        const core::Device &device);
 
-core::Tensor SolvePointToPlaneTransformation(const geometry::PointCloud &source,
-                                             const geometry::PointCloud &target,
-                                             CorrespondenceSet &corres,
-                                             const core::Dtype dtype);
-
-}  // namespace registration
-}  // namespace pipelines
+}  // namespace utility
 }  // namespace t
 }  // namespace open3d

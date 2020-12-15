@@ -24,21 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// THIS FILE IS FOR TEMPORARY PURPOSE, FOR HELPING TRANSFORMATIONESTIMATION
-// WITH FUNCTIONS TO SOLVE EQUATIONS, AND WILL BE REMOVED WHEN THE
-// PROPER FUNCTIONALITIES ARE ADDED TO THE CORE
-
-#include "open3d/t/pipelines/registration/SolveTransform.h"
+#include "open3d/t/utility/SolveTransformation.h"
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
 namespace t {
-namespace pipelines {
-namespace registration {
+namespace utility {
 
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
                                          const core::Tensor &t,
@@ -117,7 +111,7 @@ core::Tensor Compute_A(const core::Tensor &source_select,
     source_select.AssertDevice(device);
     target_n_select.AssertDevice(device);
     if (target_n_select.GetShape() != source_select.GetShape()) {
-        utility::LogError(
+        open3d::utility::LogError(
                 " [Compute_A:] Target Normal Pointcloud Correspondace Shape "
                 " {} != Corresponding Source Pointcloud's Shape {}.",
                 target_n_select.GetShape().ToString(),
@@ -169,35 +163,6 @@ core::Tensor Compute_A(const core::Tensor &source_select,
     return A;
 }
 
-core::Tensor SolvePointToPlaneTransformation(const geometry::PointCloud &source,
-                                             const geometry::PointCloud &target,
-                                             CorrespondenceSet &corres,
-                                             const core::Dtype dtype) {
-    // TODO:
-    // Asserts and Checks
-    core::Device device = source.GetDevice();
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-    // A better implementation of this function
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    //     core::Tensor corres_select =
-    //     corres.IndexGet({select_bool}).Reshape({-1});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
-    core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second});
-
-    // TODO: SANITY CHECKS
-    core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
-                             .Sum({1}, true);
-    core::Tensor A = Compute_A(source_select, target_n_select, dtype, device);
-    core::Tensor X = (A.LeastSquares(B)).Reshape({-1});
-    return ComputeTransformationFromPose(X, dtype, device);
-};
-
-}  // namespace registration
-}  // namespace pipelines
+}  // namespace utility
 }  // namespace t
 }  // namespace open3d

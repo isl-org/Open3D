@@ -48,7 +48,7 @@ static RegistrationResult GetCorrespondencesFromKNNSearch(
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device);
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -61,7 +61,7 @@ static RegistrationResult GetCorrespondencesFromKNNSearch(
     bool check = target_nns.KnnIndex();
 
     if (!check) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "[Tensor: EvaluateRegistration: "
                 "GetRegistrationResultAndCorrespondences: "
                 "NearestNeighborSearch::HybridSearch] "
@@ -101,7 +101,7 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device);
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -113,7 +113,7 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
 
     bool check = target_nns.HybridIndex();
     if (!check) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "[Tensor: EvaluateRegistration: "
                 "GetRegistrationResultAndCorrespondences: "
                 "NearestNeighborSearch::HybridSearch] "
@@ -127,12 +127,13 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
             max_correspondence_distance * max_correspondence_distance;
 
     // TODO: Timers will be removed before merging with master
-    // utility::Timer hybrid_time;
+    // open3d::utility::Timer hybrid_time;
     // hybrid_time.Start();
     auto result_nns = target_nns.HybridSearch(source.GetPoints(),
                                               max_correspondence_distance, 1);
     // hybrid_time.Stop();
-    // utility::LogInfo(" HYBRID SEARCH TOOK {}", hybrid_time.GetDuration());
+    // open3d::utility::LogInfo(" HYBRID SEARCH TOOK {}",
+    // hybrid_time.GetDuration());
 
     // This condition can be different for different search method used
     result.correspondence_select_bool_ =
@@ -184,7 +185,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device);
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -213,7 +214,7 @@ RegistrationResult RegistrationICP(
     init.AssertShape({4, 4});
     init.AssertDevice(device);
     if (target.GetDevice() != device) {
-        utility::LogError(
+        open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -234,10 +235,11 @@ RegistrationResult RegistrationICP(
                                  result.correspondence_set_);
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                          result.fitness_, result.inlier_rmse_);
+        open3d::utility::LogDebug(
+                "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                result.fitness_, result.inlier_rmse_);
         // TODO: Remote the timers before final merge
-        // utility::Timer icp_loop_time;
+        // open3d::utility::Timer icp_loop_time;
         // icp_loop_time.Start();
         auto update = estimation.ComputeTransformation(source_transformed,
                                                        target, corres);
@@ -250,7 +252,7 @@ RegistrationResult RegistrationICP(
         corres = std::make_pair(result.correspondence_select_bool_,
                                 result.correspondence_set_);
         // icp_loop_time.Stop();
-        // utility::LogInfo(" ICP Iteration Time: {}",
+        // open3d::utility::LogInfo(" ICP Iteration Time: {}",
         // icp_loop_time.GetDuration());
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
