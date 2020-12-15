@@ -104,6 +104,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
         {"defaultLitTransparency",
          ResourceManager::kDefaultLitWithTransparency},
+        {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
         {"defaultUnlitTransparency",
          ResourceManager::kDefaultUnlitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
@@ -733,8 +734,8 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             // .SetTexture("clearCoatRoughnessMap",
             // maps.clear_coat_roughness_map,
             //             rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("anisotropyMap", maps.anisotropy_map,
-                        rendering::TextureSamplerParameters::Pretty())
+            // .SetTexture("anisotropyMap", maps.anisotropy_map,
+            //             rendering::TextureSamplerParameters::Pretty())
             .Finish();
 }
 
@@ -944,7 +945,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     // Update shader properties
     // TODO: Use a functional interface to get appropriate update methods
     if (props.shader == "defaultLit" ||
-        props.shader == "defaultLitTransparency") {
+        props.shader == "defaultLitTransparency" ||
+        props.shader == "defaultLitSSR") {
         UpdateDefaultLit(geom.mat);
     } else if (props.shader == "defaultUnlit" ||
                props.shader == "defaultUnlitTransparency") {
@@ -992,7 +994,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
     geom->mat.properties = material;
     if (shader_only) {
         if (material.shader == "defaultLit" ||
-            material.shader == "defaultLitTransparency") {
+            material.shader == "defaultLitTransparency" ||
+            material.shader == "defaultLitSSR") {
             UpdateDefaultLit(geom->mat);
         } else if (material.shader == "defaultUnlit" ||
                    material.shader == "defaultUnlitTransparency") {
