@@ -1445,7 +1445,7 @@ void FilamentScene::SetBackground(
         // "device coordinates". Since we want to draw on the entire screen,
         // and GL's native coordinates range from (-1, 1) to (1, 1), that's
         // what we use. The z value does not matter, as we are writing directly
-        // to GL coordinates and we won't be writting depth values.
+        // to GL coordinates and we won't be writing depth values.
         quad.vertices_ = {{-1.0, -1.0, 0.0},
                           {1.0, -1.0, 0.0},
                           {1.0, 1.0, 0.0},
