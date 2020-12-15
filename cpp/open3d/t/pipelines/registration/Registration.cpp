@@ -31,7 +31,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -126,21 +125,14 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
                 "NearestNeighborSearch::HybridSearch] "
                 "Index is not set.");
     }
-
     // max_correspondece_dist in HybridSearch Tensor implementation
     // is square root of that used in Legacy implementation
     // TODO: Inform author about this
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
-    // TODO: Timers will be removed before merging with master
-    // open3d::utility::Timer hybrid_time;
-    // hybrid_time.Start();
     auto result_nns = target_nns.HybridSearch(source.GetPoints(),
                                               max_correspondence_distance, 1);
-    // hybrid_time.Stop();
-    // open3d::utility::LogInfo(" HYBRID SEARCH TOOK {}",
-    // hybrid_time.GetDuration());
 
     // This condition can be different for different search method used
     result.correspondence_select_bool_ =
@@ -224,15 +216,12 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
             transformation);
 }
 
-RegistrationResult RegistrationICP(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        double max_correspondence_distance,
-        const core::Tensor &init,
-        const TransformationEstimation &estimation
-        /* = TransformationEstimationPointToPoint(false)*/,
-        const ICPConvergenceCriteria
-                &criteria /* = ICPConvergenceCriteria()*/) {
+RegistrationResult RegistrationICP(const geometry::PointCloud &source,
+                                   const geometry::PointCloud &target,
+                                   double max_correspondence_distance,
+                                   const core::Tensor &init,
+                                   const TransformationEstimation &estimation,
+                                   const ICPConvergenceCriteria &criteria) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -265,9 +254,6 @@ RegistrationResult RegistrationICP(
         open3d::utility::LogDebug(
                 "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                 result.fitness_, result.inlier_rmse_);
-        // TODO: Remote the timers before final merge
-        // open3d::utility::Timer icp_loop_time;
-        // icp_loop_time.Start();
         auto update = estimation.ComputeTransformation(source_transformed,
                                                        target, corres);
         transformation = update.Matmul(transformation);
@@ -278,9 +264,6 @@ RegistrationResult RegistrationICP(
                 max_correspondence_distance, transformation);
         corres = std::make_pair(result.correspondence_select_bool_,
                                 result.correspondence_set_);
-        // icp_loop_time.Stop();
-        // open3d::utility::LogInfo(" ICP Iteration Time: {}",
-        // icp_loop_time.GetDuration());
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <

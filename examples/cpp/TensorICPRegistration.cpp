@@ -236,6 +236,5 @@ int main(int argc, char *argv[]) {
 
     // auto transformation_point2plane = reg_p2plane.transformation_;
     // VisualizeRegistration(source2, target, transformation_point2plane);
-
     return 0;
 }

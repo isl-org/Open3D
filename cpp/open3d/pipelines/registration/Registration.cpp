@@ -31,7 +31,6 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace pipelines {
@@ -49,9 +48,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     double error2 = 0.0;
-    // Useful for time analysis
-    // utility::Timer legacy_search_time;
-    // legacy_search_time.Start();
 
 #pragma omp parallel
     {
@@ -78,9 +74,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             error2 += error2_private;
         }
     }
-    // legacy_search_time.Stop();
-    // utility::LogInfo(" [Legacy] Search Time: {}",
-    //                  legacy_search_time.GetDuration());
 
     if (result.correspondence_set_.empty()) {
         result.fitness_ = 0.0;
@@ -171,12 +164,9 @@ RegistrationResult RegistrationICP(
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
-    // Useful for time analysis
-    // utility::Timer legacy_icp_time;
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
-        // legacy_icp_time.Start();
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
@@ -185,9 +175,6 @@ RegistrationResult RegistrationICP(
         result = GetRegistrationResultAndCorrespondences(
                 pcd, target, kdtree, max_correspondence_distance,
                 transformation);
-        // legacy_icp_time.Stop();
-        // utility::LogInfo(" ICP Iteration time: {} ",
-        //                  legacy_icp_time.GetDuration());
 
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&

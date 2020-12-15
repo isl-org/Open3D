@@ -43,9 +43,16 @@ namespace utility {
 // t::utility::ComputeTransformationFromRt
 // t::utility::ComputeTransformationFromPose
 
+/// \brief Functions for Computing Transformation Matrix {4,4}
+/// from Rotation {3,3} and Translation {3}
+/// \param R Rotation Tensor {3,3} Float32
+/// \param t Translation Tensor {3} Float32
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
                                          const core::Tensor &t);
 
+/// \brief Functions for Computing Transformation Matrix {4,4}
+/// from Pose {6} [alpha, beta, gamma, tx, ty, tz]
+/// \param X Pose {6} Float32
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
 
 }  // namespace utility
