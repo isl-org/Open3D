@@ -44,19 +44,14 @@ namespace utility {
 // t::utility::ComputeTransformationFromPose
 
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
-                                         const core::Tensor &t,
-                                         const core::Dtype &dtype,
-                                         const core::Device &device);
-double det_(const core::Tensor D);
+                                         const core::Tensor &t);
 
-core::Tensor ComputeTransformationFromPose(const core::Tensor &X,
-                                           const core::Dtype &dtype,
-                                           const core::Device &device);
+double det_(const core::Tensor &D);
+
+core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
 
 core::Tensor Compute_A(const core::Tensor &source_select,
-                       const core::Tensor &target_n_select,
-                       const core::Dtype &dtype,
-                       const core::Device &device);
+                       const core::Tensor &target_n_select);
 
 }  // namespace utility
 }  // namespace t

@@ -36,21 +36,22 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+
     double error;
     // TODO: Revist to support Float32 and 64 without type conversion
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
+    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
+    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
     core::Tensor error_t = (source_select - target_select);
     error_t.Mul_(error_t);
-    error = error_t.Sum({0, 1}).Item<double_t>();
+    error = (double)error_t.Sum({0, 1}).Item<float_t>();
     return std::sqrt(error / (double)corres.second.GetShape()[0]);
 }
 
@@ -59,6 +60,9 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -68,22 +72,18 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     // Float32 Dtype, is required by SVD Solver
     // TODO: Revist to support both Float32 and 64 wihtout
     // type conversion on all data
-    core::Dtype dtype = core::Dtype::Float32;
 
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
+    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
+    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
     // https://ieeexplore.ieee.org/document/88573
 
-    core::Tensor mux = source_select.Mean({0}, true).To(dtype);
-    core::Tensor muy = target_select.Mean({0}, true).To(dtype);
+    core::Tensor mux = source_select.Mean({0}, true);
+    core::Tensor muy = target_select.Mean({0}, true);
     core::Tensor Sxy = ((target_select - muy)
                                 .T()
                                 .Matmul(source_select - mux)
-                                .Div_((float)corres.second.GetShape()[0])
-                                .To(dtype));
+                                .Div_((float)corres.second.GetShape()[0]));
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
@@ -91,39 +91,38 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         S[-1][-1] = -1;
     }
     core::Tensor R, t;
-    R = U.Matmul(S.Matmul(VT)).To(dtype);
-    t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1}).To(dtype);
+    R = U.Matmul(S.Matmul(VT));
+    t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
 
-    return t::utility::ComputeTransformationFromRt(R, t, dtype, device)
-            .To(dtype);
+    return t::utility::ComputeTransformationFromRt(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
-    // TODO: Source Target Device Assert has been so frequently used,
-    // that an op can be defined for this.
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Dtype::Float32;
+    // TODO: Assert Ops for pointcloud
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+
     if (!target.HasPointNormals()) return 0.0;
 
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
+    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
+    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
     core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
+            target.GetPointNormals().IndexGet({corres.second});
 
     core::Tensor error_t =
             (source_select - target_select).Mul_(target_n_select);
     error_t.Mul_(error_t);
-    double error = error_t.Sum({0, 1}).Item<double_t>();
+    double error = (double)error_t.Sum({0, 1}).Item<float_t>();
     return std::sqrt(error / (double)corres.second.GetShape()[0]);
 }
 
@@ -134,6 +133,9 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     // TODO: if corres empty throw Error
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
+    // TODO: Assert Ops for pointcloud
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -147,15 +149,12 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     core::Tensor target_n_select =
             target.GetPointNormals().IndexGet({corres.second}).To(dtype);
 
-    // TODO: SANITY CHECKS
     core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
                              .Sum({1}, true)
                              .To(dtype);
-    core::Tensor A =
-            t::utility::Compute_A(source_select, target_n_select, dtype, device)
-                    .To(dtype);
+    core::Tensor A = t::utility::Compute_A(source_select, target_n_select);
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
-    return t::utility::ComputeTransformationFromPose(Pose, dtype, device);
+    return t::utility::ComputeTransformationFromPose(Pose);
 }
 
 }  // namespace registration

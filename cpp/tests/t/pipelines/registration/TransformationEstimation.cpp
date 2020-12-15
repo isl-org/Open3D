@@ -101,7 +101,6 @@ TEST_P(TransformationEstimationPermuteDevices,
             0.922024, 1.14872, 2.34317,  3.70293,  1.85134, 1.15357, 3.06505,
             1.30386,  1.55279, 0.634826, 1.04995,  2.47046, 1.40107, 1.37469,
             1.09687,  2.93002, 1.96242,  1.48532,  3.74384, 1.30258, 1.30244};
-
     core::Tensor source_points(src_points_vec, {14, 3}, dtype, device);
     t::geometry::PointCloud source_device(device);
     source_device.SetPoints(source_points);

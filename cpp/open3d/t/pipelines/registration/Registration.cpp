@@ -45,21 +45,24 @@ static RegistrationResult GetCorrespondencesFromKNNSearch(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-    // TODO: Assert Dtype: Float32
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device);
+    transformation.AssertDtype(dtype);
+
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
         return result;
     }
 
     bool check = target_nns.KnnIndex();
-
     if (!check) {
         open3d::utility::LogError(
                 "[Tensor: EvaluateRegistration: "
@@ -98,13 +101,17 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device);
+    transformation.AssertDtype(dtype);
 
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
@@ -164,6 +171,19 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     // This function is a wrapper, to allow changing underlying
     // search method without breaking the code.
 
+    core::Device device = source.GetDevice();
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
+    if (target.GetDevice() != device) {
+        open3d::utility::LogError(
+                "Target Pointcloud device {} != Source Pointcloud's device {}.",
+                target.GetDevice().ToString(), device.ToString());
+    }
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device);
+    transformation.AssertDtype(dtype);
+
     // condition because, otherwise, un-used function error comes up
     bool condition = false;
     if (condition) {
@@ -182,13 +202,17 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         double max_correspondence_distance,
                                         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device);
+    transformation.AssertDtype(dtype);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
@@ -210,14 +234,17 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     core::Device device = source.GetDevice();
-    // TODO: Assert Dtypes compatibility [Float32 Required]
-    init.AssertShape({4, 4});
-    init.AssertDevice(device);
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         open3d::utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+    init.AssertShape({4, 4});
+    init.AssertDtype(dtype);
+    init.AssertDevice(device);
 
     core::Tensor transformation = init;
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());

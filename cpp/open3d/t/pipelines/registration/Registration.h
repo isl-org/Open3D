@@ -30,7 +30,6 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {

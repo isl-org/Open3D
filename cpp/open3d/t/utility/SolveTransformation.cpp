@@ -35,17 +35,17 @@ namespace t {
 namespace utility {
 
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
-                                         const core::Tensor &t,
-                                         const core::Dtype &dtype,
-                                         const core::Device &device) {
+                                         const core::Tensor &t) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = R.GetDevice();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     R.AssertShape({3, 3});
-    R.AssertDevice(device);
+    R.AssertDtype(dtype);
     t.AssertShape({3});
     t.AssertDevice(device);
+    t.AssertDtype(dtype);
 
     // Rotation
-    core::Tensor translate = t.Copy().Reshape({1, 3});
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(0, 3, 1)},
             R);
@@ -57,9 +57,10 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
     return transformation;
 }
 
-double det_(const core::Tensor D) {
+double det_(const core::Tensor &D) {
     // TODO: Create a proper op for Determinant
     D.AssertShape({3, 3});
+    D.AssertDtype(core::Dtype::Float32);
     core::Tensor D_ = D.Copy();
     D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]);
     D_[0][1] = D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]);
@@ -68,14 +69,12 @@ double det_(const core::Tensor D) {
     return D_[0][0].Item<float>();
 }
 
-core::Tensor ComputeTransformationFromPose(const core::Tensor &X,
-                                           const core::Dtype &dtype,
-                                           const core::Device &device) {
-    // TODO:
-    // A better implementation of this function
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = X.GetDevice();
     X.AssertShape({6});
-    X.AssertDevice(device);
+    X.AssertDtype(dtype);
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
 
     // Rotation from Pose X
     transformation[0][0] = X[2].Cos().Mul(X[1].Cos());
@@ -103,13 +102,14 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X,
 }
 
 core::Tensor Compute_A(const core::Tensor &source_select,
-                       const core::Tensor &target_n_select,
-                       const core::Dtype &dtype,
-                       const core::Device &device) {
-    // TODO:
-    // A better implementation of this function
-    source_select.AssertDevice(device);
+                       const core::Tensor &target_n_select) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = source_select.GetDevice();
+    source_select.AssertDtype(dtype);
     target_n_select.AssertDevice(device);
+    target_n_select.AssertDtype(dtype);
+
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     if (target_n_select.GetShape() != source_select.GetShape()) {
         open3d::utility::LogError(
                 " [Compute_A:] Target Normal Pointcloud Correspondace Shape "
