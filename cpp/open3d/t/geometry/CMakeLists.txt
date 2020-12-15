@@ -2,6 +2,7 @@
 set(ALL_SOURCE_FILES
     PointCloud.cpp
     Image.cpp
+    RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
 )

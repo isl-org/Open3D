@@ -1112,6 +1112,40 @@ bool FilamentScene::AddSpotLight(const std::string& light_name,
     return true;
 }
 
+bool FilamentScene::AddDirectionalLight(const std::string& light_name,
+                                        const Eigen::Vector3f& color,
+                                        const Eigen::Vector3f& direction,
+                                        float intensity,
+                                        bool cast_shadows) {
+    if (lights_.count(light_name) > 0) {
+        utility::LogWarning(
+                "Cannot add point light because {} has already been added",
+                light_name);
+        return false;
+    }
+
+    filament::LightManager::Type light_type =
+            filament::LightManager::Type::DIRECTIONAL;
+    auto light = utils::EntityManager::get().create();
+    auto result =
+            filament::LightManager::Builder(light_type)
+                    .castShadows(cast_shadows)
+                    .direction({direction.x(), direction.y(), direction.z()})
+                    .color({color.x(), color.y(), color.z()})
+                    .intensity(intensity)
+                    .build(engine_, light);
+
+    if (result == filament::LightManager::Builder::Success) {
+        lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+    } else {
+        utility::LogWarning("Failed to build Filament light resources for {}",
+                            light_name);
+        return false;
+    }
+
+    return true;
+}
+
 Light& FilamentScene::GetLight(const std::string& light_name) {
     // TODO: Not yet implemented. I still don't see any advantage to doing this
     static Light blah;
@@ -1199,7 +1233,13 @@ void FilamentScene::UpdateLightConeAngles(const std::string& light_name,
 
 void FilamentScene::EnableLightShadow(const std::string& light_name,
                                       bool cast_shadows) {
-    // TODO: Research. Not previously implemented.
+    auto light = GetLightInternal(light_name);
+    if (light) {
+        auto& light_mgr = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                light_mgr.getInstance(light->filament_entity);
+        light_mgr.setShadowCaster(inst, cast_shadows);
+    }
 }
 
 void FilamentScene::CreateSunDirectionalLight() {
@@ -1222,9 +1262,9 @@ void FilamentScene::CreateSunDirectionalLight() {
     }
 }
 
-void FilamentScene::SetDirectionalLight(const Eigen::Vector3f& direction,
-                                        const Eigen::Vector3f& color,
-                                        float intensity) {
+void FilamentScene::SetSunLight(const Eigen::Vector3f& direction,
+                                const Eigen::Vector3f& color,
+                                float intensity) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
@@ -1233,7 +1273,7 @@ void FilamentScene::SetDirectionalLight(const Eigen::Vector3f& direction,
     light_mgr.setIntensity(inst, intensity);
 }
 
-void FilamentScene::EnableDirectionalLight(bool enable) {
+void FilamentScene::EnableSunLight(bool enable) {
     if (sun_.enabled != enable) {
         sun_.enabled = enable;
         if (enable) {
@@ -1244,26 +1284,49 @@ void FilamentScene::EnableDirectionalLight(bool enable) {
     }
 }
 
-void FilamentScene::EnableDirectionalLightShadows(bool enable) {
-    // TODO: Research. Not previously implemented
+void FilamentScene::EnableSunLightShadows(bool enable) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    return light_mgr.setShadowCaster(inst, enable);
 }
 
-float FilamentScene::GetDirectionalLightIntensity() {
+float FilamentScene::GetSunLightIntensity() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
     return light_mgr.getIntensity(inst);
 }
 
-void FilamentScene::SetDirectionalLightDirection(
-        const Eigen::Vector3f& direction) {
+void FilamentScene::SetSunLightDirection(const Eigen::Vector3f& direction) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
     light_mgr.setDirection(inst, {direction.x(), direction.y(), direction.z()});
 }
 
-Eigen::Vector3f FilamentScene::GetDirectionalLightDirection() {
+void FilamentScene::SetSunAngularRadius(float radius) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunAngularRadius(inst, radius);
+}
+
+void FilamentScene::SetSunHaloSize(float size) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunHaloSize(inst, size);
+}
+
+void FilamentScene::SetSunHaloFalloff(float falloff) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunHaloFalloff(inst, falloff);
+}
+
+Eigen::Vector3f FilamentScene::GetSunLightDirection() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);

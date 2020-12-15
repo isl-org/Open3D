@@ -494,9 +494,9 @@ private:
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
         render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
-        render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
-                                          float(lighting.sun_intensity));
-        render_scene->EnableDirectionalLight(lighting.sun_enabled);
+        render_scene->SetSunLight(lighting.sun_dir, lighting.sun_color,
+                                  float(lighting.sun_intensity));
+        render_scene->EnableSunLight(lighting.sun_enabled);
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,

@@ -275,9 +275,9 @@ void pybind_rendering_classes(py::module &m) {
             .def("set_indirect_light_intensity",
                  &Scene::SetIndirectLightIntensity,
                  "Sets the brightness of the indirect light")
-            .def("enable_directional_light", &Scene::EnableDirectionalLight)
-            .def("set_directional_light", &Scene::SetDirectionalLight,
-                 "Sets the parameters of the directional light: direction, "
+            .def("enable_sun_light", &Scene::EnableSunLight)
+            .def("set_sun_light", &Scene::SetSunLight,
+                 "Sets the parameters of the sun light: direction, "
                  "color, intensity")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
