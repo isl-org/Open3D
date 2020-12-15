@@ -34,6 +34,7 @@ namespace rendering {
 
 class Scene;
 class Camera;
+class ColorGradingParams;
 
 class View {
 public:
@@ -75,6 +76,9 @@ public:
     virtual std::array<int, 4> GetViewport() const = 0;
 
     virtual void SetSSAOEnabled(bool enabled) = 0;
+    virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
+
+    virtual void ConfigureForColorPicking() = 0;
 
     virtual Camera* GetCamera() const = 0;
 };

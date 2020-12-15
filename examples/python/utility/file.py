@@ -8,6 +8,7 @@ from os import listdir, makedirs
 from os.path import exists, isfile, join, splitext
 import shutil
 import re
+import open3d as o3d
 
 
 def sorted_alphanum(file_list_ordered):
@@ -59,6 +60,8 @@ def make_clean_folder(path_folder):
 
 
 def check_folder_structure(path_dataset):
+    if isfile(path_dataset) and path_dataset.endswith(".bag"):
+        return
     path_color, path_depth = get_rgbd_folders(path_dataset)
     assert exists(path_depth), \
             "Path %s is not exist!" % path_depth

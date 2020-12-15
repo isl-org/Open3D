@@ -27,6 +27,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "open3d/core/Tensor.h"
@@ -129,13 +130,27 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    /// Compute min 2D coordinates for the data (always {0, 0}).
+    core::Tensor GetMinBound() const {
+        return core::Tensor::Zeros({2}, core::Dtype::Int64);
+    };
+
+    /// Compute max 2D coordinates for the data ({rows, cols}).
+    core::Tensor GetMaxBound() const {
+        return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
+                            core::Dtype::Int64);
+    };
+
     /// Create from a legacy Open3D Image.
     static Image FromLegacyImage(
             const open3d::geometry::Image &image_legacy,
             const core::Device &Device = core::Device("CPU:0"));
 
-    /// Convert to a legacy Open3D Image.
-    open3d::geometry::Image ToLegacyImage();
+    /// Convert to legacy Image type.
+    open3d::geometry::Image ToLegacyImage() const;
+
+    /// Text description
+    std::string ToString() const;
 
 protected:
     /// Internal data of the Image, represented as a 3D tensor of shape {rols,

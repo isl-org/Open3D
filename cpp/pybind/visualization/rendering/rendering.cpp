@@ -122,25 +122,16 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
                                                     "Camera object");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    fov_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Camera field of view types.";
-            }),
-            py::none(), py::none(), "");
+    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
+                                        "Enum class for Camera field of view "
+                                        "types.");
     fov_type.value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
             .export_values();
 
-    py::enum_<Camera::Projection> proj_type(cam, "Projection",
-                                            py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    proj_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Camera field of view types.";
-            }),
-            py::none(), py::none(), "");
+    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
+                                            "Enum class for Camera projection "
+                                            "types.");
     proj_type.value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
             .export_values();
@@ -224,6 +215,7 @@ void pybind_rendering_classes(py::module &m) {
                            &Material::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &Material::base_anisotropy)
             .def_readwrite("point_size", &Material::point_size)
+            .def_readwrite("line_width", &Material::line_width)
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -239,6 +231,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("gradient", &Material::gradient)
             .def_readwrite("scalar_min", &Material::scalar_min)
             .def_readwrite("scalar_max", &Material::scalar_max)
+            .def_readwrite("sRGB_color", &Material::sRGB_color)
             .def_readwrite("shader", &Material::shader);
 
     // ---- Scene ----
@@ -271,8 +264,7 @@ void pybind_rendering_classes(py::module &m) {
                  "the scene.")
             .def("update_geometry", &Scene::UpdateGeometry,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
-                 "The "
-                 "flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
+                 "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
@@ -283,9 +275,9 @@ void pybind_rendering_classes(py::module &m) {
             .def("set_indirect_light_intensity",
                  &Scene::SetIndirectLightIntensity,
                  "Sets the brightness of the indirect light")
-            .def("enable_directional_light", &Scene::EnableDirectionalLight)
-            .def("set_directional_light", &Scene::SetDirectionalLight,
-                 "Sets the parameters of the directional light: direction, "
+            .def("enable_sun_light", &Scene::EnableSunLight)
+            .def("set_sun_light", &Scene::SetSunLight,
+                 "Sets the parameters of the sun light: direction, "
                  "color, intensity")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
@@ -300,11 +292,26 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Open3DScene ----
     py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
+    py::enum_<Open3DScene::LightingProfile> lighting(
+            o3dscene, "LightingProfile", py::arithmetic(),
+            "Enum for conveniently setting lighting");
+    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
+            .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
+            .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
+            .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
+            .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
+            .export_values();
+
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
+            .def("set_lighting", &Open3DScene::SetLighting,
+                 "Sets a simple lighting model. set_lighting(profile, "
+                 "sun_dir). The default value is "
+                 "set_lighting(Open3DScene.LightingProfile.MED_SHADOWS, "
+                 "(0.577, -0.577, -0.577))")
             .def(
                     "set_background_color",
                     [](Open3DScene &scene, const Eigen::Vector4f &color) {
@@ -323,7 +330,7 @@ void pybind_rendering_classes(py::module &m) {
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   std::shared_ptr<const geometry::Geometry3D>,
+                                   const geometry::Geometry3D *,
                                    const Material &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,

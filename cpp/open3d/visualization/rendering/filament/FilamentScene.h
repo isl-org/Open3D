@@ -160,6 +160,11 @@ public:
                       float inner_cone_angle,
                       float outer_cone_angle,
                       bool cast_shadows) override;
+    bool AddDirectionalLight(const std::string& light_name,
+                             const Eigen::Vector3f& color,
+                             const Eigen::Vector3f& direction,
+                             float intensity,
+                             bool cast_shadows) override;
     Light& GetLight(const std::string& light_name) override;
     void RemoveLight(const std::string& light_name) override;
     void UpdateLight(const std::string& light_name,
@@ -180,14 +185,17 @@ public:
     void EnableLightShadow(const std::string& light_name,
                            bool cast_shadows) override;
 
-    void SetDirectionalLight(const Eigen::Vector3f& direction,
-                             const Eigen::Vector3f& color,
-                             float intensity) override;
-    void EnableDirectionalLight(bool enable) override;
-    void EnableDirectionalLightShadows(bool enable) override;
-    void SetDirectionalLightDirection(
-            const Eigen::Vector3f& direction) override;
-    Eigen::Vector3f GetDirectionalLightDirection() override;
+    void SetSunLight(const Eigen::Vector3f& direction,
+                     const Eigen::Vector3f& color,
+                     float intensity) override;
+    void EnableSunLight(bool enable) override;
+    void EnableSunLightShadows(bool enable) override;
+    float GetSunLightIntensity() override;
+    void SetSunLightDirection(const Eigen::Vector3f& direction) override;
+    Eigen::Vector3f GetSunLightDirection() override;
+    void SetSunAngularRadius(float radius) override;
+    void SetSunHaloSize(float size) override;
+    void SetSunHaloFalloff(float falloff) override;
 
     bool SetIndirectLight(const std::string& ibl_name) override;
     const std::string& GetIndirectLight() override;
@@ -297,6 +305,7 @@ private:
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
     void UpdateLineShader(GeometryMaterialInstance& geom_mi);
+    void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();

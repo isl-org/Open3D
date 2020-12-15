@@ -76,21 +76,21 @@ public:
                                double near,
                                double far) = 0;
 
-    virtual double GetNear() const = 0;
-    virtual double GetFar() const = 0;
-    /// only valid if fov was passed to SetProjection()
-    virtual double GetFieldOfView() const = 0;
-    /// only valid if fov was passed to SetProjection()
-    virtual FovType GetFieldOfViewType() const = 0;
+    virtual void LookAt(const Eigen::Vector3f& center,
+                        const Eigen::Vector3f& eye,
+                        const Eigen::Vector3f& up) = 0;
 
     virtual void SetModelMatrix(const Transform& view) = 0;
     virtual void SetModelMatrix(const Eigen::Vector3f& forward,
                                 const Eigen::Vector3f& left,
                                 const Eigen::Vector3f& up) = 0;
 
-    virtual void LookAt(const Eigen::Vector3f& center,
-                        const Eigen::Vector3f& eye,
-                        const Eigen::Vector3f& up) = 0;
+    virtual double GetNear() const = 0;
+    virtual double GetFar() const = 0;
+    /// only valid if fov was passed to SetProjection()
+    virtual double GetFieldOfView() const = 0;
+    /// only valid if fov was passed to SetProjection()
+    virtual FovType GetFieldOfViewType() const = 0;
 
     virtual Eigen::Vector3f GetPosition() const = 0;
     virtual Eigen::Vector3f GetForwardVector() const = 0;
@@ -99,6 +99,31 @@ public:
     virtual Transform GetModelMatrix() const = 0;
     virtual Transform GetViewMatrix() const = 0;
     virtual Transform GetProjectionMatrix() const = 0;
+
+    struct ProjectionInfo {
+        bool is_ortho;
+        union {
+            struct {
+                Projection projection;
+                double left;
+                double right;
+                double bottom;
+                double top;
+                double near_plane;  // Windows #defines "near"
+                double far_plane;   // Windows #defines "far"
+            } ortho;
+            struct {
+                FovType fov_type;
+                double fov;
+                double aspect;
+                double near_plane;
+                double far_plane;
+            } perspective;
+        } proj;
+    };
+    virtual const ProjectionInfo& GetProjection() const = 0;
+
+    virtual void CopyFrom(const Camera* camera) = 0;
 };
 
 }  // namespace rendering

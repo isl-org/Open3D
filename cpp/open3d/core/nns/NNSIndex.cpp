@@ -45,6 +45,8 @@ size_t NNSIndex::GetDatasetSize() const {
 
 Dtype NNSIndex::GetDtype() const { return dataset_points_.GetDtype(); }
 
+Device NNSIndex::GetDevice() const { return dataset_points_.GetDevice(); }
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
