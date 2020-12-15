@@ -691,6 +691,17 @@ void FilamentScene::GeometryShadows(const std::string& object_name,
     }
 }
 
+void FilamentScene::SetGeometryCulling(const std::string& object_name,
+                                       bool enable) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        auto& renderable_mgr = engine_.getRenderableManager();
+        filament::RenderableManager::Instance inst =
+                renderable_mgr.getInstance(g->filament_entity);
+        renderable_mgr.setCulling(inst, enable);
+    }
+}
+
 void FilamentScene::SetGeometryPriority(const std::string& object_name,
                                         uint8_t priority) {
     auto geoms = GetGeometry(object_name);
@@ -1430,18 +1441,30 @@ void FilamentScene::SetBackground(
         const std::shared_ptr<geometry::Image> image) {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;
-        quad.vertices_ = {{-1.0, -1.0, -0.5},
-                          {1.0, -1.0, -0.5},
-                          {1.0, 1.0, -0.5},
-                          {-1.0, 1.0, -0.5}};
+        // The coordinates are in raw GL coordinates, what Filament calls
+        // "device coordinates". Since we want to draw on the entire screen,
+        // and GL's native coordinates range from (-1, 1) to (1, 1), that's
+        // what we use. The z value does not matter, as we are writing directly
+        // to GL coordinates and we won't be writting depth values.
+        quad.vertices_ = {{-1.0, -1.0, 0.0},
+                          {1.0, -1.0, 0.0},
+                          {1.0, 1.0, 0.0},
+                          {-1.0, 1.0, 0.0}};
         quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
         Material m;
         m.shader = "unlitBackground";
         m.base_color = color;
         m.aspect_ratio = 0.0;
         AddGeometry(kBackgroundName, quad, m);
+        // Since this is the background,
+        //    we don't want any shadows,
+        //    we want to prevent the object from getting culled out of the
+        //        scene (since the whole point is for it to always draw), and
+        //    we want to set the priority so that it draws first (the shader
+        //        will overwrite all the pixels
         GeometryShadows(kBackgroundName, false, false);
         SetGeometryPriority(kBackgroundName, 0);
+        SetGeometryCulling(kBackgroundName, false);
     }
 
     Material m;

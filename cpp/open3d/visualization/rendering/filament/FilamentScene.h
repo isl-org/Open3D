@@ -136,6 +136,8 @@ public:
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
                          bool receive_shadows) override;
+    void SetGeometryCulling(const std::string& object_name,
+                            bool enable) override;
     void SetGeometryPriority(const std::string& object_name,
                              uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
