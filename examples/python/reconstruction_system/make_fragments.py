@@ -4,10 +4,10 @@
 
 # examples/python/reconstruction_system/make_fragments.py
 
-import numpy as np
 import math
-import open3d as o3d
 import sys
+import numpy as np
+import open3d as o3d
 sys.path.append("../utility")
 from file import join, make_clean_folder, get_rgbd_file_lists
 from opencv import initialize_opencv
@@ -167,14 +167,16 @@ def process_single_fragment(fragment_id, color_files, depth_files, n_files,
 
 
 def run(config):
+
     print("making fragments from RGBD sequence.")
     make_clean_folder(join(config["path_dataset"], config["folder_fragment"]))
+
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
-    n_fragments = int(math.ceil(float(n_files) / \
-            config['n_frames_per_fragment']))
+    n_fragments = int(
+        math.ceil(float(n_files) / config['n_frames_per_fragment']))
 
-    if config["python_multi_threading"] == True:
+    if config["python_multi_threading"] is True:
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess

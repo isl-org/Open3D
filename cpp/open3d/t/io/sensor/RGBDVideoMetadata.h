@@ -24,19 +24,64 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/io/io.h"
+#pragma once
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 namespace open3d {
+
+namespace camera {
+class PinholeCameraIntrinsic;
+}
+
 namespace t {
 namespace io {
 
-void pybind_io(py::module& m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-    pybind_sensor(m_io);
-}
+enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
+
+/// RGBD video metadata.
+class RGBDVideoMetadata : public utility::IJsonConvertible {
+public:
+    bool ConvertToJsonValue(Json::Value &value) const override;
+
+    bool ConvertFromJsonValue(const Json::Value &value) override;
+
+    /// Text description
+    using utility::IJsonConvertible::ToString;
+
+public:
+    /// \brief Shared intrinsics between RGB & depth.
+    ///
+    /// We assume depth image is always warped to the color image system.
+    camera::PinholeCameraIntrinsic intrinsics_;
+
+    /// Capture device name.
+    std::string device_name_ = "";
+
+    /// Capture device serial number.
+    std::string serial_number_ = "";
+
+    /// Length of the video (usec).
+    uint64_t stream_length_usec_ = 0;
+
+    /// Width of the video frame.
+    int width_;
+
+    /// Height of the video frame.
+    int height_;
+
+    /// Frame rate.
+    //
+    /// We assume both color and depth streams have the same frame rate.
+    double fps_;
+
+    /// Pixel format for color data.
+    std::string color_format_;
+
+    /// Pixel format for depth data.
+    std::string depth_format_;
+};
 
 }  // namespace io
 }  // namespace t

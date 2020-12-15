@@ -69,6 +69,32 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
+open3d::geometry::Image Image::ToLegacyImage() const {
+    auto dt = data_.GetDtype();
+    if (!(dt == core::Dtype::UInt8 || dt == core::Dtype::UInt16 ||
+          dt == core::Dtype::Float32))
+        utility::LogError("Legacy image does not support data type {}",
+                          dt.ToString());
+    if (!data_.IsContiguous()) {
+        utility::LogError("Image tensor must be contiguous.");
+    } else {
+        open3d::geometry::Image image_legacy;
+        size_t elem_sz = dt.ByteSize();
+        image_legacy.Prepare((int)GetCols(), (int)GetRows(), (int)GetChannels(),
+                             (int)elem_sz);
+        core::MemoryManager::MemcpyToHost(image_legacy.data_.data(),
+                                          data_.GetDataPtr(), data_.GetDevice(),
+                                          image_legacy.data_.size());
+        return image_legacy;
+    }
+}
+
+std::string Image::ToString() const {
+    return fmt::format("Image[size={{{},{}}}, channels={}, {}, {}]", GetRows(),
+                       GetCols(), GetChannels(), GetDtype().ToString(),
+                       GetDevice().ToString());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

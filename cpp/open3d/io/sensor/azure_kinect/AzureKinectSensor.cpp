@@ -266,8 +266,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
     if (K4A_IMAGE_FORMAT_COLOR_MJPG !=
         k4a_plugin::k4a_image_get_format(k4a_color)) {
         utility::LogWarning(
-                "Unexpected image format. The stream may have "
-                "corrupted.");
+                "Unexpected image format. The stream may have been corrupted.");
         return nullptr;
     }
 
