@@ -96,9 +96,13 @@ int main(int argc, char *argv[]) {
         hybrid_time.Stop();
         // --- TIMER STOP
 
+        // To get number of correspondence
+        auto correspondence_set_ =
+            result_nns.first.IndexGet({result_nns.first.Ne(-1).Reshape({-1})})
+                    .Reshape({-1});
         utility::LogInfo(" [Tensor] HYBRID SEARCH TOOK {}, Correspondences: {}",
-                         hybrid_time.GetDuration(),
-                         result_nns.second.GetShape()[0]);
+                         hybrid_time.GetDuration(), correspondence_set_.GetShape()[0]);
+
         auto time = hybrid_time.GetDuration();
         avg_ += time;
         max_ = std::max(max_, time);
