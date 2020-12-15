@@ -78,7 +78,7 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
     Device device = pcd.GetDevice();
 
-    int64_t n = pcd.GetShape()[0];
+    int64_t n = pcd.GetLength();
     float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
 
     Tensor block_coordi({8 * n, 3}, Dtype::Int32, device);
@@ -134,11 +134,11 @@ void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
         case GeneralEWOpCode::TSDFIntegrate:
             CUDATSDFIntegrateKernel(srcs, dsts);
             break;
-        case GeneralEWOpCode::TSDFSurfaceExtraction:
-            CUDASurfaceExtractionKernel(srcs, dsts);
+        case GeneralEWOpCode::TSDFPointExtraction:
+            CUDAPointExtractionKernel(srcs, dsts);
             break;
-        case GeneralEWOpCode::MarchingCubes:
-            CUDAMarchingCubesKernel(srcs, dsts);
+        case GeneralEWOpCode::TSDFMeshExtraction:
+            CUDAMeshExtractionKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::RayCasting:
             utility::LogError("[RayCasting] Unimplemented.");

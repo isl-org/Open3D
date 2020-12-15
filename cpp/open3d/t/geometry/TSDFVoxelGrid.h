@@ -77,7 +77,6 @@ public:
                    double depth_max = 3.0);
 
     /// RGB-D integration
-    /// TODO: reuse RGB-D t/geometry
     void Integrate(const Image &depth,
                    const Image &color,
                    const core::Tensor &intrinsics,

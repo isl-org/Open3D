@@ -122,11 +122,12 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                 "[TSDFVoxelGrid] input depth is empty for integration.");
     }
 
-    // Unproject
+    // Create a point cloud from a low-resolution depth input to roughly
+    // estimate surfaces.
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, 4);
 
-    // Touch blocks
+    // Determine voxel blocks to allocate.
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"points", pcd.GetPoints().Contiguous()},
             {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
@@ -144,12 +145,17 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                 "[TSDFVoxelGrid] touch launch failed, expected block_coords");
     }
 
+    // Active voxel blocks in the block hashmap.
     core::Tensor block_coords = dsts.at("block_coords");
     core::Tensor addrs, masks;
     block_hashmap_->Activate(block_coords, addrs, masks);
+
+    // Collect voxel blocks in the viewing frustum. Note we cannot directly
+    // reuse addrs from Activate, since some blocks might have been activated in
+    // previous launches and return false.
     block_hashmap_->Find(block_coords, addrs, masks);
 
-    // Integration
+    // TSDF Integration.
     srcs = {{"depth", depth.AsTensor().Contiguous()},
             {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
             {"block_keys", block_hashmap_->GetKeyTensor()},
@@ -195,13 +201,14 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
+    // Extract active voxel blocks from the hashmap.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
     core::Tensor active_nb_addrs, active_nb_masks;
     std::tie(active_nb_addrs, active_nb_masks) =
             BufferRadiusNeighbors(active_addrs);
 
-    // Input
+    // Extract points around zero-crossings.
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"indices", active_addrs.To(core::Dtype::Int64)},
             {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
@@ -214,8 +221,8 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
                                         core::Dtype::Float32, device_)}};
 
     std::unordered_map<std::string, core::Tensor> dsts;
-    core::kernel::GeneralEW(
-            srcs, dsts, core::kernel::GeneralEWOpCode::TSDFSurfaceExtraction);
+    core::kernel::GeneralEW(srcs, dsts,
+                            core::kernel::GeneralEWOpCode::TSDFPointExtraction);
     if (dsts.count("points") == 0) {
         utility::LogError(
                 "[TSDFVoxelGrid] extract surface launch failed, points "
@@ -231,9 +238,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
 }
 
 TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
-    int64_t num_blocks = block_hashmap_->Size();
-
-    // Query active blocks and their nearest neighbors.
+    // Query active blocks and their nearest neighbors to handle boundary cases.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
     core::Tensor active_nb_addrs, active_nb_masks;
@@ -241,6 +246,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             BufferRadiusNeighbors(active_addrs);
 
     // Map active indices to [0, num_blocks] to be allocated for surface mesh.
+    int64_t num_blocks = block_hashmap_->Size();
     core::Tensor inverse_index_map({block_hashmap_->GetCapacity()},
                                    core::Dtype::Int64, device_);
     std::vector<int64_t> iota_map(num_blocks);
@@ -249,9 +255,6 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             {active_addrs.To(core::Dtype::Int64)},
             core::Tensor(iota_map, {num_blocks}, core::Dtype::Int64, device_));
 
-    // Voxel-wise mesh info. 4 channels correspond to:
-    // 3 edges' corresponding vertex index + 1 table index
-    // Input
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"indices", active_addrs.To(core::Dtype::Int64)},
             {"inv_indices", inverse_index_map},
@@ -267,7 +270,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
     std::unordered_map<std::string, core::Tensor> dsts;
 
     core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::MarchingCubes);
+                            core::kernel::GeneralEWOpCode::TSDFMeshExtraction);
 
     TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
     mesh.SetVertexNormals(dsts.at("normals"));
@@ -291,6 +294,7 @@ TSDFVoxelGrid TSDFVoxelGrid::CPU() {
     }
     return Copy(core::Device("CPU:0"));
 }
+
 TSDFVoxelGrid TSDFVoxelGrid::CUDA() {
     if (GetDevice().GetType() == core::Device::DeviceType::CUDA) {
         return *this;
@@ -300,13 +304,16 @@ TSDFVoxelGrid TSDFVoxelGrid::CUDA() {
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         const core::Tensor &active_addrs) {
+    // Fixed radius search for spatially hashed voxel blocks.
+    // A generalization will be implementing dense/sparse fixed radius search
+    // with coordinates as hashmap keys.
     core::Tensor key_buffer_int3_tensor = block_hashmap_->GetKeyTensor();
 
     core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
             {active_addrs.To(core::Dtype::Int64)});
     int64_t n = active_keys.GetShape()[0];
 
-    // Fill in radius nearest neighbors
+    // Fill in radius nearest neighbors.
     core::Tensor keys_nb({27, n, 3}, core::Dtype::Int32, device_);
     for (int nb = 0; nb < 27; ++nb) {
         int dz = nb / 9;

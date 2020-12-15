@@ -86,7 +86,7 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
     float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
 
-    int64_t n = pcd.GetShape()[0];
+    int64_t n = pcd.GetLength();
     float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
@@ -145,11 +145,11 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
         case GeneralEWOpCode::TSDFIntegrate:
             CPUTSDFIntegrateKernel(srcs, dsts);
             break;
-        case GeneralEWOpCode::TSDFSurfaceExtraction:
-            CPUSurfaceExtractionKernel(srcs, dsts);
+        case GeneralEWOpCode::TSDFPointExtraction:
+            CPUPointExtractionKernel(srcs, dsts);
             break;
-        case GeneralEWOpCode::MarchingCubes:
-            CPUMarchingCubesKernel(srcs, dsts);
+        case GeneralEWOpCode::TSDFMeshExtraction:
+            CPUMeshExtractionKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::RayCasting:
             utility::LogError("[RayCasting] Unimplemented.");

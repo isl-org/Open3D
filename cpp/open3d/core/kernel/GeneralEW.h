@@ -40,10 +40,9 @@ enum class GeneralEWOpCode {
     Unproject,
     TSDFIntegrate,
     TSDFTouch,
-    TSDFSurfaceExtraction,
-    MarchingCubes,
-    RayCasting,
-    Debug
+    TSDFPointExtraction,
+    TSDFMeshExtraction,
+    RayCasting
 };
 
 void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,

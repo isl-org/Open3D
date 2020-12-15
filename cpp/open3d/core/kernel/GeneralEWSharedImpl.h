@@ -175,6 +175,7 @@ struct ColoredVoxel32f {
         }                                                    \
     }()
 
+// Get a voxel in a certain voxel block given the block id with its neighbors.
 template <typename voxel_t>
 inline OPEN3D_DEVICE voxel_t* DeviceGetVoxelAt(
         int xo,
@@ -207,6 +208,8 @@ inline OPEN3D_DEVICE voxel_t* DeviceGetVoxelAt(
             blocks_indexer.GetDataPtrFromCoord(xn, yn, zn, block_idx_i));
 }
 
+// Get TSDF gradient as normal in a certain voxel block given the block id with
+// its neighbors.
 template <typename voxel_t>
 inline OPEN3D_DEVICE void DeviceGetNormalAt(
         int xo,
@@ -379,7 +382,7 @@ void CPUTSDFIntegrateKernel
     // Plain arrays that does not require indexers
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
 
-    int64_t n = indices.GetShape()[0] * resolution3;
+    int64_t n = indices.GetLength() * resolution3;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     CUDALauncher launcher;
@@ -424,15 +427,13 @@ void CPUTSDFIntegrateKernel
                         return;
                     }
 
-                    /// Associate image workload and compute SDF
-
+                    // Associate image workload and compute SDF and TSDF.
                     float depth = *static_cast<const float*>(
                                           depth_indexer.GetDataPtrFromCoord(
                                                   static_cast<int64_t>(u),
                                                   static_cast<int64_t>(v))) /
                                   depth_scale;
 
-                    // Compute multiplier
                     float sdf = (depth - zc);
                     if (depth <= 0 || depth > depth_max || zc <= 0 ||
                         sdf < -sdf_trunc) {
@@ -441,7 +442,7 @@ void CPUTSDFIntegrateKernel
                     sdf = sdf < sdf_trunc ? sdf : sdf_trunc;
                     sdf /= sdf_trunc;
 
-                    /// Associate voxel workload and update TSDF/Weights
+                    // Associate voxel workload and update TSDF/Weights
                     voxel_t* voxel_ptr = static_cast<voxel_t*>(
                             voxel_block_buffer_indexer.GetDataPtrFromCoord(
                                     xv, yv, zv, block_idx));
@@ -462,9 +463,9 @@ void CPUTSDFIntegrateKernel
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-void CUDASurfaceExtractionKernel
+void CUDAPointExtractionKernel
 #else
-void CPUSurfaceExtractionKernel
+void CPUPointExtractionKernel
 #endif
         (const std::unordered_map<std::string, Tensor>& srcs,
          std::unordered_map<std::string, Tensor>& dsts) {
@@ -481,7 +482,6 @@ void CPUSurfaceExtractionKernel
                     k);
         }
     }
-    utility::LogInfo("surface extraction starts");
 
     Tensor indices = srcs.at("indices");
     Tensor nb_indices = srcs.at("nb_indices");
@@ -507,7 +507,7 @@ void CPUSurfaceExtractionKernel
     // Plain arrays that does not require indexers
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
 
-    int64_t n_blocks = indices.GetShape()[0];
+    int64_t n_blocks = indices.GetLength();
     int64_t n = n_blocks * resolution3;
 
     // Output
@@ -526,6 +526,7 @@ void CPUSurfaceExtractionKernel
     CPULauncher launcher;
 #endif
 
+    // This pass determines valid number of points.
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -557,6 +558,7 @@ void CPUSurfaceExtractionKernel
                     float weight_o = voxel_ptr->GetWeight();
                     if (weight_o <= kWeightThreshold) return;
 
+                    // Enumerate x-y-z directions
                     for (int i = 0; i < 3; ++i) {
                         voxel_t* ptr = GetVoxelAt(
                                 static_cast<int>(xv) + (i == 0),
@@ -581,6 +583,7 @@ void CPUSurfaceExtractionKernel
 #else
     int total_count = (*count_ptr).load();
 #endif
+    utility::LogInfo("Total point count = {}", total_count);
 
     core::Tensor points({total_count, 3}, core::Dtype::Float32,
                         block_values.GetDevice());
@@ -598,6 +601,7 @@ void CPUSurfaceExtractionKernel
     (*count_ptr) = 0;
 #endif
 
+    // This pass extracts exact surface points.
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 bool extract_color = false;
@@ -666,6 +670,8 @@ void CPUSurfaceExtractionKernel
                     GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
                                 static_cast<int>(zv),
                                 static_cast<int>(workload_block_idx), no);
+
+                    // Enumerate x-y-z axis
                     for (int i = 0; i < 3; ++i) {
                         voxel_t* ptr = GetVoxelAt(
                                 static_cast<int>(xv) + (i == 0),
@@ -743,9 +749,9 @@ void CPUSurfaceExtractionKernel
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-void CUDAMarchingCubesKernel
+void CUDAMeshExtractionKernel
 #else
-void CPUMarchingCubesKernel
+void CPUMeshExtractionKernel
 #endif
         (const std::unordered_map<std::string, Tensor>& srcs,
          std::unordered_map<std::string, Tensor>& dsts) {
@@ -785,7 +791,9 @@ void CPUMarchingCubesKernel
     CUDACachedMemoryManager::ReleaseCache();
 #endif
 
-    int n_blocks = static_cast<int>(indices.GetShape()[0]);
+    int n_blocks = static_cast<int>(indices.GetLength());
+    // Voxel-wise mesh info. 4 channels correspond to:
+    // 3 edges' corresponding vertex index + 1 table index.
     core::Tensor mesh_structure = core::Tensor::Zeros(
             {n_blocks, resolution, resolution, resolution, 4},
             core::Dtype::Int32, block_keys.GetDevice());
@@ -808,7 +816,8 @@ void CPUMarchingCubesKernel
     CPULauncher launcher;
 #endif
 
-    // Pass 0: analyze mesh structure, set up one-on-one correspondences
+    // Pass 0: analyze mesh structure, set up one-on-one correspondences from
+    // edges to vertices.
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -891,7 +900,7 @@ void CPUMarchingCubesKernel
                 });
             });
 
-    // Pass 1: allocate and assign vertices with normals
+    // Pass 1: determine valid number of vertices.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
@@ -956,6 +965,7 @@ void CPUMarchingCubesKernel
     NDArrayIndexer vertex_indexer(vertices, 1);
     NDArrayIndexer normal_indexer(normals, 1);
 
+    // Pass 2: extract vertices.
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 bool extract_color = false;
@@ -1101,7 +1111,7 @@ void CPUMarchingCubesKernel
                 }
             });
 
-    // Pass 2: connect vertices
+    // Pass 3: connect vertices and form triangles.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                                 block_values.GetDevice());
