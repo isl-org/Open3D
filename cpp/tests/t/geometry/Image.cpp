@@ -120,5 +120,37 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
     EXPECT_ANY_THROW(t::geometry::Image im_nc(t_3d_sliced); (void)im_nc;);
 }
 
+// tImage: (r, c, ch) | legacy Image: (u, v, ch) = (c, r, ch)
+TEST_P(ImagePermuteDevices, ToLegacyImage) {
+    core::Device device = GetParam();
+    // 2 byte dtype is general enough for uin8_t as well as float
+    core::Dtype dtype = core::Dtype::UInt16;
+
+    // 2D tensor for 1 channel image
+    core::Tensor t_1ch(std::vector<uint16_t>{0, 1, 2, 3, 4, 5}, {2, 3}, dtype,
+                       device);
+
+    // Test 1 channel image conversion
+    t::geometry::Image im_1ch(t_1ch);
+    geometry::Image leg_im_1ch = im_1ch.ToLegacyImage();
+    for (int r = 0; r < im_1ch.GetRows(); ++r)
+        for (int c = 0; c < im_1ch.GetCols(); ++c)
+            EXPECT_EQ(im_1ch.At(r, c).Item<uint16_t>(),
+                      *leg_im_1ch.PointerAt<uint16_t>(c, r));
+
+    // 3D tensor for 3 channel image
+    core::Tensor t_3ch(
+            std::vector<uint16_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+            {2, 2, 3}, dtype, device);
+    // Test 3 channel image conversion
+    t::geometry::Image im_3ch(t_3ch);
+    geometry::Image leg_im_3ch = im_3ch.ToLegacyImage();
+    for (int r = 0; r < im_3ch.GetRows(); ++r)
+        for (int c = 0; c < im_3ch.GetCols(); ++c)
+            for (int ch = 0; ch < im_3ch.GetChannels(); ++ch)
+                EXPECT_EQ(im_3ch.At(r, c, ch).Item<uint16_t>(),
+                          *leg_im_3ch.PointerAt<uint16_t>(c, r, ch));
+}
+
 }  // namespace tests
 }  // namespace open3d

@@ -44,17 +44,6 @@ void pybind_geometry_class(py::module& m) {
                  "Returns ``True`` iff the geometry is empty.");
     docstring::ClassMethodDocInject(m, "Geometry", "clear");
     docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
-
-    // open3d.t.geometry.Geometry2D
-    py::class_<Geometry2D, PyGeometry2D<Geometry2D>, Geometry> geometry2d(
-            m, "Geometry2D", "The base geometry class for 2D geometries.");
-    geometry2d
-            .def("get_min_bound", &Geometry2D::GetMinBound,
-                 "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &Geometry2D::GetMaxBound,
-                 "Returns max bounds for geometry coordinates.");
-    docstring::ClassMethodDocInject(m, "Geometry2D", "get_min_bound");
-    docstring::ClassMethodDocInject(m, "Geometry2D", "get_max_bound");
 }
 
 void pybind_geometry(py::module& m) {

@@ -40,7 +40,7 @@ Image::Image(int64_t rows,
              int64_t channels,
              core::Dtype dtype,
              const core::Device &device)
-    : Geometry2D(Geometry::GeometryType::Image) {
+    : Geometry(Geometry::GeometryType::Image, 2) {
     if (rows < 0) {
         utility::LogError("rows must be >= 0, but got {}.", rows);
     }
@@ -54,7 +54,7 @@ Image::Image(int64_t rows,
 }
 
 Image::Image(const core::Tensor &tensor)
-    : Geometry2D(Geometry::GeometryType::Image) {
+    : Geometry(Geometry::GeometryType::Image, 2) {
     if (!tensor.IsContiguous()) {
         utility::LogError("Input tensor must be contiguous.");
     }
@@ -70,27 +70,28 @@ Image::Image(const core::Tensor &tensor)
 }
 
 open3d::geometry::Image Image::ToLegacyImage() const {
-    open3d::geometry::Image image_legacy;
-    size_t elem_sz = data_.GetDtype().ByteSize();
-    image_legacy.Prepare((int)GetCols(), (int)GetRows(), (int)GetChannels(),
-                         (int)elem_sz);
-    if (data_.IsContiguous()) {
-        memcpy(image_legacy.data_.data(), data_.GetDataPtr(),
-               image_legacy.data_.size());
+    auto dt = data_.GetDtype();
+    if (!(dt == core::Dtype::UInt8 || dt == core::Dtype::UInt16 ||
+          dt == core::Dtype::Float32))
+        utility::LogError("Legacy image does not support data type {}",
+                          dt.ToString());
+    if (!data_.IsContiguous()) {
+        utility::LogError("Image tensor must be contiguous.");
     } else {
-        for (int64_t i = 0, i_leg = 0; i < GetRows(); ++i)
-            for (int64_t j = 0; i < GetCols(); ++j)
-                for (int64_t k = 0; i < GetChannels(); ++k, i_leg += elem_sz)
-                    // image_legacy is contiguous
-                    memcpy(&image_legacy.data_[i_leg],
-                           data_[i][j][k].GetDataPtr(), elem_sz);
+        open3d::geometry::Image image_legacy;
+        size_t elem_sz = dt.ByteSize();
+        image_legacy.Prepare((int)GetCols(), (int)GetRows(), (int)GetChannels(),
+                             (int)elem_sz);
+        core::MemoryManager::MemcpyToHost(image_legacy.data_.data(),
+                                          data_.GetDataPtr(), data_.GetDevice(),
+                                          image_legacy.data_.size());
+        return image_legacy;
     }
-    return image_legacy;
 }
 
 std::string Image::ToString() const {
-    return fmt::format("Image[size={{{},{}}}, channels={}, {}, {}]", GetCols(),
-                       GetRows(), GetChannels(), GetDtype().ToString(),
+    return fmt::format("Image[size={{{},{}}}, channels={}, {}, {}]", GetRows(),
+                       GetCols(), GetChannels(), GetDtype().ToString(),
                        GetDevice().ToString());
 }
 

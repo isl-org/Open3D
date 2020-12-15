@@ -38,13 +38,14 @@ namespace t {
 namespace io {
 
 std::string RGBDVideoReader::ToString() const {
-    if (IsOpened())
+    if (IsOpened()) {
         return fmt::format(
                 "RGBDVideoReader reading file {} at position {}us / {}us",
                 GetFilename(), GetTimestamp(),
                 GetMetadata().stream_length_usec_);
-    else
+    } else {
         return "RGBDVideoReader: No open file.";
+    }
 }
 
 void RGBDVideoReader::SaveFrames(const std::string &frame_path,
@@ -57,11 +58,12 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
     }
     bool success = MakeDirectoryHierarchy(fmt::format("{}/color", frame_path));
     success &= MakeDirectoryHierarchy(fmt::format("{}/depth", frame_path));
-    if (!success)
+    if (!success) {
         utility::LogError(
                 "Could not create color or depth subfolder in {} or they "
                 "already exist.",
                 frame_path);
+    }
     WriteIJsonConvertibleToJSON(fmt::format("{}/intrinsic.json", frame_path),
                                 GetMetadata());
     SeekTimestamp(start_time);
@@ -77,7 +79,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             WriteImage(color_file, im_color);
-            utility::LogInfo("Written color image to {}", color_file);
+            utility::LogDebug("Written color image to {}", color_file);
         }
 #pragma omp section
         {
@@ -85,7 +87,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             WriteImage(depth_file, im_depth);
-            utility::LogInfo("Written depth image to {}", depth_file);
+            utility::LogDebug("Written depth image to {}", depth_file);
         }
     }
     utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",

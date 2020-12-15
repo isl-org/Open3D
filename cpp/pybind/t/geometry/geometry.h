@@ -27,7 +27,6 @@
 #pragma once
 
 #include "open3d/t/geometry/Geometry.h"
-#include "open3d/t/geometry/Geometry2D.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
@@ -46,21 +45,6 @@ public:
 
     bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
-
-// Geometry2D trampoline class
-template <class Geometry2DBase = Geometry2D>
-class PyGeometry2D : public PyGeometry<Geometry2DBase> {
-public:
-    using PyGeometry<Geometry2DBase>::PyGeometry;
-
-    core::Tensor GetMinBound() const override {
-        PYBIND11_OVERLOAD_PURE(core::Tensor, Geometry2DBase, );
-    }
-
-    core::Tensor GetMaxBound() const override {
-        PYBIND11_OVERLOAD_PURE(core::Tensor, Geometry2DBase, );
     }
 };
 

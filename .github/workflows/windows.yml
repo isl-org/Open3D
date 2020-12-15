@@ -39,6 +39,31 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
+      - name: Remove extra installed software
+        run: |
+          Get-PSDrive (get-location).Drive
+          echo "Removing Applications..."
+          Remove-Item -Recurse -Force -ErrorAction Ignore `
+          "C:\Program Files\Amazon" `
+          "C:\Program Files\Android" `
+          "C:\Program Files\Azure Cosmos DB Emulator" `
+          "C:\Program Files\Docker" `
+          "C:\Program Files\dotnet" `
+          "C:\Program Files\IIS" `
+          "C:\Program Files\IIS Express" `
+          "C:\Program Files\internet explorer" `
+          "C:\Program Files\Java" `
+          "C:\Program Files\Mercurial" `
+          "C:\Program Files\Microsoft Silverlight" `
+          "C:\Program Files\Microsoft SQL Server" `
+          "C:\Program Files\MongoDB" `
+          "C:\Program Files\Mozilla Firefox" `
+          "C:\Program Files\PostgreSQL" `
+          "C:\Program Files\R" `
+          "C:\Program Files\Reference Assemblies" `
+          "C:\Program Files\TortoiseSVN"
+          Get-PSDrive (get-location).Drive
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -51,23 +76,38 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} -DBUILD_RPC_INTERFACE=ON -DBUILD_LIBREALSENSE=ON ..
+          cmake -G "Visual Studio 16 2019" -A x64 `
+          -DBUILD_EXAMPLES=OFF `
+          -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+          -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
+          -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+          -DBUILD_RPC_INTERFACE=ON `
+          -DBUILD_LIBREALSENSE=ON `
+          ..
       - name: Build
         run: |
           cd build
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target build-examples-iteratively
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target INSTALL
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+          --target build-examples-iteratively
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+          --target INSTALL
       - name: Linking to Open3D
         run: |
           cd docs\_static\C++
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
-          cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
+          cmake -G "Visual Studio 16 2019" -A x64 `
+          -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+          -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+          ..
+          cmake --build . --config ${{ matrix.CONFIG }} `
+          && .\${{ matrix.CONFIG }}\TestVisualizer.exe
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Python package
         run: |
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+          wheel==${{ env.WHEEL_VER }} `
+          setuptools==${{ env.STOOLS_VER }}
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
@@ -117,12 +157,23 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DBUILD_AZURE_KINECT=ON -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DBUILD_RPC_INTERFACE=ON -DBUILD_LIBREALSENSE=ON -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" ..
+          cmake -G "Visual Studio 16 2019" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DBUILD_AZURE_KINECT=ON `
+          -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+          -DBUILD_SHARED_LIBS=OFF `
+          -DSTATIC_WINDOWS_RUNTIME=ON `
+          -DBUILD_RPC_INTERFACE=ON `
+          -DBUILD_LIBREALSENSE=ON `
+          -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+          ..
 
       - name: Build Python package
         shell: pwsh
         run: |
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+          wheel==${{ env.WHEEL_VER }} `
+          setuptools==${{ env.STOOLS_VER }}
           cd build
           conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           conda-build --version
@@ -216,7 +267,9 @@ jobs:
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
 
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+          wheel==${{ env.WHEEL_VER }} `
+          setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")

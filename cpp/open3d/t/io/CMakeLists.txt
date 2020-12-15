@@ -5,15 +5,14 @@ set(FILE_IO_SRC
     file_format/FilePLY.cpp
 )
 
-file(GLOB SENSOR_IO_SRC "sensor/*.cpp")
+set(SENSOR_IO_SRC
+    "sensor/RGBDVideoReader.cpp"
+    "sensor/RGBDVideoMetadata.cpp")
+
 set(IO_DEFINITIONS "")
 if (BUILD_LIBREALSENSE)
-    file(GLOB REALSENSE_SRC "sensor/realsense/*.cpp")
+    set(REALSENSE_SRC "sensor/realsense/RSBagReader.cpp")
     list(APPEND IO_DEFINITIONS BUILD_LIBREALSENSE)
-endif ()
-if (BUILD_AZURE_KINECT)
-    file(GLOB KINECT_SRC "sensor/azure_kinect/*.cpp")
-    list(APPEND IO_DEFINITIONS BUILD_AZURE_KINECT)
 endif ()
 
 # Create object library

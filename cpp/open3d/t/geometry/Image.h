@@ -32,7 +32,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/Image.h"
-#include "open3d/t/geometry/Geometry2D.h"
+#include "open3d/t/geometry/Geometry.h"
 
 namespace open3d {
 namespace t {
@@ -42,7 +42,7 @@ namespace geometry {
 ///
 /// \brief The Image class stores image with customizable rols, cols, channels,
 /// dtype and device.
-class Image : public Geometry2D {
+class Image : public Geometry {
 public:
     /// \brief Constructor for image.
     ///
@@ -130,14 +130,14 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
-    /// Compute min 2D coordinates for the data (always {0, 0})
-    core::Tensor GetMinBound() const override {
+    /// Compute min 2D coordinates for the data (always {0, 0}).
+    core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
     };
 
-    /// Compute max 2D coordinates for the data ({cols, rows})
-    core::Tensor GetMaxBound() const override {
-        return core::Tensor(std::vector<int64_t>{GetCols(), GetRows()}, {2},
+    /// Compute max 2D coordinates for the data ({rows, cols}).
+    core::Tensor GetMaxBound() const {
+        return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
                             core::Dtype::Int64);
     };
 
