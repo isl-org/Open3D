@@ -104,6 +104,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
         {"defaultLitTransparency",
          ResourceManager::kDefaultLitWithTransparency},
+        {"defaultUnlitTransparency",
+         ResourceManager::kDefaultUnlitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader},
@@ -944,7 +946,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (props.shader == "defaultLit" ||
         props.shader == "defaultLitTransparency") {
         UpdateDefaultLit(geom.mat);
-    } else if (props.shader == "defaultUnlit") {
+    } else if (props.shader == "defaultUnlit" ||
+               props.shader == "defaultUnlitTransparency") {
         UpdateDefaultUnlit(geom.mat);
     } else if (props.shader == "normals") {
         UpdateNormalShader(geom.mat);
@@ -991,7 +994,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
         if (material.shader == "defaultLit" ||
             material.shader == "defaultLitTransparency") {
             UpdateDefaultLit(geom->mat);
-        } else if (material.shader == "defaultUnlit") {
+        } else if (material.shader == "defaultUnlit" ||
+                   material.shader == "defaultUnlitTransparency") {
             UpdateDefaultUnlit(geom->mat);
         } else if (material.shader == "normals") {
             UpdateNormalShader(geom->mat);

@@ -64,6 +64,7 @@ public:
     static const MaterialHandle kDefaultLit;
     static const MaterialHandle kDefaultLitWithTransparency;
     static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kDefaultUnlitWithTransparency;
     static const MaterialHandle kDefaultNormalShader;
     static const MaterialHandle kDefaultDepthShader;
     static const MaterialHandle kDefaultUnlitGradientShader;
