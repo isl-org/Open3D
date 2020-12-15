@@ -41,14 +41,14 @@ namespace io {
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 
 /// RGBD video metadata.
-class RGBDVideoMetadata : public utility::IJsonConvertible {
+class RGBDVideoMetadata : public open3d::utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
 
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
     /// Text description
-    using utility::IJsonConvertible::ToString;
+    using open3d::utility::IJsonConvertible::ToString;
 
 public:
     /// \brief Shared intrinsics between RGB & depth.
