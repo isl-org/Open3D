@@ -80,8 +80,6 @@ public:
 
     virtual void ConfigureForColorPicking() = 0;
 
-    virtual void ConfigureForColorPicking() = 0;
-
     virtual Camera* GetCamera() const = 0;
 };
 
