@@ -22,8 +22,8 @@ env:
   SCIPY_VER: "1.4.1"
   NPROC: 2
   CONDA_BUILD_VER: "3.20.0"
-  SRC_DIR: "D:\a\open3d\open3d"
-  BUILD_DIR: "C:\Open3D\build"
+  SRC_DIR: "D:\\a\\open3d\\open3d"
+  BUILD_DIR: "C:\\Open3D\\build"
 
 jobs:
   windows:
