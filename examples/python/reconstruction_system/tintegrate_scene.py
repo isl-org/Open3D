@@ -39,14 +39,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '--block_count',
         type=int,
-        default=1000,
+        default=100,
         help=
         'estimated number of 16x16x16 voxel blocks to represent a scene. Typically with a 6mm resolution, a lounge scene requires around 30K blocks, while a large apartment requires 80K blocks. Open3D will dynamically increase the block count on demand.'
     )
     parser.add_argument(
         '--voxel_size',
         type=float,
-        default=0.006,
+        default=3.0 / 512,
         help=
         'voxel resolution. For small scenes, 6mm preserves fine details. For large indoor scenes, 1cm or larger will be reasonable for limited memory.'
     )
