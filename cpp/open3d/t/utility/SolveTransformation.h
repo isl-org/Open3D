@@ -46,12 +46,7 @@ namespace utility {
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
                                          const core::Tensor &t);
 
-double det_(const core::Tensor &D);
-
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
-
-core::Tensor Compute_A(const core::Tensor &source_select,
-                       const core::Tensor &target_n_select);
 
 }  // namespace utility
 }  // namespace t

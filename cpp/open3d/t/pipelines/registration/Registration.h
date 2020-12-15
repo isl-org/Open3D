@@ -120,12 +120,10 @@ public:
 /// distance. \param transformation The 4x4 transformation matrix to transform
 /// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
 /// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
-RegistrationResult EvaluateRegistration(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        double max_correspondence_distance,
-        const core::Tensor &transformation /*= core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0"))*/);
+RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
+                                        const geometry::PointCloud &target,
+                                        double max_correspondence_distance,
+                                        const core::Tensor &transformation);
 
 /// \brief Functions for ICP registration.
 ///
@@ -141,12 +139,9 @@ RegistrationResult RegistrationICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const core::Tensor &init /*= core::Tensor::Eye(4,
-                                                     core::Dtype::Float64,
-                                                     core::Device("CPU:0"))*/
-        ,
+        const core::Tensor &init,
         const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(false),
+                TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
 // [TODO: To Be Implemented]

@@ -57,18 +57,6 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
     return transformation;
 }
 
-double det_(const core::Tensor &D) {
-    // TODO: Create a proper op for Determinant
-    D.AssertShape({3, 3});
-    D.AssertDtype(core::Dtype::Float32);
-    core::Tensor D_ = D.Copy();
-    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]);
-    D_[0][1] = D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]);
-    D_[0][2] = D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
-    D_[0][0] = D_[0][0] - D_[0][1] + D_[0][2];
-    return D_[0][0].Item<float>();
-}
-
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = X.GetDevice();
@@ -99,68 +87,6 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     // Current Implementation DOES NOT SUPPORT SCALE transfomation
     transformation[3][3] = 1;
     return transformation;
-}
-
-core::Tensor Compute_A(const core::Tensor &source_select,
-                       const core::Tensor &target_n_select) {
-    core::Dtype dtype = core::Dtype::Float32;
-    core::Device device = source_select.GetDevice();
-    source_select.AssertDtype(dtype);
-    target_n_select.AssertDevice(device);
-    target_n_select.AssertDtype(dtype);
-
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    if (target_n_select.GetShape() != source_select.GetShape()) {
-        open3d::utility::LogError(
-                " [Compute_A:] Target Normal Pointcloud Correspondace Shape "
-                " {} != Corresponding Source Pointcloud's Shape {}.",
-                target_n_select.GetShape().ToString(),
-                source_select.GetShape().ToString());
-    }
-
-    auto num_corres = source_select.GetShape()[0];
-    // if num_corres == 0 : LogError / Return 0 Tensor
-
-    // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz)
-    core::Tensor nx =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor ny =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor nz =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(2, 3, 1)});
-    core::Tensor sx =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor sy =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor sz =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(2, 3, 1)});
-
-    // Cross Product Calculation
-    core::Tensor a1 = (nz * sy) - (ny * sz);
-    core::Tensor a2 = (nx * sz) - (nz * sx);
-    core::Tensor a3 = (ny * sx) - (nx * sy);
-
-    // Putting the pieces back together.
-    core::Tensor A({num_corres, 6}, dtype, device);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(0, 1, 1)},
-              a1);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(1, 2, 1)},
-              a2);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(2, 3, 1)},
-              a3);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(3, 6, 1)},
-              target_n_select);
-    return A;
 }
 
 }  // namespace utility

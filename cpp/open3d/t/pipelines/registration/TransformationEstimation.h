@@ -70,11 +70,6 @@ public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
 
-    // TODO: corres_num is an additional parameter which needs to be passed
-    // as new CorrespondenceSet is of same length as pointcloud,
-    // in future this needs to be corrected, as it will potentially break
-    // the existing code / ability to move to tensor without much change.
-
     /// Compute RMSE between source and target points cloud given
     /// correspondences.
     ///
@@ -101,12 +96,14 @@ public:
 /// Estimate a transformation for point to point distance.
 class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
+    /// Currently Not Implemented. [Scaling not supported]
     /// \brief Parameterized Constructor.
     ///
     /// \param with_scaling Set to True to estimate scaling, False to force
     /// scaling to be 1.
-    TransformationEstimationPointToPoint(bool with_scaling = false)
-        : with_scaling_(with_scaling) {}
+    // TransformationEstimationPointToPoint(bool with_scaling = false)
+    //     : with_scaling_(with_scaling) {}
+
     ~TransformationEstimationPointToPoint() override {}
 
 public:
@@ -123,13 +120,14 @@ public:
             CorrespondenceSet &corres) const override;
 
 public:
-    /// \brief Set to True to estimate scaling, False to force scaling to be 1.
+    /// Currently Not Implemented. [Scaling not supported]
+    /// Set to True to estimate scaling, False to force scaling to be 1.
     ///
     /// The homogeneous transformation is given by\n
     /// T = [ cR t]\n
     ///     [0   1]\n
     /// Sets 𝑐=1 if with_scaling is False.
-    bool with_scaling_ = false;
+    // bool with_scaling_ = false;
 
 private:
     const TransformationEstimationType type_ =
@@ -145,12 +143,13 @@ public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
+    /// Currently Not Implemented. [RobustKernel not supported]
     /// \brief Constructor that takes as input a RobustKernel \params kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
-    explicit TransformationEstimationPointToPlane(
-            std::shared_ptr<open3d::pipelines::registration::RobustKernel>
-                    kernel)
-        : kernel_(std::move(kernel)) {}
+    // explicit TransformationEstimationPointToPlane(
+    //         std::shared_ptr<open3d::pipelines::registration::RobustKernel>
+    //                 kernel)
+    //     : kernel_(std::move(kernel)) {}
 
 public:
     TransformationEstimationType GetTransformationEstimationType()
@@ -166,9 +165,10 @@ public:
             CorrespondenceSet &corres) const override;
 
 public:
+    /// Currently Not Implemented. [RobustKernel not supported]
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
-    std::shared_ptr<open3d::pipelines::registration::RobustKernel> kernel_ =
-            std::make_shared<open3d::pipelines::registration::L2Loss>();
+    // std::shared_ptr<open3d::pipelines::registration::RobustKernel> kernel_ =
+    //         std::make_shared<open3d::pipelines::registration::L2Loss>();
 
 private:
     const TransformationEstimationType type_ =

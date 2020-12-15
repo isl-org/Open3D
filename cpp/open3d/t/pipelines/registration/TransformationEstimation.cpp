@@ -69,10 +69,6 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    // Float32 Dtype, is required by SVD Solver
-    // TODO: Revist to support both Float32 and 64 wihtout
-    // type conversion on all data
-
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
@@ -87,7 +83,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
-    if (t::utility::det_(U) * t::utility::det_(VT.T()) < 0) {
+    if (U.Det_() * (VT.T()).Det_() < 0) {
         S[-1][-1] = -1;
     }
     core::Tensor R, t;
@@ -152,7 +148,48 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
                              .Sum({1}, true)
                              .To(dtype);
-    core::Tensor A = t::utility::Compute_A(source_select, target_n_select);
+
+    // --- Computing A in AX = B
+    auto num_corres = source_select.GetShape()[0];
+    // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz)
+    core::Tensor nx =
+            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                     core::TensorKey::Slice(0, 1, 1)});
+    core::Tensor ny =
+            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                     core::TensorKey::Slice(1, 2, 1)});
+    core::Tensor nz =
+            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                     core::TensorKey::Slice(2, 3, 1)});
+    core::Tensor sx =
+            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                   core::TensorKey::Slice(0, 1, 1)});
+    core::Tensor sy =
+            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                   core::TensorKey::Slice(1, 2, 1)});
+    core::Tensor sz =
+            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                   core::TensorKey::Slice(2, 3, 1)});
+    // Cross Product Calculation
+    core::Tensor a1 = (nz * sy) - (ny * sz);
+    core::Tensor a2 = (nx * sz) - (nz * sx);
+    core::Tensor a3 = (ny * sx) - (nx * sy);
+    // Putting the pieces back together.
+    core::Tensor A({num_corres, 6}, dtype, device);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(0, 1, 1)},
+              a1);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(1, 2, 1)},
+              a2);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(2, 3, 1)},
+              a3);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(3, 6, 1)},
+              target_n_select);
+    // --- Computing A completed
+
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
     return t::utility::ComputeTransformationFromPose(Pose);
 }
