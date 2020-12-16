@@ -228,11 +228,11 @@ Hashmap Hashmap::CPU() {
     return Copy(Device("CPU:0"));
 }
 
-Hashmap Hashmap::CUDA() {
+Hashmap Hashmap::CUDA(int device_id) {
     if (GetDevice().GetType() == Device::DeviceType::CUDA) {
         return *this;
     }
-    return Copy(Device("CUDA:0"));
+    return Copy(Device(Device::DeviceType::CUDA, device_id));
 }
 
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }

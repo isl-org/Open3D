@@ -9,20 +9,20 @@ import math
 import sys
 import time
 import open3d as o3d
+import argparse
+
 sys.path.append("../utility")
 from file import *
 sys.path.append(".")
-
-import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'dataset_path',
         type=str,
-        help=
-        'path to the dataset. It should contain 16bit depth images in a folder named depth/, and rgb images in a folder named color/ or rgb/'
-    )
+        help='path to the dataset.'
+        'It should contain 16bit depth images in a folder named depth/'
+        'and rgb images in a folder named color/ or rgb/')
     parser.add_argument('trajectory_path',
                         type=str,
                         help='path to the trajectory in open3d\'s .log format')
@@ -30,25 +30,28 @@ if __name__ == '__main__':
                         type=str,
                         default='mesh.ply',
                         help='output mesh filename')
-    parser.add_argument(
-        '--intrinsic_path',
-        type=str,
-        help=
-        'path to the intrinsic.json config file. By default PrimeSense intrinsics is used.'
-    )
+    parser.add_argument('--intrinsic_path',
+                        type=str,
+                        help='path to the intrinsic.json config file.'
+                        'By default PrimeSense intrinsics is used.')
     parser.add_argument(
         '--block_count',
         type=int,
         default=100,
-        help=
-        'estimated number of 16x16x16 voxel blocks to represent a scene. Typically with a 6mm resolution, a lounge scene requires around 30K blocks, while a large apartment requires 80K blocks. Open3D will dynamically increase the block count on demand.'
+        help='estimated number of 16x16x16 voxel blocks to represent a scene.'
+        'Typically with a 6mm resolution,'
+        'a lounge scene requires around 30K blocks,'
+        'while a large apartment requires 80K blocks.'
+        'Open3D will dynamically increase the block count on demand,'
+        'but a rough upper bound will be useful especially when memory is limited.'
     )
     parser.add_argument(
         '--voxel_size',
         type=float,
         default=3.0 / 512,
-        help=
-        'voxel resolution. For small scenes, 6mm preserves fine details. For large indoor scenes, 1cm or larger will be reasonable for limited memory.'
+        help='voxel resolution.'
+        'For small scenes, 6mm preserves fine details.'
+        'For large indoor scenes, 1cm or larger will be reasonable for limited memory.'
     )
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()

@@ -78,7 +78,7 @@ Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
     };
 
     if (image_legacy.IsEmpty()) {
-        return Image();
+        return Image(0, 0, 1, core::Dtype::Float32, device);
     }
 
     auto iter = kBytesToDtypeMap.find(image_legacy.bytes_per_channel_);

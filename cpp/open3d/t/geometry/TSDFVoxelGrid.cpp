@@ -42,12 +42,12 @@ TSDFVoxelGrid::TSDFVoxelGrid(
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device)
-    : attr_dtype_map_(attr_dtype_map),
-      voxel_size_(voxel_size),
+    : voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
       block_count_(block_count),
-      device_(device) {
+      device_(device),
+      attr_dtype_map_(attr_dtype_map) {
     if (attr_dtype_map_.count("tsdf") == 0 ||
         attr_dtype_map_.count("weight") == 0) {
         utility::LogError(
@@ -283,7 +283,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
     TSDFVoxelGrid cpu_tsdf_voxelgrid(attr_dtype_map_, voxel_size_, sdf_trunc_,
                                      block_resolution_, block_count_, device);
-    auto cpu_tsdf_hashmap = cpu_tsdf_voxelgrid.GetVoxelBlockHashmap();
+    auto cpu_tsdf_hashmap = cpu_tsdf_voxelgrid.block_hashmap_;
     *cpu_tsdf_hashmap = block_hashmap_->Copy(device);
     return cpu_tsdf_voxelgrid;
 }
@@ -295,11 +295,11 @@ TSDFVoxelGrid TSDFVoxelGrid::CPU() {
     return Copy(core::Device("CPU:0"));
 }
 
-TSDFVoxelGrid TSDFVoxelGrid::CUDA() {
+TSDFVoxelGrid TSDFVoxelGrid::CUDA(int device_id) {
     if (GetDevice().GetType() == core::Device::DeviceType::CUDA) {
         return *this;
     }
-    return Copy(core::Device("CUDA:0"));
+    return Copy(core::Device(core::Device::DeviceType::CUDA, device_id));
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(

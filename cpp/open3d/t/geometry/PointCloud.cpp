@@ -135,13 +135,14 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-/// Create a PointCloud from a depth image
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
                                             const core::Tensor &extrinsics,
                                             double depth_scale,
                                             double depth_max,
                                             int stride) {
+    depth.AsTensor().AssertDtype(core::Dtype::UInt16);
+
     core::Device device = depth.GetDevice();
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"depth", depth.AsTensor()},

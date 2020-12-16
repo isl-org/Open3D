@@ -116,7 +116,7 @@ public:
 
     Hashmap Copy(const Device& device);
     Hashmap CPU();
-    Hashmap CUDA();
+    Hashmap CUDA(int device_id = 0);
 
     int64_t Size() const;
 

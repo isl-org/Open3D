@@ -69,14 +69,14 @@ public:
 
     ~TSDFVoxelGrid(){};
 
-    /// Depth-only integration
+    /// Depth-only integration.
     void Integrate(const Image &depth,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
                    double depth_scale = 1000.0,
                    double depth_max = 3.0);
 
-    /// RGB-D integration
+    /// RGB-D integration.
     void Integrate(const Image &depth,
                    const Image &color,
                    const core::Tensor &intrinsics,
@@ -90,23 +90,27 @@ public:
     /// Extract mesh near iso-surfaces with Marching Cubes.
     TriangleMesh ExtractSurfaceMesh();
 
+    /// Copy TSDFVoxelGrid to the target device.
     TSDFVoxelGrid Copy(const core::Device &device);
 
+    /// Copy TSDFVoxelGrid to CPU.
     TSDFVoxelGrid CPU();
-    TSDFVoxelGrid CUDA();
+
+    /// Copy TSDFVoxelGrid to CUDA.
+    TSDFVoxelGrid CUDA(int device_id = 0);
 
     core::Device GetDevice() { return device_; }
 
 protected:
-    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
-
-    std::shared_ptr<core::Hashmap> GetVoxelBlockHashmap() {
-        return block_hashmap_;
-    }
-
-    /// Return (active_entries, 27) with \addrs and \masks for radius (3)
-    /// neighbor entries. Currently we preserve redundancy without compressing /
-    /// reduction.
+    /// Return  \addrs and \masks for radius (3) neighbor entries.
+    /// We first find all active entries in the hashmap with there coordinates.
+    /// We then query these coordinates and their 3^3 neighbors.
+    /// \addrs_nb: indexer used for the internal hashmap to access voxel block
+    /// coordinates in the 3^3 neighbors.
+    /// \masks_nb: flag used for hashmap to indicate whether a query is a
+    /// success.
+    /// Currently we preserve a dense output (27 x active_entries) without
+    /// compression / reduction.
     std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
             const core::Tensor &active_addrs);
 
@@ -119,6 +123,8 @@ protected:
     core::Device device_ = core::Device("CPU:0");
 
     std::shared_ptr<core::Hashmap> block_hashmap_;
+
+    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 };
 }  // namespace geometry
 }  // namespace t

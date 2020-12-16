@@ -272,7 +272,25 @@ public:
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
-    /// Create a PointCloud from a depth image.
+    /// \brief Factory function to create a pointcloud from a depth image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
+    /// / fy\n
+    ///
+    /// \param depth The input depth image should be a uint16_t image.
+    /// \param intrinsic Intrinsic parameters of the camera.
+    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
+    /// \param depth_trunc Truncated at \p depth_trunc distance.
+    /// \param stride Sampling factor to support coarse point cloud extraction.
+    ///
+    /// \return An empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static PointCloud CreateFromDepthImage(
             const Image &depth,
             const core::Tensor &intrinsics,

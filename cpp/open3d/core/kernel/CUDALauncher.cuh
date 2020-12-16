@@ -145,7 +145,7 @@ public:
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, element_kernel);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchIntegrateKernel failed.");
+        OPEN3D_GET_LAST_CUDA_ERROR("LaunchGeneralKernel failed.");
     }
 };
 }  // namespace kernel

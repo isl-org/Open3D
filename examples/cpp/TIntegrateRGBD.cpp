@@ -1,22 +1,32 @@
-#include <fmt/format.h>
-
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
 #include "open3d/Open3D.h"
-#include "open3d/t/geometry/Image.h"
-#include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/geometry/TSDFVoxelGrid.h"
-#include "open3d/t/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
 
 using namespace open3d;
 using namespace open3d::core;
-
-template <class T, int M, int N, int A>
-Tensor FromEigen(const Eigen::Matrix<T, M, N, A>& matrix) {
-    Dtype dtype = Dtype::FromType<T>();
-    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
-    return Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
-                  dtype);
-}
 
 void PrintHelp() {
     using namespace open3d;
@@ -29,7 +39,6 @@ void PrintHelp() {
     utility::LogInfo("     [options]");
     utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
     utility::LogInfo("     --device [CPU:0]");
-    utility::LogInfo("     --output_filename [mesh]");
     utility::LogInfo("     --mesh");
     utility::LogInfo("     --pointcloud");
     // clang-format on
@@ -116,7 +125,9 @@ int main(int argc, char** argv) {
 
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
-        Tensor extrinsic_t = FromEigen(extrinsic).Copy(device);
+        Tensor extrinsic_t =
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                        device);
 
         utility::Timer timer;
         timer.Start();

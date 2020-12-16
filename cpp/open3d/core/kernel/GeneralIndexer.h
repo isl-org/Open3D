@@ -45,6 +45,11 @@ public:
                      const Tensor& extrinsic = Tensor::Eye(
                              4, core::Dtype::Float32, core::Device("CPU:0")),
                      float scale = 1.0f) {
+        intrinsic.AssertShape({3, 3});
+        extrinsic.AssertShape({4, 4});
+        intrinsic.AssertDtype(core::Dtype::Float32);
+        extrinsic.AssertDtype(core::Dtype::Float32);
+
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
                 extrinsic_[i][j] = extrinsic[i][j].Item<float>();
@@ -112,12 +117,18 @@ private:
     float scale_;
 };
 
-/// Convert between ND coordinates and their corresponding linear offsets
-/// Internal conversions:
+/// Convert between ND coordinates and their corresponding linear offsets.
+/// Input ndarray tensor must be contiguous.
+/// Internal shape conversions:
 /// 1D: index (x), [channel (c)]
 /// 2D: height (y), weight (x), [channel (c)]
 /// 3D: depth (z), height (y), width (x), [channel (c)]
 /// 4D: time (t), depth (z), height (y), width (x), [channel (c)]
+/// External indexing order:
+/// 1D: x
+/// 2D: x, y
+/// 3D: x, y, z
+/// 4D: x, y, z, t
 const int64_t MAX_RESOLUTION_DIMS = 4;
 class NDArrayIndexer {
 public:

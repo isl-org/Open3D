@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 
 #include "core/CoreTest.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
@@ -36,14 +37,6 @@
 
 namespace open3d {
 namespace tests {
-
-template <class T, int M, int N, int A>
-core::Tensor FromEigen(const Eigen::Matrix<T, M, N, A>& matrix) {
-    core::Dtype dtype = core::Dtype::FromType<T>();
-    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
-    return core::Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
-                        dtype);
-}
 
 class TSDFVoxelGridPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(TSDFVoxelGrid,
@@ -95,14 +88,16 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
-        core::Tensor extrinsic_t = FromEigen(extrinsic).Copy(device);
+        core::Tensor extrinsic_t =
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                        device);
 
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
     }
 
     auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
     auto pcd_gt = *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
-                                                "/tsdf_pcd.ply");
+                                                "/RGBD/example_tsdf_pcd.ply");
     auto result = pipelines::registration::EvaluateRegistration(pcd, pcd_gt,
                                                                 voxel_size);
 

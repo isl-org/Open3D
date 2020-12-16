@@ -105,7 +105,8 @@ def test_integration(device):
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
 
     pcd = volume.extract_surface_points().to_legacy_pointcloud()
-    pcd_gt = o3d.io.read_point_cloud(test_data_path + "tsdf_pcd.ply")
+    pcd_gt = o3d.io.read_point_cloud(test_data_path +
+                                     "RGBD/example_tsdf_pcd.ply")
 
     n_pcd = len(pcd.points)
     n_pcd_gt = len(pcd_gt.points)
