@@ -58,7 +58,7 @@ void pybind_sensor(py::module &m) {
                      "Size of internal frame buffer, increase this if you "
                      "experience frame drops."}};
 
-    py::enum_<SensorType>(m, "SensorType")
+    py::enum_<SensorType>(m, "SensorType", "Sensor type")
             .value("AZURE_KINECT", SensorType::AZURE_KINECT)
             .value("REAL_SENSE", SensorType::REAL_SENSE);
 
