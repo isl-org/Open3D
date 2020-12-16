@@ -1066,6 +1066,7 @@ bool FilamentScene::AddPointLight(const std::string& light_name,
 
     if (result == filament::LightManager::Builder::Success) {
         lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+        scene_->addEntity(light);
     } else {
         utility::LogWarning("Failed to build Filament light resources for {}",
                             light_name);
@@ -1107,6 +1108,7 @@ bool FilamentScene::AddSpotLight(const std::string& light_name,
 
     if (result == filament::LightManager::Builder::Success) {
         lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+        scene_->addEntity(light);
     } else {
         utility::LogWarning("Failed to build Filament light resources for {}",
                             light_name);
@@ -1141,6 +1143,7 @@ bool FilamentScene::AddDirectionalLight(const std::string& light_name,
 
     if (result == filament::LightManager::Builder::Success) {
         lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+        scene_->addEntity(light);
     } else {
         utility::LogWarning("Failed to build Filament light resources for {}",
                             light_name);
