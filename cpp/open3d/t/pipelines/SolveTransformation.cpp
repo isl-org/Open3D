@@ -29,6 +29,7 @@
 #include <cmath>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/SolveTransformation.cu"
 
 namespace open3d {
 namespace t {
@@ -57,17 +58,16 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
     return transformation;
 }
 
-core::Tensor ComputeTransformationFromPoseCPU(const core::Tensor &X){
+core::Tensor ComputeTransformationFromPoseCPU(const core::Tensor &X) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = X.GetDevice();
-    core::Tensor transformation =
-            core::Tensor::Zeros({4, 4}, dtype, device);
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     auto X_copy = X.Contiguous();
     float *transformation_ptr =
             static_cast<float *>(transformation.GetDataPtr());
     float *X_ptr = static_cast<float *>(X_copy.GetDataPtr());
-    
+
     // Rotation from Pose X
     transformation_ptr[0] = std::cos(X_ptr[2]) * std::cos(X_ptr[1]);
     transformation_ptr[1] =
@@ -96,37 +96,40 @@ core::Tensor ComputeTransformationFromPoseCPU(const core::Tensor &X){
     return transformation;
 }
 
-core::Tensor ComputeTransformationFromPoseCUDA(const core::Tensor &X){
-    core::Dtype dtype = core::Dtype::Float32;
-    core::Device device = X.GetDevice();
-    X.AssertShape({6});
-    X.AssertDtype(dtype);
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+// core::Tensor ComputeTransformationFromPoseCUDA(const core::Tensor &X){
+//     core::Dtype dtype = core::Dtype::Float32;
+//     core::Device device = X.GetDevice();
+//     X.AssertShape({6});
+//     X.AssertDtype(dtype);
+//     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
 
-    // Rotation from Pose X
-    transformation[0][0] = X[2].Cos().Mul(X[1].Cos());
-    transformation[0][1] =
-            -1 * X[2].Sin() * X[0].Cos() + X[2].Cos() * X[1].Sin() * X[0].Sin();
-    transformation[0][2] =
-            X[2].Sin() * X[0].Sin() + X[2].Cos() * X[1].Sin() * X[0].Cos();
-    transformation[1][0] = X[2].Sin() * X[1].Cos();
-    transformation[1][1] =
-            X[2].Cos() * X[0].Cos() + X[2].Sin() * X[1].Sin() * X[0].Sin();
-    transformation[1][2] =
-            -1 * X[2].Cos() * X[0].Sin() + X[2].Sin() * X[1].Sin() * X[0].Cos();
-    transformation[2][0] = -1 * X[1].Sin();
-    transformation[2][1] = X[1].Cos() * X[0].Sin();
-    transformation[2][2] = X[1].Cos() * X[0].Cos();
+//     // Rotation from Pose X
+//     transformation[0][0] = X[2].Cos().Mul(X[1].Cos());
+//     transformation[0][1] =
+//             -1 * X[2].Sin() * X[0].Cos() + X[2].Cos() * X[1].Sin() *
+//             X[0].Sin();
+//     transformation[0][2] =
+//             X[2].Sin() * X[0].Sin() + X[2].Cos() * X[1].Sin() * X[0].Cos();
+//     transformation[1][0] = X[2].Sin() * X[1].Cos();
+//     transformation[1][1] =
+//             X[2].Cos() * X[0].Cos() + X[2].Sin() * X[1].Sin() * X[0].Sin();
+//     transformation[1][2] =
+//             -1 * X[2].Cos() * X[0].Sin() + X[2].Sin() * X[1].Sin() *
+//             X[0].Cos();
+//     transformation[2][0] = -1 * X[1].Sin();
+//     transformation[2][1] = X[1].Cos() * X[0].Sin();
+//     transformation[2][2] = X[1].Cos() * X[0].Cos();
 
-    // Translation from Pose X
-    transformation.SetItem(
-            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
-            X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
+//     // Translation from Pose X
+//     transformation.SetItem(
+//             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4,
+//             1)}, X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3,
+//             1}));
 
-    // Current Implementation DOES NOT SUPPORT SCALE transfomation
-    transformation[3][3] = 1;
-    return transformation;
-}
+//     // Current Implementation DOES NOT SUPPORT SCALE transfomation
+//     transformation[3][3] = 1;
+//     return transformation;
+// }
 
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     core::Dtype dtype = core::Dtype::Float32;
