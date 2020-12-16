@@ -254,7 +254,7 @@ geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
               (!wait && pipe_->poll_for_frames(&frames))))
             return geometry::RGBDImage();
         if (align_depth_to_color) frames = align_to_color_->process(frames);
-        timestamp_ = frames.get_timestamp() * MILLISEC_TO_MICROSEC;
+        timestamp_ = uint64_t(frames.get_timestamp() * MILLISEC_TO_MICROSEC);
         // Copy frame data to Tensors
         const auto& color_frame = frames.get_color_frame();
         current_frame_.color_ = core::Tensor(
