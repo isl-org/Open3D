@@ -1166,7 +1166,7 @@ struct O3DVisualizer::Impl {
                 window_->SetOnTickEvent(on_animation_tick_);
             } else {
                 window_->SetOnTickEvent(
-                    [this]() -> bool { return this->OnAnimationTick(); });
+                        [this]() -> bool { return this->OnAnimationTick(); });
             }
         } else {
             window_->SetOnTickEvent(nullptr);
@@ -1177,31 +1177,29 @@ struct O3DVisualizer::Impl {
         settings.time_edit->SetEnabled(!is_animating);
     }
 
-    void SetOnAnimationTick(O3DVisualizer& o3dvis,
-                            std::function<TickResult(O3DVisualizer&, double, double)> cb) {
+    void SetOnAnimationTick(
+            O3DVisualizer &o3dvis,
+            std::function<TickResult(O3DVisualizer &, double, double)> cb) {
         if (cb) {
-            on_animation_tick_ =
-                [this, &o3dvis, cb]() -> bool {
-                    auto now = Application::GetInstance().Now();
-                    auto dt = now - this->last_animation_tick_clock_time_;
-                    auto total_time =
-                        now - this->start_animation_clock_time_;
-                    this->last_animation_tick_clock_time_ = now;
+            on_animation_tick_ = [this, &o3dvis, cb]() -> bool {
+                auto now = Application::GetInstance().Now();
+                auto dt = now - this->last_animation_tick_clock_time_;
+                auto total_time = now - this->start_animation_clock_time_;
+                this->last_animation_tick_clock_time_ = now;
 
-                    auto result = cb(o3dvis, dt, total_time);
+                auto result = cb(o3dvis, dt, total_time);
 
-                    if (result == TickResult::REDRAW) {
-                        this->scene_->ForceRedraw();
-                        return true;
-                    } else {
-                        return false;
-                    }
-                };
+                if (result == TickResult::REDRAW) {
+                    this->scene_->ForceRedraw();
+                    return true;
+                } else {
+                    return false;
+                }
+            };
         } else {
             on_animation_tick_ = nullptr;
         }
     }
-
 
     void SetUIState(const UIState &new_state) {
         int point_size_changed = (new_state.point_size != ui_state_.point_size);
@@ -1822,7 +1820,8 @@ O3DVisualizer::UIState O3DVisualizer::GetUIState() const {
     return impl_->ui_state_;
 }
 
-void O3DVisualizer::SetOnAnimationFrame(std::function<void(O3DVisualizer&, double)> cb) {
+void O3DVisualizer::SetOnAnimationFrame(
+        std::function<void(O3DVisualizer &, double)> cb) {
     if (cb) {
         impl_->on_animation_ = [this, cb](double t) { cb(*this, t); };
     } else {
@@ -1830,7 +1829,8 @@ void O3DVisualizer::SetOnAnimationFrame(std::function<void(O3DVisualizer&, doubl
     }
 }
 
-void O3DVisualizer::SetOnAnimationTick(std::function<TickResult(O3DVisualizer&, double, double)> cb) {
+void O3DVisualizer::SetOnAnimationTick(
+        std::function<TickResult(O3DVisualizer &, double, double)> cb) {
     impl_->SetOnAnimationTick(*this, cb);
 }
 
