@@ -43,34 +43,39 @@ namespace open3d {
 namespace t {
 namespace io {
 
+/// RealSense camera discovery, configuration, streaming and recording
 class RealSenseSensor : public RGBDSensor {
 public:
+    /// Query all connected RealSense cameras for their capabilities.
+    ///
+    /// \return A list of devices and their supported capabilities.
     static std::vector<RealSenseValidConfigs> EnumerateDevices();
+    /// List all RealSense cameras connected to the system along with their
+    /// capabilities. Use this listing to select an appropriate configuration
+    /// for a camera.
     static bool ListDevices();
 
-    /** Initialize with default settings
-     */
+    /// Default constructor. Initialize with default settings.
     RealSenseSensor();
     RealSenseSensor(const RealSenseSensor &) = delete;
     RealSenseSensor &operator=(const RealSenseSensor &) = delete;
     virtual ~RealSenseSensor() override;
 
-    /** Initialize sensor (optional).
-     *
-     * Configure sensor with custom settings. If this is skipped, default
-     * settings will be used. You can enable recording to a bag file by
-     * specifying a filename.
-     * \param sensor_config Camera configuration, such as resolution and
-     * framerate. A serial number can be entered here to connect to a specific
-     * camera.
-     * \param sensor_index Connect to a camera at this position in the
-     * enumeration of RealSense cameras that are currently connected. Use
-     * EnumerateDevices() or ListDevices() to obtain a list of connected
-     * cameras. This is ignored if \p sensor_config contains a serial entry. If
-     * \param filename Save frames to a bag file
-     * \return true if a camera was found and initialized with the given
-     * settings, else false
-     */
+    /// Initialize sensor (optional).
+    ///
+    /// Configure sensor with custom settings. If this is skipped, default
+    /// settings will be used. You can enable recording to a bag file by
+    /// specifying a filename.
+    /// \param sensor_config Camera configuration, such as resolution and
+    /// framerate. A serial number can be entered here to connect to a specific
+    /// camera.
+    /// \param sensor_index Connect to a camera at this position in the
+    /// enumeration of RealSense cameras that are currently connected. Use
+    /// EnumerateDevices() or ListDevices() to obtain a list of connected
+    /// cameras. This is ignored if \p sensor_config contains a serial entry.
+    /// \param filename Save frames to a bag file
+    /// \return true if a camera was found and initialized with the given
+    /// settings, else false.
     virtual bool InitSensor(const RealSenseSensorConfig &sensor_config =
                                     RealSenseSensorConfig{},
                             size_t sensor_index = 0,
@@ -84,48 +89,59 @@ public:
                 sensor_index, filename);
     }
 
-    /// Start capturing synchronized depth and color frames
-    /// \p start_record start recording to the specified bag file as well
+    /// Start capturing synchronized depth and color frames.
+    /// \param start_record start recording to the specified bag file as well.
     virtual bool StartCapture(bool start_record = false) override;
 
-    /// Pause recording to the bag file
+    /// Pause recording to the bag file.
     virtual void PauseRecord() override;
 
     /// Resume recording to the bag file. The file will contain discontinuous
-    /// segments
+    /// segments.
     virtual void ResumeRecord() override;
 
-    /** Acquire the next synchronized RGBD frameset from the camera.
-     *
-     * \param align_depth_to_color Enable aligning WFOV depth image to
-     * the color image in visualizer.
-     * \param wait If true wait for the next frame set, else return immediately
-     * with an empty RGBDImage if it is not yet available
-     */
+    ///  Acquire the next synchronized RGBD frameset from the camera.
+    ///
+    /// \param wait If true wait for the next frame set, else return immediately
+    /// with an empty RGBDImage if it is not yet available.
+    /// \param align_depth_to_color Enable aligning WFOV depth image to
+    /// the color image in visualizer.
     virtual geometry::RGBDImage CaptureFrame(
             bool wait = true, bool align_depth_to_color = true) override;
-    /// Get current timestamp (in us).
-    virtual uint64_t GetTimestamp() const override;
 
-    /// Stop capturing frames
+    /// Get current timestamp (in us)
+    ///
+    /// See
+    /// https://intelrealsense.github.io/librealsense/doxygen/classrs2_1_1frame.html#a25f71d45193f2f4d77960320276b83f1
+    /// for more details.
+    virtual uint64_t GetTimestamp() const override { return timestamp_; }
+
+    /// Stop capturing frames.
     virtual void StopCapture() override;
 
-    /// Get const reference to the metadata of the RGBD video capture
-    virtual RGBDVideoMetadata &GetMetadata() const override;
+    /// Get metadata of the RealSense video capture.
+    virtual const RGBDVideoMetadata &GetMetadata() const override {
+        return metadata_;
+    }
 
-    /// Return filename being written
+    /// Get filename being written.
     virtual std::string GetFilename() const override { return filename_; };
+
+    /// Text Description.
+    using RGBDSensor::ToString;
 
 private:
     bool enable_recording_ = false, is_recording_ = false,
          is_capturing_ = false;
-    core::Dtype dt_color_, dt_depth_;
-    uint8_t channels_color_;
     std::string filename_;
     geometry::RGBDImage current_frame_;
+    uint64_t timestamp_ = 0;
+    RGBDVideoMetadata metadata_;
     std::unique_ptr<rs2::pipeline> pipe_;
     std::unique_ptr<rs2::align> align_to_color_;
     std::unique_ptr<rs2::config> rs_config_;
+
+    static const uint64_t MILLISEC_TO_MICROSEC = 1000;
 };
 
 }  // namespace io

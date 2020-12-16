@@ -26,10 +26,12 @@
 
 #include "open3d/t/io/sensor/realsense/RealSenseSensor.h"
 
-#include <librealsense2/rs.hpp>
+#include <json/json.h>
+
 #include <string>
 #include <vector>
 
+#include "open3d/t/io/sensor/realsense/RealSense-private.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -190,22 +192,9 @@ bool RealSenseSensor::StartCapture(bool start_record) {
     }
     try {
         const auto profile = pipe_->start(*rs_config_);
-        const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
-                                      .as<rs2::video_stream_profile>();
-        dt_depth_ = RealSenseSensorConfig::get_dtype_channels(
-                            (int)rs_depth.format())
-                            .first;
-        if (dt_depth_ != core::Dtype::UInt16) {
-            utility::LogError("Only 16 bit unsigned int depth is supported!");
-        }
-        const auto rs_color = profile.get_stream(RS2_STREAM_COLOR)
-                                      .as<rs2::video_stream_profile>();
-        std::tie(dt_color_, channels_color_) =
-                RealSenseSensorConfig::get_dtype_channels(
-                        (int)rs_color.format());
-        if (dt_color_ != core::Dtype::UInt8) {
-            utility::LogError("Only 8 bit unsigned int color is supported!");
-        }
+        metadata_.ConvertFromJsonValue(
+                RealSenseSensorConfig::GetMetadataJson(profile));
+        RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
 
         is_capturing_ = true;
         utility::LogInfo(
@@ -254,17 +243,19 @@ geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
               (!wait && pipe_->poll_for_frames(&frames))))
             return geometry::RGBDImage();
         if (align_depth_to_color) frames = align_to_color_->process(frames);
+        timestamp_ = frames.get_timestamp() * MILLISEC_TO_MICROSEC;
         // Copy frame data to Tensors
         const auto& color_frame = frames.get_color_frame();
         current_frame_.color_ = core::Tensor(
                 static_cast<const uint8_t*>(color_frame.get_data()),
                 {color_frame.get_height(), color_frame.get_width(),
-                 channels_color_},
-                dt_color_);
+                 metadata_.color_channels_},
+                metadata_.color_dt_);
         const auto& depth_frame = frames.get_depth_frame();
         current_frame_.depth_ = core::Tensor(
                 static_cast<const uint16_t*>(depth_frame.get_data()),
-                {depth_frame.get_height(), depth_frame.get_width()}, dt_depth_);
+                {depth_frame.get_height(), depth_frame.get_width()},
+                metadata_.depth_dt_);
         return current_frame_;
     } catch (const rs2::error& e) {
         utility::LogError("CaptureFrame() failed: {}: {}",

@@ -32,26 +32,93 @@ message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
 set(PACKAGE_NAME pybind)
 
-file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
+set(PY_ALL_SOURCE_FILES
+    # Utility
+    "${CMAKE_CURRENT_SOURCE_DIR}/pybind_utils.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/docstring.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utility/console.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utility/eigen.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utility/utility.cpp"
+    # Core
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/hashmap.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/linalg.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/kernel.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/core.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/blob.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/tensorlist.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/device.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/size_vector.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/cuda_utils.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/tensor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/nns/nearest_neighbor_search.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/dtype.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/tensor_key.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/camera/camera.cpp"
+    # Geometry
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/pointcloud.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/trianglemesh.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/voxelgrid.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/tetramesh.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/image.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/keypoint.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/kdtreeflann.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/lineset.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/boundingvolume.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/octree.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/meshbase.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/geometry/halfedgetrianglemesh.cpp"
+    # IO
+    "${CMAKE_CURRENT_SOURCE_DIR}/io/io.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/io/class_io.cpp"
+    # Pipelines
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/registration/registration.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/registration/global_optimization.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/registration/robust_kernels.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/registration/feature.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/pipelines.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/integration/integration.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/color_map/color_map.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipelines/odometry/odometry.cpp"
+    # Tensor Geometry
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/geometry/pointcloud.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/geometry/geometry.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/geometry/image.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/geometry/tensormap.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/open3d_pybind.cpp"
+    # Tensor IO
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/t.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/io/io.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/io/sensor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/t/io/class_io.cpp"
+    # ML
+    "${CMAKE_CURRENT_SOURCE_DIR}/ml/ml.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ml/contrib/contrib.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ml/contrib/contrib_subsample.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ml/contrib/contrib_nns.cpp"
+    # Visualization
+    "${CMAKE_CURRENT_SOURCE_DIR}/visualization/visualizer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/visualization/visualization.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/visualization/renderoption.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/visualization/viewcontrol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/visualization/utility.cpp"
+    )
 
-if (NOT BUILD_GUI)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+if (BUILD_GUI)
+    list(APPEND PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/o3dvisualizer.cpp")
 endif()
 
-if (NOT BUILD_AZURE_KINECT)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+if (BUILD_AZURE_KINECT)
+    list(APPEND PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
 endif()
 
-if (NOT BUILD_RPC_INTERFACE)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"
-        )
+if (BUILD_RPC_INTERFACE)
+    list(APPEND PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp")
 endif()
 
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x

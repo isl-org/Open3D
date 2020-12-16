@@ -121,8 +121,6 @@ public:
 private:
     std::string filename_;
     RGBDVideoMetadata metadata_;
-    core::Dtype dt_color_, dt_depth_;
-    uint8_t channels_color_;
 
     bool is_eof_ = false;     ///< Write by frame_reader_thread. Non-atomic OK
                               ///< since 1 byte.

@@ -29,13 +29,15 @@
 #include <json/json.h>
 
 #include <cstdlib>
-#include <librealsense2/rs.hpp>
 #include <map>
 #include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/t/io/sensor/RGBDVideoMetadata.h"
+#include "open3d/t/io/sensor/realsense/RealSense-private.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -184,11 +186,6 @@ bool RealSenseSensorConfig::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
-void RealSenseSensorConfig::ConvertFromNativeConfig(
-        const rs2::config &rs_config) {
-    utility::LogError("Not Implemented!");
-}
-
 rs2::config RealSenseSensorConfig::ConvertToNativeConfig() const {
     rs2::config cfg;
     auto it = config_.find("serial");
@@ -226,12 +223,66 @@ rs2::config RealSenseSensorConfig::ConvertToNativeConfig() const {
     return cfg;
 }
 
-bool RealSenseSensorConfig::IsValidConfig() const {
-    // FIXME
-    utility::LogInfo("TODO: Only 16 bit unsigned int depth is supported!");
-    utility::LogInfo("TODO: Only 8 bit unsigned int color is supported!");
-    return true;
-    // ConvertToNativeConfig().can_resolve();
+void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
+                                           RGBDVideoMetadata &metadata) {
+    const auto rs_color = profile.get_stream(RS2_STREAM_COLOR)
+                                  .as<rs2::video_stream_profile>();
+    std::tie(metadata.color_dt_, metadata.color_channels_) =
+            RealSenseSensorConfig::get_dtype_channels((int)rs_color.format());
+    if (metadata.color_dt_ != core::Dtype::UInt8) {
+        utility::LogError("Only 8 bit unsigned int color is supported!");
+    }
+    const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
+                                  .as<rs2::video_stream_profile>();
+    metadata.depth_dt_ =
+            RealSenseSensorConfig::get_dtype_channels((int)rs_depth.format())
+                    .first;
+    if (metadata.depth_dt_ != core::Dtype::UInt16) {
+        utility::LogError("Only 16 bit unsigned int depth is supported!");
+    }
+}
+
+Json::Value RealSenseSensorConfig::GetMetadataJson(
+        const rs2::pipeline_profile &profile) {
+    if (!profile) {
+        utility::LogError("Invalid RealSense pipeline profile.");
+    }
+    Json::Value value;
+
+    const auto rs_device = profile.get_device();
+    const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
+                                  .as<rs2::video_stream_profile>();
+    const auto rs_color = profile.get_stream(RS2_STREAM_COLOR)
+                                  .as<rs2::video_stream_profile>();
+
+    rs2_intrinsics rgb_intr = rs_color.get_intrinsics();
+    camera::PinholeCameraIntrinsic pinhole_camera;
+    pinhole_camera.SetIntrinsics(rgb_intr.width, rgb_intr.height, rgb_intr.fx,
+                                 rgb_intr.fy, rgb_intr.ppx, rgb_intr.ppy);
+    // TODO: Add support for distortion
+    pinhole_camera.ConvertToJsonValue(value);
+
+    value["device_name"] = rs_device.get_info(RS2_CAMERA_INFO_NAME);
+    value["serial_number"] = rs_device.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+    value["depth_format"] = enum_to_string(rs_depth.format())
+                                    .substr(11);  // remove RS2_FORMAT_ prefix
+    value["color_format"] = enum_to_string(rs_color.format())
+                                    .substr(11);  // remove RS2_FORMAT_ prefix
+    value["fps"] = rs_color.fps();
+    if (value["fps"] != rs_depth.fps()) {
+        utility::LogError(
+                "Different frame rates for color ({} fps) and depth ({} fps) "
+                "streams is not supported.",
+                value["fps"], rs_depth.fps());
+    }
+    if (rs_device.is<rs2::playback>()) {
+        value["stream_length_usec"] =
+                std::chrono::duration_cast<std::chrono::microseconds>(
+                        rs_device.as<rs2::playback>().get_duration())
+                        .count();
+    }
+
+    return value;
 }
 
 }  // namespace io
