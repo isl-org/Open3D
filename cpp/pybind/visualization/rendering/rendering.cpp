@@ -279,6 +279,33 @@ void pybind_rendering_classes(py::module &m) {
             .def("set_sun_light", &Scene::SetSunLight,
                  "Sets the parameters of the sun light: direction, "
                  "color, intensity")
+            .def("add_point_light", &Scene::AddPointLight,
+                 "Adds a point light to the scene: add_point_light(name, "
+                 "color, position, intensity, falloff, cast_shadows)")
+            .def("add_spot_light", &Scene::AddSpotLight,
+                 "Adds a spot light to the scene: add_point_light(name, "
+                 "color, position, direction, intensity, falloff, "
+                 "inner_cone_angle, outer_cone_angle, cast_shadows)")
+            .def("add_directional_light", &Scene::AddDirectionalLight,
+                 "Adds a directional light to the scene: add_point_light(name, "
+                 "color, intensity, cast_shadows)")
+            .def("remove_light", &Scene::RemoveLight,
+                 "Removes the named light from the scene: remove_light(name)")
+            .def("update_light_color", &Scene::UpdateLightColor,
+                 "Changes a point, spot, or directional light's color")
+            .def("update_light_position", &Scene::UpdateLightPosition,
+                 "Changes a point or spot light's position")
+            .def("update_light_direction", &Scene::UpdateLightDirection,
+                 "Changes a spot or directional light's direction")
+            .def("update_light_intensity", &Scene::UpdateLightIntensity,
+                 "Changes a point, spot or directional light's intensity")
+            .def("update_light_falloff", &Scene::UpdateLightFalloff,
+                 "Changes a point or spot light's falloff")
+            .def("update_light_cone_angles", &Scene::UpdateLightConeAngles,
+                 "Changes a spot light's inner and outer cone angles")
+            .def("enable_light_shadow", &Scene::EnableLightShadow,
+                 "Changes whether a point, spot, or directional light can "
+                 "cast shadows:  enable_light_shadow(name, can_cast_shadows)")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
