@@ -166,6 +166,8 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
             unlocker, scene->GetView(), scene->GetScene(), width, height);
 }
 
+enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED }; 
+
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(m, "Application",
@@ -537,6 +539,25 @@ void pybind_gui_classes(py::module &m) {
     //  2) if the object is never added, the memory will be leaked.
     py::class_<Widget, UnownedPointer<Widget>> widget(m, "Widget",
                                                       "Base widget class");
+    py::enum_<EventCallbackResult> widget_event_callback_result(widget, "EventCallbackResult",
+                                                   "Returned by event handlers",
+                                                   py::arithmetic());
+    widget_event_callback_result
+                       .value("IGNORED", EventCallbackResult::IGNORED,
+                              "Event handler ignored the event, widget will "
+                              "handle event normally")
+                       .value("HANDLED", EventCallbackResult::HANDLED,
+                              "Event handler handled the event, but widget "
+                              "will still handle the event normally. This is "
+                              "useful when you are augmenting base "
+                              "functionality")
+                       .value("CONSUMED", EventCallbackResult::CONSUMED,
+                              "Event handler consumed the event, event "
+                              "handling stops, widget will not handle the "
+                              "event. This is useful when you are replacing "
+                              "functionality")
+                       .export_values();
+
     widget.def(py::init<>())
             .def("__repr__",
                  [](const Widget &w) {
@@ -843,7 +864,64 @@ void pybind_gui_classes(py::module &m) {
                     "The value of the progress bar, ranges from 0.0 to 1.0");
 
     // ---- SceneWidget ----
-    py::class_<SceneWidget, UnownedPointer<SceneWidget>, Widget> scene(
+    class PySceneWidget : public SceneWidget {
+        using Super = SceneWidget;
+    public:
+        void SetOnMouse(std::function<int(const MouseEvent&)> f) {
+            on_mouse_ = f;
+        }
+        void SetOnKey(std::function<int(const KeyEvent&)> f) {
+            on_key_ = f;
+        }
+
+        Widget::EventResult Mouse(const MouseEvent& e) override {
+            if (on_mouse_) {
+                switch (EventCallbackResult(on_mouse_(e))) {
+                    case EventCallbackResult::CONSUMED:
+                        return Widget::EventResult::CONSUMED;
+                    case EventCallbackResult::HANDLED: {
+                        auto result = Super::Mouse(e);
+                        if (result == Widget::EventResult::IGNORED) {
+                            result = Widget::EventResult::CONSUMED;
+                        }
+                        return result;
+                    }
+                    case EventCallbackResult::IGNORED:
+                    default:
+                        return Super::Mouse(e);
+                }
+            } else {
+                return Super::Mouse(e);
+            }
+        }
+
+        Widget::EventResult Key(const KeyEvent& e) override {
+            if (on_key_) {
+                switch (EventCallbackResult(on_key_(e))) {
+                    case EventCallbackResult::CONSUMED:
+                        return Widget::EventResult::CONSUMED;
+                    case EventCallbackResult::HANDLED: {
+                        auto result = Super::Key(e);
+                        if (result == Widget::EventResult::IGNORED) {
+                            result = Widget::EventResult::CONSUMED;
+                        }
+                        return result;
+                    }
+                    case EventCallbackResult::IGNORED:
+                    default:
+                        return Super::Key(e);
+                }
+            } else {
+                return Super::Key(e);
+            }
+        }
+
+    private:
+        std::function<int(const MouseEvent&)> on_mouse_;
+        std::function<int(const KeyEvent&)> on_key_;
+    };
+
+    py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(
             m, "SceneWidget", "Displays 3D content");
     py::enum_<SceneWidget::Controls> scene_ctrl(scene, "Controls",
                                                 py::arithmetic());
@@ -865,22 +943,32 @@ void pybind_gui_classes(py::module &m) {
               "Creates an empty SceneWidget. Assign a Scene with the 'scene' "
               "property")
             .def_property(
-                    "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
+                    "scene", &PySceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
-            .def("enable_scene_caching", &SceneWidget::EnableSceneCaching,
+            .def("enable_scene_caching", &PySceneWidget::EnableSceneCaching,
                  "Enable/Disable caching of scene content when the view or "
                  "model is not changing. Scene caching can help improve UI "
                  "responsiveness for large models and point clouds")
-            .def("force_redraw", &SceneWidget::ForceRedraw,
+            .def("force_redraw", &PySceneWidget::ForceRedraw,
                  "Ensures scene redraws even when scene caching is enabled.")
-            .def("set_view_controls", &SceneWidget::SetViewControls,
+            .def("set_view_controls", &PySceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
-            .def("setup_camera", &SceneWidget::SetupCamera,
+            .def("setup_camera", &PySceneWidget::SetupCamera,
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, "
                  "center_of_rotation)")
+            .def("set_on_mouse", &PySceneWidget::SetOnMouse,
+                 "Sets a callback for mouse events. This callback is passed "
+                 "a MouseEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallackResult.CONSUMED.")
+            .def("set_on_key", &PySceneWidget::SetOnKey,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallackResult.CONSUMED.")
             .def("set_on_sun_direction_changed",
-                 &SceneWidget::SetOnSunDirectionChanged,
+                 &PySceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
                  "ROTATE_SUN control mode). Called with one argument, the "
                  "[i, j, k] vector of the new sun direction");
@@ -1325,6 +1413,7 @@ void pybind_gui_classes(py::module &m) {
 
 void pybind_gui(py::module &m) {
     py::module m_gui = m.def_submodule("gui");
+    pybind_gui_events(m_gui);
     pybind_gui_classes(m_gui);
 }
 
