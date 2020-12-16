@@ -77,7 +77,7 @@ public:
 
     void SetPostProcessing(bool enabled) override;
     void SetAmbientOcclusion(bool enabled, bool ssct_enabled = false) override;
-    void SetAntiAliasing(bool enabled, bool temporal = false);
+    void SetAntiAliasing(bool enabled, bool temporal = false) override;
     void SetShadowing(bool enabled, ShadowType type) override;
 
     void SetColorGrading(const ColorGradingParams& color_grading) override;
