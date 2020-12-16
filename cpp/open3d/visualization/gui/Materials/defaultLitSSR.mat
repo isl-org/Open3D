@@ -56,5 +56,6 @@ fragment {
         material.anisotropy = materialParams.anisotropy;
         material.transmission = materialParams.transmission;
         material.thickness = materialParams.thickness;
+        material.absorption = materialParams.absorption;
     }
 }
