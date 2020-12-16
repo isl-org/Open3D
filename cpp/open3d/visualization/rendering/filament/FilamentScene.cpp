@@ -743,6 +743,14 @@ void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
     auto& material = geom_mi.properties;
     auto& maps = geom_mi.maps;
 
+    auto absorption_float3 = filament::Color::absorptionAtDistance(
+            filament::math::float3(material.absorption_color.x(),
+                                   material.absorption_color.y(),
+                                   material.absorption_color.z()),
+            material.absorption_distance);
+    Eigen::Vector3f absorption(absorption_float3.x, absorption_float3.y,
+                               absorption_float3.z);
+
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", material.base_color, false)
             .SetParameter("pointSize", material.point_size)
@@ -755,7 +763,7 @@ void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
             .SetParameter("anisotropy", material.base_anisotropy)
             .SetParameter("thickness", material.thickness)
             .SetParameter("transmission", material.transmission)
-            .SetParameter("absorption", material.absorption)
+            .SetParameter("absorption", absorption)
             .SetTexture("albedo", maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("normalMap", maps.normal_map,
