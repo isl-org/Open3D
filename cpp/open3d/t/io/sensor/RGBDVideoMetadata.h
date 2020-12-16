@@ -89,6 +89,9 @@ public:
     /// Pixel Dtype for depth data.
     core::Dtype depth_dt_;
 
+    /// Value of one depth unit in meters.
+    double depth_scale_;
+
     /// Number of color channels.
     uint8_t color_channels_;
 };

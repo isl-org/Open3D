@@ -75,16 +75,19 @@ void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("RealSenseBagReader --input input.bag [--output] [path]");
+    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output] [path]");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-
     if (!utility::ProgramOptionExists(argc, argv, "--input")) {
         PrintUsage();
         return 1;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "-V")) {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    } else {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
     std::string bag_filename =
             utility::GetProgramOptionAsString(argc, argv, "--input");

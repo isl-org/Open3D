@@ -104,7 +104,7 @@ void pybind_sensor(py::module &m) {
                                     map_shared_argument_docstrings);
 
     // Class RGBD sensor
-    py::class_<RGBDSensor, std::shared_ptr<RGBDSensor>> rgbd_sensor(
+    py::class_<RGBDSensor> rgbd_sensor(
             m, "RGBDSensor", "Interface class for control of RGBD cameras.");
     rgbd_sensor.def("__repr__", &RGBDSensor::ToString);
 
@@ -176,11 +176,10 @@ void pybind_sensor(py::module &m) {
                            "list of valid values.");
 
     // Class RealSenseSensor
-    py::class_<RealSenseSensor, std::shared_ptr<RealSenseSensor>, RGBDSensor>
-            realsense_sensor(
-                    m, "RealSenseSensor",
-                    "RealSense camera discovery, configuration, streaming and "
-                    "recording");
+    py::class_<RealSenseSensor, RGBDSensor> realsense_sensor(
+            m, "RealSenseSensor",
+            "RealSense camera discovery, configuration, streaming and "
+            "recording");
     realsense_sensor.def(py::init<>(), "Initialize with default settings.")
             .def_static("list_devices", &RealSenseSensor::ListDevices,
                         "List all RealSense cameras connected to the system "

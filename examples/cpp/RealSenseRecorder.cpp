@@ -46,7 +46,7 @@ void PrintUsage() {
             "stream format settings.");
     utility::LogInfo("Usage:");
     utility::LogInfo(
-            "RealSenseRecorder [-h|--help] [-l|--list-devices] [--align]\n"
+            "RealSenseRecorder [-h|--help] [-V] [-l|--list-devices] [--align]\n"
             "[--record rgbd_video_file.bag] [-c|--config rs-config.json]");
 }
 
@@ -61,6 +61,11 @@ int main(int argc, char **argv) {
         utility::ProgramOptionExists(argc, argv, "-l")) {
         RealSenseSensor::ListDevices();
         return 0;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "-V")) {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    } else {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
     bool align_streams = false;
     /* visualization::gui::Size color_size(0, 0), depth_size(0, 0); */
@@ -86,52 +91,9 @@ int main(int argc, char **argv) {
     open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
 
     RealSenseSensor rs;
+    rs.ListDevices();
     rs.InitSensor(rs_cfg, 0, bag_file);
-
-    /* // Get device details */
-    /* utility::LogInfo("Using device 0, an {}", */
-    /*                  rs_device.get_info(RS2_CAMERA_INFO_NAME)); */
-    /* utility::LogInfo("    Serial number: {}", */
-    /*                  rs_device.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER)); */
-    /* utility::LogInfo("    Firmware version: {}", */
-    /*                  rs_device.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION));
-     */
-    /* utility::LogInfo(""); */
-
-    /* // Get stream configuration */
-    /* const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH) */
-    /*                               .as<rs2::video_stream_profile>(); */
-    /* const auto rs_color = profile.get_stream(RS2_STREAM_COLOR) */
-    /*                               .as<rs2::video_stream_profile>(); */
-    /* rs2_extrinsics extr_depth2color = rs_depth.get_extrinsics_to(rs_color);
-     */
-    /* utility::LogInfo("depth->color extrinsics: Rotation"); */
-    /* for (int i = 0; i < 9; i++) { */
-    /*     utility::LogInfo("{:.6f} ", extr_depth2color.rotation[i]); */
-    /* } */
-    /* utility::LogInfo("depth->color extrinsics: Translation"); */
-    /* for (int i = 0; i < 3; i++) { */
-    /*     utility::LogInfo("{:.6f} ", extr_depth2color.translation[i]); */
-    /* } */
-    /* utility::LogInfo(""); */
-
-    /* for (const auto &rs_stream : {rs_depth, rs_color}) { */
-    /*     rs2_intrinsics intr = rs_stream.get_intrinsics(); */
-    /*     if (rs_stream.unique_id() == rs_depth.unique_id()) */
-    /*         depth_size = {intr.width, intr.height}; */
-    /*     else if (rs_stream.unique_id() == rs_color.unique_id()) */
-    /*         color_size = {intr.width, intr.height}; */
-    /*     utility::LogInfo("Instrinsics for stream {}",
-     * rs_stream.stream_name()); */
-    /*     utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", intr.width,
-     */
-    /*                      intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy);
-     */
-    /*     for (int i = 0; i < 5; i++) { */
-    /*         utility::LogInfo("{:.6f} ", intr.coeffs[i]); */
-    /*     } */
-    /*     utility::LogInfo(""); */
-    /* } */
+    std::cout << rs.GetMetadata().ToString() << std::endl;
 
     // Create windows to show depth and color streams
     bool flag_record = false, flag_start = false, flag_exit = false;
@@ -224,7 +186,9 @@ int main(int argc, char **argv) {
         depth_vis.UpdateRender();
         color_vis.UpdateRender();
 
-        if (frame_id++ % 30 == 0) utility::LogInfo("Frame {}", frame_id - 1);
+        if (frame_id++ % 30 == 0)
+            utility::LogInfo("Time: {}s, Frame {}",
+                             double(rs.GetTimestamp()) * 1e-6, frame_id - 1);
 
     } while (!flag_exit);
 

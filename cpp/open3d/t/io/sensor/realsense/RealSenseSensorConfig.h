@@ -103,7 +103,7 @@ public:
     /// Convert rs2_format enum to Open3D Dtype and number of channels
     /// \param rs2_format_enum An int is accepted instead of rs2_format enum
     /// to prevent dependence on the realsense headers.
-    static std::pair<core::Dtype, size_t> get_dtype_channels(
+    static std::pair<core::Dtype, uint8_t> get_dtype_channels(
             int rs2_format_enum);
 
     // To avoid including RealSense or json header, config is stored in a

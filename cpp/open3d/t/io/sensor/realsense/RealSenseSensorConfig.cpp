@@ -132,7 +132,7 @@ STRINGIFY_ENUM(rs2_sr300_visual_preset, {
 });
 // clang-format on
 
-std::pair<core::Dtype, size_t> RealSenseSensorConfig::get_dtype_channels(
+std::pair<core::Dtype, uint8_t> RealSenseSensorConfig::get_dtype_channels(
         int rs2_format_enum) {
     static const std::unordered_map<rs2_format, core::Dtype> format_dtype = {
             {RS2_FORMAT_Z16, core::Dtype::UInt16},
@@ -266,6 +266,8 @@ Json::Value RealSenseSensorConfig::GetMetadataJson(
     value["serial_number"] = rs_device.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
     value["depth_format"] = enum_to_string(rs_depth.format())
                                     .substr(11);  // remove RS2_FORMAT_ prefix
+    value["depth_scale"] =
+            rs_device.first<rs2::depth_sensor>().get_depth_scale();
     value["color_format"] = enum_to_string(rs_color.format())
                                     .substr(11);  // remove RS2_FORMAT_ prefix
     value["fps"] = rs_color.fps();

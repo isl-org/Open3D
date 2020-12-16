@@ -126,7 +126,9 @@ std::vector<RealSenseValidConfigs> RealSenseSensor::EnumerateDevices() {
 RealSenseSensor::RealSenseSensor()
     : pipe_{new rs2::pipeline},
       align_to_color_{new rs2::align(rs2_stream::RS2_STREAM_COLOR)},
-      rs_config_{new rs2::config} {}
+      rs_config_{new rs2::config} {
+    *rs_config_ = RealSenseSensorConfig().ConvertToNativeConfig();
+}
 
 RealSenseSensor::~RealSenseSensor() { StopCapture(); }
 
@@ -144,8 +146,9 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
                     "Using default device, if any.",
                     sensor_index, device_list.size());
         } else
-            rs_config_->enable_device(device_list[sensor_index].get_info(
-                    RS2_CAMERA_INFO_SERIAL_NUMBER));
+            rs_config_->enable_device(
+                    device_list[(uint32_t)sensor_index].get_info(
+                            RS2_CAMERA_INFO_SERIAL_NUMBER));
     }
     if (!filename.empty()) {
         rs_config_->enable_record_to_file(filename);
@@ -166,22 +169,29 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
     if (product_line == "L500") {
         rs2_l500_visual_preset option;
         enum_from_string(option_str, option);
-        dev.set_option(RS2_OPTION_VISUAL_PRESET, option);
+        if (option != RS2_L500_VISUAL_PRESET_DEFAULT)
+            dev.set_option(RS2_OPTION_VISUAL_PRESET, (float)option);
     } else if (product_line == "RS400") {
         rs2_rs400_visual_preset option;
         enum_from_string(option_str, option);
-        dev.set_option(RS2_OPTION_VISUAL_PRESET, option);
+        if (option != RS2_RS400_VISUAL_PRESET_DEFAULT)
+            dev.set_option(RS2_OPTION_VISUAL_PRESET, (float)option);
     } else if (product_line == "SR300") {
         rs2_sr300_visual_preset option;
         enum_from_string(option_str, option);
-        dev.set_option(RS2_OPTION_VISUAL_PRESET, option);
+        if (option != RS2_SR300_VISUAL_PRESET_DEFAULT)
+            dev.set_option(RS2_OPTION_VISUAL_PRESET, (float)option);
     }
+    metadata_.ConvertFromJsonValue(
+            RealSenseSensorConfig::GetMetadataJson(profile));
+    RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
     return true;
 
 } catch (const rs2::error& e) {
     utility::LogWarning(
-            "Invalid RealSense camera configuration specified, or camera "
-            "not connected.");
+            "Invalid RealSense camera configuration, or camera not connected:"
+            "\n{}: {}",
+            rs2_exception_type_to_string(e.get_type()), e.what());
     return false;
 }
 
@@ -192,6 +202,7 @@ bool RealSenseSensor::StartCapture(bool start_record) {
     }
     try {
         const auto profile = pipe_->start(*rs_config_);
+        // This step is repeated here since the user may bypass InitSensor()
         metadata_.ConvertFromJsonValue(
                 RealSenseSensorConfig::GetMetadataJson(profile));
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
