@@ -60,7 +60,10 @@ public:
         ColorMapZ
     };
 
-    enum class ShadowType : std::uint8_t { kPCF, kVSM };
+    enum class ShadowType : std::uint8_t {
+        kPCF, /* Percentage closer filter, the default */
+        kVSM  /* Variance shadow map */
+    };
 
     virtual ~View() {}
 
