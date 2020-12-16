@@ -46,6 +46,35 @@ INSTANTIATE_TEST_SUITE_P(
         RegistrationPermuteDevicePairs,
         testing::ValuesIn(RegistrationPermuteDevicePairs::TestCases()));
 
+TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // Initial Transformation input for Tensor
+    core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
+
+    t::pipelines::registration::ICPConvergenceCriteria convergence_criteria;
+
+    EXPECT_EQ(convergence_criteria.max_iteration_, 30);
+    EXPECT_DOUBLE_EQ(convergence_criteria.relative_fitness_, 1e-6);
+    EXPECT_DOUBLE_EQ(convergence_criteria.relative_rmse_, 1e-6);
+}
+
+TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // Initial Transformation input for Tensor
+    core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
+
+    t::pipelines::registration::RegistrationResult reg_result(init_trans_t);
+
+    EXPECT_DOUBLE_EQ(reg_result.inlier_rmse_, 0.0);
+    EXPECT_DOUBLE_EQ(reg_result.fitness_, 0.0);
+    EXPECT_EQ(reg_result.transformation_.ToFlatVector<float_t>(),
+              init_trans_t.ToFlatVector<float_t>());
+}
+
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
@@ -94,15 +123,12 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     double max_correspondence_dist = 1.25;
 
     // Tensor Evaluation
-    // t::pipelines::registration::RegistrationResult
-    // evaluation_t(init_trans_t);
     auto evaluation_t =
             open3d::t::pipelines::registration::EvaluateRegistration(
                     source_device, target_device, max_correspondence_dist,
                     init_trans_t);
 
-    // open3d::pipelines::registration::RegistrationResult
-    // evaluation_l(init_trans_l);
+    // Legacy Evaluation
     auto evaluation_l = open3d::pipelines::registration::EvaluateRegistration(
             source_l_down, target_l_down, max_correspondence_dist,
             init_trans_l);
@@ -151,7 +177,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     double relative_rmse = 1e-6;
     int max_iterations = 2;
 
-    // PointToPoint
+    // PointToPoint - Tensor
     auto reg_p2p_t = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans_t,
             open3d::t::pipelines::registration::
@@ -159,6 +185,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
             open3d::t::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
 
+    // PointToPoint - Legacy
     auto reg_p2p_l = open3d::pipelines::registration::RegistrationICP(
             source_l_down, target_l_down, max_correspondence_dist, init_trans_l,
             open3d::pipelines::registration::
@@ -219,7 +246,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     double relative_rmse = 1e-6;
     int max_iterations = 2;
 
-    // PointToPlane
+    // PointToPlane - Tensor
     auto reg_p2plane_t = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans_t,
             open3d::t::pipelines::registration::
@@ -227,6 +254,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
             open3d::t::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
 
+    // PointToPlane - Legacy
     auto reg_p2plane_l = open3d::pipelines::registration::RegistrationICP(
             source_l_down, target_l_down, max_correspondence_dist, init_trans_l,
             open3d::pipelines::registration::

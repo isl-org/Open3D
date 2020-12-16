@@ -55,12 +55,14 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
 
 /// \brief Helper function for ComputeTransformationFromPose CUDA
 /// Do not call this independendtly, as it only sets the Rotation part
-/// in Transformation matrix, using the Pose
+/// in Transformation matrix, using the Pose, the rest is set in
+/// the parent function ComputeTransformationFromPose
 void ComputeTransformationFromPoseCUDA(float *transformation_ptr, float *X_ptr);
 
 /// \brief Helper function for ComputeTransformationFromPose CPU
 /// Do not call this independendtly, as it only sets the Rotation part
-/// in Transformation matrix, using the Pose
+/// in Transformation matrix, using the Pose, the rest is set in
+/// the parent function ComputeTransformationFromPose
 void ComputeTransformationFromPoseCPU(float *transformation_ptr, float *X_ptr);
 
 }  // namespace pipelines

@@ -78,7 +78,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     auto result_nns = target_nns.HybridSearch(source.GetPoints(),
                                               max_correspondence_distance, 1);
 
-    // This condition can be different for different search method used
     result.correspondence_select_bool_ =
             (result_nns.first.Ne(-1)).Reshape({-1});
     result.correspondence_set_ =
@@ -88,7 +87,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             result_nns.second.IndexGet({result.correspondence_select_bool_})
                     .Reshape({-1});
 
-    // Reduction Sum of "distances"
+    // Reduction Sum of "distances" for Error
     auto squared_error = (dist_select.Sum({0})).Item<float_t>();
     result.fitness_ = (float)result.correspondence_set_.GetShape()[0] /
                       (float)result.correspondence_select_bool_.GetShape()[0];

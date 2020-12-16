@@ -49,6 +49,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     // TODO: Revist to support Float32 and 64 without type conversion
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+
     core::Tensor error_t = (source_select - target_select);
     error_t.Mul_(error_t);
     error = (double)error_t.Sum({0, 1}).Item<float_t>();
@@ -68,12 +69,10 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
     // https://ieeexplore.ieee.org/document/88573
-
     core::Tensor mux = source_select.Mean({0}, true);
     core::Tensor muy = target_select.Mean({0}, true);
     core::Tensor Sxy = ((target_select - muy)
