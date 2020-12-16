@@ -70,7 +70,6 @@ def test_integration(device):
     sdf_trunc = 0.04  # truncation distance in meter
     block_resolution = 16  # 16^3 voxel blocks
     initial_block_count = 1000  # initially allocated number of voxel blocks
-    device = o3d.core.Device('cuda:0')  # or 'cuda:0' if you have cuda support
 
     volume = o3d.t.geometry.TSDFVoxelGrid(
         {
