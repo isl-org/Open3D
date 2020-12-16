@@ -31,8 +31,6 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
 namespace t {
@@ -54,6 +52,10 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
 /// from Pose {6} [alpha, beta, gamma, tx, ty, tz]
 /// \param X Pose {6} Float32
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
+
+void ComputeTransformationFromPoseCUDA(float *transformation_ptr, float *X_ptr);
+
+void ComputeTransformationFromPoseCPU(float *transformation_ptr, float *X_ptr);
 
 }  // namespace pipelines
 }  // namespace t

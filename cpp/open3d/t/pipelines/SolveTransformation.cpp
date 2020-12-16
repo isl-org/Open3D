@@ -29,7 +29,6 @@
 #include <cmath>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/SolveTransformation.cu"
 
 namespace open3d {
 namespace t {
