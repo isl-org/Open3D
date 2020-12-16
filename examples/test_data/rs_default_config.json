@@ -1,0 +1,22 @@
+// See RealSense documentation for the set of configuration values. Supported
+// configuration options will be specific to a device and other chosen options.
+// - https://intelrealsense.github.io/librealsense/doxygen/rs__option_8h.html
+// - https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html
+{
+    // Pick a specific device, leave empty to pick the first available device
+    "serial": "",
+    // pixel format for color frames
+    "color_format": "RS2_FORMAT_ANY",
+    // (width, height): Leave 0 to let RealSense pick a supported width or height
+    "color_resolution": "0,0",
+    // pixel format for depth frames
+    "depth_format": "RS2_FORMAT_ANY",
+    // (width, height): Leave 0 to let RealSense pick a supported width or height
+    "depth_resolution": "0,0",
+    // Common framerate for both depth and color streams. Leave 0 to let
+    // RealSense pick a supported framerate
+    "fps": "0",
+    // Controls depth computation on the device. Supported values are specific
+    // to product line (SR300, RS400, L500). Leave empty to pick the default.
+    "visual_preset": ""
+}

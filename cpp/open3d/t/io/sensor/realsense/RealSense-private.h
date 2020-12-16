@@ -24,48 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/io/sensor/RGBDVideoMetadata.h"
+// PRIVATE RealSense header for compiling Open3D. Do not #include outside
+// Open3D.
+#pragma once
 
-#include <json/json.h>
+#include <librealsense2/rs.hpp>
 
-#include <unordered_map>
+#include "open3d/io/IJsonConvertibleIO.h"
 
 namespace open3d {
 namespace t {
 namespace io {
 
-bool RGBDVideoMetadata::ConvertToJsonValue(Json::Value &value) const {
-    intrinsics_.ConvertToJsonValue(value);
+DECLARE_STRINGIFY_ENUM(rs2_stream)
+DECLARE_STRINGIFY_ENUM(rs2_format)
+DECLARE_STRINGIFY_ENUM(rs2_l500_visual_preset)
+DECLARE_STRINGIFY_ENUM(rs2_rs400_visual_preset)
+DECLARE_STRINGIFY_ENUM(rs2_sr300_visual_preset)
 
-    value["device_name"] = device_name_;
-    value["serial_number"] = serial_number_;
-    value["color_format"] = color_format_;
-    value["depth_format"] = depth_format_;
-    value["depth_scale"] = depth_scale_;
-
-    value["stream_length_usec"] = stream_length_usec_;
-    value["width"] = width_;
-    value["height"] = height_;
-    value["fps"] = fps_;
-
-    return true;
-}
-bool RGBDVideoMetadata::ConvertFromJsonValue(const Json::Value &value) {
-    intrinsics_.ConvertFromJsonValue(value);
-
-    serial_number_ = value["serial_number"].asString();
-    device_name_ = value["device_name"].asString();
-    color_format_ = value["color_format"].asString();
-    depth_format_ = value["depth_format"].asString();
-    depth_scale_ = value["depth_scale"].asFloat();
-
-    stream_length_usec_ = value["stream_length_usec"].asUInt64();
-    width_ = value["width"].asInt();
-    height_ = value["height"].asInt();
-    fps_ = value["fps"].asDouble();
-
-    return true;
-}
 }  // namespace io
 }  // namespace t
 }  // namespace open3d

@@ -75,16 +75,19 @@ void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("RealSenseBagReader --input input.bag [--output] [path]");
+    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output] [path]");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-
     if (!utility::ProgramOptionExists(argc, argv, "--input")) {
         PrintUsage();
         return 1;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "-V")) {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    } else {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
     std::string bag_filename =
             utility::GetProgramOptionAsString(argc, argv, "--input");
@@ -187,8 +190,6 @@ int main(int argc, char **argv) {
             im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
             // Improve depth visualization by scaling
             /* im_rgbd.depth_.LinearTransform(0.25); */
-            auto depth_image_ptr = std::shared_ptr<open3d::geometry::Image>(
-                    &im_rgbd.depth_, [](open3d::geometry::Image *) {});
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});

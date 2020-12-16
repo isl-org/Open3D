@@ -51,7 +51,14 @@ public:
         : Geometry(Geometry::GeometryType::RGBDImage, 2),
           color_(color),
           depth_(depth),
-          aligned_(aligned) {}
+          aligned_(aligned) {
+        if (color.GetRows() != depth.GetRows() ||
+            color.GetCols() != depth.GetCols()) {
+            aligned_ = false;
+            utility::LogWarning(
+                    "Aligned image pair must have the same resolution.");
+        }
+    }
 
     ~RGBDImage() override{};
 
