@@ -787,6 +787,10 @@ void FilamentResourceManager::LoadDefaults() {
     lit_ssr_mat->setDefaultParameter("clearCoat", 0.f);
     lit_ssr_mat->setDefaultParameter("clearCoatRoughness", 0.f);
     lit_ssr_mat->setDefaultParameter("anisotropy", 0.f);
+    lit_ssr_mat->setDefaultParameter("thickness", 0.5f);
+    lit_ssr_mat->setDefaultParameter("transmission", 1.f);
+    lit_ssr_mat->setDefaultParameter("absorption",
+                                     filament::math::float3(0.f, 0.f, 0.f));
     lit_ssr_mat->setDefaultParameter("pointSize", 3.f);
     lit_ssr_mat->setDefaultParameter("albedo", texture, default_sampler);
     lit_ssr_mat->setDefaultParameter("ao_rough_metalMap", texture,
