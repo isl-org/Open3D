@@ -162,11 +162,9 @@ public:
 
     void SetOnAnimationFrame(std::function<void(O3DVisualizer&, double)> cb);
 
-    enum class TickResult {
-        IGNORE,
-        REDRAW
-    };
-    void SetOnAnimationTick(std::function<TickResult(O3DVisualizer&, double, double)> cb);
+    enum class TickResult { IGNORE, REDRAW };
+    void SetOnAnimationTick(
+            std::function<TickResult(O3DVisualizer&, double, double)> cb);
 
     void ExportCurrentImage(const std::string& path);
 
