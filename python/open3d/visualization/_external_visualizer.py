@@ -117,7 +117,7 @@ class ExternalVisualizer:
         return o3d.io.rpc.set_time(time, connection)
 
     def set_active_camera(self, path):
-        """Sets the time in the external visualizer
+        """Sets the active camera in the external visualizer
 
         Args:
             path: A path describing a location in the scene tree.
@@ -125,6 +125,57 @@ class ExternalVisualizer:
         connection = o3d.io.rpc.Connection(address=self.address,
                                            timeout=self.timeout)
         return o3d.io.rpc.set_active_camera(path, connection)
+
+    def draw(self, geometry=None, *args, **kwargs):
+        """This function has the same functionality as 'set'.
+
+        This function is compatible with the standalone 'draw' function and can
+        be used to redirect calls to the external visualizer. Note that only
+        the geometry argument is supported, all other arguments will be 
+        ignored.
+
+        Example:
+            Here we use draw with the default external visualizer::
+                import open3d as o3d
+
+                torus = o3d.geometry.TriangleMesh.create_torus()
+                sphere = o3d.geometry.TriangleMesh.create_sphere()
+
+                draw = o3d.visualization.EV.draw
+                draw([ {'geometry': sphere, 'name': 'sphere'},
+                       {'geometry': torus, 'name': 'torus', 'time': 1} ])
+
+                # now use the standard draw function as comparison
+                draw = o3d.visualization.draw
+                draw([ {'geometry': sphere, 'name': 'sphere'},
+                       {'geometry': torus, 'name': 'torus', 'time': 1} ])
+
+        Args:
+            geometry: The geometry to draw. This can be a geometry object, a
+            list of geometries. To pass additional information along with the
+            geometry we can use a dictionary. Supported keys for the dictionary
+            are 'geometry', 'name', and 'time'.
+        """
+        if args or kwargs:
+            import warnings
+            warnings.warn(
+                "ExternalVisualizer.draw() does only support the 'geometry' argument",
+                Warning)
+
+        def add(g):
+            if isinstance(g, dict):
+                obj = g['geometry']
+                path = g.get('name', '')
+                time = g.get('time', 0)
+                self.set(obj=obj, path=path, time=time)
+            else:
+                self.set(g)
+
+        if isinstance(geometry, (tuple, list)):
+            for g in geometry:
+                add(g)
+        elif geometry is not None:
+            add(geometry)
 
 
 # convenience default external visualizer

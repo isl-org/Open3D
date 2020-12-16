@@ -77,10 +77,11 @@ FilamentView::FilamentView(filament::Engine& engine,
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
     view_->setSampleCount(4);
-    view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
-    view_->setPostProcessingEnabled(true);
-    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
+    SetAntiAliasing(true, true);
+    SetPostProcessing(true);
+    SetAmbientOcclusion(true, false);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    SetShadowing(true, ShadowType::kPCF);
     ColorGradingParams cp(ColorGradingParams::Quality::kHigh,
                           ColorGradingParams::ToneMapping::kUchimura);
     SetColorGrading(cp);
@@ -165,10 +166,39 @@ std::array<int, 4> FilamentView::GetViewport() const {
     return {vp.left, vp.bottom, int(vp.width), int(vp.height)};
 }
 
-void FilamentView::SetSSAOEnabled(const bool enabled) {
-    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
-                                : filament::View::AmbientOcclusion::NONE;
-    view_->setAmbientOcclusion(option);
+void FilamentView::SetPostProcessing(bool enabled) {
+    view_->setPostProcessingEnabled(enabled);
+}
+
+void FilamentView::SetAmbientOcclusion(bool enabled,
+                                       bool ssct_enabled /* = false */) {
+    filament::View::AmbientOcclusionOptions options;
+    options.enabled = enabled;
+    options.ssct.enabled = ssct_enabled;
+    view_->setAmbientOcclusionOptions(options);
+}
+
+void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
+    if (enabled) {
+        filament::View::TemporalAntiAliasingOptions options;
+        options.enabled = temporal;
+        view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
+        view_->setTemporalAntiAliasingOptions(options);
+    } else {
+        view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
+    }
+}
+
+void FilamentView::SetShadowing(bool enabled, ShadowType type) {
+    if (enabled) {
+        filament::View::ShadowType stype =
+                (type == ShadowType::kPCF) ? filament::View::ShadowType::PCF
+                                           : filament::View::ShadowType::VSM;
+        view_->setShadowType(stype);
+        view_->setShadowingEnabled(true);
+    } else {
+        view_->setShadowingEnabled(false);
+    }
 }
 
 static inline filament::math::float3 eigen_to_float3(const Eigen::Vector3f& v) {
@@ -255,11 +285,9 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
 
 void FilamentView::ConfigureForColorPicking() {
     view_->setSampleCount(1);
-    view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
-    view_->setPostProcessingEnabled(false);
-    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::NONE);
-    view_->setShadowsEnabled(false);
-    view_->setToneMapping(filament::View::ToneMapping::LINEAR);
+    SetPostProcessing(false);
+    SetAmbientOcclusion(false, false);
+    SetShadowing(false, ShadowType::kPCF);
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
