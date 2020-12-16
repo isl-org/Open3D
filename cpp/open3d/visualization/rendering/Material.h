@@ -52,6 +52,11 @@ struct Material {
     float base_clearcoat_roughness = 0.f;
     float base_anisotropy = 0.f;
 
+    // PBR material properties for refractive materials
+    float thickness = 1.f;
+    float transmission = 1.f;
+    Eigen::Vector3f absorption = Eigen::Vector3f(0.f, 0.f, 0.f);
+
     float point_size = 3.f;
     float line_width = 1.f;
 

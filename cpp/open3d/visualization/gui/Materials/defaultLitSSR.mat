@@ -2,6 +2,7 @@ material {
     name : defaultLitSSR,
     shadingModel : lit,
     refractionMode : screenspace,
+    refractionType : solid,
 
     parameters : [
         { type : float4,    name : baseColor },
@@ -11,6 +12,9 @@ material {
         { type : float,     name : clearCoat },
         { type : float,     name : clearCoatRoughness },
         { type : float,     name : anisotropy },
+        { type : float,     name : thickness },
+        { type : float,     name : transmission },
+        { type : float3,    name : absorption },
         { type : float,     name : pointSize },
         { type : sampler2d, name : albedo },
         { type : sampler2d, name : ao_rough_metalMap },
@@ -50,7 +54,7 @@ fragment {
         material.clearCoat = materialParams.clearCoat;
         material.clearCoatRoughness = materialParams.clearCoatRoughness;
         material.anisotropy = materialParams.anisotropy;
-        material.transmission = 0.9;
-        material.ior = 1.9;
+        material.transmission = materialParams.transmission;
+        material.thickness = materialParams.thickness;
     }
 }
