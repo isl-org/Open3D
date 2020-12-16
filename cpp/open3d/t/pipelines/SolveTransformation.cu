@@ -59,27 +59,11 @@ __global__ void ComputeTransformationFromPoseCUDAKernel(
     transformation_ptr[10] = std::cos(X_ptr[1]) * std::cos(X_ptr[0]);
 }
 
-core::Tensor ComputeTransformationFromPoseCUDA(const core::Tensor &X) {
-    core::Dtype dtype = core::Dtype::Float32;
-    core::Device device = X.GetDevice();
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    transformation = transformation.Contiguous();
-    auto X_copy = X.Contiguous();
-    float *transformation_ptr =
-            static_cast<float *>(transformation.GetDataPtr());
-    float *X_ptr = static_cast<float *>(X_copy.GetDataPtr());
-
+void ComputeTransformationFromPoseCUDA(float *transformation_ptr,
+                                       float *X_ptr) {
     // kernel call
     ComputeTransformationFromPoseCUDAKernel<<<1, 1>>>(X_ptr,
                                                       transformation_ptr);
-
-    // Translation from Pose X
-    transformation.SetItem(
-            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
-            X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
-    // Current Implementation DOES NOT SUPPORT SCALE transfomation
-    transformation[3][3] = 1;
-    return transformation;
 }
 
 }  // namespace pipelines

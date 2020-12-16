@@ -58,16 +58,7 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
     return transformation;
 }
 
-core::Tensor ComputeTransformationFromPoseCPU(const core::Tensor &X) {
-    core::Dtype dtype = core::Dtype::Float32;
-    core::Device device = X.GetDevice();
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    transformation = transformation.Contiguous();
-    auto X_copy = X.Contiguous();
-    float *transformation_ptr =
-            static_cast<float *>(transformation.GetDataPtr());
-    float *X_ptr = static_cast<float *>(X_copy.GetDataPtr());
-
+void ComputeTransformationFromPoseCPU(float *transformation_ptr, float *X_ptr) {
     // Rotation from Pose X
     transformation_ptr[0] = std::cos(X_ptr[2]) * std::cos(X_ptr[1]);
     transformation_ptr[1] =
@@ -86,14 +77,6 @@ core::Tensor ComputeTransformationFromPoseCPU(const core::Tensor &X) {
     transformation_ptr[8] = -1 * std::sin(X_ptr[1]);
     transformation_ptr[9] = std::cos(X_ptr[1]) * std::sin(X_ptr[0]);
     transformation_ptr[10] = std::cos(X_ptr[1]) * std::cos(X_ptr[0]);
-
-    // Translation from Pose X
-    transformation.SetItem(
-            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
-            X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
-    // Current Implementation DOES NOT SUPPORT SCALE transfomation
-    transformation[3][3] = 1;
-    return transformation;
 }
 
 // core::Tensor ComputeTransformationFromPoseCUDA(const core::Tensor &X){
@@ -135,19 +118,34 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     core::Dtype dtype = core::Dtype::Float32;
     X.AssertShape({6});
     X.AssertDtype(dtype);
+    core::Device device = X.GetDevice();
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+    transformation = transformation.Contiguous();
+    auto X_copy = X.Contiguous();
+    float *transformation_ptr =
+            static_cast<float *>(transformation.GetDataPtr());
+    float *X_ptr = static_cast<float *>(X_copy.GetDataPtr());
 
-    core::Device::DeviceType device_type = X.GetDevice().GetType();
+    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        return ComputeTransformationFromPoseCPU(X);
+        ComputeTransformationFromPoseCPU(transformation_ptr, X_ptr);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        return ComputeTransformationFromPoseCUDA(X);
+        ComputeTransformationFromPoseCUDA(transformation_ptr, X_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");
     }
+
+    // Translation from Pose X
+    transformation.SetItem(
+            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
+            X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
+    // Current Implementation DOES NOT SUPPORT SCALE transfomation
+    transformation[3][3] = 1;
+    return transformation;
 }
 
 }  // namespace pipelines
