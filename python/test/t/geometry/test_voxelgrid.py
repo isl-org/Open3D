@@ -113,5 +113,5 @@ def test_integration(device):
 
     result = o3d.pipelines.registration.evaluate_registration(
         pcd, pcd_gt, voxel_size, np.identity(4))
-    assert result.fitness > 1 - 1e-10
-    assert result.inlier_rmse < 1e-10
+    assert result.fitness > 1 - 1e-5
+    assert result.inlier_rmse < 1e-5
