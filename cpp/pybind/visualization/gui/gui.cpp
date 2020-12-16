@@ -166,7 +166,7 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
             unlocker, scene->GetView(), scene->GetScene(), width, height);
 }
 
-enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED }; 
+enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
 
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
@@ -539,24 +539,24 @@ void pybind_gui_classes(py::module &m) {
     //  2) if the object is never added, the memory will be leaked.
     py::class_<Widget, UnownedPointer<Widget>> widget(m, "Widget",
                                                       "Base widget class");
-    py::enum_<EventCallbackResult> widget_event_callback_result(widget, "EventCallbackResult",
-                                                   "Returned by event handlers",
-                                                   py::arithmetic());
+    py::enum_<EventCallbackResult> widget_event_callback_result(
+            widget, "EventCallbackResult", "Returned by event handlers",
+            py::arithmetic());
     widget_event_callback_result
-                       .value("IGNORED", EventCallbackResult::IGNORED,
-                              "Event handler ignored the event, widget will "
-                              "handle event normally")
-                       .value("HANDLED", EventCallbackResult::HANDLED,
-                              "Event handler handled the event, but widget "
-                              "will still handle the event normally. This is "
-                              "useful when you are augmenting base "
-                              "functionality")
-                       .value("CONSUMED", EventCallbackResult::CONSUMED,
-                              "Event handler consumed the event, event "
-                              "handling stops, widget will not handle the "
-                              "event. This is useful when you are replacing "
-                              "functionality")
-                       .export_values();
+            .value("IGNORED", EventCallbackResult::IGNORED,
+                   "Event handler ignored the event, widget will "
+                   "handle event normally")
+            .value("HANDLED", EventCallbackResult::HANDLED,
+                   "Event handler handled the event, but widget "
+                   "will still handle the event normally. This is "
+                   "useful when you are augmenting base "
+                   "functionality")
+            .value("CONSUMED", EventCallbackResult::CONSUMED,
+                   "Event handler consumed the event, event "
+                   "handling stops, widget will not handle the "
+                   "event. This is useful when you are replacing "
+                   "functionality")
+            .export_values();
 
     widget.def(py::init<>())
             .def("__repr__",
@@ -866,15 +866,14 @@ void pybind_gui_classes(py::module &m) {
     // ---- SceneWidget ----
     class PySceneWidget : public SceneWidget {
         using Super = SceneWidget;
+
     public:
-        void SetOnMouse(std::function<int(const MouseEvent&)> f) {
+        void SetOnMouse(std::function<int(const MouseEvent &)> f) {
             on_mouse_ = f;
         }
-        void SetOnKey(std::function<int(const KeyEvent&)> f) {
-            on_key_ = f;
-        }
+        void SetOnKey(std::function<int(const KeyEvent &)> f) { on_key_ = f; }
 
-        Widget::EventResult Mouse(const MouseEvent& e) override {
+        Widget::EventResult Mouse(const MouseEvent &e) override {
             if (on_mouse_) {
                 switch (EventCallbackResult(on_mouse_(e))) {
                     case EventCallbackResult::CONSUMED:
@@ -895,7 +894,7 @@ void pybind_gui_classes(py::module &m) {
             }
         }
 
-        Widget::EventResult Key(const KeyEvent& e) override {
+        Widget::EventResult Key(const KeyEvent &e) override {
             if (on_key_) {
                 switch (EventCallbackResult(on_key_(e))) {
                     case EventCallbackResult::CONSUMED:
@@ -917,8 +916,8 @@ void pybind_gui_classes(py::module &m) {
         }
 
     private:
-        std::function<int(const MouseEvent&)> on_mouse_;
-        std::function<int(const KeyEvent&)> on_key_;
+        std::function<int(const MouseEvent &)> on_mouse_;
+        std::function<int(const KeyEvent &)> on_key_;
     };
 
     py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(

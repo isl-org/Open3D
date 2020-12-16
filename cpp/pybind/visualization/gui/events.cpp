@@ -24,11 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/gui/gui.h"
-
-#include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Events.h"
 
+#include "open3d/utility/Console.h"
+#include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
 namespace open3d {
@@ -39,127 +38,139 @@ void pybind_gui_events(py::module& m) {
     py::enum_<MouseButton> buttons(m, "MouseButton", "Mouse button identifiers",
                                    py::arithmetic());
     buttons.value("NONE", MouseButton::NONE)
-           .value("LEFT", MouseButton::LEFT)
-           .value("MIDDLE", MouseButton::MIDDLE)
-           .value("RIGHT", MouseButton::RIGHT)
-           .value("BUTTON4", MouseButton::BUTTON4)
-           .value("BUTTON5", MouseButton::BUTTON5)
-           .export_values();
+            .value("LEFT", MouseButton::LEFT)
+            .value("MIDDLE", MouseButton::MIDDLE)
+            .value("RIGHT", MouseButton::RIGHT)
+            .value("BUTTON4", MouseButton::BUTTON4)
+            .value("BUTTON5", MouseButton::BUTTON5)
+            .export_values();
 
     py::enum_<KeyModifier> key_mod(m, "KeyModifier", "Key modifier identifiers",
                                    py::arithmetic());
     key_mod.value("NONE", KeyModifier::NONE)
-           .value("SHIFT", KeyModifier::SHIFT)
-           .value("CTRL", KeyModifier::CTRL)
-           .value("ALT", KeyModifier::ALT)
-           .value("META", KeyModifier::META)
-           .export_values();
+            .value("SHIFT", KeyModifier::SHIFT)
+            .value("CTRL", KeyModifier::CTRL)
+            .value("ALT", KeyModifier::ALT)
+            .value("META", KeyModifier::META)
+            .export_values();
 
     py::class_<MouseEvent> mouse_event(m, "MouseEvent",
                                        "Object that stores mouse events");
     py::enum_<MouseEvent::Type> mouse_event_type(mouse_event, "Type",
                                                  py::arithmetic());
     mouse_event_type.value("MOVE", MouseEvent::Type::MOVE)
-                    .value("BUTTON_DOWN", MouseEvent::Type::BUTTON_DOWN)
-                    .value("DRAG", MouseEvent::Type::DRAG)
-                    .value("BUTTON_UP", MouseEvent::Type::BUTTON_UP)
-                    .value("WHEEL", MouseEvent::Type::WHEEL)
-                    .export_values();
-    mouse_event
-        .def_readwrite("type", &MouseEvent::type,
-                       "Mouse event type")
-        .def_readwrite("x", &MouseEvent::x,
-                       "x coordinate  of the mouse event")
-        .def_readwrite("y", &MouseEvent::y,
-                       "y coordinate of the mouse event")
-        .def("is_modifier_down",
-             [](const MouseEvent& e, KeyModifier mod) {
-                 return ((e.modifiers & int(mod)) != 0);
-             },
-             "Convenience function to more easily deterimine if a modifier "
-             "key is down")
-        .def("is_button_down",
-             [](const MouseEvent& e, MouseButton b) {
-                 if (e.type == MouseEvent::Type::WHEEL) {
-                     return false;
-                 } else if (e.type == MouseEvent::Type::BUTTON_DOWN){
-                     return (e.button.button == b);
-                 } else {
-                     return ((e.move.buttons & int(b)) != 0);
-                 }
-             },
-             "Convenience function to more easily deterimine if a mouse "
-             "button is pressed")
-        .def_readwrite("modifiers", &MouseEvent::modifiers,
-                       "ORed mouse modifiers")
-        .def_property("buttons",
-                        [](const MouseEvent& e) -> int {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                return int(MouseButton::NONE);
-                            } else if (e.type == MouseEvent::Type::BUTTON_DOWN){
-                                return int(e.button.button);
-                            } else {
-                                return e.move.buttons;
-                            }
-                        },
-                        [](MouseEvent& e, int new_value) {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                ;  // no button value for wheel events
-                            } else if (e.type == MouseEvent::Type::BUTTON_DOWN){
-                                e.button.button = MouseButton(new_value);
-                            } else {
-                                e.move.buttons = new_value;
-                            }
-                        },
-                       "ORed mouse buttons")
-        .def_property("wheel_dx",
-                        [](const MouseEvent& e) -> int {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                return e.wheel.dx;
-                            } else {
-                                return 0;
-                            }
-                        },
-                        [](MouseEvent& e, int new_value) {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                e.wheel.dx = new_value;
-                            } else {
-                                utility::LogWarning("Cannot set MouseEvent.wheel_dx unless MouseEvent.type == MouseEvent.Type.WHEEL");
-                            }
-                        },
-                       "Mouse wheel horizontal motion")
-        .def_property("wheel_dy",
-                        [](const MouseEvent& e) -> int {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                return e.wheel.dy;
-                            } else {
-                                return 0;
-                            }
-                        },
-                        [](MouseEvent& e, int new_value) {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                e.wheel.dy = new_value;
-                            } else {
-                                utility::LogWarning("Cannot set MouseEvent.wheel_dy unless MouseEvent.type == MouseEvent.Type.WHEEL");
-                            }
-                        },
-                       "Mouse wheel vertical motion")
-        .def_property("wheel_is_trackpad",
-                        [](const MouseEvent& e) -> bool {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                return e.wheel.isTrackpad;
-                            } else {
-                                return false;
-                            }
-                        },
-                        [](MouseEvent& e, bool new_value) {
-                            if (e.type == MouseEvent::Type::WHEEL) {
-                                e.wheel.isTrackpad = new_value;
-                            } else {
-                                utility::LogWarning("Cannot set MouseEvent.wheel_is_trackpad unless MouseEvent.type == MouseEvent.Type.WHEEL");
-                            }
-                        },
-                       "Is mouse wheel event from a trackpad");
+            .value("BUTTON_DOWN", MouseEvent::Type::BUTTON_DOWN)
+            .value("DRAG", MouseEvent::Type::DRAG)
+            .value("BUTTON_UP", MouseEvent::Type::BUTTON_UP)
+            .value("WHEEL", MouseEvent::Type::WHEEL)
+            .export_values();
+    mouse_event.def_readwrite("type", &MouseEvent::type, "Mouse event type")
+            .def_readwrite("x", &MouseEvent::x,
+                           "x coordinate  of the mouse event")
+            .def_readwrite("y", &MouseEvent::y,
+                           "y coordinate of the mouse event")
+            .def(
+                    "is_modifier_down",
+                    [](const MouseEvent& e, KeyModifier mod) {
+                        return ((e.modifiers & int(mod)) != 0);
+                    },
+                    "Convenience function to more easily deterimine if a "
+                    "modifier "
+                    "key is down")
+            .def(
+                    "is_button_down",
+                    [](const MouseEvent& e, MouseButton b) {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            return false;
+                        } else if (e.type == MouseEvent::Type::BUTTON_DOWN) {
+                            return (e.button.button == b);
+                        } else {
+                            return ((e.move.buttons & int(b)) != 0);
+                        }
+                    },
+                    "Convenience function to more easily deterimine if a mouse "
+                    "button is pressed")
+            .def_readwrite("modifiers", &MouseEvent::modifiers,
+                           "ORed mouse modifiers")
+            .def_property(
+                    "buttons",
+                    [](const MouseEvent& e) -> int {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            return int(MouseButton::NONE);
+                        } else if (e.type == MouseEvent::Type::BUTTON_DOWN) {
+                            return int(e.button.button);
+                        } else {
+                            return e.move.buttons;
+                        }
+                    },
+                    [](MouseEvent& e, int new_value) {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            ;  // no button value for wheel events
+                        } else if (e.type == MouseEvent::Type::BUTTON_DOWN) {
+                            e.button.button = MouseButton(new_value);
+                        } else {
+                            e.move.buttons = new_value;
+                        }
+                    },
+                    "ORed mouse buttons")
+            .def_property(
+                    "wheel_dx",
+                    [](const MouseEvent& e) -> int {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            return e.wheel.dx;
+                        } else {
+                            return 0;
+                        }
+                    },
+                    [](MouseEvent& e, int new_value) {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            e.wheel.dx = new_value;
+                        } else {
+                            utility::LogWarning(
+                                    "Cannot set MouseEvent.wheel_dx unless "
+                                    "MouseEvent.type == MouseEvent.Type.WHEEL");
+                        }
+                    },
+                    "Mouse wheel horizontal motion")
+            .def_property(
+                    "wheel_dy",
+                    [](const MouseEvent& e) -> int {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            return e.wheel.dy;
+                        } else {
+                            return 0;
+                        }
+                    },
+                    [](MouseEvent& e, int new_value) {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            e.wheel.dy = new_value;
+                        } else {
+                            utility::LogWarning(
+                                    "Cannot set MouseEvent.wheel_dy unless "
+                                    "MouseEvent.type == MouseEvent.Type.WHEEL");
+                        }
+                    },
+                    "Mouse wheel vertical motion")
+            .def_property(
+                    "wheel_is_trackpad",
+                    [](const MouseEvent& e) -> bool {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            return e.wheel.isTrackpad;
+                        } else {
+                            return false;
+                        }
+                    },
+                    [](MouseEvent& e, bool new_value) {
+                        if (e.type == MouseEvent::Type::WHEEL) {
+                            e.wheel.isTrackpad = new_value;
+                        } else {
+                            utility::LogWarning(
+                                    "Cannot set MouseEvent.wheel_is_trackpad "
+                                    "unless MouseEvent.type == "
+                                    "MouseEvent.Type.WHEEL");
+                        }
+                    },
+                    "Is mouse wheel event from a trackpad");
 
     py::enum_<KeyName> key_name(m, "KeyName",
                                 "Names of keys. Used by KeyEvent.key");
@@ -262,17 +273,16 @@ void pybind_gui_events(py::module& m) {
     py::enum_<KeyEvent::Type> key_event_type(key_event, "Type",
                                              py::arithmetic());
     key_event_type.value("DOWN", KeyEvent::Type::DOWN)
-                  .value("UP", KeyEvent::Type::UP)
-                  .export_values();
-    key_event.def_readwrite("type", &KeyEvent::type,
-                            "Key event type")
-             .def_readwrite("key", &KeyEvent::key,
-                            "This is the actual key that was pressed, not the "
-                            "character generated by the key. This event is "
-                            "not suitable for text entry")
-             .def_readwrite("is_repeat", &KeyEvent::isRepeat,
-                            "True if this key down event comes from a key "
-                            "repeat");
+            .value("UP", KeyEvent::Type::UP)
+            .export_values();
+    key_event.def_readwrite("type", &KeyEvent::type, "Key event type")
+            .def_readwrite("key", &KeyEvent::key,
+                           "This is the actual key that was pressed, not the "
+                           "character generated by the key. This event is "
+                           "not suitable for text entry")
+            .def_readwrite("is_repeat", &KeyEvent::isRepeat,
+                           "True if this key down event comes from a key "
+                           "repeat");
 }
 
 }  // namespace gui
