@@ -155,7 +155,6 @@ int main(int argc, char *argv[]) {
     utility::LogInfo("     [Time]: {}", icp_p2p_time.GetDuration());
     utility::LogInfo("     [Tranformation Matrix]: ");
     std::cout << reg_p2p.transformation_ << std::endl;
-    ;
 
     // auto transformation_point2point = reg_p2p.transformation_;
     // VisualizeRegistration(source, target, transformation_point2point);
@@ -185,7 +184,7 @@ int main(int argc, char *argv[]) {
     utility::LogInfo("     Inlier RMSE: {} ", reg_p2plane.inlier_rmse_);
     utility::LogInfo("     [Time]: {}", icp_p2plane_time.GetDuration());
     utility::LogInfo("     [Tranformation Matrix]: ");
-    std::cout << reg_p2plane.transformation_;
+    std::cout << reg_p2plane.transformation_ << std::endl;
 
     // auto transformation_point2plane = reg_p2plane.transformation_;
     // VisualizeRegistration(source2, target, transformation_point2plane);

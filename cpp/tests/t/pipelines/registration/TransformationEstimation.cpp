@@ -85,8 +85,8 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPoint) {
             estimation_p2p;
     double p2p_rmse =
             estimation_p2p.ComputeRMSE(source_device, target_device, corres);
-    // Exepcted close to 0.746223
-    EXPECT_TRUE(p2p_rmse > 0.746 && p2p_rmse < 0.747);
+
+    EXPECT_NEAR(p2p_rmse, 0.746223, 0.0001);
 }
 
 TEST_P(TransformationEstimationPermuteDevices,
@@ -140,9 +140,8 @@ TEST_P(TransformationEstimationPermuteDevices,
     double p2p_rmse_ = estimation_p2p.ComputeRMSE(source_transformed_p2p,
                                                   target_device, corres);
 
-    // Compare the new RMSE
-    // Exepcted close to 0.545857
-    EXPECT_TRUE(p2p_rmse_ > 0.545 && p2p_rmse_ < 0.546);
+    // Compare the new RMSE after transformation
+    EXPECT_NEAR(p2p_rmse_, 0.545857, 0.0001);
 }
 
 TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPlane) {
@@ -195,8 +194,8 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPlane) {
             estimation_p2plane;
     double p2plane_rmse = estimation_p2plane.ComputeRMSE(source_device,
                                                          target_device, corres);
-    // Expected Value ~ 0.319101
-    EXPECT_TRUE(p2plane_rmse > 0.319 && p2plane_rmse < 0.3195);
+
+    EXPECT_NEAR(p2plane_rmse, 0.319101, 0.0001);
 }
 
 TEST_P(TransformationEstimationPermuteDevices,
@@ -254,8 +253,9 @@ TEST_P(TransformationEstimationPermuteDevices,
     source_transformed_p2plane.Transform(p2plane_transform.To(dtype));
     double p2plane_rmse_ = estimation_p2plane.ComputeRMSE(
             source_transformed_p2plane, target_device, corres);
-    // Expected value close to 0.653965
-    EXPECT_TRUE(p2plane_rmse_ > 0.653 && p2plane_rmse_ < 0.654);
+
+    // Compare the new RMSE, after transformation
+    EXPECT_NEAR(p2plane_rmse_, 0.653965, 0.0001);
 }
 
 }  // namespace tests
