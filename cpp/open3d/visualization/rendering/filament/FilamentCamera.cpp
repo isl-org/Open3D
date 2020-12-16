@@ -92,6 +92,16 @@ void FilamentCamera::CopyFrom(const Camera* camera) {
                       proj.proj.ortho.right, proj.proj.ortho.bottom,
                       proj.proj.ortho.top, proj.proj.ortho.near_plane,
                       proj.proj.ortho.far_plane);
+    } else if (proj.is_intrinsic) {
+        Eigen::Matrix3d intrinsic_matrix;
+        intrinsic_matrix.setIdentity();
+        intrinsic_matrix(0, 0) = proj.proj.intrinsics.fx;
+        intrinsic_matrix(1, 1) = proj.proj.intrinsics.fy;
+        intrinsic_matrix(0, 2) = proj.proj.intrinsics.cx;
+        intrinsic_matrix(1, 2) = proj.proj.intrinsics.cy;
+        SetProjection(intrinsic_matrix, proj.proj.intrinsics.near_plane,
+                      proj.proj.intrinsics.far_plane,
+                      proj.proj.intrinsics.width, proj.proj.intrinsics.height);
     } else {
         SetProjection(proj.proj.perspective.fov, proj.proj.perspective.aspect,
                       proj.proj.perspective.near_plane,
@@ -142,12 +152,51 @@ void FilamentCamera::SetProjection(Projection projection,
     projection_.proj.ortho.far_plane = far;
 }
 
+void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
+                                   double near,
+                                   double far,
+                                   double width,
+                                   double height) {
+    filament::math::mat4 custom_proj;
+    custom_proj[0][0] = 2.0 * intrinsics(0, 0) / width;
+    custom_proj[0][1] = 0.0;
+    custom_proj[0][2] = 0.0;
+    custom_proj[0][3] = 0.0;
+
+    custom_proj[1][0] = 0.0;
+    custom_proj[1][1] = 2.0 * intrinsics(1, 1) / height;
+    custom_proj[1][2] = 0.0;
+    custom_proj[1][3] = 0.0;
+
+    custom_proj[2][0] = 1.0 - 2.0 * intrinsics(0, 2) / width;
+    custom_proj[2][1] = -1.0 + 2.0 * intrinsics(1, 2) / height;
+    custom_proj[2][2] = (-far - near) / (far - near);
+    custom_proj[2][3] = -1.0;
+
+    custom_proj[3][0] = 0.0;
+    custom_proj[3][1] = 0.0;
+    custom_proj[3][2] = -2.0 * far * near / (far - near);
+    custom_proj[3][3] = 0.0;
+
+    camera_->setCustomProjection(custom_proj, near, far);
+
+    projection_.is_intrinsic = true;
+    projection_.proj.intrinsics.fx = intrinsics(0, 0);
+    projection_.proj.intrinsics.fy = intrinsics(1, 1);
+    projection_.proj.intrinsics.cx = intrinsics(0, 2);
+    projection_.proj.intrinsics.cy = intrinsics(1, 2);
+    projection_.proj.intrinsics.near_plane = near;
+    projection_.proj.intrinsics.far_plane = far;
+    projection_.proj.intrinsics.width = width;
+    projection_.proj.intrinsics.height = height;
+}
+
 double FilamentCamera::GetNear() const { return camera_->getNear(); }
 
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
 double FilamentCamera::GetFieldOfView() const {
-    if (projection_.is_ortho) {
+    if (projection_.is_ortho || projection_.is_intrinsic) {
         // technically orthographic projection is lim(fov->0) as dist->inf,
         // but it also serves as an obviously wrong value if you call
         // GetFieldOfView() after setting an orthographic projection

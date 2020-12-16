@@ -21,17 +21,21 @@ vertex {
     void materialVertex(inout MaterialVertexInputs material) {
         float4 pos = getPosition();
         float4 next = getCustom0();
+        float4 resolution = getResolution();
+        float2 aspect = float2(resolution.x / resolution.y, 1.0);
+
         // Project current vertex and next vertex to screen
-        vec4 projected_pos = getClipFromViewMatrix() * getViewFromWorldMatrix() * vec4(pos.xyz - getWorldOffset(), 1.0);
-        vec4 projected_next = getClipFromViewMatrix() * getViewFromWorldMatrix() * vec4(next.xyz - getWorldOffset(), 1.0);
-        vec2 screen_pos = projected_pos.xy / projected_pos.w;
-        vec2 screen_next = projected_next.xy / projected_next.w;
+        float4 projected_pos = getClipFromWorldMatrix() * float4(pos.xyz - getWorldOffset(), 1.0);
+        float4 projected_next = getClipFromWorldMatrix() * float4(next.xyz - getWorldOffset(), 1.0);
+        float2 screen_pos = (projected_pos.xy / projected_pos.w) * aspect;
+        float2 screen_next = (projected_next.xy / projected_next.w) * aspect;
 
         // now compute offset
-        vec2 dir = normalize(screen_next - screen_pos);
-        vec2 normal = vec2(-dir.y, dir.x);
-        normal *= materialParams.lineWidth;
-        vec4 offset = vec4(normal * next.w, 0.0, 1.0);
+        float2 dir = normalize(screen_next - screen_pos);
+        float2 normal = float2(-dir.y, dir.x);
+        normal *= materialParams.lineWidth * resolution.z;
+        normal.x /= aspect.x;
+        float4 offset = float4(normal * next.w, 0.0, 0.0);
         material.worldPosition = getWorldFromClipMatrix() * (projected_pos + offset);
     }
 }
