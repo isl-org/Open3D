@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/pipelines/registration/Registration.h"
-#include "open3d/pipelines/registration/Registration.h"
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/pipelines/registration/Registration.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "tests/UnitTest.h"
 
@@ -83,7 +83,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
 
     auto source_l_down = source_device.ToLegacyPointCloud();
     auto target_l_down = target_device.ToLegacyPointCloud();
-    
+
     // Initial Transformation input for Tensor
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
@@ -94,18 +94,21 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     double max_correspondence_dist = 1.25;
 
     // Tensor Evaluation
-    // t::pipelines::registration::RegistrationResult evaluation_t(init_trans_t);
-    auto evaluation_t = open3d::t::pipelines::registration::EvaluateRegistration(
-            source_device, target_device, max_correspondence_dist, init_trans_t);
+    // t::pipelines::registration::RegistrationResult
+    // evaluation_t(init_trans_t);
+    auto evaluation_t =
+            open3d::t::pipelines::registration::EvaluateRegistration(
+                    source_device, target_device, max_correspondence_dist,
+                    init_trans_t);
 
-    // open3d::pipelines::registration::RegistrationResult evaluation_l(init_trans_l);
+    // open3d::pipelines::registration::RegistrationResult
+    // evaluation_l(init_trans_l);
     auto evaluation_l = open3d::pipelines::registration::EvaluateRegistration(
             source_l_down, target_l_down, max_correspondence_dist,
             init_trans_l);
 
     EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.0005);
     EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_, 0.0005);
-
 }
 
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
@@ -133,10 +136,10 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
 
     t::geometry::PointCloud target_device(device);
     target_device.SetPoints(target_points);
-    
+
     auto source_l_down = source_device.ToLegacyPointCloud();
     auto target_l_down = target_device.ToLegacyPointCloud();
-    
+
     // Initial Transformation input for Tensor
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
@@ -166,7 +169,6 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.0005);
     EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
 }
-
 
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     core::Device device = GetParam();
@@ -205,7 +207,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
 
     auto source_l_down = source_device.ToLegacyPointCloud();
     auto target_l_down = target_device.ToLegacyPointCloud();
-    
+
     // Initial Transformation input for Tensor
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
