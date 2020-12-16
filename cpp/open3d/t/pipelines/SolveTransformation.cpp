@@ -26,6 +26,8 @@
 
 #include "open3d/t/pipelines/SolveTransformation.h"
 
+#include <cmath>
+
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
@@ -60,22 +62,31 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     core::Device device = X.GetDevice();
     X.AssertShape({6});
     X.AssertDtype(dtype);
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+    core::Tensor transformation =
+            core::Tensor::Zeros({4, 4}, dtype, device).Contiguous();
+    float *transformation_ptr =
+            static_cast<float *>(transformation.GetDataPtr());
+    // auto X_copy = X.Copy();
+    const float *X_ptr = static_cast<const float *>(X.GetDataPtr());
 
     // Rotation from Pose X
-    transformation[0][0] = X[2].Cos().Mul(X[1].Cos());
-    transformation[0][1] =
-            -1 * X[2].Sin() * X[0].Cos() + X[2].Cos() * X[1].Sin() * X[0].Sin();
-    transformation[0][2] =
-            X[2].Sin() * X[0].Sin() + X[2].Cos() * X[1].Sin() * X[0].Cos();
-    transformation[1][0] = X[2].Sin() * X[1].Cos();
-    transformation[1][1] =
-            X[2].Cos() * X[0].Cos() + X[2].Sin() * X[1].Sin() * X[0].Sin();
-    transformation[1][2] =
-            -1 * X[2].Cos() * X[0].Sin() + X[2].Sin() * X[1].Sin() * X[0].Cos();
-    transformation[2][0] = -1 * X[1].Sin();
-    transformation[2][1] = X[1].Cos() * X[0].Sin();
-    transformation[2][2] = X[1].Cos() * X[0].Cos();
+    transformation_ptr[0] = std::cos(X_ptr[2]) * std::cos(X_ptr[1]);
+    transformation_ptr[1] =
+            -1 * std::sin(X_ptr[2]) * std::cos(X_ptr[0]) +
+            std::cos(X_ptr[2]) * std::sin(X_ptr[1]) * std::sin(X_ptr[0]);
+    transformation_ptr[2] =
+            std::sin(X_ptr[2]) * std::sin(X_ptr[0]) +
+            std::cos(X_ptr[2]) * std::sin(X_ptr[1]) * std::cos(X_ptr[0]);
+    transformation_ptr[4] = std::sin(X_ptr[2]) * std::cos(X_ptr[1]);
+    transformation_ptr[5] =
+            std::cos(X_ptr[2]) * std::cos(X_ptr[0]) +
+            std::sin(X_ptr[2]) * std::sin(X_ptr[1]) * std::sin(X_ptr[0]);
+    transformation_ptr[6] =
+            -1 * std::cos(X_ptr[2]) * std::sin(X_ptr[0]) +
+            std::sin(X_ptr[2]) * std::sin(X_ptr[1]) * std::cos(X_ptr[0]);
+    transformation_ptr[8] = -1 * std::sin(X_ptr[1]);
+    transformation_ptr[9] = std::cos(X_ptr[1]) * std::sin(X_ptr[0]);
+    transformation_ptr[10] = std::cos(X_ptr[1]) * std::cos(X_ptr[0]);
 
     // Translation from Pose X
     transformation.SetItem(
