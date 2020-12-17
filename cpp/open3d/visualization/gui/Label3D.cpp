@@ -32,7 +32,7 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static const Color DEFAULT_COLOR(0, 0, 0, 0);
+static const Color DEFAULT_COLOR(0, 0, 0, 1);
 
 struct Label3D::Impl {
     std::string text_;
