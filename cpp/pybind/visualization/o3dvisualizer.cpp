@@ -79,7 +79,7 @@ void pybind_o3dvisualizer(py::module& m) {
     py::enum_<O3DVisualizer::TickResult> tick_result(
             o3dvis, "TickResult", "Return value from animation tick callback");
     tick_result
-            .value("IGNORE", O3DVisualizer::TickResult::IGNORE,
+            .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
                    "Signals that no change happened and no redraw is required")
             .value("REDRAW", O3DVisualizer::TickResult::REDRAW,
                    "Signals that a redraw is required");

@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include <vector>
-
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
+
+#include <vector>
 
 namespace open3d {
 namespace visualization {

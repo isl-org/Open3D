@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/MaterialModifier.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 

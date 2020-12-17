@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include <memory>
-#include <set>
-#include <string>
-
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
@@ -162,7 +158,7 @@ public:
 
     void SetOnAnimationFrame(std::function<void(O3DVisualizer&, double)> cb);
 
-    enum class TickResult { IGNORE, REDRAW };
+    enum class TickResult { NO_CHANGE, REDRAW };
     void SetOnAnimationTick(
             std::function<TickResult(O3DVisualizer&, double, double)> cb);
 
