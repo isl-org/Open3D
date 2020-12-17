@@ -30,7 +30,7 @@
 
 #include <Eigen/Geometry>
 #include <set>
-#include <unordered_map>
+#include <unordered_set>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/gui/Application.h"
