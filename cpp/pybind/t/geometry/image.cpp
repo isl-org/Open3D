@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/Image.h"
 
 #include <string>
+#include <unordered_map>
 
 #include "open3d/t/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
@@ -113,6 +114,10 @@ void pybind_image(py::module &m) {
     // Conversion.
     image.def("to_legacy_image", &Image::ToLegacyImage,
               "Convert to legacy Image type.");
+    image.def_static("from_legacy_image", &Image::FromLegacyImage,
+                     "image_legacy"_a, "device"_a = core::Device("CPU:0"),
+                     "Create a Image from a legacy Open3D Image.");
+    image.def("as_tensor", &Image::AsTensor);
 
     docstring::ClassMethodDocInject(m, "Image", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Image", "get_max_bound");

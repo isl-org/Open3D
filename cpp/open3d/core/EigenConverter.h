@@ -38,6 +38,18 @@ namespace open3d {
 namespace core {
 namespace eigen_converter {
 
+/// Converts a Eigen matrix of shape (M, N) with alignment A and type T to a
+/// Tensor.
+/// \param matrix A templated Eigen matrix.
+/// \return A tensor converted from the eigen matrix.
+template <class T, int M, int N, int A>
+core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
+    core::Dtype dtype = core::Dtype::FromType<T>();
+    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
+    return core::Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
+                        dtype);
+}
+
 /// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
 /// the tensor dtype, the output will be converted to to double.
