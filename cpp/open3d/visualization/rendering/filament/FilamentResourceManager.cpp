@@ -240,6 +240,8 @@ const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLitSSR =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitWithTransparency =
@@ -773,6 +775,30 @@ void FilamentResourceManager::LoadDefaults() {
                                        default_sampler);
     materials_[kDefaultLitWithTransparency] =
             BoxResource(lit_trans_mat, engine_);
+
+    const auto lit_ssr_path = resource_root + "/defaultLitSSR.filamat";
+    auto lit_ssr_mat = LoadMaterialFromFile(lit_ssr_path, engine_);
+    lit_ssr_mat->setDefaultParameter("baseColor",
+                                     filament::RgbaType::PREMULTIPLIED_sRGB,
+                                     default_color_alpha);
+    lit_ssr_mat->setDefaultParameter("baseRoughness", 0.7f);
+    lit_ssr_mat->setDefaultParameter("reflectance", 0.5f);
+    lit_ssr_mat->setDefaultParameter("baseMetallic", 0.f);
+    lit_ssr_mat->setDefaultParameter("clearCoat", 0.f);
+    lit_ssr_mat->setDefaultParameter("clearCoatRoughness", 0.f);
+    lit_ssr_mat->setDefaultParameter("anisotropy", 0.f);
+    lit_ssr_mat->setDefaultParameter("thickness", 0.5f);
+    lit_ssr_mat->setDefaultParameter("transmission", 1.f);
+    lit_ssr_mat->setDefaultParameter("absorption",
+                                     filament::math::float3(0.f, 0.f, 0.f));
+    lit_ssr_mat->setDefaultParameter("pointSize", 3.f);
+    lit_ssr_mat->setDefaultParameter("albedo", texture, default_sampler);
+    lit_ssr_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                     default_sampler);
+    lit_ssr_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
+    lit_ssr_mat->setDefaultParameter("reflectanceMap", texture,
+                                     default_sampler);
+    materials_[kDefaultLitSSR] = BoxResource(lit_ssr_mat, engine_);
 
     const auto unlit_path = resource_root + "/defaultUnlit.filamat";
     auto unlit_mat = LoadMaterialFromFile(unlit_path, engine_);

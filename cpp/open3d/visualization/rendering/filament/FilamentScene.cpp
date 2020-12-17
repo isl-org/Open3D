@@ -104,6 +104,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
         {"defaultLitTransparency",
          ResourceManager::kDefaultLitWithTransparency},
+        {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
         {"defaultUnlitTransparency",
          ResourceManager::kDefaultUnlitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
@@ -744,7 +745,43 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             // .SetTexture("clearCoatRoughnessMap",
             // maps.clear_coat_roughness_map,
             //             rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("anisotropyMap", maps.anisotropy_map,
+            // .SetTexture("anisotropyMap", maps.anisotropy_map,
+            //             rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
+
+void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
+    auto& material = geom_mi.properties;
+    auto& maps = geom_mi.maps;
+
+    auto absorption_float3 = filament::Color::absorptionAtDistance(
+            filament::math::float3(material.absorption_color.x(),
+                                   material.absorption_color.y(),
+                                   material.absorption_color.z()),
+            material.absorption_distance);
+    Eigen::Vector3f absorption(absorption_float3.x, absorption_float3.y,
+                               absorption_float3.z);
+
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", material.base_color, false)
+            .SetParameter("pointSize", material.point_size)
+            .SetParameter("baseRoughness", material.base_roughness)
+            .SetParameter("baseMetallic", material.base_metallic)
+            .SetParameter("reflectance", material.base_reflectance)
+            .SetParameter("clearCoat", material.base_clearcoat)
+            .SetParameter("clearCoatRoughness",
+                          material.base_clearcoat_roughness)
+            .SetParameter("anisotropy", material.base_anisotropy)
+            .SetParameter("thickness", material.thickness)
+            .SetParameter("transmission", material.transmission)
+            .SetParameter("absorption", absorption)
+            .SetTexture("albedo", maps.albedo_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("normalMap", maps.normal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("reflectanceMap", maps.reflectance_map,
                         rendering::TextureSamplerParameters::Pretty())
             .Finish();
 }
@@ -957,6 +994,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (props.shader == "defaultLit" ||
         props.shader == "defaultLitTransparency") {
         UpdateDefaultLit(geom.mat);
+    } else if (props.shader == "defaultLitSSR") {
+        UpdateDefaultLitSSR(geom.mat);
     } else if (props.shader == "defaultUnlit" ||
                props.shader == "defaultUnlitTransparency") {
         UpdateDefaultUnlit(geom.mat);
@@ -1005,6 +1044,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
         if (material.shader == "defaultLit" ||
             material.shader == "defaultLitTransparency") {
             UpdateDefaultLit(geom->mat);
+        } else if (material.shader == "defaultLitSSR") {
+            UpdateDefaultLitSSR(geom->mat);
         } else if (material.shader == "defaultUnlit" ||
                    material.shader == "defaultUnlitTransparency") {
             UpdateDefaultUnlit(geom->mat);
