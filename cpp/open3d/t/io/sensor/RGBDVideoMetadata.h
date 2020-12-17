@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/core/Dtype.h"
 #include "open3d/utility/IJsonConvertible.h"
 
 namespace open3d {
@@ -81,6 +82,18 @@ public:
 
     /// Pixel format for depth data.
     std::string depth_format_;
+
+    /// Pixel Dtype for color data.
+    core::Dtype color_dt_;
+
+    /// Pixel Dtype for depth data.
+    core::Dtype depth_dt_;
+
+    /// Value of one depth unit in meters.
+    double depth_scale_;
+
+    /// Number of color channels.
+    uint8_t color_channels_;
 };
 
 }  // namespace io
