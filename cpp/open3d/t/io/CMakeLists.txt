@@ -1,17 +1,21 @@
-# Build
 set(FILE_IO_SRC
     PointCloudIO.cpp
     file_format/FileXYZI.cpp
     file_format/FilePLY.cpp
-)
+    )
 
 set(SENSOR_IO_SRC
-    "sensor/RGBDVideoReader.cpp"
-    "sensor/RGBDVideoMetadata.cpp")
+    sensor/RGBDVideoReader.cpp
+    sensor/RGBDVideoMetadata.cpp
+    )
 
 set(IO_DEFINITIONS "")
 if (BUILD_LIBREALSENSE)
-    set(REALSENSE_SRC "sensor/realsense/RSBagReader.cpp")
+    set(REALSENSE_SRC
+        sensor/realsense/RSBagReader.cpp
+        sensor/realsense/RealSenseSensor.cpp
+        sensor/realsense/RealSenseSensorConfig.cpp
+        )
     list(APPEND IO_DEFINITIONS BUILD_LIBREALSENSE)
 endif ()
 
@@ -22,7 +26,6 @@ add_library(tio OBJECT
     ${LIBLZF_SOURCE_FILES}
     ${SENSOR_IO_SRC}
     ${REALSENSE_SRC}
-    ${KINECT_SRC}
     )
 target_compile_definitions(tio PRIVATE ${IO_DEFINITIONS})
 open3d_show_and_abort_on_warning(tio)
