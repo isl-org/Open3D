@@ -46,7 +46,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     }
 
     double error;
-    // TODO: Revist to support Float32 and 64 without type conversion.
+    // TODO: revist to support Float32 and 64 without type conversion.
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
@@ -89,7 +89,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     R = U.Matmul(S.Matmul(VT));
     t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
 
-    return t::pipelines::ComputeTransformationFromRt(R, t);
+    return t::pipelines::RtToTransformation(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -98,7 +98,6 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
-    // TODO: Assert Ops for pointcloud.
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -128,7 +127,6 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     // TODO: if corres empty throw Error.
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
-    // TODO: Assert Ops for pointcloud.
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -150,7 +148,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
 
     // --- Computing A in AX = B.
     auto num_corres = source_select.GetShape()[0];
-    // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz).
+    // Slicing normals: (nx, ny, nz) and source points: (sx, sy, sz).
     core::Tensor nx =
             target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
                                      core::TensorKey::Slice(0, 1, 1)});
@@ -190,7 +188,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     // --- Computing A completed.
 
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
-    return t::pipelines::ComputeTransformationFromPose(Pose);
+    return t::pipelines::PoseToTransformation(Pose);
 }
 
 }  // namespace registration

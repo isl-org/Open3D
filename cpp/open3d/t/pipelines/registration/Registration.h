@@ -55,10 +55,10 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param relative_fitness If relative change (difference) of fitness score
-    /// is lower than relative_fitness, the iteration stops. \param
-    /// relative_rmse If relative change (difference) of inliner RMSE score is
-    /// lower than relative_rmse, the iteration stops. \param max_iteration
-    /// Maximum iteration before iteration stops.
+    /// is lower than relative_fitness, the iteration stops.
+    /// \param relative_rmse If relative change (difference) of inliner RMSE
+    /// score is lower than relative_rmse, the iteration stops.
+    /// \param max_iteration Maximum iteration before iteration stops.
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
                            double relative_rmse = 1e-6,
                            int max_iteration = 30)
@@ -116,7 +116,8 @@ public:
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param transformation The 4x4 transformation matrix to transform
+/// distance.
+/// \param transformation The 4x4 transformation matrix to transform
 /// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
 /// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
 RegistrationResult EvaluateRegistration(
@@ -131,7 +132,8 @@ RegistrationResult EvaluateRegistration(
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param init Initial transformation estimation.
+/// distance.
+/// \param init Initial transformation estimation.
 ///  Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
 ///  [0., 0., 0., 1.]])
 /// \param estimation Estimation method.
@@ -144,18 +146,6 @@ RegistrationResult RegistrationICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
-
-// [TODO: To Be Implemented].
-/// \param source The source point cloud.
-/// \param target The target point cloud.
-/// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param transformation The 4x4 transformation matrix to transform
-/// `source` to `target`.
-// core::Tensor GetInformationMatrixFromPointClouds(
-//         const geometry::PointCloud &source,
-//         const geometry::PointCloud &target,
-//         double max_correspondence_distance,
-//         const core::Tensor &transformation);
 
 }  // namespace registration
 }  // namespace pipelines

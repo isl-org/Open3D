@@ -24,24 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+// Private header. Do not include in Open3d.h.
 
-#include "open3d/t/pipelines/SolveTransformationImpl.h"
+#pragma once
+
+#include <cmath>
+
+#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 
-__global__ void ComputeTransformationFromPoseKernel(float *transformation_ptr,
-                                                    const float *X_ptr) {
-    ComputeTransformationFromPoseImpl(transformation_ptr, X_ptr);
+/// Shared implementation for PoseToTransformation function.
+OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
+        float *transformation_ptr, const float *pose_ptr) {
+    transformation_ptr[0] = cos(pose_ptr[2]) * cos(pose_ptr[1]);
+    transformation_ptr[1] =
+            -1 * sin(pose_ptr[2]) * cos(pose_ptr[0]) +
+            cos(pose_ptr[2]) * sin(pose_ptr[1]) * sin(pose_ptr[0]);
+    transformation_ptr[2] =
+            sin(pose_ptr[2]) * sin(pose_ptr[0]) +
+            cos(pose_ptr[2]) * sin(pose_ptr[1]) * cos(pose_ptr[0]);
+    transformation_ptr[4] = sin(pose_ptr[2]) * cos(pose_ptr[1]);
+    transformation_ptr[5] =
+            cos(pose_ptr[2]) * cos(pose_ptr[0]) +
+            sin(pose_ptr[2]) * sin(pose_ptr[1]) * sin(pose_ptr[0]);
+    transformation_ptr[6] =
+            -1 * cos(pose_ptr[2]) * sin(pose_ptr[0]) +
+            sin(pose_ptr[2]) * sin(pose_ptr[1]) * cos(pose_ptr[0]);
+    transformation_ptr[8] = -1 * sin(pose_ptr[1]);
+    transformation_ptr[9] = cos(pose_ptr[1]) * sin(pose_ptr[0]);
+    transformation_ptr[10] = cos(pose_ptr[1]) * cos(pose_ptr[0]);
 }
 
-void ComputeTransformationFromPoseImplCUDA(float *transformation_ptr,
-                                           const float *X_ptr) {
-    ComputeTransformationFromPoseKernel<<<1, 1>>>(transformation_ptr, X_ptr);
-}
+#ifdef BUILD_CUDA_MODULE
+/// \brief Helper function for PoseToTransformationCUDA.
+/// Do not call this independently, as it only sets the transformation part
+/// in transformation matrix, using the Pose, the rest is set in
+/// the parent function PoseToTransformation.
+void PoseToTransformationCUDA(float *transformation_ptr, const float *pose_ptr);
+#endif
 
 }  // namespace pipelines
 }  // namespace t

@@ -15,7 +15,7 @@
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EposePRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -24,19 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/SolveTransformation.h"
+#include "open3d/t/pipelines/TransformationConverter.h"
 
 #include <cmath>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/SolveTransformationImpl.h"
+#include "open3d/t/pipelines/TransformationConverterImpl.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 
-core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
-                                         const core::Tensor &t) {
+core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = R.GetDevice();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
@@ -50,44 +49,45 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(0, 3, 1)},
             R);
-    // Translation and Scale [Assumed to be 1].
+    // Translation.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
             t.Reshape({3, 1}));
+    // Scale [assumed to be 1].
     transformation[3][3] = 1;
     return transformation;
 }
 
-core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
+core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::Dtype dtype = core::Dtype::Float32;
-    X.AssertShape({6});
-    X.AssertDtype(dtype);
-    core::Device device = X.GetDevice();
+    pose.AssertShape({6});
+    pose.AssertDtype(dtype);
+    core::Device device = pose.GetDevice();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
-    auto X_copy = X.Contiguous();
+    auto pose_copy = pose.Contiguous();
     float *transformation_ptr =
             static_cast<float *>(transformation.GetDataPtr());
-    const float *X_ptr = static_cast<const float *>(X_copy.GetDataPtr());
+    const float *pose_ptr = static_cast<const float *>(pose_copy.GetDataPtr());
 
+    // Rotation from pose.
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputeTransformationFromPoseImpl(transformation_ptr, X_ptr);
+        PoseToTransformationImpl(transformation_ptr, pose_ptr);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputeTransformationFromPoseImplCUDA(transformation_ptr, X_ptr);
+        PoseToTransformationCUDA(transformation_ptr, pose_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");
     }
-
-    // Translation from Pose X.
+    // Translation from pose.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
-            X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
-    // Current Implementation DOES NOT SUPPORT SCALE transfomation.
+            pose.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
+    // Scale [assumed to be 1].
     transformation[3][3] = 1;
     return transformation;
 }

@@ -241,7 +241,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     // Initial Transformation input for Legacy
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
 
-    double max_correspondence_dist = 1.25;
+    double max_correspondence_dist = 2.0;
     double relative_fitness = 1e-6;
     double relative_rmse = 1e-6;
     int max_iterations = 2;

@@ -24,25 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <cuda.h>
+#include <cuda_runtime.h>
 
-#include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/TransformationConverterImpl.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 
-/// \brief Functions for Computing Transformation Matrix {4,4}
-/// from Rotation {3,3} and Translation {3}.
-/// \param R Rotation Tensor {3,3} Float32.
-/// \param t Translation Tensor {3} Float32.
-core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
-                                         const core::Tensor &t);
+__global__ void PoseToTransformationKernel(float *transformation_ptr,
+                                           const float *X_ptr) {
+    PoseToTransformationImpl(transformation_ptr, X_ptr);
+}
 
-/// \brief Functions for Computing Transformation Matrix {4,4}
-/// from Pose {6} [alpha, beta, gamma, tx, ty, tz].
-/// \param X Pose {6} Float32.
-core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
+void PoseToTransformationCUDA(float *transformation_ptr, const float *X_ptr) {
+    PoseToTransformationKernel<<<1, 1>>>(transformation_ptr, X_ptr);
+}
 
 }  // namespace pipelines
 }  // namespace t

@@ -74,8 +74,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "NearestNeighborSearch::HybridSearch] "
                 "Index is not set.");
     }
-    // max_correspondece_dist in HybridSearch Tensor implementation
-    // is square root of that used in Legacy implementation.
+    // max_correspondece_dist in HybridSearch tensor implementation
+    // is square root of that used in legacy implementation.
     // TODO: Inform author about this.
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
@@ -92,7 +92,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             result_nns.second.IndexGet({result.correspondence_select_bool_})
                     .Reshape({-1});
 
-    // Reduction Sum of "distances" for Error.
+    // Reduction sum of "distances" for error.
     auto squared_error = (dist_select.Sum({0})).Item<float_t>();
     result.fitness_ = (float)result.correspondence_set_.GetShape()[0] /
                       (float)result.correspondence_select_bool_.GetShape()[0];

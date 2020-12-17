@@ -24,44 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Private header. Do not include in Open3d.h.
-
 #pragma once
 
-#include <cmath>
-
-#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 
-/// Shared implementation for ComputeTransformationFromPose.
-OPEN3D_HOST_DEVICE inline void ComputeTransformationFromPoseImpl(
-        float *transformation_ptr, const float *X_ptr) {
-    transformation_ptr[0] = cos(X_ptr[2]) * cos(X_ptr[1]);
-    transformation_ptr[1] = -1 * sin(X_ptr[2]) * cos(X_ptr[0]) +
-                            cos(X_ptr[2]) * sin(X_ptr[1]) * sin(X_ptr[0]);
-    transformation_ptr[2] = sin(X_ptr[2]) * sin(X_ptr[0]) +
-                            cos(X_ptr[2]) * sin(X_ptr[1]) * cos(X_ptr[0]);
-    transformation_ptr[4] = sin(X_ptr[2]) * cos(X_ptr[1]);
-    transformation_ptr[5] = cos(X_ptr[2]) * cos(X_ptr[0]) +
-                            sin(X_ptr[2]) * sin(X_ptr[1]) * sin(X_ptr[0]);
-    transformation_ptr[6] = -1 * cos(X_ptr[2]) * sin(X_ptr[0]) +
-                            sin(X_ptr[2]) * sin(X_ptr[1]) * cos(X_ptr[0]);
-    transformation_ptr[8] = -1 * sin(X_ptr[1]);
-    transformation_ptr[9] = cos(X_ptr[1]) * sin(X_ptr[0]);
-    transformation_ptr[10] = cos(X_ptr[1]) * cos(X_ptr[0]);
-}
+/// \brief Convert rotation and translation to the transformation matrix.
+///
+/// \param R Rotation, a tensor of shape {3, 3} and dtype Float32.
+/// \param t Translation, a tensor of shape {3, 3} and dtype Float32.
+/// \return Transformation, a tensor of shape {4, 4}, dtype Float32.
+core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t);
 
-#ifdef BUILD_CUDA_MODULE
-/// \brief Helper function for ComputeTransformationFromPose CUDA
-/// Do not call this independently, as it only sets the Rotation part
-/// in Transformation matrix, using the Pose, the rest is set in
-/// the parent function ComputeTransformationFromPose.
-void ComputeTransformationFromPoseImplCUDA(float *transformation_ptr,
-                                           const float *X_ptr);
-#endif
+/// \brief Convert pose to the transformation matrix.
+///
+/// \param pose Pose [alpha, beta, gamma, tx, ty, tz], a tensor of
+/// shape {6} and dtype Float32.
+/// \return Transformation, a tensor of shape {4, 4}, dtype Float32.
+core::Tensor PoseToTransformation(const core::Tensor &pose);
 
 }  // namespace pipelines
 }  // namespace t

@@ -5,11 +5,11 @@ set(REGISTRATION_SRC
 )
 
 set(UTILITY_SRC
-    SolveTransformation.cpp
+    TransformationConverter.cpp
 )
 
 set(UTILITY_CUDA_SRC
-    SolveTransformation.cu
+    TransformationConverter.cu
 )
 
 set(ALL_PIPELINE_SRC

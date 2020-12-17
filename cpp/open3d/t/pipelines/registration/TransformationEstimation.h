@@ -34,7 +34,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/SolveTransformation.h"
+#include "open3d/t/pipelines/TransformationConverter.h"
 
 namespace open3d {
 
@@ -96,8 +96,8 @@ public:
 /// Estimate a transformation for point to point distance.
 class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
-    /// Currently Not Implemented. [Scaling not supported]
-    /// \brief Parameterized Constructor.
+    /// Currently not implemented. [Scaling not supported]
+    /// \brief Parameterized constructor.
     ///
     /// \param with_scaling Set to True to estimate scaling, False to force
     /// scaling to be 1.
@@ -120,7 +120,7 @@ public:
             CorrespondenceSet &corres) const override;
 
 public:
-    /// Currently Not Implemented. [Scaling not supported].
+    /// Currently not implemented. [Scaling not supported].
     /// Set to True to estimate scaling, False to force scaling to be 1.
     ///
     /// The homogeneous transformation is given by\n
@@ -139,17 +139,9 @@ private:
 /// Class to estimate a transformation for point to plane distance.
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
-    /// \brief Default Constructor.
+    /// \brief Default constructor.
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
-
-    /// Currently Not Implemented. [RobustKernel not supported].
-    /// \brief Constructor that takes as input a RobustKernel \params kernel Any
-    /// of the implemented statistical robust kernel for outlier rejection.
-    // explicit TransformationEstimationPointToPlane(
-    //         std::shared_ptr<open3d::pipelines::registration::RobustKernel>
-    //                 kernel)
-    //     : kernel_(std::move(kernel)) {}
 
 public:
     TransformationEstimationType GetTransformationEstimationType()
@@ -163,12 +155,6 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             CorrespondenceSet &corres) const override;
-
-public:
-    /// Currently Not Implemented. [RobustKernel not supported]
-    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
-    // std::shared_ptr<open3d::pipelines::registration::RobustKernel> kernel_ =
-    //         std::make_shared<open3d::pipelines::registration::L2Loss>();
 
 private:
     const TransformationEstimationType type_ =
