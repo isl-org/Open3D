@@ -36,15 +36,31 @@
 #include "open3d/core/kernel/GeneralIndexer.h"
 #include "open3d/utility/Console.h"
 
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#else
+#define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#endif
+
+#define DISPATCH_BYTESIZE_TO_VOXEL(BYTESIZE, ...)            \
+    [&] {                                                    \
+        if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
+            using voxel_t = ColoredVoxel32f;                 \
+            return __VA_ARGS__();                            \
+        } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
+            using voxel_t = ColoredVoxel16i;                 \
+            return __VA_ARGS__();                            \
+        } else if (BYTESIZE == sizeof(Voxel32f)) {           \
+            using voxel_t = Voxel32f;                        \
+            return __VA_ARGS__();                            \
+        } else {                                             \
+            utility::LogError("Unsupported voxel bytesize"); \
+        }                                                    \
+    }()
+
 namespace open3d {
 namespace core {
 namespace kernel {
-
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-#define ATOMIC_ADD(X, Y) atomicAdd(X, Y)
-#else
-#define ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
-#endif
 
 /// 8-byte voxel structure.
 /// Smallest struct we can get. float tsdf + uint16_t weight also requires
@@ -74,6 +90,9 @@ struct Voxel32f {
 
 /// 12-byte voxel structure.
 /// uint16_t for colors and weights, sacrifices minor accuracy but saves memory.
+/// Basically, kColorFactor=255.0 extends the range of the uint8_t input color
+/// to the range of uint16_t where weight average is computed. In practice, it
+/// preserves most of the color details.
 OPEN3D_DEVICE const float kColorFactor = 255.0f;
 struct ColoredVoxel16i {
     static const uint16_t kMaxUint16 = 65535;
@@ -158,22 +177,6 @@ struct ColoredVoxel32f {
         weight += 1;
     }
 };
-
-#define DISPATCH_BYTESIZE_TO_VOXEL(BYTESIZE, ...)            \
-    [&] {                                                    \
-        if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
-            using voxel_t = ColoredVoxel32f;                 \
-            return __VA_ARGS__();                            \
-        } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
-            using voxel_t = ColoredVoxel16i;                 \
-            return __VA_ARGS__();                            \
-        } else if (BYTESIZE == sizeof(Voxel32f)) {           \
-            using voxel_t = Voxel32f;                        \
-            return __VA_ARGS__();                            \
-        } else {                                             \
-            utility::LogError("Unsupported voxel bytesize"); \
-        }                                                    \
-    }()
 
 // Get a voxel in a certain voxel block given the block id with its neighbors.
 template <typename voxel_t>
@@ -300,7 +303,7 @@ void CPUUnprojectKernel
                                   depth_indexer.GetDataPtrFromCoord(x, y))) /
                           depth_scale;
                 if (d > 0 && d < depth_max) {
-                    int idx = ATOMIC_ADD(count_ptr, 1);
+                    int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
                     float x_c = 0, y_c = 0, z_c = 0;
                     ti.Unproject(static_cast<float>(x), static_cast<float>(y),
@@ -572,7 +575,7 @@ void CPUPointExtractionKernel
 
                         if (weight_i > kWeightThreshold &&
                             tsdf_i * tsdf_o < 0) {
-                            ATOMIC_ADD(count_ptr, 1);
+                            OPEN3D_ATOMIC_ADD(count_ptr, 1);
                         }
                     }
                 });
@@ -687,7 +690,7 @@ void CPUPointExtractionKernel
                             tsdf_i * tsdf_o < 0) {
                             float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
-                            int idx = ATOMIC_ADD(count_ptr, 1);
+                            int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
                             float* point_ptr = static_cast<float*>(
                                     point_indexer.GetDataPtrFromCoord(idx));
@@ -940,7 +943,7 @@ void CPUMeshExtractionKernel
                     int vertex_idx = mesh_struct_ptr[e];
                     if (vertex_idx != -1) continue;
 
-                    ATOMIC_ADD(vtx_count_ptr, 1);
+                    OPEN3D_ATOMIC_ADD(vtx_count_ptr, 1);
                 }
             });
 
@@ -1056,7 +1059,7 @@ void CPUMeshExtractionKernel
                         float tsdf_e = voxel_ptr_e->GetTSDF();
                         float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
-                        int idx = ATOMIC_ADD(vtx_count_ptr, 1);
+                        int idx = OPEN3D_ATOMIC_ADD(vtx_count_ptr, 1);
                         mesh_struct_ptr[e] = idx;
 
                         float ratio_x = ratio * int(e == 0);
@@ -1150,7 +1153,7 @@ void CPUMeshExtractionKernel
                 for (size_t tri = 0; tri < 16; tri += 3) {
                     if (tri_table[table_idx][tri] == -1) return;
 
-                    int tri_idx = ATOMIC_ADD(tri_count_ptr, 1);
+                    int tri_idx = OPEN3D_ATOMIC_ADD(tri_count_ptr, 1);
 
                     for (size_t vertex = 0; vertex < 3; ++vertex) {
                         int edge = tri_table[table_idx][tri + vertex];

@@ -56,43 +56,41 @@ TSDFVoxelGrid::TSDFVoxelGrid(
     }
 
     int64_t total_bytes = 0;
-    for (auto &kv : attr_dtype_map_) {
-        std::string key = kv.first;
-        core::Dtype dtype = kv.second;
-
-        if (key == "tsdf") {
-            if (dtype != core::Dtype::Float32) {
-                utility::LogWarning(
-                        "[TSDFVoxelGrid] unexpected TSDF dtype, please "
-                        "implement your own Voxel structure in "
-                        "core/kernel/GeneralEWSharedImpl.h for dispatching.",
-                        key);
-            }
-            total_bytes += dtype.ByteSize();
+    if (attr_dtype_map_.count("tsdf") != 0) {
+        core::Dtype dtype = attr_dtype_map_.at("tsdf");
+        if (dtype != core::Dtype::Float32) {
+            utility::LogWarning(
+                    "[TSDFVoxelGrid] unexpected TSDF dtype, please "
+                    "implement your own Voxel structure in "
+                    "core/kernel/GeneralEWSharedImpl.h for dispatching.");
         }
-        if (key == "weight") {
-            if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
-                utility::LogWarning(
-                        "[TSDFVoxelGrid] unexpected weight dtype, please "
-                        "implement your own Voxel structure in "
-                        "core/kernel/GeneralEWSharedImpl.h for "
-                        "dispatching.",
-                        key);
-            }
-            total_bytes += dtype.ByteSize();
-        }
-        if (key == "color") {
-            if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
-                utility::LogWarning(
-                        "[TSDFVoxelGrid] unexpected color dtype, please "
-                        "implement your own Voxel structure in "
-                        "core/kernel/GeneralEWSharedImpl.h for dispatching.",
-                        key);
-            }
-            total_bytes += dtype.ByteSize() * 3;
-        }
+        total_bytes += dtype.ByteSize();
     }
 
+    if (attr_dtype_map_.count("weight") != 0) {
+        core::Dtype dtype = attr_dtype_map_.at("weight");
+        if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
+            utility::LogWarning(
+                    "[TSDFVoxelGrid] unexpected weight dtype, please "
+                    "implement your own Voxel structure in "
+                    "core/kernel/GeneralEWSharedImpl.h for "
+                    "dispatching.");
+        }
+        total_bytes += dtype.ByteSize();
+    }
+
+    if (attr_dtype_map_.count("color") != 0) {
+        core::Dtype dtype = attr_dtype_map_.at("color");
+        if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
+            utility::LogWarning(
+                    "[TSDFVoxelGrid] unexpected color dtype, please "
+                    "implement your own Voxel structure in "
+                    "core/kernel/GeneralEWSharedImpl.h for dispatching.");
+        }
+        total_bytes += dtype.ByteSize() * 3;
+    }
+
+    // Users can add other key/dtype checkers here for potential extensions.
     block_hashmap_ = std::make_shared<core::Hashmap>(
             block_count_, core::Dtype::Int32, core::Dtype::UInt8,
             core::SizeVector{3},
@@ -281,11 +279,12 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 }
 
 TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
-    TSDFVoxelGrid cpu_tsdf_voxelgrid(attr_dtype_map_, voxel_size_, sdf_trunc_,
-                                     block_resolution_, block_count_, device);
-    auto cpu_tsdf_hashmap = cpu_tsdf_voxelgrid.block_hashmap_;
-    *cpu_tsdf_hashmap = block_hashmap_->Copy(device);
-    return cpu_tsdf_voxelgrid;
+    TSDFVoxelGrid device_tsdf_voxelgrid(attr_dtype_map_, voxel_size_,
+                                        sdf_trunc_, block_resolution_,
+                                        block_count_, device);
+    auto device_tsdf_hashmap = device_tsdf_voxelgrid.block_hashmap_;
+    *device_tsdf_hashmap = block_hashmap_->Copy(device);
+    return device_tsdf_voxelgrid;
 }
 
 TSDFVoxelGrid TSDFVoxelGrid::CPU() {
@@ -296,10 +295,12 @@ TSDFVoxelGrid TSDFVoxelGrid::CPU() {
 }
 
 TSDFVoxelGrid TSDFVoxelGrid::CUDA(int device_id) {
-    if (GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    core::Device device =
+            core::Device(core::Device::DeviceType::CUDA, device_id);
+    if (GetDevice() == device) {
         return *this;
     }
-    return Copy(core::Device(core::Device::DeviceType::CUDA, device_id));
+    return Copy(device);
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(

@@ -99,9 +99,9 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
         int zb_lo = static_cast<int>(floor((z - sdf_trunc) / block_size));
         int zb_hi = static_cast<int>(floor((z + sdf_trunc) / block_size));
 
-        for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
-            for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
-                for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
+        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
                     int idx = atomicAdd(count_ptr, 1);
                     block_coordi_ptr[3 * idx + 0] = xb;
                     block_coordi_ptr[3 * idx + 1] = yb;

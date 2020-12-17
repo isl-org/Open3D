@@ -95,23 +95,16 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
         float y = pcd_ptr[3 * workload_idx + 1];
         float z = pcd_ptr[3 * workload_idx + 2];
 
-        int64_t xb_lo =
-                static_cast<int64_t>(std::floor((x - sdf_trunc) / block_size));
-        int64_t xb_hi =
-                static_cast<int64_t>(std::floor((x + sdf_trunc) / block_size));
-        int64_t yb_lo =
-                static_cast<int64_t>(std::floor((y - sdf_trunc) / block_size));
-        int64_t yb_hi =
-                static_cast<int64_t>(std::floor((y + sdf_trunc) / block_size));
-        int64_t zb_lo =
-                static_cast<int64_t>(std::floor((z - sdf_trunc) / block_size));
-        int64_t zb_hi =
-                static_cast<int64_t>(std::floor((z + sdf_trunc) / block_size));
-        for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
-            for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
-                for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
-                    set.emplace(static_cast<int>(xb), static_cast<int>(yb),
-                                static_cast<int>(zb));
+        int xb_lo = static_cast<int>(std::floor((x - sdf_trunc) / block_size));
+        int xb_hi = static_cast<int>(std::floor((x + sdf_trunc) / block_size));
+        int yb_lo = static_cast<int>(std::floor((y - sdf_trunc) / block_size));
+        int yb_hi = static_cast<int>(std::floor((y + sdf_trunc) / block_size));
+        int zb_lo = static_cast<int>(std::floor((z - sdf_trunc) / block_size));
+        int zb_hi = static_cast<int>(std::floor((z + sdf_trunc) / block_size));
+        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
+                    set.emplace(xb, yb, zb);
                 }
             }
         }
@@ -124,9 +117,9 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
         int64_t offset = count * 3;
-        block_coords_ptr[offset + 0] = static_cast<int>((*it).x_);
-        block_coords_ptr[offset + 1] = static_cast<int>((*it).y_);
-        block_coords_ptr[offset + 2] = static_cast<int>((*it).z_);
+        block_coords_ptr[offset + 0] = static_cast<int>(it->x_);
+        block_coords_ptr[offset + 1] = static_cast<int>(it->y_);
+        block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
     }
 
     dsts.emplace("block_coords", block_coords);
