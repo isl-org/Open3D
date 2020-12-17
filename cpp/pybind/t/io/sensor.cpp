@@ -193,7 +193,7 @@ void pybind_sensor(py::module &m) {
                                    const std::string &>(
                          &RealSenseSensor::InitSensor),
                  "sensor_config"_a = RealSenseSensorConfig{},
-                 "sensor_index"_a = 0, "filename"_a = std::string{},
+                 "sensor_index"_a = 0, "filename"_a = "",
                  "Configure sensor with custom settings. If this is skipped, "
                  "default settings will be used. You can enable recording to a "
                  "bag file by specifying a filename.")
@@ -202,7 +202,7 @@ void pybind_sensor(py::module &m) {
                                    const std::string &>(
                          &RealSenseSensor::InitSensor),
                  "sensor_config"_a = RealSenseSensorConfig{},
-                 "sensor_index"_a = 0, "filename"_a = std::string{},
+                 "sensor_index"_a = 0, "filename"_a = "",
                  "Configure sensor with custom settings. If this is skipped, "
                  "default settings will be used. You can enable recording to a "
                  "bag file by specifying a filename.")

@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "open3d/t/io/sensor/realsense/RealSense-private.h"
+#include "open3d/t/io/sensor/realsense/RealSensePrivate.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -142,13 +142,13 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         auto device_list = ctx.query_devices();
         if (sensor_index >= device_list.size()) {
             utility::LogError(
-                    "No device for sensor_index {}. Only {} devices detected. "
-                    "Using default device, if any.",
+                    "No device for sensor_index {}. Only {} devices detected.",
                     sensor_index, device_list.size());
-        } else
+        } else {
             rs_config_->enable_device(
                     device_list[(uint32_t)sensor_index].get_info(
                             RS2_CAMERA_INFO_SERIAL_NUMBER));
+        }
     }
     if (!filename.empty()) {
         rs_config_->enable_record_to_file(filename);

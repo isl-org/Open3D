@@ -35,7 +35,7 @@
 #include <sstream>
 #include <tuple>
 
-#include "open3d/t/io/sensor/realsense/RealSense-private.h"
+#include "open3d/t/io/sensor/realsense/RealSensePrivate.h"
 #include "open3d/t/io/sensor/realsense/RealSenseSensorConfig.h"
 
 namespace open3d {

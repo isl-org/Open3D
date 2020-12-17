@@ -37,7 +37,7 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/t/io/sensor/RGBDVideoMetadata.h"
-#include "open3d/t/io/sensor/realsense/RealSense-private.h"
+#include "open3d/t/io/sensor/realsense/RealSensePrivate.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

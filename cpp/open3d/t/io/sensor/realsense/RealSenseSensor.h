@@ -79,7 +79,7 @@ public:
     virtual bool InitSensor(const RealSenseSensorConfig &sensor_config =
                                     RealSenseSensorConfig{},
                             size_t sensor_index = 0,
-                            const std::string &filename = std::string{});
+                            const std::string &filename = "");
     virtual bool InitSensor(
             const RGBDSensorConfig &sensor_config,
             size_t sensor_index = 0,
@@ -131,8 +131,9 @@ public:
     using RGBDSensor::ToString;
 
 private:
-    bool enable_recording_ = false, is_recording_ = false,
-         is_capturing_ = false;
+    bool enable_recording_ = false;
+    bool is_recording_ = false;
+    bool is_capturing_ = false;
     std::string filename_;
     geometry::RGBDImage current_frame_;
     uint64_t timestamp_ = 0;

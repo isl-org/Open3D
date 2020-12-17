@@ -1,20 +1,20 @@
 set(FILE_IO_SRC
-    "PointCloudIO.cpp"
-    "file_format/FileXYZI.cpp"
-    "file_format/FilePLY.cpp"
+    PointCloudIO.cpp
+    file_format/FileXYZI.cpp
+    file_format/FilePLY.cpp
     )
 
 set(SENSOR_IO_SRC
-    "sensor/RGBDVideoReader.cpp"
-    "sensor/RGBDVideoMetadata.cpp"
+    sensor/RGBDVideoReader.cpp
+    sensor/RGBDVideoMetadata.cpp
     )
 
 set(IO_DEFINITIONS "")
 if (BUILD_LIBREALSENSE)
     set(REALSENSE_SRC
-        "sensor/realsense/RSBagReader.cpp"
-        "sensor/realsense/RealSenseSensor.cpp"
-        "sensor/realsense/RealSenseSensorConfig.cpp"
+        sensor/realsense/RSBagReader.cpp
+        sensor/realsense/RealSenseSensor.cpp
+        sensor/realsense/RealSenseSensorConfig.cpp
         )
     list(APPEND IO_DEFINITIONS BUILD_LIBREALSENSE)
 endif ()

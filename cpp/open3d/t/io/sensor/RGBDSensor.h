@@ -42,7 +42,7 @@ class RGBDSensor {
 public:
     /// Default constructor. Initialize with default settings.
     RGBDSensor() {}
-    virtual ~RGBDSensor(){};
+    virtual ~RGBDSensor() {}
 
     /// Initialize sensor (optional).
     ///
@@ -62,7 +62,7 @@ public:
     /// settings, else false.
     virtual bool InitSensor(const RGBDSensorConfig &sensor_config,
                             size_t sensor_index = 0,
-                            const std::string &filename = std::string{}) = 0;
+                            const std::string &filename = "") = 0;
 
     /// Start capturing synchronized depth and color frames.
     /// \param start_record start recording to the specified file as well.

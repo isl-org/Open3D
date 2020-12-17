@@ -69,10 +69,13 @@ bool WriteIJsonConvertibleToJSONString(std::string &json_string,
 ///      {FORMAT_PNG, "png"},
 ///      {FORMAT_JPG, "jpg"}
 ///      })
-/// This creates a function enum_to_string(const ENUM_TYPE &e) -> std::string
-/// and a function enum_from_string<ENUM_TYPE>(const std::string &str) ->
-/// ENUM_TYPE for conversion between the enum and string. Invalid string values
-/// are apped to the first specified option in the macro.
+/// in the cpp file and
+/// DECLARE_STRINGIFY_ENUM(IMAGE_FORMAT)
+/// in the header file. This creates the functions
+/// - enum_to_string(const ENUM_TYPE &e) -> std::string
+/// - enum_from_string(const std::string &str, ENUM_TYPE &e) -> void
+/// for conversion between the enum and string. Invalid string values are mapped
+/// to the first specified option in the macro.
 #define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)    \
     std::string enum_to_string(ENUM_TYPE e); \
     void enum_from_string(const std::string &str, ENUM_TYPE &e);

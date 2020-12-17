@@ -24,12 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <librealsense2/rs.hpp>
 #include <memory>
 #include <string>
 
 #include "open3d/Open3D.h"
-#include "open3d/t/io/sensor/realsense/RealSenseSensor.h"
 
 using namespace open3d;
 using namespace open3d::t::io;
@@ -72,11 +70,11 @@ int main(int argc, char **argv) {
     /* int color_fps = 0, depth_fps = 0; */
     std::string config_file, bag_file;
 
-    if (utility::ProgramOptionExists(argc, argv, "-c"))
+    if (utility::ProgramOptionExists(argc, argv, "-c")) {
         config_file = utility::GetProgramOptionAsString(argc, argv, "-c");
-    else if (utility::ProgramOptionExists(argc, argv, "--config"))
+    } else if (utility::ProgramOptionExists(argc, argv, "--config")) {
         config_file = utility::GetProgramOptionAsString(argc, argv, "--config");
-    else {
+    } else {
         utility::LogError("config json file required.");
         PrintUsage();
         return 1;
@@ -84,8 +82,9 @@ int main(int argc, char **argv) {
     if (utility::ProgramOptionExists(argc, argv, "--align")) {
         align_streams = true;
     }
-    if (utility::ProgramOptionExists(argc, argv, "--record"))
+    if (utility::ProgramOptionExists(argc, argv, "--record")) {
         bag_file = utility::GetProgramOptionAsString(argc, argv, "--record");
+    }
 
     RealSenseSensorConfig rs_cfg;
     open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
@@ -93,7 +92,7 @@ int main(int argc, char **argv) {
     RealSenseSensor rs;
     rs.ListDevices();
     rs.InitSensor(rs_cfg, 0, bag_file);
-    std::cout << rs.GetMetadata().ToString() << std::endl;
+    utility::LogInfo("{}", rs.GetMetadata().ToString());
 
     // Create windows to show depth and color streams
     bool flag_record = false, flag_start = false, flag_exit = false;
@@ -142,8 +141,9 @@ int main(int argc, char **argv) {
                 "In the visulizer window, "
                 "press [SPACE] to start recording, "
                 "press [ESC] to exit.");
-    } else
+    } else {
         utility::LogInfo("In the visulizer window, press [ESC] to exit.");
+    }
 
     using legacyRGBDImage = open3d::geometry::RGBDImage;
     using legacyImage = open3d::geometry::Image;
@@ -186,9 +186,10 @@ int main(int argc, char **argv) {
         depth_vis.UpdateRender();
         color_vis.UpdateRender();
 
-        if (frame_id++ % 30 == 0)
+        if (frame_id++ % 30 == 0) {
             utility::LogInfo("Time: {}s, Frame {}",
                              double(rs.GetTimestamp()) * 1e-6, frame_id - 1);
+        }
 
     } while (!flag_exit);
 
