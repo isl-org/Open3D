@@ -76,6 +76,14 @@ void pybind_o3dvisualizer(py::module& m) {
                    "Pixel colors correspond to depth buffer value")
             .export_values();
 
+    py::enum_<O3DVisualizer::TickResult> tick_result(
+            o3dvis, "TickResult", "Return value from animation tick callback");
+    tick_result
+            .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
+                   "Signals that no change happened and no redraw is required")
+            .value("REDRAW", O3DVisualizer::TickResult::REDRAW,
+                   "Signals that a redraw is required");
+
     py::class_<O3DVisualizer::DrawObject> drawobj(
             o3dvis, "DrawObject",
             "Information about an object that is drawn. Do not modify this, it "
@@ -182,6 +190,21 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("get_selection_sets", &O3DVisualizer::GetSelectionSets,
                  "Returns the selection sets, as [{'obj_name', "
                  "[SelectedIndex]}]")
+            .def("set_on_animation_frame", &O3DVisualizer::SetOnAnimationFrame,
+                 "set_on_animation(callback): Sets a callback that will be "
+                 "called every frame of the animation. The callback will be "
+                 "called as callback(o3dvis, current_time).")
+            .def("set_on_animation_tick", &O3DVisualizer::SetOnAnimationTick,
+                 "set_on_animation(callback): Sets a callback that will be "
+                 "called every frame of the animation. The callback will be "
+                 "called as callback(o3dvis, time_since_last_tick, "
+                 "total_elapsed_since_animation_started). Note that this "
+                 "is a low-level callback. If you need to change the current "
+                 "timestamp being shown you will need to update the "
+                 "o3dvis.current_time property in the callback. The callback "
+                 "must return either O3DVisualizer.TickResult.IGNORE if no "
+                 "redraw is required or O3DVisualizer.TickResult.REDRAW "
+                 "if a redraw is required.")
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
@@ -248,11 +271,20 @@ void pybind_o3dvisualizer(py::module& m) {
                           &O3DVisualizer::GetAnimationTimeStep,
                           &O3DVisualizer::SetAnimationTimeStep,
                           "Gets/sets the time step for animations. Default is "
-                          "1.0")
+                          "1.0 sec")
             .def_property("animation_frame_delay",
                           &O3DVisualizer::GetAnimationFrameDelay,
                           &O3DVisualizer::SetAnimationFrameDelay,
                           "Gets/sets the length of time a frame is visible.")
+            .def_property("animation_duration",
+                          &O3DVisualizer::GetAnimationDuration,
+                          &O3DVisualizer::SetAnimationDuration,
+                          "Gets/sets the duration (in seconds) of the "
+                          "animation. This is automatically computed to be the "
+                          "difference between the minimum and maximum time "
+                          "values, but this is useful if no time values have "
+                          "been specified (that is, all objects are at the "
+                          "default t=0)")
             .def_property("is_animating", &O3DVisualizer::GetIsAnimating,
                           &O3DVisualizer::SetAnimating,
                           "Gets/sets the status of the animation. Changing "

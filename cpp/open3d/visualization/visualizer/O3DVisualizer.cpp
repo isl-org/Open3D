@@ -294,18 +294,21 @@ struct O3DVisualizer::Impl {
     std::vector<DrawObject> objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
     bool selections_need_update_ = true;
+    std::function<void(double)> on_animation_;
+    std::function<bool()> on_animation_tick_;
+    std::shared_ptr<Receiver> receiver_;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
 
     double min_time_ = 0.0;
     double max_time_ = 0.0;
+    double start_animation_clock_time_ = 0.0;
     double next_animation_tick_clock_time_ = 0.0;
+    double last_animation_tick_clock_time_ = 0.0;
 
     Window *window_ = nullptr;
     SceneWidget *scene_ = nullptr;
-
-    std::shared_ptr<Receiver> receiver_;
 
     struct {
         // We only keep pointers here because that way we don't have to release
@@ -1142,6 +1145,10 @@ struct O3DVisualizer::Impl {
             UpdateGeometryVisibility(o);
         }
         UpdateTimeUI();
+
+        if (on_animation_) {
+            on_animation_(ui_state_.current_time);
+        }
     }
 
     void SetAnimating(bool is_animating) {
@@ -1152,8 +1159,15 @@ struct O3DVisualizer::Impl {
         ui_state_.is_animating = is_animating;
         if (is_animating) {
             ui_state_.current_time = max_time_;
-            window_->SetOnTickEvent(
-                    [this]() -> bool { return this->OnAnimationTick(); });
+            auto now = Application::GetInstance().Now();
+            start_animation_clock_time_ = now;
+            last_animation_tick_clock_time_ = now;
+            if (on_animation_tick_) {
+                window_->SetOnTickEvent(on_animation_tick_);
+            } else {
+                window_->SetOnTickEvent(
+                        [this]() -> bool { return this->OnAnimationTick(); });
+            }
         } else {
             window_->SetOnTickEvent(nullptr);
             SetCurrentTime(0.0);
@@ -1161,6 +1175,30 @@ struct O3DVisualizer::Impl {
         }
         settings.time_slider->SetEnabled(!is_animating);
         settings.time_edit->SetEnabled(!is_animating);
+    }
+
+    void SetOnAnimationTick(
+            O3DVisualizer &o3dvis,
+            std::function<TickResult(O3DVisualizer &, double, double)> cb) {
+        if (cb) {
+            on_animation_tick_ = [this, &o3dvis, cb]() -> bool {
+                auto now = Application::GetInstance().Now();
+                auto dt = now - this->last_animation_tick_clock_time_;
+                auto total_time = now - this->start_animation_clock_time_;
+                this->last_animation_tick_clock_time_ = now;
+
+                auto result = cb(o3dvis, dt, total_time);
+
+                if (result == TickResult::REDRAW) {
+                    this->scene_->ForceRedraw();
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+        } else {
+            on_animation_tick_ = nullptr;
+        }
     }
 
     void SetUIState(const UIState &new_state) {
@@ -1742,6 +1780,17 @@ double O3DVisualizer::GetAnimationTimeStep() const {
 
 void O3DVisualizer::SetAnimationTimeStep(double time_step) {
     impl_->ui_state_.time_step = time_step;
+    SetAnimationFrameDelay(time_step);
+}
+
+double O3DVisualizer::GetAnimationDuration() const {
+    return impl_->max_time_ - impl_->min_time_ + GetAnimationTimeStep();
+}
+
+void O3DVisualizer::SetAnimationDuration(double sec) {
+    impl_->max_time_ = impl_->min_time_ + sec - GetAnimationTimeStep();
+    impl_->UpdateTimeUIRange();
+    impl_->settings.time_panel->SetVisible(impl_->min_time_ < impl_->max_time_);
 }
 
 double O3DVisualizer::GetCurrentTime() const {
@@ -1769,6 +1818,20 @@ void O3DVisualizer::ResetCameraToDefault() {
 
 O3DVisualizer::UIState O3DVisualizer::GetUIState() const {
     return impl_->ui_state_;
+}
+
+void O3DVisualizer::SetOnAnimationFrame(
+        std::function<void(O3DVisualizer &, double)> cb) {
+    if (cb) {
+        impl_->on_animation_ = [this, cb](double t) { cb(*this, t); };
+    } else {
+        impl_->on_animation_ = nullptr;
+    }
+}
+
+void O3DVisualizer::SetOnAnimationTick(
+        std::function<TickResult(O3DVisualizer &, double, double)> cb) {
+    impl_->SetOnAnimationTick(*this, cb);
 }
 
 void O3DVisualizer::ExportCurrentImage(const std::string &path) {
