@@ -24,24 +24,44 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+// Private header. Do not include in Open3d.h.
 
-#include "open3d/t/pipelines/SolveTransformationImpl.h"
+#pragma once
+
+#include <cmath>
+
+#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 
-__global__ void ComputeTransformationFromPoseKernel(float *transformation_ptr,
-                                                    float *X_ptr) {
-    ComputeTransformationFromPoseImpl(transformation_ptr, X_ptr);
+/// Shared implementation for ComputeTransformationFromPose.
+OPEN3D_HOST_DEVICE inline void ComputeTransformationFromPoseImpl(
+        float *transformation_ptr, float *X_ptr) {
+    transformation_ptr[0] = cos(X_ptr[2]) * cos(X_ptr[1]);
+    transformation_ptr[1] = -1 * sin(X_ptr[2]) * cos(X_ptr[0]) +
+                            cos(X_ptr[2]) * sin(X_ptr[1]) * sin(X_ptr[0]);
+    transformation_ptr[2] = sin(X_ptr[2]) * sin(X_ptr[0]) +
+                            cos(X_ptr[2]) * sin(X_ptr[1]) * cos(X_ptr[0]);
+    transformation_ptr[4] = sin(X_ptr[2]) * cos(X_ptr[1]);
+    transformation_ptr[5] = cos(X_ptr[2]) * cos(X_ptr[0]) +
+                            sin(X_ptr[2]) * sin(X_ptr[1]) * sin(X_ptr[0]);
+    transformation_ptr[6] = -1 * cos(X_ptr[2]) * sin(X_ptr[0]) +
+                            sin(X_ptr[2]) * sin(X_ptr[1]) * cos(X_ptr[0]);
+    transformation_ptr[8] = -1 * sin(X_ptr[1]);
+    transformation_ptr[9] = cos(X_ptr[1]) * sin(X_ptr[0]);
+    transformation_ptr[10] = cos(X_ptr[1]) * cos(X_ptr[0]);
 }
 
+#ifdef BUILD_CUDA_MODULE
+/// \brief Helper function for ComputeTransformationFromPose CUDA
+/// Do not call this independently, as it only sets the Rotation part
+/// in Transformation matrix, using the Pose, the rest is set in
+/// the parent function ComputeTransformationFromPose.
 void ComputeTransformationFromPoseImplCUDA(float *transformation_ptr,
-                                           float *X_ptr) {
-    ComputeTransformationFromPoseKernel<<<1, 1>>>(transformation_ptr, X_ptr);
-}
+                                           float *X_ptr);
+#endif
 
 }  // namespace pipelines
 }  // namespace t

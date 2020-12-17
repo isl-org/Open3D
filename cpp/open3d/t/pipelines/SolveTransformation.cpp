@@ -29,6 +29,7 @@
 #include <cmath>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/SolveTransformationImpl.h"
 
 namespace open3d {
 namespace t {
@@ -71,10 +72,10 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputeTransformationFromPoseCPU(transformation_ptr, X_ptr);
+        ComputeTransformationFromPoseImpl(transformation_ptr, X_ptr);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputeTransformationFromPoseCUDA(transformation_ptr, X_ptr);
+        ComputeTransformationFromPoseImplCUDA(transformation_ptr, X_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -89,27 +90,6 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     // Current Implementation DOES NOT SUPPORT SCALE transfomation
     transformation[3][3] = 1;
     return transformation;
-}
-
-void ComputeTransformationFromPoseCPU(float *transformation_ptr, float *X_ptr) {
-    // Rotation from Pose X
-    transformation_ptr[0] = std::cos(X_ptr[2]) * std::cos(X_ptr[1]);
-    transformation_ptr[1] =
-            -1 * std::sin(X_ptr[2]) * std::cos(X_ptr[0]) +
-            std::cos(X_ptr[2]) * std::sin(X_ptr[1]) * std::sin(X_ptr[0]);
-    transformation_ptr[2] =
-            std::sin(X_ptr[2]) * std::sin(X_ptr[0]) +
-            std::cos(X_ptr[2]) * std::sin(X_ptr[1]) * std::cos(X_ptr[0]);
-    transformation_ptr[4] = std::sin(X_ptr[2]) * std::cos(X_ptr[1]);
-    transformation_ptr[5] =
-            std::cos(X_ptr[2]) * std::cos(X_ptr[0]) +
-            std::sin(X_ptr[2]) * std::sin(X_ptr[1]) * std::sin(X_ptr[0]);
-    transformation_ptr[6] =
-            -1 * std::cos(X_ptr[2]) * std::sin(X_ptr[0]) +
-            std::sin(X_ptr[2]) * std::sin(X_ptr[1]) * std::cos(X_ptr[0]);
-    transformation_ptr[8] = -1 * std::sin(X_ptr[1]);
-    transformation_ptr[9] = std::cos(X_ptr[1]) * std::sin(X_ptr[0]);
-    transformation_ptr[10] = std::cos(X_ptr[1]) * std::cos(X_ptr[0]);
 }
 
 }  // namespace pipelines
