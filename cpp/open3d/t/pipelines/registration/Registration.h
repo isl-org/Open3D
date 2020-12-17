@@ -145,7 +145,7 @@ RegistrationResult RegistrationICP(
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
-// [TODO: To Be Implemented]
+// [TODO: To Be Implemented].
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair

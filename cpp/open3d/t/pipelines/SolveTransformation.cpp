@@ -46,11 +46,11 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
     t.AssertDevice(device);
     t.AssertDtype(dtype);
 
-    // Rotation
+    // Rotation.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(0, 3, 1)},
             R);
-    // Translation and Scale [Assumed to be 1]
+    // Translation and Scale [Assumed to be 1].
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
             t.Reshape({3, 1}));
@@ -83,11 +83,11 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
         utility::LogError("Unimplemented device.");
     }
 
-    // Translation from Pose X
+    // Translation from Pose X.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
             X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
-    // Current Implementation DOES NOT SUPPORT SCALE transfomation
+    // Current Implementation DOES NOT SUPPORT SCALE transfomation.
     transformation[3][3] = 1;
     return transformation;
 }
