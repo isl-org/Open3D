@@ -106,8 +106,7 @@ public:
     virtual Transform GetViewMatrix() const = 0;
     virtual Transform GetProjectionMatrix() const = 0;
 
-    virtual Eigen::Vector2f GetScreenPosition(
-            const Eigen::Vector3f& pt) const = 0;
+    virtual Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const = 0;
 
     struct ProjectionInfo {
         bool is_ortho;

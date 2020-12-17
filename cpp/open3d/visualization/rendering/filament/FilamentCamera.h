@@ -89,7 +89,7 @@ public:
     Transform GetProjectionMatrix() const override;
     const ProjectionInfo& GetProjection() const override;
 
-    Eigen::Vector2f GetScreenPosition(const Eigen::Vector3f& pt) const override;
+    Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const override;
 
     void CopyFrom(const Camera* camera) override;
 

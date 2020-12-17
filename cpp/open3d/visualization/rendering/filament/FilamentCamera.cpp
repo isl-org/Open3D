@@ -253,8 +253,7 @@ Camera::Transform FilamentCamera::GetProjectionMatrix() const {
     return FilamentToCameraTransform(ftransform);
 }
 
-Eigen::Vector2f FilamentCamera::GetScreenPosition(
-        const Eigen::Vector3f& pt) const {
+Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
     auto vtransform = camera_->getViewMatrix();
     auto ptransform = camera_->getProjectionMatrix();
     filament::math::float4 p(pt(0), pt(1), pt(2), 1.f);
