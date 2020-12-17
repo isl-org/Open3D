@@ -50,6 +50,7 @@ bool RGBDVideoMetadata::ConvertToJsonValue(Json::Value &value) const {
 
     return true;
 }
+
 bool RGBDVideoMetadata::ConvertFromJsonValue(const Json::Value &value) {
     intrinsics_.ConvertFromJsonValue(value);
 

@@ -10,22 +10,22 @@ Obtaining Open3D with RealSense support
 
 Python
 ^^^^^^
-    Install Open3D from PyPI (a virtual environment is recommended):
+Install Open3D from PyPI (a virtual environment is recommended):
 
-    .. code-block:: sh
+.. code-block:: sh
 
-        pip install open3d
+    pip install open3d
 
 Compile from source (C++)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-    To build Open3D from source with RealSense support, set
-    ``BUILD_LIBREALSENSE=ON`` at CMake config step. You can add other
-    configuration options as well (e.g.: ``BUILD_GUI=ON`` and
-    ``BUILD_PYTHON_MODULE=ON`` may be useful).
+To build Open3D from source with RealSense support, set
+``BUILD_LIBREALSENSE=ON`` at CMake config step. You can add other
+configuration options as well (e.g.: ``BUILD_GUI=ON`` and
+``BUILD_PYTHON_MODULE=ON`` may be useful).
 
-    .. code-block:: sh
+.. code-block:: sh
 
-        cmake -D BUILD_LIBREALSENSE=ON -D <OTHER_FLAGS> /path/to/Open3D/source/
+    cmake -D BUILD_LIBREALSENSE=ON -D <OTHER_FLAGS> /path/to/Open3D/source/
 
 Reading from RealSense bag files
 --------------------------------
@@ -43,67 +43,67 @@ Here is a C++ code snippet that shows how to read a RealSense bag file recorded
 with Open3D or the ``realsense-viewer``. Note that general ROSbag files are not
 supported. See more details and available functionality (such as getting
 timestamps, aligning the depth stream to the color stream and getting intrinsic
-calibration) in the C++ API in the `documentation <../../cpp_api/classopen3d_1_1t_1_1io_1_1_r_s_bag_reader.html>_`
+calibration) in the C++ API in the `RSBagReader documentation <cpp_api/classopen3d_1_1t_1_1io_1_1_r_s_bag_reader.html>`_
 
-   .. code-block:: C++
+.. code-block:: C++
 
-        #include <open3d/open3d.hpp>
-        using namespace open3d;
-        t::io::RSBagReader bag_reader;
-        bag_reader.Open(bag_filename);
-        while (!bag_reader.IsEOF()) {
-            im_rgbd = bag_reader.NextFrame();
-            // process im_rgbd.depth_ and im_rgbd.color_
-        }
-        bag_reader.Close();
+    #include <open3d/open3d.hpp>
+    using namespace open3d;
+    t::io::RSBagReader bag_reader;
+    bag_reader.Open(bag_filename);
+    while (!bag_reader.IsEOF()) {
+        im_rgbd = bag_reader.NextFrame();
+        // process im_rgbd.depth_ and im_rgbd.color_
+    }
+    bag_reader.Close();
 
 Here is the corresponding Python code:
 
-   .. code-block:: Python
+.. code-block:: Python
 
-        import open3d as o3d
-        bag_reader = o3d.t.io.RSBagReader()
-        bag_reader.open(bag_filename)
-        while not bag_reader.is_eof():
-            im_rgbd = bag_reader.next_frame()
-            # process im_rgbd.depth and im_rgbd.color
+    import open3d as o3d
+    bag_reader = o3d.t.io.RSBagReader()
+    bag_reader.open(bag_filename)
+    while not bag_reader.is_eof():
+        im_rgbd = bag_reader.next_frame()
+        # process im_rgbd.depth and im_rgbd.color
 
-        bag_reader.close()
+    bag_reader.close()
 
 Examples
 ^^^^^^^^
 
 C++ RS bag file viewer
 """"""""""""""""""""""
-    This C++ example that plays back the color and depth streams from a
-    RealSense bag file. It also prints out metadata about the video streams in
-    the file. Press [SPACE] to pause/resume and [ESC] to exit.::
+This C++ example that plays back the color and depth streams from a
+RealSense bag file. It also prints out metadata about the video streams in
+the file. Press [SPACE] to pause/resume and [ESC] to exit.::
 
-        make RealSenseBagReader
-        bin/examples/RealSenseBagReader --input L515_test.bag
+    make RealSenseBagReader
+    bin/examples/RealSenseBagReader --input L515_test.bag
 
-    .. image:: https://storage.googleapis.com/open3d-bin/docs/images/RSbagviewer.jpg
-        :width: 800px
-        :align: center
-        :alt: RealSenseBagReader example
+.. image:: https://storage.googleapis.com/open3d-bin/docs/images/RSbagviewer.jpg
+    :width: 800px
+    :align: center
+    :alt: RealSenseBagReader example
 
 Running the scene reconstruction pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    You can provide an RS bag file directly to the reconstruction pipeline. It
-    will automatically be converted to a directory of depth and color frames and
-    the camera intrinsics. Edit the
-    `examples/python/reconstruction_system/config/realsense.json` file with the
-    path to your RS bag file and leave `path_intrinsic` empty. Update other
-    configuration parameters if needed (see the reconstruction pipeline
-    documentation for more details, including other required packages)::
+You can provide an RS bag file directly to the reconstruction pipeline. It
+will automatically be converted to a directory of depth and color frames and
+the camera intrinsics. Edit the
+`examples/python/reconstruction_system/config/realsense.json` file with the
+path to your RS bag file and leave `path_intrinsic` empty. Update other
+configuration parameters if needed (see the reconstruction pipeline
+documentation for more details, including other required packages)::
 
-        cd examples/python/reconstruction_system/
-        python run_system.py --make --register --refine --integrate config/realsense.json
+    cd examples/python/reconstruction_system/
+    python run_system.py --make --register --refine --integrate config/realsense.json
 
-    .. image:: https://storage.googleapis.com/open3d-bin/docs/images/RS_recon_result.jpg
-        :width: 800px
-        :align: center
-        :alt: Scene reconstruction sample result with RealSense bag input data
+.. image:: https://storage.googleapis.com/open3d-bin/docs/images/RS_recon_result.jpg
+    :width: 800px
+    :align: center
+    :alt: Scene reconstruction sample result with RealSense bag input data
 
 RealSense camera configuration, live capture, processing and recording
 ----------------------------------------------------------------------
@@ -115,15 +115,15 @@ You can list all RealSense devices connected to the system and get their
 capabilities (supported resolutions, frame rates, etc.) with the code snippet
 below.
 
-   .. code-block:: C++
+.. code-block:: C++
 
-        #include <open3d/open3d.hpp>
-        open3d::t::io::RealSenseSensor::ListDevices();
+    #include <open3d/open3d.hpp>
+    open3d::t::io::RealSenseSensor::ListDevices();
 
-   .. code-block:: Python
+.. code-block:: Python
 
-        import open3d as o3d
-        o3d.t.io.RealSenseSensor.list_devices()
+    import open3d as o3d
+    o3d.t.io.RealSenseSensor.list_devices()
 
 Here is sample output when only one L515 camera is connected::
 

@@ -80,10 +80,9 @@ public:
                                     RealSenseSensorConfig{},
                             size_t sensor_index = 0,
                             const std::string &filename = "");
-    virtual bool InitSensor(
-            const RGBDSensorConfig &sensor_config,
-            size_t sensor_index = 0,
-            const std::string &filename = std::string{}) override {
+    virtual bool InitSensor(const RGBDSensorConfig &sensor_config,
+                            size_t sensor_index = 0,
+                            const std::string &filename = "") override {
         return InitSensor(
                 dynamic_cast<const RealSenseSensorConfig &>(sensor_config),
                 sensor_index, filename);
