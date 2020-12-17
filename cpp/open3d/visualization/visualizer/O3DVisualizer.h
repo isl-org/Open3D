@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include <memory>
-#include <set>
-#include <string>
-
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
@@ -151,11 +147,20 @@ public:
     double GetAnimationTimeStep() const;
     void SetAnimationTimeStep(double time_step);
 
+    double GetAnimationDuration() const;
+    void SetAnimationDuration(double sec);
+
     double GetCurrentTime() const;
     void SetCurrentTime(double t);
 
     bool GetIsAnimating() const;
     void SetAnimating(bool is_animating);
+
+    void SetOnAnimationFrame(std::function<void(O3DVisualizer&, double)> cb);
+
+    enum class TickResult { NO_CHANGE, REDRAW };
+    void SetOnAnimationTick(
+            std::function<TickResult(O3DVisualizer&, double, double)> cb);
 
     void ExportCurrentImage(const std::string& path);
 
