@@ -79,6 +79,8 @@ filament::math::mat4f CameraToFilamentTransformF(const Camera::Transform& t) {
 
 FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
     camera_ = engine_.createCamera();
+    projection_.is_ortho = false;
+    projection_.is_intrinsic = false;
 }
 
 FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
@@ -120,6 +122,7 @@ void FilamentCamera::SetProjection(
         camera_->setProjection(fov, aspect, near, far, dir);
 
         projection_.is_ortho = false;
+        projection_.is_intrinsic = false;
         projection_.proj.perspective.fov_type = fov_type;
         projection_.proj.perspective.fov = fov;
         projection_.proj.perspective.aspect = aspect;
@@ -143,6 +146,7 @@ void FilamentCamera::SetProjection(Projection projection,
     camera_->setProjection(proj, left, right, bottom, top, near, far);
 
     projection_.is_ortho = true;
+    projection_.is_intrinsic = false;
     projection_.proj.ortho.projection = projection;
     projection_.proj.ortho.left = left;
     projection_.proj.ortho.right = right;
@@ -181,6 +185,7 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
     camera_->setCustomProjection(custom_proj, near, far);
 
     projection_.is_intrinsic = true;
+    projection_.is_ortho = false;
     projection_.proj.intrinsics.fx = intrinsics(0, 0);
     projection_.proj.intrinsics.fy = intrinsics(1, 1);
     projection_.proj.intrinsics.cx = intrinsics(0, 2);
