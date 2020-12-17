@@ -93,9 +93,10 @@ struct Voxel32f {
 /// Basically, kColorFactor=255.0 extends the range of the uint8_t input color
 /// to the range of uint16_t where weight average is computed. In practice, it
 /// preserves most of the color details.
-OPEN3D_DEVICE const float kColorFactor = 255.0f;
+
 struct ColoredVoxel16i {
     static const uint16_t kMaxUint16 = 65535;
+    static constexpr float kColorFactor = 255.0f;
 
     float tsdf;
     uint16_t weight;
