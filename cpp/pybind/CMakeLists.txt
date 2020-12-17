@@ -35,6 +35,7 @@ set(PACKAGE_NAME pybind)
 set(PY_ALL_SOURCE_FILES
     # Utility
     pybind_utils.cpp
+    open3d_pybind.cpp
     docstring.cpp
     utility/console.cpp
     utility/eigen.cpp
@@ -81,11 +82,12 @@ set(PY_ALL_SOURCE_FILES
     pipelines/color_map/color_map.cpp
     pipelines/odometry/odometry.cpp
     # Tensor Geometry
-    t/geometry/pointcloud.cpp
     t/geometry/geometry.cpp
+    t/geometry/pointcloud.cpp
     t/geometry/image.cpp
     t/geometry/tensormap.cpp
-    open3d_pybind.cpp
+    t/geometry/trianglemesh.cpp
+    t/geometry/tsdf_voxelgrid.cpp
     # Tensor IO
     t/t.cpp
     t/io/io.cpp
@@ -108,6 +110,7 @@ set(PY_ALL_SOURCE_FILES
 if (BUILD_GUI)
     list(APPEND PY_ALL_SOURCE_FILES
         visualization/gui/gui.cpp
+        visualization/gui/events.cpp
         visualization/rendering/rendering.cpp
         visualization/o3dvisualizer.cpp
         )
