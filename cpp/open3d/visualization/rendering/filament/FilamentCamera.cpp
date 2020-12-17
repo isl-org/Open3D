@@ -261,7 +261,7 @@ Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
     filament::math::float2 ndc_space_p;
     ndc_space_p.x = clip_space_p.x / clip_space_p.w;
     ndc_space_p.y = clip_space_p.y / clip_space_p.w;
-    
+
     return {ndc_space_p.x, ndc_space_p.y};
 }
 
