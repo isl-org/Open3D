@@ -46,13 +46,12 @@ class Feature;
 /// \class ICPConvergenceCriteria
 ///
 /// \brief Class that defines the convergence criteria of ICP.
-///
-/// ICP algorithm stops if the relative change of fitness and rmse hit
-/// \p relative_fitness_ and \p relative_rmse_ individually, or the iteration
-/// number exceeds \p max_iteration_.
 class ICPConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
+    /// ICP algorithm stops if the relative change of fitness and rmse hit
+    /// \p relative_fitness_ and \p relative_rmse_ individually, or the
+    /// iteration number exceeds \p max_iteration_.
     ///
     /// \param relative_fitness If relative change (difference) of fitness score
     /// is lower than relative_fitness, the iteration stops.
@@ -99,15 +98,13 @@ public:
     core::Tensor transformation_;
     /// Correspondence set between source and target point cloud.
     core::Tensor correspondence_set_;
-    /// Bool Indexing Tensor, indicating valid Correspondences in Correspondace
+    /// Bool indexing Tensor, indicating valid correspondences in correspondace
     /// set.
     core::Tensor correspondence_select_bool_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
     /// in target). Higher is better.
-    /// For RANSAC: inlier ratio (# of inlier correspondences / # of
-    /// all correspondences).
     double fitness_;
 };
 
@@ -118,8 +115,8 @@ public:
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param transformation The 4x4 transformation matrix to transform
-/// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
-/// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
+/// source to target. Default value: Tensor([[1., 0., 0., 0.], [0., 1., 0., 0.],
+/// [0., 0., 1., 0.], [0., 0., 0., 1.]]), Float32, device = CPU:0.
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -134,8 +131,6 @@ RegistrationResult EvaluateRegistration(
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param init Initial transformation estimation.
-///  Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
-///  [0., 0., 0., 1.]])
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
 RegistrationResult RegistrationICP(

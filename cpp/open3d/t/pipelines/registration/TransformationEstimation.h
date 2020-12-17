@@ -127,7 +127,7 @@ public:
     /// T = [ cR t]\n
     ///     [0   1]\n
     /// Sets 𝑐=1 if with_scaling is False.
-    // bool with_scaling_ = false;
+    //  bool with_scaling_ = false;
 
 private:
     const TransformationEstimationType type_ =

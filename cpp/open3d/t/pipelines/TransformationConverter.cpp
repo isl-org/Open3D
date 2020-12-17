@@ -65,10 +65,10 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::Device device = pose.GetDevice();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
-    auto pose_copy = pose.Contiguous();
+    core::Tensor pose_ = pose.Contiguous();
     float *transformation_ptr =
             static_cast<float *>(transformation.GetDataPtr());
-    const float *pose_ptr = static_cast<const float *>(pose_copy.GetDataPtr());
+    const float *pose_ptr = static_cast<const float *>(pose_.GetDataPtr());
 
     // Rotation from pose.
     core::Device::DeviceType device_type = device.GetType();
@@ -86,7 +86,7 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     // Translation from pose.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
-            pose.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
+            pose_.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
     // Scale [assumed to be 1].
     transformation[3][3] = 1;
     return transformation;

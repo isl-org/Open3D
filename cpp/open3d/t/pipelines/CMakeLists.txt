@@ -19,9 +19,8 @@ set(ALL_PIPELINE_SRC
 
 if(BUILD_CUDA_MODULE)
     set(ALL_PIPELINE_SRC
-        ${REGISTRATION_SRC}
+        ${ALL_PIPELINE_SRC}
         ${UTILITY_CUDA_SRC}
-        ${UTILITY_SRC}
     )
 endif()
 

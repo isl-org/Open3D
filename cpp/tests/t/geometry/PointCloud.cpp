@@ -117,6 +117,49 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
               std::vector<float>({2.5, 3.5, 4.5}));
 }
 
+TEST_P(PointCloudPermuteDevices, CopyDevice) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud pcd(device);
+    pcd.SetPoints(core::Tensor::Ones({10, 3}, dtype, device));
+    pcd.SetPointNormals(core::Tensor::Ones({10, 3}, dtype, device));
+
+    t::geometry::PointCloud pcd_copy(core::Device("CPU:0"));
+    pcd_copy = pcd.Copy(core::Device("CPU:0"));
+    pcd_copy.GetPoints()[0][0] = 100;
+    pcd_copy.GetPointNormals()[0][0] = 100;
+
+    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDevice(core::Device("CPU:0")));
+    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDtype(dtype));
+
+    EXPECT_NE(pcd.GetPoints().ToFlatVector<float_t>(),
+              pcd_copy.GetPoints().ToFlatVector<float_t>());
+    EXPECT_NE(pcd.GetPointNormals().ToFlatVector<float_t>(),
+              pcd_copy.GetPointNormals().ToFlatVector<float_t>());
+}
+
+TEST_P(PointCloudPermuteDevices, Copy) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud pcd(device);
+    pcd.SetPoints(core::Tensor::Ones({10, 3}, dtype, device));
+    pcd.SetPointNormals(core::Tensor::Ones({10, 3}, dtype, device));
+
+    t::geometry::PointCloud pcd_copy = pcd.Copy();
+    pcd_copy.GetPoints()[0][0] = 100;
+    pcd_copy.GetPointNormals()[0][0] = 100;
+
+    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDevice(device));
+    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDtype(dtype));
+
+    EXPECT_NE(pcd.GetPoints().ToFlatVector<float_t>(),
+              pcd_copy.GetPoints().ToFlatVector<float_t>());
+    EXPECT_NE(pcd.GetPointNormals().ToFlatVector<float_t>(),
+              pcd_copy.GetPointNormals().ToFlatVector<float_t>());
+}
+
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
