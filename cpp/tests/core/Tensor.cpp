@@ -1042,6 +1042,16 @@ TEST_P(TensorPermuteDevices, T) {
     EXPECT_THROW(t_3d.T(), std::runtime_error);
 }
 
+TEST_P(TensorPermuteDevices, Det) {
+    core::Device device = GetParam();
+
+    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
+    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
+
+    double t_t = t.Det();
+    EXPECT_DOUBLE_EQ(t_t, -40.0);
+}
+
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
     core::Device device = GetParam();
     core::Tensor t({2, 3}, core::Dtype::Float32, device);

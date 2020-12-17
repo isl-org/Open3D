@@ -767,15 +767,14 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det_() const {
-    // TODO: Create a proper op for Determinant
+double Tensor::Det() const {
+    // TODO: Create a proper op for Determinant.
     this->AssertShape({3, 3});
     this->AssertDtype(core::Dtype::Float32);
     core::Tensor D_ = this->Copy();
-    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]);
-    D_[0][1] = D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]);
-    D_[0][2] = D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
-    D_[0][0] = D_[0][0] - D_[0][1] + D_[0][2];
+    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
+               D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
+               D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
     return (double)D_[0][0].Item<float>();
 }
 

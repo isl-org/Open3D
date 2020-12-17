@@ -48,30 +48,35 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
     transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
     transformation.AssertDtype(dtype);
+    core::Tensor transformation_device;
+    if (transformation.GetDevice() == device) {
+        transformation_device = transformation;
+    } else {
+        transformation_device = transformation.Copy(device);
+    }
 
-    RegistrationResult result(transformation);
+    RegistrationResult result(transformation_device);
     if (max_correspondence_distance <= 0.0) {
         return result;
     }
 
     bool check = target_nns.HybridIndex();
     if (!check) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "[Tensor: EvaluateRegistration: "
                 "GetRegistrationResultAndCorrespondences: "
                 "NearestNeighborSearch::HybridSearch] "
                 "Index is not set.");
     }
     // max_correspondece_dist in HybridSearch Tensor implementation
-    // is square root of that used in Legacy implementation
-    // TODO: Inform author about this
+    // is square root of that used in Legacy implementation.
+    // TODO: Inform author about this.
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
@@ -100,28 +105,36 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         const geometry::PointCloud &target,
                                         double max_correspondence_distance,
-                                        const core::Tensor &transformation) {
+                                        const core::Tensor &transformation /*
+                                        = core::Tensor::Eye(4, 
+                                        core::Dtype::Float32,
+                                        core::Device("CPU:0"))*/) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
     transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device);
     transformation.AssertDtype(dtype);
+    core::Tensor transformation_device;
+    if (transformation.GetDevice() == device) {
+        transformation_device = transformation;
+    } else {
+        transformation_device = transformation.Copy(device);
+    }
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
     geometry::PointCloud source_transformed = source;
-    // TODO: Check if transformation isIdentity (skip transform operation)
-    source_transformed.Transform(transformation);
+    // TODO: Check if transformation isIdentity (skip transform operation).
+    source_transformed.Transform(transformation_device);
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
-            transformation);
+            transformation_device);
 }
 
 RegistrationResult RegistrationICP(const geometry::PointCloud &source,
@@ -135,41 +148,44 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
     init.AssertShape({4, 4});
     init.AssertDtype(dtype);
-    init.AssertDevice(device);
+    core::Tensor transformation_device;
+    if (init.GetDevice() == device) {
+        transformation_device = init;
+    } else {
+        transformation_device = init.Copy(device);
+    }
 
-    core::Tensor transformation = init;
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud source_transformed = source;
 
-    // TODO: Check if transformation isIdentity (skip transform operation)
-    source_transformed.Transform(transformation);
-    // TODO: Default constructor absent in RegistrationResult class
-    RegistrationResult result(transformation);
+    // TODO: Check if transformation isIdentity (skip transform operation).
+    source_transformed.Transform(transformation_device);
+    // TODO: Default constructor absent in RegistrationResult class.
+    RegistrationResult result(transformation_device);
 
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
-            transformation);
+            transformation_device);
     auto corres = std::make_pair(result.correspondence_select_bool_,
                                  result.correspondence_set_);
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        open3d::utility::LogDebug(
-                "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                result.fitness_, result.inlier_rmse_);
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                          result.fitness_, result.inlier_rmse_);
         auto update = estimation.ComputeTransformation(source_transformed,
                                                        target, corres);
-        transformation = update.Matmul(transformation);
+        transformation_device = update.Matmul(transformation_device);
         source_transformed.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
                 source_transformed, target, target_nns,
-                max_correspondence_distance, transformation);
+                max_correspondence_distance, transformation_device);
         corres = std::make_pair(result.correspondence_select_bool_,
                                 result.correspondence_set_);
         if (std::abs(backup.fitness_ - result.fitness_) <

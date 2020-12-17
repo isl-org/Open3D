@@ -24,10 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// THIS FILE IS FOR TEMPORARY PURPOSE, FOR HELPING TRANSFORMATIONESTIMATION
-// WITH FUNCTIONS TO SOLVE EQUATIONS, AND WILL BE REMOVED WHEN THE
-// PROPER FUNCTIONALITIES ARE ADDED TO THE CORE
-
 #pragma once
 
 #include "open3d/core/Tensor.h"
@@ -36,21 +32,16 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 
-// Utility functions
-// Accessible directly as
-// t::pipelines::ComputeTransformationFromRt
-// t::pipelines::ComputeTransformationFromPose
-
 /// \brief Functions for Computing Transformation Matrix {4,4}
-/// from Rotation {3,3} and Translation {3}
-/// \param R Rotation Tensor {3,3} Float32
-/// \param t Translation Tensor {3} Float32
+/// from Rotation {3,3} and Translation {3}.
+/// \param R Rotation Tensor {3,3} Float32.
+/// \param t Translation Tensor {3} Float32.
 core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
                                          const core::Tensor &t);
 
 /// \brief Functions for Computing Transformation Matrix {4,4}
-/// from Pose {6} [alpha, beta, gamma, tx, ty, tz]
-/// \param X Pose {6} Float32
+/// from Pose {6} [alpha, beta, gamma, tx, ty, tz].
+/// \param X Pose {6} Float32.
 core::Tensor ComputeTransformationFromPose(const core::Tensor &X);
 
 }  // namespace pipelines

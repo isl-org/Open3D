@@ -436,9 +436,9 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 3x3 Matrix
-    /// returns Determinant of the matrix (double)
-    double Det_() const;
+    /// \brief Expects input to be 3x3 Matrix.
+    /// \return returns the determinant of the matrix (double).
+    double Det() const;
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()

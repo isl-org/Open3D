@@ -68,7 +68,7 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X) {
     auto X_copy = X.Contiguous();
     float *transformation_ptr =
             static_cast<float *>(transformation.GetDataPtr());
-    float *X_ptr = static_cast<float *>(X_copy.GetDataPtr());
+    const float *X_ptr = static_cast<const float *>(X_copy.GetDataPtr());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

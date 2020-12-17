@@ -8,20 +8,19 @@ set(UTILITY_SRC
     SolveTransformation.cpp
 )
 
-
 set(UTILITY_CUDA_SRC
     SolveTransformation.cu
+)
+
+set(ALL_PIPELINE_SRC
+    ${REGISTRATION_SRC}
+    ${UTILITY_SRC}
 )
 
 if(BUILD_CUDA_MODULE)
     set(ALL_PIPELINE_SRC
         ${REGISTRATION_SRC}
         ${UTILITY_CUDA_SRC}
-        ${UTILITY_SRC}
-    )
-else()
-    set(ALL_PIPELINE_SRC
-        ${REGISTRATION_SRC}
         ${UTILITY_SRC}
     )
 endif()

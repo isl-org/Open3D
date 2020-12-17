@@ -34,12 +34,12 @@ namespace t {
 namespace pipelines {
 
 __global__ void ComputeTransformationFromPoseKernel(float *transformation_ptr,
-                                                    float *X_ptr) {
+                                                    const float *X_ptr) {
     ComputeTransformationFromPoseImpl(transformation_ptr, X_ptr);
 }
 
 void ComputeTransformationFromPoseImplCUDA(float *transformation_ptr,
-                                           float *X_ptr) {
+                                           const float *X_ptr) {
     ComputeTransformationFromPoseKernel<<<1, 1>>>(transformation_ptr, X_ptr);
 }
 

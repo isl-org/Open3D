@@ -40,19 +40,19 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
 
     double error;
-    // TODO: Revist to support Float32 and 64 without type conversion
+    // TODO: Revist to support Float32 and 64 without type conversion.
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
     core::Tensor error_t = (source_select - target_select);
     error_t.Mul_(error_t);
-    error = (double)error_t.Sum({0, 1}).Item<float_t>();
+    error = static_cast<double>(error_t.Sum({0, 1}).Item<float_t>());
     return std::sqrt(error / (double)corres.second.GetShape()[0]);
 }
 
@@ -65,7 +65,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -82,7 +82,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
-    if (U.Det_() * (VT.T()).Det_() < 0) {
+    if (U.Det() * (VT.T()).Det() < 0) {
         S[-1][-1] = -1;
     }
     core::Tensor R, t;
@@ -98,11 +98,11 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
-    // TODO: Assert Ops for pointcloud
+    // TODO: Assert Ops for pointcloud.
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -117,7 +117,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     core::Tensor error_t =
             (source_select - target_select).Mul_(target_n_select);
     error_t.Mul_(error_t);
-    double error = (double)error_t.Sum({0, 1}).Item<float_t>();
+    double error = static_cast<float>(error_t.Sum({0, 1}).Item<float_t>());
     return std::sqrt(error / (double)corres.second.GetShape()[0]);
 }
 
@@ -125,14 +125,14 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
-    // TODO: if corres empty throw Error
+    // TODO: if corres empty throw Error.
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
-    // TODO: Assert Ops for pointcloud
+    // TODO: Assert Ops for pointcloud.
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
@@ -148,9 +148,9 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                              .Sum({1}, true)
                              .To(dtype);
 
-    // --- Computing A in AX = B
+    // --- Computing A in AX = B.
     auto num_corres = source_select.GetShape()[0];
-    // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz)
+    // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz).
     core::Tensor nx =
             target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
                                      core::TensorKey::Slice(0, 1, 1)});
@@ -169,7 +169,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     core::Tensor sz =
             source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
                                    core::TensorKey::Slice(2, 3, 1)});
-    // Cross Product Calculation
+    // Cross Product Calculation.
     core::Tensor a1 = (nz * sy) - (ny * sz);
     core::Tensor a2 = (nx * sz) - (nz * sx);
     core::Tensor a3 = (ny * sx) - (nx * sy);
@@ -187,7 +187,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
                core::TensorKey::Slice(3, 6, 1)},
               target_n_select);
-    // --- Computing A completed
+    // --- Computing A completed.
 
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
     return t::pipelines::ComputeTransformationFromPose(Pose);

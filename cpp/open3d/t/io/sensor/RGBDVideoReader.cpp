@@ -51,15 +51,15 @@ std::string RGBDVideoReader::ToString() const {
 void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                                  uint64_t start_time,
                                  uint64_t end_time) {
-    using namespace open3d::utility::filesystem;
+    using namespace utility::filesystem;
     using namespace open3d::io;
     if (!IsOpened()) {
-        open3d::utility::LogError("Null file handler. Please call Open().");
+        utility::LogError("Null file handler. Please call Open().");
     }
     bool success = MakeDirectoryHierarchy(fmt::format("{}/color", frame_path));
     success &= MakeDirectoryHierarchy(fmt::format("{}/depth", frame_path));
     if (!success) {
-        open3d::utility::LogError(
+        utility::LogError(
                 "Could not create color or depth subfolder in {} or they "
                 "already exist.",
                 frame_path);
@@ -79,7 +79,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             WriteImage(color_file, im_color);
-            open3d::utility::LogDebug("Written color image to {}", color_file);
+            utility::LogDebug("Written color image to {}", color_file);
         }
 #pragma omp section
         {
@@ -87,25 +87,24 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             WriteImage(depth_file, im_depth);
-            open3d::utility::LogDebug("Written depth image to {}", depth_file);
+            utility::LogDebug("Written depth image to {}", depth_file);
         }
     }
-    open3d::utility::LogInfo(
-            "Written {} depth and color images to {}/{{depth,color}}/", idx,
-            frame_path);
+    utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
+                     idx, frame_path);
 }
 
 std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         const std::string &filename) {
 #ifdef BUILD_LIBREALSENSE
-    if (open3d::utility::ToLower(filename).compare(filename.length() - 4, 4,
-                                                   ".bag") == 0) {
+    if (utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
+        0) {
         auto reader = std::make_shared<RSBagReader>();
         reader->Open(filename);
         return reader;
     } else
 #endif
-        open3d::utility::LogError("Unsupported file format for {}", filename);
+        utility::LogError("Unsupported file format for {}", filename);
 }
 }  // namespace io
 }  // namespace t

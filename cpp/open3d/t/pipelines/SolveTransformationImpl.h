@@ -38,7 +38,7 @@ namespace pipelines {
 
 /// Shared implementation for ComputeTransformationFromPose.
 OPEN3D_HOST_DEVICE inline void ComputeTransformationFromPoseImpl(
-        float *transformation_ptr, float *X_ptr) {
+        float *transformation_ptr, const float *X_ptr) {
     transformation_ptr[0] = cos(X_ptr[2]) * cos(X_ptr[1]);
     transformation_ptr[1] = -1 * sin(X_ptr[2]) * cos(X_ptr[0]) +
                             cos(X_ptr[2]) * sin(X_ptr[1]) * sin(X_ptr[0]);
@@ -60,7 +60,7 @@ OPEN3D_HOST_DEVICE inline void ComputeTransformationFromPoseImpl(
 /// in Transformation matrix, using the Pose, the rest is set in
 /// the parent function ComputeTransformationFromPose.
 void ComputeTransformationFromPoseImplCUDA(float *transformation_ptr,
-                                           float *X_ptr);
+                                           const float *X_ptr);
 #endif
 
 }  // namespace pipelines

@@ -86,8 +86,7 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix.
-    RegistrationResult(const core::Tensor &transformation /*= core::Tensor::Eye(
-                               4, core::Dtype::Float64, core::Device("CPU:0"))*/)
+    RegistrationResult(const core::Tensor &transformation)
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
     bool IsBetterRANSACThan(const RegistrationResult &other) const {
@@ -108,7 +107,7 @@ public:
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
     /// in target). Higher is better.
     /// For RANSAC: inlier ratio (# of inlier correspondences / # of
-    /// all correspondences)
+    /// all correspondences).
     double fitness_;
 };
 
@@ -120,10 +119,12 @@ public:
 /// distance. \param transformation The 4x4 transformation matrix to transform
 /// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
 /// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
-RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
-                                        const geometry::PointCloud &target,
-                                        double max_correspondence_distance,
-                                        const core::Tensor &transformation);
+RegistrationResult EvaluateRegistration(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance,
+        const core::Tensor &transformation = core::Tensor::Eye(
+                4, core::Dtype::Float32, core::Device("CPU:0")));
 
 /// \brief Functions for ICP registration.
 ///

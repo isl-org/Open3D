@@ -120,7 +120,7 @@ public:
             CorrespondenceSet &corres) const override;
 
 public:
-    /// Currently Not Implemented. [Scaling not supported]
+    /// Currently Not Implemented. [Scaling not supported].
     /// Set to True to estimate scaling, False to force scaling to be 1.
     ///
     /// The homogeneous transformation is given by\n
@@ -143,7 +143,7 @@ public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
-    /// Currently Not Implemented. [RobustKernel not supported]
+    /// Currently Not Implemented. [RobustKernel not supported].
     /// \brief Constructor that takes as input a RobustKernel \params kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
     // explicit TransformationEstimationPointToPlane(
