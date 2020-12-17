@@ -772,7 +772,6 @@ void GuiVisualizer::SetGeometry(
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);
-        //impl_->scene_wgt_->AddLabel(Eigen::Vector3f(2.f, 2.f, 0.f), "Here is some text...");
     } else {
         // NOTE: If a model was NOT loaded then these must be point clouds
         std::shared_ptr<const geometry::Geometry> g = geometry;
