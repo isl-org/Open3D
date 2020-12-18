@@ -33,6 +33,9 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+// Label3D is a helper class for labels (like UI Labels) at 3D points as opposed
+// to screen points. It is NOT a UI widget but is instead used via Open3DScene
+// class. See Open3DScene::AddLabel/RemoveLabel.
 class Label3D {
 public:
     /// Copies text
