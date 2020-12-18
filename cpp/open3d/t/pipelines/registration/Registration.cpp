@@ -76,7 +76,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
     // max_correspondece_dist in HybridSearch tensor implementation
     // is square root of that used in legacy implementation.
-    // TODO: Inform author about this.
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
@@ -105,10 +104,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         const geometry::PointCloud &target,
                                         double max_correspondence_distance,
-                                        const core::Tensor &transformation /*
-                                        = core::Tensor::Eye(4, 
-                                        core::Dtype::Float32,
-                                        core::Device("CPU:0"))*/) {
+                                        const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -129,8 +125,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
-    geometry::PointCloud source_transformed = source;
-    // TODO: Check if transformation isIdentity (skip transform operation).
+    geometry::PointCloud source_transformed = source.Copy();
     source_transformed.Transform(transformation_device);
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
@@ -163,9 +158,8 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud source_transformed = source.Copy();
-
-    // TODO: Check if transformation isIdentity (skip transform operation).
     source_transformed.Transform(transformation_device);
+
     // TODO: Default constructor absent in RegistrationResult class.
     RegistrationResult result(transformation_device);
 

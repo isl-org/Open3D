@@ -96,14 +96,8 @@ public:
 /// Estimate a transformation for point to point distance.
 class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
-    /// Currently not implemented. [Scaling not supported]
-    /// \brief Parameterized constructor.
-    ///
-    /// \param with_scaling Set to True to estimate scaling, False to force
-    /// scaling to be 1.
-    // TransformationEstimationPointToPoint(bool with_scaling = false)
-    //     : with_scaling_(with_scaling) {}
-
+    // TODO: support with_scaling.
+    TransformationEstimationPointToPoint() {}
     ~TransformationEstimationPointToPoint() override {}
 
 public:
@@ -118,16 +112,6 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             CorrespondenceSet &corres) const override;
-
-public:
-    /// Currently not implemented. [Scaling not supported].
-    /// Set to True to estimate scaling, False to force scaling to be 1.
-    ///
-    /// The homogeneous transformation is given by\n
-    /// T = [ cR t]\n
-    ///     [0   1]\n
-    /// Sets 𝑐=1 if with_scaling is False.
-    //  bool with_scaling_ = false;
 
 private:
     const TransformationEstimationType type_ =

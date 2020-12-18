@@ -167,10 +167,11 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     core::Tensor sz =
             source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
                                    core::TensorKey::Slice(2, 3, 1)});
-    // Cross Product Calculation.
+    // Cross product calculation.
     core::Tensor a1 = (nz * sy) - (ny * sz);
     core::Tensor a2 = (nx * sz) - (nz * sx);
     core::Tensor a3 = (ny * sx) - (nx * sy);
+
     // Putting the pieces back together.
     core::Tensor A({num_corres, 6}, dtype, device);
     A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
@@ -185,7 +186,6 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
                core::TensorKey::Slice(3, 6, 1)},
               target_n_select);
-    // --- Computing A completed.
 
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
     return t::pipelines::PoseToTransformation(Pose);

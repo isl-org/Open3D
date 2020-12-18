@@ -115,8 +115,7 @@ public:
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param transformation The 4x4 transformation matrix to transform
-/// source to target. Default value: Tensor([[1., 0., 0., 0.], [0., 1., 0., 0.],
-/// [0., 0., 1., 0.], [0., 0., 0., 1.]]), Float32, device = CPU:0.
+/// source to target.
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
