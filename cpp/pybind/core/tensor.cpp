@@ -35,6 +35,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
+#include "open3d/utility/Optional.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
@@ -80,16 +81,36 @@ void pybind_core_tensor(py::module& m) {
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
 
     // Constructor from numpy array
-    tensor.def(py::init([](py::array np_array, const Dtype& dtype,
-                           const Device& device) {
-        py::buffer_info info = np_array.request();
-        SizeVector shape(info.shape.begin(), info.shape.end());
-        Tensor t;
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
-            t = Tensor(ToFlatVector<scalar_t>(np_array), shape, dtype, device);
-        });
-        return t;
-    }));
+    tensor.def(py::init([](py::array np_array, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
+                   if (dtype.has_value()) {
+                       t = t.To(dtype.value(), /*copy=*/false);
+                   }
+                   if (device.has_value() &&
+                       device.value() != core::Device("CPU:0")) {
+                       t = t.Copy(device.value());
+                   }
+                   return t;
+               }),
+               "np_array"_a, "dtype"_a = py::none(), "device"_a = py::none());
+
+    tensor.def(py::init([](int64_t scalar_value, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   Dtype dtype_value = Dtype::Int64;
+                   if (dtype.has_value()) {
+                       dtype_value = dtype.value();
+                   }
+                   Device device_value("CPU:0");
+                   if (device.has_value()) {
+                       device_value = device.value();
+                   }
+                   return Tensor(std::vector<int64_t>{scalar_value}, {},
+                                 Dtype::Int64, device_value)
+                           .To(dtype_value, /*copy=*/false);
+               }),
+               "scalar_value"_a, "dtype"_a = py::none(),
+               "device"_a = py::none());
 
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);

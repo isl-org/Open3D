@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import open3d.core as o3c
 import numpy as np
 import pytest
 
@@ -36,8 +37,16 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 def test_creation():
     t_np = np.ones((2, 3))
 
-    t0 = o3d.core.Tensor(t_np)
+    t0 = o3c.Tensor(t_np)
     print(t0)
 
-    t1 = o3d.pybind.core.Tensor(t_np)
+    t1 = o3d.pybind.core.Tensor(t_np, o3c.Dtype.Int32)
+    print(t1)
+
+    t1 = o3d.pybind.core.Tensor(t_np, dtype=None, device=o3c.Device("CPU:0"))
+    print(t1)
+
+    t1 = o3d.pybind.core.Tensor(1,
+                                dtype=o3c.Dtype.Float32,
+                                device=o3c.Device("CPU:0"))
     print(t1)
