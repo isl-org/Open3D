@@ -32,9 +32,9 @@ fragment {
             float bg_aspect_ratio = resolution[0] * resolution[3];
             float2 xy = getNormalizedViewportCoord().xy;
             xy[1] = 1.0 - xy[1];  // flip y
-            // (This if should be fast because all pixesl take same branch)
+            // (This if should be fast because all pixels take same branch)
             if (materialParams.aspectRatio < bg_aspect_ratio) {
-                float half_w = 0.5 / bg_aspect_ratio;
+                float half_w = 0.5 / bg_aspect_ratio * materialParams.aspectRatio;
                 // (This if should have good coherence: nearby pixels are
                 // very likely to take the same branch)
                 if (xy[0] >= 0.5 - half_w && xy[0] <= 0.5 + half_w) {
@@ -45,7 +45,7 @@ fragment {
                     material.baseColor = float4(materialParams.baseColor, 1.0f);
                 }
             } else {
-                float half_h = 0.5 * bg_aspect_ratio;
+                float half_h = 0.5 / materialParams.aspectRatio * bg_aspect_ratio;
                 // (This if should have good coherence: nearby pixels are
                 // very likely to take the same branch)
                 if (xy[1] >= 0.5 - half_h && xy[1] <= 0.5 + half_h) {
