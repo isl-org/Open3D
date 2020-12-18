@@ -51,7 +51,7 @@ std::string RGBDVideoReader::ToString() const {
 void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                                  uint64_t start_time,
                                  uint64_t end_time) {
-    using namespace open3d::utility::filesystem;
+    using namespace utility::filesystem;
     using namespace open3d::io;
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");

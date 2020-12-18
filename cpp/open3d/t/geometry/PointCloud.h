@@ -233,6 +233,12 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
+    /// Returns deep copy of the pointcloud
+    PointCloud Copy(const core::Device device) const;
+
+    /// Returns deep copy of the pointcloud on the same device
+    PointCloud Copy() const;
+
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.
     /// Extracts R, t from Transformation
