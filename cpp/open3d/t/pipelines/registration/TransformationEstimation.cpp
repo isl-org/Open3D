@@ -148,7 +148,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                              .To(dtype);
 
     // --- Computing A in AX = B.
-    int num_corres = source_select.GetShape()[0];
+    int64_t num_corres = source_select.GetShape()[0];
     // Slicing normals: (nx, ny, nz) and source points: (sx, sy, sz).
     core::Tensor nx =
             target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),

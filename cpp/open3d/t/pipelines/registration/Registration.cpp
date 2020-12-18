@@ -79,7 +79,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
-    CorrespondenceSet result_nns = target_nns.HybridSearch(
+    std::pair<core::Tensor, core::Tensor> result_nns = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
 
     result.correspondence_select_bool_ =
