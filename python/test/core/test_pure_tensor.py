@@ -50,3 +50,8 @@ def test_creation():
                                 dtype=o3c.Dtype.Float32,
                                 device=o3c.Device("CPU:0"))
     print(t1)
+
+    t1 = o3d.pybind.core.Tensor(3.14,
+                                dtype=o3c.Dtype.Int32,
+                                device=o3c.Device("CPU:0"))
+    print(t1)
