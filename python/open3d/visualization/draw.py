@@ -13,6 +13,8 @@ def draw(
         #eye=None,
         #up=None,
         #field_of_view=None,
+        bg_color=(1, 1, 1, 1),
+        bg_image=None,
         show_ui=None,
         point_size=None,
         animation_time_step=1.0,
@@ -47,6 +49,7 @@ def draw(
         add(geometry, n)
 
     w.reset_camera_to_default()
+    w.set_background(bg_color, bg_image)
 
     w.animation_time_step = animation_time_step
     if animation_duration is not None:
