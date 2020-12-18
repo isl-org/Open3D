@@ -258,6 +258,18 @@ Camera::Transform FilamentCamera::GetProjectionMatrix() const {
     return FilamentToCameraTransform(ftransform);
 }
 
+Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
+    auto vtransform = camera_->getViewMatrix();
+    auto ptransform = camera_->getProjectionMatrix();
+    filament::math::float4 p(pt(0), pt(1), pt(2), 1.f);
+    auto clip_space_p = ptransform * vtransform * p;
+    filament::math::float2 ndc_space_p;
+    ndc_space_p.x = float(clip_space_p.x / clip_space_p.w);
+    ndc_space_p.y = float(clip_space_p.y / clip_space_p.w);
+
+    return {ndc_space_p.x, ndc_space_p.y};
+}
+
 const Camera::ProjectionInfo& FilamentCamera::GetProjection() const {
     return projection_;
 }
