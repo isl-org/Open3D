@@ -129,6 +129,13 @@ void pybind_core_tensor(py::module& m) {
                "scalar_value"_a, "dtype"_a = py::none(),
                "device"_a = py::none());
 
+    tensor.def(py::init([](py::list list, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   utility::LogError("in the list");
+                   return Tensor();
+               }),
+               "list"_a, "dtype"_a = py::none(), "device"_a = py::none());
+
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);
     tensor.def_static("full", &Tensor::Full<float>);

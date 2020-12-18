@@ -55,3 +55,10 @@ def test_creation():
                                 dtype=o3c.Dtype.Int32,
                                 device=o3c.Device("CPU:0"))
     print(t1)
+
+
+def test_list_creation():
+    t1 = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
+                                dtype=None,
+                                device=o3c.Device("CPU:0"))
+    print(t1)
