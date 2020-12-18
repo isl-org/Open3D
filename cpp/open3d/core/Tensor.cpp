@@ -775,7 +775,7 @@ double Tensor::Det() const {
     D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
                D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
                D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
-    return (double)D_[0][0].Item<float>();
+    return static_cast<double>(D_[0][0].Item<float>());
 }
 
 Tensor Tensor::Add(const Tensor& value) const {

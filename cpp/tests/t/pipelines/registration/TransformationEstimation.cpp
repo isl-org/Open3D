@@ -79,7 +79,8 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPoint) {
                                             7,  3,  6,  7, 0,  8};
     core::Tensor corres_indices(corres_indices_vec, {13}, core::Dtype::Int64,
                                 device);
-    auto corres = std::make_pair(corres_select_bool, corres_indices);
+    t::pipelines::registration::CorrespondenceSet corres =
+            std::make_pair(corres_select_bool, corres_indices);
 
     t::pipelines::registration::TransformationEstimationPointToPoint
             estimation_p2p;
@@ -126,16 +127,17 @@ TEST_P(TransformationEstimationPermuteDevices,
     core::Tensor corres_indices(corres_indices_vec, {13}, core::Dtype::Int64,
                                 device);
 
-    auto corres = std::make_pair(corres_select_bool, corres_indices);
+    t::pipelines::registration::CorrespondenceSet corres =
+            std::make_pair(corres_select_bool, corres_indices);
 
     t::pipelines::registration::TransformationEstimationPointToPoint
             estimation_p2p;
 
     // Get transfrom.
-    auto p2p_transform = estimation_p2p.ComputeTransformation(
+    core::Tensor p2p_transform = estimation_p2p.ComputeTransformation(
             source_device, target_device, corres);
     // Apply transform.
-    auto source_transformed_p2p = source_device;
+    t::geometry::PointCloud source_transformed_p2p = source_device.Copy();
     source_transformed_p2p.Transform(p2p_transform.To(dtype));
     double p2p_rmse_ = estimation_p2p.ComputeRMSE(source_transformed_p2p,
                                                   target_device, corres);
@@ -189,7 +191,8 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPlane) {
                                             7,  3,  6,  7, 0,  8};
     core::Tensor corres_indices(corres_indices_vec, {13}, core::Dtype::Int64,
                                 device);
-    auto corres = std::make_pair(corres_select_bool, corres_indices);
+    t::pipelines::registration::CorrespondenceSet corres =
+            std::make_pair(corres_select_bool, corres_indices);
     t::pipelines::registration::TransformationEstimationPointToPlane
             estimation_p2plane;
     double p2plane_rmse = estimation_p2plane.ComputeRMSE(source_device,
@@ -272,13 +275,14 @@ TEST_P(TransformationEstimationPermuteDevices,
                                             7,  10, 11, 9, 16, 16, 6,  11};
     core::Tensor corres_indices(corres_indices_vec, {26}, core::Dtype::Int64,
                                 device);
-    auto corres = std::make_pair(corres_select_bool, corres_indices);
+    t::pipelines::registration::CorrespondenceSet corres =
+            std::make_pair(corres_select_bool, corres_indices);
 
     t::pipelines::registration::TransformationEstimationPointToPlane
             estimation_p2plane;
-    auto p2plane_transform = estimation_p2plane.ComputeTransformation(
+    core::Tensor p2plane_transform = estimation_p2plane.ComputeTransformation(
             source_device, target_device, corres);
-    auto source_transformed_p2plane = source_device;
+    t::geometry::PointCloud source_transformed_p2plane = source_device.Copy();
     source_transformed_p2plane.Transform(p2plane_transform.To(dtype));
     double p2plane_rmse_ = estimation_p2plane.ComputeRMSE(
             source_transformed_p2plane, target_device, corres);

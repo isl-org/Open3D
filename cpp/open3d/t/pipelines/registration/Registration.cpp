@@ -79,8 +79,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
-    auto result_nns = target_nns.HybridSearch(source.GetPoints(),
-                                              max_correspondence_distance, 1);
+    CorrespondenceSet result_nns = target_nns.HybridSearch(
+            source.GetPoints(), max_correspondence_distance, 1);
 
     result.correspondence_select_bool_ =
             (result_nns.first.Ne(-1)).Reshape({-1});
@@ -170,14 +170,14 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
             transformation_device);
-    auto corres = std::make_pair(result.correspondence_select_bool_,
-                                 result.correspondence_set_);
+    CorrespondenceSet corres = std::make_pair(
+            result.correspondence_select_bool_, result.correspondence_set_);
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
-        auto update = estimation.ComputeTransformation(source_transformed,
-                                                       target, corres);
+        core::Tensor update = estimation.ComputeTransformation(
+                source_transformed, target, corres);
         transformation_device = update.Matmul(transformation_device);
         source_transformed.Transform(update);
 
