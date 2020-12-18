@@ -944,7 +944,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     if (!impl_->labels_3d_.empty()) {
         const auto f = GetFrame();
         // Setup ImGUI
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowPos(ImVec2(f.x, f.y));
         ImGui::SetNextWindowSize(ImVec2(f.width, f.height));
         ImGui::Begin("3D Labels", nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
@@ -958,7 +958,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
             ndc *= 0.5f;
             ndc.x() *= f.width;
             ndc.y() *= f.height;
-            ImGui::SetCursorScreenPos(ImVec2(ndc.x(), f.height - ndc.y()));
+            ImGui::SetCursorScreenPos(ImVec2(ndc.x()-f.x, f.height - ndc.y() - f.y));
             auto color = l->GetTextColor();
             ImGui::TextColored({color.GetRed(), color.GetGreen(),
                                 color.GetBlue(), color.GetAlpha()},
