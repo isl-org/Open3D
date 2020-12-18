@@ -944,8 +944,8 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     if (!impl_->labels_3d_.empty()) {
         const auto f = GetFrame();
         // Setup ImGUI
-        ImGui::SetNextWindowPos(ImVec2(f.x, f.y));
-        ImGui::SetNextWindowSize(ImVec2(f.width, f.height));
+        ImGui::SetNextWindowPos(ImVec2(float(f.x), float(f.y)));
+        ImGui::SetNextWindowSize(ImVec2(float(f.width), float(f.height)));
         ImGui::Begin("3D Labels", nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
                              ImGuiWindowFlags_NoNav |
