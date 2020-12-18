@@ -52,8 +52,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 
     core::Tensor error_t = (source_select - target_select);
     error_t.Mul_(error_t);
-    error = static_cast<double>(error_t.Sum({0, 1}).Item<float_t>());
-    return std::sqrt(error / (double)corres.second.GetShape()[0]);
+    error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
+    return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
 }
 
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
@@ -75,10 +75,11 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     // https://ieeexplore.ieee.org/document/88573
     core::Tensor mux = source_select.Mean({0}, true);
     core::Tensor muy = target_select.Mean({0}, true);
-    core::Tensor Sxy = ((target_select - muy)
-                                .T()
-                                .Matmul(source_select - mux)
-                                .Div_((float)corres.second.GetShape()[0]));
+    core::Tensor Sxy =
+            ((target_select - muy)
+                     .T()
+                     .Matmul(source_select - mux)
+                     .Div_(static_cast<float>(corres.second.GetShape()[0])));
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
@@ -116,8 +117,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     core::Tensor error_t =
             (source_select - target_select).Mul_(target_n_select);
     error_t.Mul_(error_t);
-    double error = static_cast<float>(error_t.Sum({0, 1}).Item<float_t>());
-    return std::sqrt(error / (double)corres.second.GetShape()[0]);
+    double error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
+    return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(

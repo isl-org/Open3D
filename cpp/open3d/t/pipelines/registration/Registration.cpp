@@ -92,11 +92,15 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                     .Reshape({-1});
 
     // Reduction sum of "distances" for error.
-    auto squared_error = (dist_select.Sum({0})).Item<float_t>();
-    result.fitness_ = (float)result.correspondence_set_.GetShape()[0] /
-                      (float)result.correspondence_select_bool_.GetShape()[0];
+    double squared_error =
+            static_cast<double>(dist_select.Sum({0}).Item<float>());
+    result.fitness_ =
+            static_cast<double>(result.correspondence_set_.GetShape()[0]) /
+            static_cast<double>(
+                    result.correspondence_select_bool_.GetShape()[0]);
     result.inlier_rmse_ = std::sqrt(
-            squared_error / (float)result.correspondence_set_.GetShape()[0]);
+            squared_error /
+            static_cast<double>(result.correspondence_set_.GetShape()[0]));
     result.transformation_ = transformation;
     return result;
 }
@@ -176,15 +180,19 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                                                        target, corres);
         transformation_device = update.Matmul(transformation_device);
         source_transformed.Transform(update);
-        RegistrationResult backup = result;
+
+        double prev_fitness_ = result.fitness_;
+        double prev_inliner_rmse_ = result.inlier_rmse_;
+
         result = GetRegistrationResultAndCorrespondences(
                 source_transformed, target, target_nns,
                 max_correspondence_distance, transformation_device);
         corres = std::make_pair(result.correspondence_select_bool_,
                                 result.correspondence_set_);
-        if (std::abs(backup.fitness_ - result.fitness_) <
+
+        if (std::abs(prev_fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
-            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
+            std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
             break;
         }

@@ -62,8 +62,8 @@ TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Tensor transformation_ =
             t::pipelines::RtToTransformation(rotation, translation);
 
-    EXPECT_EQ(transformation.ToFlatVector<float_t>(),
-              transformation_.ToFlatVector<float_t>());
+    EXPECT_EQ(transformation.ToFlatVector<float>(),
+              transformation_.ToFlatVector<float>());
 }
 
 TEST_P(TransformationConverterPermuteDevices, PoseToTransformation) {
@@ -79,8 +79,8 @@ TEST_P(TransformationConverterPermuteDevices, PoseToTransformation) {
 
     core::Tensor transformation_ = t::pipelines::PoseToTransformation(pose);
 
-    EXPECT_EQ(transformation.ToFlatVector<float_t>(),
-              transformation_.ToFlatVector<float_t>());
+    EXPECT_EQ(transformation.ToFlatVector<float>(),
+              transformation_.ToFlatVector<float>());
 }
 
 }  // namespace tests

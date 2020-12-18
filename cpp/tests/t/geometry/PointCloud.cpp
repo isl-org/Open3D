@@ -117,47 +117,59 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
               std::vector<float>({2.5, 3.5, 4.5}));
 }
 
-TEST_P(PointCloudPermuteDevices, CopyDevice) {
-    core::Device device = GetParam();
+TEST_P(PointCloudPermuteDevicePairs, CopyDevice) {
+    core::Device dst_device;
+    core::Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
     core::Dtype dtype = core::Dtype::Float32;
 
-    t::geometry::PointCloud pcd(device);
-    pcd.SetPoints(core::Tensor::Ones({10, 3}, dtype, device));
-    pcd.SetPointNormals(core::Tensor::Ones({10, 3}, dtype, device));
+    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, src_device);
+    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, src_device) * 2;
+    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, src_device) * 3;
 
-    t::geometry::PointCloud pcd_copy(core::Device("CPU:0"));
-    pcd_copy = pcd.Copy(core::Device("CPU:0"));
-    pcd_copy.GetPoints()[0][0] = 100;
-    pcd_copy.GetPointNormals()[0][0] = 100;
+    t::geometry::PointCloud pcd(src_device);
 
-    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDevice(core::Device("CPU:0")));
-    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDtype(dtype));
+    pcd.SetPoints(points);
+    pcd.SetPointColors(colors);
+    pcd.SetPointAttr("labels", labels);
 
-    EXPECT_NE(pcd.GetPoints().ToFlatVector<float_t>(),
-              pcd_copy.GetPoints().ToFlatVector<float_t>());
-    EXPECT_NE(pcd.GetPointNormals().ToFlatVector<float_t>(),
-              pcd_copy.GetPointNormals().ToFlatVector<float_t>());
+    // Copy is created on the dst_device.
+    t::geometry::PointCloud pcd_copy = pcd.Copy(dst_device);
+
+    EXPECT_EQ(pcd_copy.GetDevice(), dst_device);
+    EXPECT_EQ(pcd_copy.GetPoints().GetDtype(), pcd.GetPoints().GetDtype());
 }
 
 TEST_P(PointCloudPermuteDevices, Copy) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
+    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device) * 2;
+    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, device) * 3;
+
     t::geometry::PointCloud pcd(device);
-    pcd.SetPoints(core::Tensor::Ones({10, 3}, dtype, device));
-    pcd.SetPointNormals(core::Tensor::Ones({10, 3}, dtype, device));
 
+    pcd.SetPoints(points);
+    pcd.SetPointColors(colors);
+    pcd.SetPointAttr("labels", labels);
+
+    // Copy is on the same device as source.
     t::geometry::PointCloud pcd_copy = pcd.Copy();
-    pcd_copy.GetPoints()[0][0] = 100;
-    pcd_copy.GetPointNormals()[0][0] = 100;
 
-    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDevice(device));
-    EXPECT_NO_THROW(pcd_copy.GetPoints().AssertDtype(dtype));
+    // Copy does not share the same memory with source (deep copy).
+    EXPECT_FALSE(pcd_copy.GetPoints().IsSame(pcd.GetPoints()));
+    EXPECT_FALSE(pcd_copy.GetPointColors().IsSame(pcd.GetPointColors()));
+    EXPECT_FALSE(
+            pcd_copy.GetPointAttr("labels").IsSame(pcd.GetPointAttr("labels")));
 
-    EXPECT_NE(pcd.GetPoints().ToFlatVector<float_t>(),
-              pcd_copy.GetPoints().ToFlatVector<float_t>());
-    EXPECT_NE(pcd.GetPointNormals().ToFlatVector<float_t>(),
-              pcd_copy.GetPointNormals().ToFlatVector<float_t>());
+    // Copy has the same attributes and values as source.
+    EXPECT_TRUE(pcd_copy.GetPoints().AllClose(pcd.GetPoints()));
+    EXPECT_TRUE(pcd_copy.GetPoints().AllClose(pcd.GetPoints()));
+    EXPECT_TRUE(pcd_copy.GetPointAttr("labels").AllClose(
+            pcd.GetPointAttr("labels")));
+    EXPECT_ANY_THROW(pcd_copy.GetPointNormals());
 }
 
 TEST_P(PointCloudPermuteDevices, Transform) {

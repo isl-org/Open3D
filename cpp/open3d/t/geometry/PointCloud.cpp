@@ -75,14 +75,8 @@ core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
 PointCloud PointCloud::Copy(const core::Device device) const {
     PointCloud pcd(device);
-    if (HasPoints()) {
-        pcd.SetPoints(GetPoints().Copy(device));
-    }
-    if (HasPointColors()) {
-        pcd.SetPointColors(GetPointColors().Copy(device));
-    }
-    if (HasPointNormals()) {
-        pcd.SetPointNormals(GetPointNormals().Copy(device));
+    for (auto &value : point_attr_) {
+        pcd.SetPointAttr(value.first, value.second.Copy(device));
     }
     return pcd;
 }
@@ -95,12 +89,12 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 
     core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
-    // TODO: Make it more generalised [4x4][4xN] Transformation
+    // TODO: Make it more generalised [4x4][4xN] transformation.
 
     // TODO: Consider adding a new op extending MatMul to support `AB + C`
     // GEMM operation. Also, a parallel joint optimimsed kernel for
     // independent MatMul operation with common matrix like AB and AC
-    // with fusion based cache optimisation
+    // with fusion based cache optimisation.
     core::Tensor &points = GetPoints();
     points = (R.Matmul(points.T())).Add_(t).T();
 

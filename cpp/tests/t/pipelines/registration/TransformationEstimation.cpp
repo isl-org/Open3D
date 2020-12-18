@@ -131,16 +131,16 @@ TEST_P(TransformationEstimationPermuteDevices,
     t::pipelines::registration::TransformationEstimationPointToPoint
             estimation_p2p;
 
-    // Get Transfrom
+    // Get transfrom.
     auto p2p_transform = estimation_p2p.ComputeTransformation(
             source_device, target_device, corres);
-    // Apply Transform
+    // Apply transform.
     auto source_transformed_p2p = source_device;
     source_transformed_p2p.Transform(p2p_transform.To(dtype));
     double p2p_rmse_ = estimation_p2p.ComputeRMSE(source_transformed_p2p,
                                                   target_device, corres);
 
-    // Compare the new RMSE after transformation
+    // Compare the new RMSE after transformation.
     EXPECT_NEAR(p2p_rmse_, 0.545857, 0.0001);
 }
 
@@ -283,7 +283,7 @@ TEST_P(TransformationEstimationPermuteDevices,
     double p2plane_rmse_ = estimation_p2plane.ComputeRMSE(
             source_transformed_p2plane, target_device, corres);
 
-    // Compare the new RMSE, after transformation
+    // Compare the new RMSE, after transformation.
     EXPECT_NEAR(p2plane_rmse_, 0.33768, 0.0005);
 }
 

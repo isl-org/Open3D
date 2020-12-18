@@ -50,7 +50,7 @@ TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Initial Transformation input for Tensor
+    // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
     t::pipelines::registration::ICPConvergenceCriteria convergence_criteria;
@@ -64,15 +64,15 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Initial Transformation input for Tensor
+    // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
     t::pipelines::registration::RegistrationResult reg_result(init_trans_t);
 
     EXPECT_DOUBLE_EQ(reg_result.inlier_rmse_, 0.0);
     EXPECT_DOUBLE_EQ(reg_result.fitness_, 0.0);
-    EXPECT_EQ(reg_result.transformation_.ToFlatVector<float_t>(),
-              init_trans_t.ToFlatVector<float_t>());
+    EXPECT_EQ(reg_result.transformation_.ToFlatVector<float>(),
+              init_trans_t.ToFlatVector<float>());
 }
 
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
@@ -113,22 +113,22 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     auto source_l_down = source_device.ToLegacyPointCloud();
     auto target_l_down = target_device.ToLegacyPointCloud();
 
-    // Initial Transformation input for Tensor
+    // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
-    // Initial Transformation input for Legacy
+    // Initial transformation input for legacy implementation.
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
 
-    // Identity Transformation
+    // Identity transformation.
     double max_correspondence_dist = 1.25;
 
-    // Tensor Evaluation
+    // Tensor evaluation.
     auto evaluation_t =
             open3d::t::pipelines::registration::EvaluateRegistration(
                     source_device, target_device, max_correspondence_dist,
                     init_trans_t);
 
-    // Legacy Evaluation
+    // Legacy evaluation.
     auto evaluation_l = open3d::pipelines::registration::EvaluateRegistration(
             source_l_down, target_l_down, max_correspondence_dist,
             init_trans_l);
@@ -166,10 +166,10 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     auto source_l_down = source_device.ToLegacyPointCloud();
     auto target_l_down = target_device.ToLegacyPointCloud();
 
-    // Initial Transformation input for Tensor
+    // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
-    // Initial Transformation input for Legacy
+    // Initial transformation input for legacy implementation.
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
 
     double max_correspondence_dist = 1.25;
@@ -177,7 +177,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     double relative_rmse = 1e-6;
     int max_iterations = 2;
 
-    // PointToPoint - Tensor
+    // PointToPoint - Tensor.
     auto reg_p2p_t = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans_t,
             open3d::t::pipelines::registration::
@@ -185,7 +185,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
             open3d::t::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
 
-    // PointToPoint - Legacy
+    // PointToPoint - Legacy.
     auto reg_p2p_l = open3d::pipelines::registration::RegistrationICP(
             source_l_down, target_l_down, max_correspondence_dist, init_trans_l,
             open3d::pipelines::registration::
@@ -235,10 +235,10 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     auto source_l_down = source_device.ToLegacyPointCloud();
     auto target_l_down = target_device.ToLegacyPointCloud();
 
-    // Initial Transformation input for Tensor
+    // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
-    // Initial Transformation input for Legacy
+    // Initial transformation input for legacy implementation.
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
 
     double max_correspondence_dist = 2.0;
@@ -246,7 +246,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     double relative_rmse = 1e-6;
     int max_iterations = 2;
 
-    // PointToPlane - Tensor
+    // PointToPlane - Tensor.
     auto reg_p2plane_t = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans_t,
             open3d::t::pipelines::registration::
@@ -254,7 +254,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
             open3d::t::pipelines::registration::ICPConvergenceCriteria(
                     relative_fitness, relative_rmse, max_iterations));
 
-    // PointToPlane - Legacy
+    // PointToPlane - Legacy.
     auto reg_p2plane_l = open3d::pipelines::registration::RegistrationICP(
             source_l_down, target_l_down, max_correspondence_dist, init_trans_l,
             open3d::pipelines::registration::
