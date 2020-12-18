@@ -151,6 +151,28 @@ void pybind_core_tensor(py::module& m) {
                }),
                "list"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
+    tensor.def(py::init([](py::tuple tuple, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   py::object numpy = py::module::import("numpy");
+                   utility::LogInfo("Imported numpy version: {}",
+                                    py::str(numpy.attr("__version__")));
+                   py::array np_array = numpy.attr("array")(tuple);
+
+                   // When np_array is a "ragged" tuple, e.g.
+                   // ((0, 1, 2, 3, 4, 5), (2, 3)), the np_array's dtype is "O"
+                   // for object, a proper open3d exception will be thrown.
+                   Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
+                   if (dtype.has_value()) {
+                       t = t.To(dtype.value(), /*copy=*/false);
+                   }
+                   if (device.has_value() &&
+                       device.value() != core::Device("CPU:0")) {
+                       t = t.Copy(device.value());
+                   }
+                   return t;
+               }),
+               "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
+
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);
     tensor.def_static("full", &Tensor::Full<float>);

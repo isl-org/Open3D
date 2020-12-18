@@ -68,3 +68,16 @@ def test_list_creation():
                                     dtype=None,
                                     device=o3c.Device("CPU:0"))
         print(t1)
+
+
+def test_tuple_creation():
+    t1 = o3d.pybind.core.Tensor((0, 1, 2, 3, 4, 5),
+                                dtype=None,
+                                device=o3c.Device("CPU:0"))
+    print(t1)
+
+    with pytest.raises(RuntimeError):
+        t1 = o3d.pybind.core.Tensor(((0, 1, 2, 3, 4, 5), (2, 3)),
+                                    dtype=None,
+                                    device=o3c.Device("CPU:0"))
+        print(t1)
