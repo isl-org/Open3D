@@ -98,10 +98,12 @@ int main(int argc, char *argv[]) {
 
         // To get number of correspondence
         auto correspondence_set_ =
-            result_nns.first.IndexGet({result_nns.first.Ne(-1).Reshape({-1})})
-                    .Reshape({-1});
+                result_nns.first
+                        .IndexGet({result_nns.first.Ne(-1).Reshape({-1})})
+                        .Reshape({-1});
         utility::LogInfo(" [Tensor] HYBRID SEARCH TOOK {}, Correspondences: {}",
-                         hybrid_time.GetDuration(), correspondence_set_.GetShape()[0]);
+                         hybrid_time.GetDuration(),
+                         correspondence_set_.GetShape()[0]);
 
         auto time = hybrid_time.GetDuration();
         avg_ += time;
