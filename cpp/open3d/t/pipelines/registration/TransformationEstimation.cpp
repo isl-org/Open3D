@@ -46,7 +46,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     }
 
     double error;
-    // TODO: revist to support Float32 and 64 without type conversion.
+    // TODO: Revist to support Float32 and 64 without type conversion.
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
@@ -125,7 +125,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
-    // TODO: if corres empty throw Error.
+    // TODO: If corres empty throw Error.
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
