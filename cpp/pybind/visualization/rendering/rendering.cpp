@@ -243,23 +243,24 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- TriangleMeshModel ----
-    py::class_<TriangleMeshModel> tri_model(m, "TriangleMeshModel",
-                                            "A list of geometry.TriangleMesh and Material that can describe a complex model with multiple meshes, such as might be stored in an FBX, OBJ, or GLTF file");
-    py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model, "MeshInfo",
-                                                           "");
+    py::class_<TriangleMeshModel> tri_model(
+            m, "TriangleMeshModel",
+            "A list of geometry.TriangleMesh and Material that can describe a "
+            "complex model with multiple meshes, such as might be stored in an "
+            "FBX, OBJ, or GLTF file");
+    py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
+                                                           "MeshInfo", "");
     tri_model_info
             .def(py::init([](std::shared_ptr<geometry::TriangleMesh> mesh,
-                             const std::string& name,
+                             const std::string &name,
                              unsigned int material_idx) {
-                              return TriangleMeshModel::MeshInfo{mesh, name,
-                                                                 material_idx};
-                          }))
+                return TriangleMeshModel::MeshInfo{mesh, name, material_idx};
+            }))
             .def_readwrite("mesh", &TriangleMeshModel::MeshInfo::mesh)
             .def_readwrite("mesh_name", &TriangleMeshModel::MeshInfo::mesh_name)
             .def_readwrite("material_idx",
                            &TriangleMeshModel::MeshInfo::material_idx);
-    tri_model
-            .def(py::init<>())
+    tri_model.def(py::init<>())
             .def_readwrite("meshes", &TriangleMeshModel::meshes_)
             .def_readwrite("materials", &TriangleMeshModel::materials_);
 

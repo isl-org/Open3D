@@ -246,14 +246,15 @@ void pybind_class_io(py::module &m_io) {
     // open3d::visualization::rendering::TriangleMeshModel (Model.h)
     m_io.def(
             "read_triangle_model",
-            [](const std::string& filename, bool print_progress) {
+            [](const std::string &filename, bool print_progress) {
                 py::gil_scoped_release release;
                 visualization::rendering::TriangleMeshModel model;
                 ReadTriangleModel(filename, model, print_progress);
                 return model;
             },
             "Function to read visualization.rendering.TriangleMeshModel from "
-            "file", "filename"_a, "print_progress"_a = false);
+            "file",
+            "filename"_a, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_model",
                                  map_shared_argument_docstrings);
 

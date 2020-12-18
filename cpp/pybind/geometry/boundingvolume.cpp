@@ -26,11 +26,11 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 
+#include <sstream>
+
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
-
-#include <sstream>
 
 namespace open3d {
 namespace geometry {
@@ -53,12 +53,12 @@ void pybind_boundingvolume(py::module &m) {
                  "center"_a, "R"_a, "extent"_a)
             .def("__repr__",
                  [](const OrientedBoundingBox &box) {
-                    std::stringstream s;
+                     std::stringstream s;
                      auto c = box.center_;
                      auto e = box.extent_;
                      s << "OrientedBoundingBox: center: (" << c.x() << ", "
                        << c.y() << ", " << c.z() << "), extent: " << e.x()
-                       <<  ", " << e.y() << e.z() << ")";
+                       << ", " << e.y() << e.z() << ")";
                      return s.str();
                  })
             .def("get_point_indices_within_bounding_box",
@@ -124,8 +124,8 @@ void pybind_boundingvolume(py::module &m) {
                      auto mn = box.min_bound_;
                      auto mx = box.max_bound_;
                      s << "AxisAlignedBoundingBox: min: (" << mn.x() << ", "
-                       << mn.y() << ", " << mn.z() << "), max: (" << mx.x() << ", "
-                       << mx.y() << ", " << mx.z() << ")";
+                       << mn.y() << ", " << mn.z() << "), max: (" << mx.x()
+                       << ", " << mx.y() << ", " << mx.z() << ")";
                      return s.str();
                  })
             .def(py::self += py::self)
