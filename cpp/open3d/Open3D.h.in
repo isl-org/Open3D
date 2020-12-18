@@ -79,6 +79,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RGBDImage.h"
+#include "open3d/t/geometry/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/io/PointCloudIO.h"
@@ -134,3 +135,4 @@
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/RGBDSensor.h"
 
 @BUILD_LIBREALSENSE_COMMENT@#include "open3d/t/io/sensor/realsense/RSBagReader.h"
+@BUILD_LIBREALSENSE_COMMENT@#include "open3d/t/io/sensor/realsense/RealSenseSensor.h"

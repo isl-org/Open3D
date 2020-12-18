@@ -41,6 +41,7 @@ bool RGBDVideoMetadata::ConvertToJsonValue(Json::Value &value) const {
     value["serial_number"] = serial_number_;
     value["color_format"] = color_format_;
     value["depth_format"] = depth_format_;
+    value["depth_scale"] = depth_scale_;
 
     value["stream_length_usec"] = stream_length_usec_;
     value["width"] = width_;
@@ -49,6 +50,7 @@ bool RGBDVideoMetadata::ConvertToJsonValue(Json::Value &value) const {
 
     return true;
 }
+
 bool RGBDVideoMetadata::ConvertFromJsonValue(const Json::Value &value) {
     intrinsics_.ConvertFromJsonValue(value);
 
@@ -56,6 +58,7 @@ bool RGBDVideoMetadata::ConvertFromJsonValue(const Json::Value &value) {
     device_name_ = value["device_name"].asString();
     color_format_ = value["color_format"].asString();
     depth_format_ = value["depth_format"].asString();
+    depth_scale_ = value["depth_scale"].asFloat();
 
     stream_length_usec_ = value["stream_length_usec"].asUInt64();
     width_ = value["width"].asInt();

@@ -46,6 +46,9 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
 
 void pybind_gui(py::module &m);
 
+void pybind_gui_events(py::module &m);
+void pybind_gui_classes(py::module &m);
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

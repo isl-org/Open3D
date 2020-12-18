@@ -19,7 +19,7 @@ isMacOS = (platform.system() == "Darwin")
 #    called from the UI thread, so use Application.post_to_main_thread().
 #    See `on_menu_random()`.
 # Running the example will show a simple window with a Debug menu item with the
-# two different options. Two second method will add random spheres for
+# two different options. The second method will add random spheres for
 # 20 seconds, during which time you can be interacting with the scene, rotating,
 # etc.
 class SpheresApp:

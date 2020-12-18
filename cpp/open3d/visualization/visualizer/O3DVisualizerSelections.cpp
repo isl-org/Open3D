@@ -29,6 +29,7 @@
 #include <assert.h>
 
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"

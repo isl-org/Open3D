@@ -203,6 +203,38 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) {
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
 
+Hashmap Hashmap::Copy(const Device& device) {
+    Hashmap new_hashmap(GetCapacity(), dtype_key_, dtype_value_,
+                        element_shape_key_, element_shape_value_, device);
+
+    Tensor keys = GetKeyTensor().Copy(device);
+    Tensor values = GetValueTensor().Copy(device);
+
+    core::Tensor active_addrs;
+    GetActiveIndices(active_addrs);
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+
+    core::Tensor addrs, masks;
+    new_hashmap.Insert(keys.IndexGet({active_indices}),
+                       values.IndexGet({active_indices}), addrs, masks);
+
+    return new_hashmap;
+}
+
+Hashmap Hashmap::CPU() {
+    if (GetDevice().GetType() == Device::DeviceType::CPU) {
+        return *this;
+    }
+    return Copy(Device("CPU:0"));
+}
+
+Hashmap Hashmap::CUDA(int device_id) {
+    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
+        return *this;
+    }
+    return Copy(Device(Device::DeviceType::CUDA, device_id));
+}
+
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
 
 int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }

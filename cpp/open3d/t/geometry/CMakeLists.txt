@@ -5,6 +5,7 @@ set(ALL_SOURCE_FILES
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
+    TSDFVoxelGrid.cpp
 )
 
 add_library(tgeometry OBJECT ${ALL_SOURCE_FILES})
