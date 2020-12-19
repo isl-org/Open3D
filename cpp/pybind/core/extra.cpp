@@ -73,22 +73,18 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
 
     tensor.def("__getitem__", [](const Tensor& tensor, int key) {
-        utility::LogInfo("__getitem__ int");
         return tensor.GetItem(ToTensorKey(key));
     });
 
     tensor.def("__getitem__", [](const Tensor& tensor, const py::slice& key) {
-        utility::LogInfo("__getitem__ slice");
         return tensor.GetItem(ToTensorKey(key));
     });
 
     tensor.def("__getitem__", [](const Tensor& tensor, const py::list& key) {
-        utility::LogInfo("__getitem__ list");
         return tensor.GetItem(ToTensorKey(key));
     });
 
     tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
-        utility::LogInfo("__getitem__ list");
         return tensor.GetItem(ToTensorKey(key));
     });
 
