@@ -65,6 +65,8 @@ static std::vector<T> ToFlatVector(
     return std::vector<T>(start, start + info.size);
 }
 
+static TensorKey ToTensorKey(int key) { return TensorKey::Index(key); }
+
 void pybind_core_tensor(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",
@@ -128,8 +130,6 @@ void pybind_core_tensor(py::module& m) {
     tensor.def(py::init([](const py::list& list, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
                    py::object numpy = py::module::import("numpy");
-                   utility::LogInfo("Imported numpy version: {}",
-                                    py::str(numpy.attr("__version__")));
                    py::array np_array = numpy.attr("array")(list);
 
                    // When np_array is a "ragged" list, e.g.
@@ -152,8 +152,6 @@ void pybind_core_tensor(py::module& m) {
             py::init([](const py::tuple& tuple, utility::optional<Dtype> dtype,
                         utility::optional<Device> device) {
                 py::object numpy = py::module::import("numpy");
-                utility::LogInfo("Imported numpy version: {}",
-                                 py::str(numpy.attr("__version__")));
                 py::array np_array = numpy.attr("array")(tuple);
 
                 // When np_array is a "ragged" tuple, e.g.
@@ -171,8 +169,8 @@ void pybind_core_tensor(py::module& m) {
             }),
             "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
-    tensor.def("__getitem__", [](const Tensor& tensor, py::tuple tuple) {
-        utility::LogInfo("__getitem__ tuple");
+    tensor.def("__getitem__", [](const Tensor& tensor, int key) {
+        utility::LogInfo("__getitem__ int");
     });
 
     tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
