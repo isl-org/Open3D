@@ -26,6 +26,8 @@
 
 #include "open3d/core/TensorKey.h"
 
+#include <sstream>
+
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
 
@@ -116,6 +118,14 @@ TensorKey::TensorKey(TensorKeyMode mode,
       stop_is_none_(stop_is_none),
       step_is_none_(step_is_none),
       index_tensor_(std::make_shared<Tensor>(index_tensor)) {}
+
+std::string TensorKey::ToString() const {
+    std::stringstream ss;
+    if (GetMode() == Index) {
+        ss << "TensorKey::Index(";
+    }
+    return ss.str();
+};
 
 }  // namespace core
 }  // namespace open3d

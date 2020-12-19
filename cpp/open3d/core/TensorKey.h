@@ -134,6 +134,9 @@ public:
                            bool stop_is_none,
                            bool step_is_none);
 
+    /// String representation of teh TensorKey.
+    std::string ToString() const;
+
 protected:
     /// The fully specified constructor shall not be called directly. Use the
     /// factory functions instead.

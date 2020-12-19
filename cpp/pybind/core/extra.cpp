@@ -119,13 +119,21 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     // Tensor::GetItem(const std::vector<TensorKey>&).
     // E.g. a[1:2, [3, 4, 5], 3:10] results in a tuple of size 3.
     tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
-        for (const auto& item : key) {
+        // ref: https://github.com/pybind/pybind11/issues/84.
+        for (const py::handle& item : key) {
             // if (py::slice(item).check()) {
             //     utility::LogInfo("got slice");
             // } else {
             //     utility::LogInfo("got something else");
             // }
             utility::LogInfo("type: {}", item.get_type().str());
+            if (std::string(item.get_type().str()) == "<class 'slice'>") {
+                TensorKey tk = ToTensorKey(py::slice(item));
+            } else if (std::string(item.get_type().str()) == "<class 'int'>") {
+                utility::LogInfo("Got int");
+            } else {
+                utility::LogInfo("Got something else");
+            }
         }
         utility::LogError("tuple not supported.");
     });
