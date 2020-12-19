@@ -213,14 +213,6 @@ class Tensor(o3d.pybind.core.Tensor):
     """
 
     def __init__(self, data, dtype=None, device=None):
-        if isinstance(data, (tuple, list, int, float)):
-            data = np.array(data)
-        if not isinstance(data, np.ndarray):
-            raise ValueError("data must be a list, tuple, or Numpy array.")
-        if dtype is None:
-            dtype = _numpy_dtype_to_dtype(data.dtype)
-        if device is None:
-            device = Device("CPU:0")
         super(Tensor, self).__init__(data, dtype, device)
 
     @cast_to_py_tensor
