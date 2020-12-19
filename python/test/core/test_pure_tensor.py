@@ -77,6 +77,22 @@ def test_getitem():
     t[o3d.pybind.core.Tensor([True, False, False, True, True, True])]
 
 
+def test_setitem():
+    t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
+                               dtype=None,
+                               device=o3c.Device("CPU:0"))
+    t[1] = 100
+    t[1:3] = o3d.pybind.core.Tensor([4, 5],
+                                    dtype=None,
+                                    device=o3c.Device("CPU:0"))
+    t[[1, 3, 4]] = 100
+    t[[True, False, False, True, True, True]] = 100
+    t[np.array([1, 3, 4])] = 100
+    t[np.array([True, False, False, True, True, True])] = 100
+    t[o3d.pybind.core.Tensor([1, 3, 4])] = 100
+    t[o3d.pybind.core.Tensor([True, False, False, True, True, True])] = 100
+
+
 def test_creation():
     t_np = np.ones((2, 3))
 
