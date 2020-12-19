@@ -44,10 +44,10 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
         utility::LogInfo("__getitem__ int");
     });
 
-    tensor.def("__getitem__", [](const Tensor& tensor, py::slice key) {
+    tensor.def("__getitem__", [](const Tensor& tensor, const py::slice& key) {
         // PYBIND11_SLICE_OBJECT is PySliceObject.
         PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
-        utility::LogInfo("start is None {}",
+        utility::LogInfo("start is None {} ",
                          (int)py::detail::PyNone_Check(slice_key->start));
         utility::LogInfo("step is None {}",
                          (int)py::detail::PyNone_Check(slice_key->step));
