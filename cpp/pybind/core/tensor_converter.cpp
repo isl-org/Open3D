@@ -187,5 +187,43 @@ Tensor IntToTensor(int64_t scalar_value,
             .To(dtype_value, /*copy=*/false);
 }
 
+Tensor PyHandleToTensor(const py::handle& item,
+                        utility::optional<Dtype> dtype,
+                        utility::optional<Device> device) {
+    /// 1) int
+    /// 2) float (double)
+    /// 3) list
+    /// 4) tuple
+    /// 5) numpy.ndarray (value will be copied)
+    /// 6) Tensor (value will be copied)
+    std::string class_name(item.get_type().str());
+    if (class_name == "<class 'int'>") {
+        return IntToTensor(static_cast<int64_t>(item.cast<py::int_>()), dtype,
+                           device);
+    } else if (class_name == "<class 'float'>") {
+        return DoubleToTensor(static_cast<double>(item.cast<py::float_>()),
+                              dtype, device);
+    } else if (class_name == "<class 'list'>") {
+        return PyListToTensor(item.cast<py::list>(), dtype, device);
+    } else if (class_name == "<class 'tuple'>") {
+        return PyTupleToTensor(item.cast<py::tuple>(), dtype, device);
+    } else if (class_name == "<class 'numpy.ndarray'>") {
+        return CastOptionalDtypeDevice(
+                PyArrayToTensor(item.cast<py::array>(), /*inplace=*/false),
+                dtype, device);
+    } else if (class_name.find("open3d") != std::string::npos &&
+               class_name.find("Tensor") != std::string::npos) {
+        try {
+            Tensor* tensor = item.cast<Tensor*>();
+            return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
+        } catch (...) {
+            utility::LogError("Cannot cast index to Tensor.");
+        }
+    } else {
+        utility::LogError("PyHandleToTensor has invlaid input type {}.",
+                          class_name);
+    }
+}
+
 }  // namespace core
 }  // namespace open3d

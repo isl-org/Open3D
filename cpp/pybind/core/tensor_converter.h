@@ -100,5 +100,20 @@ Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype = utility::nullopt,
                    utility::optional<Device> device = utility::nullopt);
 
+/// Converts supported python types to Tensor.
+///
+/// Supported types:
+/// 1) int
+/// 2) float (double)
+/// 3) list
+/// 4) tuple
+/// 5) numpy.ndarray (value will be copied)
+/// 6) Tensor (value will be copied)
+///
+/// An exception will be thrown if the type is not supported.
+Tensor PyHandleToTensor(const py::handle& item,
+                        utility::optional<Dtype> dtype = utility::nullopt,
+                        utility::optional<Device> device = utility::nullopt);
+
 }  // namespace core
 }  // namespace open3d
