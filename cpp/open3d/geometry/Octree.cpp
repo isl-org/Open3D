@@ -412,11 +412,13 @@ void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
     }
 
     // Insert points
+    const bool has_colors = point_cloud.HasColors();
     for (size_t idx = 0; idx < point_cloud.points_.size(); idx++) {
+        const Eigen::Vector3d& color =
+                has_colors ? point_cloud.colors_[idx] : Eigen::Vector3d::Zero();
         InsertPoint(point_cloud.points_[idx],
                     geometry::OctreeColorLeafNode::GetInitFunction(),
-                    geometry::OctreeColorLeafNode::GetUpdateFunction(
-                            point_cloud.colors_[idx]));
+                    geometry::OctreeColorLeafNode::GetUpdateFunction(color));
     }
 }
 
