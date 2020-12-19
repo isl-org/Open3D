@@ -43,8 +43,16 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_extra(py::class_<Tensor>& t) {
+void pybind_core_extra(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
+
+    tensor.def("__getitem__", [](const Tensor& tensor, int key) {
+        utility::LogInfo("__getitem__ int");
+    });
+
+    tensor.def("__getitem__", [](const Tensor& tensor, py::slice key) {
+        utility::LogInfo("__getitem__ slice");
+    });
 }
 
 }  // namespace core
