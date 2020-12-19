@@ -58,16 +58,6 @@ namespace open3d {
 namespace core {
 
 template <typename T>
-void bind_templated_constructor(py::class_<Tensor>& tensor) {
-    tensor.def(py::init([](const std::vector<T>& init_vals,
-                           const SizeVector& shape, const Dtype& dtype,
-                           const Device& device = Device("CPU:0")) {
-                   return new Tensor(init_vals, shape, dtype, device);
-               }),
-               "init_vals"_a, "shape"_a, "dtype"_a, "device"_a);
-}
-
-template <typename T>
 static std::vector<T> ToFlatVector(
         py::array_t<T, py::array::c_style | py::array::forcecast> np_array) {
     py::buffer_info info = np_array.request();
@@ -181,9 +171,9 @@ void pybind_core_tensor(py::module& m) {
             }),
             "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
-    // tensor.def("__getitem__", [](const Tensor& tensor, py::tuple tuple) {
-    //     utility::LogInfo("__getitem__ tuple");
-    // });
+    tensor.def("__getitem__", [](const Tensor& tensor, py::tuple tuple) {
+        utility::LogInfo("__getitem__ tuple");
+    });
 
     tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
         return tensor.GetItem(tk);
@@ -280,19 +270,19 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
-    /// Linalg operations
+    /// Linalg operations.
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("lstsq", &Tensor::LeastSquares);
     tensor.def("solve", &Tensor::Solve);
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
 
-    // Casting
+    // Casting.
     tensor.def("to", &Tensor::To);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
 
-    // Binary element-wise ops
+    // Binary element-wise ops.
     BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
@@ -302,7 +292,7 @@ void pybind_core_tensor(py::module& m) {
     BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
 
-    // Binary boolean element-wise ops
+    // Binary boolean element-wise ops.
     BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_and_, LogicalAnd_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_or, LogicalOr, CONST_ARG);
@@ -322,7 +312,7 @@ void pybind_core_tensor(py::module& m) {
     BIND_BINARY_OP_ALL_DTYPES(ne, Ne, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(ne_, Ne_, NON_CONST_ARG);
 
-    // Getters and setters as peoperty
+    // Getters and setters as properties.
     tensor.def_property_readonly(
             "shape", [](const Tensor& tensor) { return tensor.GetShape(); });
     tensor.def_property_readonly("strides", [](const Tensor& tensor) {
@@ -336,7 +326,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("__len__", &Tensor::GetLength);
     tensor.def("__bool__", &Tensor::IsNonZero);  // Python 3.X.
 
-    // Unary element-wise ops
+    // Unary element-wise ops.
     tensor.def("sqrt", &Tensor::Sqrt);
     tensor.def("sqrt_", &Tensor::Sqrt_);
     tensor.def("sin", &Tensor::Sin);
@@ -352,13 +342,13 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
-    // Boolean
+    // Boolean.
     tensor.def("_non_zero", &Tensor::NonZero);
     tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
     tensor.def("all", &Tensor::All);
     tensor.def("any", &Tensor::Any);
 
-    // Reduction ops
+    // Reduction ops.
     tensor.def("sum", &Tensor::Sum);
     tensor.def("mean", &Tensor::Mean);
     tensor.def("prod", &Tensor::Prod);
@@ -367,20 +357,20 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("argmin_", &Tensor::ArgMin);
     tensor.def("argmax_", &Tensor::ArgMax);
 
-    // Comparison
+    // Comparison.
     tensor.def("allclose", &Tensor::AllClose, "other"_a, "rtol"_a = 1e-5,
                "atol"_a = 1e-8);
     tensor.def("isclose", &Tensor::IsClose, "other"_a, "rtol"_a = 1e-5,
                "atol"_a = 1e-8);
     tensor.def("issame", &Tensor::IsSame);
 
-    // Print tensor
+    // Print tensor.
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });
     tensor.def("__str__",
                [](const Tensor& tensor) { return tensor.ToString(); });
 
-    // Get item from Tensor of one element
+    // Get item from Tensor of one element.
     tensor.def("_item_float", [](const Tensor& t) { return t.Item<float>(); });
     tensor.def("_item_double",
                [](const Tensor& t) { return t.Item<double>(); });

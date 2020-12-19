@@ -34,6 +34,13 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 
+def test_getitem():
+    t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
+                               dtype=None,
+                               device=o3c.Device("CPU:0"))
+    print(t[1])
+
+
 def test_creation():
     t_np = np.ones((2, 3))
 
