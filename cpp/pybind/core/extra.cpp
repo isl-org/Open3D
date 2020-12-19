@@ -44,7 +44,6 @@ static TensorKey ToTensorKey(const py::slice& key) {
     Py_ssize_t stop;
     Py_ssize_t step;
     PySlice_Unpack(key.ptr(), &start, &stop, &step);
-
     PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
     return TensorKey::Slice(static_cast<int64_t>(start),
                             static_cast<int64_t>(stop),

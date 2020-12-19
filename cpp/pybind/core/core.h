@@ -63,6 +63,24 @@ py::array TensorToPyArray(const Tensor& tensor);
 /// python buffer will be copied.
 Tensor PyArrayToTensor(py::array array, bool inplace);
 
+/// Converts py::list to Tensor.
+///
+/// Nested lists are supported, e.g. [[0, 1, 2], [3, 4, 5]] becomes a 2x3
+/// tensor. For "ragged" list of invalid shapes, e.g. ((0, 1, 2, 3, 4, 5), (2,
+/// 3)), the np_array's dtype is "O", a proper exception will be thrown.
+///
+/// The dtype will be inferred from the value of the list.
+Tensor PyListToTensor(const py::list& list);
+
+/// Converts py::tuple to Tensor.
+///
+/// Nested tuples are supported, e.g. ((0, 1, 2), (3, 4, 5)) becomes a 2x3
+/// tensor. For "ragged" tuple of invalid shapes, e.g. ((0, 1, 2, 3, 4, 5), (2,
+/// 3)), the np_array's dtype is "O", a proper exception will be thrown.
+///
+/// The dtype will be inferred from the value of the tuple.
+Tensor PyTupleToTensor(const py::tuple& tuple);
+
 void pybind_core(py::module& m);
 void pybind_cuda_utils(py::module& m);
 void pybind_core_blob(py::module& m);

@@ -127,13 +127,7 @@ void pybind_core_tensor(py::module& m) {
     // o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype=None, device=None).
     tensor.def(py::init([](const py::list& list, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
-                   py::object numpy = py::module::import("numpy");
-                   py::array np_array = numpy.attr("array")(list);
-
-                   // When np_array is a "ragged" list, e.g.
-                   // [[0, 1, 2, 3, 4, 5], [2, 3]], the np_array's dtype is "O"
-                   // for object, a proper open3d exception will be thrown.
-                   Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
+                   Tensor t = PyListToTensor(list);
                    if (dtype.has_value()) {
                        t = t.To(dtype.value(), /*copy=*/false);
                    }
@@ -149,13 +143,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def(
             py::init([](const py::tuple& tuple, utility::optional<Dtype> dtype,
                         utility::optional<Device> device) {
-                py::object numpy = py::module::import("numpy");
-                py::array np_array = numpy.attr("array")(tuple);
-
-                // When np_array is a "ragged" tuple, e.g.
-                // ((0, 1, 2, 3, 4, 5), (2, 3)), the np_array's dtype is "O"
-                // for object, a proper open3d exception will be thrown.
-                Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
+                Tensor t = PyTupleToTensor(tuple);
                 if (dtype.has_value()) {
                     t = t.To(dtype.value(), /*copy=*/false);
                 }
@@ -168,7 +156,6 @@ void pybind_core_tensor(py::module& m) {
             "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
     pybind_core_extra(tensor);
-
 
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);

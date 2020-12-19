@@ -124,6 +124,18 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     }
 }
 
+Tensor PyListToTensor(const py::list& list) {
+    py::object numpy = py::module::import("numpy");
+    py::array np_array = numpy.attr("array")(list);
+    return PyArrayToTensor(np_array, false);
+}
+
+Tensor PyTupleToTensor(const py::tuple& tuple) {
+    py::object numpy = py::module::import("numpy");
+    py::array np_array = numpy.attr("array")(tuple);
+    return PyArrayToTensor(np_array, false);
+}
+
 void pybind_core(py::module& m) {
     py::module m_core = m.def_submodule("core");
 
