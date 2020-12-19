@@ -113,7 +113,8 @@ Tensor IntToTensor(int64_t scalar_value,
 /// An exception will be thrown if the type is not supported.
 Tensor PyHandleToTensor(const py::handle& item,
                         utility::optional<Dtype> dtype = utility::nullopt,
-                        utility::optional<Device> device = utility::nullopt);
+                        utility::optional<Device> device = utility::nullopt,
+                        bool force_copy = false);
 
 }  // namespace core
 }  // namespace open3d

@@ -189,7 +189,8 @@ Tensor IntToTensor(int64_t scalar_value,
 
 Tensor PyHandleToTensor(const py::handle& item,
                         utility::optional<Dtype> dtype,
-                        utility::optional<Device> device) {
+                        utility::optional<Device> device,
+                        bool force_copy) {
     /// 1) int
     /// 2) float (double)
     /// 3) list
@@ -208,14 +209,18 @@ Tensor PyHandleToTensor(const py::handle& item,
     } else if (class_name == "<class 'tuple'>") {
         return PyTupleToTensor(item.cast<py::tuple>(), dtype, device);
     } else if (class_name == "<class 'numpy.ndarray'>") {
-        return CastOptionalDtypeDevice(
-                PyArrayToTensor(item.cast<py::array>(), /*inplace=*/false),
-                dtype, device);
+        return CastOptionalDtypeDevice(PyArrayToTensor(item.cast<py::array>(),
+                                                       /*inplace=*/!force_copy),
+                                       dtype, device);
     } else if (class_name.find("open3d") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
             Tensor* tensor = item.cast<Tensor*>();
-            return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
+            if (force_copy) {
+                return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
+            } else {
+                return CastOptionalDtypeDevice(*tensor, dtype, device);
+            }
         } catch (...) {
             utility::LogError("Cannot cast index to Tensor.");
         }
