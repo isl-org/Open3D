@@ -34,11 +34,24 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 
+class Dog():
+
+    def __init__(self):
+        pass
+
+    def __getitem__(self, key):
+        print("__getitem__")
+        print(key)
+
+
 def test_getitem():
     t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
                                dtype=None,
                                device=o3c.Device("CPU:0"))
-    print(t[1])
+    print(t[1:3])
+
+    # d = Dog()
+    # d[1:5]
 
 
 def test_creation():

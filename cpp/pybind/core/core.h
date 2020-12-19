@@ -76,5 +76,7 @@ void pybind_core_linalg(py::module& m);
 void pybind_core_kernel(py::module& m);
 void pybind_core_hashmap(py::module& m);
 
+void pybind_core_extra(py::class_<Tensor>& t);
+
 }  // namespace core
 }  // namespace open3d

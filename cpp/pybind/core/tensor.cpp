@@ -169,9 +169,15 @@ void pybind_core_tensor(py::module& m) {
             }),
             "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
-    tensor.def("__getitem__", [](const Tensor& tensor, int key) {
-        utility::LogInfo("__getitem__ int");
-    });
+    // tensor.def("__getitem__", [](const Tensor& tensor, int key) {
+    //     utility::LogInfo("__getitem__ int");
+    // });
+
+    // tensor.def("__getitem__", [](const Tensor& tensor, py::slice key) {
+    //     utility::LogInfo("__getitem__ slice");
+    // });
+
+    pybind_core_extra(tensor);
 
     tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
         return tensor.GetItem(tk);
