@@ -320,6 +320,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
+            .def_property_readonly("now", &Application::Now,
+                                   "Returns current time in seconds")
             // Note: we cannot export AddWindow and RemoveWindow
             .def_property_readonly("resource_path",
                                    &Application::GetResourcePath,
