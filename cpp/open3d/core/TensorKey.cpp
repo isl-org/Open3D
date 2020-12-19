@@ -121,8 +121,32 @@ TensorKey::TensorKey(TensorKeyMode mode,
 
 std::string TensorKey::ToString() const {
     std::stringstream ss;
-    if (GetMode() == Index) {
-        ss << "TensorKey::Index(";
+    if (mode_ == TensorKeyMode::Index) {
+        ss << "TensorKey::Index(" << index_ << ")";
+    } else if (mode_ == TensorKeyMode::Slice) {
+        ss << "TensorKey::Slice(";
+        if (start_is_none_) {
+            ss << "None";
+        } else {
+            ss << start_;
+        }
+        ss << ", ";
+        if (stop_is_none_) {
+            ss << "None";
+        } else {
+            ss << stop_;
+        }
+        ss << ", ";
+        if (step_is_none_) {
+            ss << "None";
+        } else {
+            ss << step_;
+        }
+        ss << ")";
+    } else if (mode_ == TensorKeyMode::IndexTensor) {
+        ss << "TensorKey::IndexTensor(" << index_tensor_->ToString() << ")";
+    } else {
+        utility::LogError("Wrong TensorKeyMode.");
     }
     return ss.str();
 };

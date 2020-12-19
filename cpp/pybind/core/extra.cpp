@@ -128,7 +128,9 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
             // }
             utility::LogInfo("type: {}", item.get_type().str());
             if (std::string(item.get_type().str()) == "<class 'slice'>") {
-                TensorKey tk = ToTensorKey(py::slice(item));
+                utility::LogInfo("Got slice");
+                // TensorKey tk = ToTensorKey(py::slice(item));
+                // utility::LogInfo("TensorKey: {}", tk.ToString());
             } else if (std::string(item.get_type().str()) == "<class 'int'>") {
                 utility::LogInfo("Got int");
             } else {
