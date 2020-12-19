@@ -64,7 +64,6 @@ def test_tuple():
 
 
 def test_getitem():
-    print()
     t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
                                dtype=None,
                                device=o3c.Device("CPU:0"))
