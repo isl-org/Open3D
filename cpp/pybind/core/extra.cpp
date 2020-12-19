@@ -119,25 +119,28 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     // Tensor::GetItem(const std::vector<TensorKey>&).
     // E.g. a[1:2, [3, 4, 5], 3:10] results in a tuple of size 3.
     tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
-        // ref: https://github.com/pybind/pybind11/issues/84.
+        std::vector<TensorKey> tks;
         for (const py::handle& item : key) {
-            // if (py::slice(item).check()) {
-            //     utility::LogInfo("got slice");
-            // } else {
-            //     utility::LogInfo("got something else");
-            // }
-            utility::LogInfo("type: {}", item.get_type().str());
-            if (std::string(item.get_type().str()) == "<class 'slice'>") {
-                utility::LogInfo("Got slice");
-                TensorKey tk = ToTensorKey(item.cast<py::slice>());
-                utility::LogInfo("TensorKey: {}", tk.ToString());
-            } else if (std::string(item.get_type().str()) == "<class 'int'>") {
-                utility::LogInfo("Got int");
+            // Try to infer types from type name and dynamic casting.
+            // See: https://github.com/pybind/pybind11/issues/84.
+            std::string class_name(item.get_type().str());
+            if (class_name == "<class 'slice'>") {
+                tks.push_back(ToTensorKey(item.cast<py::slice>()));
+            } else if (class_name == "<class 'int'>") {
+                tks.push_back(ToTensorKey(
+                        static_cast<int64_t>(item.cast<py::int_>())));
+            } else if (class_name.find("core.Tensor") != std::string::npos) {
+                try {
+                    Tensor* tensor = item.cast<Tensor*>();
+                    tks.push_back(ToTensorKey(*tensor));
+                } catch (...) {
+                    utility::LogError("Cannot cast index to Tensor.");
+                }
             } else {
-                utility::LogInfo("Got something else");
+                utility::LogError("Got something else");
             }
         }
-        utility::LogError("tuple not supported.");
+        return tensor.GetItem(tks);
     });
 
     tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {

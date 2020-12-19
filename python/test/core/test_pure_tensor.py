@@ -55,7 +55,8 @@ def test_dog():
 def test_tuple():
     print()
     t = o3d.pybind.core.Tensor(np.ones((30, 40, 50)))
-    print(t[1:3, 5, 3:5])
+    t_idx = o3d.pybind.core.Tensor([3, 4, 5])
+    print(t[t_idx, 1:3, 5])
     # print(t[1:3, 5, t])
 
 
