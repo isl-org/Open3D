@@ -48,7 +48,8 @@ def test_getitem():
     t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
                                dtype=None,
                                device=o3c.Device("CPU:0"))
-    print(t[1])
+    # print(t[1])
+    print(t[1:3])
 
     # d = Dog()
     # d[1:5]

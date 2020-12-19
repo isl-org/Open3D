@@ -26,12 +26,6 @@
 
 #include <vector>
 
-#include "open3d/core/Blob.h"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Device.h"
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/utility/Optional.h"
@@ -51,6 +45,15 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     });
 
     tensor.def("__getitem__", [](const Tensor& tensor, py::slice key) {
+        // PYBIND11_SLICE_OBJECT is PySliceObject.
+        PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
+        utility::LogInfo("start is None {}",
+                         (int)py::detail::PyNone_Check(slice_key->start));
+        utility::LogInfo("step is None {}",
+                         (int)py::detail::PyNone_Check(slice_key->step));
+        utility::LogInfo("stop is None {}",
+                         (int)py::detail::PyNone_Check(slice_key->stop));
+
         utility::LogInfo("__getitem__ slice");
     });
 }
