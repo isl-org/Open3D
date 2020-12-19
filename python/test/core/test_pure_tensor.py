@@ -44,6 +44,19 @@ class Dog():
         print(key)
 
 
+def test_dog():
+    print("dog")
+    # d = Dog()
+    # d[(1, 2, 3)]
+    # d[1, 2:3, [1, 2, 3]]
+    # print("dog done")
+
+
+def test_tuple():
+    t = o3d.pybind.core.Tensor(np.ones((30, 40, 50)))
+    print(t[1:3, 2:4, 3:5])
+
+
 def test_getitem():
     print()
 
@@ -55,11 +68,11 @@ def test_getitem():
     # print(t[[1, 3, 4]])
     # print(t[(4, 3, 1)])
     # print(t[[True, False, False, True, True, True]])
-    print(t[np.array([1, 3, 4])])
-    print(t[np.array([True, False, False, True, True, True])])
+    # print(t[np.array([1, 3, 4])])
+    # print(t[np.array([True, False, False, True, True, True])])
 
-    print(t[o3d.pybind.core.Tensor([1, 3, 4])])
-    print(t[o3d.pybind.core.Tensor([True, False, False, True, True, True])])
+    # print(t[o3d.pybind.core.Tensor([1, 3, 4])])
+    # print(t[o3d.pybind.core.Tensor([True, False, False, True, True, True])])
 
 
 def test_creation():

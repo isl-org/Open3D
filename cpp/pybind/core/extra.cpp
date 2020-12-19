@@ -97,14 +97,6 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
         return tensor.GetItem(ToTensorKey(key));
     });
 
-    tensor.def("__getitem__", [](const Tensor& tensor, const py::list& key) {
-        return tensor.GetItem(ToTensorKey(key));
-    });
-
-    tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
-        return tensor.GetItem(ToTensorKey(key));
-    });
-
     tensor.def("__getitem__", [](const Tensor& tensor, const py::array& key) {
         return tensor.GetItem(ToTensorKey(key));
     });
@@ -112,6 +104,22 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     tensor.def("__getitem__", [](const Tensor& tensor, const Tensor& key) {
         utility::LogInfo("getitem tensor");
         return tensor.GetItem(ToTensorKey(key));
+    });
+
+    // List is interpreted as one TensorKey object, which calls
+    // Tensor::GetItem(const TensorKey&).
+    // E.g. a[[3, 4, 5]] is a list. It indices the first dimension of a.
+    // E.g. a[(3, 4, 5)] does very different things. It indices the first three
+    //      dimensions of a.
+    tensor.def("__getitem__", [](const Tensor& tensor, const py::list& key) {
+        return tensor.GetItem(ToTensorKey(key));
+    });
+
+    // Tuple is interpreted as a vector TensorKey objects, which calls
+    // Tensor::GetItem(const std::vector<TensorKey>&).
+    // E.g. a[1:2, [3, 4, 5], 3:10] results in a tuple of size 3.
+    tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
+        utility::LogError("tuple not supported.");
     });
 
     tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
