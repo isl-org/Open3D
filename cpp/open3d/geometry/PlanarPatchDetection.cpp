@@ -40,6 +40,13 @@ namespace geometry {
 
 std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches() const {
 
+  if (!HasNormals()) {
+    utility::LogError(
+            "DetectPlanarPatches requires pre-computed normal vectors.");
+    return {};
+  }
+
+  return {};
 }
 
 }  // namespace geometry
