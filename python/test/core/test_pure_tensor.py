@@ -53,8 +53,9 @@ def test_dog():
 
 
 def test_tuple():
+    print()
     t = o3d.pybind.core.Tensor(np.ones((30, 40, 50)))
-    print(t[1:3, 2:4, 3:5])
+    print(t[1:3, 5, 3:5])
 
 
 def test_getitem():
