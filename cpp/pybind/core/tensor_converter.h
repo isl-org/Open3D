@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/Optional.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
@@ -70,7 +71,9 @@ Tensor PyArrayToTensor(py::array array, bool inplace);
 /// 3)), the np_array's dtype is "O", a proper exception will be thrown.
 ///
 /// The dtype will be inferred from the value of the list.
-Tensor PyListToTensor(const py::list& list);
+Tensor PyListToTensor(const py::list& list,
+                      utility::optional<Dtype> dtype = utility::nullopt,
+                      utility::optional<Device> device = utility::nullopt);
 
 /// Converts py::tuple to Tensor.
 ///
@@ -79,7 +82,9 @@ Tensor PyListToTensor(const py::list& list);
 /// 3)), the np_array's dtype is "O", a proper exception will be thrown.
 ///
 /// The dtype will be inferred from the value of the tuple.
-Tensor PyTupleToTensor(const py::tuple& tuple);
+Tensor PyTupleToTensor(const py::tuple& tuple,
+                       utility::optional<Dtype> dtype = utility::nullopt,
+                       utility::optional<Device> device = utility::nullopt);
 
 }  // namespace core
 }  // namespace open3d

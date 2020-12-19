@@ -128,15 +128,7 @@ void pybind_core_tensor(py::module& m) {
     // o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype=None, device=None).
     tensor.def(py::init([](const py::list& list, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
-                   Tensor t = PyListToTensor(list);
-                   if (dtype.has_value()) {
-                       t = t.To(dtype.value(), /*copy=*/false);
-                   }
-                   if (device.has_value() &&
-                       device.value() != core::Device("CPU:0")) {
-                       t = t.Copy(device.value());
-                   }
-                   return t;
+                   return PyListToTensor(list, dtype, device);
                }),
                "list"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
@@ -144,15 +136,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def(
             py::init([](const py::tuple& tuple, utility::optional<Dtype> dtype,
                         utility::optional<Device> device) {
-                Tensor t = PyTupleToTensor(tuple);
-                if (dtype.has_value()) {
-                    t = t.To(dtype.value(), /*copy=*/false);
-                }
-                if (device.has_value() &&
-                    device.value() != core::Device("CPU:0")) {
-                    t = t.Copy(device.value());
-                }
-                return t;
+                return PyTupleToTensor(tuple, dtype, device);
             }),
             "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
 

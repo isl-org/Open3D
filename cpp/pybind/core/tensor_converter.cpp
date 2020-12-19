@@ -35,6 +35,19 @@
 namespace open3d {
 namespace core {
 
+static Tensor CastOptionalDtypeDevice(const Tensor& t,
+                                      utility::optional<Dtype> dtype,
+                                      utility::optional<Device> device) {
+    Tensor t_cast = t;
+    if (dtype.has_value() && dtype.value() != t_cast.GetDtype()) {
+        t_cast = t_cast.To(dtype.value(), /*copy=*/false);
+    }
+    if (device.has_value() && device.value() != t_cast.GetDevice()) {
+        t_cast = t_cast.Copy(device.value());
+    }
+    return t_cast;
+}
+
 /// Convert Tensor class to py::array (Numpy array).
 py::array TensorToPyArray(const Tensor& tensor) {
     if (tensor.GetDevice().GetType() != Device::DeviceType::CPU) {
@@ -124,16 +137,22 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     }
 }
 
-Tensor PyListToTensor(const py::list& list) {
+Tensor PyListToTensor(const py::list& list,
+                      utility::optional<Dtype> dtype,
+                      utility::optional<Device> device) {
     py::object numpy = py::module::import("numpy");
     py::array np_array = numpy.attr("array")(list);
-    return PyArrayToTensor(np_array, false);
+    Tensor t = PyArrayToTensor(np_array, false);
+    return CastOptionalDtypeDevice(t, dtype, device);
 }
 
-Tensor PyTupleToTensor(const py::tuple& tuple) {
+Tensor PyTupleToTensor(const py::tuple& tuple,
+                       utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
     py::object numpy = py::module::import("numpy");
     py::array np_array = numpy.attr("array")(tuple);
-    return PyArrayToTensor(np_array, false);
+    Tensor t = PyArrayToTensor(np_array, false);
+    return CastOptionalDtypeDevice(t, dtype, device);
 }
 
 }  // namespace core
