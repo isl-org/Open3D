@@ -139,6 +139,10 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
                 tks.push_back(ToTensorKey(item.cast<py::slice>()));
             } else if (class_name == "<class 'list'>") {
                 tks.push_back(ToTensorKey(item.cast<py::list>()));
+            } else if (class_name == "<class 'tuple'>") {
+                tks.push_back(ToTensorKey(item.cast<py::tuple>()));
+            } else if (class_name == "<class 'numpy.ndarray'>") {
+                tks.push_back(ToTensorKey(item.cast<py::array>()));
             } else if (class_name.find("core.Tensor") != std::string::npos) {
                 try {
                     Tensor* tensor = item.cast<Tensor*>();
