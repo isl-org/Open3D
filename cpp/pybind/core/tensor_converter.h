@@ -93,5 +93,12 @@ Tensor DoubleToTensor(double scalar_value,
                       utility::optional<Dtype> dtype = utility::nullopt,
                       utility::optional<Device> device = utility::nullopt);
 
+/// Converts scalar int value to Tensor.
+///
+/// The default dtype is Int64, unless specified.
+Tensor IntToTensor(int64_t scalar_value,
+                   utility::optional<Dtype> dtype = utility::nullopt,
+                   utility::optional<Device> device = utility::nullopt);
+
 }  // namespace core
 }  // namespace open3d

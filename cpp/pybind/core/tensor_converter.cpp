@@ -171,5 +171,21 @@ Tensor DoubleToTensor(double scalar_value,
             .To(dtype_value, /*copy=*/false);
 }
 
+Tensor IntToTensor(int64_t scalar_value,
+                   utility::optional<Dtype> dtype,
+                   utility::optional<Device> device) {
+    Dtype dtype_value = Dtype::Int64;
+    if (dtype.has_value()) {
+        dtype_value = dtype.value();
+    }
+    Device device_value("CPU:0");
+    if (device.has_value()) {
+        device_value = device.value();
+    }
+    return Tensor(std::vector<int64_t>{scalar_value}, {}, Dtype::Int64,
+                  device_value)
+            .To(dtype_value, /*copy=*/false);
+}
+
 }  // namespace core
 }  // namespace open3d
