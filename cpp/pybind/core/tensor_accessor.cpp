@@ -122,7 +122,7 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
     }
 }
 
-void pybind_core_extra(py::class_<Tensor>& tensor) {
+void pybind_core_tensor_accessor(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
 
     tensor.def("__getitem__", [](const Tensor& tensor, int key) {

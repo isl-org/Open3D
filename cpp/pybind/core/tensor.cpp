@@ -155,7 +155,7 @@ void pybind_core_tensor(py::module& m) {
             }),
             "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
-    pybind_core_extra(tensor);
+    pybind_core_tensor_accessor(tensor);
 
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);
