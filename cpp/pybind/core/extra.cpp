@@ -44,7 +44,6 @@ static TensorKey ToTensorKey(const py::slice& key) {
     Py_ssize_t stop;
     Py_ssize_t step;
     PySlice_Unpack(key.ptr(), &start, &stop, &step);
-    utility::LogError("{}, {}, {}", start, stop, step);
 
     PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
     return TensorKey::Slice(static_cast<int64_t>(start),
@@ -66,6 +65,24 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
         ToTensorKey(key);
         utility::LogInfo("__getitem__ slice");
     });
+
+    tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
+        return tensor.GetItem(tk);
+    });
+
+    tensor.def("_getitem_vector",
+               [](const Tensor& tensor, const std::vector<TensorKey>& tks) {
+                   return tensor.GetItem(tks);
+               });
+
+    tensor.def("_setitem",
+               [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
+                   return tensor.SetItem(tk, value);
+               });
+
+    tensor.def("_setitem_vector",
+               [](Tensor& tensor, const std::vector<TensorKey>& tks,
+                  const Tensor& value) { return tensor.SetItem(tks, value); });
 }
 
 }  // namespace core
