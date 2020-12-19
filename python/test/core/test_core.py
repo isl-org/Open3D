@@ -156,7 +156,7 @@ def test_tensor_constructor(device):
 
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         o3_t = o3d.core.Tensor(li_t, dtype, device)
 
     # Automatic casting
@@ -312,17 +312,17 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0, :, :-2].cpu().numpy(), np_t[0, :, :-2])
     np.testing.assert_equal(o3_t[0, 1:3, 2].cpu().numpy(), np_t[0, 1:3, 2])
     np.testing.assert_equal(o3_t[0, 1:-1, 2].cpu().numpy(), np_t[0, 1:-1, 2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(), np_t[0, 1:3,
-                                                                    0:4:2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(), np_t[0, 1:3,
-                                                                     0:-1:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(),
+                            np_t[0, 1:3, 0:4:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(),
+                            np_t[0, 1:3, 0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
     # Slice out-of-range
     np.testing.assert_equal(o3_t[1:6].cpu().numpy(), np_t[1:6])
     np.testing.assert_equal(o3_t[2:5, -10:20].cpu().numpy(), np_t[2:5, -10:20])
-    np.testing.assert_equal(o3_t[2:2, 3:3, 4:4].cpu().numpy(), np_t[2:2, 3:3,
-                                                                    4:4])
+    np.testing.assert_equal(o3_t[2:2, 3:3, 4:4].cpu().numpy(),
+                            np_t[2:2, 3:3, 4:4])
     np.testing.assert_equal(o3_t[2:20, 3:30, 4:40].cpu().numpy(),
                             np_t[2:20, 3:30, 4:40])
     np.testing.assert_equal(o3_t[-2:20, -3:30, -4:40].cpu().numpy(),
