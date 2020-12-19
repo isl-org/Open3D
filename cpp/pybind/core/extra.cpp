@@ -90,8 +90,8 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
 /// casting. Supported types:
 /// 1) int
 /// 2) slice
-/// 3) tuple
-/// 4) list
+/// 3) list
+/// 4) tuple
 /// 5) numpy.ndarray
 /// 6) Tensor
 static TensorKey PyHandleToTensorKey(const py::handle& item) {
@@ -117,7 +117,7 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensorKey got unsupported type {}.",
+        utility::LogError("PyHandleToTensorKey has invlaid key type {}.",
                           class_name);
     }
 }
