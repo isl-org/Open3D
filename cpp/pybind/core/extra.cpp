@@ -69,6 +69,23 @@ static TensorKey ToTensorKey(const py::tuple& key) {
     return TensorKey::IndexTensor(key_tensor);
 }
 
+static TensorKey ToTensorKey(const py::array& key) {
+    Tensor key_tensor = PyArrayToTensor(key, /*inplace=*/false);
+    if (key_tensor.GetDtype() != Dtype::Bool) {
+        key_tensor = key_tensor.To(Dtype::Int64);
+    }
+    return TensorKey::IndexTensor(key_tensor);
+}
+
+static TensorKey ToTensorKey(const Tensor& key_tensor) {
+    if (key_tensor.GetDtype() != Dtype::Bool) {
+        Tensor key_tensor_int64 = key_tensor.To(Dtype::Int64);
+        TensorKey::IndexTensor(key_tensor_int64);
+    } else {
+        TensorKey::IndexTensor(key_tensor);
+    }
+}
+
 void pybind_core_extra(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
 
@@ -85,6 +102,15 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     });
 
     tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
+        return tensor.GetItem(ToTensorKey(key));
+    });
+
+    tensor.def("__getitem__", [](const Tensor& tensor, const py::array& key) {
+        return tensor.GetItem(ToTensorKey(key));
+    });
+
+    tensor.def("__getitem__", [](const Tensor& tensor, const Tensor& key) {
+        utility::LogInfo("getitem tensor");
         return tensor.GetItem(ToTensorKey(key));
     });
 

@@ -51,10 +51,15 @@ def test_getitem():
                                dtype=None,
                                device=o3c.Device("CPU:0"))
     # print(t[1])
-    print(t[1:3])
-    print(t[[1, 3, 4]])
-    print(t[(4, 3, 1)])
-    print(t[[True, False, False, True, True, True]])
+    # print(t[1:3])
+    # print(t[[1, 3, 4]])
+    # print(t[(4, 3, 1)])
+    # print(t[[True, False, False, True, True, True]])
+    print(t[np.array([1, 3, 4])])
+    print(t[np.array([True, False, False, True, True, True])])
+
+    print(t[o3d.pybind.core.Tensor([1, 3, 4])])
+    print(t[o3d.pybind.core.Tensor([True, False, False, True, True, True])])
 
 
 def test_creation():
