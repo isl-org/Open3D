@@ -217,28 +217,11 @@ class Tensor(o3d.pybind.core.Tensor):
 
     @cast_to_py_tensor
     def __getitem__(self, key):
-        t = self
-        if isinstance(key, tuple):
-            o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
-            t = super(Tensor, self)._getitem_vector(o3d_tensor_keys)
-        elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
-            t = super(Tensor, self)._getitem(_to_o3d_tensor_key(key))
-        else:
-            raise TypeError("Invalid type {} for getitem.".format(type(key)))
-        return t
+        return super(Tensor, self).__getitem__(key)
 
     @cast_to_py_tensor
     def __setitem__(self, key, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
-        if isinstance(key, tuple):
-            o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
-            super(Tensor, self)._setitem_vector(o3d_tensor_keys, value)
-        elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
-            super(Tensor, self)._setitem(_to_o3d_tensor_key(key), value)
-        else:
-            raise TypeError("Invalid type {} for getitem.".format(type(key)))
-        return self
+        return super(Tensor, self).__setitem__(key, value)
 
     @staticmethod
     @cast_to_py_tensor
