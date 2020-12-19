@@ -80,7 +80,7 @@ void pybind_core_tensor(py::module& m) {
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
 
-    // Constructor from numpy array
+    // o3c.Tensor(np.array([[0, 1, 2], [3, 4, 5]]), dtype=None, device=None).
     tensor.def(py::init([](py::array np_array, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
                    Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
@@ -95,6 +95,8 @@ void pybind_core_tensor(py::module& m) {
                }),
                "np_array"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
+    // o3c.Tensor(1, dtype=None, device=None).
+    // Default to Int64, CPU:0.
     tensor.def(py::init([](int64_t scalar_value, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
                    Dtype dtype_value = Dtype::Int64;
@@ -112,6 +114,8 @@ void pybind_core_tensor(py::module& m) {
                "scalar_value"_a, "dtype"_a = py::none(),
                "device"_a = py::none());
 
+    // o3c.Tensor(3.14, dtype=None, device=None).
+    // Default to Float64, CPU:0.
     tensor.def(py::init([](double scalar_value, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
                    Dtype dtype_value = Dtype::Float64;
@@ -129,6 +133,7 @@ void pybind_core_tensor(py::module& m) {
                "scalar_value"_a, "dtype"_a = py::none(),
                "device"_a = py::none());
 
+    // o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype=None, device=None).
     tensor.def(py::init([](py::list list, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
                    py::object numpy = py::module::import("numpy");
@@ -151,6 +156,7 @@ void pybind_core_tensor(py::module& m) {
                }),
                "list"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
+    // o3c.Tensor(((0, 1, 2), (3, 4, 5)), dtype=None, device=None).
     tensor.def(py::init([](py::tuple tuple, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
                    py::object numpy = py::module::import("numpy");
@@ -172,6 +178,24 @@ void pybind_core_tensor(py::module& m) {
                    return t;
                }),
                "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
+
+    tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
+        return tensor.GetItem(tk);
+    });
+
+    tensor.def("_getitem_vector",
+               [](const Tensor& tensor, const std::vector<TensorKey>& tks) {
+                   return tensor.GetItem(tks);
+               });
+
+    tensor.def("_setitem",
+               [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
+                   return tensor.SetItem(tk, value);
+               });
+
+    tensor.def("_setitem_vector",
+               [](Tensor& tensor, const std::vector<TensorKey>& tks,
+                  const Tensor& value) { return tensor.SetItem(tks, value); });
 
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);
@@ -256,24 +280,6 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("solve", &Tensor::Solve);
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
-
-    tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
-        return tensor.GetItem(tk);
-    });
-
-    tensor.def("_getitem_vector",
-               [](const Tensor& tensor, const std::vector<TensorKey>& tks) {
-                   return tensor.GetItem(tks);
-               });
-
-    tensor.def("_setitem",
-               [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
-                   return tensor.SetItem(tk, value);
-               });
-
-    tensor.def("_setitem_vector",
-               [](Tensor& tensor, const std::vector<TensorKey>& tks,
-                  const Tensor& value) { return tensor.SetItem(tks, value); });
 
     // Casting
     tensor.def("to", &Tensor::To);
