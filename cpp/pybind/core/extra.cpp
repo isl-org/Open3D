@@ -86,6 +86,42 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
     }
 }
 
+/// Convert supported types to TensorKey. Infer types via type name and dynamic
+/// casting. Supported types:
+/// 1) int
+/// 2) slice
+/// 3) tuple
+/// 4) list
+/// 5) numpy.ndarray
+/// 6) Tensor
+static TensorKey PyHandleToTensorKey(const py::handle& item) {
+    // Infer types from type name and dynamic casting.
+    // See: https://github.com/pybind/pybind11/issues/84.
+    std::string class_name(item.get_type().str());
+    if (class_name == "<class 'int'>") {
+        return ToTensorKey(static_cast<int64_t>(item.cast<py::int_>()));
+    } else if (class_name == "<class 'slice'>") {
+        return ToTensorKey(item.cast<py::slice>());
+    } else if (class_name == "<class 'list'>") {
+        return ToTensorKey(item.cast<py::list>());
+    } else if (class_name == "<class 'tuple'>") {
+        return ToTensorKey(item.cast<py::tuple>());
+    } else if (class_name == "<class 'numpy.ndarray'>") {
+        return ToTensorKey(item.cast<py::array>());
+    } else if (class_name.find("open3d") != std::string::npos &&
+               class_name.find("Tensor") != std::string::npos) {
+        try {
+            Tensor* tensor = item.cast<Tensor*>();
+            return ToTensorKey(*tensor);
+        } catch (...) {
+            utility::LogError("Cannot cast index to Tensor.");
+        }
+    } else {
+        utility::LogError("PyHandleToTensorKey got unsupported type {}.",
+                          class_name);
+    }
+}
+
 void pybind_core_extra(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
 
@@ -121,39 +157,7 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
         std::vector<TensorKey> tks;
         for (const py::handle& item : key) {
-            // Try to infer types from type name and dynamic casting.
-            // See: https://github.com/pybind/pybind11/issues/84.
-            std::string class_name(item.get_type().str());
-            utility::LogInfo("class_name: {}", class_name);
-            // Supported types:
-            // 1) int
-            // 2) slice
-            // 3) tuple
-            // 4) list
-            // 5) np.ndarray
-            // 6) tensor
-            if (class_name == "<class 'int'>") {
-                tks.push_back(ToTensorKey(
-                        static_cast<int64_t>(item.cast<py::int_>())));
-            } else if (class_name == "<class 'slice'>") {
-                tks.push_back(ToTensorKey(item.cast<py::slice>()));
-            } else if (class_name == "<class 'list'>") {
-                tks.push_back(ToTensorKey(item.cast<py::list>()));
-            } else if (class_name == "<class 'tuple'>") {
-                tks.push_back(ToTensorKey(item.cast<py::tuple>()));
-            } else if (class_name == "<class 'numpy.ndarray'>") {
-                tks.push_back(ToTensorKey(item.cast<py::array>()));
-            } else if (class_name.find("open3d") != std::string::npos &&
-                       class_name.find("Tensor") != std::string::npos) {
-                try {
-                    Tensor* tensor = item.cast<Tensor*>();
-                    tks.push_back(ToTensorKey(*tensor));
-                } catch (...) {
-                    utility::LogError("Cannot cast index to Tensor.");
-                }
-            } else {
-                utility::LogError("Got something else");
-            }
+            tks.push_back(PyHandleToTensorKey(item));
         }
         return tensor.GetItem(tks);
     });
