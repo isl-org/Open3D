@@ -171,6 +171,66 @@ static void byind_getitem(py::class_<Tensor>& tensor) {
 }
 
 static void byind_setitem(py::class_<Tensor>& tensor) {
+    tensor.def("__setitem__", [](Tensor& tensor, int key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(key),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
+    tensor.def("__setitem__", [](Tensor& tensor, const py::slice& key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(key),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
+    tensor.def("__setitem__", [](Tensor& tensor, const py::array& key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(key),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
+    tensor.def("__setitem__", [](Tensor& tensor, const Tensor& key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(key),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
+    // List is interpreted as one TensorKey object, which calls
+    // Tensor::SetItem(const TensorKey&, xxx).
+    // E.g. a[[3, 4, 5]] = xxx is a list. It indices the first dimension of a.
+    // E.g. a[(3, 4, 5)] = xxx does very different things. It indices the first
+    // three
+    //      dimensions of a.
+    tensor.def("__setitem__", [](Tensor& tensor, const py::list& key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(key),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
+    // Tuple is interpreted as a vector TensorKey objects, which calls
+    // Tensor::SetItem(const std::vector<TensorKey>&, xxx).
+    // E.g. a[1:2, [3, 4, 5], 3:10] = xxx results in a tuple of size 3.
+    tensor.def("__setitem__", [](Tensor& tensor, const py::tuple& key,
+                                 const py::handle& value) {
+        std::vector<TensorKey> tks;
+        for (const py::handle& item : key) {
+            tks.push_back(PyHandleToTensorKey(item));
+        }
+        return tensor.SetItem(tks, PyHandleToTensor(value, tensor.GetDtype(),
+                                                    tensor.GetDevice(),
+                                                    /*force_copy=*/false));
+    });
+
     tensor.def("_setitem",
                [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
                    return tensor.SetItem(tk, value);
