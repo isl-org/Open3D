@@ -53,6 +53,22 @@ static TensorKey ToTensorKey(const py::slice& key) {
                             py::detail::PyNone_Check(slice_key->step));
 }
 
+static TensorKey ToTensorKey(const py::list& key) {
+    Tensor key_tensor = PyTupleToTensor(key);
+    if (key_tensor.GetDtype() != Dtype::Bool) {
+        key_tensor = key_tensor.To(Dtype::Int64);
+    }
+    return TensorKey::IndexTensor(key_tensor);
+}
+
+static TensorKey ToTensorKey(const py::tuple& key) {
+    Tensor key_tensor = PyTupleToTensor(key);
+    if (key_tensor.GetDtype() != Dtype::Bool) {
+        key_tensor = key_tensor.To(Dtype::Int64);
+    }
+    return TensorKey::IndexTensor(key_tensor);
+}
+
 void pybind_core_extra(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
 
@@ -63,6 +79,16 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
 
     tensor.def("__getitem__", [](const Tensor& tensor, const py::slice& key) {
         utility::LogInfo("__getitem__ slice");
+        return tensor.GetItem(ToTensorKey(key));
+    });
+
+    tensor.def("__getitem__", [](const Tensor& tensor, const py::list& key) {
+        utility::LogInfo("__getitem__ list");
+        return tensor.GetItem(ToTensorKey(key));
+    });
+
+    tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
+        utility::LogInfo("__getitem__ list");
         return tensor.GetItem(ToTensorKey(key));
     });
 

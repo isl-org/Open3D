@@ -52,9 +52,9 @@ def test_getitem():
                                device=o3c.Device("CPU:0"))
     # print(t[1])
     print(t[1:3])
-
-    # d = Dog()
-    # d[1:5]
+    print(t[[1, 3, 4]])
+    print(t[(4, 3, 1)])
+    print(t[[True, False, False, True, True, True]])
 
 
 def test_creation():
