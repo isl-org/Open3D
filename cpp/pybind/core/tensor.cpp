@@ -65,8 +65,6 @@ static std::vector<T> ToFlatVector(
     return std::vector<T>(start, start + info.size);
 }
 
-static TensorKey ToTensorKey(int key) { return TensorKey::Index(key); }
-
 void pybind_core_tensor(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",

@@ -37,6 +37,24 @@
 namespace open3d {
 namespace core {
 
+static TensorKey ToTensorKey(int key) { return TensorKey::Index(key); }
+
+static TensorKey ToTensorKey(const py::slice& key) {
+    Py_ssize_t start;
+    Py_ssize_t stop;
+    Py_ssize_t step;
+    PySlice_Unpack(key.ptr(), &start, &stop, &step);
+    utility::LogError("{}, {}, {}", start, stop, step);
+
+    PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
+    return TensorKey::Slice(static_cast<int64_t>(start),
+                            static_cast<int64_t>(stop),
+                            static_cast<int64_t>(step),
+                            py::detail::PyNone_Check(slice_key->start),
+                            py::detail::PyNone_Check(slice_key->stop),
+                            py::detail::PyNone_Check(slice_key->step));
+}
+
 void pybind_core_extra(py::class_<Tensor>& tensor) {
     utility::LogInfo("pybind_core_extra");
 
@@ -45,15 +63,7 @@ void pybind_core_extra(py::class_<Tensor>& tensor) {
     });
 
     tensor.def("__getitem__", [](const Tensor& tensor, const py::slice& key) {
-        // PYBIND11_SLICE_OBJECT is PySliceObject.
-        PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
-        utility::LogInfo("start is None {} ",
-                         (int)py::detail::PyNone_Check(slice_key->start));
-        utility::LogInfo("step is None {}",
-                         (int)py::detail::PyNone_Check(slice_key->step));
-        utility::LogInfo("stop is None {}",
-                         (int)py::detail::PyNone_Check(slice_key->stop));
-
+        ToTensorKey(key);
         utility::LogInfo("__getitem__ slice");
     });
 }
