@@ -28,7 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
-#include "pybind/core/core.h"
+#include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"

@@ -26,7 +26,6 @@
 
 #include "open3d/ml/contrib/contrib_nns.h"
 
-#include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
 #include "pybind/open3d_pybind.h"
