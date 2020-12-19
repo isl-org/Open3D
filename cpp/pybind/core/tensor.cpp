@@ -110,17 +110,7 @@ void pybind_core_tensor(py::module& m) {
     // Default to Float64, CPU:0.
     tensor.def(py::init([](double scalar_value, utility::optional<Dtype> dtype,
                            utility::optional<Device> device) {
-                   Dtype dtype_value = Dtype::Float64;
-                   if (dtype.has_value()) {
-                       dtype_value = dtype.value();
-                   }
-                   Device device_value("CPU:0");
-                   if (device.has_value()) {
-                       device_value = device.value();
-                   }
-                   return Tensor(std::vector<double>{scalar_value}, {},
-                                 Dtype::Float64, device_value)
-                           .To(dtype_value, /*copy=*/false);
+                   return DoubleToTensor(scalar_value, dtype, device);
                }),
                "scalar_value"_a, "dtype"_a = py::none(),
                "device"_a = py::none());

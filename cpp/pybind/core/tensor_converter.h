@@ -86,5 +86,12 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
                        utility::optional<Dtype> dtype = utility::nullopt,
                        utility::optional<Device> device = utility::nullopt);
 
+/// Converts scalar double value to Tensor.
+///
+/// The default dtype is Float64, unless specified.
+Tensor DoubleToTensor(double scalar_value,
+                      utility::optional<Dtype> dtype = utility::nullopt,
+                      utility::optional<Device> device = utility::nullopt);
+
 }  // namespace core
 }  // namespace open3d
