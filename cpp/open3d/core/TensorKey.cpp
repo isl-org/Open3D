@@ -115,7 +115,7 @@ TensorKey::TensorKey(TensorKeyMode mode,
       start_is_none_(start_is_none),
       stop_is_none_(stop_is_none),
       step_is_none_(step_is_none),
-      index_tensor_(std::make_shared<Tensor>(index_tensor)){};
+      index_tensor_(std::make_shared<Tensor>(index_tensor)) {}
 
 }  // namespace core
 }  // namespace open3d
