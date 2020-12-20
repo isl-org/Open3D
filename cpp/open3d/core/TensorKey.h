@@ -33,6 +33,7 @@ namespace core {
 
 class Tensor;  // Avoids circular include
 
+// TODO: refactor this to use utility::optional
 class NoneType {};
 
 extern NoneType None;
@@ -50,8 +51,6 @@ extern NoneType None;
 /// Tensor y = t.GetItem({TensorKey::Index(1),
 ///                       TensorKey::Slice(None, 3, None),
 ///                       TensorKey::Slice(0, -1, 2)});
-///
-/// TODO: refactor this to use utility::optional
 /// ```
 class TensorKey {
 public:
