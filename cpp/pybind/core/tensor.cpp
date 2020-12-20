@@ -66,6 +66,32 @@ static std::vector<T> ToFlatVector(
     return std::vector<T>(start, start + info.size);
 }
 
+template <typename func_t>
+static void BindTensorCreation(py::class_<Tensor>& tensor,
+                               const std::string& py_name,
+                               func_t cpp_func) {
+    tensor.def_static(
+            py_name.c_str(),
+            [cpp_func](const py::tuple& shape, utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
+                return cpp_func(
+                        PyTupleToSizeVector(shape),
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            py_name.c_str(),
+            [cpp_func](const py::list& shape, utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
+                return cpp_func(
+                        PyListToSizeVector(shape),
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+}
+
 void pybind_core_tensor(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",
@@ -124,27 +150,29 @@ void pybind_core_tensor(py::module& m) {
     pybind_core_tensor_accessor(tensor);
 
     // Tensor creation API
-    tensor.def_static("empty", &Tensor::Empty);
-    tensor.def_static(
-            "empty",
-            [](const py::tuple& shape, utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
-                return Tensor::Empty(
-                        PyTupleToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
-    tensor.def_static(
-            "empty",
-            [](const py::list& shape, utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
-                return Tensor::Empty(
-                        PyListToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    BindTensorCreation(tensor, "empty", Tensor::Empty);
+    // tensor.def_static(
+    //         "empty",
+    //         [](const py::tuple& shape, utility::optional<Dtype> dtype,
+    //            utility::optional<Device> device) {
+    //             return Tensor::Empty(
+    //                     PyTupleToSizeVector(shape),
+    //                     dtype.has_value() ? dtype.value() : Dtype::Float32,
+    //                     device.has_value() ? device.value() :
+    //                     Device("CPU:0"));
+    //         },
+    //         "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    // tensor.def_static(
+    //         "empty",
+    //         [](const py::list& shape, utility::optional<Dtype> dtype,
+    //            utility::optional<Device> device) {
+    //             return Tensor::Empty(
+    //                     PyListToSizeVector(shape),
+    //                     dtype.has_value() ? dtype.value() : Dtype::Float32,
+    //                     device.has_value() ? device.value() :
+    //                     Device("CPU:0"));
+    //         },
+    //         "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
     tensor.def_static("full", &Tensor::Full<float>);
     tensor.def_static("full", &Tensor::Full<double>);
