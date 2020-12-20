@@ -28,34 +28,15 @@ import open3d as o3d
 import numpy as np
 
 if o3d.__DEVICE_API__ == 'cuda':
-    from open3d.cuda.pybind.core import (Tensor, Dtype, DtypeCode, Device, cuda,
-                                         nns, NoneType, TensorList, SizeVector,
+    from open3d.cuda.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
+                                         Device, cuda, nns, NoneType,
+                                         TensorList, SizeVector,
                                          DynamicSizeVector, matmul, lstsq,
                                          solve, inv, svd)
 else:
-    from open3d.cpu.pybind.core import (Tensor, Dtype, DtypeCode, Device, cuda,
-                                        nns, NoneType, TensorList, SizeVector,
-                                        DynamicSizeVector, matmul, lstsq, solve,
-                                        inv, svd)
+    from open3d.cpu.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
+                                        Device, cuda, nns, NoneType, TensorList,
+                                        SizeVector, DynamicSizeVector, matmul,
+                                        lstsq, solve, inv, svd)
 
 none = NoneType()
-
-
-class Hashmap(o3d.pybind.core.Hashmap):
-    """
-    Open3D Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
-    """
-
-    def __init__(self,
-                 init_capacity,
-                 dtype_key,
-                 dtype_value,
-                 shape_key=[1],
-                 shape_value=[1],
-                 device=None):
-        if not isinstance(shape_key, SizeVector):
-            shape_key = SizeVector(shape_key)
-        if not isinstance(shape_value, SizeVector):
-            shape_value = SizeVector(shape_value)
-        super(Hashmap, self).__init__(init_capacity, dtype_key, dtype_value,
-                                      shape_key, shape_value, device)

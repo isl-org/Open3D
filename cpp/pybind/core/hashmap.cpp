@@ -33,6 +33,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
 #include "pybind/core/core.h"
+#include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
@@ -47,6 +48,24 @@ void pybind_core_hashmap(py::module& m) {
                          const SizeVector&, const Device&>(),
                 "init_capacity"_a, "dtype_key"_a, "dtype_value"_a,
                 "shape_key"_a, "shape_value"_a, "device"_a);
+
+    hashmap.def(py::init([](int64_t init_capacity, const Dtype& dtype_key,
+                            const Dtype& dtype_value,
+                            const py::handle& element_shape_key,
+                            const py::handle& element_shape_value,
+                            const Device& device) {
+                    SizeVector element_shape_key_sv =
+                            PyHandleToSizeVector(element_shape_key);
+                    SizeVector element_shape_value_sv =
+                            PyHandleToSizeVector(element_shape_value);
+                    return Hashmap(init_capacity, dtype_key, dtype_value,
+                                   element_shape_key_sv, element_shape_value_sv,
+                                   device);
+                }),
+                "init_capacity"_a, "dtype_key"_a, "dtype_value"_a,
+                "element_shape_key"_a = SizeVector({1}),
+                "element_shape_value"_a = SizeVector({1}),
+                "device"_a = Device("CPU:0"));
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
