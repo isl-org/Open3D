@@ -334,230 +334,230 @@ class Tensor(o3d.pybind.core.Tensor):
         """
         return super(Tensor, Tensor).from_dlpack(dlpack)
 
-    @cast_to_py_tensor
-    def add(self, value):
-        """
-        Adds a tensor and returns the resulting tensor.
-        """
-        return super(Tensor, self).add(value)
+    # @cast_to_py_tensor
+    # def add(self, value):
+    #     """
+    #     Adds a tensor and returns the resulting tensor.
+    #     """
+    #     return super(Tensor, self).add(value)
 
-    @cast_to_py_tensor
-    def add_(self, value):
-        """
-        Inplace version of Tensor.add.
-        """
-        return super(Tensor, self).add_(value)
+    # @cast_to_py_tensor
+    # def add_(self, value):
+    #     """
+    #     Inplace version of Tensor.add.
+    #     """
+    #     return super(Tensor, self).add_(value)
 
-    @cast_to_py_tensor
-    def sub(self, value):
-        """
-        Substracts a tensor and returns the resulting tensor.
-        """
-        return super(Tensor, self).sub(value)
+    # @cast_to_py_tensor
+    # def sub(self, value):
+    #     """
+    #     Substracts a tensor and returns the resulting tensor.
+    #     """
+    #     return super(Tensor, self).sub(value)
 
-    @cast_to_py_tensor
-    def sub_(self, value):
-        """
-        Inplace version of Tensor.sub.
-        """
-        return super(Tensor, self).sub_(value)
+    # @cast_to_py_tensor
+    # def sub_(self, value):
+    #     """
+    #     Inplace version of Tensor.sub.
+    #     """
+    #     return super(Tensor, self).sub_(value)
 
-    @cast_to_py_tensor
-    def mul(self, value):
-        """
-        Multiplies a tensor and returns the resulting tensor.
-        """
-        return super(Tensor, self).mul(value)
+    # @cast_to_py_tensor
+    # def mul(self, value):
+    #     """
+    #     Multiplies a tensor and returns the resulting tensor.
+    #     """
+    #     return super(Tensor, self).mul(value)
 
-    @cast_to_py_tensor
-    def mul_(self, value):
-        """
-        Inplace version of Tensor.mul.
-        """
-        return super(Tensor, self).mul_(value)
+    # @cast_to_py_tensor
+    # def mul_(self, value):
+    #     """
+    #     Inplace version of Tensor.mul.
+    #     """
+    #     return super(Tensor, self).mul_(value)
 
-    @cast_to_py_tensor
-    def div(self, value):
-        """
-        Divides a tensor and returns the resulting tensor.
-        """
-        return super(Tensor, self).div(value)
+    # @cast_to_py_tensor
+    # def div(self, value):
+    #     """
+    #     Divides a tensor and returns the resulting tensor.
+    #     """
+    #     return super(Tensor, self).div(value)
 
-    @cast_to_py_tensor
-    def div_(self, value):
-        """
-        Inplace version of Tensor.div.
-        """
-        return super(Tensor, self).div_(value)
+    # @cast_to_py_tensor
+    # def div_(self, value):
+    #     """
+    #     Inplace version of Tensor.div.
+    #     """
+    #     return super(Tensor, self).div_(value)
 
-    @cast_to_py_tensor
-    def abs(self):
-        """
-        Returns element-wise absolute value of a tensor.
-        """
-        return super(Tensor, self).abs()
+    # @cast_to_py_tensor
+    # def abs(self):
+    #     """
+    #     Returns element-wise absolute value of a tensor.
+    #     """
+    #     return super(Tensor, self).abs()
 
-    @cast_to_py_tensor
-    def abs_(self):
-        """
-        Inplace version of Tensor.abs.
-        """
-        return super(Tensor, self).abs_()
+    # @cast_to_py_tensor
+    # def abs_(self):
+    #     """
+    #     Inplace version of Tensor.abs.
+    #     """
+    #     return super(Tensor, self).abs_()
 
-    @cast_to_py_tensor
-    def logical_and(self, value):
-        """
-        Element-wise logical and operation.
+    # @cast_to_py_tensor
+    # def logical_and(self, value):
+    #     """
+    #     Element-wise logical and operation.
 
-        If the tensor is not boolean, zero will be treated as False, while
-        non-zero values will be treated as True.
-        """
-        return super(Tensor, self).logical_and(value)
+    #     If the tensor is not boolean, zero will be treated as False, while
+    #     non-zero values will be treated as True.
+    #     """
+    #     return super(Tensor, self).logical_and(value)
 
-    @cast_to_py_tensor
-    def logical_and_(self, value):
-        """
-        Inplace version of Tensor.logical_and.
+    # @cast_to_py_tensor
+    # def logical_and_(self, value):
+    #     """
+    #     Inplace version of Tensor.logical_and.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).logical_and_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).logical_and_(value)
 
-    @cast_to_py_tensor
-    def logical_or(self, value):
-        """
-        Element-wise logical or operation.
+    # @cast_to_py_tensor
+    # def logical_or(self, value):
+    #     """
+    #     Element-wise logical or operation.
 
-        If the tensor is not boolean, zero will be treated as False, while
-        non-zero values will be treated as True.
-        """
-        return super(Tensor, self).logical_or(value)
+    #     If the tensor is not boolean, zero will be treated as False, while
+    #     non-zero values will be treated as True.
+    #     """
+    #     return super(Tensor, self).logical_or(value)
 
-    @cast_to_py_tensor
-    def logical_or_(self, value):
-        """
-        Inplace version of Tensor.logical_or.
+    # @cast_to_py_tensor
+    # def logical_or_(self, value):
+    #     """
+    #     Inplace version of Tensor.logical_or.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).logical_or_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).logical_or_(value)
 
-    @cast_to_py_tensor
-    def logical_xor(self, value):
-        """
-        Element-wise logical exclusive-or operation.
+    # @cast_to_py_tensor
+    # def logical_xor(self, value):
+    #     """
+    #     Element-wise logical exclusive-or operation.
 
-        If the tensor is not boolean, zero will be treated as False, while
-        non-zero values will be treated as True.
-        """
-        return super(Tensor, self).logical_xor(value)
+    #     If the tensor is not boolean, zero will be treated as False, while
+    #     non-zero values will be treated as True.
+    #     """
+    #     return super(Tensor, self).logical_xor(value)
 
-    @cast_to_py_tensor
-    def logical_xor_(self, value):
-        """
-        Inplace version of Tensor.logical_xor.
+    # @cast_to_py_tensor
+    # def logical_xor_(self, value):
+    #     """
+    #     Inplace version of Tensor.logical_xor.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).logical_xor_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).logical_xor_(value)
 
-    @cast_to_py_tensor
-    def gt(self, value):
-        """
-        Element-wise greater than operation, returning a new boolean tensor.
-        """
-        return super(Tensor, self).gt(value)
+    # @cast_to_py_tensor
+    # def gt(self, value):
+    #     """
+    #     Element-wise greater than operation, returning a new boolean tensor.
+    #     """
+    #     return super(Tensor, self).gt(value)
 
-    @cast_to_py_tensor
-    def gt_(self, value):
-        """
-        Inplace version of Tensor.gt.
+    # @cast_to_py_tensor
+    # def gt_(self, value):
+    #     """
+    #     Inplace version of Tensor.gt.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).gt_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).gt_(value)
 
-    @cast_to_py_tensor
-    def lt(self, value):
-        """
-        Element-wise less than operation, returning a new boolean tensor.
-        """
-        return super(Tensor, self).lt(value)
+    # @cast_to_py_tensor
+    # def lt(self, value):
+    #     """
+    #     Element-wise less than operation, returning a new boolean tensor.
+    #     """
+    #     return super(Tensor, self).lt(value)
 
-    @cast_to_py_tensor
-    def lt_(self, value):
-        """
-        Inplace version of Tensor.lt.
+    # @cast_to_py_tensor
+    # def lt_(self, value):
+    #     """
+    #     Inplace version of Tensor.lt.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).lt_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).lt_(value)
 
-    @cast_to_py_tensor
-    def ge(self, value):
-        """
-        Element-wise greater-than-or-equals-to operation, returning a new
-        boolean tensor.
-        """
-        return super(Tensor, self).ge(value)
+    # @cast_to_py_tensor
+    # def ge(self, value):
+    #     """
+    #     Element-wise greater-than-or-equals-to operation, returning a new
+    #     boolean tensor.
+    #     """
+    #     return super(Tensor, self).ge(value)
 
-    @cast_to_py_tensor
-    def ge_(self, value):
-        """
-        Inplace version of Tensor.ge.
+    # @cast_to_py_tensor
+    # def ge_(self, value):
+    #     """
+    #     Inplace version of Tensor.ge.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).ge_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).ge_(value)
 
-    @cast_to_py_tensor
-    def le(self, value):
-        """
-        Element-wise less-than-or-equals-to than operation, returning a new
-        boolean tensor.
-        """
-        return super(Tensor, self).le(value)
+    # @cast_to_py_tensor
+    # def le(self, value):
+    #     """
+    #     Element-wise less-than-or-equals-to than operation, returning a new
+    #     boolean tensor.
+    #     """
+    #     return super(Tensor, self).le(value)
 
-    @cast_to_py_tensor
-    def le_(self, value):
-        """
-        Inplace version of Tensor.le.
+    # @cast_to_py_tensor
+    # def le_(self, value):
+    #     """
+    #     Inplace version of Tensor.le.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).le_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).le_(value)
 
-    @cast_to_py_tensor
-    def eq(self, value):
-        """
-        Element-wise equal operation, returning a new boolean tensor.
-        """
-        return super(Tensor, self).eq(value)
+    # @cast_to_py_tensor
+    # def eq(self, value):
+    #     """
+    #     Element-wise equal operation, returning a new boolean tensor.
+    #     """
+    #     return super(Tensor, self).eq(value)
 
-    @cast_to_py_tensor
-    def eq_(self, value):
-        """
-        Inplace version of Tensor.eq.
+    # @cast_to_py_tensor
+    # def eq_(self, value):
+    #     """
+    #     Inplace version of Tensor.eq.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).eq_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).eq_(value)
 
-    @cast_to_py_tensor
-    def ne(self, value):
-        """
-        Element-wise not-equal operation, returning a new boolean tensor.
-        """
-        return super(Tensor, self).ne(value)
+    # @cast_to_py_tensor
+    # def ne(self, value):
+    #     """
+    #     Element-wise not-equal operation, returning a new boolean tensor.
+    #     """
+    #     return super(Tensor, self).ne(value)
 
-    @cast_to_py_tensor
-    def ne_(self, value):
-        """
-        Inplace version of Tensor.ne.
+    # @cast_to_py_tensor
+    # def ne_(self, value):
+    #     """
+    #     Inplace version of Tensor.ne.
 
-        This operation won't change the tensor's dtype.
-        """
-        return super(Tensor, self).ne_(value)
+    #     This operation won't change the tensor's dtype.
+    #     """
+    #     return super(Tensor, self).ne_(value)
 
     @cast_to_py_tensor
     def to(self, dtype, copy=False):
@@ -581,13 +581,13 @@ class Tensor(o3d.pybind.core.Tensor):
         """
         return super(Tensor, self).contiguous()
 
-    @cast_to_py_tensor
-    def T(self):
-        """
-        Expects input to be <= 2-D Tensor by swapping dimension 0 and 1.
-        0-D and 1-D Tensor remains the same.
-        """
-        return super(Tensor, self).T()
+    # @cast_to_py_tensor
+    # def T(self):
+    #     """
+    #     Expects input to be <= 2-D Tensor by swapping dimension 0 and 1.
+    #     0-D and 1-D Tensor remains the same.
+    #     """
+    #     return super(Tensor, self).T()
 
     @cast_to_py_tensor
     def nonzero(self, as_tuple=False):
@@ -596,96 +596,96 @@ class Tensor(o3d.pybind.core.Tensor):
         else:
             return super(Tensor, self)._non_zero()
 
-    @cast_to_py_tensor
-    def matmul(self, value):
-        """
-        Matrix multiplication between Tensor \param self and Tensor \param value
+    # @cast_to_py_tensor
+    # def matmul(self, value):
+    #     """
+    #     Matrix multiplication between Tensor \param self and Tensor \param value
 
-        Args:
-          self: Tensor of shape (m, k)
-          value: Tensor of shape (k, n)
+    #     Args:
+    #       self: Tensor of shape (m, k)
+    #       value: Tensor of shape (k, n)
 
-        Returns:
-          Tensor of shape (m, n)
+    #     Returns:
+    #       Tensor of shape (m, n)
 
-        - Both tensors should share the same device and dtype.
-        - Int32, Int64, Float32, Float64 are supported,
-          but results of big integers' matmul are not guaranteed, overflow can
-          happen.
-        """
-        return super(Tensor, self).matmul(value)
+    #     - Both tensors should share the same device and dtype.
+    #     - Int32, Int64, Float32, Float64 are supported,
+    #       but results of big integers' matmul are not guaranteed, overflow can
+    #       happen.
+    #     """
+    #     return super(Tensor, self).matmul(value)
 
-    @cast_to_py_tensor
-    def solve(self, value):
-        """
-        Returns X by solving linear system AX = B with LU decomposition,
-        where A is Tensor \param self and B is Tensor \param value.
+    # @cast_to_py_tensor
+    # def solve(self, value):
+    #     """
+    #     Returns X by solving linear system AX = B with LU decomposition,
+    #     where A is Tensor \param self and B is Tensor \param value.
 
-        Args:
-          self: Tensor of shape (n, n)
-          value: Tensor of shape (n, k)
+    #     Args:
+    #       self: Tensor of shape (n, n)
+    #       value: Tensor of shape (n, k)
 
-        Returns:
-          Tensor of shape (n, k)
+    #     Returns:
+    #       Tensor of shape (n, k)
 
-        - Both tensors should share the same device and dtype.
-        - Float32 and Float64 are supported.
-        """
-        return super(Tensor, self).solve(value)
+    #     - Both tensors should share the same device and dtype.
+    #     - Float32 and Float64 are supported.
+    #     """
+    #     return super(Tensor, self).solve(value)
 
-    @cast_to_py_tensor
-    def lstsq(self, value):
-        """
-        Returns X by solving linear system AX = B with QR decomposition,
-        where A is Tensor \param self and B is Tensor \param value.
-        Use it only when A is non-square.
+    # @cast_to_py_tensor
+    # def lstsq(self, value):
+    #     """
+    #     Returns X by solving linear system AX = B with QR decomposition,
+    #     where A is Tensor \param self and B is Tensor \param value.
+    #     Use it only when A is non-square.
 
-        Args:
-          self: Tensor of shape (m, n), m >= n and is a full rank matrix.
-          value: Tensor of shape (m, k)
+    #     Args:
+    #       self: Tensor of shape (m, n), m >= n and is a full rank matrix.
+    #       value: Tensor of shape (m, k)
 
-        Returns:
-          Tensor of shape (n, k)
+    #     Returns:
+    #       Tensor of shape (n, k)
 
-        - Both tensors should share the same device and dtype.
-        - Float32 and Float64 are supported.
-        - The result can be unexpected when A is not a full-rank matrix and the
-          backend is cuda.
-        """
-        return super(Tensor, self).lstsq(value)
+    #     - Both tensors should share the same device and dtype.
+    #     - Float32 and Float64 are supported.
+    #     - The result can be unexpected when A is not a full-rank matrix and the
+    #       backend is cuda.
+    #     """
+    #     return super(Tensor, self).lstsq(value)
 
-    @cast_to_py_tensor
-    def inv(self):
-        """
-        Returns matrix's inversion with LU decomposition.
+    # @cast_to_py_tensor
+    # def inv(self):
+    #     """
+    #     Returns matrix's inversion with LU decomposition.
 
-        Args:
-          self: Tensor of shape (m, m) and is an invertable matrix
+    #     Args:
+    #       self: Tensor of shape (m, m) and is an invertable matrix
 
-        Returns:
-          Tensor of shape (m, m)
+    #     Returns:
+    #       Tensor of shape (m, m)
 
-        - Float32 and Float64 are supported.
-        """
-        return super(Tensor, self).inv()
+    #     - Float32 and Float64 are supported.
+    #     """
+    #     return super(Tensor, self).inv()
 
-    @cast_to_py_tensor
-    def svd(self):
-        """
-        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor
-        \param self.
+    # @cast_to_py_tensor
+    # def svd(self):
+    #     """
+    #     Returns matrix's SVD decomposition: U S VT = A, where A is Tensor
+    #     \param self.
 
-        Args:
-          self: Tensor of shape (m, n).
+    #     Args:
+    #       self: Tensor of shape (m, n).
 
-        Returns: a tuple of tensors:
-          U: Tensor of shape (m, n)
-          S: Tensor of shape (min(m, n))
-          VT: Tensor of shape (n, n)
+    #     Returns: a tuple of tensors:
+    #       U: Tensor of shape (m, n)
+    #       S: Tensor of shape (min(m, n))
+    #       VT: Tensor of shape (n, n)
 
-        - Float32 and Float64 are supported.
-        """
-        return super(Tensor, self).svd()
+    #     - Float32 and Float64 are supported.
+    #     """
+    #     return super(Tensor, self).svd()
 
     # def __add__(self, value):
     #     return self.add(value)
