@@ -72,6 +72,16 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
                                func_t cpp_func) {
     tensor.def_static(
             py_name.c_str(),
+            [cpp_func](const SizeVector& shape, utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
+                return cpp_func(
+                        shape,
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            py_name.c_str(),
             [cpp_func](const py::tuple& shape, utility::optional<Dtype> dtype,
                        utility::optional<Device> device) {
                 return cpp_func(
@@ -151,6 +161,8 @@ void pybind_core_tensor(py::module& m) {
 
     // Tensor creation API
     BindTensorCreation(tensor, "empty", Tensor::Empty);
+    BindTensorCreation(tensor, "zeros", Tensor::Zeros);
+    BindTensorCreation(tensor, "ones", Tensor::Ones);
     // tensor.def_static(
     //         "empty",
     //         [](const py::tuple& shape, utility::optional<Dtype> dtype,
@@ -180,8 +192,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_static("full", &Tensor::Full<int64_t>);
     tensor.def_static("full", &Tensor::Full<uint8_t>);
     tensor.def_static("full", &Tensor::Full<bool>);
-    tensor.def_static("zeros", &Tensor::Zeros);
-    tensor.def_static("ones", &Tensor::Ones);
+
     tensor.def_static("eye", &Tensor::Eye);
     tensor.def_static("diag", &Tensor::Diag);
 
