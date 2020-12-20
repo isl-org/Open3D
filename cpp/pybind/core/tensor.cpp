@@ -259,7 +259,7 @@ void pybind_core_tensor(py::module& m) {
 
     pybind_core_tensor_accessor(tensor);
 
-    // Tensor creation API
+    // Tensor creation API.
     BindTensorCreation(tensor, "empty", Tensor::Empty);
     BindTensorCreation(tensor, "zeros", Tensor::Zeros);
     BindTensorCreation(tensor, "ones", Tensor::Ones);
@@ -280,10 +280,10 @@ void pybind_core_tensor(py::module& m) {
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
-    // Tensor copy
+    // Tensor copy.
     tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 
-    // Device transfer
+    // Device transfer.
     tensor.def(
             "cuda",
             [](const Tensor& tensor, int device_id) {
@@ -304,7 +304,7 @@ void pybind_core_tensor(py::module& m) {
         return tensor.Copy(Device(Device::DeviceType::CPU, 0));
     });
 
-    // Buffer I/O for Numpy and DLPack(PyTorch)
+    // Buffer I/O for Numpy and DLPack(PyTorch).
     tensor.def("numpy", &core::TensorToPyArray);
 
     tensor.def_static("from_numpy", [](py::array np_array) {
