@@ -332,6 +332,8 @@ void pybind_core_tensor(py::module& m) {
 
     BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__sub__, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__isub__, Sub_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rsub__, Sub);
 
     BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);

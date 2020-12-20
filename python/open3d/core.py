@@ -708,17 +708,17 @@ class Tensor(o3d.pybind.core.Tensor):
         """
         return super(Tensor, self).svd()
 
-    def __add__(self, value):
-        return self.add(value)
+    # def __add__(self, value):
+    #     return self.add(value)
 
-    def __sub__(self, value):
-        return self.sub(value)
+    # def __sub__(self, value):
+    #     return self.sub(value)
 
     # def __rsub__(self, value):
     #     return Tensor.full((), value, self.dtype, self.device) - self
 
-    def __isub__(self, value):
-        return self.sub_(value)
+    # def __isub__(self, value):
+    #     return self.sub_(value)
 
     def __mul__(self, value):
         return self.mul(value)
