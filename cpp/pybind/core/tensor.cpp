@@ -433,16 +433,27 @@ void pybind_core_tensor(py::module& m) {
                [](const Tensor& tensor) { return tensor.ToString(); });
 
     // Get item from Tensor of one element.
-    tensor.def("_item_float", [](const Tensor& t) { return t.Item<float>(); });
-    tensor.def("_item_double",
-               [](const Tensor& t) { return t.Item<double>(); });
-    tensor.def("_item_int32_t",
-               [](const Tensor& t) { return t.Item<int32_t>(); });
-    tensor.def("_item_int64_t",
-               [](const Tensor& t) { return t.Item<int64_t>(); });
-    tensor.def("_item_uint8_t",
-               [](const Tensor& t) { return t.Item<uint8_t>(); });
-    tensor.def("_item_bool", [](const Tensor& t) { return t.Item<bool>(); });
+
+    tensor.def("item", [](const Tensor& tensor) -> py::object {
+        Dtype dtype = tensor.GetDtype();
+        if (dtype == Dtype::Float32) {
+            return py::float_(tensor.Item<float>());
+        } else if (dtype == Dtype::Float64) {
+            return py::float_(tensor.Item<double>());
+        } else if (dtype == Dtype::Int32) {
+            return py::int_(tensor.Item<int32_t>());
+        } else if (dtype == Dtype::Int64) {
+            return py::int_(tensor.Item<int64_t>());
+        } else if (dtype == Dtype::UInt8) {
+            return py::int_(tensor.Item<uint8_t>());
+        } else if (dtype == Dtype::UInt16) {
+            return py::int_(tensor.Item<uint16_t>());
+        } else if (dtype == Dtype::Bool) {
+            return py::bool_(tensor.Item<bool>());
+        } else {
+            utility::LogError("Unsupported dtype to conver to python.");
+        }
+    });
 }
 
 }  // namespace core

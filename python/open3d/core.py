@@ -895,8 +895,9 @@ class Tensor(o3d.pybind.core.Tensor):
         Returns scalar value of a scalar Tensor, the Tensor mush have empty
         shape ().
         """
+        return super(Tensor, self).item()
         if self.dtype == Dtype.Float32:
-            return super(Tensor, self)._item_float()
+            return super(Tensor, self).item()
         elif self.dtype == Dtype.Float64:
             return super(Tensor, self)._item_double()
         elif self.dtype == Dtype.Int32:
