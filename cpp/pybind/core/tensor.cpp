@@ -323,6 +323,9 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
 
+    // See "emulating numeric types" section for Python built-in numeric ops.
+    // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
+    //
     // BinaryEW: add.
     BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
@@ -357,13 +360,28 @@ void pybind_core_tensor(py::module& m) {
     BIND_BINARY_OP_ALL_DTYPES(__ifloordiv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rfloordiv__, Div);
 
-    // Binary boolean element-wise ops.
+    // BinaryEW: and.
     BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_and_, LogicalAnd_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__and__, LogicalAnd, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__iand__, LogicalAnd_, NON_CONST_ARG);
+    BIND_BINARY_R_OP_ALL_DTYPES(__rand__, LogicalAnd);
+
+    // BinaryEW: or.
     BIND_BINARY_OP_ALL_DTYPES(logical_or, LogicalOr, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_or_, LogicalOr_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__or__, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__ior__, LogicalOr_, NON_CONST_ARG);
+    BIND_BINARY_R_OP_ALL_DTYPES(__ror__, LogicalOr);
+
+    // BinaryEW: xor.
     BIND_BINARY_OP_ALL_DTYPES(logical_xor, LogicalXor, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_xor_, LogicalXor_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__xor__, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__ixor__, LogicalXor_, NON_CONST_ARG);
+    BIND_BINARY_R_OP_ALL_DTYPES(__rxor__, LogicalXor);
+
+    // BinaryEW: comparsion ops.
     BIND_BINARY_OP_ALL_DTYPES(gt, Gt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(gt_, Gt_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(lt, Lt, CONST_ARG);
