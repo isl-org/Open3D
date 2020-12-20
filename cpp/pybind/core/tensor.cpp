@@ -384,16 +384,22 @@ void pybind_core_tensor(py::module& m) {
     // BinaryEW: comparsion ops.
     BIND_BINARY_OP_ALL_DTYPES(gt, Gt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(gt_, Gt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__gt__, Gt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(lt, Lt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(lt_, Lt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__lt__, Lt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(ge, Ge, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(ge_, Ge_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__ge__, Ge, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(le, Le, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(le_, Le_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__le__, Le, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(eq, Eq, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(eq_, Eq_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__eq__, Eq, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(ne, Ne, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(ne_, Ne_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__ne__, Ne, CONST_ARG);
 
     // Getters and setters as properties.
     tensor.def_property_readonly(

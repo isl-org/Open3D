@@ -871,23 +871,23 @@ class Tensor(o3d.pybind.core.Tensor):
         """
         return super(Tensor, self).isclose(other, rtol, atol)
 
-    def __lt__(self, value):
-        return self.lt(value)
+    # def __lt__(self, value):
+    #     return self.lt(value)
 
-    def __le__(self, value):
-        return self.le(value)
+    # def __le__(self, value):
+    #     return self.le(value)
 
-    def __eq__(self, value):
-        return self.eq(value)
+    # def __eq__(self, value):
+    #     return self.eq(value)
 
-    def __ne__(self, value):
-        return self.ne(value)
+    # def __ne__(self, value):
+    #     return self.ne(value)
 
-    def __gt__(self, value):
-        return self.gt(value)
+    # def __gt__(self, value):
+    #     return self.gt(value)
 
-    def __ge__(self, value):
-        return self.ge(value)
+    # def __ge__(self, value):
+    #     return self.ge(value)
 
     @cast_to_py_tensor
     def item(self):
