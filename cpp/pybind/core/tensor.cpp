@@ -353,7 +353,12 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("svd", &Tensor::SVD);
 
     // Casting.
-    tensor.def("to", &Tensor::To);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Dtype& dtype, bool copy) {
+                return tensor.To(dtype, copy);
+            },
+            "dtype"_a, "copy"_a = false);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
 

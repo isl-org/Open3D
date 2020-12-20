@@ -176,14 +176,6 @@ class Tensor(o3d.pybind.core.Tensor):
         super(Tensor, self).__init__(data, dtype, device)
 
     @cast_to_py_tensor
-    def __getitem__(self, key):
-        return super(Tensor, self).__getitem__(key)
-
-    @cast_to_py_tensor
-    def __setitem__(self, key, value):
-        return super(Tensor, self).__setitem__(key, value)
-
-    @cast_to_py_tensor
     def cuda(self, device_id=0):
         """
         Returns a copy of this tensor in CUDA memory.
@@ -238,18 +230,18 @@ class Tensor(o3d.pybind.core.Tensor):
         """
         return super(Tensor, Tensor).from_dlpack(dlpack)
 
-    @cast_to_py_tensor
-    def to(self, dtype, copy=False):
-        """
-        Returns a tensor with the specified dtype.
+    # @cast_to_py_tensor
+    # def to(self, dtype, copy=False):
+    #     """
+    #     Returns a tensor with the specified dtype.
 
-        Args:
-            dtype: The targeted dtype to convert to.
-            copy: If true, a new tensor is always created; if false, the copy
-                  is avoided when the original tensor already have the targeted
-                  dtype.
-        """
-        return super(Tensor, self).to(dtype, copy)
+    #     Args:
+    #         dtype: The targeted dtype to convert to.
+    #         copy: If true, a new tensor is always created; if false, the copy
+    #               is avoided when the original tensor already have the targeted
+    #               dtype.
+    #     """
+    #     return super(Tensor, self).to(dtype, copy)
 
     @cast_to_py_tensor
     def contiguous(self):
