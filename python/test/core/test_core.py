@@ -156,7 +156,7 @@ def test_tensor_constructor(device):
 
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         o3_t = o3d.core.Tensor(li_t, dtype, device)
 
     # Automatic casting
@@ -433,14 +433,6 @@ def test_setitem(device):
     np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = np_fill_t
     o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = o3_fill_t
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
-
-
-@pytest.mark.parametrize("device", list_devices())
-def test_cast_to_py_tensor(device):
-    a = o3d.core.Tensor([1], device=device)
-    b = o3d.core.Tensor([2], device=device)
-    c = a + b
-    assert isinstance(c, o3d.core.Tensor)  # Not o3d.open3d-pybind.Tensor
 
 
 @pytest.mark.parametrize(
