@@ -45,25 +45,6 @@ else:
 none = NoneType()
 
 
-def _numpy_dtype_to_dtype(numpy_dtype):
-    if numpy_dtype == np.float32:
-        return Dtype.Float32
-    elif numpy_dtype == np.float64:
-        return Dtype.Float64
-    elif numpy_dtype == np.int32:
-        return Dtype.Int32
-    elif numpy_dtype == np.int64:
-        return Dtype.Int64
-    elif numpy_dtype == np.uint8:
-        return Dtype.UInt8
-    elif numpy_dtype == np.uint16:
-        return Dtype.UInt16
-    elif numpy_dtype == np.bool:
-        return Dtype.Bool
-    else:
-        raise ValueError("Unsupported numpy dtype:", numpy_dtype)
-
-
 def cast_to_py_tensor(func):
     """
     Args:
@@ -201,83 +182,6 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def __setitem__(self, key, value):
         return super(Tensor, self).__setitem__(key, value)
-
-    @staticmethod
-    @cast_to_py_tensor
-    def empty(shape, dtype, device=Device("CPU:0")):
-        """
-        Create a tensor with uninitilized values.
-
-        Args:
-            shape (list, tuple, SizeVector): Shape of the tensor.
-            dtype (Dtype): Data type of the tensor.
-            device (Device): Device where the tensor is created.
-        """
-        return super(Tensor, Tensor).empty(shape, dtype, device)
-
-    @staticmethod
-    @cast_to_py_tensor
-    def full(shape, fill_value, dtype, device=Device("CPU:0")):
-        """
-        Create a tensor with fill with the specified value.
-
-        Args:
-            shape (list, tuple, SizeVector): Shape of the tensor.
-            fill_value (scalar): The value to be filled.
-            dtype (Dtype): Data type of the tensor.
-            device (Device): Device where the tensor is created.
-        """
-        return super(Tensor, Tensor).full(shape, fill_value, dtype, device)
-
-    @staticmethod
-    @cast_to_py_tensor
-    def zeros(shape, dtype, device=Device("CPU:0")):
-        """
-        Create a tensor with fill with zeros.
-
-        Args:
-            shape (list, tuple, SizeVector): Shape of the tensor.
-            dtype (Dtype): Data type of the tensor.
-            device (Device): Device where the tensor is created.
-        """
-        return super(Tensor, Tensor).zeros(shape, dtype, device)
-
-    @staticmethod
-    @cast_to_py_tensor
-    def ones(shape, dtype, device=Device("CPU:0")):
-        """
-        Create a tensor with fill with ones.
-
-        Args:
-            shape (list, tuple, SizeVector): Shape of the tensor.
-            dtype (Dtype): Data type of the tensor.
-            device (Device): Device where the tensor is created.
-        """
-        return super(Tensor, Tensor).ones(shape, dtype, device)
-
-    @staticmethod
-    @cast_to_py_tensor
-    def eye(n, dtype=Dtype.Float64, device=Device("CPU:0")):
-        """
-        Create an identity square matrix.
-
-        Args:
-            n (int): size of square matrix
-            dtype (Dtype): Data type of the tensor.
-            device (Device): Device where the tensor is created.
-        """
-        return super(Tensor, Tensor).eye(n, dtype, device)
-
-    @staticmethod
-    @cast_to_py_tensor
-    def diag(value):
-        """
-        Create an diagonal square matrix.
-
-        Args:
-            value (Tensor): array of numbers on the diagonal
-        """
-        return super(Tensor, Tensor).diag(value)
 
     @cast_to_py_tensor
     def cuda(self, device_id=0):
