@@ -434,7 +434,7 @@ void pybind_core_tensor(py::module& m) {
 
     // Get item from Tensor of one element.
 
-    tensor.def("item", [](const Tensor& tensor) -> py::object {
+    tensor.def("item", [](const Tensor& tensor) -> py::handle {
         Dtype dtype = tensor.GetDtype();
         if (dtype == Dtype::Float32) {
             return py::float_(tensor.Item<float>());
