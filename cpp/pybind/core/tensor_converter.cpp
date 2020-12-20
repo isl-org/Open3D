@@ -187,7 +187,7 @@ Tensor IntToTensor(int64_t scalar_value,
             .To(dtype_value, /*copy=*/false);
 }
 
-Tensor PyHandleToTensor(const py::handle& item,
+Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Dtype> dtype,
                         utility::optional<Device> device,
                         bool force_copy) {
@@ -197,25 +197,25 @@ Tensor PyHandleToTensor(const py::handle& item,
     /// 4) tuple
     /// 5) numpy.ndarray (value will be copied)
     /// 6) Tensor (value will be copied)
-    std::string class_name(item.get_type().str());
+    std::string class_name(handle.get_type().str());
     if (class_name == "<class 'int'>") {
-        return IntToTensor(static_cast<int64_t>(item.cast<py::int_>()), dtype,
+        return IntToTensor(static_cast<int64_t>(handle.cast<py::int_>()), dtype,
                            device);
     } else if (class_name == "<class 'float'>") {
-        return DoubleToTensor(static_cast<double>(item.cast<py::float_>()),
+        return DoubleToTensor(static_cast<double>(handle.cast<py::float_>()),
                               dtype, device);
     } else if (class_name == "<class 'list'>") {
-        return PyListToTensor(item.cast<py::list>(), dtype, device);
+        return PyListToTensor(handle.cast<py::list>(), dtype, device);
     } else if (class_name == "<class 'tuple'>") {
-        return PyTupleToTensor(item.cast<py::tuple>(), dtype, device);
+        return PyTupleToTensor(handle.cast<py::tuple>(), dtype, device);
     } else if (class_name == "<class 'numpy.ndarray'>") {
-        return CastOptionalDtypeDevice(PyArrayToTensor(item.cast<py::array>(),
+        return CastOptionalDtypeDevice(PyArrayToTensor(handle.cast<py::array>(),
                                                        /*inplace=*/!force_copy),
                                        dtype, device);
     } else if (class_name.find("open3d") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
-            Tensor* tensor = item.cast<Tensor*>();
+            Tensor* tensor = handle.cast<Tensor*>();
             if (force_copy) {
                 return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
             } else {
@@ -258,25 +258,25 @@ SizeVector PyListToSizeVector(const py::list& list) {
     return shape;
 }
 
-SizeVector PyHandleToReductionDims(const py::handle& item) {
-    std::string class_name(item.get_type().str());
+SizeVector PyHandleToSizeVector(const py::handle& handle) {
+    std::string class_name(handle.get_type().str());
     if (class_name == "<class 'int'>") {
-        return SizeVector{static_cast<int64_t>(item.cast<py::int_>())};
+        return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
     } else if (class_name == "<class 'list'>") {
-        return PyListToSizeVector(item.cast<py::list>());
+        return PyListToSizeVector(handle.cast<py::list>());
     } else if (class_name == "<class 'tuple'>") {
-        return PyTupleToSizeVector(item.cast<py::tuple>());
+        return PyTupleToSizeVector(handle.cast<py::tuple>());
     } else if (class_name.find("SizeVector") != std::string::npos) {
         try {
-            SizeVector* sv = item.cast<SizeVector*>();
+            SizeVector* sv = handle.cast<SizeVector*>();
             return SizeVector(sv->begin(), sv->end());
         } catch (...) {
             utility::LogError(
-                    "PyHandleToReductionDims: cannot cast to SizeVector.");
+                    "PyHandleToSizeVector: cannot cast to SizeVector.");
         }
     } else {
         utility::LogError(
-                "PyHandleToReductionDims has invlaid input type {}. Only int, "
+                "PyHandleToSizeVector has invlaid input type {}. Only int, "
                 "tuple and list are supported.",
                 class_name);
     }

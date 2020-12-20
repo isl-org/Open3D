@@ -112,7 +112,7 @@ Tensor IntToTensor(int64_t scalar_value,
 /// 6) Tensor (value will be copied)
 ///
 /// An exception will be thrown if the type is not supported.
-Tensor PyHandleToTensor(const py::handle& item,
+Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Dtype> dtype = utility::nullopt,
                         utility::optional<Device> device = utility::nullopt,
                         bool force_copy = false);
@@ -135,7 +135,7 @@ SizeVector PyListToSizeVector(const py::list& list);
 /// 4) tuple of ints (1D)
 ///
 /// An exception will be thrown if the type is not supported.
-SizeVector PyHandleToReductionDims(const py::handle& item);
+SizeVector PyHandleToSizeVector(const py::handle& handle);
 
 }  // namespace core
 }  // namespace open3d

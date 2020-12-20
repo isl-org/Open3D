@@ -82,37 +82,37 @@
                 .cpp_name(self);                                          \
     });
 
-#define BIND_REDUCTION_OP(py_name, cpp_name)                               \
-    tensor.def(                                                            \
-            #py_name,                                                      \
-            [](const Tensor& tensor, utility::optional<py::handle> dim,    \
-               bool keepdim) {                                             \
-                SizeVector reduction_dims;                                 \
-                if (dim.has_value()) {                                     \
-                    reduction_dims = PyHandleToReductionDims(dim.value()); \
-                } else {                                                   \
-                    for (int64_t i = 0; i < tensor.NumDims(); i++) {       \
-                        reduction_dims.push_back(i);                       \
-                    }                                                      \
-                }                                                          \
-                return tensor.cpp_name(reduction_dims, keepdim);           \
-            },                                                             \
+#define BIND_REDUCTION_OP(py_name, cpp_name)                            \
+    tensor.def(                                                         \
+            #py_name,                                                   \
+            [](const Tensor& tensor, utility::optional<py::handle> dim, \
+               bool keepdim) {                                          \
+                SizeVector reduction_dims;                              \
+                if (dim.has_value()) {                                  \
+                    reduction_dims = PyHandleToSizeVector(dim.value()); \
+                } else {                                                \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) {    \
+                        reduction_dims.push_back(i);                    \
+                    }                                                   \
+                }                                                       \
+                return tensor.cpp_name(reduction_dims, keepdim);        \
+            },                                                          \
             "dim"_a = py::none(), "keepdim"_a = false);
 
-#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                    \
-    tensor.def(                                                            \
-            #py_name,                                                      \
-            [](const Tensor& tensor, utility::optional<py::handle> dim) {  \
-                SizeVector reduction_dims;                                 \
-                if (dim.has_value()) {                                     \
-                    reduction_dims = PyHandleToReductionDims(dim.value()); \
-                } else {                                                   \
-                    for (int64_t i = 0; i < tensor.NumDims(); i++) {       \
-                        reduction_dims.push_back(i);                       \
-                    }                                                      \
-                }                                                          \
-                return tensor.cpp_name(reduction_dims);                    \
-            },                                                             \
+#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                   \
+    tensor.def(                                                           \
+            #py_name,                                                     \
+            [](const Tensor& tensor, utility::optional<py::handle> dim) { \
+                SizeVector reduction_dims;                                \
+                if (dim.has_value()) {                                    \
+                    reduction_dims = PyHandleToSizeVector(dim.value());   \
+                } else {                                                  \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) {      \
+                        reduction_dims.push_back(i);                      \
+                    }                                                     \
+                }                                                         \
+                return tensor.cpp_name(reduction_dims);                   \
+            },                                                            \
             "dim"_a = py::none());
 
 namespace open3d {
