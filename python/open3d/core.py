@@ -896,22 +896,6 @@ class Tensor(o3d.pybind.core.Tensor):
         shape ().
         """
         return super(Tensor, self).item()
-        if self.dtype == Dtype.Float32:
-            return super(Tensor, self).item()
-        elif self.dtype == Dtype.Float64:
-            return super(Tensor, self)._item_double()
-        elif self.dtype == Dtype.Int32:
-            return super(Tensor, self)._item_int32_t()
-        elif self.dtype == Dtype.Int64:
-            return super(Tensor, self)._item_int64_t()
-        elif self.dtype == Dtype.UInt8:
-            return super(Tensor, self)._item_uint8_t()
-        elif self.dtype == Dtype.UInt16:
-            return super(Tensor, self)._item_uint16_t()
-        elif self.dtype == Dtype.Bool:
-            return super(Tensor, self)._item_bool()
-        else:
-            raise TypeError("Unspported type when calling item()")
 
 
 class Hashmap(o3d.pybind.core.Hashmap):

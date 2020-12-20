@@ -433,7 +433,6 @@ void pybind_core_tensor(py::module& m) {
                [](const Tensor& tensor) { return tensor.ToString(); });
 
     // Get item from Tensor of one element.
-
     tensor.def("item", [](const Tensor& tensor) -> py::object {
         Dtype dtype = tensor.GetDtype();
         if (dtype == Dtype::Float32) {
@@ -451,7 +450,8 @@ void pybind_core_tensor(py::module& m) {
         } else if (dtype == Dtype::Bool) {
             return py::bool_(tensor.Item<bool>());
         } else {
-            utility::LogError("Unsupported dtype to conver to python.");
+            utility::LogError(
+                    "Tensor.item(): unsupported dtype to convert to python.");
         }
     });
 }
