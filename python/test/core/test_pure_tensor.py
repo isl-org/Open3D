@@ -55,6 +55,7 @@ def test_dog():
 
 def test_creation():
     t = o3d.pybind.core.Tensor.empty((20, 30))
+    t = o3d.pybind.core.Tensor.empty([20, 30])
 
 
 # def test_tuple():

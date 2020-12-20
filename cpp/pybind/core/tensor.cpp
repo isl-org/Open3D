@@ -135,6 +135,16 @@ void pybind_core_tensor(py::module& m) {
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            "empty",
+            [](const py::list& shape, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Empty(
+                        PyListToSizeVector(shape),
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
     tensor.def_static("full", &Tensor::Full<float>);
     tensor.def_static("full", &Tensor::Full<double>);
