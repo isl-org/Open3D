@@ -209,7 +209,6 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<int64_t>(tensor);
     BindTensorFullCreation<uint8_t>(tensor);
     BindTensorFullCreation<bool>(tensor);
-
     tensor.def_static(
             "eye",
             [](int64_t n, utility::optional<Dtype> dtype,
@@ -219,7 +218,6 @@ void pybind_core_tensor(py::module& m) {
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
-
     tensor.def_static("diag", &Tensor::Diag);
 
     // Tensor copy
