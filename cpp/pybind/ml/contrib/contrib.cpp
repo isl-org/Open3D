@@ -26,7 +26,6 @@
 
 #include "pybind/ml/contrib/contrib.h"
 
-#include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"

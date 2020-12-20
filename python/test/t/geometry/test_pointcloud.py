@@ -35,18 +35,6 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
 
-# Cast o3d.pybind.core.Tensor (C++) to o3d.core.Tensor (Python). The underlying
-# memory are the same.
-# TODO: remove this after unifying o3d.pybind.core.Tensor and o3c.Tensor
-def cast_to_py_tensor(c_tensor):
-    if isinstance(c_tensor, o3d.pybind.core.Tensor):
-        py_tensor = o3c.Tensor([])
-        py_tensor.shallow_copy_from(c_tensor)
-        return py_tensor
-    else:
-        return c_tensor
-
-
 @pytest.mark.parametrize("device", list_devices())
 def test_constructor_and_accessors(device):
     dtype = o3c.Dtype.Float32
@@ -69,7 +57,7 @@ def test_constructor_and_accessors(device):
     assert len(pcd.point["colors"]) == 1
 
     # Edit and access values.
-    points = cast_to_py_tensor(pcd.point["points"])
+    points = pcd.point["points"]
     points[0] = o3c.Tensor([1, 2, 3], dtype, device)
     assert pcd.point["points"].allclose(o3c.Tensor([[1, 2, 3]], dtype, device))
 
