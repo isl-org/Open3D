@@ -172,63 +172,60 @@ class Tensor(o3d.pybind.core.Tensor):
     and etc. Tensor can be used to perform numerical operations.
     """
 
-    def __init__(self, data, dtype=None, device=None):
-        super(Tensor, self).__init__(data, dtype, device)
+    # @cast_to_py_tensor
+    # def cuda(self, device_id=0):
+    #     """
+    #     Returns a copy of this tensor in CUDA memory.
 
-    @cast_to_py_tensor
-    def cuda(self, device_id=0):
-        """
-        Returns a copy of this tensor in CUDA memory.
+    #     Args:
+    #         device_id: CUDA device id.
+    #     """
+    #     return super(Tensor, self).cuda(device_id)
 
-        Args:
-            device_id: CUDA device id.
-        """
-        return super(Tensor, self).cuda(device_id)
+    # @cast_to_py_tensor
+    # def cpu(self):
+    #     """
+    #     Returns a copy of this tensor in CPU.
 
-    @cast_to_py_tensor
-    def cpu(self):
-        """
-        Returns a copy of this tensor in CPU.
+    #     If the Tensor is already in CPU, then no copy is performed.
+    #     """
+    #     return super(Tensor, self).cpu()
 
-        If the Tensor is already in CPU, then no copy is performed.
-        """
-        return super(Tensor, self).cpu()
+    # def numpy(self):
+    #     """
+    #     Returns this tensor as a NumPy array. This tensor must be a CPU tensor,
+    #     and the returned NumPy array shares the same memory as this tensor.
+    #     Changes to the NumPy array will be reflected in the original tensor and
+    #     vice versa.
+    #     """
+    #     return super(Tensor, self).numpy()
 
-    def numpy(self):
-        """
-        Returns this tensor as a NumPy array. This tensor must be a CPU tensor,
-        and the returned NumPy array shares the same memory as this tensor.
-        Changes to the NumPy array will be reflected in the original tensor and
-        vice versa.
-        """
-        return super(Tensor, self).numpy()
+    # @staticmethod
+    # @cast_to_py_tensor
+    # def from_numpy(np_array):
+    #     """
+    #     Returns a Tensor from NumPy array. The resulting tensor is a CPU tensor
+    #     that shares the same memory as the NumPy array. Changes to the tensor
+    #     will be reflected in the original NumPy array and vice versa.
 
-    @staticmethod
-    @cast_to_py_tensor
-    def from_numpy(np_array):
-        """
-        Returns a Tensor from NumPy array. The resulting tensor is a CPU tensor
-        that shares the same memory as the NumPy array. Changes to the tensor
-        will be reflected in the original NumPy array and vice versa.
+    #     Args:
+    #         np_array: The Numpy array to be converted from.
+    #     """
+    #     return super(Tensor, Tensor).from_numpy(np_array)
 
-        Args:
-            np_array: The Numpy array to be converted from.
-        """
-        return super(Tensor, Tensor).from_numpy(np_array)
+    # def to_dlpack(self):
+    #     """
+    #     Returns a DLPack PyCapsule representing this tensor.
+    #     """
+    #     return super(Tensor, self).to_dlpack()
 
-    def to_dlpack(self):
-        """
-        Returns a DLPack PyCapsule representing this tensor.
-        """
-        return super(Tensor, self).to_dlpack()
-
-    @staticmethod
-    @cast_to_py_tensor
-    def from_dlpack(dlpack):
-        """
-        Returns a tensor converted from DLPack PyCapsule.
-        """
-        return super(Tensor, Tensor).from_dlpack(dlpack)
+    # @staticmethod
+    # @cast_to_py_tensor
+    # def from_dlpack(dlpack):
+    #     """
+    #     Returns a tensor converted from DLPack PyCapsule.
+    #     """
+    #     return super(Tensor, Tensor).from_dlpack(dlpack)
 
     # @cast_to_py_tensor
     # def to(self, dtype, copy=False):
@@ -243,21 +240,23 @@ class Tensor(o3d.pybind.core.Tensor):
     #     """
     #     return super(Tensor, self).to(dtype, copy)
 
-    @cast_to_py_tensor
-    def contiguous(self):
-        """
-        Returns a contiguous Tensor containing the same data in the same device.
-        If self tensor is already contiguous, the same underlying memory will be
-        used.
-        """
-        return super(Tensor, self).contiguous()
+    # @cast_to_py_tensor
+    # def contiguous(self):
+    #     """
+    #     Returns a contiguous Tensor containing the same data in the same device.
+    #     If self tensor is already contiguous, the same underlying memory will be
+    #     used.
+    #     """
+    #     return super(Tensor, self).contiguous()
 
-    @cast_to_py_tensor
-    def nonzero(self, as_tuple=False):
-        if as_tuple:
-            return super(Tensor, self)._non_zero_numpy()
-        else:
-            return super(Tensor, self)._non_zero()
+    # @cast_to_py_tensor
+    # def nonzero(self, as_tuple=False):
+    #     if as_tuple:
+    #         return super(Tensor, self)._non_zero_numpy()
+    #     else:
+    #         return super(Tensor, self)._non_zero()
+
+    pass
 
 
 class Hashmap(o3d.pybind.core.Hashmap):

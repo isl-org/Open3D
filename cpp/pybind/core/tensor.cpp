@@ -284,19 +284,23 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 
     // Device transfer
-    tensor.def("cuda", [](const Tensor& tensor, int device_id = 0) {
-              if (!cuda::IsAvailable()) {
-                  utility::LogError(
-                          "CUDA is not available, cannot copy Tensor.");
-              }
-              if (device_id < 0 || device_id >= cuda::DeviceCount()) {
-                  utility::LogError(
-                          "Invalid device_id {}, must satisfy 0 <= "
-                          "device_id < {}",
-                          device_id, cuda::DeviceCount());
-              }
-              return tensor.Copy(Device(Device::DeviceType::CUDA, device_id));
-          }).def("cpu", [](const Tensor& tensor) {
+    tensor.def(
+            "cuda",
+            [](const Tensor& tensor, int device_id) {
+                if (!cuda::IsAvailable()) {
+                    utility::LogError(
+                            "CUDA is not available, cannot copy Tensor.");
+                }
+                if (device_id < 0 || device_id >= cuda::DeviceCount()) {
+                    utility::LogError(
+                            "Invalid device_id {}, must satisfy 0 <= "
+                            "device_id < {}",
+                            device_id, cuda::DeviceCount());
+                }
+                return tensor.Copy(Device(Device::DeviceType::CUDA, device_id));
+            },
+            "device_id"_a = 0);
+    tensor.def("cpu", [](const Tensor& tensor) {
         return tensor.Copy(Device(Device::DeviceType::CPU, 0));
     });
 
@@ -471,8 +475,18 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
     // Boolean.
-    tensor.def("_non_zero", &Tensor::NonZero);
-    tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
+    tensor.def(
+            "nonzero",
+            [](const Tensor& tensor, bool as_tuple) -> py::object {
+                if (as_tuple) {
+                    return py::cast(tensor.NonZero());
+                } else {
+                    return py::cast(tensor.NonZeroNumpy());
+                }
+            },
+            "as_tuple"_a = false);
+    // tensor.def("_non_zero", &Tensor::NonZero);
+    // tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
     tensor.def("all", &Tensor::All);
     tensor.def("any", &Tensor::Any);
 
