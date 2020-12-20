@@ -93,27 +93,6 @@ def cast_to_py_tensor(func):
     return wrapped_func
 
 
-def _to_o3d_tensor_key(key):
-
-    if isinstance(key, int):
-        return o3d.pybind.core.TensorKey.index(key)
-    elif isinstance(key, slice):
-        return o3d.pybind.core.TensorKey.slice(
-            none if key.start == None else key.start,
-            none if key.stop == None else key.stop,
-            none if key.step == None else key.step)
-    elif isinstance(key, (tuple, list)):
-        key = np.array(key).astype(np.int64)
-        return o3d.pybind.core.TensorKey.index_tensor(Tensor(key))
-    elif isinstance(key, np.ndarray):
-        key = key.astype(np.int64)
-        return o3d.pybind.core.TensorKey.index_tensor(Tensor(key))
-    elif isinstance(key, Tensor):
-        return o3d.pybind.core.TensorKey.index_tensor(key)
-    else:
-        raise TypeError("Invalid key type {}.".format(type(key)))
-
-
 @cast_to_py_tensor
 def matmul(lhs, rhs):
     """

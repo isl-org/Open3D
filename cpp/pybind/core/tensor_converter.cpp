@@ -258,5 +258,29 @@ SizeVector PyListToSizeVector(const py::list& list) {
     return shape;
 }
 
+SizeVector PyHandleToReductionDims(const py::handle& item) {
+    std::string class_name(item.get_type().str());
+    if (class_name == "<class 'int'>") {
+        return SizeVector{static_cast<int64_t>(item.cast<py::int_>())};
+    } else if (class_name == "<class 'list'>") {
+        return PyListToSizeVector(item.cast<py::list>());
+    } else if (class_name == "<class 'tuple'>") {
+        return PyTupleToSizeVector(item.cast<py::tuple>());
+    } else if (class_name.find("SizeVector") != std::string::npos) {
+        try {
+            SizeVector* sv = item.cast<SizeVector*>();
+            return SizeVector(sv->begin(), sv->end());
+        } catch (...) {
+            utility::LogError(
+                    "PyHandleToReductionDims: cannot cast to SizeVector.");
+        }
+    } else {
+        utility::LogError(
+                "PyHandleToReductionDims has invlaid input type {}. Only int, "
+                "tuple and list are supported.",
+                class_name);
+    }
+}
+
 }  // namespace core
 }  // namespace open3d

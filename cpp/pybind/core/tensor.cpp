@@ -438,7 +438,21 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("any", &Tensor::Any);
 
     // Reduction ops.
-    tensor.def("sum", &Tensor::Sum);
+    tensor.def(
+            "sum",
+            [](const Tensor& tensor, utility::optional<py::handle> dim,
+               bool keepdim) {
+                SizeVector reduction_dims;
+                if (dim.has_value()) {
+                    reduction_dims = PyHandleToReductionDims(dim.value());
+                } else {
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) {
+                        reduction_dims.push_back(i);
+                    }
+                }
+                return tensor.Sum(reduction_dims, keepdim);
+            },
+            "dim"_a = py::none(), "keepdim"_a = false);
     tensor.def("mean", &Tensor::Mean);
     tensor.def("prod", &Tensor::Prod);
     tensor.def("min", &Tensor::Min);
