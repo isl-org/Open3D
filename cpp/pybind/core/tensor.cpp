@@ -106,24 +106,36 @@ void pybind_core_tensor(py::module& m) {
                "device"_a = py::none());
 
     // o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype=None, device=None).
-    tensor.def(py::init([](const py::list& list, utility::optional<Dtype> dtype,
-                           utility::optional<Device> device) {
-                   return PyListToTensor(list, dtype, device);
-               }),
-               "list"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def(
+            py::init([](const py::list& shape, utility::optional<Dtype> dtype,
+                        utility::optional<Device> device) {
+                return PyListToTensor(shape, dtype, device);
+            }),
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
     // o3c.Tensor(((0, 1, 2), (3, 4, 5)), dtype=None, device=None).
     tensor.def(
-            py::init([](const py::tuple& tuple, utility::optional<Dtype> dtype,
+            py::init([](const py::tuple& shape, utility::optional<Dtype> dtype,
                         utility::optional<Device> device) {
-                return PyTupleToTensor(tuple, dtype, device);
+                return PyTupleToTensor(shape, dtype, device);
             }),
-            "tuple"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
     pybind_core_tensor_accessor(tensor);
 
     // Tensor creation API
     tensor.def_static("empty", &Tensor::Empty);
+    tensor.def_static(
+            "empty",
+            [](const py::tuple& shape, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Empty(
+                        PyTupleToSizeVector(shape),
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+
     tensor.def_static("full", &Tensor::Full<float>);
     tensor.def_static("full", &Tensor::Full<double>);
     tensor.def_static("full", &Tensor::Full<int32_t>);

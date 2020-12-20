@@ -230,5 +230,33 @@ Tensor PyHandleToTensor(const py::handle& item,
     }
 }
 
+SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
+    SizeVector shape;
+    for (const py::handle& item : tuple) {
+        if (std::string(item.get_type().str()) == "<class 'int'>") {
+            shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
+        } else {
+            utility::LogError(
+                    "The tuple must be a 1D tuple of integers, but got {}.",
+                    item.attr("__str__")());
+        }
+    }
+    return shape;
+}
+
+SizeVector PyListToSizeVector(const py::list& list) {
+    SizeVector shape;
+    for (const py::handle& item : list) {
+        if (std::string(item.get_type().str()) == "<class 'int'>") {
+            shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
+        } else {
+            utility::LogError(
+                    "The list must be a 1D list of integers, but got {}.",
+                    item.attr("__str__")());
+        }
+    }
+    return shape;
+}
+
 }  // namespace core
 }  // namespace open3d

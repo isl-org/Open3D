@@ -53,90 +53,89 @@ def test_dog():
     # print("dog done")
 
 
-def test_tuple():
-    t = o3d.pybind.core.Tensor(np.ones((30, 40, 50)))
-    t_idx = o3d.pybind.core.Tensor([3, 4, 5])
-    t[t_idx, 1:3, 5]
-    t[1:3, 5, t]
-    t[[3, 4, 5], 1:3, 5]
-    t[(3, 4, 5), 1:3, 5]
-    t[np.array([3, 4, 5]), 1:3, 5]
-
-
-def test_getitem():
-    t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
-                               dtype=None,
-                               device=o3c.Device("CPU:0"))
-    t[1]
-    t[1:3]
-    t[[1, 3, 4]]
-    t[[True, False, False, True, True, True]]
-    t[np.array([1, 3, 4])]
-    t[np.array([True, False, False, True, True, True])]
-    t[o3d.pybind.core.Tensor([1, 3, 4])]
-    t[o3d.pybind.core.Tensor([True, False, False, True, True, True])]
-
-
-def test_setitem():
-    t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
-                               dtype=None,
-                               device=o3c.Device("CPU:0"))
-    t[1] = 100
-    t[1:3] = o3d.pybind.core.Tensor([4, 5],
-                                    dtype=None,
-                                    device=o3c.Device("CPU:0"))
-    t[[1, 3, 4]] = 100
-    t[[True, False, False, True, True, True]] = 100
-    t[np.array([1, 3, 4])] = 100
-    t[np.array([True, False, False, True, True, True])] = 100
-    t[o3d.pybind.core.Tensor([1, 3, 4])] = 100
-    t[o3d.pybind.core.Tensor([True, False, False, True, True, True])] = 100
-
-
 def test_creation():
-    t_np = np.ones((2, 3))
-
-    t0 = o3c.Tensor(t_np)
-    # print(t0)
-
-    t1 = o3d.pybind.core.Tensor(t_np, o3c.Dtype.Int32)
-    # print(t1)
-
-    t1 = o3d.pybind.core.Tensor(t_np, dtype=None, device=o3c.Device("CPU:0"))
-    # print(t1)
-
-    t1 = o3d.pybind.core.Tensor(1,
-                                dtype=o3c.Dtype.Float32,
-                                device=o3c.Device("CPU:0"))
-    # print(t1)
-
-    t1 = o3d.pybind.core.Tensor(3.14,
-                                dtype=o3c.Dtype.Int32,
-                                device=o3c.Device("CPU:0"))
-    # print(t1)
+    t = o3d.pybind.core.Tensor.empty((20, 30))
 
 
-def test_list_creation():
-    t1 = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
-                                dtype=None,
-                                device=o3c.Device("CPU:0"))
+# def test_tuple():
+#     t = o3d.pybind.core.Tensor(np.ones((30, 40, 50)))
+#     t_idx = o3d.pybind.core.Tensor([3, 4, 5])
+#     t[t_idx, 1:3, 5]
+#     t[1:3, 5, t]
+#     t[[3, 4, 5], 1:3, 5]
+#     t[(3, 4, 5), 1:3, 5]
+#     t[np.array([3, 4, 5]), 1:3, 5]
 
-    t1 = o3d.pybind.core.Tensor([[0, 1, 2], [3, 4, 5]],
-                                dtype=None,
-                                device=o3c.Device("CPU:0"))
+# def test_getitem():
+#     t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
+#                                dtype=None,
+#                                device=o3c.Device("CPU:0"))
+#     t[1]
+#     t[1:3]
+#     t[[1, 3, 4]]
+#     t[[True, False, False, True, True, True]]
+#     t[np.array([1, 3, 4])]
+#     t[np.array([True, False, False, True, True, True])]
+#     t[o3d.pybind.core.Tensor([1, 3, 4])]
+#     t[o3d.pybind.core.Tensor([True, False, False, True, True, True])]
 
-    with pytest.raises(RuntimeError):
-        t1 = o3d.pybind.core.Tensor([[0, 1, 2, 3, 4, 5], [2, 3]],
-                                    dtype=None,
-                                    device=o3c.Device("CPU:0"))
+# def test_setitem():
+#     t = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
+#                                dtype=None,
+#                                device=o3c.Device("CPU:0"))
+#     t[1] = 100
+#     t[1:3] = o3d.pybind.core.Tensor([4, 5],
+#                                     dtype=None,
+#                                     device=o3c.Device("CPU:0"))
+#     t[[1, 3, 4]] = 100
+#     t[[True, False, False, True, True, True]] = 100
+#     t[np.array([1, 3, 4])] = 100
+#     t[np.array([True, False, False, True, True, True])] = 100
+#     t[o3d.pybind.core.Tensor([1, 3, 4])] = 100
+#     t[o3d.pybind.core.Tensor([True, False, False, True, True, True])] = 100
 
+# def test_creation():
+#     t_np = np.ones((2, 3))
 
-def test_tuple_creation():
-    t1 = o3d.pybind.core.Tensor((0, 1, 2, 3, 4, 5),
-                                dtype=None,
-                                device=o3c.Device("CPU:0"))
+#     t0 = o3c.Tensor(t_np)
+#     # print(t0)
 
-    with pytest.raises(RuntimeError):
-        t1 = o3d.pybind.core.Tensor(((0, 1, 2, 3, 4, 5), (2, 3)),
-                                    dtype=None,
-                                    device=o3c.Device("CPU:0"))
+#     t1 = o3d.pybind.core.Tensor(t_np, o3c.Dtype.Int32)
+#     # print(t1)
+
+#     t1 = o3d.pybind.core.Tensor(t_np, dtype=None, device=o3c.Device("CPU:0"))
+#     # print(t1)
+
+#     t1 = o3d.pybind.core.Tensor(1,
+#                                 dtype=o3c.Dtype.Float32,
+#                                 device=o3c.Device("CPU:0"))
+#     # print(t1)
+
+#     t1 = o3d.pybind.core.Tensor(3.14,
+#                                 dtype=o3c.Dtype.Int32,
+#                                 device=o3c.Device("CPU:0"))
+#     # print(t1)
+
+# def test_list_creation():
+#     t1 = o3d.pybind.core.Tensor([0, 1, 2, 3, 4, 5],
+#                                 dtype=None,
+#                                 device=o3c.Device("CPU:0"))
+
+#     t1 = o3d.pybind.core.Tensor([[0, 1, 2], [3, 4, 5]],
+#                                 dtype=None,
+#                                 device=o3c.Device("CPU:0"))
+
+#     with pytest.raises(RuntimeError):
+#         t1 = o3d.pybind.core.Tensor([[0, 1, 2, 3, 4, 5], [2, 3]],
+#                                     dtype=None,
+#                                     device=o3c.Device("CPU:0"))
+
+# def test_tuple_creation():
+#     t1 = o3d.pybind.core.Tensor((0, 1, 2, 3, 4, 5),
+#                                 dtype=None,
+#                                 device=o3c.Device("CPU:0"))
+
+#     with pytest.raises(RuntimeError):
+#         t1 = o3d.pybind.core.Tensor(((0, 1, 2, 3, 4, 5), (2, 3)),
+#                                     dtype=None,
+#                                     device=o3c.Device("CPU:0"))

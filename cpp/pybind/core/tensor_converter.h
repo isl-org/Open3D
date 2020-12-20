@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Optional.h"
 #include "pybind/open3d_pybind.h"
@@ -33,7 +34,7 @@
 namespace open3d {
 namespace core {
 
-/// Converts Tensor to py::array (Numpy array). The python object holds a
+/// Convert Tensor to py::array (Numpy array). The python object holds a
 /// reference to the Tensor, and when it goes out of scope, the Tensor's
 /// reference counter will be decremented by 1.
 ///
@@ -54,7 +55,7 @@ namespace core {
 /// convienent, but will require an extra copy.
 py::array TensorToPyArray(const Tensor& tensor);
 
-/// Converts py::array (Numpy array) to Tensor.
+/// Convert py::array (Numpy array) to Tensor.
 ///
 /// You may use this helper function for importing data from Numpy.
 ///
@@ -64,7 +65,7 @@ py::array TensorToPyArray(const Tensor& tensor);
 /// python buffer will be copied.
 Tensor PyArrayToTensor(py::array array, bool inplace);
 
-/// Converts py::list to Tensor.
+/// Convert py::list to Tensor.
 ///
 /// Nested lists are supported, e.g. [[0, 1, 2], [3, 4, 5]] becomes a 2x3
 /// tensor. For "ragged" list of invalid shapes, e.g. ((0, 1, 2, 3, 4, 5), (2,
@@ -75,7 +76,7 @@ Tensor PyListToTensor(const py::list& list,
                       utility::optional<Dtype> dtype = utility::nullopt,
                       utility::optional<Device> device = utility::nullopt);
 
-/// Converts py::tuple to Tensor.
+/// Convert py::tuple to Tensor.
 ///
 /// Nested tuples are supported, e.g. ((0, 1, 2), (3, 4, 5)) becomes a 2x3
 /// tensor. For "ragged" tuple of invalid shapes, e.g. ((0, 1, 2, 3, 4, 5), (2,
@@ -86,21 +87,21 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
                        utility::optional<Dtype> dtype = utility::nullopt,
                        utility::optional<Device> device = utility::nullopt);
 
-/// Converts scalar double value to Tensor.
+/// Convert scalar double value to Tensor.
 ///
 /// The default dtype is Float64, unless specified.
 Tensor DoubleToTensor(double scalar_value,
                       utility::optional<Dtype> dtype = utility::nullopt,
                       utility::optional<Device> device = utility::nullopt);
 
-/// Converts scalar int value to Tensor.
+/// Convert scalar int value to Tensor.
 ///
 /// The default dtype is Int64, unless specified.
 Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype = utility::nullopt,
                    utility::optional<Device> device = utility::nullopt);
 
-/// Converts supported python types to Tensor.
+/// Convert supported python types to Tensor.
 ///
 /// Supported types:
 /// 1) int
@@ -115,6 +116,16 @@ Tensor PyHandleToTensor(const py::handle& item,
                         utility::optional<Dtype> dtype = utility::nullopt,
                         utility::optional<Device> device = utility::nullopt,
                         bool force_copy = false);
+
+/// Convert py::tuple to SizeVector.
+///
+/// The tuple must contain a list of (1D) integers. Floats are not allowed.
+SizeVector PyTupleToSizeVector(const py::tuple& tuple);
+
+/// Convert py::list to SizeVector.
+///
+/// The list must contain a list of (1D) integers. Floats are not allowed.
+SizeVector PyListToSizeVector(const py::list& list);
 
 }  // namespace core
 }  // namespace open3d
