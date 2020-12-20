@@ -299,6 +299,9 @@ void pybind_core_tensor(py::module& m) {
     // Binary element-wise ops.
     BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__add__, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__radd__, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(__iadd__, Add_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);

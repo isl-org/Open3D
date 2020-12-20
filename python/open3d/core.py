@@ -711,12 +711,6 @@ class Tensor(o3d.pybind.core.Tensor):
     def __add__(self, value):
         return self.add(value)
 
-    def __radd__(self, value):
-        return self.add(value)
-
-    def __iadd__(self, value):
-        return self.add_(value)
-
     def __sub__(self, value):
         return self.sub(value)
 
