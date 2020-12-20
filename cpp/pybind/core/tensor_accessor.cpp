@@ -123,7 +123,7 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
     }
 }
 
-static void byind_getitem(py::class_<Tensor>& tensor) {
+static void pybind_getitem(py::class_<Tensor>& tensor) {
     tensor.def("__getitem__", [](const Tensor& tensor, int key) {
         return tensor.GetItem(ToTensorKey(key));
     });
@@ -170,7 +170,7 @@ static void byind_getitem(py::class_<Tensor>& tensor) {
                });
 }
 
-static void byind_setitem(py::class_<Tensor>& tensor) {
+static void pybind_setitem(py::class_<Tensor>& tensor) {
     tensor.def("__setitem__", [](Tensor& tensor, int key,
                                  const py::handle& value) {
         return tensor.SetItem(
@@ -242,8 +242,8 @@ static void byind_setitem(py::class_<Tensor>& tensor) {
 }
 
 void pybind_core_tensor_accessor(py::class_<Tensor>& tensor) {
-    byind_getitem(tensor);
-    byind_setitem(tensor);
+    pybind_getitem(tensor);
+    pybind_setitem(tensor);
 }
 
 }  // namespace core
