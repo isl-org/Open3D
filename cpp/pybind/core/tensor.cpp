@@ -485,8 +485,6 @@ void pybind_core_tensor(py::module& m) {
                 }
             },
             "as_tuple"_a = false);
-    // tensor.def("_non_zero", &Tensor::NonZero);
-    // tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
     tensor.def("all", &Tensor::All);
     tensor.def("any", &Tensor::Any);
 
