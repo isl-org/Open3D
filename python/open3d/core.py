@@ -720,40 +720,40 @@ class Tensor(o3d.pybind.core.Tensor):
     # def __isub__(self, value):
     #     return self.sub_(value)
 
-    def __mul__(self, value):
-        return self.mul(value)
+    # def __mul__(self, value):
+    #     return self.mul(value)
 
-    def __rmul__(self, value):
-        return self.mul(value)
+    # def __rmul__(self, value):
+    #     return self.mul(value)
 
     def __matmul__(self, value):
         return self.matmul(value)
 
-    def __imul__(self, value):
-        return self.mul_(value)
+    # def __imul__(self, value):
+    #     return self.mul_(value)
 
-    def __truediv__(self, value):
-        # True div and floor div are the same for Tensor.
-        return self.div(value)
+    # def __truediv__(self, value):
+    #     # True div and floor div are the same for Tensor.
+    #     return self.div(value)
 
-    def __rtruediv__(self, value):
-        return Tensor.full((), value, self.dtype, self.device) / self
+    # def __rtruediv__(self, value):
+    #     return Tensor.full((), value, self.dtype, self.device) / self
 
-    def __itruediv__(self, value):
-        # True div and floor div are the same for Tensor.
-        return self.div_(value)
+    # def __itruediv__(self, value):
+    #     # True div and floor div are the same for Tensor.
+    #     return self.div_(value)
 
-    def __floordiv__(self, value):
-        # True div and floor div are the same for Tensor.
-        return self.div(value)
+    # def __floordiv__(self, value):
+    #     # True div and floor div are the same for Tensor.
+    #     return self.div(value)
 
-    def __rfloordiv__(self, value):
-        # True div and floor div are the same for Tensor.
-        return Tensor.full((), value, self.dtype, self.device) // self
+    # def __rfloordiv__(self, value):
+    #     # True div and floor div are the same for Tensor.
+    #     return Tensor.full((), value, self.dtype, self.device) // self
 
-    def __ifloordiv__(self, value):
-        # True div and floor div are the same for Tensor.
-        return self.div_(value)
+    # def __ifloordiv__(self, value):
+    #     # True div and floor div are the same for Tensor.
+    #     return self.div_(value)
 
     def _reduction_dim_to_size_vector(self, dim):
         if dim is None:

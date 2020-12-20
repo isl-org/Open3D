@@ -344,15 +344,18 @@ void pybind_core_tensor(py::module& m) {
 
     BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
+
     BIND_BINARY_OP_ALL_DTYPES(__div__, Div, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(__idiv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rdiv__, Div);
+
     BIND_BINARY_OP_ALL_DTYPES(__truediv__, Div, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(__itruediv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rtruediv__, Div);
+
     BIND_BINARY_OP_ALL_DTYPES(__floordiv__, Div, CONST_ARG);  // truediv only.
-    BIND_BINARY_OP_ALL_DTYPES(__rfloordiv__, Div_, NON_CONST_ARG);
-    BIND_BINARY_R_OP_ALL_DTYPES(__ifloordiv__, Div);
+    BIND_BINARY_OP_ALL_DTYPES(__ifloordiv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_R_OP_ALL_DTYPES(__rfloordiv__, Div);
 
     // Binary boolean element-wise ops.
     BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
