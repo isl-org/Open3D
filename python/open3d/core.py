@@ -705,8 +705,8 @@ class Tensor(o3d.pybind.core.Tensor):
     # def __rmul__(self, value):
     #     return self.mul(value)
 
-    def __matmul__(self, value):
-        return self.matmul(value)
+    # def __matmul__(self, value):
+    #     return self.matmul(value)
 
     # def __imul__(self, value):
     #     return self.mul_(value)
@@ -838,17 +838,17 @@ class Tensor(o3d.pybind.core.Tensor):
     #         raise TypeError("dim must be int or None, but got {}.".format(dim))
     #     return super(Tensor, self).argmax_(dim)
 
-    @cast_to_py_tensor
-    def isclose(self, other, rtol=1e-5, atol=1e-8):
-        """
-        Element-wise test if the tensor value is close to other.
-        - If the device is not the same: throws exception.
-        - If the dtype is not the same: throws exception.
-        - If the shape is not the same: throws exception.
-        - For each element in the returned tensor:
-          abs(self - other) <= (atol + rtol * abs(other)).
-        """
-        return super(Tensor, self).isclose(other, rtol, atol)
+    # @cast_to_py_tensor
+    # def isclose(self, other, rtol=1e-5, atol=1e-8):
+    #     """
+    #     Element-wise test if the tensor value is close to other.
+    #     - If the device is not the same: throws exception.
+    #     - If the dtype is not the same: throws exception.
+    #     - If the shape is not the same: throws exception.
+    #     - For each element in the returned tensor:
+    #       abs(self - other) <= (atol + rtol * abs(other)).
+    #     """
+    #     return super(Tensor, self).isclose(other, rtol, atol)
 
     # def __lt__(self, value):
     #     return self.lt(value)
@@ -868,13 +868,13 @@ class Tensor(o3d.pybind.core.Tensor):
     # def __ge__(self, value):
     #     return self.ge(value)
 
-    @cast_to_py_tensor
-    def item(self):
-        """
-        Returns scalar value of a scalar Tensor, the Tensor mush have empty
-        shape ().
-        """
-        return super(Tensor, self).item()
+    # @cast_to_py_tensor
+    # def item(self):
+    #     """
+    #     Returns scalar value of a scalar Tensor, the Tensor mush have empty
+    #     shape ().
+    #     """
+    #     return super(Tensor, self).item()
 
 
 class Hashmap(o3d.pybind.core.Hashmap):
