@@ -234,8 +234,6 @@ class Tensor(o3d.pybind.core.Tensor):
             dtype (Dtype): Data type of the tensor.
             device (Device): Device where the tensor is created.
         """
-        if not isinstance(shape, SizeVector):
-            shape = SizeVector(shape)
         return super(Tensor, Tensor).empty(shape, dtype, device)
 
     @staticmethod
@@ -250,8 +248,6 @@ class Tensor(o3d.pybind.core.Tensor):
             dtype (Dtype): Data type of the tensor.
             device (Device): Device where the tensor is created.
         """
-        if not isinstance(shape, SizeVector):
-            shape = SizeVector(shape)
         return super(Tensor, Tensor).full(shape, fill_value, dtype, device)
 
     @staticmethod
@@ -265,8 +261,6 @@ class Tensor(o3d.pybind.core.Tensor):
             dtype (Dtype): Data type of the tensor.
             device (Device): Device where the tensor is created.
         """
-        if not isinstance(shape, SizeVector):
-            shape = SizeVector(shape)
         return super(Tensor, Tensor).zeros(shape, dtype, device)
 
     @staticmethod
@@ -280,8 +274,6 @@ class Tensor(o3d.pybind.core.Tensor):
             dtype (Dtype): Data type of the tensor.
             device (Device): Device where the tensor is created.
         """
-        if not isinstance(shape, SizeVector):
-            shape = SizeVector(shape)
         return super(Tensor, Tensor).ones(shape, dtype, device)
 
     @staticmethod
