@@ -714,8 +714,8 @@ class Tensor(o3d.pybind.core.Tensor):
     def __sub__(self, value):
         return self.sub(value)
 
-    def __rsub__(self, value):
-        return Tensor.full((), value, self.dtype, self.device) - self
+    # def __rsub__(self, value):
+    #     return Tensor.full((), value, self.dtype, self.device) - self
 
     def __isub__(self, value):
         return self.sub_(value)
