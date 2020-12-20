@@ -745,15 +745,15 @@ class Tensor(o3d.pybind.core.Tensor):
             raise TypeError(
                 "dim must be int, list or tuple, but was {}.".format(type(dim)))
 
-    @cast_to_py_tensor
-    def sum(self, dim=None, keepdim=False):
-        """
-        Returns the sum along each the specified dimension `dim`. If `dim` is
-        None, the reduction happens for all elements of the tensor. If `dim` is
-        a list or tuple, the reduction happens in all of the specified `dim`.
-        """
-        dim = self._reduction_dim_to_size_vector(dim)
-        return super(Tensor, self).sum(dim, keepdim)
+    # @cast_to_py_tensor
+    # def sum(self, dim=None, keepdim=False):
+    #     """
+    #     Returns the sum along each the specified dimension `dim`. If `dim` is
+    #     None, the reduction happens for all elements of the tensor. If `dim` is
+    #     a list or tuple, the reduction happens in all of the specified `dim`.
+    #     """
+    #     dim = self._reduction_dim_to_size_vector(dim)
+    #     return super(Tensor, self).sum(dim, keepdim)
 
     @cast_to_py_tensor
     def mean(self, dim=None, keepdim=False):
