@@ -56,6 +56,32 @@
     tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<bool>);
 
+#define BIND_BINARY_R_OP_ALL_DTYPES(py_name, cpp_name)                    \
+    tensor.def(#py_name, [](const Tensor& self, float value) {            \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, double value) {           \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, int32_t value) {          \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, int64_t value) {          \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, uint8_t value) {          \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, bool value) {             \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });
+
 namespace open3d {
 namespace core {
 
@@ -301,39 +327,17 @@ void pybind_core_tensor(py::module& m) {
     BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(__add__, Add, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__radd__, Add, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(__iadd__, Add_, NON_CONST_ARG);
+    BIND_BINARY_R_OP_ALL_DTYPES(__radd__, Add);
+
     BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
+    BIND_BINARY_R_OP_ALL_DTYPES(__rsub__, Sub);
+
     BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(mul_, Mul_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
-
-    tensor.def("__rsub__", [](const Tensor& self, float value) {
-        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice())
-                .Sub(self);
-    });
-    tensor.def("__rsub__", [](const Tensor& self, double value) {
-        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice())
-                .Sub(self);
-    });
-    tensor.def("__rsub__", [](const Tensor& self, int32_t value) {
-        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice())
-                .Sub(self);
-    });
-    tensor.def("__rsub__", [](const Tensor& self, int64_t value) {
-        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice())
-                .Sub(self);
-    });
-    tensor.def("__rsub__", [](const Tensor& self, uint8_t value) {
-        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice())
-                .Sub(self);
-    });
-    tensor.def("__rsub__", [](const Tensor& self, bool value) {
-        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice())
-                .Sub(self);
-    });
 
     // Binary boolean element-wise ops.
     BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
