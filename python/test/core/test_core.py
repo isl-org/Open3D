@@ -435,14 +435,6 @@ def test_setitem(device):
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
 
-# @pytest.mark.parametrize("device", list_devices())
-# def test_cast_to_py_tensor(device):
-#     a = o3d.core.Tensor([1], device=device)
-#     b = o3d.core.Tensor([2], device=device)
-#     c = a + b
-#     assert isinstance(c, o3d.core.Tensor)  # Not o3d.open3d-pybind.Tensor
-
-
 @pytest.mark.parametrize(
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
