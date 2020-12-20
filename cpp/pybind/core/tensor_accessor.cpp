@@ -159,15 +159,6 @@ static void pybind_getitem(py::class_<Tensor>& tensor) {
         }
         return tensor.GetItem(tks);
     });
-
-    tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
-        return tensor.GetItem(tk);
-    });
-
-    tensor.def("_getitem_vector",
-               [](const Tensor& tensor, const std::vector<TensorKey>& tks) {
-                   return tensor.GetItem(tks);
-               });
 }
 
 static void pybind_setitem(py::class_<Tensor>& tensor) {
@@ -229,15 +220,6 @@ static void pybind_setitem(py::class_<Tensor>& tensor) {
                                                     tensor.GetDevice(),
                                                     /*force_copy=*/false));
     });
-
-    tensor.def("_setitem",
-               [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
-                   return tensor.SetItem(tk, value);
-               });
-
-    tensor.def("_setitem_vector",
-               [](Tensor& tensor, const std::vector<TensorKey>& tks,
-                  const Tensor& value) { return tensor.SetItem(tks, value); });
 }
 
 void pybind_core_tensor_accessor(py::class_<Tensor>& tensor) {
