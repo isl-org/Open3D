@@ -102,6 +102,46 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
             "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
 }
 
+template <typename T>
+static void BindTensorFullCreation(py::class_<Tensor>& tensor) {
+    tensor.def_static(
+            "full",
+            [](const SizeVector& shape, T fill_value,
+               utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Full<T>(
+                        shape, fill_value,
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
+            "device"_a = py::none());
+    tensor.def_static(
+            "full",
+            [](const py::tuple& shape, T fill_value,
+               utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Full<T>(
+                        PyTupleToSizeVector(shape), fill_value,
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
+            "device"_a = py::none());
+    tensor.def_static(
+            "full",
+            [](const py::list& shape, T fill_value,
+               utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Full<T>(
+                        PyListToSizeVector(shape), fill_value,
+                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
+            "device"_a = py::none());
+}
+
 void pybind_core_tensor(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",
@@ -163,35 +203,12 @@ void pybind_core_tensor(py::module& m) {
     BindTensorCreation(tensor, "empty", Tensor::Empty);
     BindTensorCreation(tensor, "zeros", Tensor::Zeros);
     BindTensorCreation(tensor, "ones", Tensor::Ones);
-    // tensor.def_static(
-    //         "empty",
-    //         [](const py::tuple& shape, utility::optional<Dtype> dtype,
-    //            utility::optional<Device> device) {
-    //             return Tensor::Empty(
-    //                     PyTupleToSizeVector(shape),
-    //                     dtype.has_value() ? dtype.value() : Dtype::Float32,
-    //                     device.has_value() ? device.value() :
-    //                     Device("CPU:0"));
-    //         },
-    //         "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
-    // tensor.def_static(
-    //         "empty",
-    //         [](const py::list& shape, utility::optional<Dtype> dtype,
-    //            utility::optional<Device> device) {
-    //             return Tensor::Empty(
-    //                     PyListToSizeVector(shape),
-    //                     dtype.has_value() ? dtype.value() : Dtype::Float32,
-    //                     device.has_value() ? device.value() :
-    //                     Device("CPU:0"));
-    //         },
-    //         "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
-
-    tensor.def_static("full", &Tensor::Full<float>);
-    tensor.def_static("full", &Tensor::Full<double>);
-    tensor.def_static("full", &Tensor::Full<int32_t>);
-    tensor.def_static("full", &Tensor::Full<int64_t>);
-    tensor.def_static("full", &Tensor::Full<uint8_t>);
-    tensor.def_static("full", &Tensor::Full<bool>);
+    BindTensorFullCreation<float>(tensor);
+    BindTensorFullCreation<double>(tensor);
+    BindTensorFullCreation<int32_t>(tensor);
+    BindTensorFullCreation<int64_t>(tensor);
+    BindTensorFullCreation<uint8_t>(tensor);
+    BindTensorFullCreation<bool>(tensor);
 
     tensor.def_static("eye", &Tensor::Eye);
     tensor.def_static("diag", &Tensor::Diag);
