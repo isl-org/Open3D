@@ -734,17 +734,6 @@ class Tensor(o3d.pybind.core.Tensor):
     #     # True div and floor div are the same for Tensor.
     #     return self.div_(value)
 
-    def _reduction_dim_to_size_vector(self, dim):
-        if dim is None:
-            return SizeVector(list(range(self.ndim)))
-        elif isinstance(dim, int):
-            return SizeVector([dim])
-        elif isinstance(dim, list) or isinstance(dim, tuple):
-            return SizeVector(dim)
-        else:
-            raise TypeError(
-                "dim must be int, list or tuple, but was {}.".format(type(dim)))
-
     # @cast_to_py_tensor
     # def sum(self, dim=None, keepdim=False):
     #     """
@@ -755,88 +744,99 @@ class Tensor(o3d.pybind.core.Tensor):
     #     dim = self._reduction_dim_to_size_vector(dim)
     #     return super(Tensor, self).sum(dim, keepdim)
 
-    @cast_to_py_tensor
-    def mean(self, dim=None, keepdim=False):
-        """
-        Returns the mean along each the specified dimension `dim`. If `dim` is
-        None, the reduction happens for all elements of the tensor. If `dim` is
-        a list or tuple, the reduction happens in all of the specified `dim`.
-        """
-        dim = self._reduction_dim_to_size_vector(dim)
-        return super(Tensor, self).mean(dim, keepdim)
+    # @cast_to_py_tensor
+    # def mean(self, dim=None, keepdim=False):
+    #     """
+    #     Returns the mean along each the specified dimension `dim`. If `dim` is
+    #     None, the reduction happens for all elements of the tensor. If `dim` is
+    #     a list or tuple, the reduction happens in all of the specified `dim`.
+    #     """
+    #     dim = self._reduction_dim_to_size_vector(dim)
+    #     return super(Tensor, self).mean(dim, keepdim)
 
-    @cast_to_py_tensor
-    def prod(self, dim=None, keepdim=False):
-        """
-        Returns the product along each the specified dimension `dim`. If
-        `dim` is None, the reduction happens for all elements of the tensor.
-        If `dim` is a list or tuple, the reduction happens in all of the
-        specified `dim`.
-        """
-        dim = self._reduction_dim_to_size_vector(dim)
-        return super(Tensor, self).prod(dim, keepdim)
+    # @cast_to_py_tensor
+    # def prod(self, dim=None, keepdim=False):
+    #     """
+    #     Returns the product along each the specified dimension `dim`. If
+    #     `dim` is None, the reduction happens for all elements of the tensor.
+    #     If `dim` is a list or tuple, the reduction happens in all of the
+    #     specified `dim`.
+    #     """
+    #     dim = self._reduction_dim_to_size_vector(dim)
+    #     return super(Tensor, self).prod(dim, keepdim)
 
-    @cast_to_py_tensor
-    def min(self, dim=None, keepdim=False):
-        """
-        Returns the min along each the specified dimension `dim`. If
-        `dim` is None, the reduction happens for all elements of the tensor.
-        If `dim` is a list or tuple, the reduction happens in all of the
-        specified `dim`.
+    # @cast_to_py_tensor
+    # def min(self, dim=None, keepdim=False):
+    #     """
+    #     Returns the min along each the specified dimension `dim`. If
+    #     `dim` is None, the reduction happens for all elements of the tensor.
+    #     If `dim` is a list or tuple, the reduction happens in all of the
+    #     specified `dim`.
 
-        Throws exception if the tensor has 0 element.
-        """
-        dim = self._reduction_dim_to_size_vector(dim)
-        return super(Tensor, self).min(dim, keepdim)
+    #     Throws exception if the tensor has 0 element.
+    #     """
+    #     dim = self._reduction_dim_to_size_vector(dim)
+    #     return super(Tensor, self).min(dim, keepdim)
 
-    @cast_to_py_tensor
-    def max(self, dim=None, keepdim=False):
-        """
-        Returns the max along each the specified dimension `dim`. If
-        `dim` is None, the reduction happens for all elements of the tensor.
-        If `dim` is a list or tuple, the reduction happens in all of the
-        specified `dim`.
+    # @cast_to_py_tensor
+    # def max(self, dim=None, keepdim=False):
+    #     """
+    #     Returns the max along each the specified dimension `dim`. If
+    #     `dim` is None, the reduction happens for all elements of the tensor.
+    #     If `dim` is a list or tuple, the reduction happens in all of the
+    #     specified `dim`.
 
-        Throws exception if the tensor has 0 element.
-        """
-        dim = self._reduction_dim_to_size_vector(dim)
-        return super(Tensor, self).max(dim, keepdim)
+    #     Throws exception if the tensor has 0 element.
+    #     """
+    #     dim = self._reduction_dim_to_size_vector(dim)
+    #     return super(Tensor, self).max(dim, keepdim)
 
-    @cast_to_py_tensor
-    def argmin(self, dim=None):
-        """
-        Returns minimum index of the tensor along the specified dimension. The
-        returned tensor has dtype int64_t, and has the same shape as original
-        tensor except that the reduced dimension is removed.
+    # def _reduction_dim_to_size_vector(self, dim):
+    #     if dim is None:
+    #         return SizeVector(list(range(self.ndim)))
+    #     elif isinstance(dim, int):
+    #         return SizeVector([dim])
+    #     elif isinstance(dim, list) or isinstance(dim, tuple):
+    #         return SizeVector(dim)
+    #     else:
+    #         raise TypeError(
+    #             "dim must be int, list or tuple, but was {}.".format(type(dim)))
 
-        Only one reduction dimension can be specified. If the specified
-        dimension is None, the index is into the flattend tensor.
-        """
-        if dim is None:
-            dim = self._reduction_dim_to_size_vector(list(range(self.ndim)))
-        elif isinstance(dim, int):
-            dim = self._reduction_dim_to_size_vector([dim])
-        else:
-            raise TypeError("dim must be int or None, but got {}.".format(dim))
-        return super(Tensor, self).argmin_(dim)
+    # @cast_to_py_tensor
+    # def argmin(self, dim=None):
+    #     """
+    #     Returns minimum index of the tensor along the specified dimension. The
+    #     returned tensor has dtype int64_t, and has the same shape as original
+    #     tensor except that the reduced dimension is removed.
 
-    @cast_to_py_tensor
-    def argmax(self, dim=None):
-        """
-        Returns maximum index of the tensor along the specified dimension. The
-        returned tensor has dtype int64_t, and has the same shape as original
-        tensor except that the reduced dimension is removed.
+    #     Only one reduction dimension can be specified. If the specified
+    #     dimension is None, the index is into the flattend tensor.
+    #     """
+    #     if dim is None:
+    #         dim = self._reduction_dim_to_size_vector(list(range(self.ndim)))
+    #     elif isinstance(dim, int):
+    #         dim = self._reduction_dim_to_size_vector([dim])
+    #     else:
+    #         raise TypeError("dim must be int or None, but got {}.".format(dim))
+    #     return super(Tensor, self).argmin_(dim)
 
-        Only one reduction dimension can be specified. If the specified
-        dimension is None, the index is into the flattend tensor.
-        """
-        if dim is None:
-            dim = self._reduction_dim_to_size_vector(list(range(self.ndim)))
-        elif isinstance(dim, int):
-            dim = self._reduction_dim_to_size_vector([dim])
-        else:
-            raise TypeError("dim must be int or None, but got {}.".format(dim))
-        return super(Tensor, self).argmax_(dim)
+    # @cast_to_py_tensor
+    # def argmax(self, dim=None):
+    #     """
+    #     Returns maximum index of the tensor along the specified dimension. The
+    #     returned tensor has dtype int64_t, and has the same shape as original
+    #     tensor except that the reduced dimension is removed.
+
+    #     Only one reduction dimension can be specified. If the specified
+    #     dimension is None, the index is into the flattend tensor.
+    #     """
+    #     if dim is None:
+    #         dim = self._reduction_dim_to_size_vector(list(range(self.ndim)))
+    #     elif isinstance(dim, int):
+    #         dim = self._reduction_dim_to_size_vector([dim])
+    #     else:
+    #         raise TypeError("dim must be int or None, but got {}.".format(dim))
+    #     return super(Tensor, self).argmax_(dim)
 
     @cast_to_py_tensor
     def isclose(self, other, rtol=1e-5, atol=1e-8):

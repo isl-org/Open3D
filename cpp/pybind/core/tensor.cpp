@@ -99,6 +99,22 @@
             },                                                             \
             "dim"_a = py::none(), "keepdim"_a = false);
 
+#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                    \
+    tensor.def(                                                            \
+            #py_name,                                                      \
+            [](const Tensor& tensor, utility::optional<py::handle> dim) {  \
+                SizeVector reduction_dims;                                 \
+                if (dim.has_value()) {                                     \
+                    reduction_dims = PyHandleToReductionDims(dim.value()); \
+                } else {                                                   \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) {       \
+                        reduction_dims.push_back(i);                       \
+                    }                                                      \
+                }                                                          \
+                return tensor.cpp_name(reduction_dims);                    \
+            },                                                             \
+            "dim"_a = py::none());
+
 namespace open3d {
 namespace core {
 
@@ -456,13 +472,12 @@ void pybind_core_tensor(py::module& m) {
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);
-
-    tensor.def("mean", &Tensor::Mean);
-    tensor.def("prod", &Tensor::Prod);
-    tensor.def("min", &Tensor::Min);
-    tensor.def("max", &Tensor::Max);
-    tensor.def("argmin_", &Tensor::ArgMin);
-    tensor.def("argmax_", &Tensor::ArgMax);
+    BIND_REDUCTION_OP(mean, Mean);
+    BIND_REDUCTION_OP(prod, Prod);
+    BIND_REDUCTION_OP(min, Min);
+    BIND_REDUCTION_OP(max, Max);
+    BIND_REDUCTION_OP_NO_KEEPDIM(argmin, ArgMin);
+    BIND_REDUCTION_OP_NO_KEEPDIM(argmax, ArgMax);
 
     // Comparison.
     tensor.def("allclose", &Tensor::AllClose, "other"_a, "rtol"_a = 1e-5,
