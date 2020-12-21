@@ -4,6 +4,11 @@
 
 # examples/python/reconstruction_system/initialize_config.py
 
+import os
+import sys
+sys.path.append("../utility")
+from file import check_folder_structure, extract_rgbd_frames
+
 
 def set_default_value(config, key, value):
     if key not in config:
@@ -45,3 +50,9 @@ def initialize_config(config):
                       "scene/refined_registration_optimized.json")
     set_default_value(config, "template_global_mesh", "scene/integrated.ply")
     set_default_value(config, "template_global_traj", "scene/trajectory.log")
+
+    if os.path.isfile(
+            config["path_dataset"]) and config["path_dataset"].endswith(".bag"):
+        print("Extracting frames from RGBD video file")
+        config["path_dataset"], config["path_intrinsic"], config[
+            "depth_scale"] = extract_rgbd_frames(config["path_dataset"])
