@@ -24,25 +24,45 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/contrib/contrib_nns.h"
+#include "open3d/visualization/gui/Label3D.h"
 
-#include "pybind/docstring.h"
-#include "pybind/ml/contrib/contrib.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include <string>
 
 namespace open3d {
-namespace ml {
-namespace contrib {
+namespace visualization {
+namespace gui {
 
-void pybind_contrib_nns(py::module& m_contrib) {
-    m_contrib.def("knn_search", &KnnSearch, "query_points"_a,
-                  "dataset_points"_a, "knn"_a);
-    m_contrib.def("radius_search", &RadiusSearch, "query_points"_a,
-                  "dataset_points"_a, "query_batches"_a, "dataset_batches"_a,
-                  "radius"_a);
+static const Color DEFAULT_COLOR(0, 0, 0, 1);
+
+struct Label3D::Impl {
+    std::string text_;
+    Eigen::Vector3f position_;
+    Color color_ = DEFAULT_COLOR;
+};
+
+Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
+    : impl_(new Label3D::Impl()) {
+    if (text) {
+        SetText(text);
+    }
 }
 
-}  // namespace contrib
-}  // namespace ml
+Label3D::~Label3D() {}
+
+const char* Label3D::GetText() const { return impl_->text_.c_str(); }
+
+void Label3D::SetText(const char* text) { impl_->text_ = text; }
+
+Eigen::Vector3f Label3D::GetPosition() const { return impl_->position_; }
+
+void Label3D::SetPosition(const Eigen::Vector3f& pos) {
+    impl_->position_ = pos;
+}
+
+Color Label3D::GetTextColor() const { return impl_->color_; }
+
+void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
+
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

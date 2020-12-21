@@ -26,13 +26,18 @@
 
 #include "open3d/visualization/gui/SceneWidget.h"
 
+#include <imgui.h>
+
 #include <Eigen/Geometry>
 #include <set>
+#include <unordered_set>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/PickPointsInteractor.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/CameraInteractorLogic.h"
@@ -652,6 +657,8 @@ struct SceneWidget::Impl {
 #ifdef NO_RENDER_TARGET
     bool is_picking_ = false;
 #endif  // NO_RENDER_TARGET
+
+    std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -884,10 +891,25 @@ rendering::Camera* SceneWidget::GetCamera() const {
     return impl_->scene_->GetCamera();
 }
 
+std::shared_ptr<Label3D> SceneWidget::AddLabel(const Eigen::Vector3f& pos,
+                                               const char* text) {
+    auto l = std::make_shared<Label3D>(pos, text);
+    impl_->labels_3d_.insert(l);
+    return l;
+}
+
+void SceneWidget::RemoveLabel(std::shared_ptr<Label3D> label) {
+    auto liter = impl_->labels_3d_.find(label);
+    if (liter != impl_->labels_3d_.end()) {
+        impl_->labels_3d_.erase(liter);
+    }
+}
+
 void SceneWidget::Layout(const Theme& theme) {
     Super::Layout(theme);
     // The UI may have changed size such that the scene has been exposed. Need
     // to force a redraw in that case.
+
     ForceRedraw();
 }
 
@@ -917,6 +939,34 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
                                    camera->GetFieldOfViewType());
 
         impl_->controls_->SetPickNeedsRedraw();
+    }
+
+    if (!impl_->labels_3d_.empty()) {
+        const auto f = GetFrame();
+        // Setup ImGUI
+        ImGui::SetNextWindowPos(ImVec2(float(f.x), float(f.y)));
+        ImGui::SetNextWindowSize(ImVec2(float(f.width), float(f.height)));
+        ImGui::Begin("3D Labels", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                             ImGuiWindowFlags_NoNav |
+                             ImGuiWindowFlags_NoBackground);
+
+        // Draw each text label
+        for (const auto& l : impl_->labels_3d_) {
+            auto ndc = GetCamera()->GetNDC(l->GetPosition());
+            ndc += Eigen::Vector2f::Ones();
+            ndc *= 0.5f;
+            ndc.x() *= f.width;
+            ndc.y() *= f.height;
+            ImGui::SetCursorScreenPos(
+                    ImVec2(ndc.x() - f.x, f.height - ndc.y() - f.y));
+            auto color = l->GetTextColor();
+            ImGui::TextColored({color.GetRed(), color.GetGreen(),
+                                color.GetBlue(), color.GetAlpha()},
+                               "%s", l->GetText());
+        }
+
+        ImGui::End();
     }
 
     // The actual drawing is done later, at the end of drawing in

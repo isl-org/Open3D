@@ -39,6 +39,7 @@
 #include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/ImageLabel.h"
 #include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
@@ -320,6 +321,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
+            .def_property_readonly("now", &Application::Now,
+                                   "Returns current time in seconds")
             // Note: we cannot export AddWindow and RemoveWindow
             .def_property_readonly("resource_path",
                                    &Application::GetResourcePath,
@@ -763,6 +766,17 @@ void pybind_gui_classes(py::module &m) {
                           &Label::SetTextColor,
                           "The color of the text (gui.Color)");
 
+    // ---- Label3D ----
+    py::class_<Label3D> label3d(m, "Label3D", "Displays text in a 3D scene");
+    label3d.def_property("text", &Label3D::GetText, &Label3D::SetText,
+                         "The text to display with this label.")
+            .def_property("position", &Label3D::GetPosition,
+                          &Label3D::SetPosition,
+                          "The position of the text in 3D coordinates")
+            .def_property("color", &Label3D::GetTextColor,
+                          &Label3D::SetTextColor,
+                          "The color of the text (gui.Color)");
+
     // ---- ListView ----
     py::class_<ListView, UnownedPointer<ListView>, Widget> listview(
             m, "ListView", "Displays a list of text");
@@ -971,7 +985,12 @@ void pybind_gui_classes(py::module &m) {
                  &PySceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
                  "ROTATE_SUN control mode). Called with one argument, the "
-                 "[i, j, k] vector of the new sun direction");
+                 "[i, j, k] vector of the new sun direction")
+            .def("add_3d_label", &PySceneWidget::AddLabel,
+                 "Add a 3D text label to the scene. The label will be anchored "
+                 "at the specified 3D point.")
+            .def("remove_3d_label", &PySceneWidget::RemoveLabel,
+                 "Removes the 3D text label from the scene");
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(

@@ -14,7 +14,7 @@ class ExternalVisualizer:
 
             import open3d as o3d
             import numpy as np
-            ev = o3d.visualizer.ExternalVisualizer()
+            ev = o3d.visualization.ExternalVisualizer()
             pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(np.random.rand(100,3)))
             ev.set(pcd)
 
@@ -109,6 +109,9 @@ class ExternalVisualizer:
     def set_time(self, time):
         """Sets the time in the external visualizer
 
+        Note that this function is a placeholder for future functionality and
+        not yet supported by the receiving visualizer.
+
         Args:
             time: The time value
         """
@@ -118,6 +121,9 @@ class ExternalVisualizer:
 
     def set_active_camera(self, path):
         """Sets the active camera in the external visualizer
+
+        Note that this function is a placeholder for future functionality and
+        not yet supported by the receiving visualizer.
 
         Args:
             path: A path describing a location in the scene tree.

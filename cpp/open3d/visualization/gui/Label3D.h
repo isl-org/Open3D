@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/contrib/contrib_nns.h"
+#pragma once
 
-#include "pybind/docstring.h"
-#include "pybind/ml/contrib/contrib.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include <memory>
 
+#include "open3d/visualization/gui/Color.h"
 namespace open3d {
-namespace ml {
-namespace contrib {
+namespace visualization {
+namespace gui {
 
-void pybind_contrib_nns(py::module& m_contrib) {
-    m_contrib.def("knn_search", &KnnSearch, "query_points"_a,
-                  "dataset_points"_a, "knn"_a);
-    m_contrib.def("radius_search", &RadiusSearch, "query_points"_a,
-                  "dataset_points"_a, "query_batches"_a, "dataset_batches"_a,
-                  "radius"_a);
-}
+// Label3D is a helper class for labels (like UI Labels) at 3D points as opposed
+// to screen points. It is NOT a UI widget but is instead used via Open3DScene
+// class. See Open3DScene::AddLabel/RemoveLabel.
+class Label3D {
+public:
+    /// Copies text
+    explicit Label3D(const Eigen::Vector3f& pos, const char* text = nullptr);
+    ~Label3D();
 
-}  // namespace contrib
-}  // namespace ml
+    const char* GetText() const;
+    /// Sets the text of the label (copies text)
+    void SetText(const char* text);
+
+    Eigen::Vector3f GetPosition() const;
+    void SetPosition(const Eigen::Vector3f& pos);
+
+    Color GetTextColor() const;
+    void SetTextColor(const Color& color);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

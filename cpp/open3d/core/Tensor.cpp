@@ -654,7 +654,7 @@ Tensor Tensor::Slice(int64_t dim,
         utility::LogError("Step size cannot be 0.");
     } else if (step < 0) {
         // TODO: support negative step sizes
-        utility::LogError("Step size cannot be 0.");
+        utility::LogError("Step size cannot be < 0.");
     }
 
     // Wrap start. Out-of-range slice is valid and produces empty Tensor.
