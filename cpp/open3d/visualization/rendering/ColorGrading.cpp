@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/rendering/ColorGrading.h"
+#include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
 namespace visualization {
@@ -32,6 +33,12 @@ namespace rendering {
 
 ColorGradingParams::ColorGradingParams(Quality q, ToneMapping algorithm)
     : quality_(q), tonemapping_(algorithm) {}
+
+void ColorGradingParams::SetQuality(Quality q) { quality_ = q; }
+
+void ColorGradingParams::SetToneMapping(ToneMapping algorithm) {
+    tonemapping_ = algorithm;
+}
 
 void ColorGradingParams::SetTemperature(float temperature) {
     temperature_ = temperature;
