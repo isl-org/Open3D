@@ -53,10 +53,6 @@ RSBagReader::~RSBagReader() {
 }
 
 bool RSBagReader::Open(const std::string &filename) {
-    return Open(filename, 0);
-}
-
-bool RSBagReader::Open(const std::string &filename, uint64_t start_time_us) {
     if (IsOpened()) {
         Close();
     }
@@ -71,8 +67,8 @@ bool RSBagReader::Open(const std::string &filename, uint64_t start_time_us) {
         metadata_.ConvertFromJsonValue(
                 RealSenseSensorConfig::GetMetadataJson(profile));
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
-
-        utility::LogInfo("File {} opened", filename);
+        if (seek_to_ == UINT64_MAX)
+            utility::LogInfo("File {} opened", filename);
     } catch (const rs2::error &) {
         utility::LogWarning("Unable to open file {}", filename);
         return false;
@@ -81,20 +77,18 @@ bool RSBagReader::Open(const std::string &filename, uint64_t start_time_us) {
     is_eof_ = false;
     is_opened_ = true;
     // Launch thread to keep frame_buffer full
-    frame_reader_thread_ =
-            std::thread{&RSBagReader::fill_frame_buffer, this, start_time_us};
+    frame_reader_thread_ = std::thread{&RSBagReader::fill_frame_buffer, this};
     return true;
 }
 
 void RSBagReader::Close() {
-    filename_.clear();
     is_opened_ = false;
     need_frames_.notify_one();
     frame_reader_thread_.join();
     pipe_->stop();
 }
 
-void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
+void RSBagReader::fill_frame_buffer() try {
     std::mutex frame_buffer_mutex;
     std::unique_lock<std::mutex> lock(frame_buffer_mutex);
     const unsigned int RS2_PLAYBACK_TIMEOUT_MS =
@@ -102,29 +96,35 @@ void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
     rs2::frameset frames;
     rs2::playback rs_device =
             pipe_->get_active_profile().get_device().as<rs2::playback>();
-    rs_device.seek(std::chrono::microseconds(start_time_us));
-    uint64_t next_dev_color_fid = 0;
     head_fid_ = 0;
-    tail_fid_ = 0;  // do not write to tail_fid_ in this thread
+    tail_fid_ = 0;
+    uint64_t next_dev_color_fid = 0;
     uint64_t dev_color_fid = 0;
-    uint64_t nreq = 0, fid = 0;  // debug
 
     while (is_opened_) {
         rs_device.resume();
         utility::LogDebug(
-                "frame_reader_thread_ start reading tail_fid_={}, head_fid_={}",
+                "frame_reader_thread_ start reading tail_fid_={}, "
+                "head_fid_={}.",
                 tail_fid_, head_fid_);
         while (!is_eof_ && head_fid_ < tail_fid_ + frame_buffer_.size()) {
+            if (seek_to_ < UINT64_MAX) {
+                utility::LogDebug("frame_reader_thread_ seek to {}us",
+                                  seek_to_);
+                rs_device.seek(std::chrono::microseconds(seek_to_));
+                tail_fid_.store(
+                        head_fid_.load());  // atomic: Invalidate buffer.
+                next_dev_color_fid = dev_color_fid = 0;
+                seek_to_ = UINT64_MAX;
+            }
             // Ensure next frameset is not a repeat
-            while (next_dev_color_fid <= dev_color_fid &&
+            while (next_dev_color_fid == dev_color_fid &&
                    pipe_->try_wait_for_frames(&frames,
                                               RS2_PLAYBACK_TIMEOUT_MS)) {
-                ++nreq;
                 next_dev_color_fid =
                         frames.get_color_frame().get_frame_number();
             }
-            ++fid;
-            if (next_dev_color_fid > dev_color_fid) {
+            if (next_dev_color_fid != dev_color_fid) {
                 dev_color_fid = next_dev_color_fid;
                 auto &current_frame =
                         frame_buffer_[head_fid_ % frame_buffer_.size()];
@@ -146,15 +146,12 @@ void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
                         rs_device.get_position() /
                         1000;  // Convert nanoseconds -> microseconds
                 ++head_fid_;   // atomic
-                utility::LogDebug(
-                        "Device Frame {}, Request {}, output frame {}",
-                        dev_color_fid, nreq, fid);
             } else {
-                utility::LogDebug("frame_reader_thread EOF reached");
+                utility::LogDebug("frame_reader_thread EOF. Join.");
                 is_eof_ = true;
                 return;
             }
-            if (!is_opened_) break;  // exit if SeekTimestamp() / Close()
+            if (!is_opened_) break;  // exit if Close()
         }
         rs_device.pause();  // Pause playback to prevent frame drops
         utility::LogDebug(
@@ -167,8 +164,8 @@ void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
         });
     }
 } catch (const rs2::error &e) {
-    utility::LogError("Realsense function call {}({}) error.",
-                      e.get_failed_function(), e.get_failed_args());
+    utility::LogError("Realsense error: {}: {}",
+                      rs2_exception_type_to_string(e.get_type()), e.what());
 } catch (const std::exception &e) {
     utility::LogError("Error in reading RealSense bag file: {}", e.what());
 }
@@ -192,9 +189,10 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
     if (is_eof_ && tail_fid_ == head_fid_) {  // no more frames
         utility::LogInfo("EOF reached");
         return t::geometry::RGBDImage();
-    } else
+    } else {
         return frame_buffer_[(tail_fid_++) %  // atomic
                              frame_buffer_.size()];
+    }
 }
 
 bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
@@ -202,16 +200,16 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
         utility::LogWarning("Null file handler. Please call Open().");
         return false;
     }
-
     if (timestamp >= metadata_.stream_length_usec_) {
         utility::LogWarning("Timestamp {} exceeds maximum {} (us).", timestamp,
                             metadata_.stream_length_usec_);
         return false;
     }
-
-    auto rs_device =
-            pipe_->get_active_profile().get_device().as<rs2::playback>();
-    Open(rs_device.file_name(), timestamp);  // restart streaming
+    seek_to_ = timestamp;  // atomic
+    if (is_eof_)
+        Open(filename_);  // EOF requires restarting pipeline.
+    else
+        need_frames_.notify_one();
     return true;
 }
 

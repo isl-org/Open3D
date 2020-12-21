@@ -29,10 +29,12 @@
 #include <json/json.h>
 
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "open3d/t/io/sensor/realsense/RealSensePrivate.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
 
 namespace open3d {
 namespace t {
@@ -98,19 +100,25 @@ std::vector<RealSenseValidConfigs> RealSenseSensor::EnumerateDevices() {
                 std::string product_line =
                         dev.get_info(RS2_CAMERA_INFO_PRODUCT_LINE);
                 if (product_line == "L500") {
-                    for (int k = 0; k < (int)RS2_L500_VISUAL_PRESET_COUNT; ++k)
+                    for (int k = 0;
+                         k < static_cast<int>(RS2_L500_VISUAL_PRESET_COUNT);
+                         ++k)
                         cfg.valid_configs["visual_preset"].insert(
                                 enum_to_string(
                                         static_cast<rs2_l500_visual_preset>(
                                                 k)));
                 } else if (product_line == "RS400") {
-                    for (int k = 0; k < (int)RS2_RS400_VISUAL_PRESET_COUNT; ++k)
+                    for (int k = 0;
+                         k < static_cast<int>(RS2_RS400_VISUAL_PRESET_COUNT);
+                         ++k)
                         cfg.valid_configs["visual_preset"].insert(
                                 enum_to_string(
                                         static_cast<rs2_rs400_visual_preset>(
                                                 k)));
                 } else if (product_line == "SR300") {
-                    for (int k = 0; k < (int)RS2_SR300_VISUAL_PRESET_COUNT; ++k)
+                    for (int k = 0;
+                         k < static_cast<int>(RS2_SR300_VISUAL_PRESET_COUNT);
+                         ++k)
                         cfg.valid_configs["visual_preset"].insert(
                                 enum_to_string(
                                         static_cast<rs2_sr300_visual_preset>(
@@ -151,7 +159,15 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         }
     }
     if (!filename.empty()) {
-        rs_config_->enable_record_to_file(filename);
+        if (utility::filesystem::FileExists(filename_)) {
+            enable_recording_ = false;
+            utility::LogError("Will not overwrite existing file {}.", filename);
+        }
+        const std::string parent_dir =
+                utility::filesystem::GetFileParentDirectory(filename_);
+        if (!utility::filesystem::DirectoryExists(parent_dir)) {
+            utility::filesystem::MakeDirectoryHierarchy(parent_dir);
+        }
         filename_ = filename;
         enable_recording_ = true;
     } else {
@@ -170,25 +186,27 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         rs2_l500_visual_preset option;
         enum_from_string(option_str, option);
         if (option != RS2_L500_VISUAL_PRESET_DEFAULT)
-            dev.set_option(RS2_OPTION_VISUAL_PRESET, (float)option);
+            dev.set_option(RS2_OPTION_VISUAL_PRESET,
+                           static_cast<float>(option));
     } else if (product_line == "RS400") {
         rs2_rs400_visual_preset option;
         enum_from_string(option_str, option);
         if (option != RS2_RS400_VISUAL_PRESET_DEFAULT)
-            dev.set_option(RS2_OPTION_VISUAL_PRESET, (float)option);
+            dev.set_option(RS2_OPTION_VISUAL_PRESET,
+                           static_cast<float>(option));
     } else if (product_line == "SR300") {
         rs2_sr300_visual_preset option;
         enum_from_string(option_str, option);
         if (option != RS2_SR300_VISUAL_PRESET_DEFAULT)
-            dev.set_option(RS2_OPTION_VISUAL_PRESET, (float)option);
+            dev.set_option(RS2_OPTION_VISUAL_PRESET,
+                           static_cast<float>(option));
     }
     metadata_.ConvertFromJsonValue(
             RealSenseSensorConfig::GetMetadataJson(profile));
     RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
     return true;
-
 } catch (const rs2::error& e) {
-    utility::LogWarning(
+    utility::LogError(
             "Invalid RealSense camera configuration, or camera not connected:"
             "\n{}: {}",
             rs2_exception_type_to_string(e.get_type()), e.what());
@@ -201,6 +219,8 @@ bool RealSenseSensor::StartCapture(bool start_record) {
         return true;
     }
     try {
+        is_recording_ = enable_recording_ && start_record;
+        if (is_recording_) rs_config_->enable_record_to_file(filename_);
         const auto profile = pipe_->start(*rs_config_);
         // This step is repeated here since the user may bypass InitSensor()
         metadata_.ConvertFromJsonValue(
@@ -214,9 +234,7 @@ bool RealSenseSensor::StartCapture(bool start_record) {
         if (enable_recording_) {
             utility::LogInfo("Recording {}to bag file {}",
                              start_record ? "" : "[Paused] ", filename_);
-            if (!start_record) profile.get_device().as<rs2::recorder>().pause();
         }
-        is_recording_ = enable_recording_ && start_record;
         return true;
     } catch (const rs2::error& e) {
         utility::LogError("StartCapture() failed: {}: {}",
@@ -229,17 +247,28 @@ void RealSenseSensor::PauseRecord() {
     if (!enable_recording_ || !is_recording_) return;
     pipe_->get_active_profile().get_device().as<rs2::recorder>().pause();
     is_recording_ = false;
+    utility::LogDebug("Recording paused.");
 }
 
 void RealSenseSensor::ResumeRecord() {
     if (!enable_recording_ || is_recording_) return;
     try {
-        pipe_->get_active_profile().get_device().as<rs2::recorder>().resume();
+        if (auto dev = pipe_->get_active_profile()
+                               .get_device()
+                               .as<rs2::recorder>()) {
+            dev.resume();
+            utility::LogDebug("Recording resumed.");
+        } else {
+            rs_config_->enable_record_to_file(filename_);
+            pipe_.reset(new rs2::pipeline);
+            pipe_->start(*rs_config_);
+            utility::LogDebug("Recording started.");
+        }
+        is_recording_ = true;
     } catch (const rs2::error& e) {
         utility::LogError("ResumeRecord() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
     }
-    is_recording_ = true;
 }
 
 geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,

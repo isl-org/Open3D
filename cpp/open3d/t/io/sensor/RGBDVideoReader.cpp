@@ -51,21 +51,21 @@ std::string RGBDVideoReader::ToString() const {
 void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                                  uint64_t start_time,
                                  uint64_t end_time) {
-    using namespace utility::filesystem;
-    using namespace open3d::io;
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");
     }
-    bool success = MakeDirectoryHierarchy(fmt::format("{}/color", frame_path));
-    success &= MakeDirectoryHierarchy(fmt::format("{}/depth", frame_path));
+    bool success = utility::filesystem::MakeDirectoryHierarchy(
+            fmt::format("{}/color", frame_path));
+    success &= utility::filesystem::MakeDirectoryHierarchy(
+            fmt::format("{}/depth", frame_path));
     if (!success) {
         utility::LogError(
                 "Could not create color or depth subfolder in {} or they "
                 "already exist.",
                 frame_path);
     }
-    WriteIJsonConvertibleToJSON(fmt::format("{}/intrinsic.json", frame_path),
-                                GetMetadata());
+    open3d::io::WriteIJsonConvertibleToJSON(
+            fmt::format("{}/intrinsic.json", frame_path), GetMetadata());
     SeekTimestamp(start_time);
     int idx = 0;
     open3d::geometry::Image im_color, im_depth;
@@ -78,7 +78,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             im_color = tim_rgbd.color_.ToLegacyImage();
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
-            WriteImage(color_file, im_color);
+            open3d::io::WriteImage(color_file, im_color);
             utility::LogDebug("Written color image to {}", color_file);
         }
 #pragma omp section
@@ -86,7 +86,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             im_depth = tim_rgbd.depth_.ToLegacyImage();
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
-            WriteImage(depth_file, im_depth);
+            open3d::io::WriteImage(depth_file, im_depth);
             utility::LogDebug("Written depth image to {}", depth_file);
         }
     }
@@ -104,7 +104,9 @@ std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         return reader;
     } else
 #endif
+    {
         utility::LogError("Unsupported file format for {}", filename);
+    }
 }
 }  // namespace io
 }  // namespace t
