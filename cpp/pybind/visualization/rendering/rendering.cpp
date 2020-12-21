@@ -222,6 +222,11 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("base_clearcoat_roughness",
                            &Material::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &Material::base_anisotropy)
+            .def_readwrite("thickness", &Material::thickness)
+            .def_readwrite("transmission", &Material::transmission)
+            .def_readwrite("absorption_color", &Material::absorption_color)
+            .def_readwrite("absorption_distance",
+                           &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
             .def_readwrite("line_width", &Material::line_width)
             .def_readwrite("albedo_img", &Material::albedo_img)
