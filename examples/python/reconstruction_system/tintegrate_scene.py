@@ -89,6 +89,8 @@ if __name__ == '__main__':
         block_count=args.block_count,
         device=device)
 
+    extrinsics = [np.linalg.inv(trajectory[i]) for i in range(n_files)]
+
     for i in range(n_files):
         rgb = o3d.io.read_image(color_files[i])
         rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
@@ -96,8 +98,11 @@ if __name__ == '__main__':
         depth = o3d.io.read_image(depth_files[i])
         depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
 
-        extrinsic = o3d.core.Tensor(np.linalg.inv(trajectory[i]),
-                                    o3d.core.Dtype.Float32, device)
+        # Uncomment me to get bad performance
+        # dummy = np.linalg.inv(np.eye(4))
+
+        extrinsic = o3d.core.Tensor(extrinsics[i], o3d.core.Dtype.Float32,
+                                    device)
 
         start = time.time()
         volume.integrate(depth, rgb, intrinsic, extrinsic, 1000.0, 3.0)
