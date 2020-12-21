@@ -194,7 +194,11 @@ Tensor Tensor::Ones(const SizeVector& shape,
 template <typename T>
 static const std::vector<T> ConvertVectorType(
         const std::vector<double>& double_vec) {
-    std::vector<T> conv_vec(double_vec.begin(), double_vec.end());
+    std::vector<T> conv_vec;
+    std::transform(double_vec.begin(), double_vec.end(),
+                   std::back_inserter(conv_vec),
+                   [](const double value) { return static_cast<T>(value); });
+
     return conv_vec;
 }
 
