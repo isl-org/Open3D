@@ -219,6 +219,24 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
+    // Create a 1-D tensor with given list.
+    static Tensor Init(const std::initializer_list<double> in_list,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0"));
+
+    // Create a 2-D tensor with given list
+    static Tensor Init(
+            const std::initializer_list<std::initializer_list<double>> in_list,
+            Dtype dtype,
+            const Device& device = Device("CPU:0"));
+
+    // Create a 3-D tensor with given list
+    static Tensor
+    Init(const std::initializer_list<
+                 std::initializer_list<std::initializer_list<double>>> in_list,
+         Dtype dtype,
+         const Device& device = Device("CPU:0"));
+
     /// Create a identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
 

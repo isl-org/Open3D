@@ -100,6 +100,29 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
     EXPECT_EQ(t.ToFlatVector<float>(), vals);
 }
 
+TEST_P(TensorPermuteDevices, WithInitList) {
+    core::Device device = GetParam();
+
+    std::vector<float> vals1{1, 2, 3};
+    core::Tensor t1 =
+            core::Tensor::Init({1, 2, 3}, core::Dtype::Float32, device);
+    EXPECT_EQ(t1.ToFlatVector<float>(), vals1);
+
+    std::vector<int> vals2{1, 2, 3, 4, 5, 6};
+    core::Tensor t2 = core::Tensor::Init({{1, 2, 3}, {4, 5, 6}},
+                                         core::Dtype::Int32, device);
+    EXPECT_EQ(t2.ToFlatVector<int>(), vals2);
+
+    std::vector<double> vals3{1, 2, 3, 4, 5, 6, 7, 8};
+    core::Tensor t3 = core::Tensor::Init({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+                                         core::Dtype::Float64, device);
+    EXPECT_EQ(t3.ToFlatVector<double>(), vals3);
+
+    EXPECT_THROW(
+            core::Tensor::Init({{1, 2, 3}, {4, 5}}, core::Dtype::Int32, device),
+            std::runtime_error);
+}
+
 TEST_P(TensorPermuteDevices, WithInitValueBool) {
     core::Device device = GetParam();
 
