@@ -25,6 +25,7 @@ def initialize_config(config):
     set_default_value(config, "max_depth", 3.0)
     set_default_value(config, "voxel_size", 0.05)
     set_default_value(config, "max_depth_diff", 0.07)
+    set_default_value(config, "depth_scale", 1000)
     set_default_value(config, "preference_loop_closure_odometry", 0.1)
     set_default_value(config, "preference_loop_closure_registration", 5.0)
     set_default_value(config, "tsdf_cubic_size", 3.0)
