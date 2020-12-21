@@ -220,17 +220,24 @@ public:
                        const Device& device = Device("CPU:0"));
 
     // Create a 1-D tensor with given list.
+    // For example, 
+    // core::Tensor::Init({1,2,3},core::Dtype::Float32);
     static Tensor Init(const std::initializer_list<double> in_list,
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    // Create a 2-D tensor with given list
+    // Create a 2-D tensor with given list.
+    // For example, 
+    // core::Tensor::Init({{1,2,3},{4,5,6}},core::Dtype::Float32);
     static Tensor Init(
             const std::initializer_list<std::initializer_list<double>> in_list,
             Dtype dtype,
             const Device& device = Device("CPU:0"));
 
-    // Create a 3-D tensor with given list
+    // Create a 3-D tensor with given list.
+    // For example, 
+    // core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}},
+    // core::Dtype::Float32);
     static Tensor
     Init(const std::initializer_list<
                  std::initializer_list<std::initializer_list<double>>> in_list,
