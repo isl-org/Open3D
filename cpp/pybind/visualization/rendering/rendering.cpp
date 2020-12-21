@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Model.h"
@@ -269,6 +270,37 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("meshes", &TriangleMeshModel::meshes_)
             .def_readwrite("materials", &TriangleMeshModel::materials_);
 
+    // ---- ColorGradingParams ---
+    py::class_<ColorGradingParams> color_grading(
+            m, "ColorGrading", "Parameters to control color grading options");
+    color_grading
+            .def(py::init([](ColorGradingParams::Quality q,
+                             ColorGradingParams::ToneMapping algorithm) {
+                return ColorGradingParams(q, algorithm);
+            }))
+            .def_property("quality", &ColorGradingParams::GetQuality,
+                          &ColorGradingParams::SetQuality,
+                          "Quality of color grading operations. High quality "
+                          "is more accurate but slower")
+            .def_property("tone_mapping", &ColorGradingParams::GetToneMapping,
+                          &ColorGradingParams::SetToneMapping,
+                          "The tone mapping algorithm to apply. Must be one of "
+                          "Linear, AcesLegacy, Aces, Filmic, Uchimura, "
+                          "Rienhard, Display Range(for debug)")
+            .def_property("temperature", &ColorGradingParams::GetTemperature,
+                          &ColorGradingParams::SetTemperature,
+                          "White balance color temperature")
+            .def_property(
+                    "tint", &ColorGradingParams::GetTint,
+                    &ColorGradingParams::SetTint,
+                    "Tint on the green/magenta axis. Ranges from -1.0 to 1.0.");
+
+    // ---- View ----
+    py::class_<View, UnownedPointer<View>> view(m, "View",
+                                                "Low-level view class");
+    view.def("set_color_grading", &View::SetColorGrading,
+             "Sets the parameters to be used for the color grading algorithms");
+
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
                                                    "Low-level rendering scene");
@@ -431,6 +463,9 @@ void pybind_rendering_classes(py::module &m) {
             .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
+            .def_property_readonly(
+                    "get_view", &Open3DScene::GetView,
+                    "The low level view associated with the scene")
             .def_property("downsample_threshold",
                           &Open3DScene::GetDownsampleThreshold,
                           &Open3DScene::SetDownsampleThreshold,
