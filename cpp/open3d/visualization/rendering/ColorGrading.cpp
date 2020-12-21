@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/rendering/ColorGrading.h"
+
 #include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
