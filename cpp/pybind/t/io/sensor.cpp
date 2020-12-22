@@ -90,8 +90,8 @@ void pybind_sensor(py::module &m) {
             .def_readwrite("depth_dt", &RGBDVideoMetadata::depth_dt_,
                            "Pixel Dtype for depth data.")
             .def_readwrite("depth_scale", &RGBDVideoMetadata::depth_scale_,
-                           "Number of depth units per meter (Inverse of "
-                           "RealSense depth_scale).")
+                           "Number of depth units per meter (depth in m = "
+                           "depth_pixel_value/depth_scale).")
             .def_readwrite("color_channels",
                            &RGBDVideoMetadata::color_channels_,
                            "Number of color channels.")

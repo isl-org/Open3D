@@ -67,8 +67,9 @@ bool RSBagReader::Open(const std::string &filename) {
         metadata_.ConvertFromJsonValue(
                 RealSenseSensorConfig::GetMetadataJson(profile));
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
-        if (seek_to_ == UINT64_MAX)
+        if (seek_to_ == UINT64_MAX) {
             utility::LogInfo("File {} opened", filename);
+        }
     } catch (const rs2::error &) {
         utility::LogWarning("Unable to open file {}", filename);
         return false;
@@ -92,7 +93,7 @@ void RSBagReader::fill_frame_buffer() try {
     std::mutex frame_buffer_mutex;
     std::unique_lock<std::mutex> lock(frame_buffer_mutex);
     const unsigned int RS2_PLAYBACK_TIMEOUT_MS =
-            (unsigned int)(10 * 1000.0 / metadata_.fps_);
+            static_cast<unsigned int>(10 * 1000.0 / metadata_.fps_);
     rs2::frameset frames;
     rs2::playback rs_device =
             pipe_->get_active_profile().get_device().as<rs2::playback>();
@@ -206,10 +207,11 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
         return false;
     }
     seek_to_ = timestamp;  // atomic
-    if (is_eof_)
+    if (is_eof_) {
         Open(filename_);  // EOF requires restarting pipeline.
-    else
+    } else {
         need_frames_.notify_one();
+    }
     return true;
 }
 

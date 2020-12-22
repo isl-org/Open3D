@@ -92,7 +92,8 @@ public:
     /// Number of color channels.
     uint8_t color_channels_;
 
-    /// Number of depth units per meter (Inverse of RealSense depth_scale).
+    /// Number of depth units per meter (depth in m =
+    /// depth_pixel_value/depth_scale).
     double depth_scale_;
 };
 
