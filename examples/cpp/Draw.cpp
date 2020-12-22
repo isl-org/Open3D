@@ -205,6 +205,12 @@ void Selections() {
             [source, target, source_name,
              target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
                 auto sets = o3dvis.GetSelectionSets();
+                if (sets.empty()) {
+                    utility::LogWarning(
+                            "You must select points for correspondence before "
+                            "running ICP!");
+                    return;
+                }
                 auto &source_picked_set = sets[0][source_name];
                 auto &target_picked_set = sets[0][target_name];
                 std::vector<visualization::visualizer::O3DVisualizerSelections::
@@ -231,6 +237,12 @@ void Selections() {
             [source, target, source_name,
              target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
                 auto sets = o3dvis.GetSelectionSets();
+                if (sets.size() < 2) {
+                    utility::LogWarning(
+                            "You must have at least two sets of selected "
+                            "points before running ICP!");
+                    return;
+                }
                 auto &source_picked_set = sets[0][source_name];
                 auto &target_picked_set = sets[1][target_name];
                 std::vector<visualization::visualizer::O3DVisualizerSelections::
