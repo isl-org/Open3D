@@ -35,7 +35,7 @@ vertex {
         // now compute offset for the desired line width
         float2 dir = normalize(screen_next - screen_pos);
         float4 normal = float4(-dir.y, dir.x, 0.0, 1.0);
-        normal.xy *= (materialParams.lineWidth * resolution.z);
+        normal.xy *= (materialParams.lineWidth * resolution.z * 0.5);
         normal *= getClipFromViewMatrix();
         normal.xy *= projected_pos.w;
 
