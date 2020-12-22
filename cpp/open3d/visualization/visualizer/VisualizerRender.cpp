@@ -34,6 +34,10 @@
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
 
+#if defined(__APPLE__) && defined(BUILD_GUI)
+#include <bluegl/BlueGL.h>
+#endif
+
 namespace open3d {
 namespace visualization {
 
