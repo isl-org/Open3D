@@ -415,7 +415,7 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     which python
     python -V
-    python -m pip install -U -q "wheel==$WHEEL_VER" "Pillow==$PILLOW_VER" \
+    python -m pip install -U -q "wheel==$WHEEL_VER" "pip==$PIP_VER" "Pillow==$PILLOW_VER" \
         "sphinx==$SPHINX_VER" "sphinx-rtd-theme==$SPHINX_RTD_VER" "nbsphinx==$NBSPHINX_VER"
     # m2r needs a patch for sphinx 3
     # https://github.com/sphinx-doc/sphinx/issues/7420
@@ -438,7 +438,7 @@ install_docs_dependencies() {
 build_docs() {
     NPROC=$(nproc)
     echo NPROC="$NPROC"
-    mkdir build
+    mkdir -p build
     cd build
     set +u
     DEVELOPER_BUILD="$1"
@@ -475,6 +475,7 @@ build_docs() {
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
+    python -m pip uninstall open3d
     cd ../build
     set +x # Echo commands off
     echo
@@ -487,7 +488,7 @@ build_docs() {
         ..
     make install-pip-package -j$NPROC
     make -j$NPROC
-    bin/GLInfo || true # Expect failure since HEADLESS_RENDERING=OFF
+    bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
