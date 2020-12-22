@@ -77,7 +77,7 @@ FilamentView::FilamentView(filament::Engine& engine,
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
     view_->setSampleCount(4);
-    SetAntiAliasing(true, true);
+    SetAntiAliasing(true, false);
     SetPostProcessing(true);
     SetAmbientOcclusion(true, false);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
