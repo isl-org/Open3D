@@ -37,7 +37,11 @@ void PrintHelp() {
     utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
     utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
     utility::LogInfo("     [options]");
-    utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
+    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("     --depth_scale [=1000.0]");
+    utility::LogInfo("     --max_depth [=3.0]");
+    utility::LogInfo("     --sdf_trunc [=0.04]");
     utility::LogInfo("     --device [CPU:0]");
     utility::LogInfo("     --mesh");
     utility::LogInfo("     --pointcloud");
@@ -77,16 +81,17 @@ int main(int argc, char** argv) {
 
     // Intrinsics
     std::string intrinsic_path;
-    if (utility::ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
-        intrinsic_path = utility::GetProgramOptionAsString(
-                argc, argv, "--camera_intrinsic");
+    if (utility::ProgramOptionExists(argc, argv, "--intrinsic_path")) {
+        intrinsic_path = utility::GetProgramOptionAsString(argc, argv,
+                                                           "--intrinsic_path");
     }
-    camera::PinholeCameraIntrinsic intrinsic;
-    if (intrinsic_path.empty() ||
-        !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
-        utility::LogWarning("Using default value for Primesense camera.");
-        intrinsic = camera::PinholeCameraIntrinsic(
-                camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    if (intrinsic_path.empty()) {
+        utility::LogError("Unable to find the intrinsic camera path");
+    }
+    if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+        utility::LogError("Unable to convert json to intrinsics.");
     }
 
     auto focal_length = intrinsic.GetFocalLength();
@@ -99,6 +104,42 @@ int main(int argc, char** argv) {
                                 0, 1}),
             {3, 3}, Dtype::Float32);
 
+    // voxel_size
+    float voxel_size = 3.0 / 512;
+    if (utility::ProgramOptionExists(argc, argv, "--voxel_size")) {
+        voxel_size =
+                utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size");
+    }
+
+    // block_count
+    int block_count = 1000;
+    if (utility::ProgramOptionExists(argc, argv, "--block_count")) {
+        block_count =
+                utility::GetProgramOptionAsInt(argc, argv, "--block_count");
+    }
+
+    // depth_scale
+    float depth_scale = 1000.0;
+    if (utility::ProgramOptionExists(argc, argv, "--depth_scale")) {
+        depth_scale =
+                utility::GetProgramOptionAsDouble(argc, argv, "--depth_scale");
+    }
+
+    // max_depth
+    float max_depth = 3.0;
+    if (utility::ProgramOptionExists(argc, argv, "--max_depth")) {
+        max_depth =
+                utility::GetProgramOptionAsDouble(argc, argv, "--max_depth");
+    }
+
+    // sdf_trunc
+    float sdf_trunc = 0.04;
+    if (utility::ProgramOptionExists(argc, argv, "--sdf_trunc")) {
+        sdf_trunc =
+                utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc");
+    }
+
+    // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
         device_code = utility::GetProgramOptionAsString(argc, argv, "--device");
@@ -106,10 +147,13 @@ int main(int argc, char** argv) {
     core::Device device(device_code);
     utility::LogInfo("Using device: {}", device.ToString());
 
+    std::cout << voxel_size << " " << sdf_trunc << " " << max_depth << " "
+              << depth_scale << "\n";
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
                                            {"color", core::Dtype::UInt16}},
-                                          3.0f / 512.f, 0.04f, 16, 100, device);
+                                          voxel_size, sdf_trunc, 16,
+                                          block_count, device);
 
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
         // Load image
@@ -131,7 +175,8 @@ int main(int argc, char** argv) {
 
         utility::Timer timer;
         timer.Start();
-        voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
+        voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
+                             depth_scale, max_depth);
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
     }
