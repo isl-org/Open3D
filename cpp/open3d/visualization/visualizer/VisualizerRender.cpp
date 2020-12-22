@@ -38,6 +38,12 @@ namespace open3d {
 namespace visualization {
 
 bool Visualizer::InitOpenGL() {
+#ifdef BUILD_GUI
+    utility::LogWarning("visualization BUILD_GUI is ON");
+#else
+    utility::LogWarning("visualization BUILD_GUI is OFF");
+#endif
+
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
         utility::LogWarning("Failed to initialize GLEW.");
