@@ -30,6 +30,15 @@ execute_process(
 )
 message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
+if (${PYTHON_VERSION_MAJOR} EQUAL 2)
+    message(FATAL_ERROR "Python 2 is no longer supported. Please check your \
+            your Pyhton version with `python --version`. To use Python 3, do \
+            one of the following: \
+            (1) activate a Python 3 virtual environment; \
+            (2) specify the Python path explicitly with -DPYTHON_EXECUTABLE=/path/to/python3; \
+            (3) add Python 3 to the PATH environment variable.")
+endif()
+
 set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
@@ -96,10 +105,6 @@ target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (WIN32)
     target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
 endif()
-
-if (${PYTHON_VERSION_MAJOR} EQUAL 2)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
-endif ()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
