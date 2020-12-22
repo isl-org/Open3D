@@ -28,7 +28,9 @@
 
 #include <chrono>
 #include <fstream>
+#include <iostream>
 #include <memory>
+#include <string>
 #include <thread>
 
 #include "open3d/Open3D.h"
@@ -67,15 +69,25 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
         value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
     }
 
-    value["rs_bag_file"] = bagfile;
+    value["name"] = bagfile;
+    value["max_depth"] = 3.0;
+    value["voxel_size"] = 0.05;
+    value["max_depth_diff"] = 0.07;
+    value["preference_loop_closure_odometry"] = 0.1;
+    value["preference_loop_closure_registration"] = 5.0;
+    value["tsdf_cubic_size"] = 3.0;
+    value["icp_method"] = "color";
+    value["global_registration"] = "ransac";
+    value["python_multi_threading"] = true;
+
     return value;
 }
 
 void PrintUsage() {
     PrintOpen3DVersion();
-    // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output] [path]");
+    // clang-format off
+    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output path]");
     // clang-format on
 }
 
@@ -149,6 +161,23 @@ int main(int argc, char **argv) {
                 flag_play = !flag_play;
                 return true;
             });
+    vis.RegisterKeyCallback(GLFW_KEY_LEFT, [&](visualization::Visualizer *vis) {
+        uint64_t now = bag_reader.GetTimestamp();
+        if (bag_reader.SeekTimestamp(now < 1'000'000 ? 0 : now - 1'000'000))
+            utility::LogInfo("Seek back 1s");
+        else
+            utility::LogWarning("Seek back 1s failed");
+        return true;
+    });
+    vis.RegisterKeyCallback(
+            GLFW_KEY_RIGHT, [&](visualization::Visualizer *vis) {
+                uint64_t now = bag_reader.GetTimestamp();
+                if (bag_reader.SeekTimestamp(now + 1'000'000))
+                    utility::LogInfo("Seek forward 1s");
+                else
+                    utility::LogWarning("Seek forward 1s failed");
+                return true;
+            });
 
     vis.CreateVisualizerWindow("Open3D Intel RealSense bag player", 1920, 540);
     utility::LogInfo(
@@ -163,8 +192,9 @@ int main(int argc, char **argv) {
     utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
                      bag_metadata.height_);
     utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
-    utility::LogInfo("      duration: {:.6f}s",
-                     double(bag_metadata.stream_length_usec_) * 1e-6);
+    utility::LogInfo(
+            "      duration: {:.6f}s",
+            static_cast<double>(bag_metadata.stream_length_usec_) * 1e-6);
     utility::LogInfo("      color pixel format: {}",
                      bag_metadata.color_format_);
     utility::LogInfo("      depth pixel format: {}",
@@ -178,22 +208,19 @@ int main(int argc, char **argv) {
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
-    auto last_frame_time =
-            std::chrono::high_resolution_clock::now() - frame_interval;
+    auto last_frame_time = std::chrono::steady_clock::now() - frame_interval;
+    using legacyRGBDImage = open3d::geometry::RGBDImage;
+    legacyRGBDImage im_rgbd;
     while (!bag_reader.IsEOF() && !flag_exit) {
-        using legacyRGBDImage = open3d::geometry::RGBDImage;
-        legacyRGBDImage im_rgbd;
-
         if (flag_play) {
             std::this_thread::sleep_until(last_frame_time + frame_interval);
-            last_frame_time = std::chrono::high_resolution_clock::now();
+            last_frame_time = std::chrono::steady_clock::now();
             im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
-            // Improve depth visualization by scaling
-            /* im_rgbd.depth_.LinearTransform(0.25); */
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});
-
+            // Improve depth visualization by scaling
+            /* im_rgbd.depth_.LinearTransform(0.25); */
             if (ptr_im_rgbd->IsEmpty()) continue;
 
             if (!is_geometry_added) {
@@ -220,12 +247,10 @@ int main(int argc, char **argv) {
                     io::WriteImage(depth_file, im_rgbd.depth_);
                 }
             }
-
             vis.UpdateGeometry();
             vis.UpdateRender();
         }
         vis.PollEvents();
     }
-
     bag_reader.Close();
 }

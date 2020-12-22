@@ -63,7 +63,7 @@ public:
     /// Capture device serial number.
     std::string serial_number_ = "";
 
-    /// Length of the video (usec).
+    /// Length of the video (usec). 0 for live capture.
     uint64_t stream_length_usec_ = 0;
 
     /// Width of the video frame.
@@ -89,11 +89,12 @@ public:
     /// Pixel Dtype for depth data.
     core::Dtype depth_dt_;
 
-    /// Value of one depth unit in meters.
-    double depth_scale_;
-
     /// Number of color channels.
     uint8_t color_channels_;
+
+    /// Number of depth units per meter (depth in m =
+    /// depth_pixel_value/depth_scale).
+    double depth_scale_;
 };
 
 }  // namespace io

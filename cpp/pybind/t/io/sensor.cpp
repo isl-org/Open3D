@@ -66,14 +66,21 @@ void pybind_sensor(py::module &m) {
     py::class_<RGBDVideoMetadata> rgbd_video_metadata(m, "RGBDVideoMetadata",
                                                       "RGBD Video metadata.");
     rgbd_video_metadata.def(py::init<>())
+            .def_readwrite("intrinsics", &RGBDVideoMetadata::intrinsics_,
+                           "Shared intrinsics between RGB & depth")
+            .def_readwrite("device_name", &RGBDVideoMetadata::device_name_,
+                           "Capture device name")
+            .def_readwrite("serial_number", &RGBDVideoMetadata::serial_number_,
+                           "Capture device serial number")
+            .def_readwrite("stream_length_usec",
+                           &RGBDVideoMetadata::stream_length_usec_,
+                           "Length of the video (usec). 0 for live capture.")
             .def_readwrite("width", &RGBDVideoMetadata::width_,
                            "Width of the video")
             .def_readwrite("height", &RGBDVideoMetadata::height_,
                            "Height of the video")
-            .def_readwrite("fps", &RGBDVideoMetadata::fps_, "Video frame rate")
-            .def_readwrite("color_channels",
-                           &RGBDVideoMetadata::color_channels_,
-                           "Number of color channels.")
+            .def_readwrite("fps", &RGBDVideoMetadata::fps_,
+                           "Video frame rate (common for both color and depth)")
             .def_readwrite("color_format", &RGBDVideoMetadata::color_format_,
                            "Pixel format for color data")
             .def_readwrite("color_dt", &RGBDVideoMetadata::color_dt_,
@@ -82,15 +89,12 @@ void pybind_sensor(py::module &m) {
                            "Pixel format for depth data")
             .def_readwrite("depth_dt", &RGBDVideoMetadata::depth_dt_,
                            "Pixel Dtype for depth data.")
-            .def_readwrite("device_name", &RGBDVideoMetadata::device_name_,
-                           "Capture device name")
-            .def_readwrite("serial_number", &RGBDVideoMetadata::serial_number_,
-                           "Capture device serial number")
-            .def_readwrite("stream_length_usec",
-                           &RGBDVideoMetadata::stream_length_usec_,
-                           "Length of the video (usec)")
-            .def_readwrite("intrinsics", &RGBDVideoMetadata::intrinsics_,
-                           "Shared intrinsics between RGB & depth")
+            .def_readwrite("depth_scale", &RGBDVideoMetadata::depth_scale_,
+                           "Number of depth units per meter (depth in m = "
+                           "depth_pixel_value/depth_scale).")
+            .def_readwrite("color_channels",
+                           &RGBDVideoMetadata::color_channels_,
+                           "Number of color channels.")
             .def("__repr__", &RGBDVideoMetadata::ToString);
 
     // Class RGBD video reader

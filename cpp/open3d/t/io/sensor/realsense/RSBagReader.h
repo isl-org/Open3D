@@ -73,7 +73,7 @@ public:
     ///
     /// \param buffer_size (optional) Max number of frames to store in the frame
     /// buffer
-    RSBagReader(size_t buffer_size = DEFAULT_BUFFER_SIZE);
+    explicit RSBagReader(size_t buffer_size = DEFAULT_BUFFER_SIZE);
 
     RSBagReader(const RSBagReader &) = delete;
     RSBagReader &operator=(const RSBagReader &) = delete;
@@ -122,11 +122,8 @@ private:
     std::string filename_;
     RGBDVideoMetadata metadata_;
 
-    bool is_eof_ = false;     ///< Write by frame_reader_thread. Non-atomic OK
-                              ///< since 1 byte.
-    bool is_opened_ = false;  ///< Read by frame_reader_thread. Non-atomic OK
-                              ///< since 1 byte.
-
+    std::atomic<bool> is_eof_{false};     // Write by frame_reader_thread.
+    std::atomic<bool> is_opened_{false};  // Read by frame_reader_thread.
     /// A frame buffer and a separate frame reader thread are used to prevent
     /// frame drops in non real time applications, when the frames
     /// are processed by user code for an arbitrarily long time. The
@@ -138,34 +135,28 @@ private:
     /// https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
     std::vector<t::geometry::RGBDImage> frame_buffer_;
     std::vector<uint64_t>
-            frame_position_us_;  ///< buffer for frame position in us
+            frame_position_us_;  ///< Buffer for frame position in us.
     static const size_t BUFFER_REFILL_FACTOR =
-            4;  ///< Refill frame buffer when it is only (eg 1/4th ) full
+            4;  ///< Refill frame buffer when it is only (eg 1/4th ) full.
     std::atomic<uint64_t> head_fid_{
             0};  ///< Next write position by frame_reader_thread.
-    std::atomic<uint64_t> tail_fid_{0};  ///< Next unread frame position
+    std::atomic<uint64_t> tail_fid_{0};  ///< Next unread frame position.
+    std::atomic<uint64_t> seek_to_{UINT64_MAX};
     std::condition_variable need_frames_;
     /// This workaround implements a single producer single consumer frame queue
     /// with a circular buffer. The producer thread (frame_reader_thread) keeps
     /// the buffer full. The main thread reads from the current position in the
     /// buffer and signals the producer thread with a condition variable for
-    /// more frames if less than a quarter of the frames remain. \param
-    /// start_time_us is used to implement seeking in the file.
-    void fill_frame_buffer(uint64_t start_time_us = 0);
+    /// more frames if less than a quarter of the frames remain.
+    void fill_frame_buffer();
     std::thread frame_reader_thread_;
 
     std::unique_ptr<rs2::pipeline> pipe_;
     std::unique_ptr<rs2::align> align_to_color_;
 
     Json::Value GetMetadataJson();
-    bool Open(const std::string &filename, uint64_t start_time_us);
     std::string GetTagInMetadata(const std::string &tag_name);
 };
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
-
-/* frame_acq thread jobs:
- *  - Fill frame_buffer_
- *  - seek
- */

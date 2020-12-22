@@ -5,10 +5,11 @@
 # examples/python/pipelines/color_map_optimization_for_reconstruction_system.py
 
 import argparse
-import open3d as o3d
-from trajectory_io import *
-import os, sys
+import os
+import sys
 import json
+from trajectory_io import *
+import open3d as o3d
 
 sys.path.append('../reconstruction_system')
 sys.path.append("../utility")
@@ -97,7 +98,11 @@ def main(config, keys):
         depth = o3d.io.read_image(os.path.join(depth_files[i]))
         color = o3d.io.read_image(os.path.join(color_files[i]))
         rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-            color, depth, convert_rgb_to_intensity=False)
+            color,
+            depth,
+            depth_scale=config["depth_scale"],
+            depth_trunc=config["max_depth"],
+            convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
     # Before full optimization, let's just visualize texture map
@@ -118,6 +123,7 @@ def main(config, keys):
     # SIGGRAPH 2014
     option.maximum_iteration = 300
     option.non_rigid_camera_coordinate = True
+    option.maximum_allowable_depth = config["max_depth"]
     o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera,
                                                    option)
     o3d.visualization.draw_geometries([mesh])

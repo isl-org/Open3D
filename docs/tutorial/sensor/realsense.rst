@@ -3,7 +3,11 @@
 RealSense with Open3D
 =====================
 
-RealSense (``librealsense`` SDK v2) is integrated into Open3D (v0.12+) and you can use it through both C++ and Python APIs without a separate ``librealsense`` SDK installation on Linux, macOS and Windows. Older versions of Open3D support RealSense through a separate install of ``librealsense`` SDK v1 and ``pyrealsense``.
+RealSense (``librealsense`` SDK v2) is integrated into Open3D (v0.12+) and you
+can use it through both C++ and Python APIs without a separate ``librealsense``
+SDK installation on Linux, macOS and Windows. Older versions of Open3D support
+RealSense through a separate install of ``librealsense`` SDK v1 and
+``pyrealsense``.
 
 Obtaining Open3D with RealSense support
 ---------------------------------------
@@ -19,9 +23,9 @@ Install Open3D from PyPI (a virtual environment is recommended):
 Compile from source (C++)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 To build Open3D from source with RealSense support, set
-``BUILD_LIBREALSENSE=ON`` at CMake config step. You can add other
-configuration options as well (e.g.: ``BUILD_GUI=ON`` and
-``BUILD_PYTHON_MODULE=ON`` may be useful).
+``BUILD_LIBREALSENSE=ON`` at CMake config step. You can add other configuration
+options as well (e.g.: ``BUILD_GUI=ON`` and ``BUILD_PYTHON_MODULE=ON`` may be
+useful).
 
 .. code-block:: sh
 
@@ -43,7 +47,8 @@ Here is a C++ code snippet that shows how to read a RealSense bag file recorded
 with Open3D or the ``realsense-viewer``. Note that general ROSbag files are not
 supported. See more details and available functionality (such as getting
 timestamps, aligning the depth stream to the color stream and getting intrinsic
-calibration) in the C++ API in the `RSBagReader documentation <cpp_api/classopen3d_1_1t_1_1io_1_1_r_s_bag_reader.html>`_
+calibration) in the C++ API in the `RSBagReader documentation
+<../../cpp_api/classopen3d_1_1t_1_1io_1_1_r_s_bag_reader.html>`_
 
 .. code-block:: C++
 
@@ -75,9 +80,9 @@ Examples
 
 C++ RS bag file viewer
 """"""""""""""""""""""
-This C++ example that plays back the color and depth streams from a
-RealSense bag file. It also prints out metadata about the video streams in
-the file. Press [SPACE] to pause/resume and [ESC] to exit.::
+This C++ example that plays back the color and depth streams from a RealSense
+bag file. It also prints out metadata about the video streams in the file. Press
+[SPACE] to pause/resume and [ESC] to exit.::
 
     make RealSenseBagReader
     bin/examples/RealSenseBagReader --input L515_test.bag
@@ -89,13 +94,13 @@ the file. Press [SPACE] to pause/resume and [ESC] to exit.::
 
 Running the scene reconstruction pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-You can provide an RS bag file directly to the reconstruction pipeline. It
-will automatically be converted to a directory of depth and color frames and
-the camera intrinsics. Edit the
-`examples/python/reconstruction_system/config/realsense.json` file with the
-path to your RS bag file and leave `path_intrinsic` empty. Update other
-configuration parameters if needed (see the reconstruction pipeline
-documentation for more details, including other required packages)::
+You can provide an RS bag file directly to the reconstruction pipeline. It will
+automatically be converted to a directory of depth and color frames and the
+camera intrinsics. Edit the
+`examples/python/reconstruction_system/config/realsense.json` file with the path
+to your RS bag file and leave `path_intrinsic` empty. Update other configuration
+parameters if needed (see the reconstruction pipeline documentation for more
+details, including other required packages)::
 
     cd examples/python/reconstruction_system/
     python run_system.py --make --register --refine --integrate config/realsense.json
@@ -144,19 +149,31 @@ configure multiple cameras.
 RealSense camera configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-RealSense cameras can be configured with a simple ``json`` configuration file. See `RealSense documentation <https://intelrealsense.github.io/librealsense/doxygen/rs__option_8h.html>`_ for the set of configuration values. Supported configuration options will be depend on the device and other chosen options. Here are the options supported by Open3D:
+RealSense cameras can be configured with a simple ``json`` configuration file.
+See `RealSense documentation
+<https://intelrealsense.github.io/librealsense/doxygen/rs__option_8h.html>`_ for
+the set of configuration values. Supported configuration options will be depend
+on the device and other chosen options. Here are the options supported by
+Open3D:
 
-* **serial**: Pick a specific device, leave empty to pick the first available device.
+* **serial**: Pick a specific device, leave empty to pick the first available
+  device.
 * **color_format**:  Pixel format for color frames.
-* **color_resolution**: (width, height): Leave 0 to let RealSense pick a supported width or height.
+* **color_resolution**: (width, height): Leave 0 to let RealSense pick a
+  supported width or height.
 * **depth_format**: Pixel format for depth frames.
-* **depth_resolution**: (width, height): Leave 0 to let RealSense pick a supported width or height.
-* **fps**: Common frame rate for both depth and color streams. Leave 0 to let RealSense pick a supported frame rate.
-* **visual_preset**: Controls depth computation on the device. Supported values are specific to product line (SR300, RS400, L500). Leave empty to pick the default.
+* **depth_resolution**: (width, height): Leave 0 to let RealSense pick a
+  supported width or height.
+* **fps**: Common frame rate for both depth and color streams. Leave 0 to let
+  RealSense pick a supported frame rate.
+* **visual_preset**: Controls depth computation on the device. Supported values
+  are specific to product line (SR300, RS400, L500). Leave empty to pick the
+  default.
 
 Here is an example ``json`` configuration file to capture 30fps, 540p color and
 480p depth video from any connected RealSense camera. The video width is picked
-by RealSense. We also set the ``visual_preset`` to ``RS2_L500_VISUAL_PRESET_MAX_RANGE`` to better capture far away objects.
+by RealSense. We also set the ``visual_preset`` to
+``RS2_L500_VISUAL_PRESET_MAX_RANGE`` to better capture far away objects.
 
 .. code-block:: json
 
@@ -174,9 +191,12 @@ RealSense camera capture, processing and recording
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following code snippets show how to capture live RGBD video from a RealSense
-camera. They capture the first 150 frames and also record them to an RS bag file.
-You can adapt the snippets to your needs by processing or displaying the frames
-after capture.
+camera. They capture the first 150 frames and also record them to an RS bag
+file. The bag file can be played back with Open3D tools, realsense-viewer. You
+can also use ROS tools such as `rosbag <http://wiki.ros.org/rosbag>`_, `rqt_bag
+<http://wiki.ros.org/rqt_bag>`_ and `rviz <https://wiki.ros.org/rviz>`_ to
+examine, play and modify the bag file. You can adapt the snippets to your needs
+by processing or displaying the frames after capture.
 
 .. code-block:: C++
 
@@ -211,11 +231,12 @@ after capture.
 Note that for any real time application such as live capture and processing, it
 is important to complete frame processing in the frame interval (~33ms for 30fps
 recording). You may experience frame drops otherwise. For high resolution
-capture, you can defer frame alignment by setting ``align_depth_to_color=false`` during capture and performing it while reading the bad file instead.
+capture, you can defer frame alignment by setting ``align_depth_to_color=false``
+during capture and performing it while reading the bad file instead.
 
-This is a complete C++ example that shows visualizing live capture and
-recording to a bag file. The recording can be paused / resumed with [SPACE]. Use
-[ESC] to stop capture and quit. You can use this example to capture your own dataset::
+This is a complete C++ example that shows visualizing live capture and recording
+to a bag file. The recording can be paused / resumed with [SPACE]. Use [ESC] to
+stop capture and quit. You can use this example to capture your own dataset::
 
         make RealSenseRecorder
         bin/examples/RealSenseRecorder --config ../examples/test_data/rs_default_config.json --record test_data.bag

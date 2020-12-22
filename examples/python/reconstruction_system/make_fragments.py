@@ -26,6 +26,7 @@ def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         color,
         depth,
+        depth_scale=config["depth_scale"],
         depth_trunc=config["max_depth"],
         convert_rgb_to_intensity=convert_rgb_to_intensity)
     return rgbd_image

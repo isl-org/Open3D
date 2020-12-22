@@ -9,34 +9,12 @@ import argparse
 import time
 import datetime
 import sys
-from warnings import warn
+from os.path import isfile
+from initialize_config import initialize_config
 import open3d as o3d
-from os.path import join, dirname, basename, splitext, isfile
 sys.path.append("../utility")
 from file import check_folder_structure
 sys.path.append(".")
-from initialize_config import initialize_config
-
-
-def extract_rgbd_frames(rgbd_video_file):
-    """
-    Extract color and aligned depth frames and intrinsic calibration from an
-    RGBD video file (currently only RealSense bag files supported). Folder
-    structure is:
-        <directory of rgbd_video_file/<rgbd_video_file name without extension>/
-            {depth/00000.jpg,color/00000.png,intrinsic.json}
-    """
-    frames_folder = join(dirname(rgbd_video_file),
-                         basename(splitext(rgbd_video_file)[0]))
-    path_intrinsic = join(frames_folder, "intrinsic.json")
-    if isfile(path_intrinsic):
-        warn(f"Skipping frame extraction for {rgbd_video_file} since files are"
-             " present.")
-    else:
-        rgbd_video = o3d.t.io.RGBDVideoReader.create(rgbd_video_file)
-        rgbd_video.save_frames(frames_folder)
-    return frames_folder, path_intrinsic
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
@@ -72,12 +50,6 @@ if __name__ == "__main__":
         with open(args.config) as json_file:
             config = json.load(json_file)
             initialize_config(config)
-            if isfile(config["path_dataset"]
-                     ) and config["path_dataset"].endswith(".bag"):
-                print("Extracting frames from RGBD video file")
-                config["path_dataset"], config[
-                    "path_intrinsic"] = extract_rgbd_frames(
-                        config["path_dataset"])
             check_folder_structure(config["path_dataset"])
     assert config is not None
 
