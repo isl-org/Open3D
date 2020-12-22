@@ -475,7 +475,7 @@ build_docs() {
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
-    python -m pip uninstall open3d
+    python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
     echo
