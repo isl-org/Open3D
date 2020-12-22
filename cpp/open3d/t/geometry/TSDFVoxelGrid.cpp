@@ -157,7 +157,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     int64_t n = block_hashmap_->Size();
     try {
         block_hashmap_->Activate(block_coords, addrs, masks);
-    } catch (const std::runtime_error &error) {
+    } catch (const std::runtime_error &) {
         utility::LogError(
                 "[TSDFIntegrate] Unable to allocate volume during rehashing. "
                 "Consider using a "

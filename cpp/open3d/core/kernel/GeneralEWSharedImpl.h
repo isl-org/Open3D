@@ -803,7 +803,7 @@ void CPUMeshExtractionKernel
         mesh_structure = core::Tensor::Zeros(
                 {n_blocks, resolution, resolution, resolution, 4},
                 core::Dtype::Int32, block_keys.GetDevice());
-    } catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error&) {
         utility::LogError(
                 "[MeshExtractionKernel] Unable to allocate assistance mesh "
                 "structure for Marching "
