@@ -80,7 +80,7 @@ public:
 
         Eigen::Vector4f bg_color = {1.0f, 1.0f, 1.0f, 1.0f};
         int point_size = 3;
-        int line_width = 1;
+        int line_width = 2;
 
         bool use_ibl = false;
         bool use_sun = true;
