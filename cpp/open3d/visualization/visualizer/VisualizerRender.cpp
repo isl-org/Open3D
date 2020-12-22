@@ -45,6 +45,9 @@ namespace visualization {
 
 bool Visualizer::InitOpenGL() {
 #if defined(__APPLE__) && defined(BUILD_GUI)
+    // In macOS, the Open3D shared library redirects all GL calls to BlueGL's
+    // forwarding functions. bluegl::bind() need to be called before calling any
+    // OpenGL functions, otherwise the function address will be invalid.
     if (bluegl::bind()) {
         utility::LogWarning("Visualizer::InitOpenGL: bluegl::bind() error.");
     }
