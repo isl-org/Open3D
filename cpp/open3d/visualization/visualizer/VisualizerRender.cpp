@@ -29,7 +29,9 @@
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/utility/GLHelper.h"
+#include "open3d/visualization/visualizer/O3DVisualizer.h"
 #include "open3d/visualization/visualizer/ViewParameters.h"
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
@@ -42,10 +44,10 @@ namespace open3d {
 namespace visualization {
 
 bool Visualizer::InitOpenGL() {
-#ifdef BUILD_GUI
-    utility::LogWarning("visualization BUILD_GUI is ON");
-#else
-    utility::LogWarning("visualization BUILD_GUI is OFF");
+#if defined(__APPLE__) && defined(BUILD_GUI)
+    if (bluegl::bind()) {
+        utility::LogWarning("Visualizer::InitOpenGL: bluegl::bind() error.");
+    }
 #endif
 
     glewExperimental = true;

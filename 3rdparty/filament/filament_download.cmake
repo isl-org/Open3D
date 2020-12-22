@@ -41,6 +41,28 @@ else()
     )
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
     set(FILAMENT_ROOT ${SOURCE_DIR})
+
+    # macOS OpenGL symbol missing fix: need bluegl headers.
+    if (APPLE AND BUILD_GUI)
+        # Must be consistent with filament_build.cmake!
+        ExternalProject_Add(
+            ext_filament_code
+            PREFIX filament_code
+            GIT_REPOSITORY "https://github.com/intel-isl/filament.git"
+            GIT_TAG "release"
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+        )
+        add_dependencies(ext_filament ext_filament_code)
+        ExternalProject_Get_Property(ext_filament_code SOURCE_DIR)
+        set(FILAMENT_BLUEGL_INCLUDE_DIR ${SOURCE_DIR}/libs/bluegl/include/)
+        message(STATUS "FILAMENT_BLUEGL_INCLUDE_DIR: ${FILAMENT_BLUEGL_INCLUDE_DIR}")
+    else()
+        set(FILAMENT_BLUEGL_INCLUDE_DIR "")
+    endif()
+
 endif()
 
 message(STATUS "Filament is located at ${FILAMENT_ROOT}")
