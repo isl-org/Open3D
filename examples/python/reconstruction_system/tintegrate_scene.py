@@ -57,20 +57,15 @@ if __name__ == '__main__':
         '--depth_scale',
         type=float,
         default=1000.0,
-        help='depth factor. Converting from a uint16 depth image to meter.'
-    )
-    parser.add_argument(
-        '--max_depth',
-        type=float,
-        default=3.0,
-        help='max range in the scene to integrate.'
-    )
-    parser.add_argument(
-        '--sdf_trunc',
-        type=float,
-        default=0.04,
-        help='SDF truncation threshold.'
-    )
+        help='depth factor. Converting from a uint16 depth image to meter.')
+    parser.add_argument('--max_depth',
+                        type=float,
+                        default=3.0,
+                        help='max range in the scene to integrate.')
+    parser.add_argument('--sdf_trunc',
+                        type=float,
+                        default=0.04,
+                        help='SDF truncation threshold.')
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()
     print(args)
@@ -124,7 +119,8 @@ if __name__ == '__main__':
                                     device)
 
         start = time.time()
-        volume.integrate(depth, rgb, intrinsic, extrinsic, args.depth_scale, args.max_depth)
+        volume.integrate(depth, rgb, intrinsic, extrinsic, args.depth_scale,
+                         args.max_depth)
         end = time.time()
         print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
             i, n_files, (end - start) * 1000.0))
