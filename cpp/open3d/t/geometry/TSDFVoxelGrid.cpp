@@ -91,6 +91,12 @@ TSDFVoxelGrid::TSDFVoxelGrid(
     }
 
     // Users can add other key/dtype checkers here for potential extensions.
+    if (sdf_trunc > block_resolution_ * voxel_size_ * 0.499) {
+        utility::LogError(
+                "SDF trunc is too large. Please make sure sdf trunc is smaller "
+                "than half block size (i.e., block_resolution * voxel_size * "
+                "0.5)");
+    }
     block_hashmap_ = std::make_shared<core::Hashmap>(
             block_count_, core::Dtype::Int32, core::Dtype::UInt8,
             core::SizeVector{3},

@@ -88,9 +88,8 @@ int main(int argc, char** argv) {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     if (intrinsic_path.empty()) {
-        utility::LogError("Unable to find the intrinsic camera path");
-    }
-    if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+        utility::LogWarning("Using default Primesense intrinsics");
+    } else if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         utility::LogError("Unable to convert json to intrinsics.");
     }
 
