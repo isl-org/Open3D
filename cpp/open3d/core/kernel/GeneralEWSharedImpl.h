@@ -798,9 +798,21 @@ void CPUMeshExtractionKernel
     int n_blocks = static_cast<int>(indices.GetLength());
     // Voxel-wise mesh info. 4 channels correspond to:
     // 3 edges' corresponding vertex index + 1 table index.
-    core::Tensor mesh_structure = core::Tensor::Zeros(
-            {n_blocks, resolution, resolution, resolution, 4},
-            core::Dtype::Int32, block_keys.GetDevice());
+    core::Tensor mesh_structure;
+    try {
+        mesh_structure = core::Tensor::Zeros(
+                {n_blocks, resolution, resolution, resolution, 4},
+                core::Dtype::Int32, block_keys.GetDevice());
+    } catch (const std::runtime_error& e) {
+        utility::LogError(
+                "[MeshExtractionKernel] Unable to allocate assistance mesh "
+                "structure for Marching "
+                "Cubes with {} active voxel blocks. Please consider using a "
+                "larger voxel size (currently {}) for TSDF "
+                "integration, or using tsdf_volume.cpu() to perform mesh "
+                "extraction on CPU.",
+                n_blocks, voxel_size);
+    }
 
     // Real data indexer
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);

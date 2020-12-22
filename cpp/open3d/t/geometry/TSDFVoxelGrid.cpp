@@ -154,7 +154,18 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Active voxel blocks in the block hashmap.
     core::Tensor block_coords = dsts.at("block_coords");
     core::Tensor addrs, masks;
-    block_hashmap_->Activate(block_coords, addrs, masks);
+    int64_t n = block_hashmap_->Size();
+    try {
+        block_hashmap_->Activate(block_coords, addrs, masks);
+    } catch (const std::runtime_error &error) {
+        utility::LogError(
+                "[TSDFIntegrate] Unable to allocate volume during rehashing. "
+                "Consider using a "
+                "larger block_count at initialization to avoid rehashing "
+                "(currently {}), or choosing a larger voxel_size "
+                "(currently {})",
+                n, voxel_size_);
+    }
 
     // Collect voxel blocks in the viewing frustum. Note we cannot directly
     // reuse addrs from Activate, since some blocks might have been activated in
