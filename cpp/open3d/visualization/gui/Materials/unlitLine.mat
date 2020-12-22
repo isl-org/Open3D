@@ -34,9 +34,10 @@ vertex {
         float2 dir = normalize(screen_next - screen_pos);
         float2 normal = float2(-dir.y, dir.x);
         normal *= materialParams.lineWidth * resolution.z;
-        normal.x /= aspect.x;
+        normal.x *= aspect.x;
         float4 offset = float4(normal * next.w, 0.0, 0.0);
-        material.worldPosition = getWorldFromClipMatrix() * (projected_pos + offset);
+        float4 new_projected_pos = float4(screen_pos.x + offset.x, screen_pos.y + offset.y, 0.5, 1.0);
+        material.worldPosition = getWorldFromClipMatrix() * new_projected_pos;
     }
 }
 
