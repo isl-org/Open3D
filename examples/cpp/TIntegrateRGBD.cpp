@@ -80,11 +80,8 @@ int main(int argc, char** argv) {
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
     // Intrinsics
-    std::string intrinsic_path;
-    if (utility::ProgramOptionExists(argc, argv, "--intrinsic_path")) {
-        intrinsic_path = utility::GetProgramOptionAsString(argc, argv,
-                                                           "--intrinsic_path");
-    }
+    std::string intrinsic_path = utility::GetProgramOptionAsString(
+            argc, argv, "--intrinsic_path", "");
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     if (intrinsic_path.empty()) {
@@ -103,40 +100,17 @@ int main(int argc, char** argv) {
                                 0, 1}),
             {3, 3}, Dtype::Float32);
 
-    // voxel_size
-    float voxel_size = 3.0 / 512;
-    if (utility::ProgramOptionExists(argc, argv, "--voxel_size")) {
-        voxel_size =
-                utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size");
-    }
+    int block_count =
+            utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
 
-    // block_count
-    int block_count = 1000;
-    if (utility::ProgramOptionExists(argc, argv, "--block_count")) {
-        block_count =
-                utility::GetProgramOptionAsInt(argc, argv, "--block_count");
-    }
-
-    // depth_scale
-    float depth_scale = 1000.0;
-    if (utility::ProgramOptionExists(argc, argv, "--depth_scale")) {
-        depth_scale =
-                utility::GetProgramOptionAsDouble(argc, argv, "--depth_scale");
-    }
-
-    // max_depth
-    float max_depth = 3.0;
-    if (utility::ProgramOptionExists(argc, argv, "--max_depth")) {
-        max_depth =
-                utility::GetProgramOptionAsDouble(argc, argv, "--max_depth");
-    }
-
-    // sdf_trunc
-    float sdf_trunc = 0.04;
-    if (utility::ProgramOptionExists(argc, argv, "--sdf_trunc")) {
-        sdf_trunc =
-                utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc");
-    }
+    double voxel_size = utility::GetProgramOptionAsDouble(
+            argc, argv, "--voxel_size", 3.0 / 512);
+    double depth_scale = utility::GetProgramOptionAsDouble(
+            argc, argv, "--depth_scale", 1000.0);
+    double max_depth =
+            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.0);
+    double sdf_trunc =
+            utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc", 0.04);
 
     // Device
     std::string device_code = "CPU:0";
@@ -145,13 +119,11 @@ int main(int argc, char** argv) {
     }
     core::Device device(device_code);
     utility::LogInfo("Using device: {}", device.ToString());
-
-    std::cout << voxel_size << " " << sdf_trunc << " " << max_depth << " "
-              << depth_scale << "\n";
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
                                            {"color", core::Dtype::UInt16}},
-                                          voxel_size, sdf_trunc, 16,
+                                          static_cast<float>(voxel_size),
+                                          static_cast<float>(sdf_trunc), 16,
                                           block_count, device);
 
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {

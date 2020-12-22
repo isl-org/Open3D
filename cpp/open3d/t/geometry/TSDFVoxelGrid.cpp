@@ -89,8 +89,10 @@ TSDFVoxelGrid::TSDFVoxelGrid(
         }
         total_bytes += dtype.ByteSize() * 3;
     }
-
     // Users can add other key/dtype checkers here for potential extensions.
+
+    // SDF trunc check, critical for TSDF touch operation that allocates TSDF
+    // volumes.
     if (sdf_trunc > block_resolution_ * voxel_size_ * 0.499) {
         utility::LogError(
                 "SDF trunc is too large. Please make sure sdf trunc is smaller "
