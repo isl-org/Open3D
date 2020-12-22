@@ -32,7 +32,7 @@ message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
 if (${PYTHON_VERSION_MAJOR} EQUAL 2)
     message(FATAL_ERROR "Python 2 is no longer supported. Please check your \
-            your Pyhton version with `python --version`. To use Python 3, do \
+            your Python version with `python --version`. To use Python 3, do \
             one of the following: \
             (1) activate a Python 3 virtual environment; \
             (2) specify the Python path explicitly with -DPYTHON_EXECUTABLE=/path/to/python3; \
