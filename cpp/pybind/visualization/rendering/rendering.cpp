@@ -436,6 +436,8 @@ void pybind_rendering_classes(py::module &m) {
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("add_model", &Open3DScene::AddModel,
+                 "Adds TriangleMeshModel to the scene.")
             .def("has_geometry", &Open3DScene::HasGeometry,
                  "has_geometry(name): returns True if the geometry has been "
                  "added to the scene, False otherwise")
