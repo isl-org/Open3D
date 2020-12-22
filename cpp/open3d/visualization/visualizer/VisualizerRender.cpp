@@ -35,7 +35,10 @@
 #include "open3d/visualization/visualizer/Visualizer.h"
 
 #if defined(__APPLE__) && defined(BUILD_GUI)
-#include <bluegl/BlueGL.h>
+namespace bluegl {
+int bind();
+void unbind();
+}  // namespace bluegl
 #endif
 
 namespace open3d {
