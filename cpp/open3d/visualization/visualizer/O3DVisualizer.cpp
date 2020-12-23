@@ -1014,7 +1014,7 @@ struct O3DVisualizer::Impl {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
 
-        px = ConvertToScaledPixels(px);
+        px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
@@ -1034,7 +1034,7 @@ struct O3DVisualizer::Impl {
     void SetLineWidth(int px) {
         ui_state_.line_width = px;
 
-        px = ConvertToScaledPixels(px);
+        px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
