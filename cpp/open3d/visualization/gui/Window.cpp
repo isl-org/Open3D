@@ -694,6 +694,7 @@ void Window::CloseDialog() {
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will
     // get merged in with this one by the OS.
+    SetNeedsLayout();
     PostRedraw();
 }
 
