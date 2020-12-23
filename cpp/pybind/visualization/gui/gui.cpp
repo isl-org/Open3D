@@ -303,11 +303,22 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
-            .def("add_window", &Application::AddWindow,
-                 "Adds a window to the application. This is only necessary "
-                 "when "
-                 "creating object that is a Window directly, rather than with "
-                 "create_window")
+            .def(
+                    "add_window",
+                    // Q: Why not just use &Application::AddWindow here?
+                    // A: Because then AddWindow gets passed a shared_ptr with
+                    //    a use_count of 0 (but with the correct value for
+                    //    .get()), so it never gets freed, and then Filament
+                    //    doesn't clean up correctly. TakeOwnership() will
+                    //    create the shared_ptr properly.
+                    [](Application &instance, UnownedPointer<Window> window) {
+                        instance.AddWindow(TakeOwnership(window));
+                    },
+                    "Adds a window to the application. This is only necessary "
+                    "when "
+                    "creating object that is a Window directly, rather than "
+                    "with "
+                    "create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "
