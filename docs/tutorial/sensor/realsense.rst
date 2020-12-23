@@ -94,9 +94,9 @@ bag file. It also prints out metadata about the video streams in the file. Press
 
 Running the scene reconstruction pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-You can provide an RS bag file directly to the reconstruction pipeline. It will
-automatically be converted to a directory of depth and color frames and the
-camera intrinsics. Edit the
+You can provide an RS bag file directly to the reconstruction pipeline and
+colormap optimization pipelines. It will be automatically converted to a
+directory of depth and color frames and the camera intrinsics. Edit the
 `examples/python/reconstruction_system/config/realsense.json` file with the path
 to your RS bag file and leave `path_intrinsic` empty. Update other configuration
 parameters if needed (see the reconstruction pipeline documentation for more
@@ -104,11 +104,24 @@ details, including other required packages)::
 
     cd examples/python/reconstruction_system/
     python run_system.py --make --register --refine --integrate config/realsense.json
+    python ../pipelines/color_map_optimization_for_reconstruction_system.py  --config config/realsense.json
 
-.. image:: https://storage.googleapis.com/open3d-bin/docs/images/RS_recon_result.jpg
-    :width: 800px
-    :align: center
-    :alt: Scene reconstruction sample result with RealSense bag input data
+The reconstruction result below was obtained with the ``L515_JackJack`` dataset
+with the configuration changes::
+
+    "path_dataset": "/path/to/downloaded/L515_JackJack.bag"
+    "max_depth": 0.85,
+    "tsdf_cubic_size": 0.75,
+    "voxel_size": 0.025,
+    "max_depth_diff": 0.03
+
+.. raw:: html
+
+   <video width="800" controls
+   src="https://storage.googleapis.com/open3d-bin/docs/images/JackJack_colormap_opt_result.mp4"
+   type="video/mp4" autoplay>
+   Scene reconstruction sample result with RealSense bag input data
+   </video>
 
 RealSense camera configuration, live capture, processing and recording
 ----------------------------------------------------------------------
