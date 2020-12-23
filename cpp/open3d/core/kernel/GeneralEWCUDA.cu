@@ -112,6 +112,12 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     });
 
     int total_block_count = count.Item<int>();
+    if (total_block_count == 0) {
+        utility::LogError(
+                "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
+                "abort integration. Please check specified parameters, "
+                "especially depth_scale and voxel_size");
+    }
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Hashmap pcd_block_hashmap(total_block_count, core::Dtype::Int32,
                                     core::Dtype::Int32, {3}, {1}, device);

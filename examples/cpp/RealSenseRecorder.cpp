@@ -24,24 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <chrono>
 #include <memory>
 #include <string>
 
 #include "open3d/Open3D.h"
 
 using namespace open3d;
-using namespace open3d::t::io;
+namespace tio = open3d::t::io;
+namespace sc = std::chrono;
 
 void PrintUsage() {
     PrintOpen3DVersion();
+    // clang-format off
     utility::LogInfo(
-            "Open a RealSense camera and display live color and depth "
-            "streams.\n"
-            "You can set frame sizes and frame rates for each stream and the\n"
-            "depth stream can be optionally aligned to the color stream.\n"
-            "NOTE: An error of 'Couldn't resolve requests' implies "
-            "unsupported\n"
-            "stream format settings.");
+            "Open a RealSense camera and display live color and depth streams. You can set\n"
+            "frame sizes and frame rates for each stream and the depth stream can be\n"
+            "optionally aligned to the color stream. NOTE: An error of 'UNKNOWN: Couldn't\n"
+            "resolve requests' implies  unsupported stream format settings.");
+    // clang-format on
     utility::LogInfo("Usage:");
     utility::LogInfo(
             "RealSenseRecorder [-h|--help] [-V] [-l|--list-devices] [--align]\n"
@@ -57,7 +58,7 @@ int main(int argc, char **argv) {
     }
     if (utility::ProgramOptionExists(argc, argv, "--list-devices") ||
         utility::ProgramOptionExists(argc, argv, "-l")) {
-        RealSenseSensor::ListDevices();
+        tio::RealSenseSensor::ListDevices();
         return 0;
     }
     if (utility::ProgramOptionExists(argc, argv, "-V")) {
@@ -66,8 +67,6 @@ int main(int argc, char **argv) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
     bool align_streams = false;
-    /* visualization::gui::Size color_size(0, 0), depth_size(0, 0); */
-    /* int color_fps = 0, depth_fps = 0; */
     std::string config_file, bag_file;
 
     if (utility::ProgramOptionExists(argc, argv, "-c")) {
@@ -86,16 +85,18 @@ int main(int argc, char **argv) {
         bag_file = utility::GetProgramOptionAsString(argc, argv, "--record");
     }
 
-    RealSenseSensorConfig rs_cfg;
+    // Read in camera configuration.
+    tio::RealSenseSensorConfig rs_cfg;
     open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
 
-    RealSenseSensor rs;
+    // Initialize camera.
+    tio::RealSenseSensor rs;
     rs.ListDevices();
     rs.InitSensor(rs_cfg, 0, bag_file);
     utility::LogInfo("{}", rs.GetMetadata().ToString());
 
-    // Create windows to show depth and color streams
-    bool flag_record = false, flag_start = false, flag_exit = false;
+    // Create windows to show depth and color streams.
+    bool flag_start = false, flag_record = flag_start, flag_exit = false;
     visualization::VisualizerWithKeyCallback depth_vis, color_vis;
     auto callback_exit = [&](visualization::Visualizer *vis) {
         flag_exit = true;
@@ -153,7 +154,7 @@ int main(int argc, char **argv) {
     legacyRGBDImage im_rgbd;
     bool is_geometry_added = false;
     size_t frame_id = 0;
-    rs.StartCapture(false);
+    rs.StartCapture(flag_start);
     do {
         im_rgbd = rs.CaptureFrame(true, align_streams).ToLegacyRGBDImage();
 
@@ -188,9 +189,9 @@ int main(int argc, char **argv) {
 
         if (frame_id++ % 30 == 0) {
             utility::LogInfo("Time: {}s, Frame {}",
-                             double(rs.GetTimestamp()) * 1e-6, frame_id - 1);
+                             static_cast<double>(rs.GetTimestamp()) * 1e-6,
+                             frame_id - 1);
         }
-
     } while (!flag_exit);
 
     rs.StopCapture();
