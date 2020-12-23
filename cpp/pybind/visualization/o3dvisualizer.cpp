@@ -70,6 +70,8 @@ void pybind_o3dvisualizer(py::module& m) {
     dv_shader
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
+            .value("UNLIT", O3DVisualizer::Shader::UNLIT,
+                   "Normals will be ignored (useful for point clouds)")
             .value("NORMALS", O3DVisualizer::Shader::NORMALS,
                    "Pixel colors correspond to surface normal")
             .value("DEPTH", O3DVisualizer::Shader::DEPTH,

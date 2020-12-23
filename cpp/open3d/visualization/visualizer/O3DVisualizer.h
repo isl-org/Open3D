@@ -55,7 +55,7 @@ class O3DVisualizer : public gui::Window {
     using Super = gui::Window;
 
 public:
-    enum class Shader { STANDARD, NORMALS, DEPTH };
+    enum class Shader { STANDARD, UNLIT, NORMALS, DEPTH };
 
     struct DrawObject {
         std::string name;

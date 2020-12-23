@@ -974,7 +974,8 @@ struct O3DVisualizer::Impl {
             for (auto &o : objects_) {
                 if (o.is_color_default) {
                     o.material.base_color = new_default_color;
-                    OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
+                    OverrideMaterial(o.name, o.material,
+                                     ui_state_.scene_shader);
                 }
             }
         }
@@ -1049,8 +1050,8 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
-    void OverrideMaterial(const std::string& name,
-                          const Material& original_material,
+    void OverrideMaterial(const std::string &name,
+                          const Material &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine" ||
                          original_material.shader == "lines");
