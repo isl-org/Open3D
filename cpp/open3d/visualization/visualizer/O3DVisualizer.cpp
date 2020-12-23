@@ -803,11 +803,10 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
-            // if (lines || obb || aabb) {
-            //     mat.shader = kShaderUnlitLines;
-            //     mat.line_width = ui_state_.line_width *
-            //     window_->GetScaling();
-            // }
+            if (lines || obb || aabb) {
+                mat.shader = kShaderUnlitLines;
+                mat.line_width = ui_state_.line_width * window_->GetScaling();
+            }
             is_default_color = true;
             if (has_colors) {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
