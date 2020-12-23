@@ -537,12 +537,15 @@ struct O3DVisualizer::Impl {
 
         settings.shader = new Combobox();
         settings.shader->AddItem("Standard");
+        settings.shader->AddItem("Unlit");
         settings.shader->AddItem("Normal Map");
         settings.shader->AddItem("Depth");
         settings.shader->SetOnValueChanged([this](const char *item, int idx) {
             if (idx == 1) {
-                this->SetShader(O3DVisualizer::Shader::NORMALS);
+                this->SetShader(O3DVisualizer::Shader::UNLIT);
             } else if (idx == 2) {
+                this->SetShader(O3DVisualizer::Shader::NORMALS);
+            } else if (idx == 3) {
                 this->SetShader(O3DVisualizer::Shader::DEPTH);
             } else {
                 this->SetShader(O3DVisualizer::Shader::STANDARD);
@@ -817,7 +820,7 @@ struct O3DVisualizer::Impl {
                 mat.shader = kShaderLit;
                 is_default_color = false;
             }
-            mat.point_size = ui_state_.point_size * window_->GetScaling();
+            mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
         }
 
         // We assume that the caller isn't setting a group or time (and in any
@@ -971,7 +974,8 @@ struct O3DVisualizer::Impl {
             for (auto &o : objects_) {
                 if (o.is_color_default) {
                     o.material.base_color = new_default_color;
-                    scene->GetScene()->OverrideMaterial(o.name, o.material);
+                    OverrideMaterial(o.name, o.material,
+                                     ui_state_.scene_shader);
                 }
             }
         }
@@ -1010,11 +1014,10 @@ struct O3DVisualizer::Impl {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
 
-        px = int(std::round(px * window_->GetScaling()));
+        px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.point_size = float(px);
-            scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
-                                                             o.material);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
         auto bbox = scene_->GetScene()->GetBoundingBox();
         auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
@@ -1031,38 +1034,60 @@ struct O3DVisualizer::Impl {
     void SetLineWidth(int px) {
         ui_state_.line_width = px;
 
-        px = int(std::round(px * window_->GetScaling()));
+        px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.line_width = float(px);
-            scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
-                                                             o.material);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
         scene_->ForceRedraw();
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
-        const char *shader_name = nullptr;
-        switch (shader) {
-            case Shader::STANDARD:
-                break;
-            case Shader::NORMALS:
-                shader_name = "normals";
-                break;
-            case Shader::DEPTH:
-                shader_name = "depth";
-                break;
-        }
-        auto scene = scene_->GetScene();
-        if (shader_name) {
-            Material mat;
-            mat.shader = shader_name;
-            scene->UpdateMaterial(mat);
-        } else {
-            for (auto &o : objects_) {
-                scene->GetScene()->OverrideMaterial(o.name, o.material);
-            }
+        ui_state_.scene_shader = shader;
+        for (auto &o : objects_) {
+            OverrideMaterial(o.name, o.material, shader);
         }
         scene_->ForceRedraw();
+    }
+
+    void OverrideMaterial(const std::string &name,
+                          const Material &original_material,
+                          O3DVisualizer::Shader shader) {
+        bool is_lines = (original_material.shader == "unlitLine" ||
+                         original_material.shader == "lines");
+        auto scene = scene_->GetScene();
+        // Lines are already unlit, so keep using the original shader when in
+        // unlit mode so that we can keep the wide lines.
+        if (shader == Shader::STANDARD ||
+            (shader == Shader::UNLIT && is_lines)) {
+            scene->GetScene()->OverrideMaterial(name, original_material);
+        } else {
+            Material m = original_material;
+            m.shader = GetShaderString(shader);
+            scene->GetScene()->OverrideMaterial(name, m);
+        }
+    }
+
+    float ConvertToScaledPixels(int px) {
+        return std::round(px * window_->GetScaling());
+    }
+
+    const char *GetShaderString(O3DVisualizer::Shader shader) {
+        switch (shader) {
+            case Shader::STANDARD:
+                return nullptr;
+            case Shader::UNLIT:
+                return "defaultUnlit";
+            case Shader::NORMALS:
+                return "normals";
+            case Shader::DEPTH:
+                return "depth";
+            default:
+                utility::LogWarning(
+                        "O3DVisualizer::GetShaderString(): unhandled Shader "
+                        "value");
+                return nullptr;
+        }
     }
 
     void SetIBL(std::string path) {
