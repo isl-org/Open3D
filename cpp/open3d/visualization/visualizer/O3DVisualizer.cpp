@@ -1082,6 +1082,11 @@ struct O3DVisualizer::Impl {
                 return "normals";
             case Shader::DEPTH:
                 return "depth";
+            default:
+                utility::LogWarning(
+                        "O3DVisualizer::GetShaderString(): unhandled Shader "
+                        "value");
+                return nullptr;
         }
     }
 
