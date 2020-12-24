@@ -221,28 +221,89 @@ public:
 
     // Create a 1-D tensor with given list.
     // For example,
-    // core::Tensor::Init({1,2,3},core::Dtype::Float32);
-    static Tensor Init(const std::initializer_list<double> in_list,
-                       Dtype dtype,
-                       const Device& device = Device("CPU:0"));
+    // core::Tensor::Init<float>({1,2,3});
+    template <typename T>
+    static Tensor Init(const std::initializer_list<T> in_list,
+                       const Device& device = Device("CPU:0")) {
+        SizeVector shape_;
+        int64_t dim0_size = static_cast<int64_t>(in_list.size());
+        shape_.push_back(dim0_size);
+
+        std::vector<T> ele_list;
+        ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
+        return Tensor(ele_list, shape_, Dtype::FromType<T>(), device);
+    };
 
     // Create a 2-D tensor with given list.
     // For example,
-    // core::Tensor::Init({{1,2,3},{4,5,6}},core::Dtype::Float32);
+    // core::Tensor::Init<float>({{1,2,3},{4,5,6}});
+    template <typename T>
     static Tensor Init(
-            const std::initializer_list<std::initializer_list<double>> in_list,
-            Dtype dtype,
-            const Device& device = Device("CPU:0"));
+            const std::initializer_list<std::initializer_list<T>> in_list,
+            const Device& device = Device("CPU:0")) {
+        SizeVector shape_;
+        std::vector<T> ele_list;
+        int64_t dim0_size = static_cast<int64_t>(in_list.size());
+        int64_t dim1_size = -1;
+        for (const auto& ele0 : in_list) {
+            if (dim1_size == -1) {
+                dim1_size = static_cast<int64_t>(ele0.size());
+            } else {
+                if (static_cast<int64_t>(ele0.size()) != dim1_size) {
+                    utility::LogError("Inputs elements are of unequal size.");
+                }
+            }
+            ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
+        }
+        shape_.push_back(dim0_size);
+        shape_.push_back(dim1_size);
+
+        return Tensor(ele_list, shape_, Dtype::FromType<T>(), device);
+    };
 
     // Create a 3-D tensor with given list.
     // For example,
-    // core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}},
-    // core::Dtype::Float32);
-    static Tensor
-    Init(const std::initializer_list<
-                 std::initializer_list<std::initializer_list<double>>> in_list,
-         Dtype dtype,
-         const Device& device = Device("CPU:0"));
+    // core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
+    template <typename T>
+    static Tensor Init(
+            const std::initializer_list<
+                    std::initializer_list<std::initializer_list<T>>> in_list,
+            const Device& device = Device("CPU:0")) {
+        SizeVector shape_;
+        std::vector<T> ele_list;
+        int64_t dim0_size = static_cast<int64_t>(in_list.size());
+        int64_t dim1_size = -1;
+        int64_t dim2_size = -1;
+
+        for (const auto& ele1 : in_list) {
+            if (dim1_size == -1) {
+                dim1_size = static_cast<int64_t>(ele1.size());
+            } else {
+                if (static_cast<int64_t>(ele1.size()) != dim1_size) {
+                    utility::LogError("Inputs elements are of unequal size.");
+                }
+            }
+
+            for (const auto& ele0 : ele1) {
+                if (dim2_size == -1) {
+                    dim2_size = static_cast<int64_t>(ele0.size());
+                } else {
+                    if (static_cast<int64_t>(ele0.size()) != dim2_size) {
+                        utility::LogError(
+                                "Inputs elements are of unequal size.");
+                    }
+                }
+
+                ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
+            }
+        }
+
+        shape_.push_back(dim0_size);
+        shape_.push_back(dim1_size);
+        shape_.push_back(dim2_size);
+
+        return Tensor(ele_list, shape_, Dtype::FromType<T>(), device);
+    };
 
     /// Create a identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
