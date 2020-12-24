@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if defined(__APPLE__)
+// Include FileDialog here to get value of GUI_USE_NATIVE_FILE_DIALOG
+#include "open3d/visualization/gui/FileDialog.h"
+
+#if defined(__APPLE__) && GUI_USE_NATIVE_FILE_DIALOG
 // see FileDialogNative.cpp
 #else
-
-#include "open3d/visualization/gui/FileDialog.h"
 
 #include <string>
 #include <unordered_map>
@@ -387,7 +388,25 @@ void FileDialog::OnDone() {
     if (this->impl_->on_done_) {
         auto dir = this->impl_->CalcCurrentDirectory();
         utility::filesystem::ChangeWorkingDirectory(dir);
-        auto name = this->impl_->filename_->GetText();
+        std::string name = this->impl_->filename_->GetText();
+        // If the user didn't specify an extension, automatically add one
+        // (unless we don't have the any-files (*.*) filter selected).
+        if (name.find(".") == std::string::npos && !name.empty()) {
+            int idx = this->impl_->filter_->GetSelectedIndex();
+            if (idx >= 0) {
+                auto &exts = impl_->filter_idx_2_filter[idx];
+                // Prefer PNG if available (otherwise in a list of common
+                // image files, e.g., ".jpg .png", we might pick the lossy one.
+                if (exts.find(".png") != exts.end()) {
+                    name += ".png";
+                } else {
+                    if (!exts.empty()) {
+                        name += *exts.begin();
+                    }
+                }
+            }
+        }
+        std::cout << "[o3d] name: '" << name << "'" << std::endl;
         this->impl_->on_done_((dir + "/" + name).c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");
