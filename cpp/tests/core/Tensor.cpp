@@ -103,22 +103,27 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
 TEST_P(TensorPermuteDevices, WithInitList) {
     core::Device device = GetParam();
 
+    // 1-D tensor initialization with list.
     std::vector<float> vals1{1, 2, 3};
     core::Tensor t1 = core::Tensor::Init<float>({1, 2, 3}, device);
     EXPECT_EQ(t1.ToFlatVector<float>(), vals1);
 
+    // 2-D tensor initialization with list.
     std::vector<int> vals2{1, 2, 3, 4, 5, 6};
     core::Tensor t2 = core::Tensor::Init<int>({{1, 2, 3}, {4, 5, 6}}, device);
     EXPECT_EQ(t2.ToFlatVector<int>(), vals2);
 
+    // 3-D tensor initialization with list.
     std::vector<double> vals3{1, 2, 3, 4, 5, 6, 7, 8};
     core::Tensor t3 = core::Tensor::Init<double>(
             {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}}, device);
     EXPECT_EQ(t3.ToFlatVector<double>(), vals3);
 
+    // Check tensor element size mismatch.
     EXPECT_THROW(core::Tensor::Init<int>({{1, 2, 3}, {4, 5}}, device),
                  std::runtime_error);
 
+    // Check unsupported dtype.
     EXPECT_THROW(core::Tensor::Init<uint64_t>({{1, 2, 3}, {4, 5, 6}}, device),
                  std::exception);
 }

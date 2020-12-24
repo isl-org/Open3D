@@ -225,13 +225,14 @@ public:
     template <typename T>
     static Tensor Init(const std::initializer_list<T> in_list,
                        const Device& device = Device("CPU:0")) {
+        Dtype type_ = Dtype::FromType<T>();
         SizeVector shape_;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
         shape_.push_back(dim0_size);
 
         std::vector<T> ele_list;
         ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
-        return Tensor(ele_list, shape_, Dtype::FromType<T>(), device);
+        return Tensor(ele_list, shape_, type_, device);
     };
 
     // Create a 2-D tensor with given list.
@@ -241,6 +242,7 @@ public:
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
             const Device& device = Device("CPU:0")) {
+        Dtype type_ = Dtype::FromType<T>();
         SizeVector shape_;
         std::vector<T> ele_list;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
@@ -258,7 +260,7 @@ public:
         shape_.push_back(dim0_size);
         shape_.push_back(dim1_size);
 
-        return Tensor(ele_list, shape_, Dtype::FromType<T>(), device);
+        return Tensor(ele_list, shape_, type_, device);
     };
 
     // Create a 3-D tensor with given list.
@@ -269,6 +271,7 @@ public:
             const std::initializer_list<
                     std::initializer_list<std::initializer_list<T>>> in_list,
             const Device& device = Device("CPU:0")) {
+        Dtype type_ = Dtype::FromType<T>();
         SizeVector shape_;
         std::vector<T> ele_list;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
@@ -302,7 +305,7 @@ public:
         shape_.push_back(dim1_size);
         shape_.push_back(dim2_size);
 
-        return Tensor(ele_list, shape_, Dtype::FromType<T>(), device);
+        return Tensor(ele_list, shape_, type_, device);
     };
 
     /// Create a identity matrix of size n x n.
