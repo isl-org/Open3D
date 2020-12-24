@@ -28,6 +28,13 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 
+#if defined(__APPLE__) && defined(BUILD_GUI)
+namespace bluegl {
+int bind();
+void unbind();
+}  // namespace bluegl
+#endif
+
 namespace open3d {
 
 namespace {
@@ -69,6 +76,9 @@ Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
     glfwTerminate();  // to be safe
+#if defined(__APPLE__) && defined(BUILD_GUI)
+    bluegl::unbind();
+#endif
 }
 
 bool Visualizer::CreateVisualizerWindow(

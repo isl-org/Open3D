@@ -51,7 +51,10 @@ public:
 
     ColorGradingParams(Quality q, ToneMapping algorithm);
 
+    void SetQuality(Quality q);
     Quality GetQuality() const { return quality_; }
+
+    void SetToneMapping(ToneMapping algorithm);
     ToneMapping GetToneMapping() const { return tonemapping_; }
 
     void SetTemperature(float temperature);

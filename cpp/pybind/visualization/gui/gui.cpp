@@ -39,6 +39,7 @@
 #include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/ImageLabel.h"
 #include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
@@ -302,11 +303,22 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
-            .def("add_window", &Application::AddWindow,
-                 "Adds a window to the application. This is only necessary "
-                 "when "
-                 "creating object that is a Window directly, rather than with "
-                 "create_window")
+            .def(
+                    "add_window",
+                    // Q: Why not just use &Application::AddWindow here?
+                    // A: Because then AddWindow gets passed a shared_ptr with
+                    //    a use_count of 0 (but with the correct value for
+                    //    .get()), so it never gets freed, and then Filament
+                    //    doesn't clean up correctly. TakeOwnership() will
+                    //    create the shared_ptr properly.
+                    [](Application &instance, UnownedPointer<Window> window) {
+                        instance.AddWindow(TakeOwnership(window));
+                    },
+                    "Adds a window to the application. This is only necessary "
+                    "when "
+                    "creating object that is a Window directly, rather than "
+                    "with "
+                    "create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "
@@ -765,6 +777,17 @@ void pybind_gui_classes(py::module &m) {
                           &Label::SetTextColor,
                           "The color of the text (gui.Color)");
 
+    // ---- Label3D ----
+    py::class_<Label3D> label3d(m, "Label3D", "Displays text in a 3D scene");
+    label3d.def_property("text", &Label3D::GetText, &Label3D::SetText,
+                         "The text to display with this label.")
+            .def_property("position", &Label3D::GetPosition,
+                          &Label3D::SetPosition,
+                          "The position of the text in 3D coordinates")
+            .def_property("color", &Label3D::GetTextColor,
+                          &Label3D::SetTextColor,
+                          "The color of the text (gui.Color)");
+
     // ---- ListView ----
     py::class_<ListView, UnownedPointer<ListView>, Widget> listview(
             m, "ListView", "Displays a list of text");
@@ -973,7 +996,12 @@ void pybind_gui_classes(py::module &m) {
                  &PySceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
                  "ROTATE_SUN control mode). Called with one argument, the "
-                 "[i, j, k] vector of the new sun direction");
+                 "[i, j, k] vector of the new sun direction")
+            .def("add_3d_label", &PySceneWidget::AddLabel,
+                 "Add a 3D text label to the scene. The label will be anchored "
+                 "at the specified 3D point.")
+            .def("remove_3d_label", &PySceneWidget::RemoveLabel,
+                 "Removes the 3D text label from the scene");
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(

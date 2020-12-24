@@ -22,21 +22,26 @@ vertex {
         float4 pos = getPosition();
         float4 next = getCustom0();
         float4 resolution = getResolution();
-        float2 aspect = float2(resolution.x / resolution.y, 1.0);
+        float aspect = resolution.x / resolution.y;
 
         // Project current vertex and next vertex to screen
         float4 projected_pos = getClipFromWorldMatrix() * float4(pos.xyz - getWorldOffset(), 1.0);
         float4 projected_next = getClipFromWorldMatrix() * float4(next.xyz - getWorldOffset(), 1.0);
-        float2 screen_pos = (projected_pos.xy / projected_pos.w) * aspect;
-        float2 screen_next = (projected_next.xy / projected_next.w) * aspect;
+        float2 screen_pos = projected_pos.xy / projected_pos.w;
+        screen_pos.x *= aspect;
+        float2 screen_next = projected_next.xy / projected_next.w;
+        screen_next.x *= aspect;
 
-        // now compute offset
+        // now compute offset for the desired line width
         float2 dir = normalize(screen_next - screen_pos);
-        float2 normal = float2(-dir.y, dir.x);
-        normal *= materialParams.lineWidth * resolution.z;
-        normal.x /= aspect.x;
-        float4 offset = float4(normal * next.w, 0.0, 0.0);
-        material.worldPosition = getWorldFromClipMatrix() * (projected_pos + offset);
+        float4 normal = float4(-dir.y, dir.x, 0.0, 1.0);
+        normal.xy *= (materialParams.lineWidth * resolution.z * 0.5);
+        normal *= getClipFromViewMatrix();
+        normal.xy *= projected_pos.w;
+
+        // Now project back to World space since Filament requires it for 'world' vertexDomain
+        projected_pos.xy += normal.xy * next.w;
+        material.worldPosition = getWorldFromClipMatrix() * projected_pos;
     }
 }
 

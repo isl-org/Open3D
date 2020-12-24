@@ -43,17 +43,20 @@ namespace keypoint {
 /// cloud. This implements the keypoint detection module proposed in Yu
 /// Zhong ,"Intrinsic Shape Signatures: A Shape Descriptor for 3D Object
 /// Recognition", 2009. The implementation is inspired by the PCL one.
-//
-/// \pram input The input PointCloud where to compute the ISS Keypoints. \param
-/// salient_radius The radius of the spherical neighborhood used to detect the
-/// keypoints \param non_max_radius The non maxima supression radius. If non of
+///
+/// \param input The input PointCloud where to compute the ISS Keypoints.
+/// \param salient_radius The radius of the spherical neighborhood used to
+/// detect the keypoints
+/// \param non_max_radius The non maxima supression radius. If non of
 /// the input parameters are specified or are 0.0, then they will be computed
-/// from the input data, taking into account the Model Resolution. \param
-/// gamma_21 The upper bound on the ratio between the second and the first
-/// eigenvalue \param gamma32 The upper bound on the ratio between the third and
-/// the second eigenvalue \param min_neighbors Minimum number of neighbors that
-/// has to be found to consider a keypoint. \authors Ignacio Vizzo and Cyrill
-/// Stachniss, University of Bonn.
+/// from the input data, taking into account the Model Resolution.
+/// \param gamma_21 The upper bound on the ratio between the second and the
+/// first eigenvalue
+/// \param gamma32 The upper bound on the ratio between the third and the second
+/// eigenvalue
+/// \param min_neighbors Minimum number of neighbors that has to be found to
+/// consider a keypoint.
+/// \authors Ignacio Vizzo and Cyrill Stachniss, University of Bonn.
 std::shared_ptr<PointCloud> ComputeISSKeypoints(const PointCloud &input,
                                                 double salient_radius = 0.0,
                                                 double non_max_radius = 0.0,

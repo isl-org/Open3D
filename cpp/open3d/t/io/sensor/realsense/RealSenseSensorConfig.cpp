@@ -45,11 +45,11 @@ namespace t {
 namespace io {
 
 // clang-format off
-//  Bidirectional string conversions for RS2 enums. Invalid values are mapped to the first entry.
-// Reference:
+//  Bidirectional string conversions for RS2 enums. Invalid values are mapped to
+//  the first entry.  Reference:
 //  - https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html
-//  -
-// RS2 stream types
+
+/// RS2 stream types
 STRINGIFY_ENUM(rs2_stream, {
         {RS2_STREAM_ANY, "RS2_STREAM_ANY"},
         {RS2_STREAM_DEPTH, "RS2_STREAM_DEPTH"},
@@ -62,7 +62,8 @@ STRINGIFY_ENUM(rs2_stream, {
         {RS2_STREAM_POSE, "RS2_STREAM_POSE"},
         {RS2_STREAM_CONFIDENCE, "RS2_STREAM_CONFIDENCE"}
 });
-// RS2 pixel formats
+
+/// RS2 pixel formats
 STRINGIFY_ENUM(rs2_format, {
         {RS2_FORMAT_ANY, "RS2_FORMAT_ANY"},
         {RS2_FORMAT_Z16, "RS2_FORMAT_Z16"},
@@ -95,7 +96,7 @@ STRINGIFY_ENUM(rs2_format, {
         {RS2_FORMAT_Z16H, "RS2_FORMAT_Z16H"}
 });
 
-// RS2 visual presets for L500 devices
+/// RS2 visual presets for L500 devices
 STRINGIFY_ENUM(rs2_l500_visual_preset, {
     {RS2_L500_VISUAL_PRESET_DEFAULT, "RS2_L500_VISUAL_PRESET_DEFAULT"},
     {RS2_L500_VISUAL_PRESET_CUSTOM, "RS2_L500_VISUAL_PRESET_CUSTOM"},
@@ -105,7 +106,7 @@ STRINGIFY_ENUM(rs2_l500_visual_preset, {
     {RS2_L500_VISUAL_PRESET_SHORT_RANGE, "RS2_L500_VISUAL_PRESET_SHORT_RANGE"}
 });
 
-// RS2 visual presets for RS400 devices
+/// RS2 visual presets for RS400 devices
 STRINGIFY_ENUM(rs2_rs400_visual_preset, {
         {RS2_RS400_VISUAL_PRESET_DEFAULT, "RS2_RS400_VISUAL_PRESET_DEFAULT"},
         {RS2_RS400_VISUAL_PRESET_CUSTOM, "RS2_RS400_VISUAL_PRESET_CUSTOM"},
@@ -228,15 +229,16 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
     const auto rs_color = profile.get_stream(RS2_STREAM_COLOR)
                                   .as<rs2::video_stream_profile>();
     std::tie(metadata.color_dt_, metadata.color_channels_) =
-            RealSenseSensorConfig::get_dtype_channels((int)rs_color.format());
+            RealSenseSensorConfig::get_dtype_channels(
+                    static_cast<int>(rs_color.format()));
     if (metadata.color_dt_ != core::Dtype::UInt8) {
         utility::LogError("Only 8 bit unsigned int color is supported!");
     }
     const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
                                   .as<rs2::video_stream_profile>();
-    metadata.depth_dt_ =
-            RealSenseSensorConfig::get_dtype_channels((int)rs_depth.format())
-                    .first;
+    metadata.depth_dt_ = RealSenseSensorConfig::get_dtype_channels(
+                                 static_cast<int>(rs_depth.format()))
+                                 .first;
     if (metadata.depth_dt_ != core::Dtype::UInt16) {
         utility::LogError("Only 16 bit unsigned int depth is supported!");
     }
@@ -267,7 +269,8 @@ Json::Value RealSenseSensorConfig::GetMetadataJson(
     value["depth_format"] = enum_to_string(rs_depth.format())
                                     .substr(11);  // remove RS2_FORMAT_ prefix
     value["depth_scale"] =
-            rs_device.first<rs2::depth_sensor>().get_depth_scale();
+            1. / rs_device.first<rs2::depth_sensor>()
+                         .get_depth_scale();  // convert meters -> m^(-1)
     value["color_format"] = enum_to_string(rs_color.format())
                                     .substr(11);  // remove RS2_FORMAT_ prefix
     value["fps"] = rs_color.fps();
