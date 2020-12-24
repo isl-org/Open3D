@@ -176,6 +176,7 @@ protected:
     const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
 
 private:
+    void CreateRenderer();
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);

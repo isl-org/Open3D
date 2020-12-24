@@ -255,8 +255,9 @@ Window::Window(const std::string& title,
     glfwSetDropCallback(impl_->window_, DragDropCallback);
     glfwSetWindowCloseCallback(impl_->window_, CloseCallback);
 
-    // On single-threaded platforms, Filament's OpenGL context must be current,
-    // not GLFW's context, so create the renderer after the window.
+    auto& theme = impl_->theme_;  // shorter alias
+    impl_->imgui_.context = ImGui::CreateContext();
+    auto oldContext = MakeDrawContextCurrent();
 
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
@@ -274,22 +275,6 @@ Window::Window(const std::string& title,
             int(std::round(impl_->theme_.default_margin * scaling));
     impl_->theme_.default_layout_spacing =
             int(std::round(impl_->theme_.default_layout_spacing * scaling));
-
-    auto& engine = visualization::rendering::EngineInstance::GetInstance();
-    auto& resource_manager =
-            visualization::rendering::EngineInstance::GetResourceManager();
-
-    impl_->renderer_ =
-            std::make_unique<visualization::rendering::FilamentRenderer>(
-                    engine, GetNativeDrawable(), resource_manager);
-    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
-
-    auto& theme = impl_->theme_;  // shorter alias
-    impl_->imgui_.context = ImGui::CreateContext();
-    auto oldContext = MakeDrawContextCurrent();
-
-    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
-            impl_->renderer_.get(), GetSize());
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -321,9 +306,82 @@ Window::Window(const std::string& title,
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tab_hover_color);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tab_active_color);
 
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+#ifdef WIN32
+    io.ImeWindowHandle = GetNativeDrawable();
+#endif
+    // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
+    // io.KeyMap to map from our code to ImGui's code.
+    io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
+    io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT;
+    io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT;
+    io.KeyMap[ImGuiKey_UpArrow] = KEY_UP;
+    io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN;
+    io.KeyMap[ImGuiKey_PageUp] = KEY_PAGEUP;
+    io.KeyMap[ImGuiKey_PageDown] = KEY_PAGEDOWN;
+    io.KeyMap[ImGuiKey_Home] = KEY_HOME;
+    io.KeyMap[ImGuiKey_End] = KEY_END;
+    io.KeyMap[ImGuiKey_Insert] = KEY_INSERT;
+    io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
+    io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
+    io.KeyMap[ImGuiKey_Space] = ' ';
+    io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
+    io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
+    io.KeyMap[ImGuiKey_A] = 'a';
+    io.KeyMap[ImGuiKey_C] = 'c';
+    io.KeyMap[ImGuiKey_V] = 'v';
+    io.KeyMap[ImGuiKey_X] = 'x';
+    io.KeyMap[ImGuiKey_Y] = 'y';
+    io.KeyMap[ImGuiKey_Z] = 'z';
+    /*    io.SetClipboardTextFn = [this](void*, const char* text) {
+            glfwSetClipboardString(this->impl_->window, text);
+        };
+        io.GetClipboardTextFn = [this](void*) -> const char* {
+            return glfwGetClipboardString(this->impl_->window);
+        }; */
+    io.ClipboardUserData = nullptr;
+
+    // Restore the context, in case we are creating a window during a draw.
+    // (This is quite likely, since ImGUI only handles things like button
+    // presses during draw. A file open dialog is likely to create a window
+    // after pressing "Open".)
+    RestoreDrawContext(oldContext);
+
+    // Don't create the renderer yet. If the program exits before the first
+    // draw callback from the operating system (Windows in particular),
+    // Filament's rendering may not have had time to start yet, so destroying
+    // the renderer will wait forever for the render thread to execute.
+    // This can be reproduced with the following Python script
+    //   import open3d as o3d
+    //   o3d.visualization.Application.instance.initialize()
+    //   w = o3d.visualization.Application.instance
+    //          .create_window("Crash", 640, 480)
+    //   <anything that throws an exception>
+}
+
+void Window::CreateRenderer() {
+    // This is a delayed part of the constructor. See comment at end of ctor.
+    auto old_context = MakeDrawContextCurrent();
+
+    // On single-threaded platforms, Filament's OpenGL context must be current,
+    // not GLFW's context, so create the renderer after the window.
+    auto& engine = visualization::rendering::EngineInstance::GetInstance();
+    auto& resource_manager =
+            visualization::rendering::EngineInstance::GetResourceManager();
+
+    impl_->renderer_ =
+            std::make_unique<visualization::rendering::FilamentRenderer>(
+                    engine, GetNativeDrawable(), resource_manager);
+    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
+
+    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
+            impl_->renderer_.get(), GetSize());
+
     // If the given font path is invalid, ImGui will silently fall back to
     // proggy, which is a tiny "pixel art" texture that is compiled into the
     // library.
+    auto &theme = GetTheme();
     if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
         int en_fonts = 0;
@@ -400,47 +458,7 @@ Window::Window(const std::string& title,
         ImGui::SetCurrentFont(impl_->imgui_.system_font);
     }
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.IniFilename = nullptr;
-#ifdef WIN32
-    io.ImeWindowHandle = GetNativeDrawable();
-#endif
-    // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
-    // io.KeyMap to map from our code to ImGui's code.
-    io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
-    io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT;
-    io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT;
-    io.KeyMap[ImGuiKey_UpArrow] = KEY_UP;
-    io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN;
-    io.KeyMap[ImGuiKey_PageUp] = KEY_PAGEUP;
-    io.KeyMap[ImGuiKey_PageDown] = KEY_PAGEDOWN;
-    io.KeyMap[ImGuiKey_Home] = KEY_HOME;
-    io.KeyMap[ImGuiKey_End] = KEY_END;
-    io.KeyMap[ImGuiKey_Insert] = KEY_INSERT;
-    io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
-    io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
-    io.KeyMap[ImGuiKey_Space] = ' ';
-    io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
-    io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
-    io.KeyMap[ImGuiKey_A] = 'a';
-    io.KeyMap[ImGuiKey_C] = 'c';
-    io.KeyMap[ImGuiKey_V] = 'v';
-    io.KeyMap[ImGuiKey_X] = 'x';
-    io.KeyMap[ImGuiKey_Y] = 'y';
-    io.KeyMap[ImGuiKey_Z] = 'z';
-    /*    io.SetClipboardTextFn = [this](void*, const char* text) {
-            glfwSetClipboardString(this->impl_->window, text);
-        };
-        io.GetClipboardTextFn = [this](void*) -> const char* {
-            return glfwGetClipboardString(this->impl_->window);
-        }; */
-    io.ClipboardUserData = nullptr;
-
-    // Restore the context, in case we are creating a window during a draw.
-    // (This is quite likely, since ImGUI only handles things like button
-    // presses during draw. A file open dialog is likely to create a window
-    // after pressing "Open".)
-    RestoreDrawContext(oldContext);
+    RestoreDrawContext(old_context);
 }
 
 Window::~Window() {
@@ -1251,6 +1269,13 @@ void Window::OnDragDropped(const char* path) {}
 // ----------------------------------------------------------------------------
 void Window::DrawCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    if (!w->impl_->renderer_) {
+        // Lazily create the renderer, in case we quit before we get here
+        // and crash (macOS) or hang (Windows).
+        w->CreateRenderer();
+    }
+
     if (w->OnDraw() == Window::REDRAW) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
