@@ -74,7 +74,7 @@ public:
     /// Set index for hybrid search.
     ///
     /// \return Returns true if building index success, otherwise false.
-    bool HybridIndex();
+    bool HybridIndex(utility::optional<double> radius = {});
 
     /// Perform knn search.
     ///

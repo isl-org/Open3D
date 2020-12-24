@@ -107,7 +107,7 @@ public:
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
     virtual std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                                   float radius,
+                                                   double radius,
                                                    int max_knn) const = 0;
 
     /// Get dimension of the dataset points.

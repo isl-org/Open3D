@@ -201,6 +201,95 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 #endif
 };
 
+std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
+#ifdef BUILD_CUDA_MODULE
+    // Check dtype.
+    query_points.AssertDtype(GetDtype());
+
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
+    // Check device.
+    query_points.AssertDevice(GetDevice());
+
+    if (radius <= 0) {
+        utility::LogError(
+                "[FixedRadiusIndex::SearchRadius] radius should be positive.");
+    }
+    Tensor query_points_ = query_points.Contiguous();
+    int64_t num_query_points = query_points_.GetShape()[0];
+    std::vector<int64_t> queries_row_splits({0, num_query_points});
+
+    void *temp_ptr = nullptr;
+    size_t temp_size = 0;
+
+    Dtype dtype = GetDtype();
+    Device device = GetDevice();
+    Tensor neighbors_index = Tensor::Full({num_query_points * max_knn}, -1,
+                                          Dtype::Int32, device);
+    Tensor neighbors_distance =
+            Tensor::Full({num_query_points * max_knn}, -1, dtype, device);
+    Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Dtype::Int64,
+                                         dataset_points_.GetDevice());
+
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        HybridSearchCUDA(
+                temp_ptr, temp_size,
+                static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
+                GetDatasetSize(),
+                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
+                num_query_points,
+                static_cast<scalar_t *>(query_points_.GetDataPtr()),
+                static_cast<scalar_t>(radius), points_row_splits_.size(),
+                points_row_splits_.data(), queries_row_splits.size(),
+                queries_row_splits.data(), hash_table_splits_.data(),
+                hash_table_cell_splits_.GetShape()[0],
+                (uint32_t *)static_cast<const int32_t *>(
+                        hash_table_cell_splits_.GetDataPtr()),
+                (uint32_t *)static_cast<const int32_t *>(
+                        hash_table_index_.GetDataPtr()),
+                output_allocator, max_knn,
+                static_cast<int32_t *>(neighbors_index.GetDataPtr()),
+                static_cast<scalar_t *>(neighbors_distance.GetDataPtr()));
+
+        Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
+                                           dataset_points_.GetDevice());
+        temp_ptr = temp_tensor.GetDataPtr();
+
+        HybridSearchCUDA(
+                temp_ptr, temp_size,
+                static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
+                GetDatasetSize(),
+                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
+                num_query_points,
+                static_cast<scalar_t *>(query_points_.GetDataPtr()),
+                static_cast<scalar_t>(radius), points_row_splits_.size(),
+                points_row_splits_.data(), queries_row_splits.size(),
+                queries_row_splits.data(), hash_table_splits_.data(),
+                hash_table_cell_splits_.GetShape()[0],
+                (uint32_t *)static_cast<const int32_t *>(
+                        hash_table_cell_splits_.GetDataPtr()),
+                (uint32_t *)static_cast<const int32_t *>(
+                        hash_table_index_.GetDataPtr()),
+                output_allocator, max_knn,
+                static_cast<int32_t *>(neighbors_index.GetDataPtr()),
+                static_cast<scalar_t *>(neighbors_distance.GetDataPtr()));
+
+        neighbors_index = neighbors_index.To(Dtype::Int64)
+                                  .View({num_query_points, max_knn});
+        neighbors_distance =
+                neighbors_distance.View({num_query_points, max_knn});
+    });
+
+    return std::make_pair(neighbors_index, neighbors_distance);
+#else
+    utility::LogError(
+            "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
+            "compile Open3d with BUILD_CUDA_MODULE=ON.");
+#endif
+}
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

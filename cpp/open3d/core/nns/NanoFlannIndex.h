@@ -154,7 +154,7 @@ public:
             const Tensor &query_points, double radius) const override;
 
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                           float radius,
+                                           double radius,
                                            int max_knn) const override;
 
 protected:

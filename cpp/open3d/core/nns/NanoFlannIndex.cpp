@@ -227,7 +227,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 };
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
-        const Tensor &query_points, float radius, int max_knn) const {
+        const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
     query_points.AssertDtype(GetDtype());
 
@@ -244,6 +244,8 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                 "[NanoFlannIndex::SearchHybrid] radius should be larger than "
                 "0.");
     }
+
+    radius = radius * radius;
 
     Tensor indices;
     Tensor distances;

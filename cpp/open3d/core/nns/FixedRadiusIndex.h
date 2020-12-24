@@ -87,10 +87,8 @@ public:
             const Tensor& query_points, double radius) const override;
 
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
-                                           float radius,
-                                           int max_knn) const override {
-        utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
-    }
+                                           double radius,
+                                           int max_knn) const override;
 
     const double hash_table_size_factor = 1 / 32;
     const int64_t max_hash_tabls_size = 10000;
@@ -124,7 +122,7 @@ public:
     }
 
     const T* DistancesPtr() const {
-        return static_cast<T*>(neighbors_distance.GetDataPtr());
+        return static_cast<const T*>(neighbors_distance.GetDataPtr());
     }
 
     const Tensor& NeighborsIndex() const { return neighbors_index; }

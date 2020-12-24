@@ -84,7 +84,7 @@ public:
 
     // query_points must be float32.
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                           float radius,
+                                           double radius,
                                            int max_knn) const override;
 
 protected:
