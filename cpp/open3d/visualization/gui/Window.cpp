@@ -348,6 +348,9 @@ Window::Window(const std::string& title,
     // after pressing "Open".)
     RestoreDrawContext(oldContext);
 
+#ifndef WIN32
+    CreateRenderer();
+#else
     // Don't create the renderer yet. If the program exits before the first
     // draw callback from the operating system (Windows in particular),
     // Filament's rendering may not have had time to start yet, so destroying
@@ -358,6 +361,7 @@ Window::Window(const std::string& title,
     //   w = o3d.visualization.Application.instance
     //          .create_window("Crash", 640, 480)
     //   <anything that throws an exception>
+#endif // !WIN32
 }
 
 void Window::CreateRenderer() {
@@ -381,7 +385,7 @@ void Window::CreateRenderer() {
     // If the given font path is invalid, ImGui will silently fall back to
     // proggy, which is a tiny "pixel art" texture that is compiled into the
     // library.
-    auto &theme = GetTheme();
+    auto& theme = GetTheme();
     if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
         int en_fonts = 0;
