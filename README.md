@@ -53,7 +53,7 @@ Windows 10 (64-bit) with Python 3.6, 3.7 and 3.8.
 $ pip install open3d
 
 # Install Open3D stable release with Conda
-$ conda install -c open3d-admin open3d
+$ conda install -c open3d-admin -c conda-forge open3d
 
 # Test the installation
 $ python -c "import open3d as o3d; print(o3d)"
