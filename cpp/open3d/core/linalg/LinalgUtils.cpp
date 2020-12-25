@@ -47,8 +47,7 @@ CuSolverContext::~CuSolverContext() {
     }
 }
 
-std::shared_ptr<CuSolverContext> CuSolverContext::instance_ =
-        CuSolverContext::GetInstance();
+std::shared_ptr<CuSolverContext> CuSolverContext::instance_ = nullptr;
 
 std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
     if (instance_ == nullptr) {
@@ -64,8 +63,7 @@ CuBLASContext::CuBLASContext() {
 }
 CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
 
-std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
-        CuBLASContext::GetInstance();
+std::shared_ptr<CuBLASContext> CuBLASContext::instance_ = nullptr;
 
 }  // namespace core
 }  // namespace open3d

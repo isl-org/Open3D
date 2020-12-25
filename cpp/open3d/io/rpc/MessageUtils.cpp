@@ -97,6 +97,16 @@ std::tuple<int32_t, std::string> GetStatusCodeAndStr(
     return std::make_tuple(status.code, status.str);
 }
 
+std::shared_ptr<zmq::message_t> CreateStatusOKMsg() {
+    auto OK = messages::Status::OK();
+    msgpack::sbuffer sbuf;
+    messages::Reply reply{OK.MsgId()};
+    msgpack::pack(sbuf, reply);
+    msgpack::pack(sbuf, OK);
+    return std::shared_ptr<zmq::message_t>(
+            new zmq::message_t(sbuf.data(), sbuf.size()));
+}
+
 }  // namespace rpc
 }  // namespace io
 }  // namespace open3d

@@ -73,13 +73,22 @@ struct TextureSamplerParameters {
     static TextureSamplerParameters Simple();
 
     /* filterMag = MagFilter::Linear
+     * filterMin = MinFilter::LinearMipmapLinear
+     * wrapU = WrapMode::Repeat
+     * wrapV = WrapMode::Repeat
+     * wrapW = WrapMode::Repeat
+     * anisotropy = 8
+     */
+    static TextureSamplerParameters Pretty();
+
+    /* filterMag = MagFilter::Linear
      * filterMin = MinFilter::Linear
      * wrapU = WrapMode::ClampToEdge
      * wrapV = WrapMode::ClampToEdge
      * wrapW = WrapMode::ClampToEdge
-     * anisotropy = 4
+     * anisotropy = 0
      */
-    static TextureSamplerParameters Pretty();
+    static TextureSamplerParameters LinearClamp();
 
     TextureSamplerParameters() = default;
 
@@ -125,9 +134,11 @@ public:
     virtual MaterialModifier& SetParameter(const char* parameter,
                                            const Eigen::Vector3f& value) = 0;
     virtual MaterialModifier& SetColor(const char* parameter,
-                                       const Eigen::Vector3f& value) = 0;
+                                       const Eigen::Vector3f& value,
+                                       bool srgb) = 0;
     virtual MaterialModifier& SetColor(const char* parameter,
-                                       const Eigen::Vector4f& value) = 0;
+                                       const Eigen::Vector4f& value,
+                                       bool srgb) = 0;
     virtual MaterialModifier& SetTexture(
             const char* parameter,
             const TextureHandle& texture,

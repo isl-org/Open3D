@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/View.h"
@@ -34,12 +36,20 @@ namespace open3d {
 
 namespace geometry {
 class AxisAlignedBoundingBox;
+class Geometry3D;
 }  // namespace geometry
+
+namespace t {
+namespace geometry {
+class Geometry;
+}  // namespace geometry
+}  // namespace t
 
 namespace visualization {
 namespace rendering {
 class Camera;
 class CameraManipulator;
+class MatrixInteractorLogic;
 class Open3DScene;
 class View;
 }  // namespace rendering
@@ -48,19 +58,37 @@ class View;
 namespace visualization {
 namespace gui {
 
+class Label3D;
 class Color;
 
 class SceneWidget : public Widget {
     using Super = Widget;
 
 public:
+    class MouseInteractor {
+    public:
+        virtual ~MouseInteractor() = default;
+
+        virtual rendering::MatrixInteractorLogic& GetMatrixInteractor() = 0;
+        virtual void Mouse(const MouseEvent& e) = 0;
+        virtual void Key(const KeyEvent& e) = 0;
+        virtual bool Tick(const TickEvent& e) { return false; }
+    };
+
+public:
     explicit SceneWidget();
     ~SceneWidget() override;
 
     void SetFrame(const Rect& f) override;
-    void SetBackgroundColor(const Color& color);
 
-    enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
+    enum Controls {
+        ROTATE_CAMERA,
+        FLY,
+        ROTATE_SUN,
+        ROTATE_IBL,
+        ROTATE_MODEL,
+        PICK_POINTS
+    };
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
@@ -83,6 +111,13 @@ public:
 
     rendering::View* GetRenderView() const;  // is nullptr if no scene
 
+    /// Enable (or disable) caching of scene to improve UI responsiveness when
+    /// dealing with large scenes (especially point clouds)
+    void EnableSceneCaching(bool enable);
+
+    /// Forces the scene to redraw regardless of Renderer caching
+    /// settings.
+    void ForceRedraw();
     enum class Quality { FAST, BEST };
     void SetRenderQuality(Quality level);
     Quality GetRenderQuality() const;
@@ -94,6 +129,41 @@ public:
     };
     void GoToCameraPreset(CameraPreset preset);
 
+    struct PickableGeometry {
+        std::string name;
+        const geometry::Geometry3D* geometry = nullptr;
+        const t::geometry::Geometry* tgeometry = nullptr;
+
+        PickableGeometry(const std::string& n, const geometry::Geometry3D* g)
+            : name(n), geometry(g) {}
+
+        PickableGeometry(const std::string& n, const t::geometry::Geometry* t)
+            : name(n), tgeometry(t) {}
+
+        /// This is for programmatic use when you don't want to know if you
+        /// have a geometry or a t::geometry; exactly one of g and t should be
+        /// non-null; the other should be nullptr.
+        PickableGeometry(const std::string& n,
+                         const geometry::Geometry3D* g,
+                         const t::geometry::Geometry* t)
+            : name(n), geometry(g), tgeometry(t) {}
+    };
+
+    void SetPickableGeometry(const std::vector<PickableGeometry>& geometry);
+    void SetPickablePointSize(int px);
+    void SetOnPointsPicked(
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> on_picked);
+
+    // 3D Labels
+    std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
+                                      const char* text);
+    void RemoveLabel(std::shared_ptr<Label3D> label);
+
+    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

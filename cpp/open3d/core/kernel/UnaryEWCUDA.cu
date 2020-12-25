@@ -42,6 +42,15 @@ static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
             static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
+static OPEN3D_HOST_DEVICE void CUDACopyObjectElementKernel(
+        const void* src, void* dst, int64_t object_byte_size) {
+    const char* src_bytes = static_cast<const char*>(src);
+    char* dst_bytes = static_cast<char*>(dst);
+    for (int i = 0; i < object_byte_size; ++i) {
+        dst_bytes[i] = src_bytes[i];
+    }
+}
+
 template <typename scalar_t>
 static OPEN3D_HOST_DEVICE void CUDASqrtElementKernel(const void* src,
                                                      void* dst) {
@@ -106,27 +115,40 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         if (src.IsContiguous() && dst.IsContiguous() &&
             src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
             // MemoryManager handles p2p and non-p2p device copy.
-            MemoryManager::Memcpy(
-                    dst.GetDataPtr(), dst_device, src.GetDataPtr(), src_device,
-                    DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+            MemoryManager::Memcpy(dst.GetDataPtr(), dst_device,
+                                  src.GetDataPtr(), src_device,
+                                  src_dtype.ByteSize() * shape.NumElements());
         } else if (src_device == dst_device) {
             // For more optimized version, one can check if P2P from src to
             // dst is enabled, then put synchronization with streams on both
             // src and dst to wait for copy kernel to complete.
             CUDADeviceSwitcher switcher(src_device);
             Indexer indexer({src}, dst, DtypePolicy::NONE);
-            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                using src_t = scalar_t;
-                DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
-                    using dst_t = scalar_t;
-                    CUDALauncher::LaunchUnaryEWKernel(
-                            indexer,
-                            // Need to wrap as extended CUDA lambda function
-                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
-                                CUDACopyElementKernel<src_t, dst_t>(src, dst);
-                            });
+            if (src.GetDtype().IsObject()) {
+                int64_t object_byte_size = src.GetDtype().ByteSize();
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDACopyObjectElementKernel(src, dst,
+                                                        object_byte_size);
+                        });
+
+            } else {
+                DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                    using src_t = scalar_t;
+                    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                        using dst_t = scalar_t;
+                        CUDALauncher::LaunchUnaryEWKernel(
+                                indexer,
+                                // Need to wrap as extended CUDA lambda function
+                                [] OPEN3D_HOST_DEVICE(const void* src,
+                                                      void* dst) {
+                                    CUDACopyElementKernel<src_t, dst_t>(src,
+                                                                        dst);
+                                });
+                    });
                 });
-            });
+            }
         } else {
             dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }
@@ -137,10 +159,9 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         Tensor src_conti = src.Contiguous();  // No op if already contiguous
         if (dst.IsContiguous() && src.GetShape() == dst.GetShape() &&
             src_dtype == dst_dtype) {
-            MemoryManager::Memcpy(
-                    dst.GetDataPtr(), dst_device, src_conti.GetDataPtr(),
-                    src_conti.GetDevice(),
-                    DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+            MemoryManager::Memcpy(dst.GetDataPtr(), dst_device,
+                                  src_conti.GetDataPtr(), src_conti.GetDevice(),
+                                  src_dtype.ByteSize() * shape.NumElements());
         } else {
             dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }
@@ -159,7 +180,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
-                    DtypeUtil::ToString(dtype));
+                    dtype.ToString());
         }
     };
 

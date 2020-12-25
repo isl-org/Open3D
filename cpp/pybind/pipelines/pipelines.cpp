@@ -33,13 +33,15 @@
 #include "pybind/pipelines/registration/registration.h"
 
 namespace open3d {
+namespace pipelines {
 
 void pybind_pipelines(py::module& m) {
     py::module m_pipelines = m.def_submodule("pipelines");
-    pybind_color_map(m_pipelines);
-    pybind_integration(m_pipelines);
-    pybind_registration(m_pipelines);
-    pybind_odometry(m_pipelines);
+    color_map::pybind_color_map(m_pipelines);
+    integration::pybind_integration(m_pipelines);
+    registration::pybind_registration(m_pipelines);
+    odometry::pybind_odometry(m_pipelines);
 }
 
+}  // namespace pipelines
 }  // namespace open3d

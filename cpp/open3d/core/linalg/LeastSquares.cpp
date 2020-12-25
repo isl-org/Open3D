@@ -43,15 +43,14 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     Dtype dtype = A.GetDtype();
     if (dtype != B.GetDtype()) {
         utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
-                          DtypeUtil::ToString(A.GetDtype()),
-                          DtypeUtil::ToString(B.GetDtype()));
+                          A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
-                DtypeUtil::ToString(dtype));
+                dtype.ToString());
     }
 
     // Check dimensions

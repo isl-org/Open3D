@@ -37,6 +37,7 @@
 
 #include "open3d/pipelines/registration/PoseGraph.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Optional.h"
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -62,7 +63,6 @@ PYBIND11_MAKE_OPAQUE(
 PYBIND11_MAKE_OPAQUE(
         std::vector<open3d::pipelines::registration::PoseGraphNode>);
 
-// some helper functions
 namespace pybind11 {
 namespace detail {
 
@@ -77,6 +77,82 @@ void bind_copy_functions(Class_ &cl) {
     cl.def("__copy__", [](T &v) { return T(v); });
     cl.def("__deepcopy__", [](T &v, py::dict &memo) { return T(v); });
 }
+
+/// Custom pybind11 type caster for open3d::utility::optional, which backports
+/// C++17's `std::optional`. We need compiler supporting C++14 or newer.
+/// Typically, this can be used to handle "None" parameters from Python.
+///
+/// Example python function:
+///
+/// ```python
+/// def add(a, b=None):
+///     # Assuming a, b are int.
+///     if b is None:
+///         return a
+///     else:
+///         return a + b
+/// ```
+///
+/// Here's the equivalent C++ implementation:
+///
+/// ```cpp
+/// m.def("add",
+///     [](int a, open3d::utility::optional<int> b) {
+///         if (!b.has_value()) {
+///             return a;
+///         } else {
+///             return a + b.value();
+///         }
+///     },
+///     py::arg("a"), py::arg("b") = py::none()
+/// );
+/// ```
+///
+/// Then this function can be called with:
+///
+/// ```python
+/// add(1)
+/// add(1, 2)
+/// add(1, b=2)
+/// add(1, b=None)
+/// ```
+template <typename T>
+struct open3d_optional_caster {
+    using value_conv = make_caster<typename T::value_type>;
+
+    template <typename T_>
+    static handle cast(T_ &&src, return_value_policy policy, handle parent) {
+        if (!src) return none().inc_ref();
+        if (!std::is_lvalue_reference<T>::value) {
+            policy = return_value_policy_override<T>::policy(policy);
+        }
+        return value_conv::cast(*std::forward<T_>(src), policy, parent);
+    }
+
+    bool load(handle src, bool convert) {
+        if (!src) {
+            return false;
+        } else if (src.is_none()) {
+            return true;  // default-constructed value is already empty
+        }
+        value_conv inner_caster;
+        if (!inner_caster.load(src, convert)) return false;
+
+        value.emplace(
+                cast_op<typename T::value_type &&>(std::move(inner_caster)));
+        return true;
+    }
+
+    PYBIND11_TYPE_CASTER(T, _("Optional[") + value_conv::name + _("]"));
+};
+
+template <typename T>
+struct type_caster<open3d::utility::optional<T>>
+    : public open3d_optional_caster<open3d::utility::optional<T>> {};
+
+template <>
+struct type_caster<open3d::utility::nullopt_t>
+    : public void_caster<open3d::utility::nullopt_t> {};
 
 }  // namespace detail
 }  // namespace pybind11

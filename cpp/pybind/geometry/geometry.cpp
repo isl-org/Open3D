@@ -31,37 +31,37 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_geometry_classes(py::module &m) {
     // open3d.geometry functions
-    m.def("get_rotation_matrix_from_xyz",
-          &geometry::Geometry3D::GetRotationMatrixFromXYZ, "rotation"_a);
-    m.def("get_rotation_matrix_from_yzx",
-          &geometry::Geometry3D::GetRotationMatrixFromYZX, "rotation"_a);
-    m.def("get_rotation_matrix_from_zxy",
-          &geometry::Geometry3D::GetRotationMatrixFromZXY, "rotation"_a);
-    m.def("get_rotation_matrix_from_xzy",
-          &geometry::Geometry3D::GetRotationMatrixFromXZY, "rotation"_a);
-    m.def("get_rotation_matrix_from_zyx",
-          &geometry::Geometry3D::GetRotationMatrixFromZYX, "rotation"_a);
-    m.def("get_rotation_matrix_from_yxz",
-          &geometry::Geometry3D::GetRotationMatrixFromYXZ, "rotation"_a);
+    m.def("get_rotation_matrix_from_xyz", &Geometry3D::GetRotationMatrixFromXYZ,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_yzx", &Geometry3D::GetRotationMatrixFromYZX,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_zxy", &Geometry3D::GetRotationMatrixFromZXY,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_xzy", &Geometry3D::GetRotationMatrixFromXZY,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_zyx", &Geometry3D::GetRotationMatrixFromZYX,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_yxz", &Geometry3D::GetRotationMatrixFromYXZ,
+          "rotation"_a);
     m.def("get_rotation_matrix_from_axis_angle",
-          &geometry::Geometry3D::GetRotationMatrixFromAxisAngle, "rotation"_a);
+          &Geometry3D::GetRotationMatrixFromAxisAngle, "rotation"_a);
     m.def("get_rotation_matrix_from_quaternion",
-          &geometry::Geometry3D::GetRotationMatrixFromQuaternion, "rotation"_a);
+          &Geometry3D::GetRotationMatrixFromQuaternion, "rotation"_a);
 
     // open3d.geometry.Geometry
-    py::class_<geometry::Geometry, PyGeometry<geometry::Geometry>,
-               std::shared_ptr<geometry::Geometry>>
+    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
             geometry(m, "Geometry", "The base geometry class.");
-    geometry.def("clear", &geometry::Geometry::Clear,
+    geometry.def("clear", &Geometry::Clear,
                  "Clear all elements in the geometry.")
-            .def("is_empty", &geometry::Geometry::IsEmpty,
+            .def("is_empty", &Geometry::IsEmpty,
                  "Returns ``True`` iff the geometry is empty.")
-            .def("get_geometry_type", &geometry::Geometry::GetGeometryType,
+            .def("get_geometry_type", &Geometry::GetGeometryType,
                  "Returns one of registered geometry types.")
-            .def("dimension", &geometry::Geometry::Dimension,
+            .def("dimension", &Geometry::Dimension,
                  "Returns whether the geometry is 2D or 3D.");
     docstring::ClassMethodDocInject(m, "Geometry", "clear");
     docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
@@ -69,8 +69,8 @@ void pybind_geometry_classes(py::module &m) {
     docstring::ClassMethodDocInject(m, "Geometry", "dimension");
 
     // open3d.geometry.Geometry.Type
-    py::enum_<geometry::Geometry::GeometryType> geometry_type(geometry, "Type",
-                                                              py::arithmetic());
+    py::enum_<Geometry::GeometryType> geometry_type(geometry, "Type",
+                                                    py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.
     geometry_type.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
@@ -78,87 +78,78 @@ void pybind_geometry_classes(py::module &m) {
             }),
             py::none(), py::none(), "");
 
-    geometry_type
-            .value("Unspecified", geometry::Geometry::GeometryType::Unspecified)
-            .value("PointCloud", geometry::Geometry::GeometryType::PointCloud)
-            .value("VoxelGrid", geometry::Geometry::GeometryType::VoxelGrid)
-            .value("LineSet", geometry::Geometry::GeometryType::LineSet)
-            .value("TriangleMesh",
-                   geometry::Geometry::GeometryType::TriangleMesh)
+    geometry_type.value("Unspecified", Geometry::GeometryType::Unspecified)
+            .value("PointCloud", Geometry::GeometryType::PointCloud)
+            .value("VoxelGrid", Geometry::GeometryType::VoxelGrid)
+            .value("LineSet", Geometry::GeometryType::LineSet)
+            .value("TriangleMesh", Geometry::GeometryType::TriangleMesh)
             .value("HalfEdgeTriangleMesh",
-                   geometry::Geometry::GeometryType::HalfEdgeTriangleMesh)
-            .value("Image", geometry::Geometry::GeometryType::Image)
-            .value("RGBDImage", geometry::Geometry::GeometryType::RGBDImage)
-            .value("TetraMesh", geometry::Geometry::GeometryType::TetraMesh)
+                   Geometry::GeometryType::HalfEdgeTriangleMesh)
+            .value("Image", Geometry::GeometryType::Image)
+            .value("RGBDImage", Geometry::GeometryType::RGBDImage)
+            .value("TetraMesh", Geometry::GeometryType::TetraMesh)
             .export_values();
 
-    py::class_<geometry::Geometry3D, PyGeometry3D<geometry::Geometry3D>,
-               std::shared_ptr<geometry::Geometry3D>, geometry::Geometry>
+    py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
+               std::shared_ptr<Geometry3D>, Geometry>
             geometry3d(m, "Geometry3D",
                        "The base geometry class for 3D geometries.");
     geometry3d
-            .def("get_min_bound", &geometry::Geometry3D::GetMinBound,
+            .def("get_min_bound", &Geometry3D::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &geometry::Geometry3D::GetMaxBound,
+            .def("get_max_bound", &Geometry3D::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
-            .def("get_center", &geometry::Geometry3D::GetCenter,
+            .def("get_center", &Geometry3D::GetCenter,
                  "Returns the center of the geometry coordinates.")
             .def("get_axis_aligned_bounding_box",
-                 &geometry::Geometry3D::GetAxisAlignedBoundingBox,
+                 &Geometry3D::GetAxisAlignedBoundingBox,
                  "Returns an axis-aligned bounding box of the geometry.")
             .def("get_oriented_bounding_box",
-                 &geometry::Geometry3D::GetOrientedBoundingBox,
+                 &Geometry3D::GetOrientedBoundingBox,
                  "Returns an oriented bounding box of the geometry.")
-            .def("transform", &geometry::Geometry3D::Transform,
+            .def("transform", &Geometry3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
-            .def("translate", &geometry::Geometry3D::Translate,
+            .def("translate", &Geometry3D::Translate,
                  "Apply translation to the geometry coordinates.",
                  "translation"_a, "relative"_a = true)
             .def("scale",
-                 (geometry::Geometry3D &
-                  (geometry::Geometry3D::*)(const double,
-                                            const Eigen::Vector3d &)) &
-                         geometry::Geometry3D::Scale,
+                 (Geometry3D &
+                  (Geometry3D::*)(const double, const Eigen::Vector3d &)) &
+                         Geometry3D::Scale,
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
-            .def("scale", &geometry::Geometry3D::Scale,
+            .def("scale", &Geometry3D::Scale,
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
             .def("rotate",
                  py::overload_cast<const Eigen::Matrix3d &>(
-                         &geometry::Geometry3D::Rotate),
+                         &Geometry3D::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a)
             .def("rotate",
                  py::overload_cast<const Eigen::Matrix3d &,
                                    const Eigen::Vector3d &>(
-                         &geometry::Geometry3D::Rotate),
+                         &Geometry3D::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a)
             .def_static("get_rotation_matrix_from_xyz",
-                        &geometry::Geometry3D::GetRotationMatrixFromXYZ,
-                        "rotation"_a)
+                        &Geometry3D::GetRotationMatrixFromXYZ, "rotation"_a)
             .def_static("get_rotation_matrix_from_yzx",
-                        &geometry::Geometry3D::GetRotationMatrixFromYZX,
-                        "rotation"_a)
+                        &Geometry3D::GetRotationMatrixFromYZX, "rotation"_a)
             .def_static("get_rotation_matrix_from_zxy",
-                        &geometry::Geometry3D::GetRotationMatrixFromZXY,
-                        "rotation"_a)
+                        &Geometry3D::GetRotationMatrixFromZXY, "rotation"_a)
             .def_static("get_rotation_matrix_from_xzy",
-                        &geometry::Geometry3D::GetRotationMatrixFromXZY,
-                        "rotation"_a)
+                        &Geometry3D::GetRotationMatrixFromXZY, "rotation"_a)
             .def_static("get_rotation_matrix_from_zyx",
-                        &geometry::Geometry3D::GetRotationMatrixFromZYX,
-                        "rotation"_a)
+                        &Geometry3D::GetRotationMatrixFromZYX, "rotation"_a)
             .def_static("get_rotation_matrix_from_yxz",
-                        &geometry::Geometry3D::GetRotationMatrixFromYXZ,
-                        "rotation"_a)
+                        &Geometry3D::GetRotationMatrixFromYXZ, "rotation"_a)
             .def_static("get_rotation_matrix_from_axis_angle",
-                        &geometry::Geometry3D::GetRotationMatrixFromAxisAngle,
+                        &Geometry3D::GetRotationMatrixFromAxisAngle,
                         "rotation"_a)
             .def_static("get_rotation_matrix_from_quaternion",
-                        &geometry::Geometry3D::GetRotationMatrixFromQuaternion,
+                        &Geometry3D::GetRotationMatrixFromQuaternion,
                         "rotation"_a);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
@@ -188,14 +179,14 @@ void pybind_geometry_classes(py::module &m) {
              {"center", "Rotation center used for transformation"}});
 
     // open3d.geometry.Geometry2D
-    py::class_<geometry::Geometry2D, PyGeometry2D<geometry::Geometry2D>,
-               std::shared_ptr<geometry::Geometry2D>, geometry::Geometry>
+    py::class_<Geometry2D, PyGeometry2D<Geometry2D>,
+               std::shared_ptr<Geometry2D>, Geometry>
             geometry2d(m, "Geometry2D",
                        "The base geometry class for 2D geometries.");
     geometry2d
-            .def("get_min_bound", &geometry::Geometry2D::GetMinBound,
+            .def("get_min_bound", &Geometry2D::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &geometry::Geometry2D::GetMaxBound,
+            .def("get_max_bound", &Geometry2D::GetMaxBound,
                  "Returns max bounds for geometry coordinates.");
     docstring::ClassMethodDocInject(m, "Geometry2D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry2D", "get_max_bound");
@@ -206,6 +197,7 @@ void pybind_geometry(py::module &m) {
     pybind_geometry_classes(m_submodule);
     pybind_kdtreeflann(m_submodule);
     pybind_pointcloud(m_submodule);
+    pybind_keypoint(m_submodule);
     pybind_voxelgrid(m_submodule);
     pybind_lineset(m_submodule);
     pybind_meshbase(m_submodule);
@@ -223,4 +215,5 @@ void pybind_geometry(py::module &m) {
     pybind_boundingvolume(m_submodule);
 }
 
+}  // namespace geometry
 }  // namespace open3d

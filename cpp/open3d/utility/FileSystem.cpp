@@ -288,6 +288,29 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
     return true;
 }
 
+std::vector<std::string> FindFilesRecursively(
+        const std::string &directory,
+        std::function<bool(const std::string &)> is_match) {
+    std::vector<std::string> matches;
+
+    std::vector<std::string> subdirs;
+    std::vector<std::string> files;
+    ListDirectory(directory, subdirs, files);  // results are paths
+    for (auto &f : files) {
+        if (is_match(f)) {
+            matches.push_back(f);
+        }
+    }
+    for (auto &d : subdirs) {
+        auto submatches = FindFilesRecursively(d, is_match);
+        if (!submatches.empty()) {
+            matches.insert(matches.end(), submatches.begin(), submatches.end());
+        }
+    }
+
+    return matches;
+}
+
 FILE *FOpen(const std::string &filename, const std::string &mode) {
     FILE *fp;
 #ifndef _WIN32
@@ -459,6 +482,33 @@ int64_t CFile::GetFileSize() {
         utility::LogError("fsetpos failed: {}", GetError());
     }
     return size;
+}
+
+int64_t CFile::GetNumLines() {
+    if (!file_) {
+        utility::LogError("CFile::GetNumLines() called on a closed file");
+    }
+    fpos_t prevpos;
+    if (fgetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fgetpos failed: {}", GetError());
+    }
+    if (fseek(file_, 0, SEEK_SET)) {
+        error_code_ = errno;
+        utility::LogError("fseek failed: {}", GetError());
+    }
+    int64_t num_lines = 0;
+    int c;
+    while (EOF != (c = getc(file_))) {
+        if (c == '\n') {
+            num_lines++;
+        }
+    }
+    if (fsetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fsetpos failed: {}", GetError());
+    }
+    return num_lines;
 }
 
 const char *CFile::ReadLine() {

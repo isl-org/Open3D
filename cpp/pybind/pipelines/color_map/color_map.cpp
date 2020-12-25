@@ -34,6 +34,8 @@
 #include "pybind/docstring.h"
 
 namespace open3d {
+namespace pipelines {
+namespace color_map {
 
 void pybind_color_map_options(py::module &m) {
     py::class_<pipelines::color_map::ColorMapOptimizer> color_map_optimizer(
@@ -220,4 +222,6 @@ void pybind_color_map(py::module &m) {
     pybind_color_map_classes(m_submodule);
 }
 
+}  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

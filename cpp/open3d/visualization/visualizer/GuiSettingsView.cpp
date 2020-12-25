@@ -61,13 +61,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
                                  std::function<void(const char *)> on_load_ibl)
     : model_(model), on_load_ibl_(on_load_ibl) {
     const auto em = theme.font_size;
-    const int lm = std::ceil(0.5 * em);
-    const int grid_spacing = std::ceil(0.25 * em);
+    const int lm = int(std::ceil(0.5 * em));
+    const int grid_spacing = int(std::ceil(0.25 * em));
 
-    const int separation_height = std::ceil(0.75 * em);
+    const int separation_height = int(std::ceil(0.75 * em));
     // (we don't want as much left margin because the twisty arrow is the
     // only thing there, and visually it looks larger than the right.)
-    const gui::Margins base_margins(0.5 * lm, lm, lm, lm);
+    const gui::Margins base_margins(int(std::ceil(0.5 * lm)), lm, lm, lm);
     SetMargins(base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
@@ -90,7 +90,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     bg_layout->AddChild(bg_color_);
 
     view_ctrls->AddChild(show_skybox_);
-    view_ctrls->AddFixed(0.25 * em);
+    view_ctrls->AddFixed(int(std::ceil(0.25 * em)));
     view_ctrls->AddChild(bg_layout);
 
     // Show axes
@@ -281,7 +281,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     mat_grid->AddChild(std::make_shared<gui::Label>("Color"));
     auto color_layout = std::make_shared<gui::Horiz>();
     color_layout->AddChild(material_color_);
-    color_layout->AddFixed(0.25 * em);
+    color_layout->AddFixed(int(std::ceil(0.25 * em)));
     color_layout->AddChild(reset_material_color_);
     mat_grid->AddChild(color_layout);
 

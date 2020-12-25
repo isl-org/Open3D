@@ -188,6 +188,10 @@ int Menu::CalcHeight(const Theme &theme) const {
     return 0;  // menu is not part of window on macOS
 }
 
+bool Menu::CheckVisibilityChange() const {
+    return false;
+}
+
 Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     return NO_ITEM;
 }

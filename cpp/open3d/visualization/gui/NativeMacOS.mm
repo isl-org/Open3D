@@ -42,8 +42,8 @@ namespace gui {
 
 void MacTransformIntoApp() {
     // This is Deep Magic. Some versions of Python (for instance, MacPorts) do
-    // properly active the python process when a window is created, despite
-    // being created as a Framework. This results in the window being
+    // not properly activate the python process when a window is created,
+    // despite being created as a Framework. This results in the window being
     // visible, but it cannot get a menubar and it never gets text focus.
     // Some more official attempts that do NOT work are:
     // * ensure NSApp is created (by use of [NSApplication sharedApplication])

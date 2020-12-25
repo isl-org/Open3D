@@ -231,7 +231,7 @@ Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     std::vector<int> major =
             CalcMajor(theme, impl_->dir_, GetChildren(), &minor);
 
-    int total_spacing = impl_->spacing_ * (major.size() - 1);
+    int total_spacing = impl_->spacing_ * std::max(0, int(major.size()) - 1);
     int major_size = 0;
     for (auto& size : major) {
         major_size += size;
@@ -261,8 +261,8 @@ void Layout1D::Layout(const Theme& theme) {
         }
     }
     int frame_size = (impl_->dir_ == VERT ? frame.height : frame.width);
-    auto total_extra =
-            frame_size - total - impl_->spacing_ * int(major.size() - 1);
+    int total_spacing = impl_->spacing_ * std::max(0, int(major.size()) - 1);
+    auto total_extra = frame_size - total - total_spacing;
     if (num_stretch > 0 && frame_size > total) {
         auto stretch = total_extra / num_stretch;
         auto leftover_stretch = total_extra - stretch * num_stretch;
@@ -277,7 +277,7 @@ void Layout1D::Layout(const Theme& theme) {
         }
     } else if (num_grow > 0 && frame_size < total) {
         auto total_excess = total - (frame_size - impl_->margins_.GetVert() -
-                                     impl_->spacing_ * (major.size() - 1));
+                                     total_spacing);
         auto excess = total_excess / num_grow;
         auto leftover = total_excess - excess * num_stretch;
         for (size_t i = 0; i < major.size(); ++i) {
@@ -361,12 +361,12 @@ void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     auto* font = ImGui::GetFont();
     auto padding = ImGui::GetStyle().FramePadding;
-    int text_height =
-            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
+    int text_height = int(
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
     int text_width =
-            std::ceil(font->CalcTextSizeA(theme.font_size, FLT_MAX, FLT_MAX,
-                                          impl_->text_.c_str())
-                              .x);
+            int(std::ceil(font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
+                                              FLT_MAX, impl_->text_.c_str())
+                                  .x));
 
     auto pref = Super::CalcPreferredSize(theme);
     if (!impl_->is_open_) {
@@ -380,8 +380,8 @@ Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
 
 void CollapsableVert::Layout(const Theme& theme) {
     auto padding = ImGui::GetStyle().FramePadding;
-    int text_height =
-            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
+    int text_height = int(
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
 
     auto& margins = GetMutableMargins();
     auto orig_top = margins.top;
@@ -397,9 +397,8 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     bool was_open = impl_->is_open_;
 
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
-    ImGui::PushItemWidth(frame.width);
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::PushItemWidth(float(frame.width));
 
     auto padding = ImGui::GetStyle().FramePadding;
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, padding.y));
@@ -483,10 +482,10 @@ Size VGrid::CalcPreferredSize(const Theme& theme) const {
     for (size_t i = 0; i < column_sizes.size(); ++i) {
         auto& sz = column_sizes[i];
         width += sz.width;
-        auto v_spacing = (columns[i].size() - 1) * impl_->spacing_;
+        auto v_spacing = (int(columns[i].size()) - 1) * impl_->spacing_;
         height = std::max(height, sz.height) + v_spacing;
     }
-    width += (column_sizes.size() - 1) * impl_->spacing_;
+    width += (int(column_sizes.size()) - 1) * impl_->spacing_;
     width = std::max(width, 0);  // in case width or height has no items
     height = std::max(height, 0);
 

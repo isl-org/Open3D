@@ -35,9 +35,6 @@ std::string LineInfo(const char* file, int line) {
     return ss.str();
 }
 
-// ----------------------------------------------------------------------------
-// Default message to use for tests missing an implementation.
-// ----------------------------------------------------------------------------
 void NotImplemented() {
     std::cout << "\033[0;32m"
               << "[          ] "
@@ -49,9 +46,6 @@ void NotImplemented() {
     GTEST_NONFATAL_FAILURE_("Not implemented");
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two arrays of uint8_t.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const uint8_t* const v0,
                       const uint8_t* const v1,
@@ -61,9 +55,6 @@ void ExpectEQInternal(const std::string& line_info,
     }
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two vectors of uint8_t.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const std::vector<uint8_t>& v0,
                       const std::vector<uint8_t>& v1) {
@@ -71,9 +62,6 @@ void ExpectEQInternal(const std::string& line_info,
     ExpectEQInternal(line_info, v0.data(), v1.data(), v0.size());
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two arrays of int.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const int* const v0,
                       const int* const v1,
@@ -81,9 +69,6 @@ void ExpectEQInternal(const std::string& line_info,
     for (size_t i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two vectors of int.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const std::vector<int>& v0,
                       const std::vector<int>& v1) {
@@ -91,9 +76,20 @@ void ExpectEQInternal(const std::string& line_info,
     ExpectEQInternal(line_info, v0.data(), v1.data(), v0.size());
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two arrays of float.
-// ----------------------------------------------------------------------------
+void ExpectEQInternal(const std::string& line_info,
+                      const int64_t* const v0,
+                      const int64_t* const v1,
+                      const size_t& size) {
+    for (size_t i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
+}
+
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<int64_t>& v0,
+                      const std::vector<int64_t>& v1) {
+    EXPECT_EQ(v0.size(), v1.size());
+    ExpectEQInternal(line_info, v0.data(), v1.data(), v0.size());
+}
+
 void ExpectEQInternal(const std::string& line_info,
                       const float* const v0,
                       const float* const v1,
@@ -102,9 +98,6 @@ void ExpectEQInternal(const std::string& line_info,
     for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], threshold);
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two vectors of float.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const std::vector<float>& v0,
                       const std::vector<float>& v1,
@@ -113,9 +106,6 @@ void ExpectEQInternal(const std::string& line_info,
     ExpectEQInternal(line_info, v0.data(), v1.data(), v0.size(), threshold);
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two arrays of double.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const double* const v0,
                       const double* const v1,
@@ -124,9 +114,6 @@ void ExpectEQInternal(const std::string& line_info,
     for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], threshold);
 }
 
-// ----------------------------------------------------------------------------
-// Test equality of two vectors of double.
-// ----------------------------------------------------------------------------
 void ExpectEQInternal(const std::string& line_info,
                       const std::vector<double>& v0,
                       const std::vector<double>& v1,

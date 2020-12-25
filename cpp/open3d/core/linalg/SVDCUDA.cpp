@@ -24,12 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/SVD.h"
+
 namespace open3d {
 namespace core {
 

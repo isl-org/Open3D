@@ -46,7 +46,16 @@ else ()
     list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsView.h)
     list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiWidgets.cpp)
     list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiWidgets.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*/Draw.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*/Draw.cpp)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*O3D.*.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*O3D.*.cpp)
 endif()
+
+if ( NOT BUILD_RPC_INTERFACE )
+        list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*Receiver.cpp)
+endif()
+
 
 # create object library
 add_library(visualization OBJECT
@@ -60,6 +69,7 @@ add_dependencies(visualization ShaderFileTarget)
 
 open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)
+open3d_set_open3d_lib_properties(visualization)
 open3d_link_3rdparty_libraries(visualization)
 
 # export GUI_RESOURCE_DIR to parent scope

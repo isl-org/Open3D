@@ -38,7 +38,12 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+namespace {
+static int g_next_button_id = 1;
+}  // namespace
+
 struct Button::Impl {
+    std::string id_;
     std::string title_;
     std::shared_ptr<UIImage> image_;
     float padding_horizontal_em_ = 0.5f;
@@ -49,6 +54,7 @@ struct Button::Impl {
 };
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
+    impl_->id_ = std::string("##button") + std::to_string(g_next_button_id++);
     impl_->title_ = title;
 }
 
@@ -57,6 +63,10 @@ Button::Button(std::shared_ptr<UIImage> image) : impl_(new Button::Impl()) {
 }
 
 Button::~Button() {}
+
+const char* Button::GetText() const { return impl_->title_.c_str(); }
+
+void Button::SetText(const char* text) { impl_->title_ = text; }
 
 float Button::GetHorizontalPaddingEm() const {
     return impl_->padding_horizontal_em_;
@@ -89,17 +99,17 @@ void Button::SetOnClicked(std::function<void()> on_clicked) {
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
     auto em = float(theme.font_size);
-    auto padding_horiz = std::ceil(impl_->padding_horizontal_em_ * em);
-    auto padding_vert = std::ceil(impl_->padding_vertical_em_ * em);
+    auto padding_horiz = int(std::ceil(impl_->padding_horizontal_em_ * em));
+    auto padding_vert = int(std::ceil(impl_->padding_vertical_em_ * em));
     if (impl_->image_) {
         auto size = impl_->image_->CalcPreferredSize(theme);
-        return Size(size.width + std::ceil(2.0f * padding_horiz),
-                    size.height + std::ceil(2.0f * padding_vert));
+        return Size(size.width + 2 * padding_horiz,
+                    size.height + 2 * padding_vert);
     } else {
         auto font = ImGui::GetFont();
         auto imguiVertPadding = ImGui::GetTextLineHeightWithSpacing() -
                                 ImGui::GetTextLineHeight();
-        auto size = font->CalcTextSizeA(theme.font_size, 10000, 10000,
+        auto size = font->CalcTextSizeA(float(theme.font_size), 10000, 10000,
                                         impl_->title_.c_str());
         // When ImGUI draws text, it draws text in a box of height
         // font_size + spacing. The padding on the bottom is essentially the
@@ -111,10 +121,11 @@ Size Button::CalcPreferredSize(const Theme& theme) const {
         // ImGUI will position the text so that the descender is cut off,
         // because it is assuming that it gets a little extra on the bottom.
         // This looks really bad...)
-        return Size(std::ceil(size.x + 2.0f + imguiVertPadding +
-                              2.0f * padding_horiz),
-                    std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding +
-                              2.0f * padding_vert));
+        return Size(
+                int(std::ceil(size.x + 2.0f + imguiVertPadding)) +
+                        2 * padding_horiz,
+                int(std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding)) +
+                        2 * padding_vert);
     }
 }
 
@@ -122,7 +133,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     bool was_on = impl_->is_on_;
     if (was_on) {
@@ -147,8 +158,9 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
                 image_id, ImVec2(params.width, params.height),
                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
     } else {
-        pressed = ImGui::Button(impl_->title_.c_str(),
-                                ImVec2(GetFrame().width, GetFrame().height));
+        pressed = ImGui::Button(
+                (impl_->title_ + impl_->id_).c_str(),
+                ImVec2(float(GetFrame().width), float(GetFrame().height)));
     }
     if (pressed) {
         if (impl_->is_toggleable_) {

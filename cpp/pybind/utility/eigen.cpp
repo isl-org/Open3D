@@ -323,6 +323,7 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
 }  // unnamed namespace
 
 namespace open3d {
+namespace utility {
 
 void pybind_eigen(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
@@ -450,4 +451,5 @@ Example usage
             py::none(), py::none(), "");
 }
 
+}  // namespace utility
 }  // namespace open3d

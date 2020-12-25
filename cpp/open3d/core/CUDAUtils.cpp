@@ -26,8 +26,11 @@
 
 #include "open3d/core/CUDAUtils.h"
 
+#include "open3d/utility/Console.h"
+
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/CUDAState.cuh"
+#include "open3d/core/MemoryManager.h"
 #endif
 
 namespace open3d {
@@ -36,8 +39,12 @@ namespace cuda {
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
-    std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
-    return cuda_state->GetNumDevices();
+    try {
+        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
+        return cuda_state->GetNumDevices();
+    } catch (const std::runtime_error& e) {  // GetInstance can throw
+        return 0;
+    }
 #else
     return 0;
 #endif
@@ -45,6 +52,26 @@ int DeviceCount() {
 
 bool IsAvailable() { return cuda::DeviceCount() > 0; }
 
+void ReleaseCache() {
+#ifdef BUILD_CUDA_MODULE
+#ifdef BUILD_CACHED_CUDA_MANAGER
+    CUDACachedMemoryManager::ReleaseCache();
+#else
+    utility::LogWarning(
+            "Built without cached CUDA memory manager, cuda::ReleaseCache() "
+            "has no effect.");
+#endif
+
+#else
+    utility::LogWarning("Built without CUDA module, cuda::ReleaseCache().");
+#endif
+}
+
 }  // namespace cuda
 }  // namespace core
 }  // namespace open3d
+
+// C interface to provide un-mangled function to Python ctypes
+extern "C" int open3d_core_cuda_device_count() {
+    return open3d::core::cuda::DeviceCount();
+}

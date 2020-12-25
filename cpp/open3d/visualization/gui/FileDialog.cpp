@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if defined(__APPLE__)
+// Include FileDialog here to get value of GUI_USE_NATIVE_FILE_DIALOG
+#include "open3d/visualization/gui/FileDialog.h"
+
+#if defined(__APPLE__) && GUI_USE_NATIVE_FILE_DIALOG
 // see FileDialogNative.cpp
 #else
-
-#include "open3d/visualization/gui/FileDialog.h"
 
 #include <string>
 #include <unordered_map>
@@ -205,10 +206,15 @@ struct FileDialog::Impl {
     }
 
     std::string CalcCurrentDirectory() const {
+#ifdef _WIN32
+        const int nSkipSlash = 1;
+#else
+        const int nSkipSlash = 2;  // 0 is "/", so don't need "/" until 2.
+#endif  // _WIN32
         auto idx = dirtree_->GetSelectedIndex();
         std::string path;
         for (int i = 0; i <= idx; ++i) {
-            if (i >= 2) {  // 0 is "/", so don't need "/" until 2.
+            if (i >= nSkipSlash) {
                 path += "/";
             }
             path += dirtree_->GetItem(i);
@@ -224,7 +230,7 @@ struct FileDialog::Impl {
 FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     : Dialog("File"), impl_(new FileDialog::Impl()) {
     auto em = theme.font_size;
-    auto layout = std::make_shared<Vert>(0.5 * em, Margins(em));
+    auto layout = std::make_shared<Vert>(int(std::ceil(0.5 * em)), Margins(em));
     impl_->mode_ = mode;
 
     // 'filename' needs to always exist, as we use it to store the name of
@@ -333,8 +339,8 @@ void FileDialog::SetPath(const char *path) {
     bool is_dir = utility::filesystem::DirectoryExists(dirpath);
 
     impl_->dirtree_->ClearItems();
-    size_t n = (is_dir ? components.size() : components.size() - 1);
-    for (size_t i = 0; i < n; ++i) {
+    int n = int(is_dir ? components.size() : components.size() - 1);
+    for (int i = 0; i < n; ++i) {
         impl_->dirtree_->AddItem(components[i].c_str());
     }
     impl_->dirtree_->SetSelectedIndex(n - 1);
@@ -358,7 +364,8 @@ void FileDialog::AddFilter(const char *filter, const char *description) {
     }
 
     bool first_filter = impl_->filter_idx_2_filter.empty();
-    impl_->filter_idx_2_filter[impl_->filter_idx_2_filter.size()] = ext_filter;
+    impl_->filter_idx_2_filter[int(impl_->filter_idx_2_filter.size())] =
+            ext_filter;
     impl_->filter_->AddItem(description);
     if (first_filter) {
         impl_->filter_->SetSelectedIndex(0);
@@ -381,7 +388,25 @@ void FileDialog::OnDone() {
     if (this->impl_->on_done_) {
         auto dir = this->impl_->CalcCurrentDirectory();
         utility::filesystem::ChangeWorkingDirectory(dir);
-        auto name = this->impl_->filename_->GetText();
+        std::string name = this->impl_->filename_->GetText();
+        // If the user didn't specify an extension, automatically add one
+        // (unless we don't have the any-files (*.*) filter selected).
+        if (name.find(".") == std::string::npos && !name.empty()) {
+            int idx = this->impl_->filter_->GetSelectedIndex();
+            if (idx >= 0) {
+                auto &exts = impl_->filter_idx_2_filter[idx];
+                // Prefer PNG if available (otherwise in a list of common
+                // image files, e.g., ".jpg .png", we might pick the lossy one.
+                if (exts.find(".png") != exts.end()) {
+                    name += ".png";
+                } else {
+                    if (!exts.empty()) {
+                        name += *exts.begin();
+                    }
+                }
+            }
+        }
+        std::cout << "[o3d] name: '" << name << "'" << std::endl;
         this->impl_->on_done_((dir + "/" + name).c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");

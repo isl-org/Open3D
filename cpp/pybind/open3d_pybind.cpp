@@ -31,7 +31,9 @@
 #include "pybind/core/core.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/io/io.h"
+#include "pybind/ml/ml.h"
 #include "pybind/pipelines/pipelines.h"
+#include "pybind/t/t.h"
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
 
@@ -39,6 +41,7 @@ namespace open3d {
 
 PYBIND11_MODULE(pybind, m) {
     open3d::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
+        py::gil_scoped_acquire acquire;
         py::print(msg);
     };
 
@@ -52,14 +55,16 @@ PYBIND11_MODULE(pybind, m) {
     // The binding order matters: if a class haven't been binded, binding the
     // user of this class will result in "could not convert default argument
     // into a Python object" error.
-    pybind_utility(m);
+    utility::pybind_utility(m);
 
-    pybind_camera(m);
-    pybind_core(m);
-    pybind_geometry(m);
-    pybind_io(m);
-    pybind_pipelines(m);
-    pybind_visualization(m);
+    camera::pybind_camera(m);
+    core::pybind_core(m);
+    geometry::pybind_geometry(m);
+    t::pybind_t(m);
+    ml::pybind_ml(m);
+    io::pybind_io(m);
+    pipelines::pybind_pipelines(m);
+    visualization::pybind_visualization(m);
 }
 
 }  // namespace open3d

@@ -34,6 +34,7 @@
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 namespace geometry {
@@ -126,9 +127,7 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     std::vector<double> distances(points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
@@ -458,9 +457,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
@@ -494,9 +491,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
-#ifdef _OPENMP
+
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
@@ -541,35 +537,9 @@ PointCloud::ComputeMeanAndCovariance() const {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
     }
-    Eigen::Matrix<double, 9, 1> cumulants;
-    cumulants.setZero();
-    for (const auto &point : points_) {
-        cumulants(0) += point(0);
-        cumulants(1) += point(1);
-        cumulants(2) += point(2);
-        cumulants(3) += point(0) * point(0);
-        cumulants(4) += point(0) * point(1);
-        cumulants(5) += point(0) * point(2);
-        cumulants(6) += point(1) * point(1);
-        cumulants(7) += point(1) * point(2);
-        cumulants(8) += point(2) * point(2);
-    }
-    cumulants /= (double)points_.size();
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
-    mean(0) = cumulants(0);
-    mean(1) = cumulants(1);
-    mean(2) = cumulants(2);
-    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
-    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
-    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
-    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
-    covariance(1, 0) = covariance(0, 1);
-    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
-    covariance(2, 0) = covariance(0, 2);
-    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
-    covariance(2, 1) = covariance(1, 2);
-    return std::make_tuple(mean, covariance);
+    std::vector<size_t> all_idx(points_.size());
+    std::iota(all_idx.begin(), all_idx.end(), 0);
+    return utility::ComputeMeanAndCovariance(points_, all_idx);
 }
 
 std::vector<double> PointCloud::ComputeMahalanobisDistance() const {
@@ -578,9 +548,7 @@ std::vector<double> PointCloud::ComputeMahalanobisDistance() const {
     Eigen::Matrix3d covariance;
     std::tie(mean, covariance) = ComputeMeanAndCovariance();
     Eigen::Matrix3d cov_inv = covariance.inverse();
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d p = points_[i] - mean;
         mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
@@ -595,9 +563,7 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 
     std::vector<double> nn_dis(points_.size());
     KDTreeFlann kdtree(*this);
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(2);
         std::vector<double> dists(2);

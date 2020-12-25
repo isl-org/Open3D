@@ -199,9 +199,7 @@ void TestBindedFunction() {
     {
         open3d::utility::ScopeTimer timer1("Data generation");
         data.resize(NCORR);
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int i = 0; i < NCORR; i++) {
             data[i] = Eigen::Vector3d::Random();
         }
@@ -224,17 +222,13 @@ void TestBindedFunction() {
     ATb.setZero();
     {
         open3d::utility::ScopeTimer timer("Calling binding function");
-#ifdef _OPENMP
 #pragma omp parallel
         {
-#endif
             Eigen::Matrix6d ATA_private;
             Eigen::Vector6d ATb_private;
             ATA_private.setZero();
             ATb_private.setZero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
             for (int i = 0; i < NCORR; i++) {
                 Eigen::Vector6d A_r;
                 double r;
@@ -242,16 +236,12 @@ void TestBindedFunction() {
                 ATA_private.noalias() += A_r * A_r.transpose();
                 ATb_private.noalias() += A_r * r;
             }
-#ifdef _OPENMP
 #pragma omp critical
             {
-#endif
                 ATA += ATA_private;
                 ATb += ATb_private;
-#ifdef _OPENMP
             }  // omp critical
         }      // omp parallel
-#endif
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;
@@ -260,17 +250,13 @@ void TestBindedFunction() {
     ATb.setZero();
     {
         open3d::utility::ScopeTimer timer("Calling lambda function");
-#ifdef _OPENMP
 #pragma omp parallel
         {
-#endif
             Eigen::Matrix6d ATA_private;
             Eigen::Vector6d ATb_private;
             ATA_private.setZero();
             ATb_private.setZero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
             for (int i = 0; i < NCORR; i++) {
                 Eigen::Vector6d A_r;
                 double r;
@@ -278,16 +264,12 @@ void TestBindedFunction() {
                 ATA_private.noalias() += A_r * A_r.transpose();
                 ATb_private.noalias() += A_r * r;
             }
-#ifdef _OPENMP
 #pragma omp critical
             {
-#endif
                 ATA += ATA_private;
                 ATb += ATb_private;
-#ifdef _OPENMP
             }  // omp critical
         }      // omp parallel
-#endif
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;
@@ -296,17 +278,13 @@ void TestBindedFunction() {
     ATb.setZero();
     {
         open3d::utility::ScopeTimer timer("Calling function directly");
-#ifdef _OPENMP
 #pragma omp parallel
         {
-#endif
             Eigen::Matrix6d ATA_private;
             Eigen::Vector6d ATb_private;
             ATA_private.setZero();
             ATb_private.setZero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
             for (int i = 0; i < NCORR; i++) {
                 Eigen::Vector6d A_r;
                 double r;
@@ -314,16 +292,12 @@ void TestBindedFunction() {
                 ATA_private.noalias() += A_r * A_r.transpose();
                 ATb_private.noalias() += A_r * r;
             }
-#ifdef _OPENMP
 #pragma omp critical
             {
-#endif
                 ATA += ATA_private;
                 ATb += ATb_private;
-#ifdef _OPENMP
             }  // omp critical
         }      // omp parallel
-#endif
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;
@@ -332,17 +306,13 @@ void TestBindedFunction() {
     ATb.setZero();
     {
         open3d::utility::ScopeTimer timer("Direct optration");
-#ifdef _OPENMP
 #pragma omp parallel
         {
-#endif
             Eigen::Matrix6d ATA_private;
             Eigen::Vector6d ATb_private;
             ATA_private.setZero();
             ATb_private.setZero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
             for (int i = 0; i < NCORR; i++) {
                 const Eigen::Vector3d &vs = data[i];
                 const Eigen::Vector3d &vt = data[i];
@@ -354,16 +324,12 @@ void TestBindedFunction() {
                 ATA_private.noalias() += A_r * A_r.transpose();
                 ATb_private.noalias() += A_r * r;
             }
-#ifdef _OPENMP
 #pragma omp critical
             {
-#endif
                 ATA += ATA_private;
                 ATb += ATb_private;
-#ifdef _OPENMP
             }  // omp critical
         }      // omp parallel
-#endif
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;

@@ -36,6 +36,7 @@
 #include "open3d/visualization/gui/Checkbox.h"
 #include "open3d/visualization/gui/ColorEdit.h"
 #include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -63,6 +64,14 @@ CheckableTextTreeCell::CheckableTextTreeCell(
 }
 
 CheckableTextTreeCell::~CheckableTextTreeCell() {}
+
+std::shared_ptr<Checkbox> CheckableTextTreeCell::GetCheckbox() {
+    return impl_->checkbox_;
+}
+
+std::shared_ptr<Label> CheckableTextTreeCell::GetLabel() {
+    return impl_->label_;
+}
 
 Size CheckableTextTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
@@ -112,6 +121,14 @@ LUTTreeCell::LUTTreeCell(const char *text,
 
 LUTTreeCell::~LUTTreeCell() {}
 
+std::shared_ptr<Checkbox> LUTTreeCell::GetCheckbox() {
+    return impl_->checkbox_;
+}
+
+std::shared_ptr<Label> LUTTreeCell::GetLabel() { return impl_->label_; }
+
+std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() { return impl_->color_; }
+
 Size LUTTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
     auto label_pref = impl_->label_->CalcPreferredSize(theme);
@@ -139,6 +156,57 @@ void LUTTreeCell::Layout(const Theme &theme) {
     auto x = impl_->checkbox_->GetFrame().GetRight();
     impl_->label_->SetFrame(
             Rect(x, frame.y, impl_->color_->GetFrame().x - x, frame.height));
+}
+
+// ----------------------------------------------------------------------------
+struct ColormapTreeCell::Impl {
+    std::shared_ptr<NumberEdit> value_;
+    std::shared_ptr<ColorEdit> color_;
+};
+
+ColormapTreeCell::ColormapTreeCell(
+        double value,
+        const Color &color,
+        std::function<void(double)> on_value_changed,
+        std::function<void(const Color &)> on_color_changed)
+    : impl_(new ColormapTreeCell::Impl()) {
+    impl_->value_ = std::make_shared<NumberEdit>(NumberEdit::DOUBLE);
+    impl_->value_->SetDecimalPrecision(3);
+    impl_->value_->SetLimits(0.0, 1.0);
+    impl_->value_->SetValue(value);
+    impl_->value_->SetOnValueChanged(on_value_changed);
+    impl_->color_ = std::make_shared<ColorEdit>();
+    impl_->color_->SetValue(color);
+    impl_->color_->SetOnValueChanged(on_color_changed);
+    AddChild(impl_->value_);
+    AddChild(impl_->color_);
+}
+
+ColormapTreeCell::~ColormapTreeCell() {}
+
+std::shared_ptr<NumberEdit> ColormapTreeCell::GetNumberEdit() {
+    return impl_->value_;
+}
+
+std::shared_ptr<ColorEdit> ColormapTreeCell::GetColorEdit() {
+    return impl_->color_;
+}
+
+Size ColormapTreeCell::CalcPreferredSize(const Theme &theme) const {
+    auto number_pref = impl_->value_->CalcPreferredSize(theme);
+    auto color_pref = impl_->color_->CalcPreferredSize(theme);
+    return Size(number_pref.width + color_pref.width,
+                std::max(number_pref.height, color_pref.height));
+}
+
+void ColormapTreeCell::Layout(const Theme &theme) {
+    auto &frame = GetFrame();
+    auto number_pref = impl_->value_->CalcPreferredSize(theme);
+    impl_->value_->SetFrame(
+            Rect(frame.x, frame.y, number_pref.width, frame.height));
+    auto x = impl_->value_->GetFrame().GetRight();
+    impl_->color_->SetFrame(
+            Rect(x, frame.y, frame.GetRight() - x, frame.height));
 }
 
 // ----------------------------------------------------------------------------
@@ -303,10 +371,11 @@ void TreeView::Layout(const Theme &theme) {
 }
 
 Widget::DrawResult TreeView::Draw(const DrawContext &context) {
+    auto result = Widget::DrawResult::NONE;
     auto &frame = GetFrame();
 
     DrawImGuiPushEnabledState();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     // ImGUI's tree wants to highlight the row as the user moves over it.
     // There are several problems here. First, there seems to be a bug in
@@ -327,13 +396,14 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
 
     // ImGUI's tree is basically a layout in the parent ImGUI window.
     // Make this a child so it's all in a nice frame.
-    ImGui::BeginChild(impl_->id_, ImVec2(frame.width, frame.height), true);
+    ImGui::BeginChild(impl_->id_,
+                      ImVec2(float(frame.width), float(frame.height)), true);
 
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
-    DrawItem = [&DrawItem, this, &frame, &context,
-                &new_selection](Impl::Item &item) {
+    DrawItem = [&DrawItem, this, &frame, &context, &new_selection,
+                &result](Impl::Item &item) {
         int height = item.cell->CalcPreferredSize(context.theme).height;
 
         // ImGUI's tree doesn't seem to support selected items,
@@ -345,11 +415,13 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             // upper left)
             auto y = frame.y + ImGui::GetCursorPosY() - ImGui::GetScrollY();
             ImGui::GetWindowDrawList()->AddRectFilled(
-                    ImVec2(frame.x, y), ImVec2(frame.GetRight(), y + height),
+                    ImVec2(float(frame.x), y),
+                    ImVec2(float(frame.GetRight()), y + height),
                     colorToImguiRGBA(context.theme.tree_selected_color));
         }
 
-        int flags = ImGuiTreeNodeFlags_DefaultOpen;
+        int flags = ImGuiTreeNodeFlags_DefaultOpen |
+                    ImGuiTreeNodeFlags_AllowItemOverlap;
         if (impl_->can_select_parents_) {
             flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
             flags |= ImGuiTreeNodeFlags_OpenOnArrow;
@@ -359,14 +431,14 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
         bool is_selectable =
                 (item.children.empty() || impl_->can_select_parents_);
-        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection](
-                                TreeView::Impl::Item &item, int height,
-                                bool is_selectable) {
+        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection,
+                         &result](TreeView::Impl::Item &item, int height,
+                                  bool is_selectable) {
             ImGui::SameLine(0, 0);
-            auto x = ImGui::GetCursorScreenPos().x;
-            auto y = ImGui::GetCursorScreenPos().y;
-            auto scroll_width = ImGui::GetStyle().ScrollbarSize;
-            auto indent = ImGui::GetCursorScreenPos().x - tree_frame.x;
+            auto x = int(std::round(ImGui::GetCursorScreenPos().x));
+            auto y = int(std::round(ImGui::GetCursorScreenPos().y));
+            auto scroll_width = int(ImGui::GetStyle().ScrollbarSize);
+            auto indent = x - tree_frame.x;
             item.cell->SetFrame(Rect(
                     x, y, tree_frame.width - indent - scroll_width, height));
             // Now that we know the frame we can finally layout. It would be
@@ -376,7 +448,10 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             item.cell->Layout(context.theme);
 
             ImGui::BeginGroup();
-            item.cell->Draw(context);
+            auto this_result = item.cell->Draw(context);
+            if (this_result == Widget::DrawResult::REDRAW) {
+                result = Widget::DrawResult::REDRAW;
+            }
             ImGui::EndGroup();
 
             if (ImGui::IsItemClicked() && is_selectable) {
@@ -409,7 +484,6 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     // finished drawing, so that the callback is able to change the contents
     // of the tree if it wishes (which could cause a crash if done while
     // drawing, e.g. deleting the current item).
-    auto result = Widget::DrawResult::NONE;
     if (new_selection) {
         if (impl_->on_selection_changed_) {
             impl_->on_selection_changed_(new_selection->id);

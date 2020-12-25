@@ -174,12 +174,10 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
                 "dimensions.");
     }
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(3) schedule(static)
-#endif
 #endif
     for (int v = 0; v < bgra.height_; ++v) {
         for (int u = 0; u < bgra.width_; ++u) {
@@ -268,8 +266,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
     if (K4A_IMAGE_FORMAT_COLOR_MJPG !=
         k4a_plugin::k4a_image_get_format(k4a_color)) {
         utility::LogWarning(
-                "Unexpected image format. The stream may have "
-                "corrupted.");
+                "Unexpected image format. The stream may have been corrupted.");
         return nullptr;
     }
 

@@ -58,18 +58,22 @@ public:
     virtual ~GuiVisualizer();
 
     void SetTitle(const std::string& title);
-    void SetGeometry(
-            const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                    geometries);
+    void SetGeometry(std::shared_ptr<const geometry::Geometry> geometry,
+                     bool loaded_model);
 
     bool SetIBL(const char* path);
 
     /// Loads asynchronously, will return immediately.
     void LoadGeometry(const std::string& path);
 
-    void ExportCurrentImage(int width, int height, const std::string& path);
+    void ExportCurrentImage(const std::string& path);
 
     void Layout(const gui::Theme& theme) override;
+
+    /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
+    void StartRPCInterface(const std::string& address, int timeout);
+
+    void StopRPCInterface();
 
 protected:
     // Add custom items to the application menu (only relevant on macOS)

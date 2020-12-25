@@ -25,8 +25,8 @@ We also recommend reading the `C++ Core Guidelines <https://github.com/isocpp/Cp
 For Python, please use Google style guidelines, as shown `here <http://google.github.io/styleguide/pyguide.html>`_.
 
 
-Automated style Checker
-========================
+Style checker
+=============
 
 Open3D's CI checks for code formatting based on the style specified in
 ``.clang-format`` for C++ files and ``.style.yapf`` for Python files.
@@ -64,6 +64,7 @@ macOS
 ~~~~~~~~~
 
 .. code:: bash
+
    # Install from official brew formula.
    brew install clang-format
    clang-format --version

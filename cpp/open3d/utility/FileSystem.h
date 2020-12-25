@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -72,6 +73,10 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
                                        const std::string &extname,
                                        std::vector<std::string> &filenames);
 
+std::vector<std::string> FindFilesRecursively(
+        const std::string &directory,
+        std::function<bool(const std::string &)> is_match);
+
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
 std::string GetIOErrorString(const int errnoVal);
@@ -91,24 +96,49 @@ bool FReadToBuffer(const std::string &path,
 /// throw, use try/catch (const std::exception &e) { ... }
 class CFile {
 public:
+    /// The destructor closes the file automatically.
     ~CFile();
+
+    /// Open a file.
     bool Open(const std::string &filename, const std::string &mode);
-    /// return last encountered error for this file
+
+    /// Returns the last encountered error for this file.
     std::string GetError();
+
+    /// Close the file.
     void Close();
-    /// return current position in the file (ftell)
+
+    /// Returns current position in the file (ftell).
     int64_t CurPos();
+
+    /// Returns the file size in bytes.
     int64_t GetFileSize();
-    /// Throws if we hit buffer maximum.  In most cases, calling code is only
+
+    /// Returns the number of lines in the file.
+    int64_t GetNumLines();
+
+    /// Throws if we hit buffer maximum. In most cases, calling code is only
     /// capable of processing a complete line, if it receives a partial line it
     /// will probably fail and it is very likely to fail/corrupt on the next
-    /// call that receives the remainder of the line
+    /// call that receives the remainder of the line.
     const char *ReadLine();
+
+    /// Read data to a buffer.
+    /// \param data The data buffer to be written into.
+    /// \param num_elements Number of elements to be read. The byte size of the
+    /// element is determined by the size of buffer type.
     template <class T>
     size_t ReadData(T *data, size_t num_elems) {
         return ReadData(data, sizeof(T), num_elems);
     }
+
+    /// Read data to a buffer.
+    /// \param data The data buffer to be written into.
+    /// \param elem_size Element size in bytes.
+    /// \param num_elems Number of elements to read.
     size_t ReadData(void *data, size_t elem_size, size_t num_elems);
+
+    /// Returns the underlying C FILE pointer.
     FILE *GetFILE() { return file_; }
 
 private:

@@ -45,13 +45,12 @@ feature_functions = pytest.mark.parametrize(
     'feature_fn', ['average', 'max', 'nearest_neighbor'])
 
 
+@mltest.parametrize.ml_cpu_only
 @position_dtypes
 @feature_dtypes
 @position_functions
 @feature_functions
-def test_voxel_pooling(pos_dtype, feat_dtype, position_fn, feature_fn):
-    import open3d.ml.tf as ml3d
-
+def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     # yapf: disable
 
     points = np.array([
@@ -77,8 +76,8 @@ def test_voxel_pooling(pos_dtype, feat_dtype, position_fn, feature_fn):
     # yapf: enable
 
     voxel_size = 1
-    ans = ml3d.ops.voxel_pooling(points, features, voxel_size, position_fn,
-                                 feature_fn)
+    ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling, points,
+                        features, voxel_size, position_fn, feature_fn)
 
     if position_fn == 'average':
         expected_positions = np.stack(
@@ -100,8 +99,7 @@ def test_voxel_pooling(pos_dtype, feat_dtype, position_fn, feature_fn):
     else:
         index = [1, 0]
 
-    np.testing.assert_allclose(ans.pooled_positions.numpy(),
-                               expected_positions[index])
+    np.testing.assert_allclose(ans.pooled_positions, expected_positions[index])
 
     if feature_fn == 'average':
         if np.issubdtype(feat_dtype, np.integer):
@@ -120,44 +118,42 @@ def test_voxel_pooling(pos_dtype, feat_dtype, position_fn, feature_fn):
     elif feature_fn == 'nearest_neighbor':
         expected_features = np.array([features[0], features[3]])
 
-    np.testing.assert_allclose(ans.pooled_features.numpy(),
-                               expected_features[index])
+    np.testing.assert_allclose(ans.pooled_features, expected_features[index])
 
 
+@mltest.parametrize.ml_cpu_only
 @position_dtypes
 @feature_dtypes
 @position_functions
 @feature_functions
-def test_voxel_pooling_empty_point_set(pos_dtype, feat_dtype, position_fn,
+def test_voxel_pooling_empty_point_set(ml, pos_dtype, feat_dtype, position_fn,
                                        feature_fn):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
-
     points = np.zeros(shape=[0, 3], dtype=pos_dtype)
     features = np.zeros(shape=[0, 5], dtype=feat_dtype)
 
     voxel_size = 1
-    ans = ml3d.ops.voxel_pooling(points, features, voxel_size, position_fn,
-                                 feature_fn)
+    ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling, points,
+                        features, voxel_size, position_fn, feature_fn)
 
-    np.testing.assert_array_equal(points, ans.pooled_positions.numpy())
-    np.testing.assert_array_equal(features, ans.pooled_features.numpy())
+    np.testing.assert_array_equal(points, ans.pooled_positions)
+    np.testing.assert_array_equal(features, ans.pooled_features)
 
 
-# tf does not support gradient computation for integer types
+# tf and torch does not support gradient computation for integer types
 gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype',
                                                   [np.float32, np.float64])
 
 
+@mltest.parametrize.ml_cpu_only
 @position_dtypes
 @gradient_feature_dtypes
 @position_functions
 @feature_functions
-@pytest.mark.parametrize('empty_point_set', [True, False])
-def test_voxel_pooling_grad(pos_dtype, feat_dtype, position_fn, feature_fn,
+@pytest.mark.parametrize('empty_point_set', [
+    False,
+])
+def test_voxel_pooling_grad(ml, pos_dtype, feat_dtype, position_fn, feature_fn,
                             empty_point_set):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
 
     rng = np.random.RandomState(123)
 
@@ -173,19 +169,16 @@ def test_voxel_pooling_grad(pos_dtype, feat_dtype, position_fn, feature_fn,
     voxel_size = 0.25
 
     def fn(features):
-        ans = ml3d.ops.voxel_pooling(positions, features, voxel_size,
-                                     position_fn, feature_fn)
-        return ans.pooled_features.numpy()
+        ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling,
+                            positions, features, voxel_size, position_fn,
+                            feature_fn)
+        return ans.pooled_features
 
     def fn_grad(features_bp, features):
-        x = tf.constant(features)
-        with tf.GradientTape() as tape:
-            tape.watch(x)
-            ans = ml3d.ops.voxel_pooling(positions, x, voxel_size, position_fn,
-                                         feature_fn)
-            y = ans.pooled_features
-            dy_dx = tape.gradient(y, x, features_bp)
-        return dy_dx.numpy()
+        return mltest.run_op_grad(ml, ml.device, True, ml.ops.voxel_pooling,
+                                  features, 'pooled_features', features_bp,
+                                  positions, features, voxel_size, position_fn,
+                                  feature_fn)
 
     gradient_OK = check_gradients(features, fn, fn_grad, epsilon=1)
     assert gradient_OK

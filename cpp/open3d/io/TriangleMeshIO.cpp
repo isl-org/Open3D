@@ -39,14 +39,15 @@ using namespace io;
 static const std::unordered_map<
         std::string,
         std::function<bool(
-                const std::string &, geometry::TriangleMesh &, bool)>>
+                const std::string &, geometry::TriangleMesh &, bool, bool)>>
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
-                {"stl", ReadTriangleMeshFromSTL},
-                {"obj", ReadTriangleMeshFromOBJ},
+                {"stl", ReadTriangleMeshUsingASSIMP},
+                {"obj", ReadTriangleMeshUsingASSIMP},
                 {"off", ReadTriangleMeshFromOFF},
-                {"gltf", ReadTriangleMeshFromGLTF},
-                {"glb", ReadTriangleMeshFromGLTF},
+                {"gltf", ReadTriangleMeshUsingASSIMP},
+                {"glb", ReadTriangleMeshUsingASSIMP},
+                {"fbx", ReadTriangleMeshUsingASSIMP},
         };
 
 static const std::unordered_map<
@@ -81,6 +82,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
+                      bool enable_post_processing /* = false */,
                       bool print_progress /* = false */) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
@@ -98,7 +100,8 @@ bool ReadTriangleMesh(const std::string &filename,
                 "extension.");
         return false;
     }
-    bool success = map_itr->second(filename, mesh, print_progress);
+    bool success = map_itr->second(filename, mesh, enable_post_processing,
+                                   print_progress);
     utility::LogDebug(
             "Read geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());

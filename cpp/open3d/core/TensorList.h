@@ -84,6 +84,24 @@ public:
     TensorList(const std::vector<Tensor>& tensors)
         : TensorList(tensors.begin(), tensors.end()) {}
 
+    /// Constructs a tensorlist with specified size.
+    ///
+    /// \param size Size of the tensorlist.
+    /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
+    /// and scalar element_shape are allowed.
+    /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
+    /// \param device Device of the contained tensors. e.g. Device("CPU:0").
+    TensorList(int64_t size,
+               const SizeVector& element_shape,
+               Dtype dtype,
+               const Device& device = Device("CPU:0"))
+        : element_shape_(element_shape),
+          size_(size),
+          reserved_size_(ComputeReserveSize(size)),
+          internal_tensor_(shape_util::Concat({reserved_size_}, element_shape_),
+                           dtype,
+                           device) {}
+
     /// Constructs a tensorlist from a list of Tensors. The tensors must have
     /// the same shape, dtype and device. Values will be copied.
     ///
@@ -125,8 +143,7 @@ public:
             if (tensor.GetDtype() != dtype) {
                 utility::LogError(
                         "Tensors must have the same dtype {}, but got {}.",
-                        DtypeUtil::ToString(dtype),
-                        DtypeUtil::ToString(tensor.GetDtype()));
+                        dtype.ToString(), tensor.GetDtype().ToString());
             }
         });
 
@@ -246,10 +263,20 @@ public:
 
     SizeVector GetElementShape() const { return element_shape_; }
 
-    void AssertElementShape(const SizeVector& element_shape) const {
-        if (element_shape != element_shape_) {
-            utility::LogError("TensorList shape mismatch, {} != {}",
-                              element_shape, element_shape_);
+    void AssertElementShape(const SizeVector& expected_element_shape) const {
+        if (expected_element_shape != element_shape_) {
+            utility::LogError(
+                    "TensorList has element shape {}, but is expected to have "
+                    "element shape {}.",
+                    element_shape_, expected_element_shape);
+        }
+    }
+
+    void AssertDevice(const Device& expected_device) const {
+        if (GetDevice() != expected_device) {
+            utility::LogError(
+                    "TensorList has device {}, but is expected to be {}.",
+                    GetDevice().ToString(), expected_device.ToString());
         }
     }
 

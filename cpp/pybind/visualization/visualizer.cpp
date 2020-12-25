@@ -35,6 +35,7 @@
 #include "pybind/visualization/visualization_trampoline.h"
 
 namespace open3d {
+namespace visualization {
 
 // Functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
@@ -57,180 +58,172 @@ static const std::unordered_map<std::string, std::string>
                  "Set to ``False`` to keep current viewpoint"}};
 
 void pybind_visualizer(py::module &m) {
-    py::class_<visualization::Visualizer, PyVisualizer<>,
-               std::shared_ptr<visualization::Visualizer>>
+    py::class_<Visualizer, PyVisualizer<>, std::shared_ptr<Visualizer>>
             visualizer(m, "Visualizer", "The main Visualizer class.");
-    py::detail::bind_default_constructor<visualization::Visualizer>(visualizer);
+    py::detail::bind_default_constructor<Visualizer>(visualizer);
     visualizer
             .def("__repr__",
-                 [](const visualization::Visualizer &vis) {
+                 [](const Visualizer &vis) {
                      return std::string("Visualizer with name ") +
                             vis.GetWindowName();
                  })
-            .def("create_window",
-                 &visualization::Visualizer::CreateVisualizerWindow,
+            .def("create_window", &Visualizer::CreateVisualizerWindow,
                  "Function to create a window and initialize GLFW",
                  "window_name"_a = "Open3D", "width"_a = 1920,
                  "height"_a = 1080, "left"_a = 50, "top"_a = 50,
                  "visible"_a = true)
-            .def("destroy_window",
-                 &visualization::Visualizer::DestroyVisualizerWindow,
+            .def("destroy_window", &Visualizer::DestroyVisualizerWindow,
                  "Function to destroy a window. This function MUST be called "
                  "from the main thread.")
             .def("register_animation_callback",
-                 &visualization::Visualizer::RegisterAnimationCallback,
+                 &Visualizer::RegisterAnimationCallback,
                  "Function to register a callback function for animation. The "
                  "callback function returns if UpdateGeometry() needs to be "
                  "run.",
                  "callback_func"_a)
-            .def("run", &visualization::Visualizer::Run,
+            .def("run", &Visualizer::Run,
                  "Function to activate the window. This function will block "
                  "the current thread until the window is closed.")
-            .def("close", &visualization::Visualizer::Close,
+            .def("close", &Visualizer::Close,
                  "Function to notify the window to be closed")
-            .def("reset_view_point", &visualization::Visualizer::ResetViewPoint,
+            .def("reset_view_point", &Visualizer::ResetViewPoint,
                  "Function to reset view point")
-            .def("update_geometry", &visualization::Visualizer::UpdateGeometry,
+            .def("update_geometry", &Visualizer::UpdateGeometry,
                  "Function to update geometry. This function must be called "
                  "when geometry has been changed. Otherwise the behavior of "
                  "Visualizer is undefined.",
                  "geometry"_a)
-            .def("update_renderer", &visualization::Visualizer::UpdateRender,
+            .def("update_renderer", &Visualizer::UpdateRender,
                  "Function to inform render needed to be updated")
-            .def("poll_events", &visualization::Visualizer::PollEvents,
+            .def("set_full_screen", &Visualizer::SetFullScreen,
+                 "Function to change between fullscreen and windowed")
+            .def("toggle_full_screen", &Visualizer::ToggleFullScreen,
+                 "Function to toggle between fullscreen and windowed")
+            .def("is_full_screen", &Visualizer::IsFullScreen,
+                 "Function to query whether in fullscreen mode")
+            .def("poll_events", &Visualizer::PollEvents,
                  "Function to poll events")
-            .def("add_geometry", &visualization::Visualizer::AddGeometry,
+            .def("add_geometry", &Visualizer::AddGeometry,
                  "Function to add geometry to the scene and create "
                  "corresponding shaders",
                  "geometry"_a, "reset_bounding_box"_a = true)
-            .def("remove_geometry", &visualization::Visualizer::RemoveGeometry,
+            .def("remove_geometry", &Visualizer::RemoveGeometry,
                  "Function to remove geometry", "geometry"_a,
                  "reset_bounding_box"_a = true)
-            .def("clear_geometries",
-                 &visualization::Visualizer::ClearGeometries,
+            .def("clear_geometries", &Visualizer::ClearGeometries,
                  "Function to clear geometries from the visualizer")
-            .def("get_view_control", &visualization::Visualizer::GetViewControl,
+            .def("get_view_control", &Visualizer::GetViewControl,
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
-            .def("get_render_option",
-                 &visualization::Visualizer::GetRenderOption,
+            .def("get_render_option", &Visualizer::GetRenderOption,
                  "Function to retrieve the associated ``RenderOption``",
                  py::return_value_policy::reference_internal)
             .def("capture_screen_float_buffer",
-                 &visualization::Visualizer::CaptureScreenFloatBuffer,
+                 &Visualizer::CaptureScreenFloatBuffer,
                  "Function to capture screen and store RGB in a float buffer",
                  "do_render"_a = false)
-            .def("capture_screen_image",
-                 &visualization::Visualizer::CaptureScreenImage,
+            .def("capture_screen_image", &Visualizer::CaptureScreenImage,
                  "Function to capture and save a screen image", "filename"_a,
                  "do_render"_a = false)
             .def("capture_depth_float_buffer",
-                 &visualization::Visualizer::CaptureDepthFloatBuffer,
+                 &Visualizer::CaptureDepthFloatBuffer,
                  "Function to capture depth in a float buffer",
                  "do_render"_a = false)
-            .def("capture_depth_image",
-                 &visualization::Visualizer::CaptureDepthImage,
+            .def("capture_depth_image", &Visualizer::CaptureDepthImage,
                  "Function to capture and save a depth image", "filename"_a,
                  "do_render"_a = false, "depth_scale"_a = 1000.0)
             .def("capture_depth_point_cloud",
-                 &visualization::Visualizer::CaptureDepthPointCloud,
+                 &Visualizer::CaptureDepthPointCloud,
                  "Function to capture and save local point cloud", "filename"_a,
                  "do_render"_a = false, "convert_to_world_coordinate"_a = false)
-            .def("get_window_name", &visualization::Visualizer::GetWindowName);
+            .def("get_window_name", &Visualizer::GetWindowName);
 
-    py::class_<visualization::VisualizerWithKeyCallback,
-               PyVisualizer<visualization::VisualizerWithKeyCallback>,
-               std::shared_ptr<visualization::VisualizerWithKeyCallback>>
+    py::class_<VisualizerWithKeyCallback,
+               PyVisualizer<VisualizerWithKeyCallback>,
+               std::shared_ptr<VisualizerWithKeyCallback>>
             visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
                            "Visualizer with custom key callack capabilities.");
-    py::detail::bind_default_constructor<
-            visualization::VisualizerWithKeyCallback>(visualizer_key);
+    py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
+            visualizer_key);
     visualizer_key
             .def("__repr__",
-                 [](const visualization::VisualizerWithKeyCallback &vis) {
+                 [](const VisualizerWithKeyCallback &vis) {
                      return std::string(
                                     "VisualizerWithKeyCallback with name ") +
                             vis.GetWindowName();
                  })
             .def("register_key_callback",
-                 &visualization::VisualizerWithKeyCallback::RegisterKeyCallback,
+                 &VisualizerWithKeyCallback::RegisterKeyCallback,
                  "Function to register a callback function for a key press "
                  "event",
                  "key"_a, "callback_func"_a)
 
             .def("register_key_action_callback",
-                 &visualization::VisualizerWithKeyCallback::
-                         RegisterKeyActionCallback,
+                 &VisualizerWithKeyCallback::RegisterKeyActionCallback,
                  "Function to register a callback function for a key action "
                  "event. The callback function takes Visualizer, action and "
                  "mods as input and returns a boolean indicating if "
                  "UpdateGeometry() needs to be run.",
                  "key"_a, "callback_func"_a);
 
-    py::class_<visualization::VisualizerWithEditing,
-               PyVisualizer<visualization::VisualizerWithEditing>,
-               std::shared_ptr<visualization::VisualizerWithEditing>>
+    py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
+               std::shared_ptr<VisualizerWithEditing>>
             visualizer_edit(m, "VisualizerWithEditing", visualizer,
                             "Visualizer with editing capabilities.");
-    py::detail::bind_default_constructor<visualization::VisualizerWithEditing>(
+    py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit.def(py::init<double, bool, const std::string &>())
             .def("__repr__",
-                 [](const visualization::VisualizerWithEditing &vis) {
+                 [](const VisualizerWithEditing &vis) {
                      return std::string("VisualizerWithEditing with name ") +
                             vis.GetWindowName();
                  })
-            .def("get_picked_points",
-                 &visualization::VisualizerWithEditing::GetPickedPoints,
+            .def("get_picked_points", &VisualizerWithEditing::GetPickedPoints,
                  "Function to get picked points");
 
-    py::class_<visualization::VisualizerWithVertexSelection,
-               PyVisualizer<visualization::VisualizerWithVertexSelection>,
-               std::shared_ptr<visualization::VisualizerWithVertexSelection>>
+    py::class_<VisualizerWithVertexSelection,
+               PyVisualizer<VisualizerWithVertexSelection>,
+               std::shared_ptr<VisualizerWithVertexSelection>>
             visualizer_vselect(
                     m, "VisualizerWithVertexSelection", visualizer,
                     "Visualizer with vertex selection capabilities.");
-    py::detail::bind_default_constructor<
-            visualization::VisualizerWithVertexSelection>(visualizer_vselect);
+    py::detail::bind_default_constructor<VisualizerWithVertexSelection>(
+            visualizer_vselect);
     visualizer_vselect.def(py::init<>())
             .def("__repr__",
-                 [](const visualization::VisualizerWithVertexSelection &vis) {
+                 [](const VisualizerWithVertexSelection &vis) {
                      return std::string(
                                     "VisualizerWithVertexSelection with "
                                     "name ") +
                             vis.GetWindowName();
                  })
             .def("get_picked_points",
-                 &visualization::VisualizerWithVertexSelection::GetPickedPoints,
+                 &VisualizerWithVertexSelection::GetPickedPoints,
                  "Function to get picked points")
             .def("clear_picked_points",
-                 &visualization::VisualizerWithVertexSelection::
-                         ClearPickedPoints,
+                 &VisualizerWithVertexSelection::ClearPickedPoints,
                  "Function to clear picked points")
             .def("register_selection_changed_callback",
-                 &visualization::VisualizerWithVertexSelection::
+                 &VisualizerWithVertexSelection::
                          RegisterSelectionChangedCallback,
                  "Registers a function to be called when selection changes")
             .def("register_selection_moving_callback",
-                 &visualization::VisualizerWithVertexSelection::
+                 &VisualizerWithVertexSelection::
                          RegisterSelectionMovingCallback,
                  "Registers a function to be called while selection moves. "
                  "Geometry's vertex values can be changed, but do not change"
                  "the number of vertices.")
             .def("register_selection_moved_callback",
-                 &visualization::VisualizerWithVertexSelection::
-                         RegisterSelectionMovedCallback,
+                 &VisualizerWithVertexSelection::RegisterSelectionMovedCallback,
                  "Registers a function to be called after selection moves");
 
-    py::class_<visualization::VisualizerWithVertexSelection::PickedPoint>
+    py::class_<VisualizerWithVertexSelection::PickedPoint>
             visualizer_vselect_pickedpoint(m, "PickedPoint");
     visualizer_vselect_pickedpoint.def(py::init<>())
             .def_readwrite("index",
-                           &visualization::VisualizerWithVertexSelection::
-                                   PickedPoint::index)
+                           &VisualizerWithVertexSelection::PickedPoint::index)
             .def_readwrite("coord",
-                           &visualization::VisualizerWithVertexSelection::
-                                   PickedPoint::coord);
+                           &VisualizerWithVertexSelection::PickedPoint::coord);
 
     docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",
                                     map_visualizer_docstrings);
@@ -274,8 +267,15 @@ void pybind_visualizer(py::module &m) {
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer", "update_renderer",
                                     map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "set_full_screen",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "toggle_full_screen",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "is_full_screen",
+                                    map_visualizer_docstrings);
 }
 
 void pybind_visualizer_method(py::module &m) {}
 
+}  // namespace visualization
 }  // namespace open3d

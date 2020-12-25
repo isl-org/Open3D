@@ -131,13 +131,13 @@ void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
 }
 
 void LightDirectionInteractorLogic::StartMouseDrag() {
-    light_dir_at_mouse_down_ = scene_->GetDirectionalLightDirection();
+    light_dir_at_mouse_down_ = scene_->GetSunLightDirection();
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
     ClearUI();
 
-    Eigen::Vector3f dir = scene_->GetDirectionalLightDirection();
+    Eigen::Vector3f dir = scene_->GetSunLightDirection();
 
     double size = model_size_;
     if (size <= 0.001) {
@@ -145,11 +145,15 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     }
     double sphere_size = 0.5 * size;  // size is a diameter
     auto sphere_tris = geometry::TriangleMesh::CreateSphere(sphere_size, 20);
+    // NOTE: Line set doesn't support UVs. With defaultUnlit shader which
+    // requires UVs, filament will print out a warning about the missing vertex
+    // attribute. If/when we have a shader specifically for line sets we can use
+    // it to avoid the warning.
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
     sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
     Material mat;
-    mat.shader = "defaultLit";
+    mat.shader = "defaultUnlit";
     scene_->AddGeometry("__suncagesphere__", *sphere, mat);
     scene_->SetGeometryTransform("__suncagesphere__", t0);
     scene_->GeometryShadows("__suncagesphere__", false, false);
@@ -158,6 +162,8 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     auto sun_radius = 0.05 * size;
     auto sun = geometry::TriangleMesh::CreateSphere(sun_radius, 20);
     sun->PaintUniformColor(kSunColor);
+    sun->ComputeVertexNormals();
+    sun->triangle_uvs_.resize(sun->triangles_.size() * 3, {0.f, 0.f});
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphere_size * dir);
     scene_->AddGeometry("__sunsphere__", *sun, mat);
@@ -170,6 +176,8 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     auto sun_dir = CreateArrow(dir.cast<double>(), arrow_radius, arrow_length,
                                0.1 * arrow_length, 20);
     sun_dir->PaintUniformColor(kSunColor);
+    sun_dir->ComputeVertexNormals();
+    sun_dir->triangle_uvs_.resize(sun_dir->triangles_.size() * 3, {0.f, 0.f});
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphere_size * dir);
     scene_->AddGeometry("__sunarrow__", *sun_dir, mat);

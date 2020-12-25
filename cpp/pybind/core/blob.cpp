@@ -31,9 +31,9 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
-void pybind_core_blob(py::module &m) {
-    py::class_<core::Blob, std::shared_ptr<core::Blob>> blob(m, "Blob");
-}
+void pybind_core_blob(py::module &m) { py::class_<Blob> blob(m, "Blob"); }
 
+}  // namespace core
 }  // namespace open3d

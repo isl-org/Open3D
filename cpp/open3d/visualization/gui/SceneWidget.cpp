@@ -26,13 +26,19 @@
 
 #include "open3d/visualization/gui/SceneWidget.h"
 
+#include <imgui.h>
+
 #include <Eigen/Geometry>
 #include <set>
+#include <unordered_set>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Label3D.h"
+#include "open3d/visualization/gui/PickPointsInteractor.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/CameraInteractorLogic.h"
 #include "open3d/visualization/rendering/IBLRotationInteractorLogic.h"
@@ -41,6 +47,9 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
+
+// Once render target is available, please remove the #ifdefs
+#define NO_RENDER_TARGET 1
 
 namespace open3d {
 namespace visualization {
@@ -51,17 +60,7 @@ static const double MIN_FAR_PLANE = 1.0;
 
 static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2;  // seconds
 // ----------------------------------------------------------------------------
-class MouseInteractor {
-public:
-    virtual ~MouseInteractor() = default;
-
-    virtual rendering::MatrixInteractorLogic& GetMatrixInteractor() = 0;
-    virtual void Mouse(const MouseEvent& e) = 0;
-    virtual void Key(const KeyEvent& e) = 0;
-    virtual bool Tick(const TickEvent& e) { return false; }
-};
-
-class RotateSunInteractor : public MouseInteractor {
+class RotateSunInteractor : public SceneWidget::MouseInteractor {
 public:
     RotateSunInteractor(rendering::Open3DScene* scene,
                         rendering::Camera* camera)
@@ -72,7 +71,7 @@ public:
         return *light_dir_.get();
     }
 
-    void SetOnDirectionalLightChanged(
+    void SetOnSunLightChanged(
             std::function<void(const Eigen::Vector3f&)> on_changed) {
         on_light_dir_changed_ = on_changed;
     }
@@ -113,7 +112,7 @@ private:
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
 };
 
-class RotateIBLInteractor : public MouseInteractor {
+class RotateIBLInteractor : public SceneWidget::MouseInteractor {
 public:
     RotateIBLInteractor(rendering::Scene* scene, rendering::Camera* camera)
         : ibl_(std::make_unique<rendering::IBLRotationInteractorLogic>(
@@ -171,7 +170,7 @@ private:
             on_rotation_changed_;
 };
 
-class FlyInteractor : public MouseInteractor {
+class FlyInteractor : public SceneWidget::MouseInteractor {
 public:
     explicit FlyInteractor(rendering::Camera* camera)
         : camera_controls_(std::make_unique<rendering::CameraInteractorLogic>(
@@ -231,7 +230,7 @@ public:
         bool redraw = false;
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
-            const float dist = 0.0025f * bounds.GetExtent().norm();
+            const float dist = float(0.0025 * bounds.GetExtent().norm());
             const float angle_rad = 0.0075f;
 
             auto HasKey = [this](uint32_t key) -> bool {
@@ -300,7 +299,7 @@ private:
     std::set<uint32_t> keys_down_;
 };
 
-class RotationInteractor : public MouseInteractor {
+class RotationInteractor : public SceneWidget::MouseInteractor {
 protected:
     void SetInteractor(rendering::RotationInteractorLogic* r) {
         interactor_ = r;
@@ -368,7 +367,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                interactor_->Dolly(2.0 * e.wheel.dy,
+                interactor_->Dolly(2 * e.wheel.dy,
                                    e.wheel.isTrackpad
                                            ? rendering::MatrixInteractorLogic::
                                                      DragType::TWO_FINGER
@@ -404,38 +403,14 @@ public:
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
-                  scene->GetScene(), camera, MIN_FAR_PLANE)),
-          scene_(scene) {
+                  scene, camera, MIN_FAR_PLANE)) {
         SetInteractor(rotation_.get());
     }
 
-    void Mouse(const MouseEvent& e) override {
-        // We need to make sure rotation_ gets the geometry handles it
-        // needs to rotate. We can't just cache this in the constructor,
-        // because the caller may have given us an empty scene which it
-        // later fills. (Also, just in case the scene geometry is updated,
-        // if we all users to load a second model.) We need to make sure
-        // that all levels of detail are updated. The handles might be
-        // the same, but it turns that works out fine because rotation_
-        // calculates the new matrix from the matrix at mouse down, so
-        // the calculation is not cumulative if there are multiple copies
-        // of the object, merely duplicated.
-        if (e.type == MouseEvent::BUTTON_DOWN) {
-            // TODO: Make sure this works with new Scene graph
-            // std::vector<rendering::GeometryHandle> geometries =
-            //         scene_->GetModel();
-            // for (auto& fast :
-            //      scene_->GetModel(rendering::Open3DScene::LOD::FAST)) {
-            //     geometries.push_back(fast);
-            // }
-            // rotation_->SetModel(scene_->GetAxis(), geometries);
-        }
-        Super::Mouse(e);
-    }
+    void Mouse(const MouseEvent& e) override { Super::Mouse(e); }
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
-    rendering::Open3DScene* scene_;
 };
 
 class RotateCameraInteractor : public RotationInteractor {
@@ -477,6 +452,49 @@ private:
     std::unique_ptr<rendering::CameraInteractorLogic> camera_controls_;
 };
 
+class PickInteractor : public RotateCameraInteractor {
+    using Super = RotateCameraInteractor;
+
+public:
+    PickInteractor(rendering::Open3DScene* scene, rendering::Camera* camera)
+        : Super(camera), pick_(new PickPointsInteractor(scene, camera)) {}
+
+    void SetViewSize(const Size& size) {
+        GetMatrixInteractor().SetViewSize(size.width, size.height);
+        pick_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+    }
+
+    void SetPickableGeometry(
+            const std::vector<SceneWidget::PickableGeometry>& geometry) {
+        pick_->SetPickableGeometry(geometry);
+    }
+
+    void SetPickablePointSize(int px) { pick_->SetPointSize(px); }
+
+    void SetOnPointsPicked(
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> on_picked) {
+        pick_->SetOnPointsPicked(on_picked);
+    }
+
+    void SetNeedsRedraw() { pick_->SetNeedsRedraw(); }
+
+    void Mouse(const MouseEvent& e) override {
+        if (e.modifiers & int(KeyModifier::CTRL)) {
+            pick_->Mouse(e);
+        } else {
+            Super::Mouse(e);
+            pick_->SetNeedsRedraw();
+        }
+    }
+
+private:
+    std::unique_ptr<PickPointsInteractor> pick_;
+};
+
 // ----------------------------------------------------------------------------
 class Interactors {
 public:
@@ -486,7 +504,8 @@ public:
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
           ibl_(std::make_unique<RotateIBLInteractor>(scene->GetScene(),
                                                      camera)),
-          model_(std::make_unique<RotateModelInteractor>(scene, camera)) {
+          model_(std::make_unique<RotateModelInteractor>(scene, camera)),
+          pick_(std::make_unique<PickInteractor>(scene, camera)) {
         current_ = rotate_.get();
     }
 
@@ -496,6 +515,7 @@ public:
         sun_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         ibl_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         model_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+        pick_->SetViewSize(size);
     }
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
@@ -504,18 +524,37 @@ public:
         sun_->GetMatrixInteractor().SetBoundingBox(bounds);
         ibl_->GetMatrixInteractor().SetBoundingBox(bounds);
         model_->GetMatrixInteractor().SetBoundingBox(bounds);
+        pick_->GetMatrixInteractor().SetBoundingBox(bounds);
     }
 
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         rotate_->SetCenterOfRotation(center);
     }
 
-    void SetOnDirectionalLightChanged(
+    void SetOnSunLightChanged(
             std::function<void(const Eigen::Vector3f&)> onChanged) {
-        sun_->SetOnDirectionalLightChanged(onChanged);
+        sun_->SetOnSunLightChanged(onChanged);
     }
 
     void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
+
+    void SetPickableGeometry(
+            const std::vector<SceneWidget::PickableGeometry>& geometry) {
+        pick_->SetPickableGeometry(geometry);
+    }
+
+    void SetPickablePointSize(int px) { pick_->SetPickablePointSize(px); }
+
+    void SetOnPointsPicked(
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> on_picked) {
+        pick_->SetOnPointsPicked(on_picked);
+    }
+
+    void SetPickNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
     SceneWidget::Controls GetControls() const {
         if (current_ == fly_.get()) {
@@ -526,6 +565,8 @@ public:
             return SceneWidget::Controls::ROTATE_IBL;
         } else if (current_ == model_.get()) {
             return SceneWidget::Controls::ROTATE_MODEL;
+        } else if (current_ == pick_.get()) {
+            return SceneWidget::Controls::PICK_POINTS;
         } else {
             return SceneWidget::Controls::ROTATE_CAMERA;
         }
@@ -547,6 +588,9 @@ public:
                 break;
             case SceneWidget::Controls::ROTATE_MODEL:
                 current_ = model_.get();
+                break;
+            case SceneWidget::Controls::PICK_POINTS:
+                current_ = pick_.get();
                 break;
         }
     }
@@ -592,15 +636,15 @@ private:
     std::unique_ptr<RotateSunInteractor> sun_;
     std::unique_ptr<RotateIBLInteractor> ibl_;
     std::unique_ptr<RotateModelInteractor> model_;
+    std::unique_ptr<PickInteractor> pick_;
 
-    MouseInteractor* current_ = nullptr;
-    MouseInteractor* override_ = nullptr;
+    SceneWidget::MouseInteractor* current_ = nullptr;
+    SceneWidget::MouseInteractor* override_ = nullptr;
 };
 
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
     std::shared_ptr<rendering::Open3DScene> scene_;
-    rendering::ViewHandle view_id_;
     geometry::AxisAlignedBoundingBox bounds_;
     std::shared_ptr<Interactors> controls_;
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
@@ -608,6 +652,13 @@ struct SceneWidget::Impl {
     int buttons_down_ = 0;
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
+    SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
+    bool scene_caching_enabled_ = false;
+#ifdef NO_RENDER_TARGET
+    bool is_picking_ = false;
+#endif  // NO_RENDER_TARGET
+
+    std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -625,11 +676,6 @@ void SceneWidget::SetFrame(const Rect& f) {
     // because we need to know the window height to convert the frame
     // to OpenGL coordinates. We will actually do the updating in Draw().
     impl_->frame_rect_changed_ = true;
-}
-
-void SceneWidget::SetBackgroundColor(const Color& color) {
-    auto view = impl_->scene_->GetView(impl_->view_id_);
-    view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
 void SceneWidget::SetupCamera(
@@ -668,28 +714,40 @@ void SceneWidget::SetOnCameraChanged(
 void SceneWidget::SetOnSunDirectionChanged(
         std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
     impl_->on_light_dir_changed_ = on_dir_changed;
-    impl_->controls_->SetOnDirectionalLightChanged(
-            [this](const Eigen::Vector3f& dir) {
-                impl_->scene_->GetScene()->SetDirectionalLightDirection(dir);
-                if (impl_->on_light_dir_changed_) {
-                    impl_->on_light_dir_changed_(dir);
-                }
-            });
+    impl_->controls_->SetOnSunLightChanged([this](const Eigen::Vector3f& dir) {
+        impl_->scene_->GetScene()->SetSunLightDirection(dir);
+        if (impl_->on_light_dir_changed_) {
+            impl_->on_light_dir_changed_(dir);
+        }
+    });
 }
 
 void SceneWidget::ShowSkybox(bool is_on) {
     impl_->controls_->ShowSkybox(is_on);
 }
 
+void SceneWidget::SetPickableGeometry(
+        const std::vector<PickableGeometry>& geometry) {
+    impl_->controls_->SetPickableGeometry(geometry);
+}
+
+void SceneWidget::SetPickablePointSize(int px) {
+    impl_->controls_->SetPickablePointSize(px);
+}
+
+void SceneWidget::SetOnPointsPicked(
+        std::function<
+                void(const std::map<
+                             std::string,
+                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                     int)> on_picked) {
+    impl_->controls_->SetOnPointsPicked(on_picked);
+}
+
 void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
-    if (impl_->scene_) {
-        impl_->scene_->DestroyView(impl_->view_id_);
-        impl_->view_id_ = rendering::ViewHandle();
-    }
     impl_->scene_ = scene;
     if (impl_->scene_) {
-        impl_->view_id_ = impl_->scene_->CreateView();
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
     }
@@ -701,7 +759,7 @@ std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
 
 rendering::View* SceneWidget::GetRenderView() const {
     if (impl_->scene_) {
-        return impl_->scene_->GetView(impl_->view_id_);
+        return impl_->scene_->GetView();
     } else {
         return nullptr;
     }
@@ -727,29 +785,74 @@ void SceneWidget::SetViewControls(Controls mode) {
     } else {
         impl_->controls_->SetControls(mode);
     }
+
+#if NO_RENDER_TARGET
+    if (mode == Controls::PICK_POINTS) {
+        impl_->is_picking_ = true;
+    }
+    EnableSceneCaching(impl_->scene_caching_enabled_);
+#endif  // NO_RENDER_TARGET
+}
+
+void SceneWidget::EnableSceneCaching(bool enable) {
+    impl_->scene_caching_enabled_ = enable;
+#if NO_RENDER_TARGET
+    if (impl_->is_picking_) {
+        enable = false;
+    }
+#endif
+    if (!enable) {
+        impl_->scene_->GetRenderer().EnableCaching(false);
+        impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
+                                                 true);
+    }
+}
+
+void SceneWidget::ForceRedraw() {
+    // ForceRedraw only applies when scene caching is enabled
+#if NO_RENDER_TARGET
+    if (!impl_->scene_caching_enabled_ || impl_->is_picking_) return;
+#else
+    if (!impl_->scene_caching_enabled_) return;
+#endif  // NO_RENDER_TARGET
+
+    impl_->scene_->GetRenderer().EnableCaching(true);
+    impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
+    impl_->controls_->SetPickNeedsRedraw();
 }
 
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
-            view->SetSampleCount(1);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
+#if NO_RENDER_TARGET
+            if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
+#else
+            if (impl_->scene_caching_enabled_) {
+#endif  // NO_RENDER_TARGET
+                impl_->scene_->GetRenderer().EnableCaching(false);
+                impl_->scene_->GetScene()->SetViewActive(
+                        impl_->scene_->GetViewId(), true);
+            }
         } else {
-            view->SetSampleCount(4);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
+#if NO_RENDER_TARGET
+            if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
+#else
+            if (impl_->scene_caching_enabled_) {
+#endif  // NO_RENDER_TARGET
+                impl_->scene_->GetRenderer().EnableCaching(true);
+                impl_->scene_->GetScene()->SetRenderOnce(
+                        impl_->scene_->GetViewId());
+            }
         }
     }
 }
 
 SceneWidget::Quality SceneWidget::GetRenderQuality() const {
-    int n = impl_->scene_->GetView(impl_->view_id_)->GetSampleCount();
-    if (n == 1) {
-        return Quality::FAST;
-    } else {
-        return Quality::BEST;
-    }
+    return impl_->current_render_quality_;
 }
 
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
@@ -759,7 +862,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float max_dim = 1.25f * impl_->bounds_.GetMaxExtent();
+    float max_dim = float(1.25 * impl_->bounds_.GetMaxExtent());
     Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
@@ -781,10 +884,33 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     }
     GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
+    ForceRedraw();
 }
 
 rendering::Camera* SceneWidget::GetCamera() const {
     return impl_->scene_->GetCamera();
+}
+
+std::shared_ptr<Label3D> SceneWidget::AddLabel(const Eigen::Vector3f& pos,
+                                               const char* text) {
+    auto l = std::make_shared<Label3D>(pos, text);
+    impl_->labels_3d_.insert(l);
+    return l;
+}
+
+void SceneWidget::RemoveLabel(std::shared_ptr<Label3D> label) {
+    auto liter = impl_->labels_3d_.find(label);
+    if (liter != impl_->labels_3d_.end()) {
+        impl_->labels_3d_.erase(liter);
+    }
+}
+
+void SceneWidget::Layout(const Theme& theme) {
+    Super::Layout(theme);
+    // The UI may have changed size such that the scene has been exposed. Need
+    // to force a redraw in that case.
+
+    ForceRedraw();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
@@ -800,7 +926,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
@@ -811,6 +937,36 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         GetCamera()->SetProjection(camera->GetFieldOfView(), aspect,
                                    camera->GetNear(), camera->GetFar(),
                                    camera->GetFieldOfViewType());
+
+        impl_->controls_->SetPickNeedsRedraw();
+    }
+
+    if (!impl_->labels_3d_.empty()) {
+        const auto f = GetFrame();
+        // Setup ImGUI
+        ImGui::SetNextWindowPos(ImVec2(float(f.x), float(f.y)));
+        ImGui::SetNextWindowSize(ImVec2(float(f.width), float(f.height)));
+        ImGui::Begin("3D Labels", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                             ImGuiWindowFlags_NoNav |
+                             ImGuiWindowFlags_NoBackground);
+
+        // Draw each text label
+        for (const auto& l : impl_->labels_3d_) {
+            auto ndc = GetCamera()->GetNDC(l->GetPosition());
+            ndc += Eigen::Vector2f::Ones();
+            ndc *= 0.5f;
+            ndc.x() *= f.width;
+            ndc.y() *= f.height;
+            ImGui::SetCursorScreenPos(
+                    ImVec2(ndc.x() - f.x, f.height - ndc.y() - f.y));
+            auto color = l->GetTextColor();
+            ImGui::TextColored({color.GetRed(), color.GetGreen(),
+                                color.GetBlue(), color.GetAlpha()},
+                               "%s", l->GetText());
+        }
+
+        ImGui::End();
     }
 
     // The actual drawing is done later, at the end of drawing in
@@ -839,7 +995,11 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
         impl_->buttons_down_ &= ~int(e.button.button);
     }
 
-    impl_->controls_->Mouse(e);
+    auto& frame = GetFrame();
+    MouseEvent local = e;
+    local.x -= frame.x;
+    local.y -= frame.y;
+    impl_->controls_->Mouse(local);
 
     if (impl_->on_camera_changed_) {
         impl_->on_camera_changed_(GetCamera());

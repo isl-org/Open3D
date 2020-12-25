@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <utils/Entity.h>
-
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -59,14 +57,22 @@ public:
     FilamentRenderer(filament::Engine& engine,
                      void* native_drawable,
                      FilamentResourceManager& resource_mgr);
+    // This will create an offscreen renderer
+    explicit FilamentRenderer(filament::Engine& engine,
+                              int width,
+                              int height,
+                              FilamentResourceManager& resource_mgr);
     ~FilamentRenderer() override;
 
     SceneHandle CreateScene() override;
     Scene* GetScene(const SceneHandle& id) const override;
     void DestroyScene(const SceneHandle& id) override;
 
+    virtual void SetClearColor(const Eigen::Vector4f& color) override;
+    void SetPreserveBuffer(bool preserve) override;
     void UpdateSwapChain() override;
 
+    void EnableCaching(bool enable) override;
     void BeginFrame() override;
     void Draw() override;
     void EndFrame() override;
@@ -74,15 +80,14 @@ public:
     MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
     MaterialInstanceHandle AddMaterialInstance(
             const MaterialHandle& material) override;
-    MaterialInstanceHandle AddMaterialInstance(
-            const geometry::TriangleMesh::Material& material) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
     void RemoveMaterialInstance(const MaterialInstanceHandle& id) override;
 
-    TextureHandle AddTexture(const ResourceLoadRequest& request) override;
-    TextureHandle AddTexture(
-            const std::shared_ptr<geometry::Image>& image) override;
+    TextureHandle AddTexture(const ResourceLoadRequest& request,
+                             bool srgb = false) override;
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
+                             bool srgb = false) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     IndirectLightHandle AddIndirectLight(
@@ -108,6 +113,7 @@ private:
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swap_chain_ = nullptr;
+    filament::SwapChain* swap_chain_cached_ = nullptr;
 
     std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>>
             scenes_;
@@ -119,6 +125,10 @@ private:
     std::unordered_set<FilamentRenderToBuffer*> buffer_renderers_;
 
     bool frame_started_ = false;
+    bool render_caching_enabled_ = false;
+    int render_count_ = 0;
+    float clear_color_[4];
+    bool preserve_buffer_ = false;
 
     void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
 };

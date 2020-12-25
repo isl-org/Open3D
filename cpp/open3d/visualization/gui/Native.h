@@ -31,6 +31,8 @@ namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window);
+// Note that Windows cannot post an expose event so it must draw immediately.
+// Therefore this function cannot be called while drawing.
 void PostNativeExposeEvent(GLFWwindow* glfw_window);
 void ShowNativeAlert(const char* message);
 

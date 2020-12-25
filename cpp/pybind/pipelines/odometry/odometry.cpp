@@ -34,9 +34,10 @@
 #include "pybind/pipelines/odometry/odometry.h"
 
 namespace open3d {
+namespace pipelines {
+namespace odometry {
 
-template <class RGBDOdometryJacobianBase =
-                  pipelines::odometry::RGBDOdometryJacobian>
+template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase {
 public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
@@ -44,6 +45,7 @@ public:
             int row,
             std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
+            std::vector<double> &w,
             const geometry::RGBDImage &source,
             const geometry::RGBDImage &target,
             const geometry::Image &source_xyz,
@@ -51,8 +53,7 @@ public:
             const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
-            const pipelines::odometry::CorrespondenceSetPixelWise &corresps)
-            const override {
+            const CorrespondenceSetPixelWise &corresps) const override {
         PYBIND11_OVERLOAD_PURE(void, RGBDOdometryJacobianBase, row, J_r, r,
                                source, target, source_xyz, target_dx, target_dy,
                                extrinsic, corresps, intrinsic);
@@ -61,14 +62,14 @@ public:
 
 void pybind_odometry_classes(py::module &m) {
     // open3d.odometry.OdometryOption
-    py::class_<pipelines::odometry::OdometryOption> odometry_option(
+    py::class_<OdometryOption> odometry_option(
             m, "OdometryOption", "Class that defines Odometry options.");
     odometry_option
             .def(py::init(
                          [](std::vector<int> iteration_number_per_pyramid_level,
                             double max_depth_diff, double min_depth,
                             double max_depth) {
-                             return new pipelines::odometry::OdometryOption(
+                             return new OdometryOption(
                                      iteration_number_per_pyramid_level,
                                      max_depth_diff, min_depth, max_depth);
                          }),
@@ -77,31 +78,26 @@ void pybind_odometry_classes(py::module &m) {
                  "max_depth_diff"_a = 0.03, "min_depth"_a = 0.0,
                  "max_depth"_a = 4.0)
             .def_readwrite("iteration_number_per_pyramid_level",
-                           &pipelines::odometry::OdometryOption::
-                                   iteration_number_per_pyramid_level_,
+                           &OdometryOption::iteration_number_per_pyramid_level_,
                            "List(int): Iteration number per image pyramid "
                            "level, typically larger image in the pyramid have "
                            "lower interation number to reduce computation "
                            "time.")
-            .def_readwrite(
-                    "max_depth_diff",
-                    &pipelines::odometry::OdometryOption::max_depth_diff_,
-                    "Maximum depth difference to be considered as "
-                    "correspondence. In depth image domain, if two "
-                    "aligned pixels have a depth difference less than "
-                    "specified value, they are considered as a "
-                    "correspondence. Larger value induce more "
-                    "aggressive search, but it is prone to unstable "
-                    "result.")
-            .def_readwrite("min_depth",
-                           &pipelines::odometry::OdometryOption::min_depth_,
+            .def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_,
+                           "Maximum depth difference to be considered as "
+                           "correspondence. In depth image domain, if two "
+                           "aligned pixels have a depth difference less than "
+                           "specified value, they are considered as a "
+                           "correspondence. Larger value induce more "
+                           "aggressive search, but it is prone to unstable "
+                           "result.")
+            .def_readwrite("min_depth", &OdometryOption::min_depth_,
                            "Pixels that has smaller than specified depth "
                            "values are ignored.")
-            .def_readwrite("max_depth",
-                           &pipelines::odometry::OdometryOption::max_depth_,
+            .def_readwrite("max_depth", &OdometryOption::max_depth_,
                            "Pixels that has larger than specified depth values "
                            "are ignored.")
-            .def("__repr__", [](const pipelines::odometry::OdometryOption &c) {
+            .def("__repr__", [](const OdometryOption &c) {
                 int num_pyramid_level =
                         (int)c.iteration_number_per_pyramid_level_.size();
                 std::string str_iteration_number_per_pyramid_level_ = "[ ";
@@ -111,8 +107,7 @@ void pybind_odometry_classes(py::module &m) {
                                     c.iteration_number_per_pyramid_level_[i]) +
                             ", ";
                 str_iteration_number_per_pyramid_level_ += "] ";
-                return std::string(
-                               "pipelines::odometry::OdometryOption class.") +
+                return std::string("OdometryOption class.") +
                        /*std::string("\nodo_init = ") +
                           std::to_string(c.odo_init_) +*/
                        std::string("\niteration_number_per_pyramid_level = ") +
@@ -126,18 +121,16 @@ void pybind_odometry_classes(py::module &m) {
             });
 
     // open3d.odometry.RGBDOdometryJacobian
-    py::class_<
-            pipelines::odometry::RGBDOdometryJacobian,
-            PyRGBDOdometryJacobian<pipelines::odometry::RGBDOdometryJacobian>>
+    py::class_<RGBDOdometryJacobian,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
             jacobian(
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
 
     // open3d.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
-    py::class_<pipelines::odometry::RGBDOdometryJacobianFromColorTerm,
-               PyRGBDOdometryJacobian<
-                       pipelines::odometry::RGBDOdometryJacobianFromColorTerm>,
-               pipelines::odometry::RGBDOdometryJacobian>
+    py::class_<RGBDOdometryJacobianFromColorTerm,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
+               RGBDOdometryJacobian>
             jacobian_color(m, "RGBDOdometryJacobianFromColorTerm",
                            R"(Class to Compute Jacobian using color term.
 
@@ -150,24 +143,19 @@ F. Steinbrucker, J. Sturm, and D. Cremers.
 Real-time visual odometry from dense RGB-D images.
 
 In ICCV Workshops, 2011.)");
-    py::detail::bind_default_constructor<
-            pipelines::odometry::RGBDOdometryJacobianFromColorTerm>(
+    py::detail::bind_default_constructor<RGBDOdometryJacobianFromColorTerm>(
             jacobian_color);
-    py::detail::bind_copy_functions<
-            pipelines::odometry::RGBDOdometryJacobianFromColorTerm>(
+    py::detail::bind_copy_functions<RGBDOdometryJacobianFromColorTerm>(
             jacobian_color);
     jacobian_color.def(
-            "__repr__",
-            [](const pipelines::odometry::RGBDOdometryJacobianFromColorTerm
-                       &te) {
+            "__repr__", [](const RGBDOdometryJacobianFromColorTerm &te) {
                 return std::string("RGBDOdometryJacobianFromColorTerm");
             });
 
     // open3d.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
-    py::class_<pipelines::odometry::RGBDOdometryJacobianFromHybridTerm,
-               PyRGBDOdometryJacobian<
-                       pipelines::odometry::RGBDOdometryJacobianFromHybridTerm>,
-               pipelines::odometry::RGBDOdometryJacobian>
+    py::class_<RGBDOdometryJacobianFromHybridTerm,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
+               RGBDOdometryJacobian>
             jacobian_hybrid(m, "RGBDOdometryJacobianFromHybridTerm",
                             R"(Class to compute Jacobian using hybrid term
 
@@ -178,30 +166,25 @@ Reference:
 J. Park, Q.-Y. Zhou, and V. Koltun
 
 Anonymous submission.)");
-    py::detail::bind_default_constructor<
-            pipelines::odometry::RGBDOdometryJacobianFromHybridTerm>(
+    py::detail::bind_default_constructor<RGBDOdometryJacobianFromHybridTerm>(
             jacobian_hybrid);
-    py::detail::bind_copy_functions<
-            pipelines::odometry::RGBDOdometryJacobianFromHybridTerm>(
+    py::detail::bind_copy_functions<RGBDOdometryJacobianFromHybridTerm>(
             jacobian_hybrid);
     jacobian_hybrid.def(
-            "__repr__",
-            [](const pipelines::odometry::RGBDOdometryJacobianFromHybridTerm
-                       &te) {
+            "__repr__", [](const RGBDOdometryJacobianFromHybridTerm &te) {
                 return std::string("RGBDOdometryJacobianFromHybridTerm");
             });
 }
 
 void pybind_odometry_methods(py::module &m) {
-    m.def("compute_rgbd_odometry", &pipelines::odometry::ComputeRGBDOdometry,
+    m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
           "Function to estimate 6D rigid motion from two RGBD image pairs. "
           "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
           "rgbd_source"_a, "rgbd_target"_a,
           "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
           "odo_init"_a = Eigen::Matrix4d::Identity(),
-          "jacobian"_a =
-                  pipelines::odometry::RGBDOdometryJacobianFromHybridTerm(),
-          "option"_a = pipelines::odometry::OdometryOption());
+          "jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
+          "option"_a = OdometryOption());
     docstring::FunctionDocInject(
             m, "compute_rgbd_odometry",
             {
@@ -211,9 +194,9 @@ void pybind_odometry_methods(py::module &m) {
                     {"odo_init", "Initial 4x4 motion matrix estimation."},
                     {"jacobian",
                      "The odometry Jacobian method to use. Can be "
-                     "``pipelines::odometry::"
+                     "``"
                      "RGBDOdometryJacobianFromHybridTerm()`` or "
-                     "``pipelines::odometry::RGBDOdometryJacobianFromColorTerm("
+                     "``RGBDOdometryJacobianFromColorTerm("
                      ").``"},
                     {"option", "Odometry hyper parameteres."},
             });
@@ -225,4 +208,6 @@ void pybind_odometry(py::module &m) {
     pybind_odometry_methods(m_submodule);
 }
 
+}  // namespace odometry
+}  // namespace pipelines
 }  // namespace open3d

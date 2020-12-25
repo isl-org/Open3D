@@ -45,14 +45,18 @@ pytestmark = mltest.default_marks
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mltest.parametrize.device
+@mltest.parametrize.ml
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
-                           in_channels, with_inp_importance,
-                           with_normalization):
+def test_compare_to_conv3d(ml, dtype, kernel_size, out_channels, in_channels,
+                           with_inp_importance, with_normalization):
     """Compares to the 3D convolution in tensorflow"""
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+
+    # This test requires tensorflow
+    try:
+        import tensorflow as tf
+    except ImportError:
+        return
+
     np.random.seed(0)
 
     filters = np.random.random(size=(*kernel_size, in_channels,
@@ -68,7 +72,7 @@ def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
         inp_importance = np.random.rand(
             inp_positions.shape[0]).astype(dtype) - 0.5
     else:
-        inp_importance = np.empty((0,))
+        inp_importance = np.empty((0,), dtype=dtype)
     out_positions = np.unique(np.random.randint(
         np.max(kernel_size) // 2, max_grid_extent - np.max(kernel_size) // 2,
         (5, 3)).astype(dtype),
@@ -80,18 +84,33 @@ def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
 
-    sparse_conv = ml3d.layers.SparseConv(
-        out_channels,
-        kernel_size,
-        normalize=with_normalization,
-        kernel_initializer=tf.constant_initializer(filters),
-        bias_initializer=tf.constant_initializer(bias))
+    if ml.module.__name__ == 'tensorflow':
+        kernel_initializer = tf.constant_initializer(filters)
+        bias_initializer = tf.constant_initializer(bias)
+    elif ml.module.__name__ == 'torch':
+        torch = ml.module
 
-    with tf.device(device):
-        y = sparse_conv(inp_features, inp_positions * voxel_size,
-                        out_positions * voxel_size, voxel_size, inp_importance)
-        assert device in y.device
-        y = y.numpy()
+        def kernel_initializer(a):
+            a.data = torch.from_numpy(filters)
+
+        def bias_initializer(a):
+            a.data = torch.from_numpy(bias)
+    else:
+        raise Exception('Unsupported ml framework {}'.format(
+            ml.module.__name__))
+
+    sparse_conv = ml.layers.SparseConv(in_channels=in_channels,
+                                       filters=out_channels,
+                                       kernel_size=kernel_size,
+                                       normalize=with_normalization,
+                                       kernel_initializer=kernel_initializer,
+                                       bias_initializer=bias_initializer)
+    if ml.module.__name__ == 'torch':
+        sparse_conv.to(ml.device)
+
+    y = mltest.run_op(ml, ml.device, True, sparse_conv, inp_features,
+                      inp_positions * voxel_size, out_positions * voxel_size,
+                      voxel_size, inp_importance)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -119,8 +138,9 @@ def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
 
     if with_normalization:
         for i, v in enumerate(y_conv3d):
-            num_neighbors = sparse_conv.nns.neighbors_row_splits[
-                i + 1] - sparse_conv.nns.neighbors_row_splits[i]
+            num_neighbors = mltest.to_numpy(
+                sparse_conv.nns.neighbors_row_splits[i + 1] -
+                sparse_conv.nns.neighbors_row_splits[i])
             v /= dtype(num_neighbors)
 
     y_conv3d += bias
@@ -137,14 +157,18 @@ def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mltest.parametrize.device
+@mltest.parametrize.ml
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
+def test_compare_to_conv3dtranspose(ml, dtype, kernel_size, out_channels,
                                     in_channels, with_out_importance,
                                     with_normalization):
     """Compares to the 3D transposed convolution in tensorflow"""
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+    # This test requires tensorflow
+    try:
+        import tensorflow as tf
+    except ImportError:
+        return
+
     np.random.seed(0)
 
     filters = np.random.random(size=(*kernel_size, in_channels,
@@ -165,7 +189,7 @@ def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
         out_importance = np.random.rand(
             out_positions.shape[0]).astype(dtype) - 0.5
     else:
-        out_importance = np.empty((0,))
+        out_importance = np.empty((0,), dtype=dtype)
     out_positions_int = out_positions.astype(np.int32)
 
     voxel_size = 0.2
@@ -173,19 +197,35 @@ def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
 
-    sparse_conv_transpose = ml3d.layers.SparseConvTranspose(
-        out_channels,
-        kernel_size,
-        normalize=with_normalization,
-        kernel_initializer=tf.constant_initializer(filters),
-        bias_initializer=tf.constant_initializer(bias))
+    if ml.module.__name__ == 'tensorflow':
+        kernel_initializer = tf.constant_initializer(filters)
+        bias_initializer = tf.constant_initializer(bias)
+    elif ml.module.__name__ == 'torch':
+        torch = ml.module
 
-    with tf.device(device):
-        y = sparse_conv_transpose(inp_features, inp_positions * voxel_size,
-                                  out_positions * voxel_size, voxel_size,
-                                  out_importance)
-        assert device in y.device
-        y = y.numpy()
+        def kernel_initializer(a):
+            a.data = torch.from_numpy(filters)
+
+        def bias_initializer(a):
+            a.data = torch.from_numpy(bias)
+    else:
+        raise Exception('Unsupported ml framework {}'.format(
+            ml.module.__name__))
+
+    sparse_conv_transpose = ml.layers.SparseConvTranspose(
+        in_channels=in_channels,
+        filters=out_channels,
+        kernel_size=kernel_size,
+        normalize=with_normalization,
+        kernel_initializer=kernel_initializer,
+        bias_initializer=bias_initializer)
+
+    if ml.module.__name__ == 'torch':
+        sparse_conv_transpose.to(ml.device)
+
+    y = mltest.run_op(ml, ml.device, True, sparse_conv_transpose, inp_features,
+                      inp_positions * voxel_size, out_positions * voxel_size,
+                      voxel_size, out_importance)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -195,8 +235,9 @@ def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
 
     if with_normalization:
         for i, v in enumerate(inp_features):
-            num_neighbors = sparse_conv_transpose.nns_inp.neighbors_row_splits[
-                i + 1] - sparse_conv_transpose.nns_inp.neighbors_row_splits[i]
+            num_neighbors = mltest.to_numpy(
+                sparse_conv_transpose.nns_inp.neighbors_row_splits[i + 1] -
+                sparse_conv_transpose.nns_inp.neighbors_row_splits[i])
             if num_neighbors:
                 v /= dtype(num_neighbors)
 

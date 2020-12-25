@@ -89,7 +89,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
 }
 
 TEST_P(LinalgPermuteDevices, Inverse) {
-    const float EPSILON = 1e-6;
+    const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;

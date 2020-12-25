@@ -28,3 +28,17 @@
 
 #define OPEN3D_CONCATENATE_IMPL(s1, s2) s1##s2
 #define OPEN3D_CONCATENATE(s1, s2) OPEN3D_CONCATENATE_IMPL(s1, s2)
+
+#if defined _WIN32 || defined __CYGWIN__
+#define OPEN3D_DLL_IMPORT __declspec(dllimport)
+#define OPEN3D_DLL_EXPORT __declspec(dllexport)
+#else
+#define OPEN3D_DLL_IMPORT
+#define OPEN3D_DLL_EXPORT
+#endif
+
+#ifdef OPEN3D_ENABLE_DLL_EXPORTS
+#define OPEN3D_API OPEN3D_DLL_EXPORT
+#else
+#define OPEN3D_API OPEN3D_DLL_IMPORT
+#endif

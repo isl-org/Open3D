@@ -28,6 +28,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "open3d/visualization/gui/Layout.h"
 

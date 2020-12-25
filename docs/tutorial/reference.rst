@@ -26,3 +26,4 @@ Reference
 .. [Taubin1995] G. Taubin: Curve and surface smoothing without shrinkage, ICCV, 1995.
 .. [Zhou2014] Q.-Y. Zhou, and V. Koltun, Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras, SIGGRAPH, 2014.
 .. [Zhou2016] Q.-Y. Zhou, J. Park, and V. Koltun, Fast Global Registration, ECCV, 2016.
+.. [Babin2019] P. Babin , P. Giguère and F. Pomerleau, ICRA, 2019

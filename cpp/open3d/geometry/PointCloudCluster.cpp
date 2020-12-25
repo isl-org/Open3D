@@ -31,10 +31,6 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 namespace open3d {
 namespace geometry {
 
@@ -48,16 +44,12 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
     utility::ConsoleProgressBar progress_bar(
             points_.size(), "Precompute Neighbours", print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int idx = 0; idx < int(points_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(points_[idx], eps, nbs[idx], dists2);
 
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         { ++progress_bar; }
     }
     utility::LogDebug("Done Precompute Neighbours");

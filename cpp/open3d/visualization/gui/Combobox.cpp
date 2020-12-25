@@ -45,7 +45,7 @@ static int g_next_combobox_id = 1;
 int CalcItemHeight(const Theme& theme) {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding.y;
-    return std::ceil(em + 2.0 * padding);
+    return int(std::ceil(em + 2.0 * padding));
 }
 
 }  // namespace
@@ -77,7 +77,7 @@ void Combobox::ClearItems() {
 
 int Combobox::AddItem(const char* name) {
     impl_->items_.push_back(name);
-    return impl_->items_.size() - 1;
+    return int(impl_->items_.size()) - 1;
 }
 
 void Combobox::ChangeItem(int index, const char* new_name) {
@@ -106,7 +106,7 @@ void Combobox::RemoveItem(int index) {
     if (index >= 0 && index < int(impl_->items_.size())) {
         impl_->items_.erase(impl_->items_.begin() + index);
         if (impl_->current_index_ >= int(impl_->items_.size())) {
-            impl_->current_index_ = impl_->items_.size() - 1;
+            impl_->current_index_ = int(impl_->items_.size()) - 1;
         }
     }
 }
@@ -140,7 +140,7 @@ bool Combobox::SetSelectedValue(const char* value) {
     std::string svalue = value;
     for (size_t i = 0; i < impl_->items_.size(); ++i) {
         if (impl_->items_[i] == svalue) {
-            SetSelectedIndex(i);
+            SetSelectedIndex(int(i));
             return true;
         }
     }
@@ -157,11 +157,12 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
     auto padding = ImGui::GetStyle().FramePadding;
     int width = 0;
     for (auto& item : impl_->items_) {
-        auto size = ImGui::GetFont()->CalcTextSizeA(theme.font_size, 10000,
-                                                    10000, item.c_str());
+        auto size = ImGui::GetFont()->CalcTextSizeA(float(theme.font_size),
+                                                    10000, 10000, item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
-    return Size(width + button_width + 2.0 * padding.x, CalcItemHeight(theme));
+    return Size(width + int(std::round(button_width + 2.0 * padding.x)),
+                CalcItemHeight(theme));
 }
 
 Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
@@ -170,7 +171,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     bool did_open = false;
 
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleColor(
             ImGuiCol_Button,
@@ -183,7 +184,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
             colorToImgui(context.theme.combobox_arrow_background_color));
 
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(frame.width);
+    ImGui::PushItemWidth(float(frame.width));
     if (ImGui::BeginCombo(impl_->imgui_id_.c_str(), GetSelectedValue())) {
         if (!was_open) {
             did_open = true;
@@ -191,10 +192,10 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool isSelected = false;
             if (ImGui::Selectable(impl_->items_[i].c_str(), &isSelected, 0)) {
-                impl_->current_index_ = i;
+                impl_->current_index_ = int(i);
                 value_changed = true;
                 if (impl_->on_value_changed_) {
-                    impl_->on_value_changed_(GetSelectedValue(), i);
+                    impl_->on_value_changed_(GetSelectedValue(), int(i));
                 }
             }
             if (isSelected) {

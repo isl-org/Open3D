@@ -27,49 +27,60 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
+#include "open3d/io/rpc/ZMQContext.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace io {
 
 void pybind_rpc(py::module& m_io) {
     py::module m = m_io.def_submodule("rpc");
-    py::class_<io::rpc::ConnectionBase,
-               std::shared_ptr<io::rpc::ConnectionBase>>(m, "_ConnectionBase");
 
-    py::class_<io::rpc::Connection, std::shared_ptr<io::rpc::Connection>,
-               io::rpc::ConnectionBase>(m, "Connection")
+    // this is to cleanly shutdown the zeromq context on windows.
+    auto atexit = py::module::import("atexit");
+    atexit.attr("register")(
+            py::cpp_function([]() { rpc::DestroyZMQContext(); }));
+
+    py::class_<rpc::ConnectionBase, std::shared_ptr<rpc::ConnectionBase>>(
+            m, "_ConnectionBase");
+
+    py::class_<rpc::Connection, std::shared_ptr<rpc::Connection>,
+               rpc::ConnectionBase>(m, "Connection")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
-                     return std::shared_ptr<io::rpc::Connection>(
-                             new io::rpc::Connection(address, connect_timeout,
-                                                     timeout));
+                     return std::shared_ptr<rpc::Connection>(
+                             new rpc::Connection(address, connect_timeout,
+                                                 timeout));
                  }),
                  "Creates a connection object",
                  "address"_a = "tcp://127.0.0.1:51454",
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
 
-    py::class_<io::rpc::DummyReceiver, std::shared_ptr<io::rpc::DummyReceiver>>(
+    py::class_<rpc::DummyReceiver, std::shared_ptr<rpc::DummyReceiver>>(
             m, "_DummyReceiver",
             "Dummy receiver for the server side receiving requests from a "
             "client.")
             .def(py::init([](std::string address, int timeout) {
-                     return std::shared_ptr<io::rpc::DummyReceiver>(
-                             new io::rpc::DummyReceiver(address, timeout));
+                     return std::shared_ptr<rpc::DummyReceiver>(
+                             new rpc::DummyReceiver(address, timeout));
                  }),
                  "Creates the receiver object which can be used for testing "
                  "connections.",
                  "address"_a = "tcp://127.0.0.1:51454", "timeout"_a = 10000)
-            .def("start", &io::rpc::DummyReceiver::Start,
+            .def("start", &rpc::DummyReceiver::Start,
                  "Starts the receiver mainloop in a new thread.")
-            .def("stop", &io::rpc::DummyReceiver::Stop,
+            .def("stop", &rpc::DummyReceiver::Stop,
                  "Stops the receiver mainloop and joins the thread. This "
                  "function blocks until the mainloop is done with processing "
                  "messages that have already been received.");
 
-    m.def("set_point_cloud", &io::rpc::SetPointCloud, "pcd"_a, "path"_a = "",
+    m.def("destroy_zmq_context", &rpc::DestroyZMQContext,
+          "Destroys the ZMQ context.");
+
+    m.def("set_point_cloud", &rpc::SetPointCloud, "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::shared_ptr<io::rpc::Connection>(),
+          "connection"_a = std::shared_ptr<rpc::Connection>(),
           "Sends a point cloud message to a viewer.");
     docstring::FunctionDocInject(
             m, "set_point_cloud",
@@ -83,9 +94,9 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_triangle_mesh", &io::rpc::SetTriangleMesh, "mesh"_a,
-          "path"_a = "", "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
+    m.def("set_triangle_mesh", &rpc::SetTriangleMesh, "mesh"_a, "path"_a = "",
+          "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a point cloud message to a viewer.");
     docstring::FunctionDocInject(
             m, "set_triangle_mesh",
@@ -99,7 +110,7 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_mesh_data", &io::rpc::SetMeshData, "vertices"_a, "path"_a = "",
+    m.def("set_mesh_data", &rpc::SetMeshData, "vertices"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
           "vertex_attributes"_a = std::map<std::string, core::Tensor>(),
           "faces"_a = core::Tensor({0}, core::Dtype::Int32),
@@ -107,7 +118,7 @@ void pybind_rpc(py::module& m_io) {
           "lines"_a = core::Tensor({0}, core::Dtype::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
           "textures"_a = std::map<std::string, core::Tensor>(),
-          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a set_mesh_data message.");
     docstring::FunctionDocInject(
             m, "set_mesh_data",
@@ -130,9 +141,9 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_legacy_camera", &io::rpc::SetLegacyCamera, "camera"_a,
-          "path"_a = "", "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
+    m.def("set_legacy_camera", &rpc::SetLegacyCamera, "camera"_a, "path"_a = "",
+          "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a PinholeCameraParameters object.");
     docstring::FunctionDocInject(
             m, "set_legacy_camera",
@@ -145,8 +156,8 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_time", &io::rpc::SetTime, "time"_a,
-          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
+    m.def("set_time", &rpc::SetTime, "time"_a,
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sets the time in the external visualizer.");
     docstring::FunctionDocInject(
             m, "set_time",
@@ -157,8 +168,8 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_active_camera", &io::rpc::SetActiveCamera, "path"_a,
-          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
+    m.def("set_active_camera", &rpc::SetActiveCamera, "path"_a,
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sets the object with the specified path as the active camera.");
     docstring::FunctionDocInject(
             m, "set_active_camera",
@@ -170,4 +181,5 @@ void pybind_rpc(py::module& m_io) {
             });
 }
 
+}  // namespace io
 }  // namespace open3d

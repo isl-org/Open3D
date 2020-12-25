@@ -39,7 +39,7 @@ namespace filament {
 class Engine;
 class IndexBuffer;
 class IndirectLight;
-struct Material;
+class Material;
 class MaterialInstance;
 class Skybox;
 class Texture;
@@ -62,9 +62,17 @@ namespace rendering {
 class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kDefaultLitWithTransparency;
+    static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kDefaultUnlitWithTransparency;
     static const MaterialHandle kDefaultNormalShader;
     static const MaterialHandle kDefaultDepthShader;
+    static const MaterialHandle kDefaultUnlitGradientShader;
+    static const MaterialHandle kDefaultUnlitSolidColorShader;
+    static const MaterialHandle kDefaultUnlitBackgroundShader;
+    static const MaterialHandle kDefaultLineShader;
+    static const MaterialHandle kDefaultUnlitPolygonOffsetShader;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
     static const MaterialInstanceHandle kColorMapMaterial;
@@ -80,24 +88,25 @@ public:
     MaterialHandle CreateMaterial(const void* material_data, size_t data_size);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
-    MaterialInstanceHandle CreateFromDescriptor(
-            const geometry::TriangleMesh::Material& material_attributes);
 
-    TextureHandle CreateTexture(const char* path);
-    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
+    TextureHandle CreateTexture(const char* path, bool srgb);
+    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image,
+                                bool srgb);
     // Slow, will make copy of image data and free it after.
-    TextureHandle CreateTexture(const geometry::Image& image);
+    TextureHandle CreateTexture(const geometry::Image& image, bool srgb);
     // Creates texture of size 'dimension' filled with color 'color'
     TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
                                       size_t dimension);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
+    SkyboxHandle CreateColorSkybox(const Eigen::Vector3f& color);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
     // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertex_buffer);
+    void ReuseVertexBuffer(VertexBufferHandle vb);
     IndexBufferHandle CreateIndexBuffer(size_t indices_count,
                                         size_t index_stride);
 
@@ -116,13 +125,25 @@ public:
     void DestroyAll();
     void Destroy(const REHandle_abstract& id);
 
+public:
+    // Only public so that .cpp file can use this
+    template <class ResourceType>
+    struct BoxedResource {
+        std::shared_ptr<ResourceType> ptr;
+        size_t use_count = 0;
+
+        BoxedResource() {}
+        BoxedResource(std::shared_ptr<ResourceType> p) : ptr(p), use_count(1) {}
+
+        std::shared_ptr<ResourceType> operator->() { return ptr; }
+    };
+
 private:
     filament::Engine& engine_;
 
     template <class ResourceType>
     using ResourcesContainer =
-            std::unordered_map<REHandle_abstract,
-                               std::shared_ptr<ResourceType>>;
+            std::unordered_map<REHandle_abstract, BoxedResource<ResourceType>>;
 
     ResourcesContainer<filament::MaterialInstance> material_instances_;
     ResourcesContainer<filament::Material> materials_;
@@ -140,7 +161,7 @@ private:
             dependencies_;
 
     filament::Texture* LoadTextureFromImage(
-            const std::shared_ptr<geometry::Image>& image);
+            const std::shared_ptr<geometry::Image>& image, bool srgb);
     filament::Texture* LoadFilledTexture(const Eigen::Vector3f& color,
                                          size_t dimension);
 

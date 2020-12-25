@@ -37,79 +37,78 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_voxelgrid(py::module &m) {
-    py::class_<geometry::Voxel, std::shared_ptr<geometry::Voxel>> voxel(
+    py::class_<Voxel, std::shared_ptr<Voxel>> voxel(
             m, "Voxel", "Base Voxel class, containing grid id and color");
-    py::detail::bind_default_constructor<geometry::Voxel>(voxel);
-    py::detail::bind_copy_functions<geometry::Voxel>(voxel);
+    py::detail::bind_default_constructor<Voxel>(voxel);
+    py::detail::bind_copy_functions<Voxel>(voxel);
     voxel.def("__repr__",
-              [](const geometry::Voxel &voxel) {
+              [](const Voxel &voxel) {
                   std::ostringstream repr;
-                  repr << "geometry::Voxel with grid_index: ("
-                       << voxel.grid_index_(0) << ", " << voxel.grid_index_(1)
-                       << ", " << voxel.grid_index_(2) << "), color: ("
+                  repr << "Voxel with grid_index: (" << voxel.grid_index_(0)
+                       << ", " << voxel.grid_index_(1) << ", "
+                       << voxel.grid_index_(2) << "), color: ("
                        << voxel.color_(0) << ", " << voxel.color_(1) << ", "
                        << voxel.color_(2) << ")";
                   return repr.str();
               })
             .def(py::init([](const Eigen::Vector3i &grid_index) {
-                     return new geometry::Voxel(grid_index);
+                     return new Voxel(grid_index);
                  }),
                  "grid_index"_a)
             .def(py::init([](const Eigen::Vector3i &grid_index,
                              const Eigen::Vector3d &color) {
-                     return new geometry::Voxel(grid_index, color);
+                     return new Voxel(grid_index, color);
                  }),
                  "grid_index"_a, "color"_a)
-            .def_readwrite("grid_index", &geometry::Voxel::grid_index_,
+            .def_readwrite("grid_index", &Voxel::grid_index_,
                            "Int numpy array of shape (3,): Grid coordinate "
                            "index of the voxel.")
             .def_readwrite(
-                    "color", &geometry::Voxel::color_,
+                    "color", &Voxel::color_,
                     "Float64 numpy array of shape (3,): Color of the voxel.");
 
-    py::class_<geometry::VoxelGrid, PyGeometry3D<geometry::VoxelGrid>,
-               std::shared_ptr<geometry::VoxelGrid>, geometry::Geometry3D>
+    py::class_<VoxelGrid, PyGeometry3D<VoxelGrid>, std::shared_ptr<VoxelGrid>,
+               Geometry3D>
             voxelgrid(m, "VoxelGrid",
                       "VoxelGrid is a collection of voxels which are aligned "
                       "in grid.");
-    py::detail::bind_default_constructor<geometry::VoxelGrid>(voxelgrid);
-    py::detail::bind_copy_functions<geometry::VoxelGrid>(voxelgrid);
+    py::detail::bind_default_constructor<VoxelGrid>(voxelgrid);
+    py::detail::bind_copy_functions<VoxelGrid>(voxelgrid);
     voxelgrid
             .def("__repr__",
-                 [](const geometry::VoxelGrid &voxelgrid) {
-                     return std::string("geometry::VoxelGrid with ") +
+                 [](const VoxelGrid &voxelgrid) {
+                     return std::string("VoxelGrid with ") +
                             std::to_string(voxelgrid.voxels_.size()) +
                             " voxels.";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("get_voxels", &geometry::VoxelGrid::GetVoxels,
+            .def("get_voxels", &VoxelGrid::GetVoxels,
                  "Returns List of ``Voxel``: Voxels contained in voxel grid. "
                  "Changes to the voxels returned from this method"
                  "are not reflected in the voxel grid.")
-            .def("has_colors", &geometry::VoxelGrid::HasColors,
+            .def("has_colors", &VoxelGrid::HasColors,
                  "Returns ``True`` if the voxel grid contains voxel colors.")
-            .def("has_voxels", &geometry::VoxelGrid::HasVoxels,
+            .def("has_voxels", &VoxelGrid::HasVoxels,
                  "Returns ``True`` if the voxel grid contains voxels.")
-            .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
+            .def("get_voxel", &VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
-            .def("check_if_included", &geometry::VoxelGrid::CheckIfIncluded,
-                 "queries"_a,
+            .def("check_if_included", &VoxelGrid::CheckIfIncluded, "queries"_a,
                  "Element-wise check if a query in the list is included in "
                  "the VoxelGrid. Queries are double precision and "
                  "are mapped to the closest voxel.")
-            .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
-                 "depth_map"_a, "camera_params"_a,
-                 "keep_voxels_outside_image"_a = false,
+            .def("carve_depth_map", &VoxelGrid::CarveDepthMap, "depth_map"_a,
+                 "camera_params"_a, "keep_voxels_outside_image"_a = false,
                  "Remove all voxels from the VoxelGrid where none of the "
                  "boundary points of the voxel projects to depth value that is "
                  "smaller, or equal than the projected depth of the boundary "
                  "point. If keep_voxels_outside_image is true then voxels are "
                  "only carved if all boundary points project to a valid image "
                  "location.")
-            .def("carve_silhouette", &geometry::VoxelGrid::CarveSilhouette,
+            .def("carve_silhouette", &VoxelGrid::CarveSilhouette,
                  "silhouette_mask"_a, "camera_params"_a,
                  "keep_voxels_outside_image"_a = false,
                  "Remove all voxels from the VoxelGrid where none of the "
@@ -117,19 +116,19 @@ void pybind_voxelgrid(py::module &m) {
                  "(pixel value > 0). If keep_voxels_outside_image is true then "
                  "voxels are only carved if all boundary points project to a "
                  "valid image location.")
-            .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
+            .def("to_octree", &VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
-            .def("create_from_octree", &geometry::VoxelGrid::CreateFromOctree,
+            .def("create_from_octree", &VoxelGrid::CreateFromOctree,
                  "octree"_a
                  "Convert from Octree.")
-            .def_static("create_dense", &geometry::VoxelGrid::CreateDense,
+            .def_static("create_dense", &VoxelGrid::CreateDense,
                         "Creates a voxel grid where every voxel is set (hence "
                         "dense). This is a useful starting point for voxel "
                         "carving",
                         "origin"_a, "color"_a, "voxel_size"_a, "width"_a,
                         "height"_a, "depth"_a)
             .def_static("create_from_point_cloud",
-                        &geometry::VoxelGrid::CreateFromPointCloud,
+                        &VoxelGrid::CreateFromPointCloud,
                         "Creates a VoxelGrid from a given PointCloud. The "
                         "color value of a given  voxel is the average color "
                         "value of the points that fall into it (if the "
@@ -137,7 +136,7 @@ void pybind_voxelgrid(py::module &m) {
                         "VoxelGrid are computed from the PointCloud.",
                         "input"_a, "voxel_size"_a)
             .def_static("create_from_point_cloud_within_bounds",
-                        &geometry::VoxelGrid::CreateFromPointCloudWithinBounds,
+                        &VoxelGrid::CreateFromPointCloudWithinBounds,
                         "Creates a VoxelGrid from a given PointCloud. The "
                         "color value of a given voxel is the average color "
                         "value of the points that fall into it (if the "
@@ -145,7 +144,7 @@ void pybind_voxelgrid(py::module &m) {
                         "VoxelGrid are defined by the given parameters.",
                         "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_static("create_from_triangle_mesh",
-                        &geometry::VoxelGrid::CreateFromTriangleMesh,
+                        &VoxelGrid::CreateFromTriangleMesh,
                         "Creates a VoxelGrid from a given TriangleMesh. No "
                         "color information is converted. The bounds of the "
                         "created VoxelGrid are computed from the  "
@@ -153,16 +152,16 @@ void pybind_voxelgrid(py::module &m) {
                         "input"_a, "voxel_size"_a)
             .def_static(
                     "create_from_triangle_mesh_within_bounds",
-                    &geometry::VoxelGrid::CreateFromTriangleMeshWithinBounds,
+                    &VoxelGrid::CreateFromTriangleMeshWithinBounds,
                     "Creates a VoxelGrid from a given TriangleMesh. No color "
                     "information is converted. The bounds "
                     "of the created VoxelGrid are defined by the given "
                     "parameters",
                     "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
-            .def_readwrite("origin", &geometry::VoxelGrid::origin_,
+            .def_readwrite("origin", &VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
-            .def_readwrite("voxel_size", &geometry::VoxelGrid::voxel_size_,
+            .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
@@ -230,4 +229,5 @@ void pybind_voxelgrid(py::module &m) {
 
 void pybind_voxelgrid_methods(py::module &m) {}
 
+}  // namespace geometry
 }  // namespace open3d

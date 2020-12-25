@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/core/kernel/BinaryEW.h"
+#include "open3d/core/kernel/GeneralEW.h"
 #include "open3d/core/kernel/IndexGetSet.h"
 #include "open3d/core/kernel/NonZero.h"
 #include "open3d/core/kernel/Reduction.h"
@@ -36,7 +37,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void TestMKLIntegration();
+void TestLinalgIntegration();
 
 }  // namespace kernel
 }  // namespace core

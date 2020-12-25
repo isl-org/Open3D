@@ -1,0 +1,7 @@
+build
+tags
+.git
+.clangd
+.vscode
+docs/_static/build
+docs/_out

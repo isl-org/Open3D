@@ -32,6 +32,7 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 // Image functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
@@ -56,13 +57,12 @@ static const std::unordered_map<std::string, std::string>
                  "by a 3x3 Gaussian kernel before downsampling."}};
 
 void pybind_image(py::module &m) {
-    py::enum_<geometry::Image::FilterType> image_filter_type(m,
-                                                             "ImageFilterType");
-    image_filter_type.value("Gaussian3", geometry::Image::FilterType::Gaussian3)
-            .value("Gaussian5", geometry::Image::FilterType::Gaussian5)
-            .value("Gaussian7", geometry::Image::FilterType::Gaussian7)
-            .value("Sobel3dx", geometry::Image::FilterType::Sobel3Dx)
-            .value("Sobel3dy", geometry::Image::FilterType::Sobel3Dy)
+    py::enum_<Image::FilterType> image_filter_type(m, "ImageFilterType");
+    image_filter_type.value("Gaussian3", Image::FilterType::Gaussian3)
+            .value("Gaussian5", Image::FilterType::Gaussian5)
+            .value("Gaussian7", Image::FilterType::Gaussian7)
+            .value("Sobel3dx", Image::FilterType::Sobel3Dx)
+            .value("Sobel3dy", Image::FilterType::Sobel3Dy)
             .export_values();
     image_filter_type.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
@@ -70,13 +70,12 @@ void pybind_image(py::module &m) {
             }),
             py::none(), py::none(), "");
 
-    py::class_<geometry::Image, PyGeometry2D<geometry::Image>,
-               std::shared_ptr<geometry::Image>, geometry::Geometry2D>
+    py::class_<Image, PyGeometry2D<Image>, std::shared_ptr<Image>, Geometry2D>
             image(m, "Image", py::buffer_protocol(),
                   "The image class stores image with customizable width, "
                   "height, num of channels and bytes per channel.");
-    py::detail::bind_default_constructor<geometry::Image>(image);
-    py::detail::bind_copy_functions<geometry::Image>(image);
+    py::detail::bind_default_constructor<Image>(image);
+    py::detail::bind_copy_functions<Image>(image);
     image.def(py::init([](py::buffer b) {
              py::buffer_info info = b.request();
              int width, height, num_of_channels = 0, bytes_per_channel;
@@ -106,12 +105,12 @@ void pybind_image(py::module &m) {
              }
              height = (int)info.shape[0];
              width = (int)info.shape[1];
-             auto img = new geometry::Image();
+             auto img = new Image();
              img->Prepare(width, height, num_of_channels, bytes_per_channel);
              memcpy(img->data_.data(), info.ptr, img->data_.size());
              return img;
          }))
-            .def_buffer([](geometry::Image &img) -> py::buffer_info {
+            .def_buffer([](Image &img) -> py::buffer_info {
                 std::string format;
                 switch (img.bytes_per_channel_) {
                     case 1:
@@ -154,7 +153,7 @@ void pybind_image(py::module &m) {
                 }
             })
             .def("__repr__",
-                 [](const geometry::Image &img) {
+                 [](const Image &img) {
                      return std::string("Image of size ") +
                             std::to_string(img.width_) + std::string("x") +
                             std::to_string(img.height_) + ", with " +
@@ -166,8 +165,7 @@ void pybind_image(py::module &m) {
                  })
             .def(
                     "filter",
-                    [](const geometry::Image &input,
-                       geometry::Image::FilterType filter_type) {
+                    [](const Image &input, Image::FilterType filter_type) {
                         if (input.num_of_channels_ != 1 ||
                             input.bytes_per_channel_ != 4) {
                             auto input_f = input.CreateFloatImage();
@@ -179,13 +177,13 @@ void pybind_image(py::module &m) {
                         }
                     },
                     "Function to filter Image", "filter_type"_a)
-            .def("flip_vertical", &geometry::Image::FlipVertical,
+            .def("flip_vertical", &Image::FlipVertical,
                  "Function to flip image vertically (upside down)")
-            .def("flip_horizontal", &geometry::Image::FlipHorizontal,
+            .def("flip_horizontal", &Image::FlipHorizontal,
                  "Function to flip image horizontally (from left to right)")
             .def(
                     "create_pyramid",
-                    [](const geometry::Image &input, size_t num_of_levels,
+                    [](const Image &input, size_t num_of_levels,
                        bool with_gaussian_filter) {
                         if (input.num_of_channels_ != 1 ||
                             input.bytes_per_channel_ != 4) {
@@ -203,10 +201,9 @@ void pybind_image(py::module &m) {
                     "with_gaussian_filter"_a)
             .def_static(
                     "filter_pyramid",
-                    [](const geometry::ImagePyramid &input,
-                       geometry::Image::FilterType filter_type) {
-                        auto output = geometry::Image::FilterPyramid(
-                                input, filter_type);
+                    [](const ImagePyramid &input,
+                       Image::FilterType filter_type) {
+                        auto output = Image::FilterPyramid(input, filter_type);
                         return output;
                     },
                     "Function to filter ImagePyramid", "image_pyramid"_a,
@@ -219,21 +216,21 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "filter_pyramid",
                                     map_shared_argument_docstrings);
 
-    py::class_<geometry::RGBDImage, PyGeometry2D<geometry::RGBDImage>,
-               std::shared_ptr<geometry::RGBDImage>, geometry::Geometry2D>
+    py::class_<RGBDImage, PyGeometry2D<RGBDImage>, std::shared_ptr<RGBDImage>,
+               Geometry2D>
             rgbd_image(m, "RGBDImage",
                        "RGBDImage is for a pair of registered color and depth "
                        "images, viewed from the same view, of the same "
                        "resolution. If you have other format, convert it "
                        "first.");
-    py::detail::bind_default_constructor<geometry::RGBDImage>(rgbd_image);
+    py::detail::bind_default_constructor<RGBDImage>(rgbd_image);
     rgbd_image
-            .def_readwrite("color", &geometry::RGBDImage::color_,
+            .def_readwrite("color", &RGBDImage::color_,
                            "open3d.geometry.Image: The color image.")
-            .def_readwrite("depth", &geometry::RGBDImage::depth_,
+            .def_readwrite("depth", &RGBDImage::depth_,
                            "open3d.geometry.Image: The depth image.")
             .def("__repr__",
-                 [](const geometry::RGBDImage &rgbd_image) {
+                 [](const RGBDImage &rgbd_image) {
                      return std::string("RGBDImage of size \n") +
                             std::string("Color image : ") +
                             std::to_string(rgbd_image.color_.width_) +
@@ -253,31 +250,28 @@ void pybind_image(py::module &m) {
                                     "Use numpy.asarray to access buffer data.");
                  })
             .def_static("create_from_color_and_depth",
-                        &geometry::RGBDImage::CreateFromColorAndDepth,
+                        &RGBDImage::CreateFromColorAndDepth,
                         "Function to make RGBDImage from color and depth image",
                         "color"_a, "depth"_a, "depth_scale"_a = 1000.0,
                         "depth_trunc"_a = 3.0,
                         "convert_rgb_to_intensity"_a = true)
             .def_static("create_from_redwood_format",
-                        &geometry::RGBDImage::CreateFromRedwoodFormat,
+                        &RGBDImage::CreateFromRedwoodFormat,
                         "Function to make RGBDImage (for Redwood format)",
                         "color"_a, "depth"_a,
                         "convert_rgb_to_intensity"_a = true)
-            .def_static("create_from_tum_format",
-                        &geometry::RGBDImage::CreateFromTUMFormat,
-                        "Function to make RGBDImage (for TUM format)",
-                        "color"_a, "depth"_a,
-                        "convert_rgb_to_intensity"_a = true)
-            .def_static("create_from_sun_format",
-                        &geometry::RGBDImage::CreateFromSUNFormat,
-                        "Function to make RGBDImage (for SUN format)",
-                        "color"_a, "depth"_a,
-                        "convert_rgb_to_intensity"_a = true)
-            .def_static("create_from_nyu_format",
-                        &geometry::RGBDImage::CreateFromNYUFormat,
-                        "Function to make RGBDImage (for NYU format)",
-                        "color"_a, "depth"_a,
-                        "convert_rgb_to_intensity"_a = true);
+            .def_static(
+                    "create_from_tum_format", &RGBDImage::CreateFromTUMFormat,
+                    "Function to make RGBDImage (for TUM format)", "color"_a,
+                    "depth"_a, "convert_rgb_to_intensity"_a = true)
+            .def_static(
+                    "create_from_sun_format", &RGBDImage::CreateFromSUNFormat,
+                    "Function to make RGBDImage (for SUN format)", "color"_a,
+                    "depth"_a, "convert_rgb_to_intensity"_a = true)
+            .def_static(
+                    "create_from_nyu_format", &RGBDImage::CreateFromNYUFormat,
+                    "Function to make RGBDImage (for NYU format)", "color"_a,
+                    "depth"_a, "convert_rgb_to_intensity"_a = true);
 
     docstring::ClassMethodDocInject(m, "RGBDImage",
                                     "create_from_color_and_depth",
@@ -295,4 +289,5 @@ void pybind_image(py::module &m) {
 
 void pybind_image_methods(py::module &m) {}
 
+}  // namespace geometry
 }  // namespace open3d

@@ -38,7 +38,7 @@ namespace gui {
 
 // This should not be Color(0, 0, 0, 0), since transparent is a valid and
 // common background color to want.
-static const Color DEFAULT_BGCOLOR(0.001, 0.001, 0.001, 0);
+static const Color DEFAULT_BGCOLOR(0.001f, 0.001f, 0.001f, 0.0f);
 
 struct Widget::Impl {
     Rect frame_;

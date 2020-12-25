@@ -26,24 +26,24 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 
+#include <sstream>
+
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_boundingvolume(py::module &m) {
-    py::class_<geometry::OrientedBoundingBox,
-               PyGeometry3D<geometry::OrientedBoundingBox>,
-               std::shared_ptr<geometry::OrientedBoundingBox>,
-               geometry::Geometry3D>
+    py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
+               std::shared_ptr<OrientedBoundingBox>, Geometry3D>
             oriented_bounding_box(m, "OrientedBoundingBox",
                                   "Class that defines an oriented box that can "
                                   "be computed from 3D geometries.");
-    py::detail::bind_default_constructor<geometry::OrientedBoundingBox>(
+    py::detail::bind_default_constructor<OrientedBoundingBox>(
             oriented_bounding_box);
-    py::detail::bind_copy_functions<geometry::OrientedBoundingBox>(
-            oriented_bounding_box);
+    py::detail::bind_copy_functions<OrientedBoundingBox>(oriented_bounding_box);
     oriented_bounding_box
             .def(py::init<const Eigen::Vector3d &, const Eigen::Matrix3d &,
                           const Eigen::Vector3d &>(),
@@ -52,36 +52,40 @@ void pybind_boundingvolume(py::module &m) {
                  "direction",
                  "center"_a, "R"_a, "extent"_a)
             .def("__repr__",
-                 [](const geometry::OrientedBoundingBox &box) {
-                     return std::string("geometry::OrientedBoundingBox");
+                 [](const OrientedBoundingBox &box) {
+                     std::stringstream s;
+                     auto c = box.center_;
+                     auto e = box.extent_;
+                     s << "OrientedBoundingBox: center: (" << c.x() << ", "
+                       << c.y() << ", " << c.z() << "), extent: " << e.x()
+                       << ", " << e.y() << e.z() << ")";
+                     return s.str();
                  })
             .def("get_point_indices_within_bounding_box",
-                 &geometry::OrientedBoundingBox::
-                         GetPointIndicesWithinBoundingBox,
+                 &OrientedBoundingBox::GetPointIndicesWithinBoundingBox,
                  "Return indices to points that are within the bounding box.",
                  "points"_a)
             .def_static("create_from_axis_aligned_bounding_box",
-                        &geometry::OrientedBoundingBox::
-                                CreateFromAxisAlignedBoundingBox,
+                        &OrientedBoundingBox::CreateFromAxisAlignedBoundingBox,
                         "Returns an oriented bounding box from the "
                         "AxisAlignedBoundingBox.",
                         "aabox"_a)
             .def_static(
                     "create_from_points",
-                    &geometry::OrientedBoundingBox::CreateFromPoints,
+                    &OrientedBoundingBox::CreateFromPoints,
                     "Creates the bounding box that encloses the set of points.",
                     "points"_a)
-            .def("volume", &geometry::OrientedBoundingBox::Volume,
+            .def("volume", &OrientedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
-            .def("get_box_points", &geometry::OrientedBoundingBox::GetBoxPoints,
+            .def("get_box_points", &OrientedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
-            .def_readwrite("center", &geometry::OrientedBoundingBox::center_,
+            .def_readwrite("center", &OrientedBoundingBox::center_,
                            "``float64`` array of shape ``(3, )``")
-            .def_readwrite("R", &geometry::OrientedBoundingBox::R_,
+            .def_readwrite("R", &OrientedBoundingBox::R_,
                            "``float64`` array of shape ``(3,3 )``")
-            .def_readwrite("extent", &geometry::OrientedBoundingBox::extent_,
+            .def_readwrite("extent", &OrientedBoundingBox::extent_,
                            "``float64`` array of shape ``(3, )``")
-            .def_readwrite("color", &geometry::OrientedBoundingBox::color_,
+            .def_readwrite("color", &OrientedBoundingBox::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_box_points");
@@ -97,19 +101,17 @@ void pybind_boundingvolume(py::module &m) {
                                     "create_from_points",
                                     {{"points", "A list of points."}});
 
-    py::class_<geometry::AxisAlignedBoundingBox,
-               PyGeometry3D<geometry::AxisAlignedBoundingBox>,
-               std::shared_ptr<geometry::AxisAlignedBoundingBox>,
-               geometry::Geometry3D>
+    py::class_<AxisAlignedBoundingBox, PyGeometry3D<AxisAlignedBoundingBox>,
+               std::shared_ptr<AxisAlignedBoundingBox>, Geometry3D>
             axis_aligned_bounding_box(m, "AxisAlignedBoundingBox",
                                       "Class that defines an axis_aligned box "
                                       "that can be computed from 3D "
                                       "geometries, The axis aligned bounding "
                                       "box uses the cooridnate axes for "
                                       "bounding box generation.");
-    py::detail::bind_default_constructor<geometry::AxisAlignedBoundingBox>(
+    py::detail::bind_default_constructor<AxisAlignedBoundingBox>(
             axis_aligned_bounding_box);
-    py::detail::bind_copy_functions<geometry::AxisAlignedBoundingBox>(
+    py::detail::bind_copy_functions<AxisAlignedBoundingBox>(
             axis_aligned_bounding_box);
     axis_aligned_bounding_box
             .def(py::init<const Eigen::Vector3d &, const Eigen::Vector3d &>(),
@@ -117,45 +119,45 @@ void pybind_boundingvolume(py::module &m) {
                  "bounds in x, y and z",
                  "min_bound"_a, "max_bound"_a)
             .def("__repr__",
-                 [](const geometry::AxisAlignedBoundingBox &box) {
-                     return std::string("geometry::AxisAlignedBoundingBox");
+                 [](const AxisAlignedBoundingBox &box) {
+                     std::stringstream s;
+                     auto mn = box.min_bound_;
+                     auto mx = box.max_bound_;
+                     s << "AxisAlignedBoundingBox: min: (" << mn.x() << ", "
+                       << mn.y() << ", " << mn.z() << "), max: (" << mx.x()
+                       << ", " << mx.y() << ", " << mx.z() << ")";
+                     return s.str();
                  })
-            .def("volume", &geometry::AxisAlignedBoundingBox::Volume,
+            .def(py::self += py::self)
+            .def("volume", &AxisAlignedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
-            .def("get_box_points",
-                 &geometry::AxisAlignedBoundingBox::GetBoxPoints,
+            .def("get_box_points", &AxisAlignedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
-            .def("get_extent", &geometry::AxisAlignedBoundingBox::GetExtent,
+            .def("get_extent", &AxisAlignedBoundingBox::GetExtent,
                  "Get the extent/length of the bounding box in x, y, and z "
                  "dimension.")
-            .def("get_half_extent",
-                 &geometry::AxisAlignedBoundingBox::GetHalfExtent,
+            .def("get_half_extent", &AxisAlignedBoundingBox::GetHalfExtent,
                  "Returns the half extent of the bounding box.")
-            .def("get_max_extent",
-                 &geometry::AxisAlignedBoundingBox::GetMaxExtent,
+            .def("get_max_extent", &AxisAlignedBoundingBox::GetMaxExtent,
                  "Returns the maximum extent, i.e. the maximum of X, Y and Z "
                  "axis")
             .def("get_point_indices_within_bounding_box",
-                 &geometry::AxisAlignedBoundingBox::
-                         GetPointIndicesWithinBoundingBox,
+                 &AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox,
                  "Return indices to points that are within the bounding box.",
                  "points"_a)
-            .def("get_print_info",
-                 &geometry::AxisAlignedBoundingBox::GetPrintInfo,
+            .def("get_print_info", &AxisAlignedBoundingBox::GetPrintInfo,
                  "Returns the 3D dimensions of the bounding box in string "
                  "format.")
             .def_static(
                     "create_from_points",
-                    &geometry::AxisAlignedBoundingBox::CreateFromPoints,
+                    &AxisAlignedBoundingBox::CreateFromPoints,
                     "Creates the bounding box that encloses the set of points.",
                     "points"_a)
-            .def_readwrite("min_bound",
-                           &geometry::AxisAlignedBoundingBox::min_bound_,
+            .def_readwrite("min_bound", &AxisAlignedBoundingBox::min_bound_,
                            "``float64`` array of shape ``(3, )``")
-            .def_readwrite("max_bound",
-                           &geometry::AxisAlignedBoundingBox::max_bound_,
+            .def_readwrite("max_bound", &AxisAlignedBoundingBox::max_bound_,
                            "``float64`` array of shape ``(3, )``")
-            .def_readwrite("color", &geometry::AxisAlignedBoundingBox::color_,
+            .def_readwrite("color", &AxisAlignedBoundingBox::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
@@ -175,4 +177,5 @@ void pybind_boundingvolume(py::module &m) {
                                     {{"points", "A list of points."}});
 }
 
+}  // namespace geometry
 }  // namespace open3d

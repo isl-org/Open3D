@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <memory>
+
 namespace zmq {
 class context_t;
 }
@@ -35,7 +37,11 @@ namespace io {
 namespace rpc {
 
 /// Returns the zeromq context for this process.
-zmq::context_t& GetZMQContext();
+std::shared_ptr<zmq::context_t> GetZMQContext();
+
+/// Destroys the zeromq context for this process. On windows this needs to be
+/// called manually for a clean shutdown of the process.
+void DestroyZMQContext();
 
 }  // namespace rpc
 }  // namespace io

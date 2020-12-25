@@ -36,8 +36,7 @@
 namespace open3d {
 namespace core {
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
+void Reduction(benchmark::State& state, const Device& device) {
     int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
     Tensor src(shape, Dtype::Int64, device);
@@ -48,27 +47,12 @@ static void ReductionCPU(benchmark::State& state) {
     }
 }
 
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(Reduction, CPU, Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
-}
-
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
+BENCHMARK_CAPTURE(Reduction, CUDA, Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
 #endif
 
 }  // namespace core

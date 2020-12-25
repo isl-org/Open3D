@@ -29,6 +29,14 @@ if (NOT BUILD_RPC_INTERFACE)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
 endif()
 
+if (NOT BUILD_CUDA_MODULE)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/FixedRadiusIndex.cpp)
+endif()
+
+if (NOT WITH_FAISS)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/KnnFaiss.cpp)
+endif()
+
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
 add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 
@@ -40,9 +48,16 @@ else()
 endif()
 
 find_package(Threads)
+
 target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
+
+if (BUILD_AZURE_KINECT)
+    # K4A headres are directly used in test. Currently we don't need to link
+    # the K4A libraries.
+    target_include_directories(tests SYSTEM PRIVATE ${K4A_INCLUDE_DIR})
+endif()
 
 if (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.

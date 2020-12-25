@@ -24,14 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif  // _MSC_VER
+
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
 #include <geometry/SurfaceOrientation.h>
 
-#include <Eigen/Core>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -49,14 +64,16 @@ struct ColoredVertex {
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float2 uv = {0.f, 0.f};
 
-    static size_t GetPositionOffset() {
+    static std::uint32_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
     }
-    static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
-    static size_t GetTangentOffset() {
+    static std::uint32_t GetColorOffset() {
+        return offsetof(ColoredVertex, color);
+    }
+    static std::uint32_t GetTangentOffset() {
         return offsetof(ColoredVertex, tangent);
     }
-    static size_t GetUVOffset() { return offsetof(ColoredVertex, uv); }
+    static std::uint32_t GetUVOffset() { return offsetof(ColoredVertex, uv); }
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto float_pos = pos.cast<float>();
         position.x = float_pos(0);
@@ -64,14 +81,87 @@ struct ColoredVertex {
         position.z = float_pos(2);
     }
 
-    void SetVertexColor(const Eigen::Vector3d& c) {
+    float sRGBToLinear(float color) {
+        return color <= 0.04045f ? color / 12.92f
+                                 : pow((color + 0.055f) / 1.055f, 2.4f);
+    }
+
+    void SetVertexColor(const Eigen::Vector3d& c, bool adjust_for_srgb) {
         auto float_color = c.cast<float>();
-        color.x = float_color(0);
-        color.y = float_color(1);
-        color.z = float_color(2);
+        if (adjust_for_srgb) {
+            color.x = sRGBToLinear(float_color(0));
+            color.y = sRGBToLinear(float_color(1));
+            color.z = sRGBToLinear(float_color(2));
+        } else {
+            color.x = float_color(0);
+            color.y = float_color(1);
+            color.z = float_color(2);
+        }
     }
 };
 }  // namespace
+
+IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
+        size_t max_index, size_t n_subsamples /*= SIZE_MAX*/) {
+    using IndexType = GeometryBuffersBuilder::IndexType;
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+
+    size_t n_indices = std::min(max_index, n_subsamples);
+    // Use double for precision, since float can only accurately represent
+    // integers up to 2^24 = 16 million, and we have buffers with more points
+    // than that.
+    double step = double(max_index) / double(n_indices);
+
+    const size_t n_bytes = n_indices * sizeof(IndexType);
+    auto* uint_indices = static_cast<IndexType*>(malloc(n_bytes));
+    if (step <= 1.0) {
+        // std::iota is about 2X faster than a loop on my machine, anyway.
+        // Since this is the common case, and is used for every entity,
+        // special-case this to make it fast.
+        std::iota(uint_indices, uint_indices + n_indices, 0);
+    } else if (std::floor(step) == step) {
+        for (size_t i = 0; i < n_indices; ++i) {
+            uint_indices[i] = IndexType(step * i);
+        }
+    } else {
+        size_t idx = 0;
+        uint_indices[idx++] = 0;
+        double dist = 1.0;
+        size_t i;
+        for (i = 1; i < max_index; ++i) {
+            if (dist >= step) {
+                uint_indices[idx++] = IndexType(i);
+                dist -= step;
+                if (idx > n_indices) {  // paranoia, should not happen
+                    break;
+                }
+            }
+            dist += 1.0;
+        }
+        // Very occasionally floating point error leads to one fewer points
+        // being added.
+        if (i < max_index - 1) {
+            n_indices = i + 1;
+        }
+    }
+
+    auto ib_handle =
+            resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
+    if (!ib_handle) {
+        free(uint_indices);
+        return IndexBufferHandle();
+    }
+
+    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
+
+    // Moving `uintIndices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
+    IndexBuffer::BufferDescriptor indices_descriptor(uint_indices, n_bytes);
+    indices_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    ibuf->setBuffer(engine, std::move(indices_descriptor));
+    return ib_handle;
+}
 
 PointCloudBuffersBuilder::PointCloudBuffersBuilder(
         const geometry::PointCloud& geometry)
@@ -94,7 +184,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     // we need to use this workaround.
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(1)
-                                 .vertexCount(n_vertices)
+                                 .vertexCount(std::uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
@@ -144,7 +234,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                    .normals(reinterpret_cast<math::float3*>(
                                            normals.data()))
                                    .build();
-        orientation.getQuats(float4v_tagents, n_vertices);
+        orientation->getQuats(float4v_tagents, n_vertices);
     }
 
     const size_t vertices_byte_count = n_vertices * sizeof(ColoredVertex);
@@ -154,7 +244,8 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
         ColoredVertex& element = vertices[i];
         element.SetVertexPosition(geometry_.points_[i]);
         if (geometry_.HasColors()) {
-            element.SetVertexColor(geometry_.colors_[i]);
+            element.SetVertexColor(geometry_.colors_[i],
+                                   adjust_colors_for_srgb_tonemapping_);
         } else {
             element.color = kDefault.color;
         }
@@ -175,29 +266,15 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
 
-    const size_t indices_byte_count = n_vertices * sizeof(IndexType);
-    auto* uint_indices = static_cast<IndexType*>(malloc(indices_byte_count));
-    for (std::uint32_t i = 0; i < n_vertices; ++i) {
-        uint_indices[i] = i;
+    auto ib_handle = CreateIndexBuffer(n_vertices);
+
+    IndexBufferHandle downsampled_handle;
+    if (n_vertices >= downsample_threshold_) {
+        downsampled_handle =
+                CreateIndexBuffer(n_vertices, downsample_threshold_);
     }
 
-    auto ib_handle =
-            resource_mgr.CreateIndexBuffer(n_vertices, sizeof(IndexType));
-    if (!ib_handle) {
-        free(uint_indices);
-        return {};
-    }
-
-    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
-
-    // Moving `uintIndices` to IndexBuffer, which will clean them up later
-    // with DeallocateBuffer
-    IndexBuffer::BufferDescriptor indices_descriptor(uint_indices,
-                                                     indices_byte_count);
-    indices_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    ibuf->setBuffer(engine, std::move(indices_descriptor));
-
-    return std::make_tuple(vb_handle, ib_handle);
+    return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
 }
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
@@ -209,6 +286,157 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     const filament::math::float3 max(geometry_aabb.max_bound_.x(),
                                      geometry_aabb.max_bound_.y(),
                                      geometry_aabb.max_bound_.z());
+
+    Box aabb;
+    aabb.set(min, max);
+
+    return aabb;
+}
+
+TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
+        const t::geometry::PointCloud& geometry)
+    : geometry_(geometry) {}
+
+RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
+        const {
+    return RenderableManager::PrimitiveType::POINTS;
+}
+
+GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+
+    // NOTE: ConstructBuffers assumes caller has checked that DTYPE of the
+    // tensor is float32. It is an error to call this with a tensor of any other
+    // dtype
+
+    const auto& points = geometry_.GetPoints();
+    const size_t n_vertices = points.GetLength();
+
+    // We use CUSTOM0 for tangents along with TANGENTS attribute
+    // because Filament would optimize out anything about normals and lightning
+    // from unlit materials. But our shader for normals visualizing is unlit, so
+    // we need to use this workaround.
+    VertexBuffer* vbuf = VertexBuffer::Builder()
+                                 .bufferCount(4)
+                                 .vertexCount(uint32_t(n_vertices))
+                                 .attribute(VertexAttribute::POSITION, 0,
+                                            VertexBuffer::AttributeType::FLOAT3)
+                                 .normalized(VertexAttribute::COLOR)
+                                 .attribute(VertexAttribute::COLOR, 1,
+                                            VertexBuffer::AttributeType::FLOAT3)
+                                 .normalized(VertexAttribute::TANGENTS)
+                                 .attribute(VertexAttribute::TANGENTS, 2,
+                                            VertexBuffer::AttributeType::FLOAT4)
+                                 .attribute(VertexAttribute::CUSTOM0, 2,
+                                            VertexBuffer::AttributeType::FLOAT4)
+                                 .attribute(VertexAttribute::UV0, 3,
+                                            VertexBuffer::AttributeType::FLOAT2)
+                                 .build(engine);
+
+    VertexBufferHandle vb_handle;
+    if (vbuf) {
+        vb_handle = resource_mgr.AddVertexBuffer(vbuf);
+    } else {
+        return {};
+    }
+
+    VertexBuffer::BufferDescriptor pts_descriptor(
+            points.GetDataPtr(), n_vertices * 3 * sizeof(float));
+    vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
+
+    const size_t color_array_size = n_vertices * 3 * sizeof(float);
+    if (geometry_.HasPointColors()) {
+        VertexBuffer::BufferDescriptor color_descriptor(
+                geometry_.GetPointColors().GetDataPtr(), color_array_size);
+        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+    } else {
+        float* color_array = static_cast<float*>(malloc(color_array_size));
+        for (size_t i = 0; i < n_vertices * 3; ++i) {
+            color_array[i] = 1.f;
+        }
+        VertexBuffer::BufferDescriptor color_descriptor(
+                color_array, color_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+    }
+
+    const size_t normal_array_size = n_vertices * 4 * sizeof(float);
+    if (geometry_.HasPointNormals()) {
+        const auto& normals = geometry_.GetPointNormals();
+
+        // Converting normals to Filament type - quaternions
+        auto float4v_tangents =
+                static_cast<math::quatf*>(malloc(normal_array_size));
+        auto orientation =
+                filament::geometry::SurfaceOrientation::Builder()
+                        .vertexCount(n_vertices)
+                        .normals(reinterpret_cast<const math::float3*>(
+                                normals.GetDataPtr()))
+                        .build();
+        orientation->getQuats(float4v_tangents, n_vertices);
+        VertexBuffer::BufferDescriptor normals_descriptor(
+                float4v_tangents, normal_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
+    } else {
+        float* normal_array = static_cast<float*>(malloc(normal_array_size));
+        float* normal_ptr = normal_array;
+        for (size_t i = 0; i < n_vertices; ++i) {
+            *normal_ptr++ = 0.f;
+            *normal_ptr++ = 0.f;
+            *normal_ptr++ = 0.f;
+            *normal_ptr++ = 1.f;
+        }
+        VertexBuffer::BufferDescriptor normals_descriptor(
+                normal_array, normal_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
+    }
+
+    const size_t uv_array_size = n_vertices * 2 * sizeof(float);
+    float* uv_array = static_cast<float*>(malloc(uv_array_size));
+    if (geometry_.HasPointAttr("uv")) {
+        const float* uv_src = static_cast<const float*>(
+                geometry_.GetPointAttr("uv").GetDataPtr());
+        memcpy(uv_array, uv_src, uv_array_size);
+    } else if (geometry_.HasPointAttr("__visualization_scalar")) {
+        // Update in FilamentScene::UpdateGeometry(), too.
+        memset(uv_array, 0, uv_array_size);
+        const float* src = static_cast<const float*>(
+                geometry_.GetPointAttr("__visualization_scalar").GetDataPtr());
+        const size_t n = 2 * n_vertices;
+        for (size_t i = 0; i < n; i += 2) {
+            uv_array[i] = *src++;
+        }
+    } else {
+        memset(uv_array, 0, uv_array_size);
+    }
+    VertexBuffer::BufferDescriptor uv_descriptor(
+            uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
+
+    auto ib_handle = CreateIndexBuffer(n_vertices);
+
+    IndexBufferHandle downsampled_handle;
+    if (n_vertices >= downsample_threshold_) {
+        downsampled_handle =
+                CreateIndexBuffer(n_vertices, downsample_threshold_);
+    }
+
+    return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
+}
+
+filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
+    auto min_bounds = geometry_.GetMinBound();
+    auto max_bounds = geometry_.GetMaxBound();
+    auto* min_bounds_float = static_cast<float*>(min_bounds.GetDataPtr());
+    auto* max_bounds_float = static_cast<float*>(max_bounds.GetDataPtr());
+
+    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                                     min_bounds_float[2]);
+    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                                     max_bounds_float[2]);
 
     Box aabb;
     aabb.set(min, max);

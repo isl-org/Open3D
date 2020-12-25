@@ -15,8 +15,17 @@ if __name__ == "__main__":
     os.environ["CI"] = "true"
 
     file_dir = Path(__file__).absolute().parent
-    nb_paths = sorted((file_dir / "Basic").glob("*.ipynb"))
-    nb_paths += sorted((file_dir / "Advanced").glob("*.ipynb"))
+
+    # Note: must be consistent with make_docs.py
+    example_dirs = [
+        "geometry",
+        "core",
+        "pipelines",
+        "visualization",
+    ]
+    nb_paths = []
+    for example_dir in example_dirs:
+        nb_paths += sorted((file_dir / example_dir).glob("*.ipynb"))
 
     print("Found the following notebooks:")
     for nb_path in nb_paths:

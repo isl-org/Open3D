@@ -26,9 +26,26 @@
 
 #pragma once
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <utils/Entity.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include <Eigen/Geometry>
 #include <unordered_map>
@@ -43,6 +60,7 @@
 
 /// @cond
 namespace filament {
+class Box;
 class Engine;
 class IndirectLight;
 class Renderer;
@@ -57,11 +75,10 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class FilamentResourceManager;
 class FilamentView;
+class GeometryBuffersBuilder;
 class Renderer;
 class View;
-class Model;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -82,6 +99,7 @@ public:
 
     View* GetView(const ViewHandle& view_id) const override;
     void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void SetRenderOnce(const ViewHandle& view_id) override;
     void RemoveView(const ViewHandle& view_id) override;
 
     // Camera
@@ -93,11 +111,23 @@ public:
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
-                     const Material& material) override;
+                     const Material& material,
+                     const std::string& downsampled_name = "",
+                     size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
-                     const Model& model) override;
+                     const t::geometry::PointCloud& point_cloud,
+                     const Material& material,
+                     const std::string& downsampled_name = "",
+                     size_t downsample_threshold = SIZE_MAX) override;
+    bool AddGeometry(const std::string& object_name,
+                     const TriangleMeshModel& model) override;
+    bool HasGeometry(const std::string& object_name) const override;
+    void UpdateGeometry(const std::string& object_name,
+                        const t::geometry::PointCloud& point_cloud,
+                        uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
+    bool GeometryIsVisible(const std::string& object_name) override;
     void SetGeometryTransform(const std::string& object_name,
                               const Transform& transform) override;
     Transform GetGeometryTransform(const std::string& object_name) override;
@@ -106,6 +136,10 @@ public:
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
                          bool receive_shadows) override;
+    void SetGeometryCulling(const std::string& object_name,
+                            bool enable) override;
+    void SetGeometryPriority(const std::string& object_name,
+                             uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
@@ -128,6 +162,11 @@ public:
                       float inner_cone_angle,
                       float outer_cone_angle,
                       bool cast_shadows) override;
+    bool AddDirectionalLight(const std::string& light_name,
+                             const Eigen::Vector3f& color,
+                             const Eigen::Vector3f& direction,
+                             float intensity,
+                             bool cast_shadows) override;
     Light& GetLight(const std::string& light_name) override;
     void RemoveLight(const std::string& light_name) override;
     void UpdateLight(const std::string& light_name,
@@ -148,14 +187,17 @@ public:
     void EnableLightShadow(const std::string& light_name,
                            bool cast_shadows) override;
 
-    void SetDirectionalLight(const Eigen::Vector3f& direction,
-                             const Eigen::Vector3f& color,
-                             float intensity) override;
-    void EnableDirectionalLight(bool enable) override;
-    void EnableDirectionalLightShadows(bool enable) override;
-    void SetDirectionalLightDirection(
-            const Eigen::Vector3f& direction) override;
-    Eigen::Vector3f GetDirectionalLightDirection() override;
+    void SetSunLight(const Eigen::Vector3f& direction,
+                     const Eigen::Vector3f& color,
+                     float intensity) override;
+    void EnableSunLight(bool enable) override;
+    void EnableSunLightShadows(bool enable) override;
+    float GetSunLightIntensity() override;
+    void SetSunLightDirection(const Eigen::Vector3f& direction) override;
+    Eigen::Vector3f GetSunLightDirection() override;
+    void SetSunAngularRadius(float radius) override;
+    void SetSunHaloSize(float size) override;
+    void SetSunHaloFalloff(float falloff) override;
 
     bool SetIndirectLight(const std::string& ibl_name) override;
     const std::string& GetIndirectLight() override;
@@ -165,10 +207,11 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
+    void SetBackground(
+            const Eigen::Vector4f& color,
+            const std::shared_ptr<geometry::Image> image = nullptr) override;
 
-    void RenderToImage(int width,
-                       int height,
-                       std::function<void(std::shared_ptr<geometry::Image>)>
+    void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
@@ -179,6 +222,15 @@ private:
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
             const Material& material);
+    enum BufferReuse { kNo, kYes };
+    bool CreateAndAddFilamentEntity(
+            const std::string& object_name,
+            GeometryBuffersBuilder& buffer_builder,
+            filament::Box& aabb,
+            VertexBufferHandle vb,
+            IndexBufferHandle ib,
+            const Material& material,
+            BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
 
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
@@ -189,11 +241,7 @@ private:
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle normal_map =
                 rendering::FilamentResourceManager::kDefaultNormalMap;
-        rendering::TextureHandle ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle metallic_map =
+        rendering::TextureHandle ao_rough_metal_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle reflectance_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
@@ -202,6 +250,8 @@ private:
         rendering::TextureHandle clear_coat_roughness_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle anisotropy_map =
+                rendering::FilamentResourceManager::kDefaultTexture;
+        rendering::TextureHandle gradient_texture =
                 rendering::FilamentResourceManager::kDefaultTexture;
     };
 
@@ -236,11 +286,13 @@ private:
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
         bool is_active = true;
+        int render_count = -1;
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 
-    RenderableGeometry* GetGeometry(const std::string& object_name,
-                                    bool warn_if_not_found = true);
+    std::vector<RenderableGeometry*> GetGeometry(const std::string& object_name,
+                                                 bool warn_if_not_found = true);
+    bool GeometryIsModel(const std::string& object_name) const;
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
@@ -248,15 +300,25 @@ private:
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
+    void UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
+    void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
+    void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
+    void UpdateLineShader(GeometryMaterialInstance& geom_mi);
+    void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;
+    std::unordered_map<std::string, std::vector<std::string>> model_geometries_;
+
+    Eigen::Vector4f background_color_;
+    std::shared_ptr<geometry::Image> background_image_;
     std::string ibl_name_;
     bool ibl_enabled_ = false;
     bool skybox_enabled_ = false;

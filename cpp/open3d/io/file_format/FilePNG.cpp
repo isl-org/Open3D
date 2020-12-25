@@ -34,15 +34,24 @@ namespace open3d {
 namespace {
 using namespace io;
 
-void SetPNGImageFromImage(const geometry::Image &image, png_image &pngimage) {
+void SetPNGImageFromImage(const geometry::Image &image,
+                          int quality,
+                          png_image &pngimage) {
     pngimage.width = image.width_;
     pngimage.height = image.height_;
-    pngimage.format = 0;
+    pngimage.format = pngimage.flags = 0;
+
     if (image.bytes_per_channel_ == 2) {
         pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
     }
-    if (image.num_of_channels_ == 3) {
+    if (image.num_of_channels_ >= 3) {
         pngimage.format |= PNG_FORMAT_FLAG_COLOR;
+    }
+    if (image.num_of_channels_ == 4) {
+        pngimage.format |= PNG_FORMAT_FLAG_ALPHA;
+    }
+    if (quality <= 2) {
+        pngimage.flags |= PNG_IMAGE_FLAG_FAST;
     }
 }
 
@@ -59,6 +68,12 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         return false;
     }
 
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
     image.Prepare(pngimage.width, pngimage.height,
                   PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
                   PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
@@ -67,6 +82,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         0) {
         utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
+        utility::LogWarning("PNG error: {}", pngimage.message);
         return false;
     }
     return true;
@@ -79,10 +95,18 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
+    if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
+        quality = 6;
+    if (quality < 0 || quality > 9) {
+        utility::LogWarning(
+                "Write PNG failed: quality ({}) must be in the range [0,9]",
+                quality);
+        return false;
+    }
     png_image pngimage;
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
-    SetPNGImageFromImage(image, pngimage);
+    SetPNGImageFromImage(image, quality, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
                                 image.data_.data(), 0, NULL) == 0) {
         utility::LogWarning("Write PNG failed: unable to write file: {}",

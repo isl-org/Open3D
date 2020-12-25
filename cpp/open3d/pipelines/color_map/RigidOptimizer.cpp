@@ -45,6 +45,7 @@ static void ComputeJacobianAndResidualRigid(
         int row,
         Eigen::Vector6d& J_r,
         double& r,
+        double& w,
         const geometry::TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
         const std::shared_ptr<geometry::Image>& images_gray,
@@ -80,6 +81,7 @@ static void ComputeJacobianAndResidualRigid(
     J_r(4) = v1;
     J_r(5) = v2;
     r = (gray - proxy_intensity[vid]);
+    w = 1.0;  // Dummy.
 }
 
 void RigidOptimizer::Run(const RigidOptimizerOption& option) {
@@ -124,9 +126,11 @@ void RigidOptimizer::Run(const RigidOptimizerOption& option) {
             intr.block<3, 3>(0, 0) = intrinsic;
             intr(3, 3) = 1.0;
 
-            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r) {
+            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r,
+                                double& w) {
+                w = 1.0;  // Dummy.
                 ComputeJacobianAndResidualRigid(
-                        i, J_r, r, *mesh_, proxy_intensity, images_gray_[c],
+                        i, J_r, r, w, *mesh_, proxy_intensity, images_gray_[c],
                         images_dx_[c], images_dy_[c], intr, extrinsic,
                         visibility_image_to_vertex[c],
                         option.image_boundary_margin_);

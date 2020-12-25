@@ -26,12 +26,31 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
+#include <utils/Entity.h>
+
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/SwapChain.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
@@ -49,7 +68,20 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    void* native_drawable,
                                    FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
-    swap_chain_ = engine_.createSwapChain(native_drawable);
+    swap_chain_ = engine_.createSwapChain(native_drawable,
+                                          filament::SwapChain::CONFIG_READABLE);
+    renderer_ = engine_.createRenderer();
+
+    materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+}
+
+FilamentRenderer::FilamentRenderer(filament::Engine& engine,
+                                   int width,
+                                   int height,
+                                   FilamentResourceManager& resource_mgr)
+    : engine_(engine), resource_mgr_(resource_mgr) {
+    swap_chain_ = engine_.createSwapChain(width, height,
+                                          filament::SwapChain::CONFIG_READABLE);
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
@@ -81,6 +113,35 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
 
 void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
+}
+
+void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = color.x();
+    co.clearColor.g = color.y();
+    co.clearColor.b = color.z();
+    co.clearColor.a = color.w();
+    co.clear = false;
+    co.discard = !preserve_buffer_;
+    renderer_->setClearOptions(co);
+
+    // remember clear color
+    clear_color_[0] = color.x();
+    clear_color_[1] = color.y();
+    clear_color_[2] = color.z();
+    clear_color_[3] = color.w();
+}
+
+void FilamentRenderer::SetPreserveBuffer(bool preserve) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = clear_color_[0];
+    co.clearColor.g = clear_color_[1];
+    co.clearColor.b = clear_color_[2];
+    co.clearColor.a = clear_color_[3];
+    preserve_buffer_ = preserve;
+    co.clear = false;
+    co.discard = !preserve;
+    renderer_->setClearOptions(co);
 }
 
 void FilamentRenderer::UpdateSwapChain() {
@@ -115,11 +176,32 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
+void FilamentRenderer::EnableCaching(bool enable) {
+    render_caching_enabled_ = enable;
+    if (enable) {
+        // NOTE: Render two frames before switching swap chain to preserve
+        // contents. This ensures that the desired content is fully rendered
+        // into buffer. Ideally only a single frame is necessary but when
+        // render_count_ is 1 artifacts occasionally occur.
+        render_count_ = 2;
+    }
+
+    SetPreserveBuffer(false);
+}
+
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
     for (auto& br : buffer_renderers_) {
         if (br->pending_) {
             br->Render();
+        }
+    }
+
+    if (render_caching_enabled_) {
+        if (render_count_-- > 0) {
+            SetPreserveBuffer(false);
+        } else {
+            SetPreserveBuffer(true);
         }
     }
 
@@ -152,11 +234,6 @@ MaterialHandle FilamentRenderer::AddMaterial(
 MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
         const MaterialHandle& material) {
     return resource_mgr_.CreateMaterialInstance(material);
-}
-
-MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
-        const geometry::TriangleMesh::Material& material) {
-    return resource_mgr_.CreateFromDescriptor(material);
 }
 
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
@@ -199,14 +276,15 @@ void FilamentRenderer::RemoveMaterialInstance(
     resource_mgr_.Destroy(id);
 }
 
-TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
+                                           bool srgb) {
     if (request.path_.empty()) {
         request.error_callback_(request, -1,
                                 "Texture can be loaded only from file");
         return {};
     }
 
-    return resource_mgr_.CreateTexture(request.path_.data());
+    return resource_mgr_.CreateTexture(request.path_.data(), srgb);
 }
 
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
@@ -263,8 +341,8 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image) {
-    return resource_mgr_.CreateTexture(image);
+        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
 }
 
 void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {

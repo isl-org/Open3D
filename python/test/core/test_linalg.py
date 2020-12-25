@@ -27,10 +27,14 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import core_test_utils
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
@@ -85,7 +89,7 @@ def test_matmul(device, dtype):
         assert 'dimensions with zero' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
@@ -104,7 +108,10 @@ def test_inverse(device, dtype):
 
     a_inv = o3d.core.inv(a)
     a_inv_numpy = np.linalg.inv(a.cpu().numpy())
-    np.testing.assert_allclose(a_inv.cpu().numpy(), a_inv_numpy, 1e-6)
+    np.testing.assert_allclose(a_inv.cpu().numpy(),
+                               a_inv_numpy,
+                               rtol=1e-5,
+                               atol=1e-5)
 
     # Non-2D
     for shape in [(), [1], (3, 4, 5)]:
@@ -136,7 +143,7 @@ def test_inverse(device, dtype):
         assert 'Singular matrix' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
@@ -202,7 +209,7 @@ def test_svd(device, dtype):
     assert 'must be 2D' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype",
                          [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
 def test_solve(device, dtype):
@@ -221,7 +228,7 @@ def test_solve(device, dtype):
     assert 'singular' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype",
                          [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
 def test_lstsq(device, dtype):

@@ -28,6 +28,9 @@
 
 #include <Eigen/Dense>
 
+#include "BoundingVolume.h"
+#include "Line3D.h"
+
 namespace open3d {
 namespace geometry {
 
@@ -77,6 +80,120 @@ public:
                                               const Eigen::Vector3d& p1,
                                               const Eigen::Vector3d& q0,
                                               const Eigen::Vector3d& q1);
+
+    /// \brief Returns the lower intersection parameter for a line with an
+    /// axis aligned bounding box or empty if no intersection. This method is
+    /// about 20x slower than the slab method, see details to know when to use.
+    /// This function wraps the underlying implementation on the Line3D class
+    /// and is included here for API coherence; if you are testing large numbers
+    /// of lines, rays, or segments use the Line3D, Ray3D, or Segment3D classes
+    /// directly.
+    ///
+    /// \details Calculates the lower intersection parameter of a parameterized
+    /// line with an axis aligned bounding box. The intersection point can be
+    /// recovered with .Line().pointAt(...). If the line does not intersect the
+    /// box the return value will be empty. Also note that if the AABB is behind
+    /// the line's origin point, the value returned will still be of the lower
+    /// intersection, which is the first intersection in the direction of the
+    /// line, not the intersection closer to the origin.
+    ///
+    /// This implementation is a naive exact method that considers intersections
+    /// with all six bounding box planes. It is not optimized for speed and
+    /// should only be used when a problem is conditioned such that the slab
+    /// method is unacceptable. Use this when a line is likely to lie exactly
+    /// in one of the AABB planes and false negatives are unacceptable.
+    /// Typically this will only happen when lines are axis-aligned and both
+    /// lines and bounding volumes are regularly spaced, and every intersection
+    /// is important.  In such cases if performance is important, a simple
+    /// custom implementation based on the problem directionality will likely
+    /// outperform even the slab method.
+    /// \code{.cpp}
+    /// // Intersection with a line
+    /// auto result = IntersectionTest::LineExactAABB(Line3D{p, n}, box);
+    /// if (result.has_value()) {
+    ///     ...
+    /// }
+    ///
+    /// // Intersection with a ray
+    /// auto result = IntersectionTest::LineExactAABB(Ray3D{p, n}, box);
+    /// if (result.has_value()) {
+    ///     ...
+    /// }
+    ///
+    /// // Intersection with a segment
+    /// auto result = IntersectionTest::LineExactAABB(Segment3D{p0, p1}, box);
+    /// if (result.has_value()) {
+    ///     ...
+    /// }
+    ///
+    /// // Getting the intersection point
+    /// Ray3D ray{p, n};
+    /// auto result = IntersectionTest::LineSlabAABB(ray, box);
+    /// if (result.has_value()) {
+    ///     // the .Line() function retrieves the underlying Eigen object
+    ///     ray.Line().pointAt(result.value());
+    /// }
+    /// \endcode
+    static utility::optional<double> LineExactAABB(
+            const Line3D& line, const AxisAlignedBoundingBox& box) {
+        return line.ExactAABB(box);
+    }
+
+    /// \brief Returns the lower intersection parameter for a line with an
+    /// axis aligned bounding box or no value if there is no intersection. This
+    /// function wraps the underlying implementation on the Line3D class and
+    /// is included here for API coherence; if you are testing large numbers
+    /// of lines, rays, or segments use the Line3D, Ray3D, or Segment3D classes
+    /// directly.
+    ///
+    /// \details Calculates the lower intersection parameter of a parameterized
+    /// line with an axis aligned bounding box. The intersection point can be
+    /// recovered with .Line().pointAt(...). If the line does not intersect the
+    /// box the return value will be empty. Also note that if the AABB is behind
+    /// the line's origin point, the value returned will still be of the lower
+    /// intersection, which is the first intersection in the direction of the
+    /// line, not the intersection closer to the origin.
+    ///
+    /// This implementation is based off of Tavian Barnes' optimized branchless
+    /// slab method. https://tavianator.com/2011/ray_box.html. It runs in
+    /// roughly 5% of the time as the the naive exact method, but can degenerate
+    /// in specific conditions where a line lies exactly in one of the AABB's
+    /// planes.
+    /// \code{.cpp}
+    /// // Intersection with a line
+    /// auto result = IntersectionTest::LineSlabAABB(Line3D{p, n}, box);
+    /// if (result.has_value()) {
+    ///     ...
+    /// }
+    ///
+    /// // Intersection with a ray
+    /// auto result = IntersectionTest::LineSlabAABB(Ray3D{p, n}, box);
+    /// if (result.has_value()) {
+    ///     ...
+    /// }
+    ///
+    /// // Intersection with a segment
+    /// auto result = IntersectionTest::LineSlabAABB(Segment3D{p0, p1}, box);
+    /// if (result.has_value()) {
+    ///     ...
+    /// }
+    ///
+    /// // Getting the intersection point
+    /// Ray3D ray{p, n};
+    /// auto result = IntersectionTest::LineSlabAABB(ray, box);
+    /// if (result.has_value()) {
+    ///     // the .Line() function retrieves the underlying Eigen object
+    ///     ray.Line().pointAt(result.value());
+    /// }
+    /// \endcode
+    ///
+    /// \warning A line that lies exactly in one of the AABB's planes within the
+    /// double floating point precision will not intersect correctly by this
+    /// method
+    static utility::optional<double> LineSlabAABB(
+            const Line3D& line, const AxisAlignedBoundingBox& box) {
+        return line.SlabAABB(box);
+    }
 };
 
 }  // namespace geometry

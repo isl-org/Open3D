@@ -109,7 +109,10 @@ void VisualizerWithCustomAnimation::Play(
                     recording_image_basedir_);
         }
     }
-    RegisterAnimationCallback([=, &progress_bar](Visualizer *vis) {
+    RegisterAnimationCallback([this, recording, recording_depth,
+                               close_window_when_animation_ends,
+                               recording_trajectory, trajectory_ptr,
+                               &progress_bar](Visualizer *vis) {
         // The lambda function captures no references to avoid dangling
         // references
         auto &view_control =

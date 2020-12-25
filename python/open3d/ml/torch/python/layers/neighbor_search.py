@@ -1,4 +1,30 @@
-from open3d.ml.torch.nn import functional as ops
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2020 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
+from ...python import ops
 import torch
 
 __all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
@@ -9,19 +35,33 @@ class FixedRadiusSearch(torch.nn.Module):
 
     This layer computes the neighbors for a fixed radius on a point cloud.
 
+    Example:
+
+      This example shows a neighbor search that returns the indices to the
+      found neighbors and the distances.::
+
+        import torch
+        import open3d.ml.torch as ml3d
+
+        points = torch.randn([20,3])
+        queries = torch.randn([10,3])
+        radius = 0.8
+
+        nsearch = ml3d.layers.FixedRadiusSearch(return_distances=True)
+        ans = nsearch(points, queries, radius)
+        # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
+
+
     Arguments:
 
-    metric:
-      Either L1, L2 or Linf. Default is L2.
+      metric: Either L1, L2 or Linf. Default is L2.
 
-    ignore_query_point:
-      If True the points that coincide with the center of the search window will be
-      ignored. This excludes the query point if 'queries' and 'points' are the same
-      point cloud.
+      ignore_query_point: If True the points that coincide with the center of
+        the search window will be ignored. This excludes the query point if
+        'queries' and 'points' are the same point cloud.
 
-    return_distances:
-      If True the distances for each neighbor will be returned.
-      If False a zero length Tensor will be returned instead.
+      return_distances: If True the distances for each neighbor will be returned.
+        If False a zero length Tensor will be returned instead.
     """
 
     def __init__(self,
@@ -54,22 +94,25 @@ class FixedRadiusSearch(torch.nn.Module):
 
           radius: A scalar with the neighborhood radius
 
-          points_row_splits:
-            Optional 1D vector with the row splits information if points is batched.
-            This vector is [0, num_points] if there is only 1 batch item.
+          points_row_splits: Optional 1D vector with the row splits information
+            if points is batched. This vector is [0, num_points] if there is
+            only 1 batch item.
 
-          queries_row_splits:
-            Optional 1D vector with the row splits information if queries is batched.
-            This vector is [0, num_queries] if there is only 1 batch item.
+          queries_row_splits: Optional 1D vector with the row splits information
+            if queries is batched.  This vector is [0, num_queries] if there is
+            only 1 batch item.
 
-          hash_table_size_factor: Scalar. The size of the hash table as fraction of points.
+          hash_table_size_factor: Scalar. The size of the hash table as fraction
+            of points.
 
           hash_table: A precomputed hash table generated with build_spatial_hash_table().
             This input can be used to explicitly force the reuse of a hash table in special
             cases and is usually not needed.
             Note that the hash table must have been generated with the same 'points' array.
 
-        Returns: 3 Tensors in the following order
+        Returns:
+          3 Tensors in the following order
+
           neighbors_index
             The compact list of indices of the neighbors. The corresponding query point
             can be inferred from the 'neighbor_count_row_splits' vector.
@@ -120,22 +163,36 @@ class RadiusSearch(torch.nn.Module):
     This layer computes the neighbors for each query point with each query
     having an individual radius.
 
+    Example:
+
+      This example shows a neighbor search that returns the indices to the
+      found neighbors and the distances.::
+
+        import torch
+        import open3d.ml.torch as ml3d
+
+        points = torch.randn([20,3])
+        queries = torch.randn([10,3])
+        radii = torch.randn([10])+1.0
+
+        nsearch = ml3d.layers.RadiusSearch(return_distances=True)
+        ans = nsearch(points, queries, radii)
+        # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
+
+
     Arguments:
 
-    metric:
-      Either L1, L2 or Linf. Default is L2.
+      metric: Either L1, L2 or Linf. Default is L2.
 
-    ignore_query_point:
-      If True the points that coincide with the center of the search window will be
-      ignored. This excludes the query point if 'queries' and 'points' are the same
-      point cloud.
+      ignore_query_point: If True the points that coincide with the center of the
+        search window will be ignored. This excludes the query point if 'queries'
+        and 'points' are the same point cloud.
 
-    return_distances:
-      If True the distances for each neighbor will be returned.
-      If False a zero length Tensor will be returned instead.
+      return_distances: If True the distances for each neighbor will be returned.
+        If False a zero length Tensor will be returned instead.
 
-    normalize_distances:
-      If True the returned distances will be normalized with the radii.
+      normalize_distances: If True the returned distances will be normalized with
+        the radii.
     """
 
     def __init__(self,
@@ -166,15 +223,17 @@ class RadiusSearch(torch.nn.Module):
 
           radii: A radius for each query point.
 
-          points_row_splits:
-            Optional 1D vector with the row splits information if points is batched.
-            This vector is [0, num_points] if there is only 1 batch item.
+          points_row_splits: Optional 1D vector with the row splits information
+            if points is batched.  This vector is [0, num_points] if there is
+            only 1 batch item.
 
-          queries_row_splits:
-            Optional 1D vector with the row splits information if queries is batched.
-            This vector is [0, num_queries] if there is only 1 batch item.
+          queries_row_splits: Optional 1D vector with the row splits information
+            if queries is batched. This vector is [0, num_queries] if there is
+            only 1 batch item.
 
-        Returns: 3 Tensors in the following order
+        Returns:
+          3 Tensors in the following order
+
           neighbors_index
             The compact list of indices of the neighbors. The corresponding query point
             can be inferred from the 'neighbor_count_row_splits' vector.
@@ -211,19 +270,37 @@ class KNNSearch(torch.nn.Module):
 
     This layer computes the k nearest neighbors for each query point.
 
+    Example:
+
+      This example shows a neighbor search that returns the indices to the
+      found neighbors and the distances.::
+
+        import torch
+        import open3d.ml.torch as ml3d
+
+        points = torch.randn([20,3])
+        queries = torch.randn([10,3])
+        k = 8
+
+        nsearch = ml3d.layers.KNNSearch(return_distances=True)
+        ans = nsearch(points, queries, k)
+        # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
+        # Since there are more than k points and we do not ignore any points we can
+        # reshape the output to [num_queries, k] with
+        neighbors_index = ans.neighbors_index.reshape(10,k)
+        neighbors_distance = ans.neighbors_distance.reshape(10,k)
+
+
     Arguments:
 
-    metric:
-      Either L1, L2 or Linf. Default is L2.
+      metric: Either L1, L2 or Linf. Default is L2.
 
-    ignore_query_point:
-      If True the points that coincide with the center of the search window will be
-      ignored. This excludes the query point if 'queries' and 'points' are the same
-      point cloud.
+      ignore_query_point: If True the points that coincide with the center of the
+        search window will be ignored. This excludes the query point if 'queries'
+        and 'points' are the same point cloud.
 
-    return_distances:
-      If True the distances for each neighbor will be returned.
-      If False a zero length Tensor will be returned instead.
+      return_distances: If True the distances for each neighbor will be returned.
+        If False a zero length Tensor will be returned instead.
     """
 
     def __init__(self,
@@ -246,21 +323,23 @@ class KNNSearch(torch.nn.Module):
 
         Arguments:
 
-          points: The 3D positions of the input points.
+          points: The 3D positions of the input points. *This argument must be
+            given as a positional argument!*
 
           queries: The 3D positions of the query points.
 
           k: The number of nearest neighbors to search.
 
-          points_row_splits:
-            Optional 1D vector with the row splits information if points is batched.
+          points_row_splits: Optional 1D vector with the row splits information
+            if points is batched.
             This vector is [0, num_points] if there is only 1 batch item.
 
-          queries_row_splits:
-            Optional 1D vector with the row splits information if queries is batched.
+          queries_row_splits: Optional 1D vector with the row splits information
+            if queries is batched.
             This vector is [0, num_queries] if there is only 1 batch item.
 
         Returns: 3 Tensors in the following order
+
           neighbors_index
             The compact list of indices of the neighbors. The corresponding query point
             can be inferred from the 'neighbor_count_row_splits' vector.

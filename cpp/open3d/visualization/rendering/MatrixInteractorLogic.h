@@ -41,6 +41,8 @@ public:
     virtual ~MatrixInteractorLogic();
 
     void SetViewSize(int width, int height);
+    int GetViewWidth() const;
+    int GetViewHeight() const;
 
     const geometry::AxisAlignedBoundingBox& GetBoundingBox() const;
     virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds);
@@ -89,8 +91,8 @@ protected:
     Eigen::Vector3f center_of_rotation_at_mouse_down_;
 
     void SetMatrix(const Camera::Transform& matrix);
-    double CalcRotateRadians(int dx, int dy);
-    double CalcRotateZRadians(int dx, int dy);
+    float CalcRotateRadians(int dx, int dy);
+    float CalcRotateZRadians(int dx, int dy);
     float CalcDollyDist(int dy, DragType drag_type);
 };
 

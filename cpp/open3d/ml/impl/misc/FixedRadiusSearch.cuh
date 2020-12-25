@@ -260,7 +260,7 @@ __global__ void CountNeighborsKernel(
 
             Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
-                if (query_pos == p) continue;
+                if ((query_pos == p).all()) continue;
             }
 
             T dist;
@@ -411,7 +411,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
             Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
-                if (query_pos == p) continue;
+                if ((query_pos == p).all()) continue;
             }
 
             T dist;

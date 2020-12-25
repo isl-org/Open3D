@@ -30,6 +30,15 @@ execute_process(
 )
 message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
+if (${PYTHON_VERSION_MAJOR} EQUAL 2)
+    message(FATAL_ERROR "Python 2 is no longer supported. Please check your \
+            your Python version with `python --version`. To use Python 3, do \
+            one of the following: \
+            (1) activate a Python 3 virtual environment; \
+            (2) specify the Python path explicitly with -DPYTHON_EXECUTABLE=/path/to/python3; \
+            (3) add Python 3 to the PATH environment variable.")
+endif()
+
 set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
@@ -39,6 +48,8 @@ if (NOT BUILD_GUI)
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/o3dvisualizer.cpp")
 endif()
 
 if (NOT BUILD_AZURE_KINECT)
@@ -80,8 +91,14 @@ open3d_set_global_properties(${PACKAGE_NAME})
 if (BUILD_AZURE_KINECT)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
 endif()
+if (BUILD_LIBREALSENSE)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_LIBREALSENSE)
+endif()
 if (BUILD_GUI)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
+endif()
+if (WITH_FAISS)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE WITH_FAISS)
 endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
@@ -89,17 +106,22 @@ if (WIN32)
     target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
 endif()
 
-if (${PYTHON_VERSION_MAJOR} EQUAL 2)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
-endif ()
-
 # At `make`: open3d.so (or the equivalents) will be created at
-# PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/Python`
-set(PYTHON_COMPILED_MODULE_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python")
+# PYTHON_COMPILED_MODULE_DIR. The default location is
+# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+set(PYTHON_COMPILED_MODULE_DIR
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 set_target_properties(${PACKAGE_NAME} PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
+# Include additional libraries that may be absent from the user system
+# eg: libc++.so and libc++abi.so (needed by filament) for Linux.
+# libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
+set(PYTHON_EXTRA_LIBRARIES "")
+if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+endif()
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DIR. It contains:
@@ -135,7 +157,7 @@ endif ()
 if ( BUILD_PYTORCH_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/TensorFlow"
+            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
@@ -149,6 +171,32 @@ if ( BUILD_PYTORCH_OPS )
         OUTPUT_VARIABLE Pytorch_VERSION)
 endif ()
 
+if ( BUNDLE_OPEN3D_ML )
+
+    find_path(
+        OPEN3D_ML_ROOT
+        NAMES set_open3d_ml_root.sh
+        HINTS $ENV{OPEN3D_ML_ROOT}
+        DOC "Path to the Open3D-ML repo. This should be set if BUNDLE_OPEN3D_ML is enabled. Alternatively set an env var with the same name to populate this var."
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
+
+    ExternalProject_Add(
+        open3d_ml
+        PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
+        GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
+        BUILD_IN_SOURCE ON
+        # do not configure
+        CONFIGURE_COMMAND ""
+        # do not build
+        BUILD_COMMAND ""
+        # do not install
+        INSTALL_COMMAND ""
+        )
+    list(APPEND GENERATED_OUTPUTS open3d_ml )
+endif ()
+
 configure_file("_build_config.py.in"
                "${CMAKE_BINARY_DIR}/lib/_build_config.py")
 
@@ -158,9 +206,12 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
+            "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+            -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
+            -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
@@ -168,7 +219,7 @@ add_custom_target(python-package
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
-            -DPROJECT_VERSION=${PROJECT_VERSION}
+            -DPROJECT_VERSION=${OPEN3D_VERSION_FULL}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
@@ -208,16 +259,22 @@ add_custom_target(install-python-package
 # Use `make conda-package` to create conda package in the build directory
 # Note that we don't provide `make install-conda-package` similar to pip. This
 # is becuase:
-#     1) `make install-pip-whell` works in conda environment for local build
+#     1) `make install-pip-package` works in conda environment for local build
 #     2) `make conda-package` is mainly for internal use to distribute conda
 add_custom_target(conda-package
-    COMMAND ${CMAKE_COMMAND}
-            -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-            -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-            -P ${CMAKE_CURRENT_SOURCE_DIR}/check_and_install_conda_deps.cmake
-    # If we put the following `conda-build` in check_and_install_conda_deps.cmake, it
-    # causes broken pipe problem while running conda build. So we put it here.
     COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
+    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+    DEPENDS python-package
+)
+
+# Make pip and conda package in one command. The python-package target clears
+# the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
+# the previous one will be deleted.
+add_custom_target(pip-conda-package
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package

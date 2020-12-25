@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cmath>
+#include <cstring>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -43,6 +44,14 @@ template <typename src_t, typename dst_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {
     *static_cast<dst_t*>(dst) =
             static_cast<dst_t>(*static_cast<const src_t*>(src));
+}
+
+static void CPUCopyObjectElementKernel(const void* src,
+                                       void* dst,
+                                       int64_t object_byte_size) {
+    const char* src_bytes = static_cast<const char*>(src);
+    char* dst_bytes = static_cast<char*>(dst);
+    memcpy(dst_bytes, src_bytes, object_byte_size);
 }
 
 template <typename scalar_t>
@@ -94,20 +103,28 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
     Dtype dst_dtype = dst.GetDtype();
     if (src.IsContiguous() && dst.IsContiguous() &&
         src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
-        MemoryManager::Memcpy(
-                dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
-                src.GetDevice(),
-                DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
+                              src.GetDataPtr(), src.GetDevice(),
+                              src_dtype.ByteSize() * shape.NumElements());
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            using src_t = scalar_t;
-            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
-                using dst_t = scalar_t;
-                CPULauncher::LaunchUnaryEWKernel(
-                        indexer, CPUCopyElementKernel<src_t, dst_t>);
+        if (src.GetDtype().IsObject()) {
+            int64_t object_byte_size = src.GetDtype().ByteSize();
+            CPULauncher::LaunchUnaryEWKernel(
+                    indexer, [&](const void* src, void* dst) {
+                        CPUCopyObjectElementKernel(src, dst, object_byte_size);
+                    });
+
+        } else {
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                using src_t = scalar_t;
+                DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                    using dst_t = scalar_t;
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUCopyElementKernel<src_t, dst_t>);
+                });
             });
-        });
+        }
     }
 }
 
@@ -120,7 +137,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
-                    DtypeUtil::ToString(dtype));
+                    dtype.ToString());
         }
     };
 

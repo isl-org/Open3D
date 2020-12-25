@@ -538,6 +538,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              geometry::TriangleMesh &mesh,
+                             bool enable_post_processing,
                              bool print_progress) {
     using namespace ply_trianglemesh_reader;
 

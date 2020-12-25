@@ -43,13 +43,15 @@ static int g_next_tab_control_id_ = 1;
 
 int CalcTabHeight(const Theme& theme) {
     auto em = std::ceil(ImGui::GetTextLineHeight());
-    return std::ceil(em + 2.0f * ImGui::GetStyle().FramePadding.y);
+    return int(std::ceil(em + 2.0f * ImGui::GetStyle().FramePadding.y));
 }
 }  // namespace
 
 struct TabControl::Impl {
     std::vector<std::string> tab_names_;
     std::string imgui_id_;
+    int current_index_ = 0;
+    std::function<void(int)> on_changed_;
 };
 
 TabControl::TabControl() : impl_(new TabControl::Impl()) {
@@ -62,7 +64,12 @@ TabControl::~TabControl() {}
 
 void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
     AddChild(panel);
-    impl_->tab_names_.push_back(name);
+    // Add spaces around the name to add padding
+    impl_->tab_names_.push_back(std::string(" ") + name + std::string(" "));
+}
+
+void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
+    impl_->on_changed_ = on_changed;
 }
 
 Size TabControl::CalcPreferredSize(const Theme& theme) const {
@@ -91,19 +98,26 @@ void TabControl::Layout(const Theme& theme) {
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::BeginTabBar(impl_->imgui_id_.c_str())) {
-        for (size_t i = 0; i < impl_->tab_names_.size(); ++i) {
+        for (int i = 0; i < int(impl_->tab_names_.size()); ++i) {
             if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str())) {
                 auto r = GetChildren()[i]->Draw(context);
                 if (r != Widget::DrawResult::NONE) {
                     result = r;
                 }
                 ImGui::EndTabItem();
+
+                if (i != impl_->current_index_) {
+                    impl_->current_index_ = i;
+                    if (impl_->on_changed_) {
+                        impl_->on_changed_(i);
+                    }
+                }
             }
         }
         ImGui::EndTabBar();

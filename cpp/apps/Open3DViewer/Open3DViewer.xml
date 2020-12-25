@@ -30,6 +30,11 @@
     </magic>
 </mime-type>
 
+<mime-type type="model/fbx">
+    <comment>Autodesk Filmbox Format</comment>
+    <glob pattern="*.fbx"/>
+</mime-type>
+
 <mime-type type="model/obj">
     <comment>Geometry Definition File Format</comment>
     <glob pattern="*.obj"/>

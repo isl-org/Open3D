@@ -41,12 +41,27 @@ namespace kernel {
 
 class CPULauncher {
 public:
+    /// Fills tensor[:][i] with element_kernel(i).
+    ///
+    /// \param indexer The input tensor and output tensor to the indexer are the
+    /// same (as a hack), since the tensor are filled in-place.
+    /// \param element_kernel A function that takes pointer location and
+    /// workload_idx, computes the value to fill, and fills the value at the
+    /// pointer location.
+    template <typename func_t>
+    static void LaunchIndexFillKernel(const Indexer& indexer,
+                                      func_t element_kernel) {
+#pragma omp parallel for schedule(static)
+        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
+             ++workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx), workload_idx);
+        }
+    }
+
     template <typename func_t>
     static void LaunchUnaryEWKernel(const Indexer& indexer,
                                     func_t element_kernel) {
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
              ++workload_idx) {
             element_kernel(indexer.GetInputPtr(0, workload_idx),
@@ -57,9 +72,7 @@ public:
     template <typename func_t>
     static void LaunchBinaryEWKernel(const Indexer& indexer,
                                      func_t element_kernel) {
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
              ++workload_idx) {
             element_kernel(indexer.GetInputPtr(0, workload_idx),
@@ -71,9 +84,7 @@ public:
     template <typename func_t>
     static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
                                             func_t element_kernel) {
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
              ++workload_idx) {
             element_kernel(indexer.GetInputPtr(workload_idx),
@@ -108,9 +119,7 @@ public:
                 (num_workloads + num_threads - 1) / num_threads;
         std::vector<scalar_t> thread_results(num_threads, identity);
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
             int64_t start = thread_idx * workload_per_thread;
             int64_t end = std::min(start + workload_per_thread, num_workloads);
@@ -154,13 +163,20 @@ public:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
             Indexer sub_indexer(indexer);
             sub_indexer.ShrinkDim(best_dim, i, 1);
             LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
+        }
+    }
+
+    /// General kernels with non-conventional indexers
+    template <typename func_t>
+    static void LaunchGeneralKernel(int64_t n, func_t element_kernel) {
+#pragma omp parallel for schedule(static)
+        for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
+            element_kernel(workload_idx);
         }
     }
 };

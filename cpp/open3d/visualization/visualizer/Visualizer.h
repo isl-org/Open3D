@@ -35,6 +35,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -180,6 +181,11 @@ public:
     /// Function to inform render needed to be updated.
     virtual void UpdateRender();
 
+    /// Functions to change between fullscreen and windowed modes
+    virtual void SetFullScreen(bool fullscreen);
+    virtual void ToggleFullScreen();
+    virtual bool IsFullScreen();
+
     virtual void PrintVisualizerHelp();
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
@@ -240,7 +246,7 @@ protected:
     /// Function to do the main rendering
     /// The function first sets view point, then draw geometry (pointclouds and
     /// meshes individually).
-    virtual void Render();
+    virtual void Render(bool render_screen = false);
 
     void CopyViewStatusToClipboard();
 
@@ -264,6 +270,8 @@ protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
+    Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
+    Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()
@@ -277,6 +285,12 @@ protected:
     bool is_redraw_required_ = true;
     bool is_initialized_ = false;
     GLuint vao_id_;
+
+    // render targets for "capture_screen_float_buffer" and
+    // "capture_screen_image" in offscreen render mode
+    unsigned int render_fbo_;
+    unsigned int render_rgb_tex_;
+    unsigned int render_depth_stencil_rbo_;
 
     // view control
     std::unique_ptr<ViewControl> view_control_ptr_;

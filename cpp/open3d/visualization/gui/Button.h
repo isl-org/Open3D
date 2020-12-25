@@ -42,6 +42,12 @@ public:
     explicit Button(std::shared_ptr<UIImage> image);
     ~Button();
 
+    /// Returns the text of the button. If the button is an image, will return
+    /// "".
+    const char* GetText() const;
+    /// Sets the text of the button. Do not call if this is an image button.
+    void SetText(const char* text);
+
     /// Returns the padding, in units of ems
     float GetHorizontalPaddingEm() const;
     float GetVerticalPaddingEm() const;

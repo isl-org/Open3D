@@ -548,7 +548,7 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_4.GetStrides(), core::SizeVector({8, 2}));
     EXPECT_EQ(t_4.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(t_4.ToFlatVector<float>(), std::vector<float>({12, 14, 20, 22}));
 
     // t_5 = t[1, 0:-1, 0:-2:2] == t[1, 0:2, 0:2:2]
@@ -557,7 +557,7 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_5.GetStrides(), core::SizeVector({4, 2}));
     EXPECT_EQ(t_5.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
 }
 
@@ -1040,6 +1040,25 @@ TEST_P(TensorPermuteDevices, T) {
 
     core::Tensor t_3d(vals, {2, 3, 4}, core::Dtype::Float32, device);
     EXPECT_THROW(t_3d.T(), std::runtime_error);
+}
+
+TEST_P(TensorPermuteDevices, Det) {
+    core::Device device = GetParam();
+
+    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
+    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
+    double t_t = t.Det();
+    EXPECT_DOUBLE_EQ(t_t, -40.0);
+
+    // Current implementation does not support any shape other than {3,3}.
+    std::vector<float> vals_4x4{-5, 0, -1, 1, 2, -1, -3, 4,
+                                1,  1, 1,  1, 1, 2,  2,  2};
+    core::Tensor t_4x4(vals_4x4, {4, 4}, core::Dtype::Float32, device);
+    EXPECT_ANY_THROW(t_4x4.Det());
+
+    std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
+    core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
+    EXPECT_ANY_THROW(t_4x3.Det());
 }
 
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
@@ -2474,7 +2493,7 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
     EXPECT_EQ(src_t.GetBlob()->GetDataPtr(), blob_head);
     EXPECT_EQ(src_t.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(src_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 
@@ -2486,10 +2505,10 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
     // Note that the original blob head's info has been discarded.
     EXPECT_EQ(dst_t.GetBlob()->GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(dst_t.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 }

@@ -165,7 +165,7 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     char* input0_base_ptr = static_cast<char*>(input0.GetDataPtr());
     char* input1_base_ptr = static_cast<char*>(input1.GetDataPtr());
     char* output_base_ptr = static_cast<char*>(output.GetDataPtr());
-    int64_t dtype_byte_size = core::DtypeUtil::ByteSize(core::Dtype::Float32);
+    int64_t dtype_byte_size = core::Dtype::Float32.ByteSize();
 
     EXPECT_EQ(indexer.GetInputPtr(0, 0), input0_base_ptr + 0 * dtype_byte_size);
     EXPECT_EQ(indexer.GetInputPtr(0, 1), input0_base_ptr + 0 * dtype_byte_size);

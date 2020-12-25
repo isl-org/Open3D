@@ -41,7 +41,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}",
-                DtypeUtil::ToString(dtype));
+                dtype.ToString());
     }
 
     // Check dimensions

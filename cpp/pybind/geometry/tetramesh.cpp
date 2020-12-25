@@ -32,16 +32,17 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_tetramesh(py::module &m) {
-    py::class_<geometry::TetraMesh, PyGeometry3D<geometry::TetraMesh>,
-               std::shared_ptr<geometry::TetraMesh>, geometry::MeshBase>
+    py::class_<TetraMesh, PyGeometry3D<TetraMesh>, std::shared_ptr<TetraMesh>,
+               MeshBase>
             trianglemesh(m, "TetraMesh",
                          "TetraMesh class. Tetra mesh contains vertices "
                          "and tetrahedra represented by the indices to the "
                          "vertices.");
-    py::detail::bind_default_constructor<geometry::TetraMesh>(trianglemesh);
-    py::detail::bind_copy_functions<geometry::TetraMesh>(trianglemesh);
+    py::detail::bind_default_constructor<TetraMesh>(trianglemesh);
+    py::detail::bind_copy_functions<TetraMesh>(trianglemesh);
     trianglemesh
             .def(py::init<const std::vector<Eigen::Vector3d> &,
                           const std::vector<Eigen::Vector4i,
@@ -49,8 +50,8 @@ void pybind_tetramesh(py::module &m) {
                  "Create a tetrahedra mesh from vertices and tetra indices",
                  "vertices"_a, "tetras"_a)
             .def("__repr__",
-                 [](const geometry::TetraMesh &mesh) {
-                     return std::string("geometry::TetraMesh with ") +
+                 [](const TetraMesh &mesh) {
+                     return std::string("TetraMesh with ") +
                             std::to_string(mesh.vertices_.size()) +
                             " points and " +
                             std::to_string(mesh.tetras_.size()) +
@@ -59,43 +60,39 @@ void pybind_tetramesh(py::module &m) {
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("remove_duplicated_vertices",
-                 &geometry::TetraMesh::RemoveDuplicatedVertices,
+                 &TetraMesh::RemoveDuplicatedVertices,
                  "Function that removes duplicated vertices, i.e., vertices "
                  "that have identical coordinates.")
-            .def("remove_duplicated_tetras",
-                 &geometry::TetraMesh::RemoveDuplicatedTetras,
+            .def("remove_duplicated_tetras", &TetraMesh::RemoveDuplicatedTetras,
                  "Function that removes duplicated tetras, i.e., removes "
                  "tetras that reference the same four vertices, "
                  "independent of their order.")
             .def("remove_unreferenced_vertices",
-                 &geometry::TetraMesh::RemoveUnreferencedVertices,
+                 &TetraMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the tetra mesh that "
                  "are not referenced in any tetra of the mesh.")
-            .def("remove_degenerate_tetras",
-                 &geometry::TetraMesh::RemoveDegenerateTetras,
+            .def("remove_degenerate_tetras", &TetraMesh::RemoveDegenerateTetras,
                  "Function that removes degenerate tetras, i.e., tetras "
                  "that references a single vertex multiple times in a single "
                  "tetra. They are usually the product of removing "
                  "duplicated vertices.")
-            .def("has_vertices", &geometry::TetraMesh::HasVertices,
+            .def("has_vertices", &TetraMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
-            .def("has_tetras", &geometry::TetraMesh::HasTetras,
+            .def("has_tetras", &TetraMesh::HasTetras,
                  "Returns ``True`` if the mesh contains tetras.")
-            .def("extract_triangle_mesh",
-                 &geometry::TetraMesh::ExtractTriangleMesh,
+            .def("extract_triangle_mesh", &TetraMesh::ExtractTriangleMesh,
                  "Function that generates a triangle mesh of the specified "
                  "iso-surface.",
                  "values"_a, "level"_a)
             .def_static(
-                    "create_from_point_cloud",
-                    &geometry::TetraMesh::CreateFromPointCloud,
+                    "create_from_point_cloud", &TetraMesh::CreateFromPointCloud,
                     "Function to create a tetrahedral mesh from a point cloud.",
                     "point_cloud"_a)
-            .def_readwrite("vertices", &geometry::TetraMesh::vertices_,
+            .def_readwrite("vertices", &TetraMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
                            "coordinates.")
-            .def_readwrite("tetras", &geometry::TetraMesh::tetras_,
+            .def_readwrite("tetras", &TetraMesh::tetras_,
                            "``int64`` array of shape ``(num_tetras, 4)``, use "
                            "``numpy.asarray()`` to access data: List of "
                            "tetras denoted by the index of points forming "
@@ -119,4 +116,5 @@ void pybind_tetramesh(py::module &m) {
 
 void pybind_tetramesh_methods(py::module &m) {}
 
+}  // namespace geometry
 }  // namespace open3d

@@ -330,6 +330,12 @@ public:
     /// the individual triangle surfaces.
     double GetSurfaceArea(std::vector<double> &triangle_areas) const;
 
+    /// Function that computes the volume of the mesh, under the condition that
+    /// it is watertight and orientable.
+    /// See Zhang and Chen, "Efficient feature extraction for 2D/3D objects in
+    /// mesh representation", 2001.
+    double GetVolume() const;
+
     /// Function that computes the plane equation from the three points.
     /// If the three points are co-linear, then this function returns the
     /// invalid plane (0, 0, 0, 0).
@@ -415,8 +421,14 @@ public:
     /// \param target_number_of_triangles defines the number of triangles that
     /// the simplified mesh should have. It is not guaranteed that this number
     /// will be reached.
+    /// \param maximum_error defines the maximum error where a vertex is allowed
+    /// to be merged
+    /// \param boundary_weight a weight applied to edge vertices used to
+    /// preserve boundaries
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
-            int target_number_of_triangles) const;
+            int target_number_of_triangles,
+            double maximum_error,
+            double boundary_weight) const;
 
     /// Function to select points from \p input TriangleMesh into
     /// output TriangleMesh

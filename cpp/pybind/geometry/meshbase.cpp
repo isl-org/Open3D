@@ -32,82 +32,79 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_meshbase(py::module &m) {
-    py::class_<geometry::MeshBase, PyGeometry3D<geometry::MeshBase>,
-               std::shared_ptr<geometry::MeshBase>, geometry::Geometry3D>
+    py::class_<MeshBase, PyGeometry3D<MeshBase>, std::shared_ptr<MeshBase>,
+               Geometry3D>
             meshbase(m, "MeshBase",
                      "MeshBase class. Triangle mesh contains vertices. "
                      "Optionally, the mesh "
                      "may also contain vertex normals and vertex colors.");
-    py::detail::bind_default_constructor<geometry::MeshBase>(meshbase);
-    py::detail::bind_copy_functions<geometry::MeshBase>(meshbase);
+    py::detail::bind_default_constructor<MeshBase>(meshbase);
+    py::detail::bind_copy_functions<MeshBase>(meshbase);
 
-    py::enum_<geometry::MeshBase::SimplificationContraction>(
-            m, "SimplificationContraction")
-            .value("Average",
-                   geometry::MeshBase::SimplificationContraction::Average,
+    py::enum_<MeshBase::SimplificationContraction>(m,
+                                                   "SimplificationContraction")
+            .value("Average", MeshBase::SimplificationContraction::Average,
                    "The vertex positions are computed by the averaging.")
-            .value("Quadric",
-                   geometry::MeshBase::SimplificationContraction::Quadric,
+            .value("Quadric", MeshBase::SimplificationContraction::Quadric,
                    "The vertex positions are computed by minimizing the "
                    "distance to the adjacent triangle planes.")
             .export_values();
 
-    py::enum_<geometry::MeshBase::FilterScope>(m, "FilterScope")
-            .value("All", geometry::MeshBase::FilterScope::All,
+    py::enum_<MeshBase::FilterScope>(m, "FilterScope")
+            .value("All", MeshBase::FilterScope::All,
                    "All properties (color, normal, vertex position) are "
                    "filtered.")
-            .value("Color", geometry::MeshBase::FilterScope::Color,
+            .value("Color", MeshBase::FilterScope::Color,
                    "Only the color values are filtered.")
-            .value("Normal", geometry::MeshBase::FilterScope::Normal,
+            .value("Normal", MeshBase::FilterScope::Normal,
                    "Only the normal values are filtered.")
-            .value("Vertex", geometry::MeshBase::FilterScope::Vertex,
+            .value("Vertex", MeshBase::FilterScope::Vertex,
                    "Only the vertex positions are filtered.")
             .export_values();
 
-    py::enum_<geometry::MeshBase::DeformAsRigidAsPossibleEnergy>(
+    py::enum_<MeshBase::DeformAsRigidAsPossibleEnergy>(
             m, "DeformAsRigidAsPossibleEnergy")
-            .value("Spokes",
-                   geometry::MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
+            .value("Spokes", MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
                    "is the original energy as formulated in orkine and Alexa, "
                    "\"As-Rigid-As-Possible Surface Modeling\", 2007.")
             .value("Smoothed",
-                   geometry::MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
+                   MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
                    "adds a rotation smoothing term to the rotations.")
             .export_values();
 
     meshbase.def("__repr__",
-                 [](const geometry::MeshBase &mesh) {
-                     return std::string("geometry::MeshBase with ") +
+                 [](const MeshBase &mesh) {
+                     return std::string("MeshBase with ") +
                             std::to_string(mesh.vertices_.size()) + " points";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_vertices", &geometry::MeshBase::HasVertices,
+            .def("has_vertices", &MeshBase::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
-            .def("has_vertex_normals", &geometry::MeshBase::HasVertexNormals,
+            .def("has_vertex_normals", &MeshBase::HasVertexNormals,
                  "Returns ``True`` if the mesh contains vertex normals.")
-            .def("has_vertex_colors", &geometry::MeshBase::HasVertexColors,
+            .def("has_vertex_colors", &MeshBase::HasVertexColors,
                  "Returns ``True`` if the mesh contains vertex colors.")
-            .def("normalize_normals", &geometry::MeshBase::NormalizeNormals,
+            .def("normalize_normals", &MeshBase::NormalizeNormals,
                  "Normalize vertex normals to length 1.")
-            .def("paint_uniform_color", &geometry::MeshBase::PaintUniformColor,
+            .def("paint_uniform_color", &MeshBase::PaintUniformColor,
                  "Assigns each vertex in the MeshBase the same color.",
                  "color"_a)
-            .def("compute_convex_hull", &geometry::MeshBase::ComputeConvexHull,
+            .def("compute_convex_hull", &MeshBase::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
-            .def_readwrite("vertices", &geometry::MeshBase::vertices_,
+            .def_readwrite("vertices", &MeshBase::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
                            "coordinates.")
-            .def_readwrite("vertex_normals",
-                           &geometry::MeshBase::vertex_normals_,
+            .def_readwrite("vertex_normals", &MeshBase::vertex_normals_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
                            "normals.")
             .def_readwrite(
-                    "vertex_colors", &geometry::MeshBase::vertex_colors_,
+                    "vertex_colors", &MeshBase::vertex_colors_,
                     "``float64`` array of shape ``(num_vertices, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of vertices.");
@@ -125,4 +122,5 @@ void pybind_meshbase(py::module &m) {
 
 void pybind_meshbase_methods(py::module &m) {}
 
+}  // namespace geometry
 }  // namespace open3d

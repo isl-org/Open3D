@@ -82,9 +82,6 @@ void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
     };
     std::vector<Pair> pairs;
 
-    // do not sort search results
-    nanoflann::SearchParams search_params(32, 0, false);
-
     auto points_equal = [](const T* const p1, const T* const p2) {
         return p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2];
     };

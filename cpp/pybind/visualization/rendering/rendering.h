@@ -29,7 +29,11 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace visualization {
+namespace rendering {
 
 void pybind_rendering(py::module &m);
 
+}
+}  // namespace visualization
 }  // namespace open3d

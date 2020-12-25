@@ -45,6 +45,7 @@ FileGeometry ReadFileGeometryType(const std::string& path);
 
 FileGeometry ReadFileGeometryTypeGLTF(const std::string& path);
 FileGeometry ReadFileGeometryTypeOBJ(const std::string& path);
+FileGeometry ReadFileGeometryTypeFBX(const std::string& path);
 FileGeometry ReadFileGeometryTypeOFF(const std::string& path);
 FileGeometry ReadFileGeometryTypePCD(const std::string& path);
 FileGeometry ReadFileGeometryTypePLY(const std::string& path);

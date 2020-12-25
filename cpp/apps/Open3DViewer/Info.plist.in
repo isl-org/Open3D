@@ -38,6 +38,25 @@
     <string>${MACOSX_BUNDLE_COPYRIGHT}</string>
     <key>CFBundleDocumentTypes</key>
     <array>
+        <dict> <!-- FBX -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Filmbox format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.filmbox-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
         <dict> <!-- GLTF -->
             <key>CFBundleTypeIconFile</key>
             <string>documentIcon</string>
@@ -256,6 +275,29 @@
     </array>
     <key>UTImportedTypeDeclarations</key>
     <array>
+        <dict> <!-- FBX -->
+            <key>UTTypeIdentifier</key>
+            <string>public.filmbox-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Filmbox Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>fbx</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/fbx</string>
+                </array>
+            </dict>
+        </dict>
         <dict> <!-- GLTF -->
             <key>UTTypeIdentifier</key>
             <string>public.gl-transmission-format</string>

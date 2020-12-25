@@ -81,6 +81,9 @@ public:
 
     int CalcHeight(const Theme& theme) const;
 
+    /// Returns true if submenu visibility changed on last call to DrawMenuBar
+    bool CheckVisibilityChange() const;
+
     ItemId DrawMenuBar(const DrawContext& context, bool is_enabled);
     ItemId Draw(const DrawContext& context, const char* name, bool is_enabled);
 

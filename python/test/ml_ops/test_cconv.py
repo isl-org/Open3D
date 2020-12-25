@@ -37,6 +37,7 @@ from check_gradients import check_gradients
 pytestmark = mltest.default_marks
 
 
+# @pytest.mark.skip()
 # yapf: disable
 @pytest.mark.parametrize("filter_size, out_channels, in_channels, with_inp_importance, with_normalization",[
                              ([3,5,1],            2,           7,                True,              False),
@@ -44,14 +45,18 @@ pytestmark = mltest.default_marks
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mltest.parametrize.device
+@mltest.parametrize.ml
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3d(dtype, device, filter_size, out_channels,
-                           in_channels, with_inp_importance,
-                           with_normalization):
+def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
+                           with_inp_importance, with_normalization):
     """Compares to the 3D convolution in tensorflow"""
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+
+    # This test requires tensorflow
+    try:
+        import tensorflow as tf
+    except ImportError:
+        return
+
     np.random.seed(0)
 
     conv_attrs = {
@@ -74,7 +79,7 @@ def test_compare_to_conv3d(dtype, device, filter_size, out_channels,
         inp_importance = np.random.rand(
             inp_positions.shape[0]).astype(dtype) - 0.5
     else:
-        inp_importance = np.empty((0,))
+        inp_importance = np.empty((0,), dtype=dtype)
     out_positions = np.unique(np.random.randint(
         np.max(filter_size) // 2, max_grid_extent - np.max(filter_size) // 2,
         (5, 3)).astype(dtype),
@@ -83,27 +88,22 @@ def test_compare_to_conv3d(dtype, device, filter_size, out_channels,
 
     voxel_size = np.array([1, 1, 1], dtype=dtype)
     extent = voxel_size[np.newaxis, :] * np.array(filter_size[::-1])
+    extent = extent.astype(np.float32)
     offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
 
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
-    fixed_radius_search = ml3d.layers.FixedRadiusSearch(metric='Linf')
-    neighbors_index, neighbors_row_splits, _ = fixed_radius_search(
-        inp_positions / extent, out_positions / extent,
-        voxel_size[0] / 2 + 0.01)
-    neighbors_index = neighbors_index.numpy()
-    neighbors_row_splits = neighbors_row_splits.numpy()
+    fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = mltest.run_op(
+        ml, ml.device, False, fixed_radius_search, inp_positions / extent,
+        out_positions / extent, voxel_size[0] / 2 + 0.01)
 
-    neighbors_importance = np.empty((0,))
+    neighbors_importance = np.empty((0,), dtype=dtype)
 
-    with tf.device(device):
-        y = ml3d.ops.continuous_conv(filters, out_positions, extent, offset,
-                                     inp_positions, inp_features,
-                                     inp_importance, neighbors_index,
-                                     neighbors_importance, neighbors_row_splits,
-                                     **conv_attrs)
-        assert device in y.device
-        y = y.numpy()
+    y = mltest.run_op(ml, ml.device, True, ml.ops.continuous_conv, filters,
+                      out_positions, extent, offset, inp_positions,
+                      inp_features, inp_importance, neighbors_index,
+                      neighbors_importance, neighbors_row_splits, **conv_attrs)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -136,8 +136,8 @@ def test_compare_to_conv3d(dtype, device, filter_size, out_channels,
     np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
 
 
+@mltest.parametrize.ml
 # yapf: disable
-# @pytest.mark.skip()
 @pytest.mark.parametrize("filter_size, out_channels, in_channels, with_inp_importance, with_neighbors_importance, with_individual_extent, with_normalization, align_corners, coordinate_mapping, interpolation",[
                              ([3,5,1],            2,           7,                True,                     False,                  False,              False,          True,        'identity', 'nearest_neighbor'),
                              ([3,3,3],            1,           1,               False,                     False,                   True,              False,         False, 'ball_to_cube_radial',       'linear'),
@@ -145,14 +145,11 @@ def test_compare_to_conv3d(dtype, device, filter_size, out_channels,
                              ([5,1,3],            3,           4,               False,                      True,                  False,              False,         False,           'identity',        'linear'),
                         ])
 # yapf: enable
-@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_cconv_gradient(dtype, device, filter_size, out_channels, in_channels,
+def test_cconv_gradient(ml, dtype, filter_size, out_channels, in_channels,
                         with_inp_importance, with_neighbors_importance,
                         with_individual_extent, with_normalization,
                         align_corners, coordinate_mapping, interpolation):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
 
     if dtype == np.float64:
         tolerance = {'atol': 1e-5, 'rtol': 1e-2, 'epsilon': 1e-6}
@@ -175,136 +172,208 @@ def test_cconv_gradient(dtype, device, filter_size, out_channels, in_channels,
     if (with_inp_importance):
         inp_importance = np.random.rand(inp_positions.shape[0]).astype(dtype)
     else:
-        inp_importance = np.empty((0,))
+        inp_importance = np.empty((0,), dtype=dtype)
 
     out_positions = np.random.rand(5, 3).astype(dtype)
 
     if with_individual_extent:
         extent = 0.4 + 0.01 * (np.random.rand(out_positions.shape[0], 1) - 0.5)
+        extent = extent.astype(dtype)
     else:
         extent = np.array([[0.4]], dtype=dtype)
     offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
 
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
-    fixed_radius_search = ml3d.layers.FixedRadiusSearch(metric='Linf')
-    neighbors_index, neighbors_row_splits, _ = fixed_radius_search(
-        inp_positions, out_positions, extent[0, 0] / 2)
-    neighbors_index = neighbors_index.numpy()
-    neighbors_row_splits = neighbors_row_splits.numpy()
+    fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = mltest.run_op(
+        ml, ml.device, False, fixed_radius_search, inp_positions, out_positions,
+        extent[0, 0] / 2)
 
     if (with_neighbors_importance):
         neighbors_importance = np.random.rand(
             neighbors_index.shape[0]).astype(dtype) - 0.5
 
-        neighbors_importance_sum = ml3d.ops.reduce_subarrays_sum(
-            neighbors_importance, neighbors_row_splits)
+        neighbors_importance_sum = mltest.run_op(ml, ml.device, False,
+                                                 ml.ops.reduce_subarrays_sum,
+                                                 neighbors_importance,
+                                                 neighbors_row_splits)
     else:
         neighbors_importance = np.empty((0,), dtype=dtype)
         neighbors_importance_sum = np.empty((0,), dtype=dtype)
 
-    inverted_neighbors_index, inverted_neighbors_row_splits, inverted_neighbors_importance = ml3d.ops.invert_neighbors_list(
+    inverted_neighbors_index, inverted_neighbors_row_splits, inverted_neighbors_importance = mltest.run_op(
+        ml, ml.device, False, ml.ops.invert_neighbors_list,
         inp_positions.shape[0], neighbors_index, neighbors_row_splits,
         neighbors_importance)
-
-    inverted_neighbors_index = inverted_neighbors_index.numpy()
-    inverted_neighbors_row_splits = inverted_neighbors_row_splits.numpy()
-    inverted_neighbors_importance = inverted_neighbors_importance.numpy()
 
     # print(neighbors_row_splits, inverted_neighbors_row_splits)
     # print(neighbors_index, inverted_neighbors_index)
 
     # define functions for the gradient checker
     def conv_infeats(inp_features):
-        with tf.device(device):
-            y = ml3d.ops.continuous_conv(filters, out_positions, extent, offset,
-                                         inp_positions, inp_features,
-                                         inp_importance, neighbors_index,
-                                         neighbors_importance,
-                                         neighbors_row_splits, **conv_attrs)
-            assert device in y.device
-            return y.numpy()
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             ml.ops.continuous_conv,
+                             filters=filters,
+                             out_positions=out_positions,
+                             extents=extent,
+                             offset=offset,
+                             inp_positions=inp_positions,
+                             inp_features=inp_features,
+                             inp_importance=inp_importance,
+                             neighbors_index=neighbors_index,
+                             neighbors_importance=neighbors_importance,
+                             neighbors_row_splits=neighbors_row_splits,
+                             **conv_attrs)
 
     def conv_filter(filters):
-        with tf.device(device):
-            y = ml3d.ops.continuous_conv(filters, out_positions, extent, offset,
-                                         inp_positions, inp_features,
-                                         inp_importance, neighbors_index,
-                                         neighbors_importance,
-                                         neighbors_row_splits, **conv_attrs)
-            assert device in y.device
-            return y.numpy()
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             ml.ops.continuous_conv,
+                             filters=filters,
+                             out_positions=out_positions,
+                             extents=extent,
+                             offset=offset,
+                             inp_positions=inp_positions,
+                             inp_features=inp_features,
+                             inp_importance=inp_importance,
+                             neighbors_index=neighbors_index,
+                             neighbors_importance=neighbors_importance,
+                             neighbors_row_splits=neighbors_row_splits,
+                             **conv_attrs)
 
     def conv_filter_backprop(out_features_gradient, filters):
-        x = tf.constant(filters)
-        with tf.GradientTape() as tape:
-            tape.watch(x)
-            y = ml3d.ops.continuous_conv(x, out_positions, extent, offset,
-                                         inp_positions, inp_features,
-                                         inp_importance, neighbors_index,
-                                         neighbors_importance,
-                                         neighbors_row_splits, **conv_attrs)
-            dy_dx = tape.gradient(y, x, out_features_gradient)
-        return dy_dx.numpy()
+        return mltest.run_op_grad(ml,
+                                  ml.device,
+                                  True,
+                                  ml.ops.continuous_conv,
+                                  filters,
+                                  '',
+                                  out_features_gradient,
+                                  filters=filters,
+                                  out_positions=out_positions,
+                                  extents=extent,
+                                  offset=offset,
+                                  inp_positions=inp_positions,
+                                  inp_features=inp_features,
+                                  inp_importance=inp_importance,
+                                  neighbors_index=neighbors_index,
+                                  neighbors_importance=neighbors_importance,
+                                  neighbors_row_splits=neighbors_row_splits,
+                                  **conv_attrs)
 
     def conv_infeat_backprop(out_features_gradient, inp_features):
-        x = tf.constant(inp_features)
-        with tf.GradientTape() as tape:
-            tape.watch(x)
-            y = ml3d.ops.continuous_conv(filters, out_positions, extent, offset,
-                                         inp_positions, x, inp_importance,
-                                         neighbors_index, neighbors_importance,
-                                         neighbors_row_splits, **conv_attrs)
-            dy_dx = tape.gradient(y, x, out_features_gradient)
-        return dy_dx.numpy()
+        return mltest.run_op_grad(ml,
+                                  ml.device,
+                                  True,
+                                  ml.ops.continuous_conv,
+                                  inp_features,
+                                  '',
+                                  out_features_gradient,
+                                  filters=filters,
+                                  out_positions=out_positions,
+                                  extents=extent,
+                                  offset=offset,
+                                  inp_positions=inp_positions,
+                                  inp_features=inp_features,
+                                  inp_importance=inp_importance,
+                                  neighbors_index=neighbors_index,
+                                  neighbors_importance=neighbors_importance,
+                                  neighbors_row_splits=neighbors_row_splits,
+                                  **conv_attrs)
 
     def conv_transpose_filter(filters):
-        with tf.device(device):
-            y = ml3d.ops.continuous_conv_transpose(
-                filters, inp_positions, inp_importance, extent, offset,
-                out_positions, y_arr, neighbors_index, neighbors_importance_sum,
-                neighbors_row_splits, inverted_neighbors_index,
-                inverted_neighbors_importance, inverted_neighbors_row_splits,
-                **conv_attrs)
-            assert device in y.device
-            return y.numpy()
+        return mltest.run_op(
+            ml,
+            ml.device,
+            True,
+            ml.ops.continuous_conv_transpose,
+            filters=filters,
+            out_positions=inp_positions,
+            out_importance=inp_importance,
+            extents=extent,
+            offset=offset,
+            inp_positions=out_positions,
+            inp_features=y_arr,
+            inp_neighbors_index=neighbors_index,
+            inp_neighbors_importance_sum=neighbors_importance_sum,
+            inp_neighbors_row_splits=neighbors_row_splits,
+            neighbors_index=inverted_neighbors_index,
+            neighbors_importance=inverted_neighbors_importance,
+            neighbors_row_splits=inverted_neighbors_row_splits,
+            **conv_attrs)
 
     def conv_transpose_infeats(inp_features):
-        with tf.device(device):
-            y = ml3d.ops.continuous_conv_transpose(
-                filters.transpose([0, 1, 2, 4, 3]), inp_positions,
-                inp_importance, extent, offset, out_positions, inp_features,
-                neighbors_index, neighbors_importance_sum, neighbors_row_splits,
-                inverted_neighbors_index, inverted_neighbors_importance,
-                inverted_neighbors_row_splits, **conv_attrs)
-            assert device in y.device
-            return y.numpy()
+        return mltest.run_op(
+            ml,
+            ml.device,
+            True,
+            ml.ops.continuous_conv_transpose,
+            filters=filters.transpose([0, 1, 2, 4, 3]),
+            out_positions=inp_positions,
+            out_importance=inp_importance,
+            extents=extent,
+            offset=offset,
+            inp_positions=out_positions,
+            inp_features=inp_features,
+            inp_neighbors_index=neighbors_index,
+            inp_neighbors_importance_sum=neighbors_importance_sum,
+            inp_neighbors_row_splits=neighbors_row_splits,
+            neighbors_index=inverted_neighbors_index,
+            neighbors_importance=inverted_neighbors_importance,
+            neighbors_row_splits=inverted_neighbors_row_splits,
+            **conv_attrs)
 
     def conv_transpose_filter_backprop(out_features_gradient, filters):
-        x = tf.constant(filters)
-        with tf.GradientTape() as tape:
-            tape.watch(x)
-            y = ml3d.ops.continuous_conv_transpose(
-                x, inp_positions, inp_importance, extent, offset, out_positions,
-                y_arr, neighbors_index, neighbors_importance_sum,
-                neighbors_row_splits, inverted_neighbors_index,
-                inverted_neighbors_importance, inverted_neighbors_row_splits,
-                **conv_attrs)
-            dy_dx = tape.gradient(y, x, out_features_gradient)
-        return dy_dx.numpy()
+        return mltest.run_op_grad(
+            ml,
+            ml.device,
+            True,
+            ml.ops.continuous_conv_transpose,
+            filters,
+            '',
+            out_features_gradient,
+            filters=filters,
+            out_positions=inp_positions,
+            out_importance=inp_importance,
+            extents=extent,
+            offset=offset,
+            inp_positions=out_positions,
+            inp_features=y_arr,
+            inp_neighbors_index=neighbors_index,
+            inp_neighbors_importance_sum=neighbors_importance_sum,
+            inp_neighbors_row_splits=neighbors_row_splits,
+            neighbors_index=inverted_neighbors_index,
+            neighbors_importance=inverted_neighbors_importance,
+            neighbors_row_splits=inverted_neighbors_row_splits,
+            **conv_attrs)
 
     def conv_transpose_infeat_backprop(out_features_gradient, inp_features):
-        x = tf.constant(inp_features)
-        with tf.GradientTape() as tape:
-            tape.watch(x)
-            y = ml3d.ops.continuous_conv_transpose(
-                filters.transpose([0, 1, 2, 4, 3]), inp_positions,
-                inp_importance, extent, offset, out_positions, x,
-                neighbors_index, neighbors_importance_sum, neighbors_row_splits,
-                inverted_neighbors_index, inverted_neighbors_importance,
-                inverted_neighbors_row_splits, **conv_attrs)
-            dy_dx = tape.gradient(y, x, out_features_gradient)
-        return dy_dx.numpy()
+        return mltest.run_op_grad(
+            ml,
+            ml.device,
+            True,
+            ml.ops.continuous_conv_transpose,
+            inp_features,
+            '',
+            out_features_gradient,
+            filters=filters.transpose([0, 1, 2, 4, 3]),
+            out_positions=inp_positions,
+            out_importance=inp_importance,
+            extents=extent,
+            offset=offset,
+            inp_positions=out_positions,
+            inp_features=inp_features,
+            inp_neighbors_index=neighbors_index,
+            inp_neighbors_importance_sum=neighbors_importance_sum,
+            inp_neighbors_row_splits=neighbors_row_splits,
+            neighbors_index=inverted_neighbors_index,
+            neighbors_importance=inverted_neighbors_importance,
+            neighbors_row_splits=inverted_neighbors_row_splits,
+            **conv_attrs)
 
     y_arr = conv_infeats(inp_features)
 

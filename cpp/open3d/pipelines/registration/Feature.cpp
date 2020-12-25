@@ -76,9 +76,7 @@ static std::shared_ptr<Feature> ComputeSPFHFeature(
         const geometry::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)input.points_.size(); i++) {
         const auto &point = input.points_[i];
         const auto &normal = input.normals_[i];
@@ -123,9 +121,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     }
     geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)input.points_.size(); i++) {
         const auto &point = input.points_[i];
         std::vector<int> indices;

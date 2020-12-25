@@ -31,12 +31,19 @@
 #include <unordered_map>
 
 #include "open3d/geometry/Image.h"
+#include "open3d/visualization/rendering/Gradient.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
 struct Material {
+    std::string name;
+
+    // Rendering attributes
+    bool has_alpha = false;
+
     // PBR Material properties and maps
     Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
     float base_metallic = 0.f;
@@ -46,7 +53,15 @@ struct Material {
     float base_clearcoat_roughness = 0.f;
     float base_anisotropy = 0.f;
 
+    // PBR material properties for refractive materials
+    float thickness = 1.f;
+    float transmission = 1.f;
+    Eigen::Vector3f absorption_color =
+            Eigen::Vector3f(1.f, 1.f, 1.f);  // linear color
+    float absorption_distance = 1.f;
+
     float point_size = 3.f;
+    float line_width = 1.f;
 
     std::shared_ptr<geometry::Image> albedo_img;
     std::shared_ptr<geometry::Image> normal_img;
@@ -57,6 +72,24 @@ struct Material {
     std::shared_ptr<geometry::Image> clearcoat_img;
     std::shared_ptr<geometry::Image> clearcoat_roughness_img;
     std::shared_ptr<geometry::Image> anisotropy_img;
+
+    // Combined images
+    std::shared_ptr<geometry::Image> ao_rough_metal_img;
+
+    // Colormap (incompatible with other settings except point_size)
+    // Values for 'value' must be in [0, 1] and the vector must be sorted
+    // by increasing value. 'shader' must be "unlitGradient".
+    std::shared_ptr<Gradient> gradient;
+    float scalar_min = 0.0f;
+    float scalar_max = 1.0f;
+
+    // Colors are assumed to be sRGB and tone-mapped accordingly.
+    // If tone-mapping is disabled, then colors would be in linear RGB space,
+    // in which case this should be set to false.
+    bool sRGB_color = true;
+
+    // Background image (shader = "unlitBackground")
+    float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

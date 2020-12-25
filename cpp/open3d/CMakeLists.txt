@@ -1,3 +1,12 @@
+# open3d_set_open3d_lib_properties() sets properties for the Open3D lib itself.
+# This should be used for all object libraries that make up the Open3D lib.
+#
+# In comparison, open3d_set_global_properties() sets properties for the Open3D
+# lib, and targets that links to the Open3D lib, e.g pybind, unit tests, etc.
+function(open3d_set_open3d_lib_properties target)
+    target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
+endfunction()
+
 # Configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h")
@@ -8,7 +17,9 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
 add_subdirectory(camera)
 add_subdirectory(core)
 add_subdirectory(geometry)
-add_subdirectory(tgeometry)
+add_subdirectory(t/geometry)
+add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
 add_subdirectory(io)
 add_subdirectory(ml)
 add_subdirectory(pipelines)
@@ -25,8 +36,10 @@ add_source_group(core)
 add_source_group(geometry)
 add_source_group(tgeometry)
 add_source_group(io)
+add_source_group(tio)
 add_source_group(ml)
 add_source_group(pipelines)
+add_source_group(tpipelines)
 add_source_group(utility)
 add_source_group(visualization)
 
@@ -39,13 +52,17 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:geometry>
     $<TARGET_OBJECTS:tgeometry>
     $<TARGET_OBJECTS:io>
+    $<TARGET_OBJECTS:tio>
+    $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
+    $<TARGET_OBJECTS:tpipelines>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
     ${GUI_OBJECTS}
 )
 open3d_show_and_abort_on_warning(${PROJECT_NAME})
 open3d_set_global_properties(${PROJECT_NAME})
+open3d_set_open3d_lib_properties(${PROJECT_NAME})
 open3d_link_3rdparty_libraries(${PROJECT_NAME})
 if(X11_TARGET)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})
