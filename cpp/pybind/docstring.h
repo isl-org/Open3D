@@ -140,7 +140,8 @@ void ClassMethodDocInject(
         const std::string& function_name,
         const std::unordered_map<std::string, std::string>&
                 map_parameter_body_docs =
-                        std::unordered_map<std::string, std::string>());
+                        std::unordered_map<std::string, std::string>(),
+        bool skip_init = true);
 
 extern py::handle static_property;
 
