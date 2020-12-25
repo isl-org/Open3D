@@ -23,7 +23,6 @@ requirements:
         - numpy
         - addict # Open3D-ML deps starts here (https://github.com/intel-isl/Open3D-ML/blob/master/requirements.txt)
         - matplotlib
-        - numpy
         - pandas
         - plyfile
         - pyyaml
