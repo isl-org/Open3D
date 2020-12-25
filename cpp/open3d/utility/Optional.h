@@ -22,9 +22,12 @@
 // - `constexpr struct in_place_t {} in_place{}` is moved to
 // `c10/util/in_place.h`, so that it can also be used in `c10/util/variant.h`.
 // - Remove special cases for pre-c++14 compilers to make code simpler
+//
+//
+// Open3D
+// - Namespace change: open3d::utility::optional
 
-#ifndef C10_UTIL_OPTIONAL_H_
-#define C10_UTIL_OPTIONAL_H_
+#pragma once
 
 #include <cassert>
 #include <functional>
@@ -42,16 +45,6 @@ namespace utility {
 
 struct in_place_t {
     explicit in_place_t() = default;
-};
-
-template <std::size_t I>
-struct in_place_index_t {
-    explicit in_place_index_t() = default;
-};
-
-template <typename T>
-struct in_place_type_t {
-    explicit in_place_type_t() = default;
 };
 
 constexpr in_place_t in_place{};
@@ -941,5 +934,3 @@ struct hash<open3d::utility::optional<T&>> {
 #undef TR2_OPTIONAL_REQUIRES
 #undef TR2_OPTIONAL_ASSERTED_EXPRESSION
 #undef TR2_OPTIONAL_HOST_CONSTEXPR
-
-#endif  // C10_UTIL_OPTIONAL_H_
