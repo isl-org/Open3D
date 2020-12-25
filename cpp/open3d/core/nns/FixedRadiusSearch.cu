@@ -417,7 +417,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
     // Sort by distance in ascending order.
     thrust::sort_by_key(thrust::seq, distances + indices_offset,
-                        distances + indices_offset + count, indices);
+                        distances + indices_offset + count,
+                        indices + indices_offset);
 }
 
 /// Count the number of neighbors for each query point
@@ -826,10 +827,6 @@ void HybridSearchCUDA(void* temp,
                       int max_knn,
                       int32_t* indices,
                       T* distances) {
-    // const bool get_temp_size = !temp;
-    // const cudaStream_t stream = 0;
-    // const int batch_size = points_row_splits_size - 1;
-
     // First, fixed radius search.
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
@@ -944,28 +941,7 @@ void HybridSearchCUDA(void* temp,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric, true);
-        }
-    }
 
-    // FixedRadiusSearchCUDA<T>(
-    //        temp, temp_size, query_neighbors_row_splits, num_points, points,
-    //        num_queries, queries, radius, points_row_splits_size,
-    //        points_row_splits, queries_row_splits_size, queries_row_splits,
-    //        hash_table_splits, hash_table_cell_splits_size,
-    //        hash_table_cell_splits, hash_table_index, output_allocator);
-
-    // const int32_t* indices_ptr = output_allocator.IndicesPtr();
-    // const T* distances_ptr = output_allocator.DistancesPtr();
-
-    // Second, threshold radius search result with max_knn.
-    if (!get_temp_size) {
-        for (int i = 0; i < batch_size; ++i) {
-            // WriteNeighborsIndicesAndDistances(
-            //        stream, indices_ptr, distances_ptr,
-            //        query_neighbors_row_splits + queries_row_splits[i],
-            //        hash_table_index, hash_table_cell_splits + first_cell_idx,
-            //        hash_table_size + 1, queries_i, num_queries_i, points,
-            //        num_points, inv_voxel_size, radius, metric, true);
             MaxKnnThreshold(stream, indices_ptr, distances_ptr,
                             query_neighbors_count.first + queries_row_splits[i],
                             query_neighbors_row_splits + queries_row_splits[i],

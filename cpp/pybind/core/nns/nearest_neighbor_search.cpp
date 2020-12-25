@@ -74,8 +74,16 @@ void pybind_core_nns(py::module &m) {
             py::arg("radius") = py::none());
     nns.def("multi_radius_index", &NearestNeighborSearch::MultiRadiusIndex,
             "Set index for multi-radius search.");
-    nns.def("hybrid_index", &NearestNeighborSearch::HybridIndex,
-            "Set index for hybrid search.");
+    nns.def(
+            "hybrid_index",
+            [](NearestNeighborSearch &self, utility::optional<double> radius) {
+                if (!radius.has_value()) {
+                    return self.HybridIndex();
+                } else {
+                    return self.HybridIndex(radius.value());
+                }
+            },
+            py::arg("radius") = py::none());
 
     // Search functions.
     nns.def("knn_search", &NearestNeighborSearch::KnnSearch, "query_points"_a,
