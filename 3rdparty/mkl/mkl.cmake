@@ -1,6 +1,6 @@
 # MKL and TBB build scripts.
 #
-# This scripts exports:
+# This scripts exports: (both MKL and TBB)
 # - STATIC_MKL_INCLUDE_DIR
 # - STATIC_MKL_LIB_DIR
 # - STATIC_MKL_LIBRARIES
@@ -31,27 +31,10 @@ else()
 endif()
 
 # Where MKL and TBB headers and libs will be installed.
+# This needs to be consistent with tbb.cmake.
 set(MKL_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/mkl_install)
 set(STATIC_MKL_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/include/")
 set(STATIC_MKL_LIB_DIR "${MKL_INSTALL_PREFIX}/lib")
-
-# Need to put TBB right next to MKL in the link flags. So instead of creating a
-# new tbb.cmake, it is also put here.
-ExternalProject_Add(
-    ext_tbb
-    PREFIX tbb
-    GIT_REPOSITORY https://github.com/wjakob/tbb.git
-    GIT_TAG 806df70ee69fc7b332fcf90a48651f6dbf0663ba # July 2020
-    UPDATE_COMMAND ""
-    CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DTBB_BUILD_TBBMALLOC=OFF
-        -DTBB_BUILD_TBBMALLOC_PROXYC=OFF
-        -DTBB_BUILD_SHARED=OFF
-        -DTBB_BUILD_TESTS=OFF
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-)
 
 if(WIN32)
     ExternalProject_Add(
@@ -73,7 +56,7 @@ if(WIN32)
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Library/lib ${MKL_INSTALL_PREFIX}/lib
     )
     # Generator expression can result in an empty string "", causing CMake to try to
-    # locat ".lib". The workaround to first list all libs, and remove unneeded items
+    # locate ".lib". The workaround to first list all libs, and remove unneeded items
     # using generator expressions.
     set(STATIC_MKL_LIBRARIES
         mkl_intel_ilp64
