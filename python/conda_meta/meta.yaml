@@ -27,7 +27,7 @@ requirements:
         - pandas
         - plyfile
         - pyyaml
-        - sklearn
+        - scikit-learn
         - tqdm
 
 about:
