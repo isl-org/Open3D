@@ -60,26 +60,25 @@ def test_color_map():
     # Load dataset
     mesh, rgbd_images, camera_trajectory = load_fountain_dataset()
 
-    # Assign mesh, rgbd images and camera trajectory to the optimizer.
-    optimizer = o3d.pipelines.color_map.ColorMapOptimizer(
-        mesh, rgbd_images, camera_trajectory)
-
     # Computes averaged color without optimization, for debugging
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
-        optimizer.run_rigid_optimizer(
+        o3d.pipelines.color_map.run_rigid_optimizer(
+            mesh, rgbd_images, camera_trajectory,
             o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
 
     # Rigid Optimization
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
-        optimizer.run_rigid_optimizer(
+        mesh_optimized = o3d.pipelines.color_map.run_rigid_optimizer(
+            mesh, rgbd_images, camera_trajectory,
             o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=5))
 
     # Non-rigid Optimization
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
-        optimizer.run_non_rigid_optimizer(
+        mesh_optimized = o3d.pipelines.color_map.run_non_rigid_optimizer(
+            mesh, rgbd_images, camera_trajectory,
             o3d.pipelines.color_map.NonRigidOptimizerOption(
                 maximum_iteration=5))
 
@@ -87,7 +86,7 @@ def test_color_map():
     # color_map_optimization are deterministic. This test ensures the refactored
     # code produces the same output. This is only valid for using exactly the
     # same inputs and optimization options.
-    vertex_colors = np.asarray(optimizer.mesh.vertex_colors)
+    vertex_colors = np.asarray(mesh_optimized.vertex_colors)
     assert vertex_colors.shape == (536872, 3)
 
     # We need to account for the acceptable variation in the least significant
@@ -96,3 +95,7 @@ def test_color_map():
     np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
                                [0.40307181, 0.37264626, 0.5436129],
                                rtol=1. / 256.)
+
+
+if __name__ == "__main__":
+    test_color_map()

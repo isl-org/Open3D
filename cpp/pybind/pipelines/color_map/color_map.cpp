@@ -29,7 +29,8 @@
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/pipelines/color_map/ColorMapOptimizer.h"
+#include "open3d/pipelines/color_map/NonRigidOptimizer.h"
+#include "open3d/pipelines/color_map/RigidOptimizer.h"
 #include "open3d/utility/Console.h"
 #include "pybind/docstring.h"
 
@@ -38,43 +39,6 @@ namespace pipelines {
 namespace color_map {
 
 void pybind_color_map_options(py::module &m) {
-    py::class_<pipelines::color_map::ColorMapOptimizer> color_map_optimizer(
-            m, "ColorMapOptimizer", "Class for color map optimization.");
-    color_map_optimizer.def(
-            py::init([](const geometry::TriangleMesh &mesh,
-                        const std::vector<std::shared_ptr<geometry::RGBDImage>>
-                                &images_rgbd,
-                        const camera::PinholeCameraTrajectory
-                                &camera_trajectory) {
-                return new pipelines::color_map::ColorMapOptimizer(
-                        mesh, images_rgbd, camera_trajectory);
-            }),
-            "mesh"_a, "images_rgbd"_a, "camera_trajectory"_a);
-
-    docstring::ClassMethodDocInject(
-            m, "ColorMapOptimizer", "__init__",
-            {{"mesh", "The input mesh geometry."},
-             {"images_rgbd", "A list of RGBDImages seen by cameras."},
-             {"camera_trajectory", "Cameras' parameters."}},
-            /*skip_init=*/false);
-
-    color_map_optimizer.def_property_readonly(
-            "mesh",
-            [](const pipelines::color_map::ColorMapOptimizer &optimizer) {
-                return optimizer.GetMesh();
-            },
-            "Get optimized mesh. Read only property.");
-    color_map_optimizer.def(
-            "run_rigid_optimizer",
-            &pipelines::color_map::ColorMapOptimizer::RunRigidOptimizer,
-            "Run rigid optimization.");
-    color_map_optimizer.def(
-            "run_non_rigid_optimizer",
-            &pipelines::color_map::ColorMapOptimizer::RunNonRigidOptimizer,
-            "Run non-rigid optimization.");
-}  // namespace open3d
-
-void pybind_color_map_classes(py::module &m) {
     static std::unordered_map<std::string, std::string> colormap_docstrings = {
             {"non_rigid_camera_coordinate",
              "bool: (Default ``False``) Set to ``True`` to enable non-rigid "
@@ -213,6 +177,14 @@ void pybind_color_map_classes(py::module &m) {
     docstring::ClassMethodDocInject(m, "NonRigidOptimizerOption", "__init__",
                                     colormap_docstrings,
                                     /*skip_init=*/false);
+}
+
+void pybind_color_map_classes(py::module &m) {
+    m.def("run_rigid_optimizer", &pipelines::color_map::RunRigidOptimizer,
+          "Run rigid optimization.");
+    m.def("run_non_rigid_optimizer",
+          &pipelines::color_map::RunNonRigidOptimizer,
+          "Run non-rigid optimization.");
 }
 
 void pybind_color_map(py::module &m) {

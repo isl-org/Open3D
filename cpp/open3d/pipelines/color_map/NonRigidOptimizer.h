@@ -130,6 +130,12 @@ protected:
     std::vector<std::shared_ptr<geometry::Image>> images_depth_;
 };
 
+std::shared_ptr<geometry::TriangleMesh> RunNonRigidOptimizer(
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::RGBDImage>>& images_rgbd,
+        const camera::PinholeCameraTrajectory& camera_trajectory,
+        const NonRigidOptimizerOption& option);
+
 }  // namespace color_map
 }  // namespace pipelines
 }  // namespace open3d

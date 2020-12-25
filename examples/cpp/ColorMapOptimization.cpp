@@ -56,21 +56,22 @@ int main(int argc, char *argv[]) {
                 *color, *depth, 1000.0, 3.0, false);
         rgbd_images.push_back(rgbd_image);
     }
-    auto camera = io::CreatePinholeCameraTrajectoryFromFile(data_path +
-                                                            "/scene/key.log");
-    auto mesh = io::CreateMeshFromFile(data_path + "/scene/integrated.ply");
+    std::shared_ptr<camera::PinholeCameraTrajectory> camera =
+            io::CreatePinholeCameraTrajectoryFromFile(data_path +
+                                                      "/scene/key.log");
+    std::shared_ptr<geometry::TriangleMesh> mesh =
+            io::CreateMeshFromFile(data_path + "/scene/integrated.ply");
 
     // Optimize texture and save the mesh as texture_mapped.ply
     // This is implementation of following paper
     // Q.-Y. Zhou and V. Koltun,
     // Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     // SIGGRAPH 2014
-    pipelines::color_map::ColorMapOptimizer optimizer(*mesh, rgbd_images,
-                                                      *camera);
     pipelines::color_map::NonRigidOptimizerOption non_rigid_option;  // Default
-    optimizer.RunNonRigidOptimizer(non_rigid_option);
-    io::WriteTriangleMesh("color_map_after_optimization.ply",
-                          *optimizer.GetMesh());
+    std::shared_ptr<geometry::TriangleMesh> optimized_mesh =
+            pipelines::color_map::RunNonRigidOptimizer(
+                    *mesh, rgbd_images, *camera, non_rigid_option);
+    io::WriteTriangleMesh("color_map_after_optimization.ply", *optimized_mesh);
 
     return 0;
 }

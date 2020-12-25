@@ -173,6 +173,49 @@ void RigidOptimizer::Run(const RigidOptimizerOption& option) {
                             option.invisible_vertex_color_knn_);
 }
 
+std::shared_ptr<geometry::TriangleMesh> RunRigidOptimizer(
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::RGBDImage>>& images_rgbd,
+        const camera::PinholeCameraTrajectory& camera_trajectory,
+        const RigidOptimizerOption& option) {
+    std::shared_ptr<geometry::TriangleMesh> mesh_;
+    std::vector<std::shared_ptr<geometry::RGBDImage>> images_rgbd_;
+    std::shared_ptr<camera::PinholeCameraTrajectory> camera_trajectory_;
+    std::vector<std::shared_ptr<geometry::Image>> images_gray_;
+    std::vector<std::shared_ptr<geometry::Image>> images_dx_;
+    std::vector<std::shared_ptr<geometry::Image>> images_dy_;
+    std::vector<std::shared_ptr<geometry::Image>> images_color_;
+    std::vector<std::shared_ptr<geometry::Image>> images_depth_;
+    mesh_ = std::make_shared<geometry::TriangleMesh>(mesh);
+    images_rgbd_ = images_rgbd;
+    camera_trajectory_ = std::make_shared<camera::PinholeCameraTrajectory>(
+            camera_trajectory);
+
+    // images_gray_, images_dx_, images_dy_, images_color_, images_depth_
+    // remain unachanged through out the optimizations.
+    utility::LogDebug("[ColorMapOptimization] :: CreateGradientImages");
+    for (size_t i = 0; i < images_rgbd_.size(); i++) {
+        auto gray_image = images_rgbd_[i]->color_.CreateFloatImage();
+        auto gray_image_filtered =
+                gray_image->Filter(geometry::Image::FilterType::Gaussian3);
+        images_gray_.push_back(gray_image_filtered);
+        images_dx_.push_back(gray_image_filtered->Filter(
+                geometry::Image::FilterType::Sobel3Dx));
+        images_dy_.push_back(gray_image_filtered->Filter(
+                geometry::Image::FilterType::Sobel3Dy));
+        auto color = std::make_shared<geometry::Image>(images_rgbd_[i]->color_);
+        auto depth = std::make_shared<geometry::Image>(images_rgbd_[i]->depth_);
+        images_color_.push_back(color);
+        images_depth_.push_back(depth);
+    }
+
+    RigidOptimizer optimizer(mesh_, images_rgbd_, camera_trajectory_,
+                             images_gray_, images_dx_, images_dy_,
+                             images_color_, images_depth_);
+    optimizer.Run(option);
+    return mesh_;
+}
+
 }  // namespace color_map
 }  // namespace pipelines
 }  // namespace open3d
