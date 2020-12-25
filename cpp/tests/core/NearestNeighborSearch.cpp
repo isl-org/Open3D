@@ -181,13 +181,15 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::NearestNeighborSearch nns(ref);
-    nns.HybridIndex();
+    double radis = 0.1;
+    int max_knn = 1;
+    nns.HybridIndex(radius);
 
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
                        {1, 3}, core::Dtype::Float32, device);
 
     std::pair<core::Tensor, core::Tensor> result =
-            nns.HybridSearch(query, 0.1, 1);
+            nns.HybridSearch(query, radius, max_knn);
 
     core::Tensor indices = result.first;
     core::Tensor distainces = result.second;
