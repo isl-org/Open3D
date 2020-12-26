@@ -76,6 +76,12 @@ public:
                                double near,
                                double far) = 0;
 
+    virtual void SetProjection(const Eigen::Matrix3d& intrinsics,
+                               double near,
+                               double far,
+                               double width,
+                               double height) = 0;
+
     virtual void LookAt(const Eigen::Vector3f& center,
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
@@ -100,8 +106,15 @@ public:
     virtual Transform GetViewMatrix() const = 0;
     virtual Transform GetProjectionMatrix() const = 0;
 
+    // Returns the normalized device coordinates (NDC) of the specified point
+    // given the view and projection matrices of the camera. The returned point
+    // is in the range [-1, 1] if the point is in view, or outside the range if
+    // the point is out of view.
+    virtual Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const = 0;
+
     struct ProjectionInfo {
         bool is_ortho;
+        bool is_intrinsic;
         union {
             struct {
                 Projection projection;
@@ -119,6 +132,16 @@ public:
                 double near_plane;
                 double far_plane;
             } perspective;
+            struct {
+                double fx;
+                double fy;
+                double cx;
+                double cy;
+                double near_plane;
+                double far_plane;
+                double width;
+                double height;
+            } intrinsics;
         } proj;
     };
     virtual const ProjectionInfo& GetProjection() const = 0;

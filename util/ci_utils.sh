@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 # The following environment variables are required:
+SUDO=${SUDO:=sudo}
+UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs 2>/dev/null || true)"} # Empty in macOS
+
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
@@ -163,6 +166,25 @@ install_python_dependencies() {
     fi
 }
 
+install_librealsense2() {
+
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo Installing librealsense
+        echo Reference: https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+        $SUDO apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE ||
+            $SUDO apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
+
+        $SUDO apt-add-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo ${UBUNTU_VERSION} main" -u
+        $SUDO apt-get install --yes --no-install-recommends librealsense2-dkms librealsense2-udev-rules librealsense2-dev
+        $SUDO apt-get install --yes --no-install-recommends librealsense2-utils
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        brew install librealsense
+    else
+        echo "Unsupported OS $OSTYPE"
+        exit 1
+    fi
+}
+
 install_azure_kinect_dependencies() {
 
     echo "Installing Azure Kinect dependencies"
@@ -186,6 +208,7 @@ build_all() {
 
     cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED"
         -DCMAKE_BUILD_TYPE=Release
+        -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DCUDA_ARCH=BasicPTX
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
@@ -249,6 +272,7 @@ build_pip_conda_package() {
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
         -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_AZURE_KINECT="$BUILD_AZURE_KINECT"
+        -DBUILD_LIBREALSENSE=ON
         -DBUILD_TENSORFLOW_OPS=ON
         -DBUILD_PYTORCH_OPS=ON
         -DBUILD_RPC_INTERFACE=ON
@@ -391,7 +415,7 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     which python
     python -V
-    python -m pip install -U -q "wheel==$WHEEL_VER" "Pillow==$PILLOW_VER" \
+    python -m pip install -U -q "wheel==$WHEEL_VER" "pip==$PIP_VER" "Pillow==$PILLOW_VER" \
         "sphinx==$SPHINX_VER" "sphinx-rtd-theme==$SPHINX_RTD_VER" "nbsphinx==$NBSPHINX_VER"
     # m2r needs a patch for sphinx 3
     # https://github.com/sphinx-doc/sphinx/issues/7420
@@ -414,7 +438,7 @@ install_docs_dependencies() {
 build_docs() {
     NPROC=$(nproc)
     echo NPROC="$NPROC"
-    mkdir build
+    mkdir -p build
     cd build
     set +u
     DEVELOPER_BUILD="$1"
@@ -434,6 +458,7 @@ build_docs() {
         -DBUILD_JUPYTER_EXTENSION=ON
         -DWITH_OPENMP=ON
         -DBUILD_AZURE_KINECT=ON
+        -DBUILD_LIBREALSENSE=ON
         -DBUILD_TENSORFLOW_OPS=ON
         -DBUILD_PYTORCH_OPS=ON
         -DBUILD_RPC_INTERFACE=ON
@@ -450,6 +475,7 @@ build_docs() {
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
+    python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
     echo
@@ -462,7 +488,7 @@ build_docs() {
         ..
     make install-pip-package -j$NPROC
     make -j$NPROC
-    bin/GLInfo || true # Expect failure since HEADLESS_RENDERING=OFF
+    bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen

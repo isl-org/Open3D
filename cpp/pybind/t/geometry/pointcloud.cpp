@@ -74,6 +74,12 @@ void pybind_pointcloud(py::module& m) {
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
     pointcloud.def_static(
+            "create_from_depth_image", &PointCloud::CreateFromDepthImage,
+            "depth"_a, "intrinsics"_a,
+            "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                               core::Device("CPU:0")),
+            "depth_scale"_a = 1000.0, "depth_max"_a = 3.0, "stride"_a = 1);
+    pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,
             "device"_a = core::Device("CPU:0"),

@@ -19,7 +19,7 @@ isMacOS = (platform.system() == "Darwin")
 #    called from the UI thread, so use Application.post_to_main_thread().
 #    See `on_menu_random()`.
 # Running the example will show a simple window with a Debug menu item with the
-# two different options. Two second method will add random spheres for
+# two different options. The second method will add random spheres for
 # 20 seconds, during which time you can be interacting with the scene, rotating,
 # etc.
 class SpheresApp:
@@ -34,11 +34,11 @@ class SpheresApp:
         self.scene = gui.SceneWidget()
         self.scene.scene = rendering.Open3DScene(self.window.renderer)
         self.scene.scene.set_background([1, 1, 1, 1])
-        self.scene.scene.scene.set_directional_light(
+        self.scene.scene.scene.set_sun_light(
             [-1, -1, -1],  # direction
             [1, 1, 1],  # color
             100000)  # intensity
-        self.scene.scene.scene.enable_directional_light(True)
+        self.scene.scene.scene.enable_sun_light(True)
         bbox = o3d.geometry.AxisAlignedBoundingBox([-10, -10, -10],
                                                    [10, 10, 10])
         self.scene.setup_camera(60, bbox, [0, 0, 0])

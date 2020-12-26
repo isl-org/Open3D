@@ -2,8 +2,10 @@
 set(ALL_SOURCE_FILES
     PointCloud.cpp
     Image.cpp
+    RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
+    TSDFVoxelGrid.cpp
 )
 
 add_library(tgeometry OBJECT ${ALL_SOURCE_FILES})

@@ -268,7 +268,6 @@ public:
     bool operator==(const int3 &other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
-
     int x_;
     int y_;
     int z_;

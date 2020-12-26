@@ -65,18 +65,11 @@ void ClassMethodDocInject(py::module& pybind_module,
 
     // Extract PyCFunctionObject
     PyCFunctionObject* f = nullptr;
-#ifdef PYTHON_2_FALLBACK
-    if (Py_TYPE(class_method_obj) == &PyMethod_Type) {
-        PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
-        f = (PyCFunctionObject*)class_method->im_func;
-    }
-#else
     if (Py_TYPE(class_method_obj) == &PyInstanceMethod_Type) {
         PyInstanceMethodObject* class_method =
                 (PyInstanceMethodObject*)class_method_obj;
         f = (PyCFunctionObject*)class_method->func;
     }
-#endif
     if (Py_TYPE(class_method_obj) == &PyCFunction_Type) {
         // def_static in Pybind is PyCFunction_Type, no need to convert
         f = (PyCFunctionObject*)class_method_obj;

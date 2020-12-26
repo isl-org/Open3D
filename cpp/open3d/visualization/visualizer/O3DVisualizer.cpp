@@ -60,6 +60,7 @@
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
+#include "open3d/visualization/visualizer/Receiver.h"
 
 #define GROUPS_USE_TREE 1
 
@@ -293,13 +294,18 @@ struct O3DVisualizer::Impl {
     std::vector<DrawObject> objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
     bool selections_need_update_ = true;
+    std::function<void(double)> on_animation_;
+    std::function<bool()> on_animation_tick_;
+    std::shared_ptr<Receiver> receiver_;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
 
     double min_time_ = 0.0;
     double max_time_ = 0.0;
+    double start_animation_clock_time_ = 0.0;
     double next_animation_tick_clock_time_ = 0.0;
+    double last_animation_tick_clock_time_ = 0.0;
 
     Window *window_ = nullptr;
     SceneWidget *scene_ = nullptr;
@@ -518,8 +524,8 @@ struct O3DVisualizer::Impl {
                                     ui_state_.bg_color.y(),
                                     ui_state_.bg_color.z());
         settings.bg_color->SetOnValueChanged([this](const Color &c) {
-            this->SetBackgroundColor(
-                    {c.GetRed(), c.GetGreen(), c.GetBlue(), 1.0f});
+            this->SetBackground({c.GetRed(), c.GetGreen(), c.GetBlue(), 1.0f},
+                                nullptr);
         });
 
         settings.point_size = new Slider(Slider::INT);
@@ -531,12 +537,15 @@ struct O3DVisualizer::Impl {
 
         settings.shader = new Combobox();
         settings.shader->AddItem("Standard");
+        settings.shader->AddItem("Unlit");
         settings.shader->AddItem("Normal Map");
         settings.shader->AddItem("Depth");
         settings.shader->SetOnValueChanged([this](const char *item, int idx) {
             if (idx == 1) {
-                this->SetShader(O3DVisualizer::Shader::NORMALS);
+                this->SetShader(O3DVisualizer::Shader::UNLIT);
             } else if (idx == 2) {
+                this->SetShader(O3DVisualizer::Shader::NORMALS);
+            } else if (idx == 3) {
                 this->SetShader(O3DVisualizer::Shader::DEPTH);
             } else {
                 this->SetShader(O3DVisualizer::Shader::STANDARD);
@@ -797,11 +806,10 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
-            // if (lines || obb || aabb) {
-            //     mat.shader = kShaderUnlitLines;
-            //     mat.line_width = ui_state_.line_width *
-            //     window_->GetScaling();
-            // }
+            if (lines || obb || aabb) {
+                mat.shader = kShaderUnlitLines;
+                mat.line_width = ui_state_.line_width * window_->GetScaling();
+            }
             is_default_color = true;
             if (has_colors) {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -812,7 +820,7 @@ struct O3DVisualizer::Impl {
                 mat.shader = kShaderLit;
                 is_default_color = false;
             }
-            mat.point_size = ui_state_.point_size * window_->GetScaling();
+            mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
         }
 
         // We assume that the caller isn't setting a group or time (and in any
@@ -954,18 +962,20 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
-    void SetBackgroundColor(const Eigen::Vector4f &bg_color) {
+    void SetBackground(const Eigen::Vector4f &bg_color,
+                       std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
         auto scene = scene_->GetScene();
-        scene->SetBackground(ui_state_.bg_color);
+        scene->SetBackground(ui_state_.bg_color, bg_image);
 
         auto new_default_color = CalcDefaultUnlitColor();
         if (new_default_color != old_default_color) {
             for (auto &o : objects_) {
                 if (o.is_color_default) {
                     o.material.base_color = new_default_color;
-                    scene->GetScene()->OverrideMaterial(o.name, o.material);
+                    OverrideMaterial(o.name, o.material,
+                                     ui_state_.scene_shader);
                 }
             }
         }
@@ -1004,11 +1014,10 @@ struct O3DVisualizer::Impl {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
 
-        px = int(std::round(px * window_->GetScaling()));
+        px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.point_size = float(px);
-            scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
-                                                             o.material);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
         auto bbox = scene_->GetScene()->GetBoundingBox();
         auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
@@ -1025,38 +1034,60 @@ struct O3DVisualizer::Impl {
     void SetLineWidth(int px) {
         ui_state_.line_width = px;
 
-        px = int(std::round(px * window_->GetScaling()));
+        px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.line_width = float(px);
-            scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
-                                                             o.material);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
         scene_->ForceRedraw();
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
-        const char *shader_name = nullptr;
-        switch (shader) {
-            case Shader::STANDARD:
-                break;
-            case Shader::NORMALS:
-                shader_name = "normals";
-                break;
-            case Shader::DEPTH:
-                shader_name = "depth";
-                break;
-        }
-        auto scene = scene_->GetScene();
-        if (shader_name) {
-            Material mat;
-            mat.shader = shader_name;
-            scene->UpdateMaterial(mat);
-        } else {
-            for (auto &o : objects_) {
-                scene->GetScene()->OverrideMaterial(o.name, o.material);
-            }
+        ui_state_.scene_shader = shader;
+        for (auto &o : objects_) {
+            OverrideMaterial(o.name, o.material, shader);
         }
         scene_->ForceRedraw();
+    }
+
+    void OverrideMaterial(const std::string &name,
+                          const Material &original_material,
+                          O3DVisualizer::Shader shader) {
+        bool is_lines = (original_material.shader == "unlitLine" ||
+                         original_material.shader == "lines");
+        auto scene = scene_->GetScene();
+        // Lines are already unlit, so keep using the original shader when in
+        // unlit mode so that we can keep the wide lines.
+        if (shader == Shader::STANDARD ||
+            (shader == Shader::UNLIT && is_lines)) {
+            scene->GetScene()->OverrideMaterial(name, original_material);
+        } else {
+            Material m = original_material;
+            m.shader = GetShaderString(shader);
+            scene->GetScene()->OverrideMaterial(name, m);
+        }
+    }
+
+    float ConvertToScaledPixels(int px) {
+        return std::round(px * window_->GetScaling());
+    }
+
+    const char *GetShaderString(O3DVisualizer::Shader shader) {
+        switch (shader) {
+            case Shader::STANDARD:
+                return nullptr;
+            case Shader::UNLIT:
+                return "defaultUnlit";
+            case Shader::NORMALS:
+                return "normals";
+            case Shader::DEPTH:
+                return "depth";
+            default:
+                utility::LogWarning(
+                        "O3DVisualizer::GetShaderString(): unhandled Shader "
+                        "value");
+                return nullptr;
+        }
     }
 
     void SetIBL(std::string path) {
@@ -1093,7 +1124,7 @@ struct O3DVisualizer::Impl {
         ui_state_.ibl_intensity =
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
-                int(scene->GetScene()->GetDirectionalLightIntensity());
+                int(scene->GetScene()->GetSunLightIntensity());
         ui_state_.sun_dir = sun_dir;
         ui_state_.sun_color = {1.0f, 1.0f, 1.0f};
         SetUIState(ui_state_);
@@ -1138,6 +1169,10 @@ struct O3DVisualizer::Impl {
             UpdateGeometryVisibility(o);
         }
         UpdateTimeUI();
+
+        if (on_animation_) {
+            on_animation_(ui_state_.current_time);
+        }
     }
 
     void SetAnimating(bool is_animating) {
@@ -1148,8 +1183,15 @@ struct O3DVisualizer::Impl {
         ui_state_.is_animating = is_animating;
         if (is_animating) {
             ui_state_.current_time = max_time_;
-            window_->SetOnTickEvent(
-                    [this]() -> bool { return this->OnAnimationTick(); });
+            auto now = Application::GetInstance().Now();
+            start_animation_clock_time_ = now;
+            last_animation_tick_clock_time_ = now;
+            if (on_animation_tick_) {
+                window_->SetOnTickEvent(on_animation_tick_);
+            } else {
+                window_->SetOnTickEvent(
+                        [this]() -> bool { return this->OnAnimationTick(); });
+            }
         } else {
             window_->SetOnTickEvent(nullptr);
             SetCurrentTime(0.0);
@@ -1157,6 +1199,30 @@ struct O3DVisualizer::Impl {
         }
         settings.time_slider->SetEnabled(!is_animating);
         settings.time_edit->SetEnabled(!is_animating);
+    }
+
+    void SetOnAnimationTick(
+            O3DVisualizer &o3dvis,
+            std::function<TickResult(O3DVisualizer &, double, double)> cb) {
+        if (cb) {
+            on_animation_tick_ = [this, &o3dvis, cb]() -> bool {
+                auto now = Application::GetInstance().Now();
+                auto dt = now - this->last_animation_tick_clock_time_;
+                auto total_time = now - this->start_animation_clock_time_;
+                this->last_animation_tick_clock_time_ = now;
+
+                auto result = cb(o3dvis, dt, total_time);
+
+                if (result == TickResult::REDRAW) {
+                    this->scene_->ForceRedraw();
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+        } else {
+            on_animation_tick_ = nullptr;
+        }
     }
 
     void SetUIState(const UIState &new_state) {
@@ -1184,7 +1250,7 @@ struct O3DVisualizer::Impl {
 
         ShowSettings(ui_state_.show_settings, false);
         SetShader(ui_state_.scene_shader);
-        SetBackgroundColor(ui_state_.bg_color);
+        SetBackground(ui_state_.bg_color, nullptr);
         ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
 
@@ -1212,9 +1278,9 @@ struct O3DVisualizer::Impl {
         auto *raw_scene = scene_->GetScene()->GetScene();
         raw_scene->EnableIndirectLight(ui_state_.use_ibl);
         raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
-        raw_scene->EnableDirectionalLight(ui_state_.use_sun);
-        raw_scene->SetDirectionalLight(ui_state_.sun_dir, ui_state_.sun_color,
-                                       float(ui_state_.sun_intensity));
+        raw_scene->EnableSunLight(ui_state_.use_sun);
+        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
+                               float(ui_state_.sun_intensity));
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
@@ -1608,6 +1674,34 @@ Open3DScene *O3DVisualizer::GetScene() const {
     return impl_->scene_->GetScene().get();
 }
 
+void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_ = std::make_shared<Receiver>(
+            this, impl_->scene_->GetScene(), address, timeout);
+    try {
+        utility::LogInfo("Starting to listen on {}", address);
+        impl_->receiver_->Start();
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to start RPC interface: {}", e.what());
+    }
+#else
+    utility::LogWarning(
+            "O3DVisualizer::StartRPCInterface: RPC interface not built");
+#endif
+}
+
+void O3DVisualizer::StopRPCInterface() {
+#ifdef BUILD_RPC_INTERFACE
+    if (impl_->receiver_) {
+        utility::LogInfo("Stopping RPC interface");
+    }
+    impl_->receiver_.reset();
+#else
+    utility::LogWarning(
+            "O3DVisualizer::StopRPCInterface: RPC interface not built");
+#endif
+}
+
 void O3DVisualizer::AddAction(const std::string &name,
                               std::function<void(O3DVisualizer &)> callback) {
     // Add button to the "Custom Actions" segment in the UI
@@ -1634,8 +1728,10 @@ void O3DVisualizer::AddAction(const std::string &name,
     SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
 }
 
-void O3DVisualizer::SetBackgroundColor(const Eigen::Vector4f &bg_color) {
-    impl_->SetBackgroundColor(bg_color);
+void O3DVisualizer::SetBackground(
+        const Eigen::Vector4f &bg_color,
+        std::shared_ptr<geometry::Image> bg_image /*= nullptr*/) {
+    impl_->SetBackground(bg_color, bg_image);
 }
 
 void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
@@ -1708,6 +1804,17 @@ double O3DVisualizer::GetAnimationTimeStep() const {
 
 void O3DVisualizer::SetAnimationTimeStep(double time_step) {
     impl_->ui_state_.time_step = time_step;
+    SetAnimationFrameDelay(time_step);
+}
+
+double O3DVisualizer::GetAnimationDuration() const {
+    return impl_->max_time_ - impl_->min_time_ + GetAnimationTimeStep();
+}
+
+void O3DVisualizer::SetAnimationDuration(double sec) {
+    impl_->max_time_ = impl_->min_time_ + sec - GetAnimationTimeStep();
+    impl_->UpdateTimeUIRange();
+    impl_->settings.time_panel->SetVisible(impl_->min_time_ < impl_->max_time_);
 }
 
 double O3DVisualizer::GetCurrentTime() const {
@@ -1735,6 +1842,20 @@ void O3DVisualizer::ResetCameraToDefault() {
 
 O3DVisualizer::UIState O3DVisualizer::GetUIState() const {
     return impl_->ui_state_;
+}
+
+void O3DVisualizer::SetOnAnimationFrame(
+        std::function<void(O3DVisualizer &, double)> cb) {
+    if (cb) {
+        impl_->on_animation_ = [this, cb](double t) { cb(*this, t); };
+    } else {
+        impl_->on_animation_ = nullptr;
+    }
+}
+
+void O3DVisualizer::SetOnAnimationTick(
+        std::function<TickResult(O3DVisualizer &, double, double)> cb) {
+    impl_->SetOnAnimationTick(*this, cb);
 }
 
 void O3DVisualizer::ExportCurrentImage(const std::string &path) {

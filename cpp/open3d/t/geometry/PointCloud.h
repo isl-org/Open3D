@@ -34,6 +34,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/utility/Console.h"
 
@@ -118,11 +119,6 @@ public:
 
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
-
-    /// Setter for point_attr_ TensorMap. Used in Pybind.
-    void SetPointAttrPybind(const TensorMap &point_attr) {
-        point_attr_ = point_attr;
-    };
 
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
@@ -237,6 +233,12 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
+    /// Returns deep copy of the pointcloud
+    PointCloud Copy(const core::Device device) const;
+
+    /// Returns deep copy of the pointcloud on the same device
+    PointCloud Copy() const;
+
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.
     /// Extracts R, t from Transformation
@@ -276,8 +278,36 @@ public:
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
+    /// \brief Factory function to create a pointcloud from a depth image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
+    /// / fy\n
+    ///
+    /// \param depth The input depth image should be a uint16_t image.
+    /// \param intrinsic Intrinsic parameters of the camera.
+    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
+    /// \param depth_trunc Truncated at \p depth_trunc distance.
+    /// \param stride Sampling factor to support coarse point cloud extraction.
+    ///
+    /// \return An empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
+    static PointCloud CreateFromDepthImage(
+            const Image &depth,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            double depth_scale = 1000.0,
+            double depth_max = 3.0,
+            int stride = 1);
+
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static geometry::PointCloud FromLegacyPointCloud(
+    static PointCloud FromLegacyPointCloud(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0"));

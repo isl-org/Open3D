@@ -33,8 +33,8 @@
 #include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/Messages.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
-#include "open3d/visualization/visualizer/GuiVisualizer.h"
 
 using namespace open3d::io::rpc;
 using namespace open3d::utility;
@@ -317,7 +317,7 @@ void Receiver::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
                            const std::string& layer) {
     std::shared_ptr<rendering::Open3DScene> scene = scene_;
     gui::Application::GetInstance().PostToMainThread(
-            gui_visualizer_, [geom, path, time, layer, scene]() {
+            window_, [geom, path, time, layer, scene]() {
                 (void)time;  // unused at the moment
                 scene->AddGeometry(path, geom.get(), rendering::Material());
             });

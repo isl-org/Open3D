@@ -70,11 +70,21 @@ void pybind_o3dvisualizer(py::module& m) {
     dv_shader
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
+            .value("UNLIT", O3DVisualizer::Shader::UNLIT,
+                   "Normals will be ignored (useful for point clouds)")
             .value("NORMALS", O3DVisualizer::Shader::NORMALS,
                    "Pixel colors correspond to surface normal")
             .value("DEPTH", O3DVisualizer::Shader::DEPTH,
                    "Pixel colors correspond to depth buffer value")
             .export_values();
+
+    py::enum_<O3DVisualizer::TickResult> tick_result(
+            o3dvis, "TickResult", "Return value from animation tick callback");
+    tick_result
+            .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
+                   "Signals that no change happened and no redraw is required")
+            .value("REDRAW", O3DVisualizer::TickResult::REDRAW,
+                   "Signals that a redraw is required");
 
     py::class_<O3DVisualizer::DrawObject> drawobj(
             o3dvis, "DrawObject",
@@ -124,15 +134,6 @@ void pybind_o3dvisualizer(py::module& m) {
                  "time"_a = 0.0, "is_visible"_a = true,
                  "Adds a geometry: geometry(name, geometry, material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
-            /*            .def("add_geometry",
-                             py::overload_cast<const std::string&,
-                                               std::shared_ptr<t::geometry::Geometry>,
-                                               rendering::Material *,
-                                               const std::string&,
-                                               double,
-                                               bool>(&O3DVisualizer::AddGeometry),
-                             "Adds a geometry")
-            */
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
@@ -191,9 +192,35 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("get_selection_sets", &O3DVisualizer::GetSelectionSets,
                  "Returns the selection sets, as [{'obj_name', "
                  "[SelectedIndex]}]")
+            .def("set_on_animation_frame", &O3DVisualizer::SetOnAnimationFrame,
+                 "set_on_animation(callback): Sets a callback that will be "
+                 "called every frame of the animation. The callback will be "
+                 "called as callback(o3dvis, current_time).")
+            .def("set_on_animation_tick", &O3DVisualizer::SetOnAnimationTick,
+                 "set_on_animation(callback): Sets a callback that will be "
+                 "called every frame of the animation. The callback will be "
+                 "called as callback(o3dvis, time_since_last_tick, "
+                 "total_elapsed_since_animation_started). Note that this "
+                 "is a low-level callback. If you need to change the current "
+                 "timestamp being shown you will need to update the "
+                 "o3dvis.current_time property in the callback. The callback "
+                 "must return either O3DVisualizer.TickResult.IGNORE if no "
+                 "redraw is required or O3DVisualizer.TickResult.REDRAW "
+                 "if a redraw is required.")
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
+            .def("start_rpc_interface", &O3DVisualizer::StartRPCInterface,
+                 "address"_a, "timeout"_a,
+                 "Starts the RPC interface.\n"
+                 "address: str with the address to listen on.\n"
+                 "timeout: int timeout in milliseconds for sending the reply.")
+            .def("stop_rpc_interface", &O3DVisualizer::StopRPCInterface,
+                 "Stops the RPC interface.")
+            .def("set_background", &O3DVisualizer::SetBackground,
+                 "set_background(color, image=None): Sets the background color "
+                 "and, optionally, the background image. Passing None for the "
+                 "background image will clear any image already there.")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {
@@ -201,13 +228,6 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
-            .def_property(
-                    "background_color",
-                    [](const O3DVisualizer& dv) {
-                        return dv.GetUIState().bg_color;
-                    },
-                    &O3DVisualizer::SetBackgroundColor,
-                    "Gets/sets the background color")
             .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {
@@ -253,11 +273,20 @@ void pybind_o3dvisualizer(py::module& m) {
                           &O3DVisualizer::GetAnimationTimeStep,
                           &O3DVisualizer::SetAnimationTimeStep,
                           "Gets/sets the time step for animations. Default is "
-                          "1.0")
+                          "1.0 sec")
             .def_property("animation_frame_delay",
                           &O3DVisualizer::GetAnimationFrameDelay,
                           &O3DVisualizer::SetAnimationFrameDelay,
                           "Gets/sets the length of time a frame is visible.")
+            .def_property("animation_duration",
+                          &O3DVisualizer::GetAnimationDuration,
+                          &O3DVisualizer::SetAnimationDuration,
+                          "Gets/sets the duration (in seconds) of the "
+                          "animation. This is automatically computed to be the "
+                          "difference between the minimum and maximum time "
+                          "values, but this is useful if no time values have "
+                          "been specified (that is, all objects are at the "
+                          "default t=0)")
             .def_property("is_animating", &O3DVisualizer::GetIsAnimating,
                           &O3DVisualizer::SetAnimating,
                           "Gets/sets the status of the animation. Changing "

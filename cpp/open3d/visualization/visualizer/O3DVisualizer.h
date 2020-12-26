@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include <memory>
-#include <set>
-#include <string>
-
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
@@ -38,6 +34,7 @@ namespace open3d {
 
 namespace geometry {
 class Geometry3D;
+class Image;
 }  // namespace geometry
 
 namespace t {
@@ -58,7 +55,7 @@ class O3DVisualizer : public gui::Window {
     using Super = gui::Window;
 
 public:
-    enum class Shader { STANDARD, NORMALS, DEPTH };
+    enum class Shader { STANDARD, UNLIT, NORMALS, DEPTH };
 
     struct DrawObject {
         std::string name;
@@ -83,7 +80,7 @@ public:
 
         Eigen::Vector4f bg_color = {1.0f, 1.0f, 1.0f, 1.0f};
         int point_size = 3;
-        int line_width = 1;
+        int line_width = 2;
 
         bool use_ibl = false;
         bool use_sun = true;
@@ -104,7 +101,8 @@ public:
     void AddAction(const std::string& name,
                    std::function<void(O3DVisualizer&)> callback);
 
-    void SetBackgroundColor(const Eigen::Vector4f& bg_color);
+    void SetBackground(const Eigen::Vector4f& bg_color,
+                       std::shared_ptr<geometry::Image> bg_image = nullptr);
 
     void SetShader(Shader shader);
 
@@ -149,16 +147,30 @@ public:
     double GetAnimationTimeStep() const;
     void SetAnimationTimeStep(double time_step);
 
+    double GetAnimationDuration() const;
+    void SetAnimationDuration(double sec);
+
     double GetCurrentTime() const;
     void SetCurrentTime(double t);
 
     bool GetIsAnimating() const;
     void SetAnimating(bool is_animating);
 
+    void SetOnAnimationFrame(std::function<void(O3DVisualizer&, double)> cb);
+
+    enum class TickResult { NO_CHANGE, REDRAW };
+    void SetOnAnimationTick(
+            std::function<TickResult(O3DVisualizer&, double, double)> cb);
+
     void ExportCurrentImage(const std::string& path);
 
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;
+
+    /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
+    void StartRPCInterface(const std::string& address, int timeout);
+
+    void StopRPCInterface();
 
 protected:
     void Layout(const gui::Theme& theme);

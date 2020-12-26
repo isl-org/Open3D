@@ -690,6 +690,15 @@ void Window::CloseDialog() {
     impl_->active_dialog_.reset();
 
     ForceRedrawSceneWidget();
+
+    // Closing a dialog does not change the layout of widgets so the following
+    // is not necessary. However, on Apple, ForceRedrawSceneWidget isn't
+    // sufficent to force a SceneWidget to redraw and therefore flickering of
+    // the now closed dialog may occur. SetNeedsLayout ensures that
+    // SceneWidget::Layout gets called which will guarantee proper redraw of the
+    // SceneWidget.
+    SetNeedsLayout();
+
     // The dialog might not be closing from within a draw call, such as when
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will

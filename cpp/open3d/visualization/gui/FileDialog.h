@@ -30,6 +30,8 @@
 
 #include "open3d/visualization/gui/Dialog.h"
 
+#define GUI_USE_NATIVE_FILE_DIALOG 1
+
 namespace open3d {
 namespace visualization {
 namespace gui {

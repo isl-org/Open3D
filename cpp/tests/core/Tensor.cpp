@@ -1042,6 +1042,25 @@ TEST_P(TensorPermuteDevices, T) {
     EXPECT_THROW(t_3d.T(), std::runtime_error);
 }
 
+TEST_P(TensorPermuteDevices, Det) {
+    core::Device device = GetParam();
+
+    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
+    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
+    double t_t = t.Det();
+    EXPECT_DOUBLE_EQ(t_t, -40.0);
+
+    // Current implementation does not support any shape other than {3,3}.
+    std::vector<float> vals_4x4{-5, 0, -1, 1, 2, -1, -3, 4,
+                                1,  1, 1,  1, 1, 2,  2,  2};
+    core::Tensor t_4x4(vals_4x4, {4, 4}, core::Dtype::Float32, device);
+    EXPECT_ANY_THROW(t_4x4.Det());
+
+    std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
+    core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
+    EXPECT_ANY_THROW(t_4x3.Det());
+}
+
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
     core::Device device = GetParam();
     core::Tensor t({2, 3}, core::Dtype::Float32, device);

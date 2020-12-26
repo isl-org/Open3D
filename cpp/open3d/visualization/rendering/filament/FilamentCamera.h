@@ -58,6 +58,12 @@ public:
                        double near,
                        double far) override;
 
+    void SetProjection(const Eigen::Matrix3d& intrinsics,
+                       double near,
+                       double far,
+                       double width,
+                       double height) override;
+
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up) override;
@@ -82,6 +88,8 @@ public:
     Transform GetViewMatrix() const override;
     Transform GetProjectionMatrix() const override;
     const ProjectionInfo& GetProjection() const override;
+
+    Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const override;
 
     void CopyFrom(const Camera* camera) override;
 
