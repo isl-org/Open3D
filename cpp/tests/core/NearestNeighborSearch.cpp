@@ -181,7 +181,7 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::NearestNeighborSearch nns(ref);
-    double radis = 0.1;
+    double radius = 0.1;
     int max_knn = 1;
     nns.HybridIndex(radius);
 
