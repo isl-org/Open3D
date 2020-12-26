@@ -37,13 +37,19 @@ namespace core {
 
 class TensorKey::Impl {
 public:
+    Impl(TensorKeyMode mode) : mode_(mode) {}
+    TensorKeyMode GetMode() const { return mode_; }
     virtual ~Impl() {}
     virtual std::string ToString() const = 0;
+
+private:
+    TensorKeyMode mode_;
 };
 
 class TensorKey::IndexImpl : public TensorKey::Impl {
 public:
-    IndexImpl(int64_t index) : index_(index) {}
+    IndexImpl(int64_t index)
+        : TensorKey::Impl(TensorKeyMode::Index), index_(index) {}
     int64_t GetIndex() const { return index_; }
     std::string ToString() const override {
         std::stringstream ss;
@@ -60,7 +66,10 @@ public:
     SliceImpl(utility::optional<int64_t> start,
               utility::optional<int64_t> stop,
               utility::optional<int64_t> step)
-        : start_(start), stop_(stop), step_(step) {}
+        : TensorKey::Impl(TensorKeyMode::Slice),
+          start_(start),
+          stop_(stop),
+          step_(step) {}
     std::shared_ptr<SliceImpl> InstantiateDimSize(int64_t dim_size) const {
         return std::make_shared<SliceImpl>(
                 start_.has_value() ? start_.value() : 0,
@@ -120,7 +129,9 @@ private:
 
 class TensorKey::IndexTensorImpl : public TensorKey::Impl {
 public:
-    IndexTensorImpl(const Tensor& index_tensor) : index_tensor_(index_tensor) {}
+    IndexTensorImpl(const Tensor& index_tensor)
+        : TensorKey::Impl(TensorKeyMode::IndexTensor),
+          index_tensor_(index_tensor) {}
     Tensor GetIndexTensor() const { return index_tensor_; }
     std::string ToString() const override {
         std::stringstream ss;
@@ -134,17 +145,7 @@ private:
 
 TensorKey::TensorKey(const std::shared_ptr<Impl>& impl) : impl_(impl) {}
 
-TensorKey::TensorKeyMode TensorKey::GetMode() const {
-    if (std::dynamic_pointer_cast<IndexImpl>(impl_)) {
-        return TensorKeyMode::Index;
-    } else if (std::dynamic_pointer_cast<SliceImpl>(impl_)) {
-        return TensorKeyMode::Slice;
-    } else if (std::dynamic_pointer_cast<IndexTensorImpl>(impl_)) {
-        return TensorKeyMode::IndexTensor;
-    } else {
-        utility::LogError("GetMode() failed: unsupported mode.");
-    }
-}
+TensorKey::TensorKeyMode TensorKey::GetMode() const { return impl_->GetMode(); }
 
 std::string TensorKey::ToString() const { return impl_->ToString(); }
 
