@@ -163,7 +163,6 @@ TensorKey TensorKey::IndexTensor(const Tensor& index_tensor) {
     return TensorKey(std::make_shared<IndexTensorImpl>(index_tensor));
 }
 
-/// For TensorKeyMode::Index.
 int64_t TensorKey::GetIndex() const {
     if (auto index_impl = std::dynamic_pointer_cast<IndexImpl>(impl_)) {
         return index_impl->GetIndex();
@@ -172,7 +171,6 @@ int64_t TensorKey::GetIndex() const {
     }
 }
 
-/// For TensorKeyMode::Slice.
 int64_t TensorKey::GetStart() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStart();
@@ -203,7 +201,6 @@ TensorKey TensorKey::InstantiateDimSize(int64_t dim_size) const {
     }
 }
 
-/// For TensorKeyMode::IndexTensor.
 Tensor TensorKey::GetIndexTensor() const {
     if (auto index_tensor_impl =
                 std::dynamic_pointer_cast<IndexTensorImpl>(impl_)) {

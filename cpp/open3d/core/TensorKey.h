@@ -42,39 +42,43 @@ constexpr utility::nullopt_t None{utility::nullopt_t::init()};
 /// indexing on a Tensor.
 ///
 /// See https://numpy.org/doc/stable/reference/arrays.indexing.html for details.
-///
-/// Example:
-/// (1) index (single index per dimension)
-/// t[0]   : t.GetItem({TensorKey::Index(0)})
-/// t[2]   : t.GetItem({TensorKey::Index(2)})
-/// t[2, 3]: t.GetItem({TensorKey::Index(2), TensorKey::Index(3)})
-///
-/// (2) slice
-/// t[0:10:2]: t.GetItem({TensorKey::Slice(0   , 10  , 2   )})
-/// t[:-1]   : t.Getitem({TensorKey::Slice(None, None, -1  )})
-/// t[3:]    : t.GetItem({TensorKey::Slice(3   , None, None)})
-///
-/// (3) tensor-index (advanced indexing with int64_t or boolean tensor)
-/// t[[1, 2], [3:]]: advanced indexing on dim-0, slicing on dim-1.
-/// t.GetItem({
-///     TensorKey::IndexTensor(Tensor::Init<int64_t>({1, 2}, device),
-///     TensorKey::Slice(3, None, None),
-/// });
 class TensorKey {
 public:
-    enum class TensorKeyMode { Index, Slice, IndexTensor };
-    ~TensorKey() {}
-
     /// Instantiates a TensorKey with single index mode.
+    ///
+    /// t[0]   : t.GetItem({TensorKey::Index(0)})
+    /// t[2]   : t.GetItem({TensorKey::Index(2)})
+    /// t[2, 3]: t.GetItem({TensorKey::Index(2), TensorKey::Index(3)})
+    ///
+    /// \param index: Index to the tensor.
     static TensorKey Index(int64_t index);
 
     /// Instantiates a TensorKey with slice mode.
+    ///
+    /// t[0:10:2]: t.GetItem({TensorKey::Slice(0    , 10  , 2   )})
+    /// t[:-1]   : t.Getitem({TensorKey::Slice(None , None, -1  )})
+    /// t[3:]    : t.GetItem({TensorKey::Slice(3    , None, None)})
+    ///
+    /// \param start: Start index. None means starting from the 0-th element.
+    /// \param stop: Stop index. None means stopping at the last element.
+    /// \param step: Step size. None means step size 1.
     static TensorKey Slice(utility::optional<int64_t> start,
                            utility::optional<int64_t> stop,
                            utility::optional<int64_t> step);
 
     /// Instantiates a TensorKey with tensor-index (advanced indexing) mode.
+    ///
+    /// t[[1, 2], [3:]]: advanced indexing on dim-0, slicing on dim-1.
+    /// t.GetItem({
+    ///     TensorKey::IndexTensor(Tensor::Init<int64_t>({1, 2}, device),
+    ///     TensorKey::Slice(3, None, None),
+    /// });
+    ///
+    /// \param index_tensor: Indexing tensor of dtype int64_t or bool.
     static TensorKey IndexTensor(const Tensor& index_tensor);
+
+    enum class TensorKeyMode { Index, Slice, IndexTensor };
+    ~TensorKey() {}
 
     /// Returns TensorKey mode.
     TensorKeyMode GetMode() const;
