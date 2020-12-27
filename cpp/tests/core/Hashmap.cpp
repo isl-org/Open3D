@@ -33,6 +33,7 @@
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/utility/Optional.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
