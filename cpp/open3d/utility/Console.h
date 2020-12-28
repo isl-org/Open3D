@@ -194,7 +194,7 @@ inline void _LogError [[noreturn]] (const char *fname,
 }
 
 // Compiler-specific function macro.
-// Ref: https://tinyurl.com/y8pbw8s8
+// Ref: https://stackoverflow.com/a/4384825
 #ifdef _WIN32
 #define __FN__ __FUNCSIG__
 #else
@@ -202,11 +202,11 @@ inline void _LogError [[noreturn]] (const char *fname,
 #endif
 
 // Mimic 'macro in namespace' by concatenating utility:: and _LogError.
-// Ref: https://tinyurl.com/yc2cmt83
+// Ref: https://stackoverflow.com/a/11791202
 // We avoid using (format, ...) since in this case __VA_ARGS__ can be
 // empty, and the behavior of pruning trailing comma with ##__VA_ARGS__ is not
 // officially standard.
-// Ref: https://tinyurl.com/ybh8wezk
+// Ref: https://stackoverflow.com/a/28074198
 // __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
 // will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
