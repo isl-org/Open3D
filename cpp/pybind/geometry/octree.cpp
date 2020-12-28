@@ -142,7 +142,7 @@ void pybind_octree(py::module &m) {
 
     // OctreeInternalPointNode
     py::class_<OctreeInternalPointNode, PyOctreeNode<OctreeInternalPointNode>,
-               std::shared_ptr<OctreeInternalPointNode>, OctreeNode>
+               std::shared_ptr<OctreeInternalPointNode>, OctreeInternalNode>
             octree_internal_point_node(m, "OctreeInternalPointNode",
                                  "OctreeInternalPointNode class is an "
                                  "OctreeInternalNode with a list of point "
@@ -303,6 +303,12 @@ void pybind_octree(py::module &m) {
             .def("insert_point", &Octree::InsertPoint, "point"_a, "f_init"_a,
                  "f_update"_a, "fi_init"_a = nullptr, "fi_update"_a = nullptr,
                  "Insert a point to the octree.")
+            .def("traverse", py::overload_cast<
+                        const std::function<void(const std::shared_ptr<OctreeNode>&,
+                            const std::shared_ptr<OctreeNodeInfo>&)> &
+                    >(&Octree::Traverse, py::const_), "f"_a,
+                 "DFS traversal of the octree from the root, with a "
+                 "callback function f being called for each node.")
             .def("locate_leaf_node", &Octree::LocateLeafNode, "point"_a,
                  "Returns leaf OctreeNode and OctreeNodeInfo where the query"
                  "point should reside.")
