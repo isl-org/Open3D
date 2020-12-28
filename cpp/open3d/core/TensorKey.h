@@ -27,153 +27,104 @@
 #pragma once
 
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
 
-class Tensor;  // Avoids circular include
+// Avoids circular include.
+class Tensor;
 
-// TODO: refactor this to use utility::optional
-class NoneType {};
+// Same as utility::nullopt. Provides a similar Python slicing API.
+constexpr utility::nullopt_t None{utility::nullopt_t::init()};
 
-extern NoneType None;
-
-/// A class to represent one of:
-/// 1) tensor index
-/// e.g. t[0], t[2]
-/// 2) tensor slice
-/// e.g. t[0:10:2], t[:-1], t[3:]
+/// \brief TensorKey is used to represent single index, slice or advanced
+/// indexing on a Tensor.
 ///
-/// Example usage:
-/// ```cpp
-/// Tensor x({2, 3, 4}, Dtype::Float32);
-/// // Equivalent to y = x[1, :3, 0:-1:2] in Python
-/// Tensor y = t.GetItem({TensorKey::Index(1),
-///                       TensorKey::Slice(None, 3, None),
-///                       TensorKey::Slice(0, -1, 2)});
-/// ```
+/// See https://numpy.org/doc/stable/reference/arrays.indexing.html for details.
 class TensorKey {
 public:
-    enum class TensorKeyMode { Index, Slice, IndexTensor };
-
-    /// Construct an TensorKeyMode::Index type TensorKey.
-    /// E.g. b = a[3]
+    /// Instantiates a TensorKey with single index mode.
+    ///
+    /// t[0]   : t.GetItem({TensorKey::Index(0)})
+    /// t[2]   : t.GetItem({TensorKey::Index(2)})
+    /// t[2, 3]: t.GetItem({TensorKey::Index(2), TensorKey::Index(3)})
+    ///
+    /// \param index: Index to the tensor.
     static TensorKey Index(int64_t index);
 
-    /// Construct an TensorKeyMode::Slice type TensorKey.
-    /// E.g. b = a[0:100:2]
-    static TensorKey Slice(int64_t start, int64_t stop, int64_t step);
-    static TensorKey Slice(int64_t start, int64_t stop, NoneType step);
-    static TensorKey Slice(int64_t start, NoneType stop, int64_t step);
-    static TensorKey Slice(int64_t start, NoneType stop, NoneType step);
-    static TensorKey Slice(NoneType start, int64_t stop, int64_t step);
-    static TensorKey Slice(NoneType start, int64_t stop, NoneType step);
-    static TensorKey Slice(NoneType start, NoneType stop, int64_t step);
-    static TensorKey Slice(NoneType start, NoneType stop, NoneType step);
+    /// Instantiates a TensorKey with slice mode.
+    ///
+    /// t[0:10:2]: t.GetItem({TensorKey::Slice(0    , 10  , 2   )})
+    /// t[:-1]   : t.Getitem({TensorKey::Slice(None , None, -1  )})
+    /// t[3:]    : t.GetItem({TensorKey::Slice(3    , None, None)})
+    ///
+    /// \param start: Start index. None means starting from the 0-th element.
+    /// \param stop: Stop index. None means stopping at the last element.
+    /// \param step: Step size. None means step size 1.
+    static TensorKey Slice(utility::optional<int64_t> start,
+                           utility::optional<int64_t> stop,
+                           utility::optional<int64_t> step);
 
-    /// Construct an TensorKeyMode::IndexTensor type TensorKey (advanced
-    /// indexing).
+    /// Instantiates a TensorKey with tensor-index (advanced indexing) mode.
+    ///
+    /// t[[1, 2], [3:]]: advanced indexing on dim-0, slicing on dim-1.
+    /// t.GetItem({
+    ///     TensorKey::IndexTensor(Tensor::Init<int64_t>({1, 2}, device),
+    ///     TensorKey::Slice(3, None, None),
+    /// });
+    ///
+    /// \param index_tensor: Indexing tensor of dtype int64_t or bool.
     static TensorKey IndexTensor(const Tensor& index_tensor);
 
-    /// Getters will check the TensorKeyMode
-    TensorKeyMode GetMode() const { return mode_; }
+    enum class TensorKeyMode { Index, Slice, IndexTensor };
+    ~TensorKey() {}
 
-    int64_t GetIndex() const {
-        AssertMode(TensorKeyMode::Index);
-        return index_;
-    }
+    /// Returns TensorKey mode.
+    TensorKeyMode GetMode() const;
 
-    int64_t GetStart() const {
-        AssertMode(TensorKeyMode::Slice);
-        return start_;
-    }
+    /// Convert TensorKey to a string representation.
+    std::string ToString() const;
 
-    int64_t GetStop() const {
-        AssertMode(TensorKeyMode::Slice);
-        return stop_;
-    }
+public:
+    /// Get (single) index.
+    /// For TensorKeyMode::Index only.
+    int64_t GetIndex() const;
 
-    int64_t GetStep() const {
-        AssertMode(TensorKeyMode::Slice);
-        return step_;
-    }
+    /// Get start index. Throws exception if start is None.
+    /// For TensorKeyMode::Slice only.
+    int64_t GetStart() const;
 
-    bool GetStartIsNone() const {
-        AssertMode(TensorKeyMode::Slice);
-        return start_is_none_;
-    }
+    /// Get stop index. Throws exception if start is None.
+    /// For TensorKeyMode::Slice only.
+    int64_t GetStop() const;
 
-    bool GetStopIsNone() const {
-        AssertMode(TensorKeyMode::Slice);
-        return stop_is_none_;
-    }
+    /// Get step index. Throws exception if start is None.
+    /// For TensorKeyMode::Slice only.
+    int64_t GetStep() const;
 
-    bool GetStepIsNone() const {
-        AssertMode(TensorKeyMode::Slice);
-        return step_is_none_;
-    }
-
-    std::shared_ptr<Tensor> GetIndexTensor() const;
-
-    /// When dim_size is know, convert the slice object such that
-    /// start_is_none_ == stop_is_none_ == step_is_none_ == false
+    /// When dim_size is know, conver the None values in start, stop, step with
+    /// to concrete values and returns a new TensorKey.
     /// E.g. if t.shape == (5,), t[:4]:
     ///      before compute: Slice(None,    4, None)
     ///      after compute : Slice(   0,    4,    1)
     /// E.g. if t.shape == (5,), t[1:]:
     ///      before compute: Slice(   1, None, None)
     ///      after compute : Slice(   1,    5,    1)
-    TensorKey UpdateWithDimSize(int64_t dim_size) const;
+    /// For TensorKeyMode::Slice only.
+    TensorKey InstantiateDimSize(int64_t dim_size) const;
 
-    /// The fully specifiec slice factory shall not be called directly.
-    static TensorKey Slice(int64_t start,
-                           int64_t stop,
-                           int64_t step,
-                           bool start_is_none,
-                           bool stop_is_none,
-                           bool step_is_none);
+    /// Get advanced indexing tensor.
+    /// For TensorKeyMode::IndexTensor only.
+    Tensor GetIndexTensor() const;
 
-    /// String representation of the TensorKey.
-    std::string ToString() const;
-
-protected:
-    /// The fully specified constructor shall not be called directly. Use the
-    /// factory functions instead.
-    TensorKey(TensorKeyMode mode,
-              int64_t index,
-              int64_t start,
-              int64_t stop,
-              int64_t step,
-              bool start_is_none,
-              bool stop_is_none,
-              bool step_is_none,
-              const Tensor& index_tensor);
-
-    void AssertMode(TensorKeyMode mode) const {
-        if (mode != mode_) {
-            utility::LogError("Wrong TensorKeyMode.");
-        }
-    }
-
-    /// Depending on the mode, some properties may or may not be used.
-    TensorKeyMode mode_;
-
-public:
-    /// Properties for TensorKeyMode::Index.
-    int64_t index_ = 0;
-
-    /// Properties for TensorKeyMode::Slice.
-    int64_t start_ = 0;
-    int64_t stop_ = 0;
-    int64_t step_ = 0;
-    bool start_is_none_ = false;
-    bool stop_is_none_ = false;
-    bool step_is_none_ = false;
-
-    /// Properties for TensorKeyMode::IndexTensor.
-    /// To avoid circular include, the pointer type is used. The index_tensor is
-    /// shallow-copied when the TensorKey constructor is called.
-    std::shared_ptr<Tensor> index_tensor_;
+private:
+    class Impl;
+    class IndexImpl;
+    class SliceImpl;
+    class IndexTensorImpl;
+    std::shared_ptr<Impl> impl_;
+    TensorKey(const std::shared_ptr<Impl>& impl);
 };
 
 }  // namespace core

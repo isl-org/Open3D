@@ -213,11 +213,10 @@ Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
-        TensorKey tk_new = tk.UpdateWithDimSize(shape_[0]);
+        TensorKey tk_new = tk.InstantiateDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
-        Tensor index_tensor(*tk.GetIndexTensor());
-        return IndexGet({index_tensor});
+        return IndexGet({tk.GetIndexTensor()});
     } else {
         utility::LogError("Internal error: wrong TensorKeyMode.");
     }
@@ -271,7 +270,7 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
                 index_tensors.push_back(Tensor(std::vector<int64_t>{},
                                                Dtype::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
-                index_tensors.push_back(Tensor(*tk.GetIndexTensor()));
+                index_tensors.push_back(tk.GetIndexTensor());
             } else {
                 utility::LogError("Internal error: wrong TensorKeyMode.");
             }
@@ -287,7 +286,7 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
         if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
             t = t.IndexExtract(slice_dim, tk.GetIndex());
         } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
-            TensorKey tk_new = tk.UpdateWithDimSize(t.shape_[slice_dim]);
+            TensorKey tk_new = tk.InstantiateDimSize(t.shape_[slice_dim]);
             t = t.Slice(slice_dim, tk_new.GetStart(), tk_new.GetStop(),
                         tk_new.GetStep());
             slice_dim++;
@@ -305,8 +304,7 @@ Tensor Tensor::SetItem(const Tensor& value) {
 
 Tensor Tensor::SetItem(const TensorKey& tk, const Tensor& value) {
     if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
-        Tensor index_tensor(*tk.GetIndexTensor());
-        IndexSet({index_tensor}, value);
+        IndexSet({tk.GetIndexTensor()}, value);
     } else {
         this->GetItem(tk) = value;
     }
@@ -343,7 +341,7 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
                 index_tensors.push_back(Tensor(std::vector<int64_t>{},
                                                Dtype::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
-                index_tensors.push_back(Tensor(*tk.GetIndexTensor()));
+                index_tensors.push_back(tk.GetIndexTensor());
             } else {
                 utility::LogError("Internal error: wrong TensorKeyMode.");
             }
