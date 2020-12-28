@@ -346,7 +346,7 @@ Octree::Octree(const Octree& src_octree)
             [&map_src_to_dst_node](
                     const std::shared_ptr<OctreeNode>& src_node,
                     const std::shared_ptr<OctreeNodeInfo>& src_node_info)
-            -> void {
+            -> bool {
         if (auto src_internal_node =
                     std::dynamic_pointer_cast<OctreeInternalNode>(src_node)) {
             auto dst_internal_node = std::make_shared<OctreeInternalNode>();
@@ -358,6 +358,7 @@ Octree::Octree(const Octree& src_octree)
         } else {
             utility::LogError("Internal error: unknown node type");
         }
+        return false;
     };
     src_octree.Traverse(f_build_map);
 
@@ -366,7 +367,7 @@ Octree::Octree(const Octree& src_octree)
             [&map_src_to_dst_node](
                     const std::shared_ptr<OctreeNode>& src_node,
                     const std::shared_ptr<OctreeNodeInfo>& src_node_info)
-            -> void {
+            -> bool {
         if (auto src_internal_node =
                     std::dynamic_pointer_cast<OctreeInternalNode>(src_node)) {
             auto dst_internal_node =
@@ -381,6 +382,7 @@ Octree::Octree(const Octree& src_octree)
                 }
             }
         }
+        return false;
     };
     src_octree.Traverse(f_clone_edges);
 
@@ -405,10 +407,11 @@ bool Octree::operator==(const Octree& that) const {
     auto f_assign_node_id =
             [&map_node_to_id, &map_id_to_node, &next_id](
                     const std::shared_ptr<OctreeNode>& node,
-                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> void {
+                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> bool {
         map_node_to_id[node] = next_id;
         map_id_to_node[next_id] = node;
         next_id++;
+        return false;
     };
 
     map_node_to_id.clear();
@@ -669,7 +672,7 @@ bool Octree::IsPointInBound(const Eigen::Vector3d& point,
 }
 
 void Octree::Traverse(
-        const std::function<void(const std::shared_ptr<OctreeNode>&,
+        const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f) {
     // root_node_'s child index is 0, though it isn't a child node
     TraverseRecurse(root_node_,
@@ -677,7 +680,7 @@ void Octree::Traverse(
 }
 
 void Octree::Traverse(
-        const std::function<void(const std::shared_ptr<OctreeNode>&,
+        const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f)
         const {
     // root_node_'s child index is 0, though it isn't a child node
@@ -688,13 +691,15 @@ void Octree::Traverse(
 void Octree::TraverseRecurse(
         const std::shared_ptr<OctreeNode>& node,
         const std::shared_ptr<OctreeNodeInfo>& node_info,
-        const std::function<void(const std::shared_ptr<OctreeNode>&,
+        const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f) {
     if (node == nullptr) {
         return;
     } else if (auto internal_node =
                        std::dynamic_pointer_cast<OctreeInternalNode>(node)) {
-        f(internal_node, node_info);
+        // Allow caller to avoid traversing further down this tree path
+        if (f(internal_node, node_info)) return;
+
         double child_size = node_info->size_ / 2.0;
 
         for (size_t child_index = 0; child_index < 8; ++child_index) {
@@ -723,23 +728,23 @@ void Octree::TraverseRecurse(
 
 std::pair<std::shared_ptr<OctreeLeafNode>, std::shared_ptr<OctreeNodeInfo>>
 Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
-    // TODO: add early stoping to callback function when the target has been
-    //       found, i.e. add return value to callback function.
-    // TODO: consider adding node's depth as parameter to the callback
-    // function.
     std::shared_ptr<OctreeLeafNode> target_leaf_node = nullptr;
     std::shared_ptr<OctreeNodeInfo> target_leaf_node_info = nullptr;
     auto f_locate_leaf_node =
             [&target_leaf_node, &target_leaf_node_info, &point](
                     const std::shared_ptr<OctreeNode>& node,
-                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> void {
+                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> bool {
+        bool skip_children = false;
         if (IsPointInBound(point, node_info->origin_, node_info->size_)) {
             if (auto leaf_node =
                         std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
                 target_leaf_node = leaf_node;
                 target_leaf_node_info = node_info;
             }
+        } else {
+            skip_children = true;
         }
+        return skip_children;
     };
     Traverse(f_locate_leaf_node);
     return std::make_pair(target_leaf_node, target_leaf_node_info);

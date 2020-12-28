@@ -304,7 +304,7 @@ void pybind_octree(py::module &m) {
                  "f_update"_a, "fi_init"_a = nullptr, "fi_update"_a = nullptr,
                  "Insert a point to the octree.")
             .def("traverse", py::overload_cast<
-                        const std::function<void(const std::shared_ptr<OctreeNode>&,
+                        const std::function<bool(const std::shared_ptr<OctreeNode>&,
                             const std::shared_ptr<OctreeNodeInfo>&)> &
                     >(&Octree::Traverse, py::const_), "f"_a,
                  "DFS traversal of the octree from the root, with a "
