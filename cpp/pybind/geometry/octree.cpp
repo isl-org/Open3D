@@ -181,6 +181,45 @@ void pybind_octree(py::module &m) {
     py::detail::bind_copy_functions<OctreeColorLeafNode>(
             octree_color_leaf_node);
 
+    // OctreePointColorLeafNode
+    py::class_<OctreePointColorLeafNode, PyOctreeLeafNode<OctreePointColorLeafNode>,
+               std::shared_ptr<OctreePointColorLeafNode>, OctreeLeafNode>
+            octree_point_color_leaf_node(m, "OctreePointColorLeafNode",
+                                   "OctreePointColorLeafNode class is an "
+                                   "OctreeLeafNode containing color.");
+    octree_point_color_leaf_node
+            .def("__repr__",
+                 [](const OctreePointColorLeafNode &color_leaf_node) {
+                     std::ostringstream repr;
+                     repr << "OctreePointColorLeafNode with color ["
+                          << color_leaf_node.color_(0) << ", "
+                          << color_leaf_node.color_(1) << ", "
+                          << color_leaf_node.color_(2) << "] "
+                          << "containing " << color_leaf_node.indices_.size()
+                          << " points.";
+                     return repr.str();
+                 })
+            .def_readwrite("color", &OctreePointColorLeafNode::color_,
+                           "(3, 1) float numpy array: Color of the node.")
+            .def_readwrite("indices", &OctreePointColorLeafNode::indices_,
+                           "List of point cloud point indices "
+                           "contained in this leaf node.")
+            .def_static("get_init_function",
+                        &OctreePointColorLeafNode::GetInitFunction,
+                        "Get lambda function for initializing OctreeLeafNode. "
+                        "When the init function is called, an empty "
+                        "OctreePointColorLeafNode is created.")
+            .def_static("get_update_function",
+                        &OctreePointColorLeafNode::GetUpdateFunction, "idx"_a, "color"_a,
+                        "Get lambda function for updating OctreeLeafNode. When "
+                        "called, the update function updates the corresponding "
+                        "node with the new point index and the input color.");
+
+    py::detail::bind_default_constructor<OctreePointColorLeafNode>(
+            octree_point_color_leaf_node);
+    py::detail::bind_copy_functions<OctreePointColorLeafNode>(
+            octree_point_color_leaf_node);
+
     // Octree
     py::class_<Octree, PyGeometry3D<Octree>, std::shared_ptr<Octree>,
                Geometry3D>
