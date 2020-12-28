@@ -193,17 +193,25 @@ inline void _LogError [[noreturn]] (const char *fname,
                        fmt::make_format_args(args...));
 }
 
+// Compiler-specific function macro.
+// Ref: https://tinyurl.com/y8pbw8s8
+#ifdef _WIN32
+#define __FN__ __FUNCSIG__
+#else
+#define __FN__ __PRETTY_FUNCTION__
+#endif
+
 // Mimic 'macro in namespace' by concatenating utility:: and _LogError.
 // Ref: https://tinyurl.com/yc2cmt83
-// We also avoid using (format, __VA_ARGS__) since __VA_ARGS__ can be empty, and
-// the behavior of pruning trailing comma with ##__VA_ARGS__ is not officially
-// standard.
+// We avoid using (format, ...) since in this case __VA_ARGS__ can be
+// empty, and the behavior of pruning trailing comma with ##__VA_ARGS__ is not
+// officially standard.
 // Ref: https://tinyurl.com/ybh8wezk
 // __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
 // will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
-#define LogError(args...) \
-    _LogError(__FILE__, __LINE__, (const char *)__PRETTY_FUNCTION__, args)
+#define LogError(...) \
+    _LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {
