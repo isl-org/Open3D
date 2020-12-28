@@ -89,6 +89,18 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
     return child_node_info;
 }
 
+std::function<std::shared_ptr<OctreeInternalNode>()>
+OctreeInternalNode::GetInitFunction() {
+    return []() -> std::shared_ptr<geometry::OctreeInternalNode> {
+        return std::make_shared<geometry::OctreeInternalNode>();
+    };
+}
+
+std::function<void(std::shared_ptr<OctreeInternalNode>)>
+OctreeInternalNode::GetUpdateFunction() {
+    return [](std::shared_ptr<geometry::OctreeInternalNode> node) -> void {};
+}
+
 bool OctreeInternalNode::ConvertToJsonValue(Json::Value& value) const {
     bool rc = true;
     value["class_name"] = "OctreeInternalNode";
@@ -496,26 +508,42 @@ void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
 
 void Octree::InsertPoint(
         const Eigen::Vector3d& point,
-        const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
-        const std::function<void(std::shared_ptr<OctreeLeafNode>)>& f_update) {
+        const std::function<std::shared_ptr<OctreeLeafNode>()>& fl_init,
+        const std::function<void(std::shared_ptr<OctreeLeafNode>)>& fl_update,
+        const std::function<std::shared_ptr<OctreeInternalNode>()>& fi_init,
+        const std::function<void(std::shared_ptr<OctreeInternalNode>)>& fi_update) {
+
+    // if missing, create basic internal node init and update functions
+    auto _fi_init = fi_init;
+    if (_fi_init == nullptr) {
+        _fi_init = OctreeInternalNode::GetInitFunction();
+    }
+    auto _fi_update = fi_update;
+    if (_fi_update == nullptr) {
+        _fi_update = OctreeInternalNode::GetUpdateFunction();
+    }
+
     if (root_node_ == nullptr) {
         if (max_depth_ == 0) {
-            root_node_ = f_init();
+            root_node_ = fl_init();
         } else {
-            root_node_ = std::make_shared<OctreeInternalNode>();
+            root_node_ = _fi_init();
         }
     }
     auto root_node_info =
             std::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0);
-    InsertPointRecurse(root_node_, root_node_info, point, f_init, f_update);
+
+    InsertPointRecurse(root_node_, root_node_info, point, fl_init, fl_update, _fi_init, _fi_update);
 }
 
 void Octree::InsertPointRecurse(
         const std::shared_ptr<OctreeNode>& node,
         const std::shared_ptr<OctreeNodeInfo>& node_info,
         const Eigen::Vector3d& point,
-        const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
-        const std::function<void(std::shared_ptr<OctreeLeafNode>)>& f_update) {
+        const std::function<std::shared_ptr<OctreeLeafNode>()>& fl_init,
+        const std::function<void(std::shared_ptr<OctreeLeafNode>)>& fl_update,
+        const std::function<std::shared_ptr<OctreeInternalNode>()>& fi_init,
+        const std::function<void(std::shared_ptr<OctreeInternalNode>)>& fi_update) {
     if (!IsPointInBound(point, node_info->origin_, node_info->size_)) {
         return;
     }
@@ -523,7 +551,7 @@ void Octree::InsertPointRecurse(
         return;
     } else if (node_info->depth_ == max_depth_) {
         if (auto leaf_node = std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
-            f_update(leaf_node);
+            fl_update(leaf_node);
         } else {
             utility::LogError(
                     "Internal error: leaf node must be OctreeLeafNode");
@@ -531,6 +559,9 @@ void Octree::InsertPointRecurse(
     } else {
         if (auto internal_node =
                     std::dynamic_pointer_cast<OctreeInternalNode>(node)) {
+            // Update internal node with information about the current point
+            fi_update(internal_node);
+
             // Get child node info
             std::shared_ptr<OctreeNodeInfo> child_node_info =
                     internal_node->GetInsertionNodeInfo(node_info, point);
@@ -539,16 +570,16 @@ void Octree::InsertPointRecurse(
             size_t child_index = child_node_info->child_index_;
             if (internal_node->children_[child_index] == nullptr) {
                 if (node_info->depth_ == max_depth_ - 1) {
-                    internal_node->children_[child_index] = f_init();
+                    internal_node->children_[child_index] = fl_init();
                 } else {
-                    internal_node->children_[child_index] =
-                            std::make_shared<OctreeInternalNode>();
+                    internal_node->children_[child_index] = fi_init();
                 }
             }
 
             // Insert to the child
             InsertPointRecurse(internal_node->children_[child_index],
-                               child_node_info, point, f_init, f_update);
+                               child_node_info, point, fl_init, fl_update,
+                               fi_init, fi_update);
         } else {
             utility::LogError(
                     "Internal error: internal node must be "
