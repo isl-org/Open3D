@@ -194,7 +194,7 @@ inline void _LogError [[noreturn]] (const char *fname,
 // standard.
 // Ref: https://tinyurl.com/ybh8wezk
 // __FUNCTION__ is not reported due to a GCC bug.
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
+// Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
 #define LogError(args...) _LogError(__FILE__, __LINE__, args)
 
 template <typename... Args>
