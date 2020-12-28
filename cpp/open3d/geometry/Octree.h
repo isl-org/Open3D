@@ -162,7 +162,7 @@ public:
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     /// \brief Get lambda function for updating OctreeLeafNode.
     ///
-    /// When called, the update function update the corresponding node with the
+    /// When called, the update function updates the corresponding node with the
     /// input color.
     ///
     /// \param color Color of the node.
@@ -173,6 +173,38 @@ public:
     // TODO: flexible data, with lambda function for handling node
     /// Color of the node.
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
+};
+
+/// \class OctreePointColorLeafNode
+///
+/// \brief OctreePointColorLeafNode class is an OctreeColorLeafNode containing
+/// a list of indices corresponding to the point cloud points contained in
+/// this leaf node.
+class OctreePointColorLeafNode : public OctreeColorLeafNode {
+public:
+    bool operator==(const OctreeLeafNode& other) const override;
+    /// Clone this OctreeLeafNode.
+    std::shared_ptr<OctreeLeafNode> Clone() const override;
+    /// \brief Get lambda function for initializing OctreeLeafNode.
+    ///
+    /// When the init function is called, an empty OctreePointColorLeafNode is
+    /// created.
+    static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+    /// \brief Get lambda function for updating OctreeLeafNode.
+    ///
+    /// When called, the update function adds the point cloud point index to
+    /// the corresponding node index list.
+    ///
+    /// \param idx Point cloud point index associated with node.
+    /// \param color Color of the node.
+    GetUpdateFunction(size_t index, const Eigen::Vector3d& color);
+
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
+
+    /// Associated point indices with this node
+    std::vector<size_t> indices_;
 };
 
 /// \class Octree
