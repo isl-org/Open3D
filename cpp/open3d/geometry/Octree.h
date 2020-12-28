@@ -147,6 +147,36 @@ public:
     std::vector<std::shared_ptr<OctreeNode>> children_;
 };
 
+/// \class OctreeInternalPointNode
+///
+/// \brief OctreeInternalPointNode class is an OctreeInternalNode containing
+/// a list of indices which is the union of all its children's list of indices.
+class OctreeInternalPointNode : public OctreeInternalNode {
+public:
+    /// \brief Default Constructor.
+    ///
+    OctreeInternalPointNode() : OctreeInternalNode() {}
+
+    /// \brief Get lambda function for initializing OctreeInternalPointNode.
+    ///
+    /// When the init function is called, an empty OctreeInternalPointNode is
+    /// created.
+    static std::function<std::shared_ptr<OctreeInternalNode>()> GetInitFunction();
+
+    /// \brief Get lambda function for updating OctreeInternalPointNode.
+    ///
+    /// When called, the update function adds the input point index to the
+    /// corresponding node's list of indices of children points.
+    static std::function<void(std::shared_ptr<OctreeInternalNode>)> GetUpdateFunction(size_t idx);
+
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
+
+public:
+    /// Indices of points associated with any children of this node
+    std::vector<size_t> indices_;
+};
+
 /// \class OctreeLeafNode
 ///
 /// \brief OctreeLeafNode base class.
