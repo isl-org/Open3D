@@ -90,11 +90,14 @@ public:
 
     void VError [[noreturn]] (const char *fname,
                               int linenum,
+                              const char *fn_name,
                               const char *format,
                               fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D ERROR in file {}, line {}] {}", fname,
-                              linenum, err_msg);
+        err_msg = fmt::format(
+                "In function {}:\n"
+                "{}:{} [Open3D Error] {}",
+                fn_name, fname, linenum, err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         throw std::runtime_error(err_msg);
     }
@@ -127,9 +130,10 @@ public:
     template <typename... Args>
     void Error [[noreturn]] (const char *fname,
                              int linenum,
+                             const char *fn_name,
                              const char *format,
                              const Args &... args) const {
-        VError(fname, linenum, format, fmt::make_format_args(args...));
+        VError(fname, linenum, fn_name, format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
@@ -182,9 +186,11 @@ inline VerbosityLevel GetVerbosityLevel() {
 template <typename... Args>
 inline void _LogError [[noreturn]] (const char *fname,
                                     int linenum,
+                                    const char *fn_name,
                                     const char *format,
                                     Args &&... args) {
-    Logger::i().VError(fname, linenum, format, fmt::make_format_args(args...));
+    Logger::i().VError(fname, linenum, fn_name, format,
+                       fmt::make_format_args(args...));
 }
 
 // Mimic 'macro in namespace' by concatenating utility:: and _LogError.
@@ -193,9 +199,11 @@ inline void _LogError [[noreturn]] (const char *fname,
 // the behavior of pruning trailing comma with ##__VA_ARGS__ is not officially
 // standard.
 // Ref: https://tinyurl.com/ybh8wezk
-// __FUNCTION__ is not reported due to a GCC bug.
+// __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
+// will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
-#define LogError(args...) _LogError(__FILE__, __LINE__, args)
+#define LogError(args...) \
+    _LogError(__FILE__, __LINE__, (const char *)__PRETTY_FUNCTION__, args)
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {
