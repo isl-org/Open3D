@@ -119,6 +119,18 @@ TEST_P(TensorPermuteDevices, WithInitList) {
             {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}}, device);
     EXPECT_EQ(t3.ToFlatVector<double>(), vals3);
 
+    // Testing boolean datatype.
+    std::vector<bool> vals4{true, false, false, true};
+    core::Tensor t4 =
+            core::Tensor::Init<bool>({{true, false}, {false, true}}, device);
+    EXPECT_EQ(t4.ToFlatVector<bool>(), vals4);
+
+    // Testing uint8 datatype.
+    std::vector<uint8_t> vals5{0, 0, 0, 0, 255, 255, 255, 255};
+    core::Tensor t5 = core::Tensor::Init<uint8_t>(
+            {{{0, 0}, {0, 0}}, {{255, 255}, {255, 255}}}, device);
+    EXPECT_EQ(t5.ToFlatVector<uint8_t>(), vals5);
+
     // Check tensor element size mismatch.
     EXPECT_THROW(core::Tensor::Init<int>({{1, 2, 3}, {4, 5}}, device),
                  std::runtime_error);

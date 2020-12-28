@@ -219,31 +219,28 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    // Create a 1-D tensor with given list.
-    // For example,
-    // core::Tensor::Init<float>({1,2,3});
+    /// Create a 1-D tensor with given list.
+    /// For example,
+    /// core::Tensor::Init<float>({1,2,3});
     template <typename T>
     static Tensor Init(const std::initializer_list<T> in_list,
                        const Device& device = Device("CPU:0")) {
-        Dtype type_ = Dtype::FromType<T>();
-        SizeVector shape_;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        shape_.push_back(dim0_size);
-
+        Dtype type = Dtype::FromType<T>();
         std::vector<T> ele_list;
         ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
-        return Tensor(ele_list, shape_, type_, device);
+
+        SizeVector shape{static_cast<int64_t>(in_list.size())};
+        return Tensor(ele_list, shape, type, device);
     };
 
-    // Create a 2-D tensor with given list.
-    // For example,
-    // core::Tensor::Init<float>({{1,2,3},{4,5,6}});
+    /// Create a 2-D tensor with given list.
+    /// For example,
+    /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
     template <typename T>
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type_ = Dtype::FromType<T>();
-        SizeVector shape_;
+        Dtype type = Dtype::FromType<T>();
         std::vector<T> ele_list;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
         int64_t dim1_size = -1;
@@ -252,27 +249,25 @@ public:
                 dim1_size = static_cast<int64_t>(ele0.size());
             } else {
                 if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    utility::LogError("Inputs elements are of unequal size.");
+                    utility::LogError("Input rows are of unequal size.");
                 }
             }
             ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
         }
-        shape_.push_back(dim0_size);
-        shape_.push_back(dim1_size);
 
-        return Tensor(ele_list, shape_, type_, device);
+        SizeVector shape{dim0_size, dim1_size};
+        return Tensor(ele_list, shape, type, device);
     };
 
-    // Create a 3-D tensor with given list.
-    // For example,
-    // core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
+    /// Create a 3-D tensor with given list.
+    /// For example,
+    /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
     template <typename T>
     static Tensor Init(
             const std::initializer_list<
                     std::initializer_list<std::initializer_list<T>>> in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type_ = Dtype::FromType<T>();
-        SizeVector shape_;
+        Dtype type = Dtype::FromType<T>();
         std::vector<T> ele_list;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
         int64_t dim1_size = -1;
@@ -283,7 +278,7 @@ public:
                 dim1_size = static_cast<int64_t>(ele1.size());
             } else {
                 if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    utility::LogError("Inputs elements are of unequal size.");
+                    utility::LogError("Input columns are of unequal size.");
                 }
             }
 
@@ -292,8 +287,7 @@ public:
                     dim2_size = static_cast<int64_t>(ele0.size());
                 } else {
                     if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        utility::LogError(
-                                "Inputs elements are of unequal size.");
+                        utility::LogError("Input rows are of unequal size.");
                     }
                 }
 
@@ -301,11 +295,8 @@ public:
             }
         }
 
-        shape_.push_back(dim0_size);
-        shape_.push_back(dim1_size);
-        shape_.push_back(dim2_size);
-
-        return Tensor(ele_list, shape_, type_, device);
+        SizeVector shape{dim0_size, dim1_size, dim2_size};
+        return Tensor(ele_list, shape, type, device);
     };
 
     /// Create a identity matrix of size n x n.
