@@ -193,8 +193,8 @@ inline void _LogError [[noreturn]] (const char *fname,
 // the behavior of pruning trailing comma with ##__VA_ARGS__ is not officially
 // standard.
 // Ref: https://tinyurl.com/ybh8wezk
-// __FUNCTION__ is not a preprocessor macro, and [[noreturn]] will be omitted.
-// Ref: https://tinyurl.com/yc523n74
+// __FUNCTION__ is not reported due to a GCC bug.
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
 #define LogError(args...) _LogError(__FILE__, __LINE__, args)
 
 template <typename... Args>
