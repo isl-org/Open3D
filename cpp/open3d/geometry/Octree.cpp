@@ -48,6 +48,8 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
     if (value != Json::nullValue && class_name != "") {
         if (class_name == "OctreeInternalNode") {
             node = std::make_shared<OctreeInternalNode>();
+        } else if (class_name == "OctreeInternalPointNode") {
+            node = std::make_shared<OctreeInternalPointNode>();
         } else if (class_name == "OctreeColorLeafNode") {
             node = std::make_shared<OctreeColorLeafNode>();
         } else if (class_name == "OctreePointColorLeafNode") {
@@ -137,6 +139,74 @@ bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
     return rc;
 }
 
+std::function<std::shared_ptr<OctreeInternalNode>()>
+OctreeInternalPointNode::GetInitFunction() {
+    return []() -> std::shared_ptr<geometry::OctreeInternalNode> {
+        return std::make_shared<geometry::OctreeInternalPointNode>();
+    };
+}
+
+std::function<void(std::shared_ptr<OctreeInternalNode>)>
+OctreeInternalPointNode::GetUpdateFunction(size_t idx) {
+    // Here the captured "idx" cannot be a reference, must be a copy,
+    // otherwise pybind does not have the correct value
+    return [idx](std::shared_ptr<geometry::OctreeInternalNode> node) -> void {
+        if (auto internal_point_node =
+                    std::dynamic_pointer_cast<geometry::OctreeInternalPointNode>(node)) {
+            internal_point_node->indices_.push_back(idx);
+        } else {
+            utility::LogError(
+                    "Internal error: internal node must be OctreeInternalPointNode");
+        }
+    };
+}
+
+bool OctreeInternalPointNode::ConvertToJsonValue(Json::Value& value) const {
+    // TODO: use inheritance here (copy value, change class_name to base class)
+    bool rc = true;
+    value["class_name"] = "OctreeInternalPointNode";
+    value["children"] = Json::arrayValue;
+    value["children"].resize(8);
+    for (int cid = 0; cid < 8; ++cid) {
+        if (children_[cid] == nullptr) {
+            value["children"][Json::ArrayIndex(cid)] = Json::objectValue;
+        } else {
+            rc = rc && children_[cid]->ConvertToJsonValue(
+                               value["children"][Json::ArrayIndex(cid)]);
+        }
+    }
+    value["indices"].clear();
+    for (int idx : indices_) {
+        value["indices"].append(idx);
+    }
+    return rc;
+}
+
+bool OctreeInternalPointNode::ConvertFromJsonValue(const Json::Value& value) {
+    // TODO: use inheritance here (copy value, change class_name to base class)
+    if (!value.isObject()) {
+        utility::LogWarning(
+                "ConvertFromJsonValue read JSON failed: unsupported json "
+                "format.");
+        return false;
+    }
+    std::string class_name = value.get("class_name", "").asString();
+    if (class_name != "OctreeInternalPointNode") {
+        utility::LogWarning("class_name {} != OctreeInternalPointNode", class_name);
+        return false;
+    }
+    bool rc = true;
+    for (int cid = 0; cid < 8; ++cid) {
+        const auto& child_value = value["children"][Json::ArrayIndex(cid)];
+        children_[cid] = OctreeNode::ConstructFromJsonValue(child_value);
+    }
+    indices_.reserve(value["indices"].size());
+    for (const auto& v : value["indices"]) {
+        indices_.push_back(v.asInt());
+    }
+    return rc;
+}
+
 std::function<std::shared_ptr<OctreeLeafNode>()>
 OctreeColorLeafNode::GetInitFunction() {
     return []() -> std::shared_ptr<geometry::OctreeLeafNode> {
@@ -146,7 +216,7 @@ OctreeColorLeafNode::GetInitFunction() {
 
 std::function<void(std::shared_ptr<OctreeLeafNode>)>
 OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
-    // Here the captured "color" cannot be a refernce, must be a copy,
+    // Here the captured "color" cannot be a reference, must be a copy,
     // otherwise pybind does not have the correct value
     return [color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
         if (auto color_leaf_node =
@@ -501,8 +571,10 @@ void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
         const Eigen::Vector3d& color =
                 has_colors ? point_cloud.colors_[idx] : Eigen::Vector3d::Zero();
         InsertPoint(point_cloud.points_[idx],
-                    geometry::OctreePointColorLeafNode::GetInitFunction(),
-                    geometry::OctreePointColorLeafNode::GetUpdateFunction(idx, color));
+                    OctreePointColorLeafNode::GetInitFunction(),
+                    OctreePointColorLeafNode::GetUpdateFunction(idx, color),
+                    OctreeInternalPointNode::GetInitFunction(),
+                    OctreeInternalPointNode::GetUpdateFunction(idx));
     }
 }
 
@@ -724,8 +796,8 @@ void Octree::CreateFromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
                                     voxel.grid_index_.array().cast<double>() *
                                             voxel_grid.voxel_size_;
         InsertPoint(
-                mid_point, geometry::OctreeColorLeafNode::GetInitFunction(),
-                geometry::OctreeColorLeafNode::GetUpdateFunction(voxel.color_));
+                mid_point, OctreeColorLeafNode::GetInitFunction(),
+                OctreeColorLeafNode::GetUpdateFunction(voxel.color_));
     }
 }
 
