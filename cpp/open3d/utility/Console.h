@@ -88,9 +88,13 @@ public:
         return instance;
     }
 
-    void VError [[noreturn]] (const char *format, fmt::format_args args) const {
+    void VError [[noreturn]] (const char *fname,
+                              int linenum,
+                              const char *format,
+                              fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D ERROR] {}", err_msg);
+        err_msg = fmt::format("[Open3D ERROR in file {}, line {}] {}", fname,
+                              linenum, err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         throw std::runtime_error(err_msg);
     }
@@ -121,8 +125,11 @@ public:
     }
 
     template <typename... Args>
-    void Error [[noreturn]] (const char *format, const Args &... args) const {
-        VError(format, fmt::make_format_args(args...));
+    void Error [[noreturn]] (const char *fname,
+                             int linenum,
+                             const char *format,
+                             const Args &... args) const {
+        VError(fname, linenum, format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
@@ -173,9 +180,22 @@ inline VerbosityLevel GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void LogError [[noreturn]] (const char *format, const Args &... args) {
-    Logger::i().VError(format, fmt::make_format_args(args...));
+inline void _LogError [[noreturn]] (const char *fname,
+                                    int linenum,
+                                    const char *format,
+                                    Args &&... args) {
+    Logger::i().VError(fname, linenum, format, fmt::make_format_args(args...));
 }
+
+// Mimic 'macro in namespace' by concatenating utility:: and _LogError.
+// Ref: https://tinyurl.com/yc2cmt83
+// We also avoid using (format, __VA_ARGS__) since __VA_ARGS__ can be empty, and
+// the behavior of pruning trailing comma with ##__VA_ARGS__ is not officially
+// standard.
+// Ref: https://tinyurl.com/ybh8wezk
+// __FUNCTION__ is not a preprocessor macro, and [[noreturn]] will be omitted.
+// Ref: https://tinyurl.com/yc523n74
+#define LogError(args...) _LogError(__FILE__, __LINE__, args)
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {
