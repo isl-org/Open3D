@@ -107,29 +107,27 @@ def main(config, keys):
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    option = o3d.pipelines.color_map.ColorMapOptimizationOption()
-    option.maximum_iteration = 0
-    o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera,
-                                                   option)
-    o3d.visualization.draw_geometries([mesh])
+    mesh_optimized = o3d.pipelines.color_map.run_rigid_optimizer(
+        mesh, rgbd_images, camera,
+        o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
+    o3d.visualization.draw_geometries([mesh_optimized])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_before_optimization.ply"), mesh)
+                     "color_map_before_optimization.ply"), mesh_optimized)
 
     # Optimize texture and save the mesh as texture_mapped.ply
     # This is implementation of following paper
     # Q.-Y. Zhou and V. Koltun,
     # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     # SIGGRAPH 2014
-    option.maximum_iteration = 300
-    option.non_rigid_camera_coordinate = True
-    option.maximum_allowable_depth = config["max_depth"]
-    o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera,
-                                                   option)
-    o3d.visualization.draw_geometries([mesh])
+    mesh_optimized = o3d.pipelines.color_map.run_non_rigid_optimizer(
+        mesh, rgbd_images, camera,
+        o3d.pipelines.color_map.NonRigidOptimizerOption(
+            maximum_iteration=300, maximum_allowable_depth=config["max_depth"]))
+    o3d.visualization.draw_geometries([mesh_optimized])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_after_optimization.ply"), mesh)
+                     "color_map_after_optimization.ply"), mesh_optimized)
 
 
 if __name__ == "__main__":

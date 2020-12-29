@@ -26,6 +26,7 @@
 
 #include "open3d/core/TensorKey.h"
 
+#include <memory>
 #include <sstream>
 
 #include "open3d/core/Tensor.h"
@@ -34,122 +35,181 @@
 namespace open3d {
 namespace core {
 
-NoneType None;
+class TensorKey::Impl {
+public:
+    Impl(TensorKeyMode mode) : mode_(mode) {}
+    TensorKeyMode GetMode() const { return mode_; }
+    virtual ~Impl() {}
+    virtual std::string ToString() const = 0;
+
+private:
+    TensorKeyMode mode_;
+};
+
+class TensorKey::IndexImpl : public TensorKey::Impl {
+public:
+    IndexImpl(int64_t index)
+        : TensorKey::Impl(TensorKeyMode::Index), index_(index) {}
+    int64_t GetIndex() const { return index_; }
+    std::string ToString() const override {
+        std::stringstream ss;
+        ss << "TensorKey::Index(" << index_ << ")";
+        return ss.str();
+    }
+
+private:
+    int64_t index_;
+};
+
+class TensorKey::SliceImpl : public TensorKey::Impl {
+public:
+    SliceImpl(utility::optional<int64_t> start,
+              utility::optional<int64_t> stop,
+              utility::optional<int64_t> step)
+        : TensorKey::Impl(TensorKeyMode::Slice),
+          start_(start),
+          stop_(stop),
+          step_(step) {}
+    std::shared_ptr<SliceImpl> InstantiateDimSize(int64_t dim_size) const {
+        return std::make_shared<SliceImpl>(
+                start_.has_value() ? start_.value() : 0,
+                stop_.has_value() ? stop_.value() : dim_size,
+                step_.has_value() ? step_.value() : 1);
+    }
+    int64_t GetStart() const {
+        if (start_.has_value()) {
+            return start_.value();
+        } else {
+            utility::LogError("TensorKeyMode::Slice: start is None.");
+        }
+    }
+    int64_t GetStop() const {
+        if (stop_.has_value()) {
+            return stop_.value();
+        } else {
+            utility::LogError("TensorKeyMode::Slice: stop is None.");
+        }
+    }
+    int64_t GetStep() const {
+        if (step_.has_value()) {
+            return step_.value();
+        } else {
+            utility::LogError("TensorKeyMode::Slice: step is None.");
+        }
+    }
+    std::string ToString() const override {
+        std::stringstream ss;
+        ss << "TensorKey::Slice(";
+        if (start_.has_value()) {
+            ss << start_.value();
+        } else {
+            ss << "None";
+        }
+        ss << ", ";
+        if (stop_.has_value()) {
+            ss << stop_.value();
+        } else {
+            ss << "None";
+        }
+        ss << ", ";
+        if (step_.has_value()) {
+            ss << step_.value();
+        } else {
+            ss << "None";
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+private:
+    utility::optional<int64_t> start_ = utility::nullopt;
+    utility::optional<int64_t> stop_ = utility::nullopt;
+    utility::optional<int64_t> step_ = utility::nullopt;
+};
+
+class TensorKey::IndexTensorImpl : public TensorKey::Impl {
+public:
+    IndexTensorImpl(const Tensor& index_tensor)
+        : TensorKey::Impl(TensorKeyMode::IndexTensor),
+          index_tensor_(index_tensor) {}
+    Tensor GetIndexTensor() const { return index_tensor_; }
+    std::string ToString() const override {
+        std::stringstream ss;
+        ss << "TensorKey::IndexTensor(" << index_tensor_.ToString() << ")";
+        return ss.str();
+    }
+
+private:
+    Tensor index_tensor_;
+};
+
+TensorKey::TensorKey(const std::shared_ptr<Impl>& impl) : impl_(impl) {}
+
+TensorKey::TensorKeyMode TensorKey::GetMode() const { return impl_->GetMode(); }
+
+std::string TensorKey::ToString() const { return impl_->ToString(); }
 
 TensorKey TensorKey::Index(int64_t index) {
-    return TensorKey(TensorKeyMode::Index, index, 0, 0, 0, false, false, false,
-                     Tensor());
+    return TensorKey(std::make_shared<IndexImpl>(index));
 }
 
-TensorKey TensorKey::Slice(int64_t start, int64_t stop, int64_t step) {
-    return Slice(start, stop, step, false, false, false);
-}
-
-TensorKey TensorKey::Slice(int64_t start, int64_t stop, NoneType step) {
-    return Slice(start, stop, 0, false, false, true);
-}
-
-TensorKey TensorKey::Slice(int64_t start, NoneType stop, int64_t step) {
-    return Slice(start, 0, step, false, true, false);
-}
-
-TensorKey TensorKey::Slice(int64_t start, NoneType stop, NoneType step) {
-    return Slice(start, 0, 0, false, true, true);
-}
-
-TensorKey TensorKey::Slice(NoneType start, int64_t stop, int64_t step) {
-    return Slice(0, stop, step, true, false, false);
-}
-
-TensorKey TensorKey::Slice(NoneType start, int64_t stop, NoneType step) {
-    return Slice(0, stop, 0, true, false, true);
-}
-
-TensorKey TensorKey::Slice(NoneType start, NoneType stop, int64_t step) {
-    return Slice(0, 0, step, true, true, false);
-}
-
-TensorKey TensorKey::Slice(NoneType start, NoneType stop, NoneType step) {
-    return Slice(0, 0, 0, true, true, true);
+TensorKey TensorKey::Slice(utility::optional<int64_t> start,
+                           utility::optional<int64_t> stop,
+                           utility::optional<int64_t> step) {
+    return TensorKey(std::make_shared<SliceImpl>(start, stop, step));
 }
 
 TensorKey TensorKey::IndexTensor(const Tensor& index_tensor) {
-    return TensorKey(TensorKeyMode::IndexTensor, 0, 0, 0, 0, false, false,
-                     false, index_tensor);
+    return TensorKey(std::make_shared<IndexTensorImpl>(index_tensor));
 }
 
-std::shared_ptr<Tensor> TensorKey::GetIndexTensor() const {
-    AssertMode(TensorKeyMode::IndexTensor);
-    return index_tensor_;
-}
-
-TensorKey TensorKey::UpdateWithDimSize(int64_t dim_size) const {
-    AssertMode(TensorKeyMode::Slice);
-    return TensorKey(TensorKeyMode::Slice, 0, start_is_none_ ? 0 : start_,
-                     stop_is_none_ ? dim_size : stop_,
-                     step_is_none_ ? 1 : step_, false, false, false, Tensor());
-}
-
-TensorKey TensorKey::Slice(int64_t start,
-                           int64_t stop,
-                           int64_t step,
-                           bool start_is_none,
-                           bool stop_is_none,
-                           bool step_is_none) {
-    return TensorKey(TensorKeyMode::Slice, 0, start, stop, step, start_is_none,
-                     stop_is_none, step_is_none, Tensor());
-}
-
-TensorKey::TensorKey(TensorKeyMode mode,
-                     int64_t index,
-                     int64_t start,
-                     int64_t stop,
-                     int64_t step,
-                     bool start_is_none,
-                     bool stop_is_none,
-                     bool step_is_none,
-                     const Tensor& index_tensor)
-    : mode_(mode),
-      index_(index),
-      start_(start),
-      stop_(stop),
-      step_(step),
-      start_is_none_(start_is_none),
-      stop_is_none_(stop_is_none),
-      step_is_none_(step_is_none),
-      index_tensor_(std::make_shared<Tensor>(index_tensor)) {}
-
-std::string TensorKey::ToString() const {
-    std::stringstream ss;
-    if (mode_ == TensorKeyMode::Index) {
-        ss << "TensorKey::Index(" << index_ << ")";
-    } else if (mode_ == TensorKeyMode::Slice) {
-        ss << "TensorKey::Slice(";
-        if (start_is_none_) {
-            ss << "None";
-        } else {
-            ss << start_;
-        }
-        ss << ", ";
-        if (stop_is_none_) {
-            ss << "None";
-        } else {
-            ss << stop_;
-        }
-        ss << ", ";
-        if (step_is_none_) {
-            ss << "None";
-        } else {
-            ss << step_;
-        }
-        ss << ")";
-    } else if (mode_ == TensorKeyMode::IndexTensor) {
-        ss << "TensorKey::IndexTensor(" << index_tensor_->ToString() << ")";
+int64_t TensorKey::GetIndex() const {
+    if (auto index_impl = std::dynamic_pointer_cast<IndexImpl>(impl_)) {
+        return index_impl->GetIndex();
     } else {
-        utility::LogError("Wrong TensorKeyMode.");
+        utility::LogError("GetIndex() failed: the impl is not IndexImpl.");
     }
-    return ss.str();
-};
+}
+
+int64_t TensorKey::GetStart() const {
+    if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
+        return slice_impl->GetStart();
+    } else {
+        utility::LogError("GetStart() failed: the impl is not SliceImpl.");
+    }
+}
+int64_t TensorKey::GetStop() const {
+    if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
+        return slice_impl->GetStop();
+    } else {
+        utility::LogError("GetStop() failed: the impl is not SliceImpl.");
+    }
+}
+int64_t TensorKey::GetStep() const {
+    if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
+        return slice_impl->GetStep();
+    } else {
+        utility::LogError("GetStep() failed: the impl is not SliceImpl.");
+    }
+}
+TensorKey TensorKey::InstantiateDimSize(int64_t dim_size) const {
+    if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
+        return TensorKey(slice_impl->InstantiateDimSize(dim_size));
+    } else {
+        utility::LogError(
+                "InstantiateDimSize() failed: the impl is not SliceImpl.");
+    }
+}
+
+Tensor TensorKey::GetIndexTensor() const {
+    if (auto index_tensor_impl =
+                std::dynamic_pointer_cast<IndexTensorImpl>(impl_)) {
+        return index_tensor_impl->GetIndexTensor();
+    } else {
+        utility::LogError(
+                "GetIndexTensor() failed: the impl is not IndexTensorImpl.");
+    }
+}
 
 }  // namespace core
 }  // namespace open3d

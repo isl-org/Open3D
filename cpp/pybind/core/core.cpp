@@ -44,7 +44,6 @@ void pybind_core(py::module& m) {
     pybind_core_dtype(m_core);
     pybind_core_device(m_core);
     pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
     pybind_core_tensor(m_core);
     pybind_core_linalg(m_core);
     pybind_core_kernel(m_core);
