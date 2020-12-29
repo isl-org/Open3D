@@ -58,21 +58,27 @@ int main(int argc, char **argv) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
     cloud_ptr->EstimateNormals();
-    std::cout << "o3d EstimateNormals: " << std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - t1).count() << " seconds" << std::endl;
+    std::cout << "o3d EstimateNormals: "
+              << std::chrono::duration_cast<std::chrono::duration<double>>(
+                         std::chrono::high_resolution_clock::now() - t1)
+                         .count()
+              << " seconds" << std::endl;
 
     const auto patches = cloud_ptr->DetectPlanarPatches();
 
-
     t1 = std::chrono::high_resolution_clock::now();
 
-    std::shared_ptr<geometry::Octree> oct = std::make_shared<geometry::Octree>(8);
+    std::shared_ptr<geometry::Octree> oct =
+            std::make_shared<geometry::Octree>(8);
     oct->ConvertFromPointCloud(*cloud_ptr);
 
     visualization::DrawGeometries({oct}, "Octree", 1600, 900);
 
-
-    std::cout << "kdtree search: " << std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - t1).count() << " seconds" << std::endl;
-
+    std::cout << "kdtree search: "
+              << std::chrono::duration_cast<std::chrono::duration<double>>(
+                         std::chrono::high_resolution_clock::now() - t1)
+                         .count()
+              << " seconds" << std::endl;
 
     return 0;
 }

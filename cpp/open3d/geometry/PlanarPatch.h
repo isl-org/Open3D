@@ -35,8 +35,6 @@
 namespace open3d {
 namespace geometry {
 
-
-
 /// \class PlanarPatch
 ///
 /// \brief A planar patch in 3D, typically detected from a point cloud.
@@ -47,20 +45,21 @@ public:
     ~PlanarPatch() override {}
 
 public:
-    // LineSet &Clear() override;
+    // PlanarPatch& Clear() override;
     // bool IsEmpty() const override;
     // Eigen::Vector3d GetMinBound() const override;
     // Eigen::Vector3d GetMaxBound() const override;
     // Eigen::Vector3d GetCenter() const override;
     // AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     // OrientedBoundingBox GetOrientedBoundingBox() const override;
-    // LineSet &Transform(const Eigen::Matrix4d &transformation) override;
-    // LineSet &Translate(const Eigen::Vector3d &translation,
-    //                    bool relative = true) override;
-    // LineSet &Scale(const double scale, const Eigen::Vector3d &center) override;
-    // LineSet &Rotate(const Eigen::Matrix3d &R,
-    //                 const Eigen::Vector3d &center) override;
+    // PlanarPatch& Transform(const Eigen::Matrix4d& transformation) override;
+    // PlanarPatch& Translate(const Eigen::Vector3d& translation,
+    //                   bool relative = true) override;
+    // PlanarPatch& Scale(const double scale, const Eigen::Vector3d& center)
+    // override; PlanarPatch& Rotate(const Eigen::Matrix3d& R,
+    //                const Eigen::Vector3d& center) override;
 
+public:
     // LineSet &operator+=(const LineSet &lineset);
     // LineSet operator+(const LineSet &lineset) const;
 
@@ -103,7 +102,8 @@ public:
     //         const PointCloud &cloud1,
     //         const std::vector<std::pair<int, int>> &correspondences);
 
-    // /// \brief Factory function to create a LineSet from an OrientedBoundingBox.
+    // /// \brief Factory function to create a LineSet from an
+    // OrientedBoundingBox.
     // ///
     // /// \param box The input bounding box.
     // static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
@@ -125,7 +125,8 @@ public:
     // /// Factory function to create a LineSet from edges of a tetra mesh.
     // ///
     // /// \param mesh The input tetra mesh.
-    // static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh &mesh);
+    // static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh
+    // &mesh);
 
 public:
     // /// Points coordinates.
