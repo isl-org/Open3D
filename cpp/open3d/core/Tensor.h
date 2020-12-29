@@ -252,7 +252,7 @@ public:
                     utility::LogError(
                             "Cannot create Tensor with ragged nested "
                             "sequences( nested"
-                            "lists have unequal size or shape).");
+                            "lists with unequal sizes or shapes).");
                 }
             }
             ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
@@ -284,7 +284,7 @@ public:
                     utility::LogError(
                             "Cannot create Tensor with ragged nested "
                             "sequences( nested"
-                            "lists have unequal size or shape).");
+                            "lists with unequal sizes or shapes).");
                 }
             }
 
@@ -296,7 +296,7 @@ public:
                         utility::LogError(
                                 "Cannot create Tensor with ragged nested "
                                 "sequences( nested"
-                                "lists have unequal size or shape).");
+                                "lists with unequal sizes or shapes).");
                     }
                 }
 
