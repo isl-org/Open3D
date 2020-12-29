@@ -33,78 +33,49 @@
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace pipelines {
 namespace color_map {
 
-class ImageWarpingField;
-class ColorMapOptimizationOption;
+std::tuple<std::vector<geometry::Image>,
+           std::vector<geometry::Image>,
+           std::vector<geometry::Image>,
+           std::vector<geometry::Image>,
+           std::vector<geometry::Image>>
+CreateGradientImages(const std::vector<geometry::RGBDImage>& images_rgbd);
 
-inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
-        const Eigen::Vector3d X,
-        const camera::PinholeCameraTrajectory& camera,
-        int camid);
+std::vector<geometry::Image> CreateDepthBoundaryMasks(
+        const std::vector<geometry::Image>& images_depth,
+        double depth_threshold_for_discontinuity_check,
+        int half_dilation_kernel_size_for_discontinuity_map);
 
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
 CreateVertexAndImageVisibility(
         const geometry::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
-        const std::vector<std::shared_ptr<geometry::Image>>& images_mask,
-        const camera::PinholeCameraTrajectory& camera,
+        const std::vector<geometry::Image>& images_depth,
+        const std::vector<geometry::Image>& images_mask,
+        const camera::PinholeCameraTrajectory& camera_trajectory,
         double maximum_allowable_depth,
         double depth_threshold_for_visibility_check);
 
-template <typename T>
-std::tuple<bool, T> QueryImageIntensity(
-        const geometry::Image& img,
-        const Eigen::Vector3d& V,
-        const camera::PinholeCameraTrajectory& camera,
-        int camid,
-        int ch = -1,
-        int image_boundary_margin = 10);
-
-template <typename T>
-std::tuple<bool, T> QueryImageIntensity(
-        const geometry::Image& img,
-        const ImageWarpingField& field,
-        const Eigen::Vector3d& V,
-        const camera::PinholeCameraTrajectory& camera,
-        int camid,
-        int ch = -1,
-        int image_boundary_margin = 10);
-
 void SetProxyIntensityForVertex(
         const geometry::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
-        const std::vector<ImageWarpingField>& warping_field,
-        const camera::PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visibility_vertex_to_image,
-        std::vector<double>& proxy_intensity,
-        int image_boundary_margin);
-
-void SetProxyIntensityForVertex(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
-        const camera::PinholeCameraTrajectory& camera,
+        const std::vector<geometry::Image>& images_gray,
+        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
         int image_boundary_margin);
 
 void SetGeometryColorAverage(
         geometry::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visibility_vertex_to_image,
-        int image_boundary_margin = 10,
-        int invisible_vertex_color_knn = 3);
-
-void SetGeometryColorAverage(
-        geometry::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
-        const std::vector<ImageWarpingField>& warping_fields,
-        const camera::PinholeCameraTrajectory& camera,
+        const std::vector<geometry::Image>& images_color,
+        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin = 10,
         int invisible_vertex_color_knn = 3);
