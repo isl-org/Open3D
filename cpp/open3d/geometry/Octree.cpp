@@ -178,7 +178,7 @@ bool OctreeInternalPointNode::ConvertToJsonValue(Json::Value& value) const {
     }
     value["indices"].clear();
     for (size_t idx : indices_) {
-        value["indices"].append(idx);
+        value["indices"].append(static_cast<Json::UInt>(idx));
     }
     return rc;
 }
@@ -315,7 +315,7 @@ bool OctreePointColorLeafNode::ConvertToJsonValue(Json::Value& value) const {
     EigenVector3dToJsonArray(color_, value["color"]);
     value["indices"].clear();
     for (size_t idx : indices_) {
-        value["indices"].append(idx);
+        value["indices"].append(static_cast<Json::UInt>(idx));
     }
     return true;
 }
