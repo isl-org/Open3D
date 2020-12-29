@@ -128,9 +128,9 @@ geometry::TriangleMesh RunRigidOptimizer(
         }
     }
 
-    utility::LogDebug("[ColorMapOptimization] CreateGradientImages");
+    utility::LogDebug("[ColorMapOptimization] CreateUtilImagesFromRGBD");
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
-            CreateGradientImages(images_rgbd);
+            CreateUtilImagesFromRGBD(images_rgbd);
 
     utility::LogDebug("[ColorMapOptimization] CreateDepthBoundaryMasks");
     images_mask = CreateDepthBoundaryMasks(

@@ -46,7 +46,7 @@ std::tuple<std::vector<geometry::Image>,
            std::vector<geometry::Image>,
            std::vector<geometry::Image>,
            std::vector<geometry::Image>>
-CreateGradientImages(const std::vector<geometry::RGBDImage>& images_rgbd);
+CreateUtilImagesFromRGBD(const std::vector<geometry::RGBDImage>& images_rgbd);
 
 std::vector<geometry::Image> CreateDepthBoundaryMasks(
         const std::vector<geometry::Image>& images_depth,
