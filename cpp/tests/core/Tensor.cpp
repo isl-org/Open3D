@@ -138,6 +138,24 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     // Check unsupported dtype.
     EXPECT_THROW(core::Tensor::Init<uint64_t>({{1, 2, 3}, {4, 5, 6}}, device),
                  std::exception);
+
+    // Testing shapes with 0-element.
+    std::vector<double> vals6({});
+    core::Tensor t6 = core::Tensor::Init<double>({}, device);
+    EXPECT_EQ(t6.ToFlatVector<double>(), vals6);
+
+    std::vector<bool> vals7({});
+    core::Tensor t7 = core::Tensor::Init<bool>({{}, {}});
+    EXPECT_EQ(t7.ToFlatVector<bool>(), vals7);
+
+    EXPECT_THROW(core::Tensor::Init<uint64_t>({{{}}, {{}, {}}}, device),
+                 std::exception);
+
+    EXPECT_THROW(core::Tensor::Init<uint64_t>({{}, {{}}}, device),
+                 std::exception);
+
+    EXPECT_THROW(core::Tensor::Init<uint64_t>({{}, {1}}, device),
+                 std::exception);
 }
 
 TEST_P(TensorPermuteDevices, WithInitValueBool) {

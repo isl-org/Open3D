@@ -249,7 +249,10 @@ public:
                 dim1_size = static_cast<int64_t>(ele0.size());
             } else {
                 if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    utility::LogError("Input rows are of unequal size.");
+                    utility::LogError(
+                            "Cannot create Tensor with ragged nested "
+                            "sequences( nested"
+                            "lists have unequal size or shape).");
                 }
             }
             ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
@@ -278,7 +281,10 @@ public:
                 dim1_size = static_cast<int64_t>(ele1.size());
             } else {
                 if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    utility::LogError("Input columns are of unequal size.");
+                    utility::LogError(
+                            "Cannot create Tensor with ragged nested "
+                            "sequences( nested"
+                            "lists have unequal size or shape).");
                 }
             }
 
@@ -287,7 +293,10 @@ public:
                     dim2_size = static_cast<int64_t>(ele0.size());
                 } else {
                     if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        utility::LogError("Input rows are of unequal size.");
+                        utility::LogError(
+                                "Cannot create Tensor with ragged nested "
+                                "sequences( nested"
+                                "lists have unequal size or shape).");
                     }
                 }
 
@@ -295,7 +304,16 @@ public:
             }
         }
 
-        SizeVector shape{dim0_size, dim1_size, dim2_size};
+        // Handles 0-sized input lists.
+        SizeVector shape;
+        if (dim0_size == 0) {
+            shape = {dim0_size};
+        } else if (dim1_size == 0) {
+            shape = {dim0_size, dim1_size};
+        } else {
+            shape = {dim0_size, dim1_size, dim2_size};
+        }
+
         return Tensor(ele_list, shape, type, device);
     };
 
