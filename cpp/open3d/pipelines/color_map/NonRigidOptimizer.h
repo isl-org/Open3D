@@ -95,7 +95,8 @@ struct NonRigidOptimizerOption {
     int invisible_vertex_color_knn_ = 3;
 
     /// If specified, the intermediate results will be stored in in the debug
-    /// output dir.
+    /// output dir. Existing files will be overwritten if the names are the
+    /// same.
     std::string debug_output_dir_ = "";
 };
 

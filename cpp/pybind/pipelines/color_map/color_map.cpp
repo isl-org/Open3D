@@ -103,7 +103,8 @@ void pybind_color_map_options(py::module &m) {
              "feature and all invisible vertices will be black."},
             {"debug_output_dir",
              "If specified, the intermediate results will be stored in in the "
-             "debug output dir."}};
+             "debug output dir. Existing files will be overwritten if the "
+             "names are the same."}};
 
     py::class_<pipelines::color_map::RigidOptimizerOption>
             rigid_optimizer_option(m, "RigidOptimizerOption",
