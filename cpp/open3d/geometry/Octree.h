@@ -142,9 +142,9 @@ public:
     bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
-    // Use vector instead of C-array for Pybind11, otherwise, need to define
-    // more helper functions
-    // https://github.com/pybind/pybind11/issues/546#issuecomment-265707318
+    /// Use vector instead of C-array for Pybind11, otherwise, need to define
+    /// more helper functions
+    /// https://github.com/pybind/pybind11/issues/546#issuecomment-265707318
     /// List of children Nodes.
     std::vector<std::shared_ptr<OctreeNode>> children_;
 };
@@ -197,25 +197,28 @@ public:
 class OctreeColorLeafNode : public OctreeLeafNode {
 public:
     bool operator==(const OctreeLeafNode& other) const override;
+
     /// Clone this OctreeLeafNode.
     std::shared_ptr<OctreeLeafNode> Clone() const override;
+
     /// \brief Get lambda function for initializing OctreeLeafNode.
     ///
     /// When the init function is called, an empty OctreeColorLeafNode is
     /// created.
     static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
-    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+
     /// \brief Get lambda function for updating OctreeLeafNode.
     ///
     /// When called, the update function updates the corresponding node with the
     /// input color.
     ///
     /// \param color Color of the node.
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(const Eigen::Vector3d& color);
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
-    // TODO: flexible data, with lambda function for handling node
+    /// TODO: flexible data, with lambda function for handling node
     /// Color of the node.
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
@@ -230,12 +233,13 @@ public:
     bool operator==(const OctreeLeafNode& other) const override;
     /// Clone this OctreeLeafNode.
     std::shared_ptr<OctreeLeafNode> Clone() const override;
+
     /// \brief Get lambda function for initializing OctreeLeafNode.
     ///
     /// When the init function is called, an empty OctreePointColorLeafNode is
     /// created.
     static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
-    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+
     /// \brief Get lambda function for updating OctreeLeafNode.
     ///
     /// When called, the update function adds the point cloud point index to
@@ -243,12 +247,13 @@ public:
     ///
     /// \param idx Point cloud point index associated with node.
     /// \param color Color of the node.
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(size_t index, const Eigen::Vector3d& color);
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
 
-    /// Associated point indices with this node
+    /// Associated point indices with this node.
     std::vector<size_t> indices_;
 };
 
