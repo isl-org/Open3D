@@ -6,7 +6,6 @@ set(ALL_SOURCE_FILES
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
-    ControlGrid.cpp
 )
 
 add_library(tgeometry OBJECT ${ALL_SOURCE_FILES})

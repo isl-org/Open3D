@@ -24,9 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ControlGrid.h"
+#include "open3d/t/pipelines/slac/ControlGrid.h"
+
 namespace open3d {
 namespace t {
-namespace geometry {}
+namespace pipelines {
+namespace slac {}
+}  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

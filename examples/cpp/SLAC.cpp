@@ -23,47 +23,50 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#include "open3d/Open3D.h"
 
-#pragma once
+using namespace open3d;
+using namespace open3d::core;
 
-#include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
-#include "open3d/t/geometry/Geometry.h"
-#include "open3d/t/geometry/Image.h"
-#include "open3d/t/geometry/PointCloud.h"
+void PrintHelp() {
+    using namespace open3d;
 
-/// ControlGrid is a spatially hashed voxel grid used for non-rigid point cloud
-/// registration and TSDF integration.
-/// Each grid stores a R^3 coordinate after non-rigid transformation.
-/// You can imagine a control grid as a jelly that is warped upon perturbation
-/// with its overall shape preserved.
-/// Reference:
-/// https://github.com/qianyizh/ElasticReconstruction/blob/master/FragmentOptimizer/OptApp.cpp
-/// http://vladlen.info/papers/elastic-fragments.pdf
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    SLAC [fragment_folder] [scene_folder] [options]");
+    // clang-format on
+    utility::LogInfo("");
+}
 
-namespace open3d {
-namespace t {
-namespace geometry {
+int main(int argc, char** argv) {
+    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
+        argc < 3) {
+        PrintHelp();
+        return 1;
+    }
 
-class ControlGrid {
-public:
-    ControlGrid(float grid_size,
-                int64_t grid_count = 1000,
-                const core::Device& device = core::Device("CPU:0"));
-    ~ControlGrid();
+    // Color and depth
+    std::string fragment_folder = std::string(argv[1]);
+    std::string scene_folder = std::string(argv[2]);
 
-    /// Warps a point cloud with local non-rigid transformation.
-    /// For each point, we first locate its control grid. Then we perform an
-    /// interpolation of its 8-neighbor control grids and obtain its final
-    /// position.
-    PointCloud Warp(const PointCloud& pcd);
+    std::vector<std::string> fragment_fnames;
+    utility::filesystem::ListFilesInDirectoryWithExtension(
+            fragment_folder, "ply", fragment_fnames);
+    std::sort(fragment_fnames.begin(), fragment_fnames.end());
+    for (auto fname : fragment_fnames) {
+        utility::LogInfo("{}", fname);
+    }
 
-private:
-    core::Device device_ = core::Device("CPU:0");
+    std::string pose_graph_fname =
+            scene_folder + "/refined_registration_optimized.json";
+    auto pose_graph = io::CreatePoseGraphFromFile(pose_graph_fname);
 
-    std::shared_ptr<core::Hashmap> ctr_hashmap_;
-};
+    for (auto edge : pose_graph->edges_) {
+        utility::LogInfo("{} - {}", edge.source_node_id_, edge.target_node_id_);
+    }
 
-}  // namespace geometry
-}  // namespace t
-}  // namespace open3d
+    t::pipelines::slac::RunSLACOptimizerForFragments(
+            fragment_fnames, *pose_graph,
+            t::pipelines::slac::SLACOptimizerOption());
+}

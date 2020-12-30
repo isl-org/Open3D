@@ -4,6 +4,11 @@ set(REGISTRATION_SRC
     registration/TransformationEstimation.cpp
 )
 
+set (SLAC_SRC
+    slac/ControlGrid.cpp
+    slac/SLACOptimizer.cpp
+)
+
 set(UTILITY_SRC
     TransformationConverter.cpp
 )
@@ -14,6 +19,7 @@ set(UTILITY_CUDA_SRC
 
 set(ALL_PIPELINE_SRC
     ${REGISTRATION_SRC}
+    ${SLAC_SRC}
     ${UTILITY_SRC}
 )
 
