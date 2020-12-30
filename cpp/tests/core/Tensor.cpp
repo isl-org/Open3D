@@ -104,26 +104,23 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     core::Device device = GetParam();
 
     core::Tensor t;
-    core::SizeVector shape;
 
     // 0-D tesnor with given value.
     t = core::Tensor::Init<float>(1, device);
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
     EXPECT_EQ(t.GetBlob()->GetDevice(), device);
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1}));
 
     // 1-D tensor initialization with list.
     t = core::Tensor::Init<float>({1, 2, 3}, device);
-    shape = {3};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({3}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 2, 3}));
 
     // 2-D tensor initialization with list.
     t = core::Tensor::Init<int>({{1, 2, 3}, {4, 5, 6}}, device);
-    shape = {2, 3};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 3}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Int32);
     EXPECT_EQ(t.ToFlatVector<int>(), std::vector<int>({1, 2, 3, 4, 5, 6}));
 
@@ -131,16 +128,14 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     std::vector<double> arr_3d({1, 2, 3, 4, 5, 6, 7, 8});
     t = core::Tensor::Init<double>({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
                                    device);
-    shape = {2, 2, 2};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
     EXPECT_EQ(t.ToFlatVector<double>(), arr_3d);
 
     // Testing boolean datatype.
     std::vector<bool> arr_bool({true, false, false, true});
     t = core::Tensor::Init<bool>({{true, false}, {false, true}}, device);
-    shape = {2, 2};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
     EXPECT_EQ(t.ToFlatVector<bool>(), arr_bool);
 
@@ -148,8 +143,7 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     std::vector<uint8_t> arr_uint8({0, 0, 0, 0, 255, 255, 255, 255});
     t = core::Tensor::Init<uint8_t>(
             {{{0, 0}, {0, 0}}, {{255, 255}, {255, 255}}}, device);
-    shape = {2, 2, 2};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), arr_uint8);
 
@@ -163,26 +157,22 @@ TEST_P(TensorPermuteDevices, WithInitList) {
 
     // Testing shapes with 0-element.
     t = core::Tensor::Init<double>({}, device);
-    shape = {0};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
     EXPECT_EQ(t.ToFlatVector<double>(), std::vector<double>({}));
 
     t = core::Tensor::Init<bool>({{}, {}});
-    shape = {2, 0};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
     EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));
 
     t = core::Tensor::Init<bool>({{}});
-    shape = {1, 0};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({1, 0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
     EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));
 
     t = core::Tensor::Init<uint8_t>({{{}}});
-    shape = {1, 1, 0};
-    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({1, 1, 0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({}));
 
