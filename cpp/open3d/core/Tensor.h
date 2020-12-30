@@ -219,6 +219,17 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
+    /// Create a 0-D tensor with given value.
+    /// For example,
+    /// core::Tensor::Init<float>(1);
+    template <typename T>
+    static Tensor Init(const T val, const Device& device = Device("CPU:0")) {
+        Dtype type = Dtype::FromType<T>();
+        std::vector<T> ele_list{val};
+        SizeVector shape;
+        return Tensor(ele_list, shape, type, device);
+    };
+
     /// Create a 1-D tensor with given list.
     /// For example,
     /// core::Tensor::Init<float>({1,2,3});
@@ -251,7 +262,7 @@ public:
                 if (static_cast<int64_t>(ele0.size()) != dim1_size) {
                     utility::LogError(
                             "Cannot create Tensor with ragged nested "
-                            "sequences( nested"
+                            "sequences (nested"
                             "lists with unequal sizes or shapes).");
                 }
             }
@@ -283,7 +294,7 @@ public:
                 if (static_cast<int64_t>(ele1.size()) != dim1_size) {
                     utility::LogError(
                             "Cannot create Tensor with ragged nested "
-                            "sequences( nested"
+                            "sequences (nested"
                             "lists with unequal sizes or shapes).");
                 }
             }
@@ -295,7 +306,7 @@ public:
                     if (static_cast<int64_t>(ele0.size()) != dim2_size) {
                         utility::LogError(
                                 "Cannot create Tensor with ragged nested "
-                                "sequences( nested"
+                                "sequences (nested"
                                 "lists with unequal sizes or shapes).");
                     }
                 }
