@@ -81,10 +81,8 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
     double r2_sum = 0.0;
     JTJ.setZero();
     JTr.setZero();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         MatOutType JTJ_private(6 + nonrigidval, 6 + nonrigidval);
         VecOutType JTr_private(6 + nonrigidval);
         double r2_sum_private = 0.0;
@@ -93,9 +91,7 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         VecInTypeDouble J_r;
         VecInTypeInt pattern;
         double r;
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int i = 0; i < iteration_num; i++) {
             f(i, J_r, r, pattern);
             for (auto x = 0; x < J_r.size(); x++) {
@@ -108,17 +104,13 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
             }
             r2_sum_private += r * r;
         }
-#ifdef _OPENMP
 #pragma omp critical
         {
-#endif
             JTJ += JTJ_private;
             JTr += JTr_private;
             r2_sum += r2_sum_private;
-#ifdef _OPENMP
         }
     }
-#endif
     if (verbose) {
         utility::LogDebug("Residual : {:.2e} (# of elements : {:d})",
                           r2_sum / (double)iteration_num, iteration_num);
@@ -310,9 +302,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
@@ -372,9 +362,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
             }
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-#ifdef _OPENMP
 #pragma omp critical
-#endif
             {
                 residual += r2;
                 residual_reg += rr_reg;
