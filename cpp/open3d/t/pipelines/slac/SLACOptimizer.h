@@ -39,6 +39,9 @@ namespace slac {
 /// Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
 struct SLACOptimizerOption {
     int max_iterations_ = 10;
+    float voxel_size_ = 0.05;
+    std::string device_ = "CUDA:0";
+    std::string buffer_folder_ = "";
 };
 
 /// Estimate a shared control grid for all fragments for scene reconstruction,

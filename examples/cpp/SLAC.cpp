@@ -34,39 +34,35 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    SLAC [fragment_folder] [scene_folder] [options]");
+    utility::LogInfo(">    SLAC [dataset_folder] [options]");
     // clang-format on
     utility::LogInfo("");
 }
 
 int main(int argc, char** argv) {
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 3) {
+        argc < 2) {
         PrintHelp();
         return 1;
     }
 
     // Color and depth
-    std::string fragment_folder = std::string(argv[1]);
-    std::string scene_folder = std::string(argv[2]);
+    std::string dataset_folder = std::string(argv[1]);
+    std::string fragment_folder = dataset_folder + "/fragments";
+    std::string scene_folder = dataset_folder + "/scene";
+    std::string slac_folder = dataset_folder + "/slac";
 
     std::vector<std::string> fragment_fnames;
     utility::filesystem::ListFilesInDirectoryWithExtension(
             fragment_folder, "ply", fragment_fnames);
     std::sort(fragment_fnames.begin(), fragment_fnames.end());
-    for (auto fname : fragment_fnames) {
-        utility::LogInfo("{}", fname);
-    }
 
     std::string pose_graph_fname =
             scene_folder + "/refined_registration_optimized.json";
     auto pose_graph = io::CreatePoseGraphFromFile(pose_graph_fname);
 
-    for (auto edge : pose_graph->edges_) {
-        utility::LogInfo("{} - {}", edge.source_node_id_, edge.target_node_id_);
-    }
-
-    t::pipelines::slac::RunSLACOptimizerForFragments(
-            fragment_fnames, *pose_graph,
-            t::pipelines::slac::SLACOptimizerOption());
+    auto option = t::pipelines::slac::SLACOptimizerOption();
+    option.buffer_folder_ = slac_folder;
+    t::pipelines::slac::RunSLACOptimizerForFragments(fragment_fnames,
+                                                     *pose_graph, option);
 }
