@@ -82,10 +82,34 @@ struct SLACPairwiseCorrespondence {
     }
 };
 
+/// Write point clouds after downsampling and normal estimation for
+/// correspondence check.
+std::vector<std::string> PreprocessPointClouds(
+        const std::vector<std::string>& fragment_fnames,
+        const SLACOptimizerOption& option) {
+    std::vector<std::string> fnames_down;
+    for (auto& fname : fragment_fnames) {
+        std::string fname_down = fmt::format(
+                "{}/{}", option.buffer_folder_,
+                utility::filesystem::GetFileNameWithoutDirectory(fname));
+        if (utility::filesystem::FileExists(fname_down)) continue;
+        utility::LogInfo("{}", fname_down);
+
+        auto pcd = io::CreatePointCloudFromFile(fname);
+        auto pcd_down = pcd->VoxelDownSample(option.voxel_size_);
+        pcd_down->EstimateNormals();
+
+        io::WritePointCloud(fname_down, *pcd_down);
+        fnames_down.emplace_back(fname_down);
+    }
+
+    return fnames_down;
+}
+
 /// Read pose graph containing loop closures and odometry to compute
 /// correspondences.
-std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForPointClouds(
-        const std::vector<std::string>& fragment_fnames,
+void GetCorrespondencesForPointClouds(
+        const std::vector<std::string>& fragment_down_fnames,
         const open3d::pipelines::registration::PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
     std::vector<SLACPairwiseCorrespondence> pair_corres;
@@ -93,31 +117,19 @@ std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForPointClouds(
     // Enumerate pose graph edges
     std::set<int> processed_pcd;
 
-    // Simple cache for loop closures
-    int i_prev = -1;
-    std::shared_ptr<open3d::geometry::PointCloud> pcd_i_down;
-    t::geometry::PointCloud tpcd_i;
-
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
 
-        // Save time loading source
-        if (i != i_prev) {
-            auto pcd_i = io::CreatePointCloudFromFile(fragment_fnames[i]);
-            pcd_i_down = pcd_i->VoxelDownSample(option.voxel_size_);
-            pcd_i_down->EstimateNormals();
-            tpcd_i = t::geometry::PointCloud::FromLegacyPointCloud(
-                    *pcd_i_down, core::Dtype::Float32);
-            i_prev = i;
-        }
+        auto pcd_i = io::CreatePointCloudFromFile(fragment_down_fnames[i]);
+        t::geometry::PointCloud tpcd_i =
+                t::geometry::PointCloud::FromLegacyPointCloud(
+                        *pcd_i, core::Dtype::Float32);
 
-        auto pcd_j = io::CreatePointCloudFromFile(fragment_fnames[j]);
-        auto pcd_j_down = pcd_j->VoxelDownSample(option.voxel_size_);
-        pcd_j_down->EstimateNormals();
+        auto pcd_j = io::CreatePointCloudFromFile(fragment_down_fnames[j]);
         t::geometry::PointCloud tpcd_j =
                 t::geometry::PointCloud::FromLegacyPointCloud(
-                        *pcd_j_down, core::Dtype::Float32);
+                        *pcd_j, core::Dtype::Float32);
 
         auto pose_i = pose_graph.nodes_[i].pose_;
         auto pose_j = pose_graph.nodes_[j].pose_;
@@ -149,12 +161,13 @@ std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForPointClouds(
                 result.correspondence_set_);
 
         pair_corres.emplace_back(i, j, corres);
-
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
                                                option.buffer_folder_, i, j);
         pair_corres.back().Write(corres_fname);
+        utility::LogInfo("Edge: {:02d} -> {:02d}, corres {}", i, j,
+                         corres.GetLength());
 
-        // For test case
+        // For IO debug
         auto corres_read =
                 SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
         utility::LogInfo("written = {}", corres.GetShape());
@@ -163,14 +176,11 @@ std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForPointClouds(
             utility::LogError("IO of correspondences mismatch");
         }
 
-        utility::LogInfo("Edge: {:02d} -> {:02d}, corres {}", i, j,
-                         corres.GetLength());
-        pcd_i_down->Transform(pose_ij);
-        visualization::DrawGeometries({pcd_i_down, pcd_j_down});
-        pcd_i_down->Transform(pose_ij.inverse());
+        // For visual debug
+        pcd_i->Transform(pose_ij);
+        visualization::DrawGeometries({pcd_i, pcd_j});
+        pcd_i->Transform(pose_ij.inverse());
     }
-
-    return pair_corres;
 }
 
 std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForRGBDImages(
@@ -196,8 +206,9 @@ ControlGrid RunSLACOptimizerForFragments(
     }
 
     // Then obtain the correspondences given the pose graph
-    auto pairs = GetCorrespondencesForPointClouds(fragment_fnames,
-                                                  fragment_pose_graph, option);
+    auto fragment_down_fnames = PreprocessPointClouds(fragment_fnames, option);
+    GetCorrespondencesForPointClouds(fragment_down_fnames, fragment_pose_graph,
+                                     option);
 
     // // First initialize ctr_grid
     // ControlGrid ctr_grid;
