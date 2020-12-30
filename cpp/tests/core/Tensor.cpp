@@ -103,57 +103,55 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
 TEST_P(TensorPermuteDevices, WithInitList) {
     core::Device device = GetParam();
 
-    // 0-D tesnor with given value
-    std::vector<float> vals0{1};
-    core::Tensor t0 = core::Tensor::Init<float>(1, device);
-    core::SizeVector shape0;
-    EXPECT_EQ(t0.GetShape(), shape0);
-    EXPECT_EQ(t0.GetDtype(), core::Dtype::Float32);
-    EXPECT_EQ(t0.GetBlob()->GetDevice(), device);
-    EXPECT_EQ(t0.ToFlatVector<float>(), vals0);
+    core::Tensor t;
+    core::SizeVector shape;
+
+    // 0-D tesnor with given value.
+    t = core::Tensor::Init<float>(1, device);
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(t.GetBlob()->GetDevice(), device);
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1}));
 
     // 1-D tensor initialization with list.
-    std::vector<float> vals1{1, 2, 3};
-    core::Tensor t1 = core::Tensor::Init<float>({1, 2, 3}, device);
-    core::SizeVector shape1{3};
-    EXPECT_EQ(t1.GetShape(), shape1);
-    EXPECT_EQ(t1.GetDtype(), core::Dtype::Float32);
-    EXPECT_EQ(t1.ToFlatVector<float>(), vals1);
+    t = core::Tensor::Init<float>({1, 2, 3}, device);
+    shape = {3};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 2, 3}));
 
     // 2-D tensor initialization with list.
-    std::vector<int> vals2{1, 2, 3, 4, 5, 6};
-    core::Tensor t2 = core::Tensor::Init<int>({{1, 2, 3}, {4, 5, 6}}, device);
-    core::SizeVector shape2{2, 3};
-    EXPECT_EQ(t2.GetShape(), shape2);
-    EXPECT_EQ(t2.GetDtype(), core::Dtype::Int32);
-    EXPECT_EQ(t2.ToFlatVector<int>(), vals2);
+    t = core::Tensor::Init<int>({{1, 2, 3}, {4, 5, 6}}, device);
+    shape = {2, 3};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Int32);
+    EXPECT_EQ(t.ToFlatVector<int>(), std::vector<int>({1, 2, 3, 4, 5, 6}));
 
     // 3-D tensor initialization with list.
-    std::vector<double> vals3{1, 2, 3, 4, 5, 6, 7, 8};
-    core::Tensor t3 = core::Tensor::Init<double>(
-            {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}}, device);
-    core::SizeVector shape3{2, 2, 2};
-    EXPECT_EQ(t3.GetShape(), shape3);
-    EXPECT_EQ(t3.GetDtype(), core::Dtype::Float64);
-    EXPECT_EQ(t3.ToFlatVector<double>(), vals3);
+    std::vector<double> arr_3d({1, 2, 3, 4, 5, 6, 7, 8});
+    t = core::Tensor::Init<double>({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+                                   device);
+    shape = {2, 2, 2};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
+    EXPECT_EQ(t.ToFlatVector<double>(), arr_3d);
 
     // Testing boolean datatype.
-    std::vector<bool> vals4{true, false, false, true};
-    core::Tensor t4 =
-            core::Tensor::Init<bool>({{true, false}, {false, true}}, device);
-    core::SizeVector shape4{2, 2};
-    EXPECT_EQ(t4.GetShape(), shape4);
-    EXPECT_EQ(t4.GetDtype(), core::Dtype::Bool);
-    EXPECT_EQ(t4.ToFlatVector<bool>(), vals4);
+    std::vector<bool> arr_bool({true, false, false, true});
+    t = core::Tensor::Init<bool>({{true, false}, {false, true}}, device);
+    shape = {2, 2};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
+    EXPECT_EQ(t.ToFlatVector<bool>(), arr_bool);
 
     // Testing uint8 datatype.
-    std::vector<uint8_t> vals5{0, 0, 0, 0, 255, 255, 255, 255};
-    core::Tensor t5 = core::Tensor::Init<uint8_t>(
+    std::vector<uint8_t> arr_uint8({0, 0, 0, 0, 255, 255, 255, 255});
+    t = core::Tensor::Init<uint8_t>(
             {{{0, 0}, {0, 0}}, {{255, 255}, {255, 255}}}, device);
-    core::SizeVector shape5{2, 2, 2};
-    EXPECT_EQ(t5.GetShape(), shape5);
-    EXPECT_EQ(t5.GetDtype(), core::Dtype::UInt8);
-    EXPECT_EQ(t5.ToFlatVector<uint8_t>(), vals5);
+    shape = {2, 2, 2};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(), arr_uint8);
 
     // Check tensor element size mismatch.
     EXPECT_THROW(core::Tensor::Init<int>({{1, 2, 3}, {4, 5}}, device),
@@ -164,35 +162,29 @@ TEST_P(TensorPermuteDevices, WithInitList) {
                  std::exception);
 
     // Testing shapes with 0-element.
-    std::vector<double> vals6({});
-    core::Tensor t6 = core::Tensor::Init<double>({}, device);
-    core::SizeVector shape6{
-            0,
-    };
-    EXPECT_EQ(t6.GetShape(), shape6);
-    EXPECT_EQ(t6.GetDtype(), core::Dtype::Float64);
-    EXPECT_EQ(t6.ToFlatVector<double>(), vals6);
+    t = core::Tensor::Init<double>({}, device);
+    shape = {0};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
+    EXPECT_EQ(t.ToFlatVector<double>(), std::vector<double>({}));
 
-    std::vector<bool> vals7({});
-    core::Tensor t7 = core::Tensor::Init<bool>({{}, {}});
-    core::SizeVector shape7{2, 0};
-    EXPECT_EQ(t7.GetShape(), shape7);
-    EXPECT_EQ(t7.GetDtype(), core::Dtype::Bool);
-    EXPECT_EQ(t7.ToFlatVector<bool>(), vals7);
+    t = core::Tensor::Init<bool>({{}, {}});
+    shape = {2, 0};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
+    EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));
 
-    std::vector<bool> vals8({});
-    core::Tensor t8 = core::Tensor::Init<bool>({{}});
-    core::SizeVector shape8{1, 0};
-    EXPECT_EQ(t8.GetShape(), shape8);
-    EXPECT_EQ(t8.GetDtype(), core::Dtype::Bool);
-    EXPECT_EQ(t8.ToFlatVector<bool>(), vals8);
+    t = core::Tensor::Init<bool>({{}});
+    shape = {1, 0};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
+    EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));
 
-    std::vector<uint8_t> vals9({});
-    core::Tensor t9 = core::Tensor::Init<uint8_t>({{{}}});
-    core::SizeVector shape9{1, 1, 0};
-    EXPECT_EQ(t9.GetShape(), shape9);
-    EXPECT_EQ(t9.GetDtype(), core::Dtype::UInt8);
-    EXPECT_EQ(t9.ToFlatVector<uint8_t>(), vals9);
+    t = core::Tensor::Init<uint8_t>({{{}}});
+    shape = {1, 1, 0};
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({}));
 
     EXPECT_THROW(core::Tensor::Init<uint64_t>({{{}}, {{}, {}}}, device),
                  std::exception);

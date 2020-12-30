@@ -261,9 +261,8 @@ public:
             } else {
                 if (static_cast<int64_t>(ele0.size()) != dim1_size) {
                     utility::LogError(
-                            "Cannot create Tensor with ragged nested "
-                            "sequences (nested"
-                            "lists with unequal sizes or shapes).");
+                            "Cannot create Tensor with ragged nested sequences "
+                            "(nested lists with unequal sizes or shapes).");
                 }
             }
             ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
@@ -293,9 +292,8 @@ public:
             } else {
                 if (static_cast<int64_t>(ele1.size()) != dim1_size) {
                     utility::LogError(
-                            "Cannot create Tensor with ragged nested "
-                            "sequences (nested"
-                            "lists with unequal sizes or shapes).");
+                            "Cannot create Tensor with ragged nested sequences "
+                            "(nested lists with unequal sizes or shapes).");
                 }
             }
 
@@ -306,8 +304,8 @@ public:
                     if (static_cast<int64_t>(ele0.size()) != dim2_size) {
                         utility::LogError(
                                 "Cannot create Tensor with ragged nested "
-                                "sequences (nested"
-                                "lists with unequal sizes or shapes).");
+                                "sequences (nested lists with unequal sizes or "
+                                "shapes).");
                     }
                 }
 
