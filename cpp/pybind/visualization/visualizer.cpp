@@ -27,10 +27,10 @@
 #include "open3d/visualization/visualizer/Visualizer.h"
 
 #include "open3d/geometry/Image.h"
+#include "open3d/visualization/visualizer/VisualizerWithEditAndKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
-#include "open3d/visualization/visualizer/VisualizerWithEditAndKeyCallback.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind/visualization/visualization_trampoline.h"
@@ -182,43 +182,46 @@ void pybind_visualizer(py::module &m) {
             .def("get_picked_points", &VisualizerWithEditing::GetPickedPoints,
                  "Function to get picked points");
 
-    py::class_<VisualizerWithEditAndKeyCallback, PyVisualizer<VisualizerWithEditAndKeyCallback>,
+    py::class_<VisualizerWithEditAndKeyCallback,
+               PyVisualizer<VisualizerWithEditAndKeyCallback>,
                std::shared_ptr<VisualizerWithEditAndKeyCallback>>
-            visualizer_edit_key(m, "VisualizerWithEditAndKeyCallback", visualizer,
-                            "Visualizer with editing and key callback capabilities.");
+            visualizer_edit_key(
+                    m, "VisualizerWithEditAndKeyCallback", visualizer,
+                    "Visualizer with editing and key callback capabilities.");
     py::detail::bind_default_constructor<VisualizerWithEditAndKeyCallback>(
             visualizer_edit_key);
     visualizer_edit_key.def(py::init<double, bool, const std::string &>())
             .def("__repr__",
                  [](const VisualizerWithEditAndKeyCallback &vis) {
-                     return std::string("VisualizerWithEditAndKeyCallback with name ") +
+                     return std::string(
+                                    "VisualizerWithEditAndKeyCallback with "
+                                    "name ") +
                             vis.GetWindowName();
                  })
 
-            .def("get_picked_points", &VisualizerWithEditAndKeyCallback::GetPickedPoints,
+            .def("get_picked_points",
+                 &VisualizerWithEditAndKeyCallback::GetPickedPoints,
                  "Custom Function to get picked points")
 
             .def("register_key_callback",
                  &VisualizerWithEditAndKeyCallback::RegisterKeyCallback,
-                 "Custom Function to register a callback function for a key press "
+                 "Custom Function to register a callback function for a key "
+                 "press "
                  "event",
                  "key"_a, "callback_func"_a)
 
             .def("register_key_action_callback",
                  &VisualizerWithEditAndKeyCallback::RegisterKeyActionCallback,
-                 "Custom Function to register a callback function for a key action "
+                 "Custom Function to register a callback function for a key "
+                 "action "
                  "event. The callback function takes Visualizer, action and "
                  "mods as input and returns a boolean indicating if "
                  "UpdateGeometry() needs to be run.",
                  "key"_a, "callback_func"_a)
 
-            .def("get_picked_points",
-                 &VisualizerWithEditAndKeyCallback::GetPickedPoints,
-                 "Function to get picked points")
-
             .def("print_visualizer_help",
-                &VisualizerWithEditAndKeyCallback::PrintVisualizerHelp,
-                "Prints out help information");
+                 &VisualizerWithEditAndKeyCallback::PrintVisualizerHelp,
+                 "Prints out help information");
 
     py::class_<VisualizerWithVertexSelection,
                PyVisualizer<VisualizerWithVertexSelection>,

@@ -36,9 +36,9 @@ namespace visualization {
 class SelectionPolygon;
 class PointCloudPicker;
 
-/// \class VisualizerWithKeyCallback
+/// \VisualizerWithEditAndKeyCallback
 ///
-/// \brief Visualizer with custom key callack capabilities.
+/// \brief Visualizer with edit and custom key callack capabilities.
 
 class VisualizerWithEditAndKeyCallback : public Visualizer {
 public:
@@ -46,22 +46,16 @@ public:
 
 public:
     VisualizerWithEditAndKeyCallback(double voxel_size = -1.0,
-                          bool use_dialog = true,
-                          const std::string &directory = "")
+                                     bool use_dialog = true,
+                                     const std::string &directory = "")
         : voxel_size_(voxel_size),
           use_dialog_(use_dialog),
           default_directory_(directory) {}
     ~VisualizerWithEditAndKeyCallback() override {}
-    VisualizerWithEditAndKeyCallback(const VisualizerWithEditAndKeyCallback &) = delete;
-    VisualizerWithEditAndKeyCallback &operator=(const VisualizerWithEditAndKeyCallback &) = delete;
-
-// public:
-//     /// \brief Default Constructor.
-//     VisualizerWithEditAndKeyCallback();
-//     ~VisualizerWithEditAndKeyCallback() override;
-//     VisualizerWithEditAndKeyCallback(const VisualizerWithEditAndKeyCallback &) = delete;
-//     VisualizerWithEditAndKeyCallback &operator=(const VisualizerWithKeyCallback &) =
-//             delete;
+    VisualizerWithEditAndKeyCallback(const VisualizerWithEditAndKeyCallback &) =
+            delete;
+    VisualizerWithEditAndKeyCallback &operator=(
+            const VisualizerWithEditAndKeyCallback &) = delete;
 
 public:
     void PrintVisualizerHelp() override;
@@ -95,7 +89,6 @@ public:
     /// \param geometry_ptr The Geometry object.
     bool AddGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr,
                      bool reset_bounding_box = true) override;
-    //void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
     int PickPoint(double x, double y);
@@ -140,11 +133,6 @@ protected:
     unsigned int crop_action_count_ = 0;
 
 protected:
-    /**void KeyPressCallback(GLFWwindow *window,
-                          int key,
-                          int scancode,
-                          int action,
-                          int mods) override;**/
     std::string PrintKeyToString(int key);
 
 protected:

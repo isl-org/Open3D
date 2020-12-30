@@ -283,6 +283,7 @@ bool VisualizerWithEditAndKeyCallback::InitRenderOption() {
 
 void VisualizerWithEditAndKeyCallback::KeyPressCallback(
         GLFWwindow *window, int key, int scancode, int action, int mods) {
+    // starts with VisualizerWithEdit Code
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     auto &option = (RenderOptionWithEditing &)(*render_option_ptr_);
     if (action == GLFW_RELEASE) {
@@ -478,6 +479,7 @@ void VisualizerWithEditAndKeyCallback::KeyPressCallback(
             Visualizer::KeyPressCallback(window, key, scancode, action, mods);
             break;
     }
+    // ends with VisualizerWithKeyCallback code
     auto action_callback = key_action_to_callback_.find(key);
     if (action_callback != key_action_to_callback_.end()) {
         if (action_callback->second(this, action, mods)) {
@@ -504,15 +506,15 @@ void VisualizerWithEditAndKeyCallback::KeyPressCallback(
 }
 
 void VisualizerWithEditAndKeyCallback::WindowResizeCallback(GLFWwindow *window,
-                                                 int w,
-                                                 int h) {
+                                                            int w,
+                                                            int h) {
     InvalidateSelectionPolygon();
     Visualizer::WindowResizeCallback(window, w, h);
 }
 
 void VisualizerWithEditAndKeyCallback::MouseMoveCallback(GLFWwindow *window,
-                                              double x,
-                                              double y) {
+                                                         double x,
+                                                         double y) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     if (view_control.IsLocked()) {
 #ifdef __APPLE__
@@ -539,8 +541,8 @@ void VisualizerWithEditAndKeyCallback::MouseMoveCallback(GLFWwindow *window,
 }
 
 void VisualizerWithEditAndKeyCallback::MouseScrollCallback(GLFWwindow *window,
-                                                double x,
-                                                double y) {
+                                                           double x,
+                                                           double y) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     if (view_control.IsLocked()) {
     } else {
@@ -549,9 +551,9 @@ void VisualizerWithEditAndKeyCallback::MouseScrollCallback(GLFWwindow *window,
 }
 
 void VisualizerWithEditAndKeyCallback::MouseButtonCallback(GLFWwindow *window,
-                                                int button,
-                                                int action,
-                                                int mods) {
+                                                           int button,
+                                                           int action,
+                                                           int mods) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     if (view_control.IsLocked() && selection_polygon_ptr_ &&
         selection_polygon_renderer_ptr_) {
@@ -764,9 +766,6 @@ std::string VisualizerWithEditAndKeyCallback::PrintKeyToString(int key) {
     }
     return std::string("Unknown");
 }
-
-
-
 
 }  // namespace visualization
 }  // namespace open3d
