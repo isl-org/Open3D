@@ -201,18 +201,18 @@ void pybind_visualizer(py::module &m) {
 
             .def("get_picked_points",
                  &VisualizerWithEditAndKeyCallback::GetPickedPoints,
-                 "Custom Function to get picked points")
+                 "Function to get picked points")
 
             .def("register_key_callback",
                  &VisualizerWithEditAndKeyCallback::RegisterKeyCallback,
-                 "Custom Function to register a callback function for a key "
+                 "Function to register a callback function for a key "
                  "press "
                  "event",
                  "key"_a, "callback_func"_a)
 
             .def("register_key_action_callback",
                  &VisualizerWithEditAndKeyCallback::RegisterKeyActionCallback,
-                 "Custom Function to register a callback function for a key "
+                 "Function to register a callback function for a key "
                  "action "
                  "event. The callback function takes Visualizer, action and "
                  "mods as input and returns a boolean indicating if "
