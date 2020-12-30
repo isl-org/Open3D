@@ -126,6 +126,7 @@
 #include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
+#include "open3d/visualization/visualizer/VisualizerWithEditAndKeyCallback.h"
 
 // clang-format off
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
