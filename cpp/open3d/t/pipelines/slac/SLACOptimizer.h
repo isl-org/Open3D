@@ -40,6 +40,7 @@ namespace slac {
 struct SLACOptimizerOption {
     int max_iterations_ = 10;
     float voxel_size_ = 0.05;
+    bool visual_debug_ = false;
     std::string device_ = "CUDA:0";
     std::string buffer_folder_ = "";
 };

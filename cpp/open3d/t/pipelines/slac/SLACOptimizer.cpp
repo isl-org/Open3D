@@ -30,6 +30,7 @@
 #include <set>
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/FileSystem.h"
@@ -92,15 +93,15 @@ std::vector<std::string> PreprocessPointClouds(
         std::string fname_down = fmt::format(
                 "{}/{}", option.buffer_folder_,
                 utility::filesystem::GetFileNameWithoutDirectory(fname));
+        fnames_down.emplace_back(fname_down);
+
         if (utility::filesystem::FileExists(fname_down)) continue;
-        utility::LogInfo("{}", fname_down);
+        utility::LogInfo("Processing {}", fname_down);
 
         auto pcd = io::CreatePointCloudFromFile(fname);
         auto pcd_down = pcd->VoxelDownSample(option.voxel_size_);
         pcd_down->EstimateNormals();
-
         io::WritePointCloud(fname_down, *pcd_down);
-        fnames_down.emplace_back(fname_down);
     }
 
     return fnames_down;
@@ -112,14 +113,13 @@ void GetCorrespondencesForPointClouds(
         const std::vector<std::string>& fragment_down_fnames,
         const open3d::pipelines::registration::PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
-    std::vector<SLACPairwiseCorrespondence> pair_corres;
-
     // Enumerate pose graph edges
-    std::set<int> processed_pcd;
-
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
+                                               option.buffer_folder_, i, j);
+        if (utility::filesystem::FileExists(corres_fname)) continue;
 
         auto pcd_i = io::CreatePointCloudFromFile(fragment_down_fnames[i]);
         t::geometry::PointCloud tpcd_i =
@@ -160,26 +160,39 @@ void GetCorrespondencesForPointClouds(
                  core::TensorKey::Index(1)},
                 result.correspondence_set_);
 
-        pair_corres.emplace_back(i, j, corres);
-        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
-                                               option.buffer_folder_, i, j);
-        pair_corres.back().Write(corres_fname);
+        auto pair_corres = SLACPairwiseCorrespondence(i, j, corres);
+        pair_corres.Write(corres_fname);
         utility::LogInfo("Edge: {:02d} -> {:02d}, corres {}", i, j,
                          corres.GetLength());
 
         // For IO debug
-        auto corres_read =
-                SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
-        utility::LogInfo("written = {}", corres.GetShape());
-        utility::LogInfo("read = {}", corres_read.correspondence_.GetShape());
-        if (!corres.AllClose(corres_read.correspondence_)) {
-            utility::LogError("IO of correspondences mismatch");
-        }
+        // auto corres_read =
+        //         SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
+        // utility::LogInfo("written = {}", corres.GetShape());
+        // utility::LogInfo("read = {}",
+        // corres_read.correspondence_.GetShape()); if
+        // (!corres.AllClose(corres_read.correspondence_)) {
+        //     utility::LogError("IO of correspondences mismatch");
+        // }
 
         // For visual debug
-        pcd_i->Transform(pose_ij);
-        visualization::DrawGeometries({pcd_i, pcd_j});
-        pcd_i->Transform(pose_ij.inverse());
+        if (option.visual_debug_) {
+            pcd_i->Transform(pose_ij);
+            visualization::DrawGeometries({pcd_i, pcd_j});
+            pcd_i->Transform(pose_ij.inverse());
+
+            std::vector<std::pair<int, int>> corres_lines;
+            for (int64_t i = 0; i < corres.GetLength(); ++i) {
+                std::pair<int, int> pair = {corres[i][0].Item<int64_t>(),
+                                            corres[i][1].Item<int64_t>()};
+                corres_lines.push_back(pair);
+            }
+            auto lineset = open3d::geometry::LineSet::
+                    CreateFromPointCloudCorrespondences(*pcd_i, *pcd_j,
+                                                        corres_lines);
+            lineset->PaintUniformColor({0, 1, 0});
+            visualization::DrawGeometries({pcd_i, pcd_j, lineset});
+        }
     }
 }
 

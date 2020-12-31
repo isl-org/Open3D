@@ -35,6 +35,7 @@ void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo(">    SLAC [dataset_folder] [options]");
+    utility::LogInfo("--debug");
     // clang-format on
     utility::LogInfo("");
 }
@@ -63,6 +64,9 @@ int main(int argc, char** argv) {
 
     auto option = t::pipelines::slac::SLACOptimizerOption();
     option.buffer_folder_ = slac_folder;
+    option.visual_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
+
     t::pipelines::slac::RunSLACOptimizerForFragments(fragment_fnames,
                                                      *pose_graph, option);
+    return 0;
 }
