@@ -125,27 +125,27 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_EQ(t.ToFlatVector<int>(), std::vector<int>({1, 2, 3, 4, 5, 6}));
 
     // 3-D tensor initialization with list.
-    std::vector<double> arr_3d({1, 2, 3, 4, 5, 6, 7, 8});
     t = core::Tensor::Init<double>({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
                                    device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
-    EXPECT_EQ(t.ToFlatVector<double>(), arr_3d);
+    EXPECT_EQ(t.ToFlatVector<double>(),
+              std::vector<double>({1, 2, 3, 4, 5, 6, 7, 8}));
 
-    // Testing boolean datatype.
-    std::vector<bool> arr_bool({true, false, false, true});
+    // Test boolean datatype.
     t = core::Tensor::Init<bool>({{true, false}, {false, true}}, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
-    EXPECT_EQ(t.ToFlatVector<bool>(), arr_bool);
+    EXPECT_EQ(t.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, true}));
 
-    // Testing uint8 datatype.
-    std::vector<uint8_t> arr_uint8({0, 0, 0, 0, 255, 255, 255, 255});
+    // Test uint8 datatype.
     t = core::Tensor::Init<uint8_t>(
             {{{0, 0}, {0, 0}}, {{255, 255}, {255, 255}}}, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
-    EXPECT_EQ(t.ToFlatVector<uint8_t>(), arr_uint8);
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(),
+              std::vector<uint8_t>({0, 0, 0, 0, 255, 255, 255, 255}));
 
     // Check tensor element size mismatch.
     EXPECT_THROW(core::Tensor::Init<int>({{1, 2, 3}, {4, 5}}, device),
@@ -155,7 +155,7 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_THROW(core::Tensor::Init<uint64_t>({{1, 2, 3}, {4, 5, 6}}, device),
                  std::exception);
 
-    // Testing shapes with 0-element.
+    // Test shapes with 0-element.
     t = core::Tensor::Init<double>({}, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);

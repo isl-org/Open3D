@@ -219,7 +219,7 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    /// Create a 0-D tensor with given value.
+    /// Create a 0-D tensor (scalar) with given value.
     /// For example,
     /// core::Tensor::Init<float>(1);
     template <typename T>
@@ -230,7 +230,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 1-D tensor with given list.
+    /// Create a 1-D tensor with initilizer list.
     /// For example,
     /// core::Tensor::Init<float>({1,2,3});
     template <typename T>
@@ -244,7 +244,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 2-D tensor with given list.
+    /// Create a 2-D tensor with nested initilizer list.
     /// For example,
     /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
     template <typename T>
@@ -272,7 +272,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 3-D tensor with given list.
+    /// Create a 3-D tensor with nested initilizer list.
     /// For example,
     /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
     template <typename T>
@@ -315,9 +315,9 @@ public:
 
         // Handles 0-sized input lists.
         SizeVector shape;
-        if (dim0_size == 0) {
+        if (dim1_size == -1) {
             shape = {dim0_size};
-        } else if (dim1_size == 0) {
+        } else if (dim2_size == -1) {
             shape = {dim0_size, dim1_size};
         } else {
             shape = {dim0_size, dim1_size, dim2_size};
