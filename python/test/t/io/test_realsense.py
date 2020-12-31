@@ -85,5 +85,3 @@ def test_RSBagReader():
     assert n_frames == 6
 
     os.remove("L515_test_s.bag")
-
-    assert False

@@ -45,7 +45,7 @@ namespace io {
 RSBagReader::RSBagReader(size_t buffer_size)
     : frame_buffer_(buffer_size),
       frame_position_us_(buffer_size),
-      pipe_(new rs2::pipeline),
+      pipe_(nullptr),
       align_to_color_(new rs2::align(rs2_stream::RS2_STREAM_COLOR)) {}
 
 RSBagReader::~RSBagReader() {
@@ -59,6 +59,7 @@ bool RSBagReader::Open(const std::string &filename) {
     try {
         rs2::config cfg;
         cfg.enable_device_from_file(filename, false);  // Do not repeat playback
+        pipe_.reset(new rs2::pipeline);
         auto profile = pipe_->start(
                 cfg);  // File will be opened in read mode at this point
         // do not drop frames: Causes deadlock after 4 frames on macOS/Linux
