@@ -48,9 +48,9 @@ def test_RSBagReader():
     # Metadata
     metadata = bag_reader.metadata
     assert metadata.color_channels == 3
-    assert metadata.color_dt == o3d.core.Dtype.UInt16
+    assert metadata.color_dt == o3d.core.Dtype.UInt8
     assert metadata.color_format == 'RGB8'
-    assert metadata.depth_dt == o3d.core.Dtype.UInt8
+    assert metadata.depth_dt == o3d.core.Dtype.UInt16
     assert metadata.depth_format == 'Z16'
     assert np.allclose(metadata.depth_scale, 3999.999755859375)
     assert metadata.device_name == "Intel RealSense L515"
@@ -59,7 +59,7 @@ def test_RSBagReader():
     assert metadata.width == 960
     assert metadata.stream_length_usec == 199868
     assert np.allclose(
-        metadata.intrsics.intrinsic_matrix,
+        metadata.intrinsics.intrinsic_matrix,
         np.array([[689.3069458, 0., 491.23974609],
                   [0., 689.74578857, 269.99111938], [0., 0., 1.]]))
 
@@ -75,14 +75,15 @@ def test_RSBagReader():
     assert im_rgbd.depth.rows == 540
     assert im_rgbd.depth.columns == 960
 
-    n_frames = 1
+    n_frames = 0
     while not bag_reader.is_eof():
-        im_rgbd = bag_reader.next_frame()
         n_frames = n_frames + 1
         print(im_rgbd)
-        # process im_rgbd.depth and im_rgbd.color
+        im_rgbd = bag_reader.next_frame()
 
     bag_reader.close()
     assert n_frames == 6
 
     os.remove("L515_test_s.bag")
+
+    assert False
