@@ -107,7 +107,7 @@ To install Open3D C++ library:
 
 .. code-block:: bash
 
-    make install
+    sudo make install
 
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`create_cplusplus_project`.
