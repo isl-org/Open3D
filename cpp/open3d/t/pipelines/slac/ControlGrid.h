@@ -49,11 +49,11 @@ class ControlGrid {
 public:
     ControlGrid(float grid_size,
                 int64_t grid_count = 1000,
-                const core::Device& device = core::Device("CPU:0")){};
+                const core::Device& device = core::Device("CPU:0"));
     ~ControlGrid(){};
 
     /// Allocate control grids in the shared camera space.
-    void Touch(const geometry::PointCloud& pcds);
+    void Touch(const geometry::PointCloud& pcd);
 
     /// Parameterize an input point cloud with the control grids via indexing
     /// and interpolation.
@@ -82,8 +82,9 @@ public:
             const core::Tensor& intrinsics);
 
 private:
-    core::Device device_ = core::Device("CPU:0");
+    float grid_size_;
 
+    core::Device device_ = core::Device("CPU:0");
     std::shared_ptr<core::Hashmap> ctr_hashmap_;
 };
 

@@ -196,6 +196,16 @@ void GetCorrespondencesForPointClouds(
     }
 }
 
+void InitializeControlGrid(ControlGrid& ctr_grid,
+                           const std::vector<std::string>& fnames) {
+    for (auto& fname : fnames) {
+        auto pcd = io::CreatePointCloudFromFile(fname);
+        auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
+                *pcd, core::Dtype::Float32);
+        ctr_grid.Touch(tpcd);
+    }
+}
+
 std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForRGBDImages(
         const std::vector<std::string>& rgbd_fnames,
         const open3d::pipelines::registration::PoseGraph& rgbd_pose_graph) {
@@ -218,13 +228,14 @@ ControlGrid RunSLACOptimizerForFragments(
         utility::filesystem::MakeDirectory(option.buffer_folder_);
     }
 
-    // Then obtain the correspondences given the pose graph
+    // First preprocess the point cloud with downsampling and normal estimation.
     auto fragment_down_fnames = PreprocessPointClouds(fragment_fnames, option);
+    // Then obtain the correspondences given the pose graph
     GetCorrespondencesForPointClouds(fragment_down_fnames, fragment_pose_graph,
                                      option);
 
-    // // First initialize ctr_grid
-    // ControlGrid ctr_grid;
+    // First initialize ctr_grid
+    ControlGrid ctr_grid(3.0 / 8);
     // for (auto fname : fragment_fnames) {
     //     auto pcd = io::ReadPointCloud(fname);
     //     ctr_grid.Touch(pcd);
