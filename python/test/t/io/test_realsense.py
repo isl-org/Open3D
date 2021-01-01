@@ -87,16 +87,17 @@ def test_RSBagReader():
     # save_frames
     bag_reader = o3d.t.io.RGBDVideoReader.create("L515_test_s.bag")
     bag_reader.save_frames("L515_test_s")
+    # Use issubset() since there may be other OS files present
     assert {'depth', 'color',
             'intrinsic.json'}.issubset(os.listdir('L515_test_s'))
     assert {
-        '00004.png', '00005.png', '00006.png', '00002.png', '00003.png',
-        '00001.png', '00000.png'
+        '00004.png', '00005.png', '00002.png', '00003.png', '00001.png',
+        '00000.png'
     }.issubset(os.listdir('L515_test_s/depth'))
     assert {
-        '00004.jpg', '00005.jpg', '00006.jpg', '00002.jpg', '00003.jpg',
-        '00001.jpg', '00000.jpg'
+        '00004.jpg', '00005.jpg', '00002.jpg', '00003.jpg', '00001.jpg',
+        '00000.jpg'
     }.issubset(os.listdir('L515_test_s/color'))
 
-    os.remove("L515_test_s.bag")
     shutil.rmtree("L515_test_s")
+    # Cannot delete "L515_test_s.bag" in Windows -> permission error
