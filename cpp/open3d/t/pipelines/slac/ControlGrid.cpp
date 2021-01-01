@@ -62,6 +62,50 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Insert(keys_nb, vals_nb, addrs_nb, masks_nb);
 }
+
+geometry::PointCloud ControlGrid::Parameterize(
+        const geometry::PointCloud& pcd) {
+    core::Tensor pts = pcd.GetPoints();
+    int64_t n = pts.GetLength();
+
+    core::Tensor pts_quantized = pts / grid_size_;
+    core::Tensor pts_quantized_floor = pts_quantized.Floor();
+
+    // (N x 3) -> [0, 1] for trilinear interpolation
+    core::Tensor residual = pts_quantized - pts_quantized_floor;
+    std::vector<std::vector<core::Tensor>> residuals(3);
+    for (int axis = 0; axis < 3; ++axis) {
+        residuals[axis].emplace_back(1.f - residual[axis]);
+        residuals[axis].emplace_back(residual[axis]);
+    }
+
+    core::Tensor keys = pts_quantized.To(core::Dtype::Int32);
+
+    core::Tensor keys_nb({8, n}, core::Dtype::Int32, device_);
+    core::Tensor residuals_nb({8, n}, core::Dtype::Float32, device_);
+    for (int nb = 0; nb < 8; ++nb) {
+        int x_sel = nb & 4;
+        int y_sel = nb & 2;
+        int z_sel = nb & 1;
+
+        core::Tensor dt = core::Tensor(std::vector<int>{x_sel, y_sel, z_sel},
+                                       {1, 3}, core::Dtype::Int32, device_);
+        keys_nb[nb] = keys + dt;
+        residuals_nb[nb] =
+                residuals[0][x_sel] * residuals[1][y_sel] * residuals[2][z_sel];
+    }
+
+    keys_nb = keys_nb.View({8 * n, 1});
+    core::Tensor addrs_nb, masks_nb;
+    ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
+
+    geometry::PointCloud pcd_with_params = pcd;
+    pcd_with_params.SetPointAttr("ctr_grid_idx",
+                                 addrs_nb.View({8, n}).T().Contiguous());
+    pcd_with_params.SetPointAttr("ctr_grid_ratio",
+                                 residuals_nb.T().Contiguous());
+    return pcd_with_params;
+}
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t
