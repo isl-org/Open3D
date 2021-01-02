@@ -178,6 +178,22 @@ def test_tensor_constructor(device):
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
+@pytest.mark.parametrize("device", list_devices())
+def test_arange(device):
+    # Full parameters
+    setups = [(0, 10, 1), (0, 10, 1), (0.0, 10.0, 2.0), (0.0, -10.0, -2.0)]
+    for start, stop, step in setups:
+        np_t = np.arange(start, stop, step)
+        o3_t = o3d.core.Tensor.arange(start, stop, step, device)
+        np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Only stop
+    for stop in [1.0, 2.0, 3.0, 4.0, 5.0]:
+        np_t = np.arange(stop)
+        o3_t = o3d.core.Tensor.arange(None, stop)
+        np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+
 def test_tensor_from_to_numpy():
     # a->b copy; b, c share memory
     a = np.ones((2, 2))
