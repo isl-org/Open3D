@@ -92,6 +92,34 @@ static OPEN3D_HOST_DEVICE void CUDAAbsElementKernel(const void* src,
             abs(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAFloorElementKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            floor(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDACeilElementKernel(const void* src,
+                                                     void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            ceil(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDARoundElementKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            round(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDATruncElementKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            trunc(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
 template <typename src_t, typename dst_t>
 static OPEN3D_HOST_DEVICE void CUDALogicalNotElementKernel(const void* src,
                                                            void* dst) {
@@ -257,6 +285,34 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                             indexer,
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDAAbsElementKernel<scalar_t>(src, dst);
+                            });
+                    break;
+                case UnaryEWOpCode::Floor:
+                    CUDALauncher::LaunchUnaryEWKernel(
+                            indexer,
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDAFloorElementKernel<scalar_t>(src, dst);
+                            });
+                    break;
+                case UnaryEWOpCode::Ceil:
+                    CUDALauncher::LaunchUnaryEWKernel(
+                            indexer,
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDACeilElementKernel<scalar_t>(src, dst);
+                            });
+                    break;
+                case UnaryEWOpCode::Round:
+                    CUDALauncher::LaunchUnaryEWKernel(
+                            indexer,
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDARoundElementKernel<scalar_t>(src, dst);
+                            });
+                    break;
+                case UnaryEWOpCode::Trunc:
+                    CUDALauncher::LaunchUnaryEWKernel(
+                            indexer,
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDATruncElementKernel<scalar_t>(src, dst);
                             });
                     break;
                 default:

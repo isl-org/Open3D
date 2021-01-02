@@ -950,6 +950,30 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
+Tensor Tensor::Floor() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Floor);
+    return dst_tensor;
+}
+
+Tensor Tensor::Ceil() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Ceil);
+    return dst_tensor;
+}
+
+Tensor Tensor::Round() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Round);
+    return dst_tensor;
+}
+
+Tensor Tensor::Trunc() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Trunc);
+    return dst_tensor;
+}
+
 Device Tensor::GetDevice() const {
     if (blob_ == nullptr) {
         utility::LogError("Blob is null, cannot get device");

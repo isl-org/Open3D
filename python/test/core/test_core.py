@@ -601,23 +601,31 @@ def test_advanced_index_set_mixed(device):
                                                        ("cos", "cos"),
                                                        ("negative", "neg"),
                                                        ("exp", "exp"),
-                                                       ("abs", "abs")])
+                                                       ("abs", "abs"),
+                                                       ("floor", "floor"),
+                                                       ("ceil", "ceil"),
+                                                       ("round", "round"),
+                                                       ("trunc", "trunc")])
 @pytest.mark.parametrize("device", list_devices())
 def test_unary_elementwise(np_func_name, o3_func_name, device):
-    np_t = np.array([-3, -2, -1, 9, 1, 2, 3]).astype(np.float32)
+    np_t = np.array([-3.4, -2.6, -1.5, 0, 1.4, 2.6, 3.5]).astype(np.float32)
     o3_t = o3d.core.Tensor(np_t, device=device)
 
     # Test non-in-place version
     np.seterr(invalid='ignore')  # e.g. sqrt of negative should be -nan
-    np.testing.assert_allclose(
-        getattr(o3_t, o3_func_name)().cpu().numpy(),
-        getattr(np, np_func_name)(np_t))
+    np.testing.assert_allclose(getattr(o3_t, o3_func_name)().cpu().numpy(),
+                               getattr(np, np_func_name)(np_t),
+                               rtol=1e-7,
+                               atol=1e-7)
 
     # Test in-place version
-    o3_func_name_inplace = o3_func_name + "_"
-    getattr(o3_t, o3_func_name_inplace)()
-    np.testing.assert_allclose(o3_t.cpu().numpy(),
-                               getattr(np, np_func_name)(np_t))
+    if o3_func_name not in ["floor", "ceil", "round", "trunc"]:
+        o3_func_name_inplace = o3_func_name + "_"
+        getattr(o3_t, o3_func_name_inplace)()
+        np.testing.assert_allclose(o3_t.cpu().numpy(),
+                                   getattr(np, np_func_name)(np_t),
+                                   rtol=1e-7,
+                                   atol=1e-7)
 
 
 @pytest.mark.parametrize("device", list_devices())

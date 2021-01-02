@@ -742,6 +742,21 @@ public:
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+
+    /// Element-wise floor value of a tensor, returning a new tensor.
+    Tensor Floor() const;
+
+    /// Element-wise ceil value of a tensor, returning a new tensor.
+    Tensor Ceil() const;
+
+    /// Element-wise round value of a tensor, returning a new tensor.
+    Tensor Round() const;
+
+    /// Element-wise trunc value of a tensor, returning a new tensor.
+    Tensor Trunc() const;
+
+    /// Element-wise absolute value of a tensor, in-place.
+
     /// Element-wise logical not of a tensor, returning a new boolean tensor.
     ///
     /// If the tensor is not boolean, 0 will be treated as False, while non-zero
