@@ -125,5 +125,5 @@ def test_RSBagReader(suspend_capture):
             '00000.jpg'
         }.issubset(os.listdir('L515_test_s/color'))
 
-        shutil.rmtree("L515_test_s")
+        # shutil.rmtree("L515_test_s")
         # Cannot delete "L515_test_s.bag" in Windows -> permission error
