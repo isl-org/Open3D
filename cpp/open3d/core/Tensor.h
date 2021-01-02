@@ -755,8 +755,6 @@ public:
     /// Element-wise trunc value of a tensor, returning a new tensor.
     Tensor Trunc() const;
 
-    /// Element-wise absolute value of a tensor, in-place.
-
     /// Element-wise logical not of a tensor, returning a new boolean tensor.
     ///
     /// If the tensor is not boolean, 0 will be treated as False, while non-zero
