@@ -42,6 +42,37 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+void CPUArangeKernel(const std::unordered_map<std::string, Tensor>& srcs,
+                     std::unordered_map<std::string, Tensor>& dsts) {
+    static std::vector<std::string> src_attrs = {"start", "step"};
+    for (auto& k : src_attrs) {
+        if (srcs.count(k) == 0) {
+            utility::LogError("Expected Tensor {} in srcs, but did not receive",
+                              k);
+        }
+    }
+    if (dsts.count("arange") == 0) {
+        utility::LogError(
+                "Expected Tensor arange in dsts, but did not receive");
+    }
+
+    Tensor start = srcs.at("start");
+    Tensor step = srcs.at("step");
+    Tensor dst = dsts.at("arange");
+
+    Dtype dtype = srcs.at("start").GetDtype();
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t sstart = start.Item<scalar_t>();
+        scalar_t sstep = step.Item<scalar_t>();
+        scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
+        int64_t n = dst.GetLength();
+        CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+            dst_ptr[workload_idx] =
+                    sstart + static_cast<scalar_t>(sstep * workload_idx);
+        });
+    });
+}
+
 struct Coord3i {
     Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
     bool operator==(const Coord3i& other) const {
@@ -135,6 +166,9 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
                   std::unordered_map<std::string, Tensor>& dsts,
                   GeneralEWOpCode op_code) {
     switch (op_code) {
+        case GeneralEWOpCode::Arange:
+            CPUArangeKernel(srcs, dsts);
+            break;
         case GeneralEWOpCode::Unproject:
             CPUUnprojectKernel(srcs, dsts);
             break;
@@ -154,7 +188,7 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
             utility::LogError("[RayCasting] Unimplemented.");
             break;
         default:
-            break;
+            utility::LogError("Unimplemented.");
     }
 }
 

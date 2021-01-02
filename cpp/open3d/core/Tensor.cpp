@@ -209,6 +209,71 @@ Tensor Tensor::Diag(const Tensor& input) {
     return diag;
 }
 
+Tensor Tensor::Arange(const Tensor& start,
+                      const Tensor& stop,
+                      const Tensor& step) {
+    if (start.NumElements() != 1) {
+        utility::LogError("Start tensor must have only 1 element");
+    }
+    if (stop.NumElements() != 1) {
+        utility::LogError("Stop tensor must have only 1 element");
+    }
+    if (step.NumElements() != 1) {
+        utility::LogError("Step tensor must have only 1 element");
+    }
+
+    Dtype dtype = start.GetDtype();
+    Device device = start.GetDevice();
+    if (stop.GetDtype() != dtype || stop.GetDevice() != device) {
+        utility::LogError("Stop must have the same dtype and device as start");
+    }
+    if (step.GetDtype() != dtype || step.GetDevice() != device) {
+        utility::LogError("Step must have the same dtype and device as start");
+    }
+
+    int64_t num_elements = 0;
+    bool is_arange_valid = true;
+
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t sstart = start.Item<scalar_t>();
+        scalar_t sstop = stop.Item<scalar_t>();
+        scalar_t sstep = step.Item<scalar_t>();
+
+        if (sstep == 0) {
+            utility::LogError("Step cannot be 0");
+        }
+        if (sstart == sstop) {
+            is_arange_valid = false;
+        }
+
+        num_elements = static_cast<int64_t>(
+                std::ceil(static_cast<double>(sstop - sstart) /
+                          static_cast<double>(sstep)));
+        if (num_elements <= 0) {
+            is_arange_valid = false;
+        }
+    });
+
+    // Special case
+    if (!is_arange_valid) {
+        return Tensor({0}, dtype, device);
+    }
+
+    // Input parameters
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"start", start},
+            {"step", step},
+    };
+
+    // Output
+    Tensor dst = Tensor({num_elements}, dtype, device);
+    std::unordered_map<std::string, core::Tensor> dsts = {{"arange", dst}};
+
+    // Kernel launch
+    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::Arange);
+    return dst;
+}
+
 Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
