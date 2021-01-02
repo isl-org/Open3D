@@ -188,9 +188,17 @@ def test_arange(device):
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Only stop
-    for stop in [1.0, 2.0, 3.0, 4.0, 5.0]:
+    for stop in [1.0, 2.0, 3.0, 1, 2, 3]:
         np_t = np.arange(stop)
-        o3_t = o3d.core.Tensor.arange(None, stop)
+        o3_t = o3d.core.Tensor.arange(stop, device)
+        np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Only start, stop (step = 1)
+    setups = [(0, 10), (0, 10), (0.0, 10.0), (0.0, -10.0)]
+    for start, stop in setups:
+        np_t = np.arange(start, stop)
+        # Not full parameter list, need to specify device by kw
+        o3_t = o3d.core.Tensor.arange(start, stop, device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 

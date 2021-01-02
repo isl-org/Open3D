@@ -280,7 +280,15 @@ void pybind_core_tensor(py::module& m) {
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
-    // Tensor creation from arange
+    // Tensor creation from arange for int
+    tensor.def_static(
+            "arange",
+            [](int64_t stop, utility::optional<Device> device) {
+                return Tensor::Arange<int64_t>(
+                        0, stop, 1,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "device"_a = py::none());
     tensor.def_static(
             "arange",
             [](utility::optional<int64_t> start, int64_t stop,
@@ -293,6 +301,16 @@ void pybind_core_tensor(py::module& m) {
             },
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "device"_a = py::none());
+
+    // Tensor creation from arange for float
+    tensor.def_static(
+            "arange",
+            [](double stop, utility::optional<Device> device) {
+                return Tensor::Arange<double>(
+                        0.0, stop, 1.0,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "device"_a = py::none());
     tensor.def_static(
             "arange",
             [](utility::optional<double> start, double stop,
