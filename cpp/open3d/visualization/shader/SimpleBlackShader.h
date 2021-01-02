@@ -101,6 +101,21 @@ protected:
                         std::vector<Eigen::Vector3f> &points) final;
 };
 
+class SimpleBlackShaderForPlanarPatchNormal : public SimpleBlackShader {
+public:
+    SimpleBlackShaderForPlanarPatchNormal()
+        : SimpleBlackShader("SimpleBlackShaderForPlanarPatchNormal") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points) final;
+};
+
 }  // namespace glsl
 
 }  // namespace visualization

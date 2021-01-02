@@ -28,10 +28,10 @@
 #include <iostream>
 
 #include "open3d/Open3D.h"
+#include "open3d/geometry/Qhull.h"
 
 int main(int argc, char **argv) {
     using namespace open3d;
-    using namespace flann;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
@@ -58,27 +58,58 @@ int main(int argc, char **argv) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
     cloud_ptr->EstimateNormals();
-    std::cout << "o3d EstimateNormals: "
+    std::cout << "EstimateNormals: "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
                          .count()
               << " seconds" << std::endl;
 
-    const auto patches = cloud_ptr->DetectPlanarPatches();
 
     t1 = std::chrono::high_resolution_clock::now();
-
-    std::shared_ptr<geometry::Octree> oct =
-            std::make_shared<geometry::Octree>(8);
-    oct->ConvertFromPointCloud(*cloud_ptr);
-
-    visualization::DrawGeometries({oct}, "Octree", 1600, 900);
-
-    std::cout << "kdtree search: "
+    const auto patches = cloud_ptr->DetectPlanarPatches();
+    std::cout << "DetectPlanarPatches: " << patches.size() << " in "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
                          .count()
               << " seconds" << std::endl;
+
+    std::cout << "==============================" << std::endl;
+    for (const auto& p : patches) {
+        std::cout << p->normal_.transpose() << " ";
+        std::cout << p->dist_from_origin_ << " |\t";
+        std::cout << p->center_.transpose() << " |\t";
+        std::cout << p->basis_x_.transpose() << " |\t";
+        std::cout << p->basis_y_.transpose() << std::endl;
+    }
+    std::cout << "==============================" << std::endl;
+
+    // for const-correctness
+    std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
+    geometries.reserve(patches.size());
+    for (const auto& patch : patches) {
+        geometries.push_back(patch);
+    }
+
+    // visualize point cloud, too
+    geometries.push_back(cloud_ptr);
+
+    // const auto ret = geometry::Qhull::ComputeConvexHull(cloud_ptr->points_);
+    // geometries.push_back(std::get<0>(ret));
+
+    // auto cloud2 = cloud_ptr->SelectByIndex(std::get<1>(ret));
+    // cloud2->PaintUniformColor(Eigen::Vector3d(255,0,0));
+    // geometries.push_back(cloud2);
+
+    visualization::DrawGeometries(geometries, "Visualize", 1600, 900);
+
+    // const auto patch = geometry::PlanarPatch::CreateFromPointCloud(*cloud_ptr);
+    // utility::LogInfo("Patch with center {} and normal {}", patch->center_, patch->normal_);
+
+
+    // auto cloud_ptr_without_normals = std::make_shared<geometry::PointCloud>();
+    // io::ReadPointCloud(argv[1], *cloud_ptr_without_normals);
+
+    // visualization::DrawGeometries({/*cloud_ptr_without_normals,*/ patch}, "Visualize", 1600, 900);
 
     return 0;
 }

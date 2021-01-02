@@ -227,6 +227,21 @@ protected:
                         std::vector<Eigen::Vector3f> &colors) final;
 };
 
+class SimpleShaderForPlanarPatch : public SimpleShader {
+public:
+    SimpleShaderForPlanarPatch() : SimpleShader("SimpleShaderForPlanarPatch") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
 }  // namespace glsl
 
 }  // namespace visualization

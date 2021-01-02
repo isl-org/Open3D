@@ -33,6 +33,7 @@
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/geometry/VoxelGrid.h"
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/visualization/shader/Shader.h"
 #include "open3d/visualization/utility/ColorMap.h"
 
@@ -866,6 +867,68 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
     octree.Traverse(f);
 
     draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+
+    return true;
+}
+
+bool SimpleShaderForPlanarPatch::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PlanarPatch) {
+        PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForPlanarPatch::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PlanarPatch) {
+        PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
+        return false;
+    }
+    const geometry::PlanarPatch &patch = (const geometry::PlanarPatch &)geometry;
+    if (patch.IsEmpty()) {
+        PrintShaderWarning("Binding failed with empty PlanarPatch.");
+        return false;
+    }
+    points.clear();
+    colors.clear();
+
+    // position of four corners of patch
+    const Eigen::Vector3d tl = patch.center_ - patch.basis_x_ + patch.basis_y_;
+    const Eigen::Vector3d tr = patch.center_ + patch.basis_x_ + patch.basis_y_;
+    const Eigen::Vector3d br = patch.center_ + patch.basis_x_ - patch.basis_y_;
+    const Eigen::Vector3d bl = patch.center_ - patch.basis_x_ - patch.basis_y_;
+
+    points.push_back(bl.cast<float>());
+    points.push_back(tl.cast<float>());
+    points.push_back(br.cast<float>());
+
+    points.push_back(tl.cast<float>());
+    points.push_back(br.cast<float>());
+    points.push_back(tr.cast<float>());
+
+    colors.push_back(patch.color_.cast<float>());
+    colors.push_back(patch.color_.cast<float>());
+    colors.push_back(patch.color_.cast<float>());
+
+    colors.push_back(patch.color_.cast<float>());
+    colors.push_back(patch.color_.cast<float>());
+    colors.push_back(patch.color_.cast<float>());
+
+    draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
 
     return true;

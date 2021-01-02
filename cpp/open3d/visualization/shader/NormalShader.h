@@ -105,6 +105,22 @@ protected:
                         std::vector<Eigen::Vector3f> &normals) final;
 };
 
+class NormalShaderForPlanarPatch : public NormalShader {
+public:
+    NormalShaderForPlanarPatch()
+        : NormalShader("NormalShaderForPlanarPatch") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &normals) final;
+};
+
 }  // namespace glsl
 
 }  // namespace visualization

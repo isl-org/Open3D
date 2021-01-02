@@ -316,7 +316,7 @@ public:
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
     ///
     ///
-    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches() const;
+    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches(double normal_similarity = 0.5, double coplanarity = 0.25, double outlier_ratio = 0.75) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.

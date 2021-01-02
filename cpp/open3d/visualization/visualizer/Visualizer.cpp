@@ -385,6 +385,12 @@ bool Visualizer::AddGeometry(
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::PlanarPatch) {
+        renderer_ptr = std::make_shared<glsl::PlanarPatchRenderer>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
     } else {
         return false;
     }

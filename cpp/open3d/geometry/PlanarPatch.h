@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "open3d/geometry/Geometry3D.h"
+#include "open3d/geometry/PointCloud.h"
 
 namespace open3d {
 namespace geometry {
@@ -45,96 +46,39 @@ public:
     ~PlanarPatch() override {}
 
 public:
-    // PlanarPatch& Clear() override;
-    // bool IsEmpty() const override;
-    // Eigen::Vector3d GetMinBound() const override;
-    // Eigen::Vector3d GetMaxBound() const override;
-    // Eigen::Vector3d GetCenter() const override;
-    // AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    // OrientedBoundingBox GetOrientedBoundingBox() const override;
-    // PlanarPatch& Transform(const Eigen::Matrix4d& transformation) override;
-    // PlanarPatch& Translate(const Eigen::Vector3d& translation,
-    //                   bool relative = true) override;
-    // PlanarPatch& Scale(const double scale, const Eigen::Vector3d& center)
-    // override; PlanarPatch& Rotate(const Eigen::Matrix3d& R,
-    //                const Eigen::Vector3d& center) override;
+    PlanarPatch& Clear() override;
+    bool IsEmpty() const override;
+    Eigen::Vector3d GetMinBound() const override;
+    Eigen::Vector3d GetMaxBound() const override;
+    Eigen::Vector3d GetCenter() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox() const override;
+    PlanarPatch& Transform(const Eigen::Matrix4d& transformation) override;
+    PlanarPatch& Translate(const Eigen::Vector3d& translation,
+                           bool relative = true) override;
+    PlanarPatch& Scale(const double scale,
+                       const Eigen::Vector3d& center) override;
+    PlanarPatch& Rotate(const Eigen::Matrix3d& R,
+                        const Eigen::Vector3d& center) override;
+
+    /// Assigns a color to the PlanarPatch.
+    ///
+    /// \param color  RGB colors of points.
+    PlanarPatch &PaintUniformColor(const Eigen::Vector3d &color) {
+        color_ = color;
+        return *this;
+    }
 
 public:
-    // LineSet &operator+=(const LineSet &lineset);
-    // LineSet operator+(const LineSet &lineset) const;
+    Eigen::Vector3d center_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
+    /// "d" parameter of a plane represented as ax + by + cz + d = 0
+    double dist_from_origin_ = 0;
+    Eigen::Vector3d basis_x_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d basis_y_ = Eigen::Vector3d::Zero();
 
-    // /// Returns `true` if the object contains points.
-    // bool HasPoints() const { return points_.size() > 0; }
+    Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
 
-    // /// Returns `true` if the object contains lines.
-    // bool HasLines() const { return HasPoints() && lines_.size() > 0; }
-
-    // /// Returns `true` if the objects lines contains colors.
-    // bool HasColors() const {
-    //     return HasLines() && colors_.size() == lines_.size();
-    // }
-
-    // /// \brief Returns the coordinates of the line at the given index.
-    // ///
-    // /// \param line_index Index of the line.
-    // std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
-    //         size_t line_index) const {
-    //     return std::make_pair(points_[lines_[line_index][0]],
-    //                           points_[lines_[line_index][1]]);
-    // }
-
-    // /// \brief Assigns each line in the LineSet the same color.
-    // ///
-    // /// \param color Specifies the color to be applied.
-    // LineSet &PaintUniformColor(const Eigen::Vector3d &color) {
-    //     ResizeAndPaintUniformColor(colors_, lines_.size(), color);
-    //     return *this;
-    // }
-
-    // /// \brief Factory function to create a LineSet from two PointClouds
-    // /// (\p cloud0, \p cloud1) and a correspondence set.
-    // ///
-    // /// \param cloud0 First point cloud.
-    // /// \param cloud1 Second point cloud.
-    // /// \param correspondences Set of correspondences.
-    // static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
-    //         const PointCloud &cloud0,
-    //         const PointCloud &cloud1,
-    //         const std::vector<std::pair<int, int>> &correspondences);
-
-    // /// \brief Factory function to create a LineSet from an
-    // OrientedBoundingBox.
-    // ///
-    // /// \param box The input bounding box.
-    // static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
-    //         const OrientedBoundingBox &box);
-
-    // /// \brief Factory function to create a LineSet from an
-    // /// AxisAlignedBoundingBox.
-    // ///
-    // /// \param box The input bounding box.
-    // static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
-    //         const AxisAlignedBoundingBox &box);
-
-    // /// Factory function to create a LineSet from edges of a triangle mesh.
-    // ///
-    // /// \param mesh The input triangle mesh.
-    // static std::shared_ptr<LineSet> CreateFromTriangleMesh(
-    //         const TriangleMesh &mesh);
-
-    // /// Factory function to create a LineSet from edges of a tetra mesh.
-    // ///
-    // /// \param mesh The input tetra mesh.
-    // static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh
-    // &mesh);
-
-public:
-    // /// Points coordinates.
-    // std::vector<Eigen::Vector3d> points_;
-    // /// Lines denoted by the index of points forming the line.
-    // std::vector<Eigen::Vector2i> lines_;
-    // /// RGB colors of lines.
-    // std::vector<Eigen::Vector3d> colors_;
 };
 
 }  // namespace geometry

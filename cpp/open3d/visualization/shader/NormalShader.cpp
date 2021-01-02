@@ -28,6 +28,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/visualization/shader/Shader.h"
 
 namespace open3d {
@@ -234,6 +235,72 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
             }
         }
     }
+    draw_arrays_mode_ = GL_TRIANGLES;
+    draw_arrays_size_ = GLsizei(points.size());
+    return true;
+}
+
+bool NormalShaderForPlanarPatch::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::PlanarPatch) {
+        PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
+        return false;
+    }
+    // if (option.mesh_show_back_face_) {
+    //     glDisable(GL_CULL_FACE);
+    // } else {
+        // glEnable(GL_CULL_FACE);
+    // }
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // if (option.mesh_show_wireframe_) {
+    //     glEnable(GL_POLYGON_OFFSET_FILL);
+    //     glPolygonOffset(1.0, 1.0);
+    // } else {
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    // }
+    return true;
+}
+
+bool NormalShaderForPlanarPatch::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &normals) {
+    if (geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::PlanarPatch) {
+        PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
+        return false;
+    }
+    const geometry::PlanarPatch &patch =
+            (const geometry::PlanarPatch &)geometry;
+    if (patch.IsEmpty()) {
+        PrintShaderWarning("Binding failed with empty PlanarPatch.");
+        return false;
+    }
+    points.resize(1);
+    normals.resize(1);
+    normals[0].z() = 1;
+    // for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+    //     const auto &triangle = mesh.triangles_[i];
+    //     for (size_t j = 0; j < 3; j++) {
+    //         size_t idx = i * 3 + j;
+    //         size_t vi = triangle(j);
+    //         const auto &vertex = mesh.vertices_[vi];
+    //         points[idx] = vertex.cast<float>();
+    //         if (option.mesh_shade_option_ ==
+    //             RenderOption::MeshShadeOption::FlatShade) {
+    //             normals[idx] = mesh.triangle_normals_[i].cast<float>();
+    //         } else {
+    //             normals[idx] = mesh.vertex_normals_[vi].cast<float>();
+    //         }
+    //     }
+    // }
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;

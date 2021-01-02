@@ -53,6 +53,7 @@
 #include "open3d/geometry/Line3D.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/Octree.h"
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"

@@ -220,6 +220,21 @@ protected:
     SimpleShaderForOctreeFace simple_shader_for_octree_face_;
 };
 
+class PlanarPatchRenderer : public GeometryRenderer {
+public:
+    ~PlanarPatchRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForPlanarPatch simple_shader_for_planar_patch_;
+    SimpleBlackShaderForPlanarPatchNormal simpleblack_normal_shader_;
+};
+
 class ImageRenderer : public GeometryRenderer {
 public:
     ~ImageRenderer() override {}
