@@ -47,13 +47,13 @@ void CPUArangeKernel(const std::unordered_map<std::string, Tensor>& srcs,
     static std::vector<std::string> src_attrs = {"start", "step"};
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
-            utility::LogError("Expected Tensor {} in srcs, but did not receive",
-                              k);
+            utility::LogError(
+                    "Expected Tensor {} in srcs, but did not receive.", k);
         }
     }
     if (dsts.count("arange") == 0) {
         utility::LogError(
-                "Expected Tensor arange in dsts, but did not receive");
+                "Expected Tensor arange in dsts, but did not receive.");
     }
 
     Tensor start = srcs.at("start");

@@ -213,22 +213,22 @@ Tensor Tensor::Arange(const Tensor& start,
                       const Tensor& stop,
                       const Tensor& step) {
     if (start.NumElements() != 1) {
-        utility::LogError("Start tensor must have only 1 element");
+        utility::LogError("Start tensor must have only 1 element.");
     }
     if (stop.NumElements() != 1) {
-        utility::LogError("Stop tensor must have only 1 element");
+        utility::LogError("Stop tensor must have only 1 element.");
     }
     if (step.NumElements() != 1) {
-        utility::LogError("Step tensor must have only 1 element");
+        utility::LogError("Step tensor must have only 1 element.");
     }
 
     Dtype dtype = start.GetDtype();
     Device device = start.GetDevice();
     if (stop.GetDtype() != dtype || stop.GetDevice() != device) {
-        utility::LogError("Stop must have the same dtype and device as start");
+        utility::LogError("Stop must have the same dtype and device as start.");
     }
     if (step.GetDtype() != dtype || step.GetDevice() != device) {
-        utility::LogError("Step must have the same dtype and device as start");
+        utility::LogError("Step must have the same dtype and device as start.");
     }
 
     int64_t num_elements = 0;
@@ -254,22 +254,22 @@ Tensor Tensor::Arange(const Tensor& start,
         }
     });
 
-    // Special case
+    // Special case.
     if (!is_arange_valid) {
         return Tensor({0}, dtype, device);
     }
 
-    // Input parameters
+    // Input parameters.
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"start", start},
             {"step", step},
     };
 
-    // Output
+    // Output.
     Tensor dst = Tensor({num_elements}, dtype, device);
     std::unordered_map<std::string, core::Tensor> dsts = {{"arange", dst}};
 
-    // Kernel launch
+    // Kernel launch.
     kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::Arange);
     return dst;
 }

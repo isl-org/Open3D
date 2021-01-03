@@ -213,7 +213,7 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
 TEST_P(TensorPermuteDevices, Arange) {
     core::Device device = GetParam();
 
-    // Test float
+    // Test float.
     std::vector<float> valsf{0, 1, 2, 3, 4};
     float startf = 0.0;
     float stopf = 5.0;
@@ -222,7 +222,7 @@ TEST_P(TensorPermuteDevices, Arange) {
             core::Tensor::Arange<float>(startf, stopf, stepf, device);
     EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
 
-    // Test float with non-one step
+    // Test float with non-one step.
     valsf = {0.1, 2.1, 4.1};
     startf = 0.1;
     stopf = 6.0;
@@ -230,7 +230,7 @@ TEST_P(TensorPermuteDevices, Arange) {
     arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
     EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
 
-    // Test float with negative step
+    // Test float with negative step.
     valsf = {0, -2.0, -4.0};
     startf = 0.0;
     stopf = -4.1;
@@ -238,21 +238,21 @@ TEST_P(TensorPermuteDevices, Arange) {
     arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
     EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
 
-    // Test empty set -- empty Tensor
+    // Test empty set -- empty Tensor.
     startf = 0.0;
     stopf = 2.0;
     stepf = -2.0;
     arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
     EXPECT_EQ(arangef.NumElements(), 0);
 
-    // Test zero step -- error
+    // Test zero step -- error.
     startf = 0.0;
     stopf = 2.0;
     stepf = 0.0;
     EXPECT_THROW(core::Tensor::Arange<float>(startf, stopf, stepf, device),
                  std::runtime_error);
 
-    // Test int
+    // Test int.
     std::vector<int64_t> valsi{0, 1, 2, 3, 4};
     int64_t starti = 0;
     int64_t stopi = 5;
