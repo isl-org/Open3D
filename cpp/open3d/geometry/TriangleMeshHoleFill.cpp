@@ -57,15 +57,15 @@ public:
 
     std::pair<int, int> GetAdjacentFrontIndices(int index,
                                                 std::vector<int> hole) {
-        const int hidx1 = index - 1 < 0 ? hole.size() - 1 : index - 1;
-        const int hidx2 = index + 1 >= hole.size() ? 0 : index + 1;
+        const int hidx1 = index - 1 < 0 ? int(hole.size()) - 1 : index - 1;
+        const int hidx2 = index + 1 >= int(hole.size()) ? 0 : index + 1;
         return std::pair<int, int>(hidx1, hidx2);
     }
 
-    bool IsExistingTriangle(size_t vidx0, size_t vidx1, size_t vidx2) {
+    bool IsExistingTriangle(int vidx0, int vidx1, int vidx2) {
         auto triangles_indices =
                 edges_to_triangles_[mesh_->GetOrderedEdge(vidx0, vidx1)];
-        for (size_t tidx : triangles_indices) {
+        for (int tidx : triangles_indices) {
             const auto &triangle = mesh_->triangles_[tidx];
             if (triangle(0) == vidx2 || triangle(1) == vidx2 ||
                 triangle(2) == vidx2) {
@@ -75,24 +75,47 @@ public:
         return false;
     }
 
-    double ComputeAngle(size_t vidx0, size_t vidx1, size_t vidx2) {
+    double ComputeAngle(int vidx0, int vidx1, int vidx2) {
         // Return 2 * M_PI if a triangle with the indices vidx0, vidx1 and vidx2
         // (in any order) already exists.
         if (IsExistingTriangle(vidx0, vidx1, vidx2)) {
             return 2 * M_PI;
         }
 
-        return utility::ComputeAngle(mesh_->vertices_[vidx0],
-                                     mesh_->vertices_[vidx1],
-                                     mesh_->vertices_[vidx2]);
+        auto &v0 = mesh_->vertices_[vidx0];
+        auto &v1 = mesh_->vertices_[vidx1];
+        auto &v2 = mesh_->vertices_[vidx2];
+
+        const auto v3 = v2 - v0;
+        const Eigen::Vector3d p = {1, 1, 1};
+        const auto plane_normal = v3.cross(p);
+        double d = -plane_normal.dot(v0);
+        double is_convex = (plane_normal.dot(v1) + d) > 0 ? true : false;
+
+        const auto e0 = v0 - v1;
+        const auto e1 = v2 - v1;
+        auto acute_angle = utility::ComputeAcuteAngle(e0, e1);
+        if (!is_convex) {
+            acute_angle = 2 * M_PI - acute_angle;
+        }
+        return acute_angle;
     }
 
     void ComputeAnglesForNeighbors(std::vector<double> &angles,
                                    std::vector<int> &front,
                                    std::pair<int, int> adjacent_front_indices) {
+        adjacent_front_indices.first =
+                adjacent_front_indices.first == int(front.size())
+                        ? int(front.size()) - 1
+                        : adjacent_front_indices.first;
+        adjacent_front_indices.second =
+                adjacent_front_indices.second - 1 < 0
+                        ? int(front.size()) - 1
+                        : adjacent_front_indices.second - 1;
+
         // Update the vertex angles for vidx_prev and vidx_next
-        const size_t vidx_prev = front[adjacent_front_indices.first];
-        const size_t vidx_next = front[adjacent_front_indices.second];
+        const int vidx_prev = front[adjacent_front_indices.first];
+        const int vidx_next = front[adjacent_front_indices.second];
         auto adjacent_front_indices_to_neighbors =
                 GetAdjacentFrontIndices(adjacent_front_indices.first, front);
         angles[adjacent_front_indices.first] = ComputeAngle(
@@ -105,7 +128,7 @@ public:
                 front[adjacent_front_indices_to_neighbors.second]);
     }
 
-    void AddTriangle(size_t vidx0, size_t vidx1, size_t vidx2) {
+    void AddTriangle(int vidx0, int vidx1, int vidx2) {
         mesh_->triangles_.emplace_back(Eigen::Vector3i(vidx0, vidx1, vidx2));
 
         auto &triangle = mesh_->triangles_.back();
@@ -149,46 +172,26 @@ public:
             }
 
             while (front.size() > 3) {
-                int min_angle_index =
+                auto min_angle_index =
                         std::min_element(angles.begin(), angles.end()) -
                         angles.begin();
                 double min_angle = angles[min_angle_index];
-                const size_t vidx = front[min_angle_index];
+                const int vidx = front[min_angle_index];
 
                 auto adjacent_front_indices =
-                        GetAdjacentFrontIndices(min_angle_index, front);
-                const size_t &vidx_prev = front[adjacent_front_indices.first];
-                const size_t &vidx_next = front[adjacent_front_indices.second];
+                        GetAdjacentFrontIndices(int(min_angle_index), front);
+                const int &vidx_prev = front[adjacent_front_indices.first];
+                const int &vidx_next = front[adjacent_front_indices.second];
 
-                std::vector<Eigen::Vector3d> vertex_candidates;
-                if (min_angle < lower_angle_threshold_) {
-                    // Do nothing.
-                } else if (lower_angle_threshold_ < min_angle &&
-                           min_angle <= upper_angle_threshold_) {
-                    // TODO: Compute one vertex candidate
-                } else if (upper_angle_threshold_ < min_angle &&
-                           min_angle < M_PI) {
-                    // TODO: Compute two vertex candidates
-                }
+                AddTriangle(vidx_prev, vidx_next, vidx);
 
-                switch (vertex_candidates.size()) {
-                    case 0: {
-                        // Add one triangle, but no new vertices.
-                        AddTriangle(vidx_prev, vidx_next, vidx);
+                mesh_->adjacency_list_[vidx_prev].insert(vidx_next);
+                mesh_->adjacency_list_[vidx_next].insert(vidx_prev);
 
-                        mesh_->adjacency_list_[vidx_prev].insert(vidx_next);
-                        mesh_->adjacency_list_[vidx_next].insert(vidx_prev);
-
-                        front.erase(front.begin() + min_angle_index);
-                        angles.erase(angles.begin() + min_angle_index);
-                        adjacent_front_indices.second =
-                                adjacent_front_indices.second - 1 < 0
-                                        ? front.size() - 1
-                                        : adjacent_front_indices.second - 1;
-                        ComputeAnglesForNeighbors(angles, front,
-                                                  adjacent_front_indices);
-                    }
-                }
+                front.erase(front.begin() + min_angle_index);
+                angles.erase(angles.begin() + min_angle_index);
+                ComputeAnglesForNeighbors(angles, front,
+                                          adjacent_front_indices);
             }
 
             AddTriangle(front[2], front[1], front[0]);
