@@ -30,6 +30,7 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace slac {
+
 ControlGrid::ControlGrid(float grid_size,
                          int64_t grid_count,
                          const core::Device& device)
@@ -44,23 +45,31 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     core::Tensor pts = pcd.GetPoints();
     int64_t n = pts.GetLength();
 
+    // Coordinate in the grid unit.
     core::Tensor vals = (pts / grid_size_).Floor();
     core::Tensor keys = vals.To(core::Dtype::Int32);
 
-    core::Tensor keys_nb({8, n}, core::Dtype::Int32, device_);
-    core::Tensor vals_nb({8, n, 3}, core::Dtype::Int32, device_);
+    // Prepare for insertion with 8 neighbors
+    core::Tensor keys_nb({8, n, 3}, core::Dtype::Int32, device_);
+    core::Tensor vals_nb({8, n, 3}, core::Dtype::Float32, device_);
     for (int nb = 0; nb < 8; ++nb) {
-        core::Tensor dt =
-                core::Tensor(std::vector<int>{(nb & 4), (nb & 2), (nb & 1)},
-                             {1, 3}, core::Dtype::Int32, device_);
+        int x_sel = (nb & 4) >> 2;
+        int y_sel = (nb & 2) >> 1;
+        int z_sel = (nb & 1);
+
+        core::Tensor dt = core::Tensor(std::vector<int>{x_sel, y_sel, z_sel},
+                                       {1, 3}, core::Dtype::Int32, device_);
         keys_nb[nb] = keys + dt;
-        vals_nb[nb] = vals + dt;
+        vals_nb[nb] = vals + dt.To(core::Dtype::Float32);
     }
-    keys_nb = keys_nb.View({8 * n, 1});
+    keys_nb = keys_nb.View({8 * n, 3});
+
+    // Convert back to the meter unit.
     vals_nb = vals_nb.View({8 * n, 3}) * grid_size_;
 
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Insert(keys_nb, vals_nb, addrs_nb, masks_nb);
+    utility::LogInfo("Hashmap size: {}", ctr_hashmap_->Size());
 }
 
 geometry::PointCloud ControlGrid::Parameterize(
@@ -75,18 +84,22 @@ geometry::PointCloud ControlGrid::Parameterize(
     core::Tensor residual = pts_quantized - pts_quantized_floor;
     std::vector<std::vector<core::Tensor>> residuals(3);
     for (int axis = 0; axis < 3; ++axis) {
-        residuals[axis].emplace_back(1.f - residual[axis]);
-        residuals[axis].emplace_back(residual[axis]);
+        core::Tensor residual_axis = residual.GetItem(
+                {core::TensorKey::Slice(core::None, core::None, core::None),
+                 core::TensorKey::Index(axis)});
+
+        residuals[axis].emplace_back(1.f - residual_axis);
+        residuals[axis].emplace_back(residual_axis);
     }
 
-    core::Tensor keys = pts_quantized.To(core::Dtype::Int32);
+    core::Tensor keys = pts_quantized_floor.To(core::Dtype::Int32);
 
-    core::Tensor keys_nb({8, n}, core::Dtype::Int32, device_);
+    core::Tensor keys_nb({8, n, 3}, core::Dtype::Int32, device_);
     core::Tensor residuals_nb({8, n}, core::Dtype::Float32, device_);
     for (int nb = 0; nb < 8; ++nb) {
-        int x_sel = nb & 4;
-        int y_sel = nb & 2;
-        int z_sel = nb & 1;
+        int x_sel = (nb & 4) >> 2;
+        int y_sel = (nb & 2) >> 1;
+        int z_sel = (nb & 1);
 
         core::Tensor dt = core::Tensor(std::vector<int>{x_sel, y_sel, z_sel},
                                        {1, 3}, core::Dtype::Int32, device_);
@@ -95,9 +108,17 @@ geometry::PointCloud ControlGrid::Parameterize(
                 residuals[0][x_sel] * residuals[1][y_sel] * residuals[2][z_sel];
     }
 
-    keys_nb = keys_nb.View({8 * n, 1});
+    keys_nb = keys_nb.View({8 * n, 3});
+
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
+
+    int64_t valid_sum =
+            masks_nb.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
+    if (valid_sum != 8 * n) {
+        utility::LogError("Unexpected invalid masks exist {} vs {}!", valid_sum,
+                          8 * n);
+    }
 
     geometry::PointCloud pcd_with_params = pcd;
     pcd_with_params.SetPointAttr("ctr_grid_idx",

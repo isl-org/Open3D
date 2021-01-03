@@ -63,6 +63,13 @@ public:
     /// points.
     geometry::PointCloud Parameterize(const geometry::PointCloud& pcd);
 
+    /// Get control grid positions directly by buffer tensor indices.
+    core::Tensor GetPositions(const core::Tensor& indices);
+
+    /// Update control grid positions directly by buffer tensor indices.
+    core::Tensor SetPositions(const core::Tensor& indices,
+                              const core::Tensor& positions);
+
     /// Warp a point cloud using control grid.
     geometry::PointCloud Warp(const geometry::PointCloud& pcd);
 

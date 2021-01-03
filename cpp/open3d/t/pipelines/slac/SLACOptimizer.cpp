@@ -199,11 +199,32 @@ void GetCorrespondencesForPointClouds(
 void InitializeControlGrid(ControlGrid& ctr_grid,
                            const std::vector<std::string>& fnames) {
     for (auto& fname : fnames) {
+        utility::LogInfo("Initializing grid for {}", fname);
+
         auto pcd = io::CreatePointCloudFromFile(fname);
         auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
                 *pcd, core::Dtype::Float32);
         ctr_grid.Touch(tpcd);
     }
+}
+
+std::pair<core::Tensor, core::Tensor> FillInControlGrid(
+        ControlGrid& ctr_grid,
+        const std::vector<std::string>& fnames,
+        const open3d::pipelines::registration::PoseGraph& rgbd_pose_graph,
+        const SLACOptimizerOption& option) {
+    core::Tensor AtA, Atb;
+
+    for (auto& fname : fnames) {
+        utility::LogInfo("Parameterizing {}", fname);
+
+        auto pcd = io::CreatePointCloudFromFile(fname);
+        auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
+                *pcd, core::Dtype::Float32);
+        auto tpcd_param = ctr_grid.Parameterize(tpcd);
+    }
+
+    return std::make_pair(AtA, Atb);
 }
 
 std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForRGBDImages(
@@ -236,10 +257,12 @@ ControlGrid RunSLACOptimizerForFragments(
 
     // First initialize ctr_grid
     ControlGrid ctr_grid(3.0 / 8);
-    // for (auto fname : fragment_fnames) {
-    //     auto pcd = io::ReadPointCloud(fname);
-    //     ctr_grid.Touch(pcd);
-    // }
+    InitializeControlGrid(ctr_grid, fragment_down_fnames);
+
+    // Fill-in using
+    core::Tensor AtA, Atb;
+    std::tie(AtA, Atb) = FillInControlGrid(ctr_grid, fragment_down_fnames,
+                                           fragment_pose_graph, option);
 
     // // Then allocate the Hessian matrix.
     // // TODO: write a sparse matrix representation / helper.
