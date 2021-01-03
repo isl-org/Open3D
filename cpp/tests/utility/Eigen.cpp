@@ -291,27 +291,5 @@ TEST(Eigen, ColorToUint8ToDouble) {
     }
 }
 
-TEST(Eigen, ComputeAngle) {
-    std::vector<Eigen::Vector3d> vertices = {{0, 1, 1}, {0, 2, 1}, {0, 2, 2}};
-    EXPECT_DOUBLE_EQ(
-            utility::ComputeAngle(vertices[0], vertices[1], vertices[2]),
-            M_PI_2);
-    EXPECT_DOUBLE_EQ(
-            utility::ComputeAngle(vertices[2], vertices[1], vertices[0]),
-            3 * M_PI_2);
-
-    vertices = {{0, 1, -1}, {0, 2, 1}, {0, 2, 2}};
-    EXPECT_NEAR(utility::ComputeAngle(vertices[0], vertices[1], vertices[2]),
-                2.677945, 0.00001);
-    EXPECT_NEAR(utility::ComputeAngle(vertices[2], vertices[1], vertices[0]),
-                2.677945 + M_PI, 0.00001);
-
-    vertices = {{0.28, -1.33, 28.9}, {38.3, 2.43, -123}, {0.12, 2.32, 2.21}};
-    EXPECT_NEAR(utility::ComputeAngle(vertices[0], vertices[1], vertices[2]),
-                0.055750, 0.00001);
-    EXPECT_NEAR(utility::ComputeAngle(vertices[2], vertices[1], vertices[0]),
-                0.055750 + M_PI, 0.00001);
-}
-
 }  // namespace tests
 }  // namespace open3d
