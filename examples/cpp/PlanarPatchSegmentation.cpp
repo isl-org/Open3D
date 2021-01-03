@@ -33,7 +33,7 @@
 int main(int argc, char **argv) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
     if (argc < 2) {
         PrintOpen3DVersion();
@@ -73,15 +73,15 @@ int main(int argc, char **argv) {
                          .count()
               << " seconds" << std::endl;
 
-    std::cout << "==============================" << std::endl;
-    for (const auto& p : patches) {
-        std::cout << p->normal_.transpose() << " ";
-        std::cout << p->dist_from_origin_ << " |\t";
-        std::cout << p->center_.transpose() << " |\t";
-        std::cout << p->basis_x_.transpose() << " |\t";
-        std::cout << p->basis_y_.transpose() << std::endl;
-    }
-    std::cout << "==============================" << std::endl;
+    // std::cout << "==============================" << std::endl;
+    // for (const auto& p : patches) {
+    //     std::cout << p->normal_.transpose() << " ";
+    //     std::cout << p->dist_from_origin_ << " |\t";
+    //     std::cout << p->center_.transpose() << " |\t";
+    //     std::cout << p->basis_x_.transpose() << " |\t";
+    //     std::cout << p->basis_y_.transpose() << std::endl;
+    // }
+    // std::cout << "==============================" << std::endl;
 
     // for const-correctness
     std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
