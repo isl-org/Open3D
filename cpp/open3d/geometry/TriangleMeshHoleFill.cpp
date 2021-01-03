@@ -86,15 +86,11 @@ public:
         auto &v1 = mesh_->vertices_[vidx1];
         auto &v2 = mesh_->vertices_[vidx2];
 
-        const auto v3 = v2 - v0;
-        const Eigen::Vector3d p = {1, 1, 1};
-        const auto plane_normal = v3.cross(p);
-        double d = -plane_normal.dot(v0);
-        double is_convex = (plane_normal.dot(v1) + d) > 0 ? true : false;
-
         const auto e0 = v0 - v1;
         const auto e1 = v2 - v1;
         auto acute_angle = utility::ComputeAcuteAngle(e0, e1);
+
+        bool is_convex = hole_normal_.dot(e0.cross(e1)) > 0.0;
         if (!is_convex) {
             acute_angle = 2 * M_PI - acute_angle;
         }
@@ -161,6 +157,20 @@ public:
         for (std::vector<int> front : boundaries_) {
             int size = int(front.size());
             std::vector<double> angles(size, 0);
+            hole_normal_ = Eigen::Vector3d::Zero();
+
+            // Compute the averaged hole normal.
+            for (int i = 0; i < size; i++) {
+                auto adjacent_front_indices = GetAdjacentFrontIndices(i, front);
+
+                auto &v0 =
+                        mesh_->vertices_[front[adjacent_front_indices.first]];
+                auto &v1 = mesh_->vertices_[front[i]];
+                auto &v2 =
+                        mesh_->vertices_[front[adjacent_front_indices.second]];
+                hole_normal_ += (v0 - v1).cross(v2 - v1);
+            }
+            hole_normal_ *= (1.0 / std::sqrt(hole_normal_.dot(hole_normal_)));
 
             // Calculate the angle between two adjacent boundary edges at each
             // vertex on the front.
@@ -214,8 +224,7 @@ private:
                        utility::hash_eigen<Eigen::Vector2i>>
             edges_to_triangles_;
 
-    double lower_angle_threshold_ = M_PI;  // TODO: Should be 75 degrees
-    double upper_angle_threshold_ = M_PI;  // TODO: Should be 135 degrees
+    Eigen::Vector3d hole_normal_;
 };
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FillHoles() {
