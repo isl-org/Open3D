@@ -656,6 +656,7 @@ void pybind_trianglemesh(py::module &m) {
              {"smoothed_alpha",
               "trade-off parameter for the smoothed energy functional for the "
               "regularization term."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "fill_holes");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
             {{"pcd",

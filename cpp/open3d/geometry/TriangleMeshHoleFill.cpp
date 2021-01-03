@@ -185,7 +185,6 @@ public:
                 auto min_angle_index =
                         std::min_element(angles.begin(), angles.end()) -
                         angles.begin();
-                double min_angle = angles[min_angle_index];
                 const int vidx = front[min_angle_index];
 
                 auto adjacent_front_indices =
