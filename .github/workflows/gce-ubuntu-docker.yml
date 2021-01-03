@@ -44,12 +44,19 @@ jobs:
 
     env:
       UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           submodules: 'recursive'
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -80,7 +87,8 @@ jobs:
       fail-fast: false
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
       matrix:
-        CI_CONFIG_ID: [2, 3, 4, 5]   # See gce-ubuntu-docker-run.sh for details. These need GPU.
+        # See gce-ubuntu-docker-run.sh for details. These need GPU.
+        CI_CONFIG_ID: ['2-bionic', '3-ML-bionic', '4-ML-RPC-bionic', '5-ML-RPC-focal']
 
     env:
       CI_CONFIG_ID: ${{ matrix.CI_CONFIG_ID }}
@@ -102,9 +110,14 @@ jobs:
         run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh create-vm
 
-      - name: Config, build and run unit tests
+      - name: Config, build and run C++ unit tests
         run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-ci
+
+      - name: Run Python unit tests
+        if: env.CI_CONFIG_ID == '4-ML-RPC-bionic' || env.CI_CONFIG_ID == '5-ML-RPC-focal'
+        run: |
+          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-python-ci
 
       - name: Delete VM
         if: always()
