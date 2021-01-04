@@ -298,9 +298,9 @@ geometry::Ray3D ViewControl::UnprojectPoint(double x, double y) const {
 
     gl_util::GLMatrix4f pvm = projection_matrix_ * view_matrix_ * model_matrix_;
     gl_util::GLMatrix4f inv = pvm.inverse();
-    gl_util::GLVector4f clipping_pos(2.0f * x / window_width_ - 1.0f,
-                                     1.0f - 2.0f * y / window_height_, 1.0f,
-                                     1.0f);
+    gl_util::GLVector4f clipping_pos(2.0f * (float)x / window_width_ - 1.0f,
+                                     1.0f - 2.0f * (float)y / window_height_,
+                                     1.0f, 1.0f);
     gl_util::GLVector4f homogeneous_pos = inv * clipping_pos;
     homogeneous_pos /= homogeneous_pos[3];
     Eigen::Vector3d world_pos = Eigen::Vector3d(
