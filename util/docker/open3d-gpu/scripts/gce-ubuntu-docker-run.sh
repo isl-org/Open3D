@@ -162,7 +162,7 @@ run-ci)
 run-python-ci)
     # Wait for wheel to be downloaded from ubuntu.yml CI
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
-        --command <<"WHEEL_WAIT"
+        <<"WHEEL_WAIT"
     bash -c 'for wait_time in $(seq 0 30 1200); do
         whlstat="$(ls -l --full-time ~/open3d*.whl 2>/dev/null)"
         sleep 30
