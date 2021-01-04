@@ -27,8 +27,8 @@
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 
 #include "open3d/Open3D.h"
-#include "open3d/core/kernel/Kernel.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/kernel/GeneralEW.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

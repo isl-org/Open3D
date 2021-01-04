@@ -24,17 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <tbb/concurrent_unordered_set.h>
+
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
-#include "open3d/core/kernel/GeneralEW.h"
-#include "open3d/core/kernel/GeneralEWMacros.h"
-#include "open3d/core/kernel/GeneralEWSharedImpl.h"
-#include "open3d/core/kernel/GeneralIndexer.h"
+#include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/t/geometry/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/GeneralEWMacros.h"
+#include "open3d/t/geometry/kernel/GeneralEWSharedImpl.h"
+#include "open3d/t/geometry/kernel/GeneralIndexer.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -42,8 +43,8 @@ namespace core {
 namespace kernel {
 
 struct Coord3i {
-    OPEN3D_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
-    bool OPEN3D_HOST_DEVICE operator==(const Coord3i& other) const {
+    Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
+    bool operator==(const Coord3i& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
@@ -52,13 +53,22 @@ struct Coord3i {
     int64_t z_;
 };
 
-void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
-                         std::unordered_map<std::string, Tensor>& dsts) {
-    static std::vector<std::string> src_attrs = {
-            "points",
-            "voxel_size",
-            "resolution",
-    };
+struct Coord3iHash {
+    size_t operator()(const Coord3i& k) const {
+        static const size_t p0 = 73856093;
+        static const size_t p1 = 19349669;
+        static const size_t p2 = 83492791;
+
+        return (static_cast<size_t>(k.x_) * p0) ^
+               (static_cast<size_t>(k.y_) * p1) ^
+               (static_cast<size_t>(k.z_) * p2);
+    }
+};
+
+void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
+                        std::unordered_map<std::string, Tensor>& dsts) {
+    static std::vector<std::string> src_attrs = {"points", "voxel_size",
+                                                 "resolution", "sdf_trunc"};
 
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
@@ -76,75 +86,69 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
     float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
 
-    Device device = pcd.GetDevice();
-
     int64_t n = pcd.GetLength();
     float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
 
-    Tensor block_coordi({8 * n, 3}, Dtype::Int32, device);
-    int* block_coordi_ptr = static_cast<int*>(block_coordi.GetDataPtr());
-    Tensor count(std::vector<int>{0}, {}, Dtype::Int32, device);
-    int* count_ptr = static_cast<int*>(count.GetDataPtr());
-
-    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                 int64_t workload_idx) {
+    tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
+    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
         float x = pcd_ptr[3 * workload_idx + 0];
         float y = pcd_ptr[3 * workload_idx + 1];
         float z = pcd_ptr[3 * workload_idx + 2];
 
-        int xb_lo = static_cast<int>(floor((x - sdf_trunc) / block_size));
-        int xb_hi = static_cast<int>(floor((x + sdf_trunc) / block_size));
-        int yb_lo = static_cast<int>(floor((y - sdf_trunc) / block_size));
-        int yb_hi = static_cast<int>(floor((y + sdf_trunc) / block_size));
-        int zb_lo = static_cast<int>(floor((z - sdf_trunc) / block_size));
-        int zb_hi = static_cast<int>(floor((z + sdf_trunc) / block_size));
-
+        int xb_lo = static_cast<int>(std::floor((x - sdf_trunc) / block_size));
+        int xb_hi = static_cast<int>(std::floor((x + sdf_trunc) / block_size));
+        int yb_lo = static_cast<int>(std::floor((y - sdf_trunc) / block_size));
+        int yb_hi = static_cast<int>(std::floor((y + sdf_trunc) / block_size));
+        int zb_lo = static_cast<int>(std::floor((z - sdf_trunc) / block_size));
+        int zb_hi = static_cast<int>(std::floor((z + sdf_trunc) / block_size));
         for (int xb = xb_lo; xb <= xb_hi; ++xb) {
             for (int yb = yb_lo; yb <= yb_hi; ++yb) {
                 for (int zb = zb_lo; zb <= zb_hi; ++zb) {
-                    int idx = atomicAdd(count_ptr, 1);
-                    block_coordi_ptr[3 * idx + 0] = xb;
-                    block_coordi_ptr[3 * idx + 1] = yb;
-                    block_coordi_ptr[3 * idx + 2] = zb;
+                    set.emplace(xb, yb, zb);
                 }
             }
         }
     });
 
-    int total_block_count = count.Item<int>();
-    if (total_block_count == 0) {
+    int64_t block_count = set.size();
+    if (block_count == 0) {
         utility::LogError(
-                "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
-                "abort integration. Please check specified parameters, "
+                "No block is touched in TSDF volume, abort integration. Please "
+                "check specified parameters, "
                 "especially depth_scale and voxel_size");
     }
-    block_coordi = block_coordi.Slice(0, 0, total_block_count);
-    core::Hashmap pcd_block_hashmap(total_block_count, core::Dtype::Int32,
-                                    core::Dtype::Int32, {3}, {1}, device);
-    core::Tensor block_addrs, block_masks;
-    pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
-                               block_addrs, block_masks);
-    dsts.emplace("block_coords", block_coordi.IndexGet({block_masks}));
+    core::Tensor block_coords({block_count, 3}, core::Dtype::Int32,
+                              pcd.GetDevice());
+    int* block_coords_ptr = static_cast<int*>(block_coords.GetDataPtr());
+    int count = 0;
+    for (auto it = set.begin(); it != set.end(); ++it, ++count) {
+        int64_t offset = count * 3;
+        block_coords_ptr[offset + 0] = static_cast<int>(it->x_);
+        block_coords_ptr[offset + 1] = static_cast<int>(it->y_);
+        block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
+    }
+
+    dsts.emplace("block_coords", block_coords);
 }
 
-void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
-                   std::unordered_map<std::string, Tensor>& dsts,
-                   GeneralEWOpCode op_code) {
+void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
+                  std::unordered_map<std::string, Tensor>& dsts,
+                  GeneralEWOpCode op_code) {
     switch (op_code) {
         case GeneralEWOpCode::Unproject:
-            CUDAUnprojectKernel(srcs, dsts);
+            CPUUnprojectKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFTouch:
-            CUDATSDFTouchKernel(srcs, dsts);
+            CPUTSDFTouchKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFIntegrate:
-            CUDATSDFIntegrateKernel(srcs, dsts);
+            CPUTSDFIntegrateKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFPointExtraction:
-            CUDAPointExtractionKernel(srcs, dsts);
+            CPUPointExtractionKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFMeshExtraction:
-            CUDAMeshExtractionKernel(srcs, dsts);
+            CPUMeshExtractionKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::RayCasting:
             utility::LogError("[RayCasting] Unimplemented.");

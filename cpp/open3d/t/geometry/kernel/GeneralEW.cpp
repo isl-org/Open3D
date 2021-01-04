@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/GeneralEW.h"
 
 #include <vector>
 

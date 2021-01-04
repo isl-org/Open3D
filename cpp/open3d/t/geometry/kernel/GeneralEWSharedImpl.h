@@ -31,9 +31,9 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/GeneralEW.h"
-#include "open3d/core/kernel/GeneralEWMacros.h"
-#include "open3d/core/kernel/GeneralIndexer.h"
+#include "open3d/t/geometry/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/GeneralEWMacros.h"
+#include "open3d/t/geometry/kernel/GeneralIndexer.h"
 #include "open3d/utility/Console.h"
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
