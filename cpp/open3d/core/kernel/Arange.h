@@ -32,12 +32,18 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor NonZero(const Tensor& src);
+Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step);
 
-Tensor NonZeroCPU(const Tensor& src);
+void ArangeCPU(const Tensor& start,
+               const Tensor& stop,
+               const Tensor& step,
+               Tensor& dst);
 
 #ifdef BUILD_CUDA_MODULE
-Tensor NonZeroCUDA(const Tensor& src);
+void ArangeCUDA(const Tensor& start,
+                const Tensor& stop,
+                const Tensor& step,
+                Tensor& dst);
 #endif
 
 }  // namespace kernel

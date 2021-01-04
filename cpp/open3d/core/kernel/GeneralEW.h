@@ -35,7 +35,6 @@ namespace core {
 namespace kernel {
 
 enum class GeneralEWOpCode {
-    Arange,
     Unproject,
     TSDFIntegrate,
     TSDFTouch,
