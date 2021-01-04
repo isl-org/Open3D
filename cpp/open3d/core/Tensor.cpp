@@ -212,28 +212,20 @@ Tensor Tensor::Diag(const Tensor& input) {
 Tensor Tensor::Arange(const Tensor& start,
                       const Tensor& stop,
                       const Tensor& step) {
-    if (start.NumElements() != 1) {
-        utility::LogError("Start tensor must have only 1 element.");
-    }
-    if (stop.NumElements() != 1) {
-        utility::LogError("Stop tensor must have only 1 element.");
-    }
-    if (step.NumElements() != 1) {
-        utility::LogError("Step tensor must have only 1 element.");
-    }
+    start.AssertShape({}, "Start tensor must have shape {}.");
+    stop.AssertShape({}, "Stop tensor must have shape {}.");
+    step.AssertShape({}, "Step tensor must have shape {}.");
 
-    Dtype dtype = start.GetDtype();
     Device device = start.GetDevice();
-    if (stop.GetDtype() != dtype || stop.GetDevice() != device) {
-        utility::LogError("Stop must have the same dtype and device as start.");
-    }
-    if (step.GetDtype() != dtype || step.GetDevice() != device) {
-        utility::LogError("Step must have the same dtype and device as start.");
-    }
+    stop.AssertDevice(device,
+                      "Stop must have the same dtype and device as start.");
+    step.AssertDevice(device,
+                      "Step must have the same dtype and device as start.");
 
     int64_t num_elements = 0;
     bool is_arange_valid = true;
 
+    Dtype dtype = start.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t sstart = start.Item<scalar_t>();
         scalar_t sstop = stop.Item<scalar_t>();
@@ -1309,29 +1301,54 @@ bool Tensor::IsSame(const Tensor& other) const {
            dtype_ == other.dtype_;
 }
 
-void Tensor::AssertShape(const SizeVector& expected_shape) const {
+void Tensor::AssertShape(const SizeVector& expected_shape,
+                         const std::string& error_msg) const {
     if (shape_ != expected_shape) {
-        utility::LogError("Tensor shape {} does not match expected shape: {}",
-                          shape_, expected_shape);
+        if (error_msg.empty()) {
+            utility::LogError(
+                    "Tensor has shape {}, but it is expected to be {}.", shape_,
+                    expected_shape);
+        } else {
+            utility::LogError(
+                    "Tensor has shape {}, but it is expected to be {}: {}",
+                    shape_, expected_shape, error_msg);
+        }
     }
 }
 
-void Tensor::AssertShapeCompatible(
-        const DynamicSizeVector& expected_shape) const {
-    GetShape().AssertCompatible(expected_shape);
+void Tensor::AssertShapeCompatible(const DynamicSizeVector& expected_shape,
+                                   const std::string& error_msg) const {
+    GetShape().AssertCompatible(expected_shape, error_msg);
 }
 
-void Tensor::AssertDevice(const Device& expected_device) const {
+void Tensor::AssertDevice(const Device& expected_device,
+                          const std::string& error_msg) const {
     if (GetDevice() != expected_device) {
-        utility::LogError("Tensor has device {}, but is expected to be {}.",
-                          GetDevice().ToString(), expected_device.ToString());
+        if (error_msg.empty()) {
+            utility::LogError("Tensor has device {}, but is expected to be {}",
+                              GetDevice().ToString(),
+                              expected_device.ToString());
+        } else {
+            utility::LogError(
+                    "Tensor has device {}, but is expected to be {}: {}",
+                    GetDevice().ToString(), expected_device.ToString(),
+                    error_msg);
+        }
     }
 }
 
-void Tensor::AssertDtype(const Dtype& expected_dtype) const {
+void Tensor::AssertDtype(const Dtype& expected_dtype,
+                         const std::string& error_msg) const {
     if (GetDtype() != expected_dtype) {
-        utility::LogError("Tensor has dtype {}, but is expected to be {}.",
-                          GetDtype().ToString(), expected_dtype.ToString());
+        if (error_msg.empty()) {
+            utility::LogError("Tensor has dtype {}, but is expected to be {}.",
+                              GetDtype().ToString(), expected_dtype.ToString());
+        } else {
+            utility::LogError(
+                    "Tensor has dtype {}, but is expected to be {}: {}",
+                    GetDtype().ToString(), expected_dtype.ToString(),
+                    error_msg);
+        }
     }
 }
 
