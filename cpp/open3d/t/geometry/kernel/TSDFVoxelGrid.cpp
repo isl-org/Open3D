@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 
 #include <vector>
 
@@ -33,11 +33,12 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
 
-void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
-               std::unordered_map<std::string, Tensor>& dsts,
+void GeneralEW(const std::unordered_map<std::string, core::Tensor>& srcs,
+               std::unordered_map<std::string, core::Tensor>& dsts,
                GeneralEWOpCode op_code) {
     // srcs cannot be empty. dsts can be empty on initialization and emplaced at
     // runtime in specific kernels.
@@ -47,7 +48,7 @@ void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
     }
 
     // srcs and dsts must be on the same device.
-    Device device = srcs.begin()->second.GetDevice();
+    core::Device device = srcs.begin()->second.GetDevice();
     for (auto it = srcs.begin(); it != srcs.end(); ++it) {
         if (device != it->second.GetDevice()) {
             utility::LogError("[GeneralEW]: incompatible device in inputs");
@@ -60,10 +61,10 @@ void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
     }
 
     // We don't assume shape consistency: general ops are less constrained.
-    Device::DeviceType device_type = device.GetType();
-    if (device_type == Device::DeviceType::CPU) {
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
         GeneralEWCPU(srcs, dsts, op_code);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         GeneralEWCUDA(srcs, dsts, op_code);
 #else
@@ -75,5 +76,6 @@ void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
 }
 
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

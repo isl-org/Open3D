@@ -31,7 +31,8 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
 
 enum class GeneralEWOpCode {
@@ -43,20 +44,21 @@ enum class GeneralEWOpCode {
     RayCasting
 };
 
-void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
-               std::unordered_map<std::string, Tensor>& dsts,
+void GeneralEW(const std::unordered_map<std::string, core::Tensor>& srcs,
+               std::unordered_map<std::string, core::Tensor>& dsts,
                GeneralEWOpCode op_code);
 
-void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
-                  std::unordered_map<std::string, Tensor>& dsts,
+void GeneralEWCPU(const std::unordered_map<std::string, core::Tensor>& srcs,
+                  std::unordered_map<std::string, core::Tensor>& dsts,
                   GeneralEWOpCode op_code);
 
 #ifdef BUILD_CUDA_MODULE
-void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
-                   std::unordered_map<std::string, Tensor>& dsts,
+void GeneralEWCUDA(const std::unordered_map<std::string, core::Tensor>& srcs,
+                   std::unordered_map<std::string, core::Tensor>& dsts,
                    GeneralEWOpCode op_code);
 #endif
 
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

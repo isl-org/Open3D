@@ -32,14 +32,15 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/t/geometry/kernel/GeneralEW.h"
-#include "open3d/t/geometry/kernel/GeneralEWMacros.h"
-#include "open3d/t/geometry/kernel/GeneralEWSharedImpl.h"
-#include "open3d/t/geometry/kernel/GeneralIndexer.h"
+#include "open3d/t/geometry/kernel/GeometryIndexer.h"
+#include "open3d/t/geometry/kernel/MarchingCubesMacros.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGridShared.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
 
 struct Coord3i {
@@ -65,21 +66,23 @@ struct Coord3iHash {
     }
 };
 
-void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
-                        std::unordered_map<std::string, Tensor>& dsts) {
+void CPUTSDFTouchKernel(
+        const std::unordered_map<std::string, core::Tensor>& srcs,
+        std::unordered_map<std::string, core::Tensor>& dsts) {
     static std::vector<std::string> src_attrs = {"points", "voxel_size",
                                                  "resolution", "sdf_trunc"};
 
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
             utility::LogError(
-                    "[CUDATSDFTouchKernel] expected Tensor {} in srcs, but "
+                    "[CUDATSDFTouchKernel] expected core::Tensor {} in srcs, "
+                    "but "
                     "did not receive",
                     k);
         }
     }
 
-    Tensor pcd = srcs.at("points");
+    core::Tensor pcd = srcs.at("points");
     float voxel_size = srcs.at("voxel_size").Item<float>();
     int64_t resolution = srcs.at("resolution").Item<int64_t>();
     float block_size = voxel_size * resolution;
@@ -90,25 +93,32 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
-    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
-        float x = pcd_ptr[3 * workload_idx + 0];
-        float y = pcd_ptr[3 * workload_idx + 1];
-        float z = pcd_ptr[3 * workload_idx + 2];
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
+                float x = pcd_ptr[3 * workload_idx + 0];
+                float y = pcd_ptr[3 * workload_idx + 1];
+                float z = pcd_ptr[3 * workload_idx + 2];
 
-        int xb_lo = static_cast<int>(std::floor((x - sdf_trunc) / block_size));
-        int xb_hi = static_cast<int>(std::floor((x + sdf_trunc) / block_size));
-        int yb_lo = static_cast<int>(std::floor((y - sdf_trunc) / block_size));
-        int yb_hi = static_cast<int>(std::floor((y + sdf_trunc) / block_size));
-        int zb_lo = static_cast<int>(std::floor((z - sdf_trunc) / block_size));
-        int zb_hi = static_cast<int>(std::floor((z + sdf_trunc) / block_size));
-        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
-            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
-                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
-                    set.emplace(xb, yb, zb);
+                int xb_lo = static_cast<int>(
+                        std::floor((x - sdf_trunc) / block_size));
+                int xb_hi = static_cast<int>(
+                        std::floor((x + sdf_trunc) / block_size));
+                int yb_lo = static_cast<int>(
+                        std::floor((y - sdf_trunc) / block_size));
+                int yb_hi = static_cast<int>(
+                        std::floor((y + sdf_trunc) / block_size));
+                int zb_lo = static_cast<int>(
+                        std::floor((z - sdf_trunc) / block_size));
+                int zb_hi = static_cast<int>(
+                        std::floor((z + sdf_trunc) / block_size));
+                for (int xb = xb_lo; xb <= xb_hi; ++xb) {
+                    for (int yb = yb_lo; yb <= yb_hi; ++yb) {
+                        for (int zb = zb_lo; zb <= zb_hi; ++zb) {
+                            set.emplace(xb, yb, zb);
+                        }
+                    }
                 }
-            }
-        }
-    });
+            });
 
     int64_t block_count = set.size();
     if (block_count == 0) {
@@ -131,8 +141,8 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     dsts.emplace("block_coords", block_coords);
 }
 
-void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
-                  std::unordered_map<std::string, Tensor>& dsts,
+void GeneralEWCPU(const std::unordered_map<std::string, core::Tensor>& srcs,
+                  std::unordered_map<std::string, core::Tensor>& dsts,
                   GeneralEWOpCode op_code) {
     switch (op_code) {
         case GeneralEWOpCode::Unproject:
@@ -159,5 +169,6 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
 }
 
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

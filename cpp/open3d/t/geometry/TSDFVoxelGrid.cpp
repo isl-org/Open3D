@@ -28,7 +28,7 @@
 
 #include "open3d/Open3D.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/geometry/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -144,8 +144,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                                        core::Dtype::Float32, device_)}};
     std::unordered_map<std::string, core::Tensor> dsts;
 
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFTouch);
+    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFTouch);
     if (dsts.count("block_coords") == 0) {
         utility::LogError(
                 "[TSDFVoxelGrid] touch launch failed, expected block_coords");
@@ -213,8 +212,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     dsts = {{"block_values", block_hashmap_->GetValueTensor()}};
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFIntegrate);
+    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFIntegrate);
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
@@ -238,8 +236,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
                                         core::Dtype::Float32, device_)}};
 
     std::unordered_map<std::string, core::Tensor> dsts;
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFPointExtraction);
+    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFPointExtraction);
     if (dsts.count("points") == 0) {
         utility::LogError(
                 "[TSDFVoxelGrid] extract surface launch failed, points "
@@ -286,8 +283,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     std::unordered_map<std::string, core::Tensor> dsts;
 
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFMeshExtraction);
+    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFMeshExtraction);
 
     TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
     mesh.SetVertexNormals(dsts.at("normals"));

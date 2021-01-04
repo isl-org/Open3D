@@ -36,7 +36,7 @@
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
-#include "open3d/t/geometry/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 
 namespace open3d {
 namespace t {
@@ -168,8 +168,7 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                     core::Dtype::Int64, device)}};
     std::unordered_map<std::string, core::Tensor> dsts;
 
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::Unproject);
+    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::Unproject);
     if (dsts.count("points") == 0) {
         utility::LogError(
                 "[PointCloud] unprojection launch failed, vertex map expected "

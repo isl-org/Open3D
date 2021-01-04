@@ -1,11 +1,11 @@
 # Create object library
 set(T_GEOMETRY_KERNEL_SRC
-    kernel/GeneralEW.cpp
-    kernel/GeneralEWCPU.cpp
+    kernel/TSDFVoxelGrid.cpp
+    kernel/TSDFVoxelGridCPU.cpp
 )
 
 set(T_GEOMETRY_KERNEL_CUDA_SRC
-    kernel/GeneralEWCUDA.cu
+    kernel/TSDFVoxelGridCUDA.cu
 )
 
 set(T_GEOMETRY_SRC

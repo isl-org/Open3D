@@ -31,9 +31,9 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/kernel/GeneralEW.h"
-#include "open3d/t/geometry/kernel/GeneralEWMacros.h"
-#include "open3d/t/geometry/kernel/GeneralIndexer.h"
+#include "open3d/t/geometry/kernel/GeometryIndexer.h"
+#include "open3d/t/geometry/kernel/MarchingCubesMacros.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/utility/Console.h"
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -59,7 +59,8 @@
     }()
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
 
 /// 8-byte voxel structure.
@@ -247,8 +248,8 @@ void CUDAUnprojectKernel
 #else
 void CPUUnprojectKernel
 #endif
-        (const std::unordered_map<std::string, Tensor>& srcs,
-         std::unordered_map<std::string, Tensor>& dsts) {
+        (const std::unordered_map<std::string, core::Tensor>& srcs,
+         std::unordered_map<std::string, core::Tensor>& dsts) {
     static std::vector<std::string> src_attrs = {
             "depth", "intrinsics", "depth_scale", "depth_max", "stride",
     };
@@ -262,9 +263,9 @@ void CPUUnprojectKernel
     }
 
     // Input
-    Tensor depth = srcs.at("depth");
-    Tensor intrinsics = srcs.at("intrinsics");
-    Tensor extrinsics = srcs.at("extrinsics");
+    core::Tensor depth = srcs.at("depth");
+    core::Tensor intrinsics = srcs.at("intrinsics");
+    core::Tensor extrinsics = srcs.at("extrinsics");
     float depth_scale = srcs.at("depth_scale").Item<float>();
     float depth_max = srcs.at("depth_max").Item<float>();
     int64_t stride = srcs.at("stride").Item<int64_t>();
@@ -276,14 +277,14 @@ void CPUUnprojectKernel
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
     int64_t cols_strided = depth_indexer.GetShape(1) / stride;
 
-    Tensor points({rows_strided * cols_strided, 3}, core::Dtype::Float32,
-                  depth.GetDevice());
+    core::Tensor points({rows_strided * cols_strided, 3}, core::Dtype::Float32,
+                        depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
 
     // Counter
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
-                 depth.GetDevice());
+    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
+                       depth.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 #else
     std::atomic<int> count_atomic(0);
@@ -292,10 +293,11 @@ void CPUUnprojectKernel
 
     int64_t n = rows_strided * cols_strided;
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher::LaunchGeneralKernel(
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
-    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
 #endif
                 int64_t y = (workload_idx / cols_strided) * stride;
                 int64_t x = (workload_idx % cols_strided) * stride;
@@ -329,8 +331,8 @@ void CUDATSDFIntegrateKernel
 #else
 void CPUTSDFIntegrateKernel
 #endif
-        (const std::unordered_map<std::string, Tensor>& srcs,
-         std::unordered_map<std::string, Tensor>& dsts) {
+        (const std::unordered_map<std::string, core::Tensor>& srcs,
+         std::unordered_map<std::string, core::Tensor>& dsts) {
     // Decode input tensors
     static std::vector<std::string> src_attrs = {
             "depth",       "indices",    "block_keys", "intrinsics",
@@ -346,14 +348,14 @@ void CPUTSDFIntegrateKernel
         }
     }
 
-    Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
-    Tensor indices = srcs.at("indices");
-    Tensor block_keys = srcs.at("block_keys");
-    Tensor block_values = dsts.at("block_values");
+    core::Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
+    core::Tensor indices = srcs.at("indices");
+    core::Tensor block_keys = srcs.at("block_keys");
+    core::Tensor block_values = dsts.at("block_values");
 
     // Transforms
-    Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
-    Tensor extrinsics = srcs.at("extrinsics").To(core::Dtype::Float32);
+    core::Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
+    core::Tensor extrinsics = srcs.at("extrinsics").To(core::Dtype::Float32);
 
     // Parameters
     int64_t resolution = srcs.at("resolution").Item<int64_t>();
@@ -374,7 +376,7 @@ void CPUTSDFIntegrateKernel
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
 
     // Optional color integration
-    Tensor color;
+    core::Tensor color;
     NDArrayIndexer color_indexer;
     bool integrate_color = false;
     if (srcs.count("color") != 0) {
@@ -389,9 +391,9 @@ void CPUTSDFIntegrateKernel
     int64_t n = indices.GetLength() * resolution3;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher launcher;
+    core::kernel::CUDALauncher launcher;
 #else
-    CPULauncher launcher;
+    core::kernel::CPULauncher launcher;
 #endif
 
     DISPATCH_BYTESIZE_TO_VOXEL(
@@ -471,8 +473,8 @@ void CUDAPointExtractionKernel
 #else
 void CPUPointExtractionKernel
 #endif
-        (const std::unordered_map<std::string, Tensor>& srcs,
-         std::unordered_map<std::string, Tensor>& dsts) {
+        (const std::unordered_map<std::string, core::Tensor>& srcs,
+         std::unordered_map<std::string, core::Tensor>& dsts) {
     // Decode input tensors
     static std::vector<std::string> src_attrs = {
             "indices",      "nb_indices", "nb_masks",   "block_keys",
@@ -487,11 +489,11 @@ void CPUPointExtractionKernel
         }
     }
 
-    Tensor indices = srcs.at("indices");
-    Tensor nb_indices = srcs.at("nb_indices");
-    Tensor nb_masks = srcs.at("nb_masks");
-    Tensor block_keys = srcs.at("block_keys");
-    Tensor block_values = srcs.at("block_values");
+    core::Tensor indices = srcs.at("indices");
+    core::Tensor nb_indices = srcs.at("nb_indices");
+    core::Tensor nb_masks = srcs.at("nb_masks");
+    core::Tensor block_keys = srcs.at("block_keys");
+    core::Tensor block_values = srcs.at("block_values");
 
     // Parameters
     int64_t resolution = srcs.at("resolution").Item<int64_t>();
@@ -525,9 +527,9 @@ void CPUPointExtractionKernel
 #endif
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher launcher;
+    core::kernel::CUDALauncher launcher;
 #else
-    CPULauncher launcher;
+    core::kernel::CPULauncher launcher;
 #endif
 
     // This pass determines valid number of points.
@@ -609,12 +611,13 @@ void CPUPointExtractionKernel
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 bool extract_color = false;
-                Tensor colors;
+                core::Tensor colors;
                 NDArrayIndexer color_indexer;
                 if (voxel_t::HasColor()) {
                     extract_color = true;
-                    colors = Tensor({total_count, 3}, core::Dtype::Float32,
-                                    block_values.GetDevice());
+                    colors =
+                            core::Tensor({total_count, 3}, core::Dtype::Float32,
+                                         block_values.GetDevice());
                     color_indexer = NDArrayIndexer(colors, 1);
                 }
 
@@ -757,8 +760,8 @@ void CUDAMeshExtractionKernel
 #else
 void CPUMeshExtractionKernel
 #endif
-        (const std::unordered_map<std::string, Tensor>& srcs,
-         std::unordered_map<std::string, Tensor>& dsts) {
+        (const std::unordered_map<std::string, core::Tensor>& srcs,
+         std::unordered_map<std::string, core::Tensor>& dsts) {
     // Decode input tensors
     static std::vector<std::string> src_attrs = {
             "indices",    "inv_indices",  "nb_indices", "nb_masks",
@@ -774,12 +777,12 @@ void CPUMeshExtractionKernel
         }
     }
 
-    Tensor indices = srcs.at("indices");
-    Tensor inv_indices = srcs.at("inv_indices");
-    Tensor nb_indices = srcs.at("nb_indices");
-    Tensor nb_masks = srcs.at("nb_masks");
-    Tensor block_keys = srcs.at("block_keys");
-    Tensor block_values = srcs.at("block_values");
+    core::Tensor indices = srcs.at("indices");
+    core::Tensor inv_indices = srcs.at("inv_indices");
+    core::Tensor nb_indices = srcs.at("nb_indices");
+    core::Tensor nb_masks = srcs.at("nb_masks");
+    core::Tensor block_keys = srcs.at("block_keys");
+    core::Tensor block_values = srcs.at("block_values");
 
     // Parameters
     int64_t resolution = srcs.at("resolution").Item<int64_t>();
@@ -792,7 +795,7 @@ void CPUMeshExtractionKernel
 
     // Output
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDACachedMemoryManager::ReleaseCache();
+    core::CUDACachedMemoryManager::ReleaseCache();
 #endif
 
     int n_blocks = static_cast<int>(indices.GetLength());
@@ -827,9 +830,9 @@ void CPUMeshExtractionKernel
     int64_t n = n_blocks * resolution3;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher launcher;
+    core::kernel::CUDALauncher launcher;
 #else
-    CPULauncher launcher;
+    core::kernel::CPULauncher launcher;
 #endif
 
     // Pass 0: analyze mesh structure, set up one-on-one correspondences from
@@ -927,10 +930,11 @@ void CPUMeshExtractionKernel
 #endif
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher::LaunchGeneralKernel(
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
-    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
 #endif
                 // Natural index (0, N) -> (block_idx, voxel_idx)
                 int64_t workload_block_idx = workload_idx / resolution3;
@@ -985,12 +989,13 @@ void CPUMeshExtractionKernel
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 bool extract_color = false;
-                Tensor colors;
+                core::Tensor colors;
                 NDArrayIndexer color_indexer;
                 if (voxel_t::HasColor()) {
                     extract_color = true;
-                    colors = Tensor({total_vtx_count, 3}, core::Dtype::Float32,
-                                    block_values.GetDevice());
+                    colors = core::Tensor({total_vtx_count, 3},
+                                          core::Dtype::Float32,
+                                          block_values.GetDevice());
                     color_indexer = NDArrayIndexer(colors, 1);
                 }
                 launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -1142,10 +1147,11 @@ void CPUMeshExtractionKernel
     NDArrayIndexer triangle_indexer(triangles, 1);
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher::LaunchGeneralKernel(
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
-    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
 #endif
                 // Natural index (0, N) -> (block_idx, voxel_idx)
                 int64_t workload_block_idx = workload_idx / resolution3;
@@ -1210,5 +1216,6 @@ void CPUMeshExtractionKernel
 }
 
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d
