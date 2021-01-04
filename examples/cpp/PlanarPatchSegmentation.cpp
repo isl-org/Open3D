@@ -57,7 +57,9 @@ int main(int argc, char **argv) {
     }
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    cloud_ptr->EstimateNormals();
+    static constexpr int nrNeighbors = 75;
+    const geometry::KDTreeSearchParam &search_param = geometry::KDTreeSearchParamKNN(nrNeighbors);
+    cloud_ptr->EstimateNormals(search_param);
     std::cout << "EstimateNormals: "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)

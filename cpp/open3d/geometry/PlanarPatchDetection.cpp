@@ -66,6 +66,8 @@ public:
     ///
     /// \param point_cloud is the associated set of points being partitioned
     BoundaryVolumeHierarchy(const PointCloud* point_cloud,
+                            const Eigen::Vector3d& min_bound,
+                            const Eigen::Vector3d& max_bound,
                             size_t min_points = 1,
                             double min_size = 0.0)
         : point_cloud_(point_cloud),
@@ -75,11 +77,8 @@ public:
           level_(0),
           child_index_(0) {
         // set origin of root node and size of each child node (cubes)
-        const Eigen::Vector3d min_bound = point_cloud->GetMinBound();
-        const Eigen::Vector3d max_bound = point_cloud->GetMaxBound();
         center_ = (min_bound + max_bound) / 2;
-        const Eigen::Vector3d half_sizes = center_ - min_bound;
-        size_ = 2 * half_sizes.maxCoeff();
+        size_ = (max_bound - min_bound).maxCoeff();
 
         // since this is the root, all the point cloud's indices are contained
         indices_ = std::vector<size_t>(point_cloud->points_.size());
@@ -343,11 +342,12 @@ public:
     /// detected plane normal and auxiliary planarity test vector. An
     /// ideal plane has score 0, i.e., normal orthogonal to test vector.
     /// \param outlier_ratio is the max allowable ratio of outlier points.
-    PlaneDetector(double normal_similarity, double coplanarity, double outlier_ratio)
+    PlaneDetector(double normal_similarity, double coplanarity, double outlier_ratio, double plane_edge_length)
         : patch_(std::make_shared<PlanarPatch>()),
             normal_similarity_thr_(normal_similarity),
             coplanarity_thr_(coplanarity),
-            outlier_ratio_thr_(outlier_ratio) {}
+            outlier_ratio_thr_(outlier_ratio),
+            plane_edge_length_thr_(plane_edge_length) {}
     ~PlaneDetector() = default;
 
     /// \brief Estimate plane from point cloud and selected point indices.
@@ -367,7 +367,6 @@ public:
 
         // estimate a plane from the relevant points
         EstimatePlane();
-        // std::cout << "estimated..." << std::flush;
 
         // check that the estimated plane passes the robust planarity tests
         return RobustPlanarityTest();
@@ -459,6 +458,11 @@ public:
         num_updates_++;
     }
 
+    bool IsFalsePositive() /*const*/ {
+        EstimatePlane(); // TODO: just recalc longest_edge?
+        return num_updates_ == 0 || longest_edge_ < plane_edge_length_thr_;
+    }
+
 public:
     std::shared_ptr<PlanarPatch> patch_;
     const PointCloud* point_cloud_;
@@ -474,10 +478,11 @@ public:
 
     size_t index_;
 
-// private:
+private:
 
     Eigen::Vector3d min_bound_;
     Eigen::Vector3d max_bound_;
+    double longest_edge_;
 
     /// Minimum allowable similarity score for point normal to plane normal.
     double normal_similarity_thr_;
@@ -486,6 +491,8 @@ public:
     double coplanarity_thr_;
     /// Maximum allowable outlier ratio
     double outlier_ratio_thr_;
+    /// The longest edge of resulting patch must be larger than this.
+    double plane_edge_length_thr_;
 
     std::unordered_set<size_t> visited_indices_;
 
@@ -538,6 +545,8 @@ public:
 
         // orthogonal distance to plane
         patch_->dist_from_origin_ = -patch_->normal_.dot(patch_->center_);
+
+        longest_edge_ = (max_bound_ - min_bound_).maxCoeff();
     }
 
     /// \brief Use robust statistics (i.e., median) to test planarity.
@@ -561,8 +570,6 @@ public:
             point_distances[i] = std::abs(patch_->normal_.dot(position) + patch_->dist_from_origin_);
         }
 
-        // std::cout << "calc stats..." << std::flush;
-
         double tmp;
         // Use lower bound of the spread around the median as an indication
         // of how similar the point normals associated with the patch are.
@@ -571,44 +578,31 @@ public:
         // of how close the points associated with the patch are to the patch.
         getMinMaxRScore(point_distances, tmp, max_point_dist_, 3);
 
-        // std::cout << "ok..." << std::flush;
-
         // Fail if too much "variance" in how similar point normals are to patch normal
-        // std::cout << "normal (" << min_normal_diff_ << " > " << normal_similarity_thr_ << ") " << std::flush;
-        // if (!IsNormalValid()) std::cout << "invalid normal (" << min_normal_diff_ << " > " << normal_similarity_thr_ << ") " << std::flush;
         if (!IsNormalValid()) return false;
 
         // Fail if too much "variance" in distances of points to patch
-        // IsDistanceValid();
-        // const double longest_edge = (max_bound_ - min_bound_).maxCoeff();
-        // std::cout << "distance (" << last_dist_ << " < " << coplanarity_thr_ << ") [" << longest_edge << "]" << std::flush;
-        // if (!IsDistanceValid()) std::cout << "@$@$@$ invalid @$@$@$" << std::flush;
         if (!IsDistanceValid()) return false;
 
         // Detect outliers, fail if too many
         std::unordered_map<size_t, bool> outliers;
         outliers.reserve(N);
         size_t num_outliers = 0;
-        // std::cout << "outlier check..." << std::flush;
         for (size_t i = 0; i < N; i++) {
             const bool is_outlier = normal_similarities[i] < min_normal_diff_
                                     || point_distances[i] > max_point_dist_;
             outliers[indices_[i]] = is_outlier;
             num_outliers += static_cast<int>(is_outlier);
         }
-        // if (num_outliers > N * outlier_ratio_thr_) std::cout << "too many outliers (" << num_outliers << " / " << N << ")..." << std::flush;
         if (num_outliers > N * outlier_ratio_thr_) return false;
 
         // Remove outliers
-        // std::cout << "rm..." << indices_.size() << "..." << num_outliers << "..." << std::flush;
-        // utility::LogInfo("indices {} outliers ", indices_,  outliers);
         if (num_outliers > 0) {
             indices_.erase(std::remove_if(indices_.begin(), indices_.end(), [&outliers](const size_t& idx) {
                 return outliers[idx];
             }), indices_.end());
         }
 
-        // std::cout << "ok..." << std::flush;
         return true;
     }
 
@@ -627,8 +621,7 @@ public:
 
         // Test point-to-plane distance w.r.t coplanarity of points.
         // See Fig. 4 of [ArujoOliveira2020].
-        const double longest_edge = (max_bound_ - min_bound_).maxCoeff();
-        const Eigen::Vector3d F = (U * longest_edge + patch_->normal_ * max_point_dist_).normalized();
+        const Eigen::Vector3d F = (U * longest_edge_ + patch_->normal_ * max_point_dist_).normalized();
         return std::abs(F.dot(patch_->normal_)) < coplanarity_thr_;
     }
 
@@ -650,7 +643,6 @@ public:
 
         std::vector<size_t> perimeter;
         getConvexHull2D(projectedPoints2d, perimeter);
-        // utility::LogInfo("Plane with {} points has convex hull of size {}.", indices_.size(), perimeter.size());
 
         M = Eigen::Matrix3Xd(3, perimeter.size());
         for (size_t i = 0; i < perimeter.size(); i++) {
@@ -688,6 +680,7 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
                                     double normal_similarity,
                                     double coplanarity,
                                     double outlier_ratio,
+                                    double plane_edge_length,
                                     std::vector<PlaneDetectorPtr>& planes,
                                     std::vector<PlaneDetectorPtr>& plane_points) {
     // if there aren't enough points to find a good plane, don't even try
@@ -701,13 +694,13 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
 
     for (const auto& child : node->children_) {
         if (child != nullptr &&
-            SplitAndDetectPlanesRecursive(child, min_num_points, normal_similarity, coplanarity, outlier_ratio, planes, plane_points)) {
+            SplitAndDetectPlanesRecursive(child, min_num_points, normal_similarity, coplanarity, outlier_ratio, plane_edge_length, planes, plane_points)) {
             child_has_plane = true;
         }
     }
 
     if (!child_has_plane && node->level_ > 2) {
-        auto plane = std::make_shared<PlaneDetector>(normal_similarity, coplanarity, outlier_ratio);
+        auto plane = std::make_shared<PlaneDetector>(normal_similarity, coplanarity, outlier_ratio, plane_edge_length);
         if (plane->DetectFromPointCloud(node->point_cloud_, node->indices())) {
             node_has_plane = true;
             planes.push_back(plane);
@@ -886,10 +879,12 @@ void ExtractPatchesFromPlanes(const std::vector<PlaneDetectorPtr>& planes, std::
     };
 
     for (size_t i = 0; i < planes.size(); i++) {
-        // create a patch by delimiting the plane using its perimeter points
-        auto patch = planes[i]->DelimitPlane();
-        patch->PaintUniformColor(colors_[i%NUM_COLORS]);
-        patches.push_back(patch);
+        if (!planes[i]->IsFalsePositive()) {
+            // create a patch by delimiting the plane using its perimeter points
+            auto patch = planes[i]->DelimitPlane();
+            patch->PaintUniformColor(colors_[i%NUM_COLORS]);
+            patches.push_back(patch);
+        }
     }
 }
 
@@ -917,13 +912,16 @@ std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(double
         kdtree.Search(points_[i], search_param, neighbors[i], distance2);
     }
 
+    const Eigen::Vector3d min_bound = GetMinBound();
+    const Eigen::Vector3d max_bound = GetMaxBound();
+    const double plane_edge_length = 0.01 * (max_bound - min_bound).maxCoeff();
     int min_num_points = 30;
 
     BoundaryVolumeHierarchyPtr root =
-            std::make_shared<BoundaryVolumeHierarchy>(this);
+            std::make_shared<BoundaryVolumeHierarchy>(this, min_bound, max_bound);
     std::vector<PlaneDetectorPtr> planes;
     std::vector<PlaneDetectorPtr> plane_points(points_.size(), nullptr);
-    SplitAndDetectPlanesRecursive(root, min_num_points, normal_similarity, coplanarity, outlier_ratio, planes, plane_points);
+    SplitAndDetectPlanesRecursive(root, min_num_points, normal_similarity, coplanarity, outlier_ratio, plane_edge_length, planes, plane_points);
 
     // iteratively grow and merge planes until each is stable
     bool changed;
