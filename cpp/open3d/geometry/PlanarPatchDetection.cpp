@@ -92,17 +92,11 @@ public:
         if (!leaf_) return;
 
         // size of each child
-        const double child_size = size_ / 2;
+        const double child_size = size_ / 2.;
 
         // Does this node have enough data to be able to partition further
         if (indices_.size() <= min_points_ || child_size < min_size_ ||
-            indices_.size() < 2) {
-            // std::cout << " ** partition failed (" << (indices_.size() <= min_points_)
-            //     << " " << (child_size < min_size_) << " " << (indices_.size() < 2)
-            //     << ") ** "<< std::flush;
-            // std::cout << "(" << indices_.size() << "vs" << min_points_ << ") " << std::flush;
-            return;
-        }
+            indices_.size() < 2) return;
 
         // split points and create children
         for (const size_t& pidx : indices_) {
@@ -286,6 +280,45 @@ void getConvexHull2D(const std::vector<Eigen::Vector2d>& points, std::vector<siz
     }
 }
 
+// Disjoint set data structure to find cycles in graphs
+class DisjointSet {
+public:
+    DisjointSet(size_t size) : parent_(size), size_(size) {
+        for (size_t idx = 0; idx < size; idx++) {
+            parent_[idx] = idx;
+            size_[idx] = 0;
+        }
+    }
+
+    // find representative element for given x
+    // using path compression
+    size_t Find(size_t x) {
+        if (x != parent_[x]) {
+            parent_[x] = Find(parent_[x]);
+        }
+        return parent_[x];
+    }
+
+    // combine two sets using size of sets
+    void Union(size_t x, size_t y) {
+        x = Find(x);
+        y = Find(y);
+        if (x != y) {
+            if (size_[x] < size_[y]) {
+                size_[y] += size_[x];
+                parent_[x] = y;
+            } else {
+                size_[x] += size_[y];
+                parent_[y] = x;
+            }
+        }
+    }
+
+private:
+    std::vector<size_t> parent_;
+    std::vector<size_t> size_;
+};
+
 /// \class PlaneDetector
 ///
 /// \brief Robust detection of planes from point sets
@@ -402,8 +435,8 @@ public:
         return valid_normal && valid_dist;
     }
 
-    /// \brief Check if cloud point at index idx is in visited list.
-    bool IsVisited(size_t idx) {
+    /// \brief Check if cloud point at index idx has been visited.
+    bool HasVisited(size_t idx) {
         return visited_indices_.find(idx) != visited_indices_.end();
     }
 
@@ -439,7 +472,9 @@ public:
     size_t num_new_points_ = 0;
     size_t num_updates_ = 0;
 
-private:
+    size_t index_;
+
+// private:
 
     Eigen::Vector3d min_bound_;
     Eigen::Vector3d max_bound_;
@@ -655,11 +690,6 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
                                     double outlier_ratio,
                                     std::vector<PlaneDetectorPtr>& planes,
                                     std::vector<PlaneDetectorPtr>& plane_points) {
-    // if (node->indices().size() < min_num_points) {
-    //     utility::LogInfo("Node {}.{} has too few points to partition or detect plane ({})", node->level_, node->child_index_, node->indices().size());
-    // }
-
-
     // if there aren't enough points to find a good plane, don't even try
     if (node->indices().size() < min_num_points) return false;
 
@@ -667,11 +697,7 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
     bool child_has_plane = false;
 
     // partition into eight children and check each recursively for a plane
-    // std::cout << std::string(node->level_, ' ') << "Partitioning node " << node->level_ << "." << node->child_index_ << "\t\t(" << node->indices().size() << ")" << std::flush;
     node->partition();
-    // std::cout << "\t[" << std::flush;
-    // for (size_t i=0; i<8; i++) if (node->children_[i]) std::cout << i << " " << std::flush;
-    // std::cout << "]" << std::endl;
 
     for (const auto& child : node->children_) {
         if (child != nullptr &&
@@ -687,14 +713,9 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
             planes.push_back(plane);
 
             // assume ownership of these indices
-            for (const size_t& idx : node->indices()) {
+            for (const size_t& idx : plane->indices_) {
                 plane_points[idx] = plane;
             }
-
-            // std::cout << std::string(node->level_, ' ') << " ++ has a plane with " << node->indices().size() << " points" << std::flush;
-            // std::cout << "\t--->\t " << plane->patch_->normal_.transpose() << " " << plane->patch_->dist_from_origin_ << std::endl;
-        // } else {
-            // std::cout << std::string(node->level_, ' ') << " -- has no plane" << std::endl;
         }
     }
 
@@ -728,7 +749,7 @@ void Grow(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& 
             for (const int& nbr : neighbors[idx]) {
                 // Skip if this neighboring point has been claimed, or,
                 // if this plane has already visited.
-                if (plane_points[nbr] != nullptr || plane->IsVisited(nbr)) continue;
+                if (plane_points[nbr] != nullptr || plane->HasVisited(nbr)) continue;
                 if (plane->IsInlier(nbr)) {
                     // Add this point to the plane and claim ownership
                     plane->AddPoint(nbr);
@@ -745,8 +766,96 @@ void Grow(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& 
     }
 }
 
-void Merge() {
+/// \brief 
+///
+/// \param planes  Collection of planes to consider
+/// \param plane_points  Vector indicating if a given point cloud point is claimed
+/// \param neighbors  Neighboring points of each point cloud point
+/// \param point_cloud  PointCloud object containing 3D coordinates of points
+void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& plane_points, const std::vector<std::vector<int>>& neighbors, const PointCloud& point_cloud) {
+    const size_t n = planes.size();
+    for (size_t i = 0; i < n; i++) {
+        planes[i]->index_ = i;
+    }
 
+    std::vector<bool> graph(n * n, false);
+    std::vector<bool> disconnected_planes(n * n, false);
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = i + 1; j < n; j++) {
+            const Eigen::Vector3d& ni = planes[i]->patch_->normal_;
+            const Eigen::Vector3d& nj = planes[j]->patch_->normal_;
+            const double normal_thr = std::min(planes[i]->min_normal_diff_, planes[j]->min_normal_diff_);
+            disconnected_planes[i * n + j] = std::abs(ni.dot(nj)) < normal_thr;
+            disconnected_planes[j * n + i] = disconnected_planes[i * n + j];
+        }
+    }
+
+    for (auto&& plane : planes) {
+        const size_t i = plane->index_;
+        for (const size_t& idx : plane->indices_) {
+            for (const int& nbr : neighbors[idx]) {
+                auto& nplane = plane_points[nbr];
+                if (nplane == nullptr) continue;
+                const size_t j = nplane->index_;
+
+                if (nplane == plane
+                    || graph[i * n + j] || graph[j * n + i]
+                    || disconnected_planes[i * n + j]
+                    || plane->HasVisited(nbr)
+                    || nplane->HasVisited(idx)) continue;
+
+                plane->MarkVisited(nbr);
+                nplane->MarkVisited(idx);
+
+                const Eigen::Vector3d& pi = point_cloud.points_[idx];
+                const Eigen::Vector3d& ni = point_cloud.normals_[idx];
+                const Eigen::Vector3d& pj = point_cloud.points_[nbr];
+                const Eigen::Vector3d& nj = point_cloud.normals_[nbr];
+                const double dist_thr = std::max(plane->max_point_dist_, nplane->max_point_dist_);
+                const double normal_thr = std::min(plane->min_normal_diff_, nplane->min_normal_diff_);
+
+                graph[i * n + j] =
+                    std::abs(plane->patch_->normal_.dot(nj)) > normal_thr &&
+                    std::abs(nplane->patch_->normal_.dot(ni)) > normal_thr &&
+                    std::abs(plane->patch_->GetSignedDistanceToPoint(pj)) < dist_thr &&
+                    std::abs(nplane->patch_->GetSignedDistanceToPoint(pi)) < dist_thr;
+            }
+        }
+    }
+
+    DisjointSet ds(n);
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = i + 1; j < n; j++) {
+            if (graph[i * n + j] || graph[j * n + i]) {
+                ds.Union(i, j);
+            }
+        }
+    }
+
+    std::vector<size_t> largest_planes(n);
+    std::iota(largest_planes.begin(), largest_planes.end(), 0);
+    for (size_t i = 0; i < n; i++) {
+        const size_t root = ds.Find(i);
+        if (planes[largest_planes[root]]->indices_.size() < planes[i]->indices_.size()) {
+            largest_planes[root] = i;
+        }
+    }
+
+    for (size_t i = 0; i < n; i++) {
+        const size_t root = largest_planes[ds.Find(i)];
+        if (root == i) continue;
+        for (const size_t& idx : planes[i]->indices_) {
+            planes[root]->AddPoint(idx);
+            plane_points[idx] = planes[root];
+        }
+        planes[root]->max_point_dist_ = std::max(planes[root]->max_point_dist_, planes[i]->max_point_dist_);
+        planes[root]->min_normal_diff_ = std::min(planes[root]->min_normal_diff_, planes[i]->min_normal_diff_);
+        planes[i].reset();
+    }
+
+    planes.erase(std::remove_if(planes.begin(), planes.end(), [](const PlaneDetectorPtr& plane) {
+        return plane == nullptr;
+    }), planes.end());
 }
 
 bool Update(std::vector<PlaneDetectorPtr>& planes) {
@@ -776,16 +885,12 @@ void ExtractPatchesFromPlanes(const std::vector<PlaneDetectorPtr>& planes, std::
         Eigen::Vector3d(0.6350, 0.0780, 0.1840)
     };
 
-    // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
     for (size_t i = 0; i < planes.size(); i++) {
         // create a patch by delimiting the plane using its perimeter points
-        // std::cout << "Delimiting [" << plane->patch_->normal_.transpose() << " " << plane->patch_->dist_from_origin_ << "]\t" << std::flush;
         auto patch = planes[i]->DelimitPlane();
-        // std::cout << std::endl;
         patch->PaintUniformColor(colors_[i%NUM_COLORS]);
         patches.push_back(patch);
     }
-    // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 }
 
 }  // unnamed namespace
@@ -825,7 +930,7 @@ std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(double
     do {
         Grow(planes, plane_points, neighbors);
 
-        Merge();
+        Merge(planes, plane_points, neighbors, *this);
 
         changed = Update(planes);
 
