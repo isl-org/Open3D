@@ -160,28 +160,31 @@ run-ci)
     ;;
 
 run-python-ci)
-    # Wait for wheel to be downloaded from ubuntu.yml CI
+    # Wait for 60 mins wheel to be downloaded from ubuntu.yml CI
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
         <<"WHEEL_WAIT"
-    bash -c 'for wait_time in $(seq 0 30 1200); do
+    bash -o errexit -o nounset -o pipefail -o xtrace -c 'for wait_time in $(seq 0 60); do
         whlstat="$(ls -l --full-time ~/open3d*.whl 2>/dev/null)"
-        sleep 30
+        sleep 60
         if [ -n "$whlstat" ] && \
         [[ "$(ls -l --full-time ~/open3d*.whl)" == "$whlstat" ]]; then
             echo Wheel available!
+            wait_time=-1
             break
-        fi;
-        echo Waiting for wheel since ${wait_time}s
-    done'
+        fi
+        echo Waiting for wheel since ${wait_time} min
+    done
+    if ((wait_time>-1)); then
+        echo Timeout: No Python wheel available for GPU tests.
+        exit 1
+    else
+        sudo docker cp ~/open3d*.whl open3d_gpu_ci:/root/
+        echo Run Python CI
+        sudo docker exec --interactive open3d_gpu_ci \
+            bash -o errexit -o nounset -o pipefail -o xtrace -c \
+            "source util/ci_utils.sh; test_wheel /root/open3d*.whl; run_python_tests"
+    fi'
 WHEEL_WAIT
-    # Copy wheel into docker
-    gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
-        --command "sudo docker cp ~/open3d*.whl open3d_gpu_ci:/root/"
-    # Run Python CI
-    gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
-        --command "sudo docker exec --interactive open3d_gpu_ci bash -o \
-        errexit,nounset,pipefail,verbose -c \
-        'source util/ci_utils.sh; test_wheel /root/open3d*.whl; run_python_tests'"
     ;;
 
 delete-image)
