@@ -41,6 +41,31 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
+Eigen::Vector3d Jet(double v, double vmin, double vmax) {
+    Eigen::Vector3d c(1, 1, 1);
+    double dv;
+
+    if (v < vmin) v = vmin;
+    if (v > vmax) v = vmax;
+    dv = vmax - vmin;
+
+    if (v < (vmin + 0.25 * dv)) {
+        c(0) = 0;
+        c(1) = 4 * (v - vmin) / dv;
+    } else if (v < (vmin + 0.5 * dv)) {
+        c(0) = 0;
+        c(2) = 1 + 4 * (vmin + 0.25 * dv - v) / dv;
+    } else if (v < (vmin + 0.75 * dv)) {
+        c(0) = 4 * (v - vmin - 0.5 * dv) / dv;
+        c(2) = 0;
+    } else {
+        c(1) = 1 + 4 * (vmin + 0.75 * dv - v) / dv;
+        c(2) = 0;
+    }
+
+    return c;
+}
+
 struct SLACPairwiseCorrespondence {
     SLACPairwiseCorrespondence() {}
     SLACPairwiseCorrespondence(int i, int j, const core::Tensor& corres)
@@ -231,8 +256,6 @@ std::pair<core::Tensor, core::Tensor> FillInControlGrid(
 
         // Prepare n x 8 corres for visualization
         core::Tensor corres = tpcd_param.GetPointAttr("ctr_grid_nb_idx");
-        core::Tensor corres_interp =
-                tpcd_param.GetPointAttr("ctr_grid_nb_ratio");
         std::vector<std::pair<int, int>> corres_lines;
         for (int64_t i = 0; i < corres.GetLength(); ++i) {
             for (int k = 0; k < 8; ++k) {
@@ -243,7 +266,18 @@ std::pair<core::Tensor, core::Tensor> FillInControlGrid(
         auto lineset =
                 open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
                         *pcd, *pcd_grid, corres_lines);
-        lineset->PaintUniformColor({0, 1, 0});
+
+        core::Tensor corres_interp =
+                tpcd_param.GetPointAttr("ctr_grid_nb_ratio");
+        for (int64_t i = 0; i < corres.GetLength(); ++i) {
+            for (int k = 0; k < 8; ++k) {
+                float ratio = corres_interp[i][k].Item<float>();
+                Eigen::Vector3d color = Jet(ratio, 0, 0.5);
+                utility::LogInfo("{}: ({} {} {})", ratio, color(0), color(1),
+                                 color(2));
+                lineset->colors_.push_back(color);
+            }
+        }
 
         // Prepare nb point cloud for visualization
         t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
@@ -253,6 +287,7 @@ std::pair<core::Tensor, core::Tensor> FillInControlGrid(
         pcd_grid_nb->PaintUniformColor({1, 0, 0});
 
         visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
+        visualization::DrawGeometries({pcd});
     }
 
     return std::make_pair(AtA, Atb);
