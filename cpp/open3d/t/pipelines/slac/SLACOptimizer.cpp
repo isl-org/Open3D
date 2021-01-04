@@ -222,6 +222,37 @@ std::pair<core::Tensor, core::Tensor> FillInControlGrid(
         auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
                 *pcd, core::Dtype::Float32);
         auto tpcd_param = ctr_grid.Parameterize(tpcd);
+
+        // Prepare all ctr grid point cloud for lineset
+        t::geometry::PointCloud tpcd_grid(
+                tpcd_param.GetPointAttr("ctr_grid_positions"));
+        auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_grid.ToLegacyPointCloud());
+
+        // Prepare n x 8 corres for visualization
+        core::Tensor corres = tpcd_param.GetPointAttr("ctr_grid_nb_idx");
+        core::Tensor corres_interp =
+                tpcd_param.GetPointAttr("ctr_grid_nb_ratio");
+        std::vector<std::pair<int, int>> corres_lines;
+        for (int64_t i = 0; i < corres.GetLength(); ++i) {
+            for (int k = 0; k < 8; ++k) {
+                std::pair<int, int> pair = {i, corres[i][k].Item<int>()};
+                corres_lines.push_back(pair);
+            }
+        }
+        auto lineset =
+                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                        *pcd, *pcd_grid, corres_lines);
+        lineset->PaintUniformColor({0, 1, 0});
+
+        // Prepare nb point cloud for visualization
+        t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
+                {corres.View({-1}).To(core::Dtype::Int64)}));
+        auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_grid_nb.ToLegacyPointCloud());
+        pcd_grid_nb->PaintUniformColor({1, 0, 0});
+
+        visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
     }
 
     return std::make_pair(AtA, Atb);

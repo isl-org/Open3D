@@ -121,10 +121,17 @@ geometry::PointCloud ControlGrid::Parameterize(
     }
 
     geometry::PointCloud pcd_with_params = pcd;
-    pcd_with_params.SetPointAttr("ctr_grid_idx",
+
+    // Set computed indices (in hashmap) and corresponding ratios.
+    pcd_with_params.SetPointAttr("ctr_grid_nb_idx",
                                  addrs_nb.View({8, n}).T().Contiguous());
-    pcd_with_params.SetPointAttr("ctr_grid_ratio",
+    pcd_with_params.SetPointAttr("ctr_grid_nb_ratio",
                                  residuals_nb.T().Contiguous());
+
+    // Set positions for optimization (and in-place update).
+    core::Tensor positions = ctr_hashmap_->GetValueTensor();
+    pcd_with_params.SetPointAttr("ctr_grid_positions",
+                                 positions.View({-1, 3}).Contiguous());
     return pcd_with_params;
 }
 }  // namespace slac
