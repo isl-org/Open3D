@@ -178,13 +178,16 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCE for GPU tests
+        continue-on-error: true
+        env:
+          CLOUDSDK_CORE_PROJECT: ${{ secrets.GCE_PROJECT }}
         run: |
           for CI_CONFIG_ID in 4 5 ; do
             VM_INSTANCE="ci-gpu-vm-${GITHUB_SHA::8}-${CI_CONFIG_ID}"
-            gcloud config set compute/zone \
-              $(gcloud compute instances list --filter="name~${VM_INSTANCE}" | tail -n1 | cut -d' ' -f3)
+            export CLOUDSDK_COMPUTE_ZONE=$(gcloud compute instances list \
+              --filter="name~${VM_INSTANCE}" | tail -n1 | cut -d' ' -f3)
             gcloud compute scp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} \
-              ${VM_INSTANCE}:~  || true
+              ${VM_INSTANCE}:~ || true
           done
 
       - name: Upload wheel to GCS bucket

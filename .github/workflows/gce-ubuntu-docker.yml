@@ -66,16 +66,13 @@ jobs:
           project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: GCloud setup for docker
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh gcloud-setup
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh gcloud-setup
 
       - name: Build docker image
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh docker-build
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh docker-build
 
       - name: Push the Docker image to Google Container Registry
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh docker-push
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh docker-push
 
 
   build-install-test:
@@ -111,18 +108,15 @@ jobs:
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh create-vm
 
       - name: Config, build and run C++ unit tests
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-ci
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-ci
 
       - name: Run Python unit tests
         if: env.CI_CONFIG_ID == '4-ML-RPC-bionic' || env.CI_CONFIG_ID == '5-ML-RPC-focal'
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-python-ci
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-python-ci
 
       - name: Delete VM
         if: always()
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-vm
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-vm
 
   cleanup:
     name: Clean-up container image
@@ -150,5 +144,4 @@ jobs:
           project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Delete container image
-        run: |
-          ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-image
+        run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-image
