@@ -44,7 +44,7 @@ YAPF_VER="0.30.0"
 SPHINX_VER=3.1.2
 SPHINX_RTD_VER=0.5.0
 NBSPHINX_VER=0.7.1
-PILLOW_VER=7.2.0
+MATPLOTLIB_VER=3.3.3
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -415,8 +415,13 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     which python
     python -V
-    python -m pip install -U -q "wheel==$WHEEL_VER" "pip==$PIP_VER" "Pillow==$PILLOW_VER" \
-        "sphinx==$SPHINX_VER" "sphinx-rtd-theme==$SPHINX_RTD_VER" "nbsphinx==$NBSPHINX_VER"
+    python -m pip install -U -q \
+        "wheel==$WHEEL_VER" \
+        "pip==$PIP_VER" \
+        "matplotlib==$MATPLOTLIB_VER" \
+        "sphinx==$SPHINX_VER" \
+        "sphinx-rtd-theme==$SPHINX_RTD_VER" \
+        "nbsphinx==$NBSPHINX_VER"
     # m2r needs a patch for sphinx 3
     # https://github.com/sphinx-doc/sphinx/issues/7420
     python -m pip install -U -q "git+https://github.com/intel-isl/m2r@dev#egg=m2r"
