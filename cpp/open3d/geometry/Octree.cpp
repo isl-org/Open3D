@@ -227,7 +227,7 @@ OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
             color_leaf_node->color_ = color;
         } else {
             utility::LogError(
-                    "Internal error: leaf node must be OctreeLeafNode");
+                    "Internal error: leaf node must be OctreeColorLeafNode");
         }
     };
 }
@@ -276,7 +276,7 @@ OctreePointColorLeafNode::GetInitFunction() {
 std::function<void(std::shared_ptr<OctreeLeafNode>)>
 OctreePointColorLeafNode::GetUpdateFunction(size_t idx,
                                             const Eigen::Vector3d& color) {
-    // Here the captured "idx" cannot be a refernce, must be a copy,
+    // Here the captured "idx" cannot be a reference, must be a copy,
     // otherwise pybind does not have the correct value
     return [idx,
             color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
@@ -287,7 +287,8 @@ OctreePointColorLeafNode::GetUpdateFunction(size_t idx,
             point_color_leaf_node->indices_.push_back(idx);
         } else {
             utility::LogError(
-                    "Internal error: leaf node must be OctreeLeafNode");
+                    "Internal error: leaf node must be "
+                    "OctreePointColorLeafNode");
         }
     };
 }
@@ -304,7 +305,9 @@ bool OctreePointColorLeafNode::operator==(const OctreeLeafNode& that) const {
         const OctreePointColorLeafNode& that_point_color_node =
                 dynamic_cast<const OctreePointColorLeafNode&>(that);
 
-        return this->indices_.size() == (that_point_color_node.indices_.size());
+        return this->color_.isApprox(that_point_color_node.color_) &&
+               this->indices_.size() == that_point_color_node.indices_.size() &&
+               this->indices_ == that_point_color_node.indices_;
     } catch (const std::exception&) {
         return false;
     }

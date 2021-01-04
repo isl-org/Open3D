@@ -358,6 +358,11 @@ public:
 
     /// \brief DFS traversal of Octree from the root, with callback function
     /// called for each node.
+    ///
+    /// \param f  Callback which fires with each traversed internal/leaf node.
+    /// Arguments supply information about the node being traversed and other
+    /// node-specific data. A Boolean return value is used for early-stopping.
+    /// If f returns true, children of this node will not be traversed.
     void Traverse(
             const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
@@ -365,6 +370,11 @@ public:
 
     /// \brief Const version of Traverse. DFS traversal of Octree from the root,
     /// with callback function called for each node.
+    ///
+    /// \param f  Callback which fires with each traversed internal/leaf node.
+    /// Arguments supply information about the node being traversed and other
+    /// node-specific data. A Boolean return value is used for early-stopping.
+    /// If f returns true, children of this node will not be traversed.
     void Traverse(
             const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
