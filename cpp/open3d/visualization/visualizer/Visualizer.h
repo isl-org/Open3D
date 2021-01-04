@@ -192,6 +192,7 @@ public:
 
     /// Function to retrieve the associated ViewControl
     ViewControl &GetViewControl() { return *view_control_ptr_; }
+    const ViewControl &GetViewControl() const { return *view_control_ptr_; }
     /// Function to retrieve the associated RenderOption.
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
     /// \brief Function to capture screen and store RGB in a float buffer.

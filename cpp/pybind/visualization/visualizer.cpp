@@ -112,7 +112,8 @@ void pybind_visualizer(py::module &m) {
                  "reset_bounding_box"_a = true)
             .def("clear_geometries", &Visualizer::ClearGeometries,
                  "Function to clear geometries from the visualizer")
-            .def("get_view_control", &Visualizer::GetViewControl,
+            .def("get_view_control",
+                 [](Visualizer &vis) { return vis.GetViewControl(); },
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
             .def("get_render_option", &Visualizer::GetRenderOption,

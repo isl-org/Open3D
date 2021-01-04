@@ -290,6 +290,34 @@ void ViewControl::ChangeWindowSize(int width, int height) {
     SetProjectionParameters();
 }
 
+geometry::Ray3D ViewControl::UnprojectPoint(double x, double y) const {
+    if (!window_width_ || !window_height_) {
+        return geometry::Ray3D(Eigen::Vector3d::Zero(),
+                               Eigen::Vector3d::Zero());
+    }
+
+    gl_util::GLMatrix4f pvm = projection_matrix_ * view_matrix_ * model_matrix_;
+    gl_util::GLMatrix4f inv = pvm.inverse();
+    gl_util::GLVector4f clipping_pos(2.0f * x / window_width_ - 1.0f,
+                                     1.0f - 2.0f * y / window_height_, 1.0f,
+                                     1.0f);
+    gl_util::GLVector4f homogeneous_pos = inv * clipping_pos;
+    homogeneous_pos /= homogeneous_pos[3];
+    Eigen::Vector3d world_pos = Eigen::Vector3d(
+            homogeneous_pos[0], homogeneous_pos[1], homogeneous_pos[2]);
+
+    if (GetProjectionType() == ProjectionType::Orthogonal) {
+        Eigen::Vector3d camera_axis = lookat_ - eye_;
+        camera_axis.normalize();
+        Eigen::Vector3d delta = world_pos - eye_;
+        double projection = delta.dot(camera_axis);
+        Eigen::Vector3d origin = world_pos - projection * camera_axis;
+        return geometry::Ray3D(origin, camera_axis);
+    }
+
+    return geometry::Ray3D(eye_, world_pos - eye_);
+}
+
 void ViewControl::Scale(double scale) {
     zoom_ = std::max(std::min(zoom_ + scale * ZOOM_STEP, ZOOM_MAX), ZOOM_MIN);
     SetProjectionParameters();
