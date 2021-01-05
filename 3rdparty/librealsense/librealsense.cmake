@@ -6,6 +6,9 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
     GIT_TAG v2.40.0 # 18 Nov 2020
     UPDATE_COMMAND ""
+    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
+        <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -14,9 +17,11 @@ ExternalProject_Add(
         -DBUILD_UNIT_TESTS=OFF
         -DBUILD_GLSL_EXTENSIONS=OFF
         -DBUILD_GRAPHICAL_EXAMPLES=OFF
-        -DBUILD_PYTHON_BINDINGS=OFF
+        -DBUILD_PYTHON_BINDINGS=ON
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
+        -DPYBIND11_PYTHON_VERSION=3.6
         -DFORCE_RSUSB_BACKEND=ON      # https://github.com/IntelRealSense/librealsense/wiki/Release-Notes#release-2400
+        -DUSE_EXTERNAL_USB=ON
         $<$<PLATFORM_ID:Darwin>:-DUSE_EXTERNAL_USB=ON>
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
@@ -39,17 +44,17 @@ if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is n
     )
 endif()
 
-if(APPLE)
-    ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "<BINARY_DIR>/libusb_install/lib/libusb.a" "${LIBREALSENSE_LIB_DIR}"
-        DEPENDEES install
-    )
-    set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
-elseif(WIN32)
+if(WIN32)
     ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
         COMMAND ${CMAKE_COMMAND} -E copy
         "<BINARY_DIR>/libusb_install/lib/usb.lib" "${LIBREALSENSE_LIB_DIR}"
+        DEPENDEES install
+    )
+    set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
+else() # if(APPLE) or Linux
+    ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "<BINARY_DIR>/libusb_install/lib/libusb.a" "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
     set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
