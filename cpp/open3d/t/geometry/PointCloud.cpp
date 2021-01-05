@@ -154,8 +154,8 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
     depth.AsTensor().AssertDtype(core::Dtype::UInt16);
 
     core::Tensor points;
-    kernel::Unproject(depth.AsTensor(), points, intrinsics, extrinsics,
-                      depth_scale, depth_max, stride);
+    kernel::pointcloud::Unproject(depth.AsTensor(), points, intrinsics,
+                                  extrinsics, depth_scale, depth_max, stride);
     return PointCloud(points);
 }
 

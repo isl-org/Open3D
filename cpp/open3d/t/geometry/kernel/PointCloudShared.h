@@ -40,7 +40,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace pointcloud {
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
 void UnprojectCUDA
 #else
@@ -108,7 +108,7 @@ void UnprojectCPU
 #endif
     points = points.Slice(0, 0, total_pts_count);
 }
-
+}  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

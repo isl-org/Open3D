@@ -134,8 +134,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
             depth, intrinsics, extrinsics, depth_scale, depth_max, 4);
 
     core::Tensor block_coords;
-    kernel::Touch(pcd.GetPoints().Contiguous(), block_coords, block_resolution_,
-                  voxel_size_, sdf_trunc_);
+    kernel::tsdf::Touch(pcd.GetPoints().Contiguous(), block_coords,
+                        block_resolution_, voxel_size_, sdf_trunc_);
 
     // Active voxel blocks in the block hashmap.
     core::Tensor addrs, masks;
@@ -180,11 +180,11 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     core::Tensor dst = block_hashmap_->GetValueTensor();
-    kernel::Integrate(depth_tensor, color_tensor,
-                      addrs.To(core::Dtype::Int64).IndexGet({masks}),
-                      block_hashmap_->GetKeyTensor(), dst, intrinsics,
-                      extrinsics, block_resolution_, voxel_size_, sdf_trunc_,
-                      depth_scale, depth_max);
+    kernel::tsdf::Integrate(depth_tensor, color_tensor,
+                            addrs.To(core::Dtype::Int64).IndexGet({masks}),
+                            block_hashmap_->GetKeyTensor(), dst, intrinsics,
+                            extrinsics, block_resolution_, voxel_size_,
+                            sdf_trunc_, depth_scale, depth_max);
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
@@ -197,7 +197,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
 
     // Extract points around zero-crossings.
     core::Tensor points, normals, colors;
-    kernel::ExtractSurfacePoints(
+    kernel::tsdf::ExtractSurfacePoints(
             active_addrs.To(core::Dtype::Int64),
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
@@ -230,7 +230,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             core::Tensor(iota_map, {num_blocks}, core::Dtype::Int64, device_));
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
-    kernel::ExtractSurfaceMesh(
+    kernel::tsdf::ExtractSurfaceMesh(
             active_addrs.To(core::Dtype::Int64), inverse_index_map,
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),

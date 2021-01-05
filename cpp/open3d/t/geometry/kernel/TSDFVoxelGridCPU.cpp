@@ -42,7 +42,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace tsdf {
 struct Coord3i {
     Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
     bool operator==(const Coord3i& other) const {
@@ -124,7 +124,7 @@ void TouchCPU(const core::Tensor& points,
         block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
     }
 }
-
+}  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

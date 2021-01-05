@@ -41,7 +41,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace tsdf {
 struct Coord3i {
     OPEN3D_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
     bool OPEN3D_HOST_DEVICE operator==(const Coord3i& other) const {
@@ -116,7 +116,7 @@ void TouchCUDA(const core::Tensor& points,
                                block_addrs, block_masks);
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
-
+}  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

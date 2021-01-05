@@ -36,7 +36,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace tsdf {
 void Touch(const core::Tensor& points,
            core::Tensor& voxel_block_coords,
            int64_t voxel_grid_resolution,
@@ -179,7 +179,7 @@ void ExtractSurfaceMesh(const core::Tensor& block_indices,
         utility::LogError("Unimplemented device");
     }
 }
-
+}  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

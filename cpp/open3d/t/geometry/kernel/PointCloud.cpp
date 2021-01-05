@@ -36,7 +36,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace pointcloud {
 void Unproject(const core::Tensor& depth,
                core::Tensor& points,
                const core::Tensor& intrinsics,
@@ -71,7 +71,7 @@ void Unproject(const core::Tensor& depth,
         utility::LogError("Unimplemented device");
     }
 }
-
+}  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

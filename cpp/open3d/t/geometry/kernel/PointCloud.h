@@ -34,7 +34,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace pointcloud {
 void Unproject(const core::Tensor& depth,
                core::Tensor& points,
                const core::Tensor& intrinsics,
@@ -60,7 +60,7 @@ void UnprojectCUDA(const core::Tensor& depth,
                    float depth_max,
                    int64_t stride);
 #endif
-
+}  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

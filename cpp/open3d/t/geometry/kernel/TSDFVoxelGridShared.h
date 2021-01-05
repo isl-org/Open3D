@@ -56,7 +56,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-
+namespace tsdf {
 /// 8-byte voxel structure.
 /// Smallest struct we can get. float tsdf + uint16_t weight also requires
 /// 8-bytes for alignement, so not implemented anyway.
@@ -1074,6 +1074,7 @@ void ExtractSurfaceMeshCPU
     triangles = triangles.Slice(0, 0, total_tri_count);
 }
 
+}  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t
