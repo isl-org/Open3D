@@ -24,22 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/t.h"
+#include "open3d/pipelines/registration/Registration.h"
 
-#include "pybind/open3d_pybind.h"
-#include "pybind/t/pipelines/pipelines.h"
-#include "pybind/t/geometry/geometry.h"
-#include "pybind/t/io/io.h"
+#include <memory>
+#include <utility>
+
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Console.h"
+#include "pybind/docstring.h"
+#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
 namespace t {
+namespace pipelines {
+namespace registration {
 
-void pybind_t(py::module& m) {
-    py::module m_submodule = m.def_submodule("t");
-    pipelines::pybind_pipelines(m_submodule);
-    geometry::pybind_geometry(m_submodule);
-    io::pybind_io(m_submodule);
+void pybind_registration(py::module &m) {
+    py::module m_submodule =
+            m.def_submodule("registration", "Registration pipeline.");
+    // pybind_registration_classes(m_submodule);
+    // pybind_registration_methods(m_submodule);
+
 }
 
+}  // namespace registration
+}  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
