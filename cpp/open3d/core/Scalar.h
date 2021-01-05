@@ -75,19 +75,25 @@ public:
     bool IsInt64() const { return scalar_type_ == ScalarType::Int64; }
     bool IsBool() const { return scalar_type_ == ScalarType::Bool; }
 
-    double ToDouble() const {
+    /// Returns double value from Scalar. Only works when scalar_type_ is
+    /// ScalarType::Double.
+    double GetDouble() const {
         if (!IsDouble()) {
             utility::LogError("Scalar is not a ScalarType:Double type.");
         }
         return value_.d;
     }
-    int64_t ToInt64() const {
+    /// Returns int64 value from Scalar. Only works when scalar_type_ is
+    /// ScalarType::Int64.
+    int64_t GetInt64() const {
         if (!IsInt64()) {
             utility::LogError("Scalar is not a ScalarType:Int64 type.");
         }
         return value_.i;
     }
-    bool ToBool() const {
+    /// Returns bool value from Scalar. Only works when scalar_type_ is
+    /// ScalarType::Bool.
+    bool GetBool() const {
         if (!IsBool()) {
             utility::LogError("Scalar is not a ScalarType:Bool type.");
         }
@@ -158,9 +164,9 @@ public:
 
     bool Equal(Scalar other) const {
         if (other.scalar_type_ == ScalarType::Double) {
-            return Equal(other.ToDouble());
+            return Equal(other.GetDouble());
         } else if (other.scalar_type_ == ScalarType::Int64) {
-            return Equal(other.ToInt64());
+            return Equal(other.GetInt64());
         } else if (other.scalar_type_ == ScalarType::Bool) {
             return scalar_type_ == ScalarType::Bool &&
                    value_.b == other.value_.b;

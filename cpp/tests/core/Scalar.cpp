@@ -43,50 +43,50 @@ static std::vector<core::Scalar> ToVectorOfScalar(
 
 TEST(Scalar, ImplicitConvertConstructor) {
     EXPECT_TRUE(ToScalar(1.25f).IsDouble());
-    EXPECT_EQ(ToScalar(1.25f).ToDouble(), 1.25);
-    EXPECT_ANY_THROW(ToScalar(1.25f).ToInt64());
-    EXPECT_ANY_THROW(ToScalar(1.25f).ToBool());
+    EXPECT_EQ(ToScalar(1.25f).GetDouble(), 1.25);
+    EXPECT_ANY_THROW(ToScalar(1.25f).GetInt64());
+    EXPECT_ANY_THROW(ToScalar(1.25f).GetBool());
 
     EXPECT_TRUE(ToScalar(1.25).IsDouble());
-    EXPECT_EQ(ToScalar(1.25).ToDouble(), 1.25);
-    EXPECT_ANY_THROW(ToScalar(1.25).ToInt64());
-    EXPECT_ANY_THROW(ToScalar(1.25).ToBool());
+    EXPECT_EQ(ToScalar(1.25).GetDouble(), 1.25);
+    EXPECT_ANY_THROW(ToScalar(1.25).GetInt64());
+    EXPECT_ANY_THROW(ToScalar(1.25).GetBool());
 
     EXPECT_TRUE(ToScalar(1).IsInt64());
-    EXPECT_EQ(ToScalar(1).ToInt64(), 1);
-    EXPECT_ANY_THROW(ToScalar(1).ToDouble());
-    EXPECT_ANY_THROW(ToScalar(1).ToBool());
+    EXPECT_EQ(ToScalar(1).GetInt64(), 1);
+    EXPECT_ANY_THROW(ToScalar(1).GetDouble());
+    EXPECT_ANY_THROW(ToScalar(1).GetBool());
 
     EXPECT_TRUE(ToScalar(static_cast<int64_t>(1)).IsInt64());
-    EXPECT_EQ(ToScalar(static_cast<int64_t>(1)).ToInt64(), 1);
-    EXPECT_ANY_THROW(ToScalar(static_cast<int64_t>(1)).ToDouble());
-    EXPECT_ANY_THROW(ToScalar(static_cast<int64_t>(1)).ToBool());
+    EXPECT_EQ(ToScalar(static_cast<int64_t>(1)).GetInt64(), 1);
+    EXPECT_ANY_THROW(ToScalar(static_cast<int64_t>(1)).GetDouble());
+    EXPECT_ANY_THROW(ToScalar(static_cast<int64_t>(1)).GetBool());
 
     EXPECT_TRUE(ToScalar(static_cast<uint8_t>(1)).IsInt64());
-    EXPECT_EQ(ToScalar(static_cast<uint8_t>(1)).ToInt64(), 1);
-    EXPECT_ANY_THROW(ToScalar(static_cast<uint8_t>(1)).ToDouble());
-    EXPECT_ANY_THROW(ToScalar(static_cast<uint8_t>(1)).ToBool());
+    EXPECT_EQ(ToScalar(static_cast<uint8_t>(1)).GetInt64(), 1);
+    EXPECT_ANY_THROW(ToScalar(static_cast<uint8_t>(1)).GetDouble());
+    EXPECT_ANY_THROW(ToScalar(static_cast<uint8_t>(1)).GetBool());
 
     EXPECT_TRUE(ToScalar(static_cast<uint16_t>(1)).IsInt64());
-    EXPECT_EQ(ToScalar(static_cast<uint16_t>(1)).ToInt64(), 1);
-    EXPECT_ANY_THROW(ToScalar(static_cast<uint16_t>(1)).ToDouble());
-    EXPECT_ANY_THROW(ToScalar(static_cast<uint16_t>(1)).ToBool());
+    EXPECT_EQ(ToScalar(static_cast<uint16_t>(1)).GetInt64(), 1);
+    EXPECT_ANY_THROW(ToScalar(static_cast<uint16_t>(1)).GetDouble());
+    EXPECT_ANY_THROW(ToScalar(static_cast<uint16_t>(1)).GetBool());
 
     EXPECT_TRUE(ToScalar(true).IsBool());
-    EXPECT_EQ(ToScalar(true).ToBool(), true);
-    EXPECT_ANY_THROW(ToScalar(true).ToInt64());
-    EXPECT_ANY_THROW(ToScalar(true).ToDouble());
+    EXPECT_EQ(ToScalar(true).GetBool(), true);
+    EXPECT_ANY_THROW(ToScalar(true).GetInt64());
+    EXPECT_ANY_THROW(ToScalar(true).GetDouble());
 }
 
 TEST(Scalar, ImplicitConvertVectorConstructor) {
     std::vector<core::Scalar> ss = ToVectorOfScalar({1, 1.25f, true});
 
     EXPECT_TRUE(ss[0].IsInt64());
-    EXPECT_EQ(ss[0].ToInt64(), 1);
+    EXPECT_EQ(ss[0].GetInt64(), 1);
     EXPECT_TRUE(ss[1].IsDouble());
-    EXPECT_EQ(ss[1].ToDouble(), 1.25);
+    EXPECT_EQ(ss[1].GetDouble(), 1.25);
     EXPECT_TRUE(ss[2].IsBool());
-    EXPECT_EQ(ss[2].ToBool(), true);
+    EXPECT_EQ(ss[2].GetBool(), true);
 }
 
 TEST(Scalar, LiteralEquality) {
