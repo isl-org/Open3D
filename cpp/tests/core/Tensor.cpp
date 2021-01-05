@@ -212,54 +212,46 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
 
 TEST_P(TensorPermuteDevices, Arange) {
     core::Device device = GetParam();
+    core::Tensor arange;
 
-    // Test float.
-    std::vector<float> valsf{0, 1, 2, 3, 4};
-    float startf = 0.0;
-    float stopf = 5.0;
-    float stepf = 1.0;
-    core::Tensor arangef =
-            core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+    // Double value to float type.
+    arange = core::Tensor::Arange(0.0, 5.0, 1.0, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(arange.GetShape(), core::SizeVector({5}));
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4}));
 
-    // Test float with non-one step.
-    valsf = {0.1, 2.1, 4.1};
-    startf = 0.1;
-    stopf = 6.0;
-    stepf = 2.0;
-    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+    // Double value to int type.
+    arange = core::Tensor::Arange(0.0, 5.0, 1.0, core::Dtype::Int32, device);
+    EXPECT_EQ(arange.GetDtype(), core::Dtype::Int32);
+    EXPECT_EQ(arange.GetShape(), core::SizeVector({5}));
+    EXPECT_EQ(arange.ToFlatVector<int>(), std::vector<int>({0, 1, 2, 3, 4}));
 
-    // Test float with negative step.
-    valsf = {0, -2.0, -4.0};
-    startf = 0.0;
-    stopf = -4.1;
-    stepf = -2.0;
-    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+    // Int value to float type.
+    arange = core::Tensor::Arange(0, 5, 1, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(arange.GetShape(), core::SizeVector({5}));
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4}));
+
+    // Float value with non-integer step.
+    arange = core::Tensor::Arange(0.1, 6.0, 2.0, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0.1, 2.1, 4.1}));
+
+    // Float value with negative step.
+    arange =
+            core::Tensor::Arange(0.0, -4.1, -2.0, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0, -2.0, -4.0}));
 
     // Test empty set -- empty Tensor.
-    startf = 0.0;
-    stopf = 2.0;
-    stepf = -2.0;
-    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.NumElements(), 0);
+    arange = core::Tensor::Arange(0, 2, -2, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.NumElements(), 0);
 
     // Test zero step -- error.
-    startf = 0.0;
-    stopf = 2.0;
-    stepf = 0.0;
-    EXPECT_THROW(core::Tensor::Arange<float>(startf, stopf, stepf, device),
+    EXPECT_THROW(core::Tensor::Arange(0, 2, 0, core::Dtype::Float32, device),
                  std::runtime_error);
-
-    // Test int.
-    std::vector<int64_t> valsi{0, 1, 2, 3, 4};
-    int64_t starti = 0;
-    int64_t stopi = 5;
-    int64_t stepi = 1;
-    core::Tensor arangei =
-            core::Tensor::Arange<int64_t>(starti, stopi, stepi, device);
-    EXPECT_EQ(arangei.ToFlatVector<int64_t>(), valsi);
 }
 
 TEST_P(TensorPermuteDevices, Fill) {

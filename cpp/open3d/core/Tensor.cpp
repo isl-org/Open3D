@@ -210,10 +210,33 @@ Tensor Tensor::Diag(const Tensor& input) {
     return diag;
 }
 
-Tensor Tensor::Arange(const Tensor& start,
-                      const Tensor& stop,
-                      const Tensor& step) {
-    return kernel::Arange(start, stop, step);
+Tensor Tensor::Arange(Scalar start,
+                      Scalar stop,
+                      Scalar step,
+                      Dtype dtype,
+                      const Device& device) {
+    start.AssertSameScalarType(stop,
+                               "start must have the same scalar type as stop.");
+    start.AssertSameScalarType(step,
+                               "start must have the same scalar type as step.");
+
+    if (step.Equal(0)) {
+        utility::LogError("Step cannot be 0.");
+    }
+    if (stop.Equal(start)) {
+        return Tensor({0}, dtype, device);
+    }
+
+    Tensor t_start;
+    Tensor t_stop;
+    Tensor t_step;
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        t_start = Tensor::Full({}, start.To<scalar_t>(), dtype, device);
+        t_stop = Tensor::Full({}, stop.To<scalar_t>(), dtype, device);
+        t_step = Tensor::Full({}, step.To<scalar_t>(), dtype, device);
+    });
+
+    return kernel::Arange(t_start, t_stop, t_step);
 }
 
 Tensor Tensor::GetItem(const TensorKey& tk) const {

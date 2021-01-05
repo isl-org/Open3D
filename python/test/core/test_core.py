@@ -184,13 +184,17 @@ def test_arange(device):
     setups = [(0, 10, 1), (0, 10, 1), (0.0, 10.0, 2.0), (0.0, -10.0, -2.0)]
     for start, stop, step in setups:
         np_t = np.arange(start, stop, step)
-        o3_t = o3d.core.Tensor.arange(start, stop, step, device)
+        o3_t = o3d.core.Tensor.arange(start,
+                                      stop,
+                                      step,
+                                      dtype=None,
+                                      device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Only stop.
     for stop in [1.0, 2.0, 3.0, 1, 2, 3]:
         np_t = np.arange(stop)
-        o3_t = o3d.core.Tensor.arange(stop, device)
+        o3_t = o3d.core.Tensor.arange(stop, dtype=None, device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Only start, stop (step = 1).
@@ -198,8 +202,35 @@ def test_arange(device):
     for start, stop in setups:
         np_t = np.arange(start, stop)
         # Not full parameter list, need to specify device by kw.
-        o3_t = o3d.core.Tensor.arange(start, stop, device=device)
+        o3_t = o3d.core.Tensor.arange(start, stop, dtype=None, device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: int -> int.
+    o3_t = o3d.core.Tensor.arange(0, 5, dtype=None, device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Int64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: int, float -> float.
+    o3_t = o3d.core.Tensor.arange(0, 5.0, dtype=None, device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Float64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: float, float -> float.
+    o3_t = o3d.core.Tensor.arange(0.0, 5.0, dtype=None, device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Float64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: explicit type.
+    o3_t = o3d.core.Tensor.arange(0.0,
+                                  5.0,
+                                  dtype=o3d.core.Dtype.Int64,
+                                  device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Int64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
 def test_tensor_from_to_numpy():
