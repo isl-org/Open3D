@@ -398,6 +398,10 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    // Numpy IO.
+    tensor.def("save", &Tensor::Save);
+    tensor.def_static("load", &Tensor::Load);
+
     /// Linalg operations.
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
@@ -415,6 +419,7 @@ void pybind_core_tensor(py::module& m) {
             "dtype"_a, "copy"_a = false);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
+    tensor.def("is_contiguous", &Tensor::IsContiguous);
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types

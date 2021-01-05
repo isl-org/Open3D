@@ -34,6 +34,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
@@ -2734,6 +2735,36 @@ TEST_P(TensorPermuteDevices, IsSame) {
     EXPECT_TRUE(t0.IsSame(vec[0]));
     EXPECT_TRUE(t1.IsSame(vec[1]));
     EXPECT_TRUE(vec[0].IsSame(vec[1]));
+}
+
+TEST_P(TensorPermuteDevices, NumpyIO) {
+    const core::Device device = GetParam();
+    const std::string file_name = "tensor.npy";
+
+    core::Tensor t;
+    core::Tensor t_load;
+
+    t = core::Tensor::Init<float>({{1, 2}, {3, 4}}, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load));
+
+    // Non-contiguous tensor will be stored as contiguous tensor.
+    t = core::Tensor::Init<float>(
+            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
+             {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
+            device);
+    // t[0:2:1, 0:3:2, 0:4:2]
+    t = t.Slice(0, 0, 2, 1).Slice(1, 0, 3, 2).Slice(2, 0, 4, 2);
+    t.Save(file_name);
+    EXPECT_FALSE(t.IsContiguous());
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t_load.IsContiguous());
+    EXPECT_EQ(t_load.GetShape(), core::SizeVector({2, 2, 2}));
+    EXPECT_EQ(t_load.ToFlatVector<float>(),
+              std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
+
+    utility::filesystem::RemoveFile(file_name);
 }
 
 }  // namespace tests
