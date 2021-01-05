@@ -86,7 +86,7 @@ void UnprojectCPU
                 int64_t y = (workload_idx / cols_strided) * stride;
                 int64_t x = (workload_idx % cols_strided) * stride;
 
-                float d = depth_indexer.GetDataPtrFromCoord<uint16_t>(x, y) /
+                float d = *depth_indexer.GetDataPtrFromCoord<uint16_t>(x, y) /
                           depth_scale;
                 if (d > 0 && d < depth_max) {
                     int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);

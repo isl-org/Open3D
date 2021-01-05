@@ -195,12 +195,13 @@ inline OPEN3D_DEVICE voxel_t* DeviceGetVoxelAt(
 
     int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-    bool block_mask_i = nb_block_masks_indexer.GetDataPtrFromCoord<bool>(
+    bool block_mask_i = *nb_block_masks_indexer.GetDataPtrFromCoord<bool>(
             curr_block_idx, nb_idx);
     if (!block_mask_i) return nullptr;
 
-    int64_t block_idx_i = nb_block_indices_indexer.GetDataPtrFromCoord<int64_t>(
-            curr_block_idx, nb_idx);
+    int64_t block_idx_i =
+            *nb_block_indices_indexer.GetDataPtrFromCoord<int64_t>(
+                    curr_block_idx, nb_idx);
 
     return blocks_indexer.GetDataPtrFromCoord<voxel_t>(xn, yn, zn, block_idx_i);
 }
@@ -325,7 +326,7 @@ void IntegrateCPU
                     }
 
                     // Associate image workload and compute SDF and TSDF.
-                    float depth = depth_indexer.GetDataPtrFromCoord<float>(
+                    float depth = *depth_indexer.GetDataPtrFromCoord<float>(
                                           static_cast<int64_t>(u),
                                           static_cast<int64_t>(v)) /
                                   depth_scale;
@@ -339,15 +340,15 @@ void IntegrateCPU
                     sdf /= sdf_trunc;
 
                     // Associate voxel workload and update TSDF/Weights
-                    voxel_t* voxel_ptr = static_cast<voxel_t*>(
-                            voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                                    xv, yv, zv, block_idx));
+                    voxel_t* voxel_ptr = voxel_block_buffer_indexer
+                                                 .GetDataPtrFromCoord<voxel_t>(
+                                                         xv, yv, zv, block_idx);
 
                     if (integrate_color) {
-                        float* color_ptr = static_cast<float*>(
-                                color_indexer.GetDataPtrFromCoord(
+                        float* color_ptr =
+                                color_indexer.GetDataPtrFromCoord<float>(
                                         static_cast<int64_t>(u),
-                                        static_cast<int64_t>(v)));
+                                        static_cast<int64_t>(v));
 
                         voxel_ptr->Integrate(sdf, color_ptr[0], color_ptr[1],
                                              color_ptr[2]);
@@ -433,9 +434,9 @@ void ExtractSurfacePointsCPU
                     int64_t xv, yv, zv;
                     voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-                    voxel_t* voxel_ptr = static_cast<voxel_t*>(
-                            voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                                    xv, yv, zv, block_idx));
+                    voxel_t* voxel_ptr = voxel_block_buffer_indexer
+                                                 .GetDataPtrFromCoord<voxel_t>(
+                                                         xv, yv, zv, block_idx);
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
                     if (weight_o <= kWeightThreshold) return;
@@ -526,8 +527,9 @@ void ExtractSurfacePointsCPU
 
                     /// Coordinate transform
                     // block_idx -> (x_block, y_block, z_block)
-                    int* block_key_ptr = static_cast<int*>(
-                            block_keys_indexer.GetDataPtrFromCoord(block_idx));
+                    int* block_key_ptr =
+                            block_keys_indexer.GetDataPtrFromCoord<int>(
+                                    block_idx);
                     int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
                     int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
                     int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
@@ -536,9 +538,9 @@ void ExtractSurfacePointsCPU
                     int64_t xv, yv, zv;
                     voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-                    voxel_t* voxel_ptr = static_cast<voxel_t*>(
-                            voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                                    xv, yv, zv, block_idx));
+                    voxel_t* voxel_ptr = voxel_block_buffer_indexer
+                                                 .GetDataPtrFromCoord<voxel_t>(
+                                                         xv, yv, zv, block_idx);
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
 
@@ -571,8 +573,9 @@ void ExtractSurfacePointsCPU
 
                             int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
-                            float* point_ptr = static_cast<float*>(
-                                    point_indexer.GetDataPtrFromCoord(idx));
+                            float* point_ptr =
+                                    point_indexer.GetDataPtrFromCoord<float>(
+                                            idx);
                             point_ptr[0] =
                                     voxel_size * (x + ratio * int(i == 0));
                             point_ptr[1] =
@@ -585,8 +588,9 @@ void ExtractSurfacePointsCPU
                                         static_cast<int>(workload_block_idx),
                                         ni);
 
-                            float* normal_ptr = static_cast<float*>(
-                                    normal_indexer.GetDataPtrFromCoord(idx));
+                            float* normal_ptr =
+                                    normal_indexer.GetDataPtrFromCoord<float>(
+                                            idx);
                             float nx = (1 - ratio) * no[0] + ratio * ni[0];
                             float ny = (1 - ratio) * no[1] + ratio * ni[1];
                             float nz = (1 - ratio) * no[2] + ratio * ni[2];
@@ -597,8 +601,10 @@ void ExtractSurfacePointsCPU
                             normal_ptr[2] = nz / norm;
 
                             if (extract_color) {
-                                float* color_ptr = static_cast<float*>(
-                                        color_indexer.GetDataPtrFromCoord(idx));
+                                float* color_ptr =
+                                        color_indexer
+                                                .GetDataPtrFromCoord<float>(
+                                                        idx);
 
                                 float r_o = voxel_ptr->GetR();
                                 float g_o = voxel_ptr->GetG();
@@ -733,9 +739,9 @@ void ExtractSurfaceMeshCPU
                         table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
                     }
 
-                    int* mesh_struct_ptr = static_cast<int*>(
-                            mesh_structure_indexer.GetDataPtrFromCoord(
-                                    xv, yv, zv, workload_block_idx));
+                    int* mesh_struct_ptr =
+                            mesh_structure_indexer.GetDataPtrFromCoord<int>(
+                                    xv, yv, zv, workload_block_idx);
                     mesh_struct_ptr[3] = table_idx;
 
                     if (table_idx == 0 || table_idx == 255) return;
@@ -756,17 +762,17 @@ void ExtractSurfaceMeshCPU
                             int nb_idx =
                                     (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                            int64_t block_idx_i = *static_cast<int64_t*>(
-                                    nb_block_indices_indexer
-                                            .GetDataPtrFromCoord(
-                                                    workload_block_idx,
-                                                    nb_idx));
-                            int* mesh_ptr_i = static_cast<int*>(
-                                    mesh_structure_indexer.GetDataPtrFromCoord(
-                                            xv_i - dxb * resolution,
-                                            yv_i - dyb * resolution,
-                                            zv_i - dzb * resolution,
-                                            inv_indices_ptr[block_idx_i]));
+                            int64_t block_idx_i =
+                                    *nb_block_indices_indexer
+                                             .GetDataPtrFromCoord<int64_t>(
+                                                     workload_block_idx,
+                                                     nb_idx);
+                            int* mesh_ptr_i =
+                                    mesh_structure_indexer.GetDataPtrFromCoord<
+                                            int>(xv_i - dxb * resolution,
+                                                 yv_i - dyb * resolution,
+                                                 zv_i - dzb * resolution,
+                                                 inv_indices_ptr[block_idx_i]);
 
                             // Non-atomic write, but we are safe
                             mesh_ptr_i[edge_i] = -1;
@@ -801,9 +807,9 @@ void ExtractSurfaceMeshCPU
                 voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
                 // Obtain voxel's mesh struct ptr
-                int* mesh_struct_ptr = static_cast<int*>(
-                        mesh_structure_indexer.GetDataPtrFromCoord(
-                                xv, yv, zv, workload_block_idx));
+                int* mesh_struct_ptr =
+                        mesh_structure_indexer.GetDataPtrFromCoord<int>(
+                                xv, yv, zv, workload_block_idx);
 
                 // Early quit -- no allocated vertex to compute
                 if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
@@ -883,8 +889,9 @@ void ExtractSurfaceMeshCPU
                     int64_t voxel_idx = workload_idx % resolution3;
 
                     // block_idx -> (x_block, y_block, z_block)
-                    int* block_key_ptr = static_cast<int*>(
-                            block_keys_indexer.GetDataPtrFromCoord(block_idx));
+                    int* block_key_ptr =
+                            block_keys_indexer.GetDataPtrFromCoord<int>(
+                                    block_idx);
                     int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
                     int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
                     int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
@@ -899,9 +906,9 @@ void ExtractSurfaceMeshCPU
                     int64_t z = zb * resolution + zv;
 
                     // Obtain voxel's mesh struct ptr
-                    int* mesh_struct_ptr = static_cast<int*>(
-                            mesh_structure_indexer.GetDataPtrFromCoord(
-                                    xv, yv, zv, workload_block_idx));
+                    int* mesh_struct_ptr =
+                            mesh_structure_indexer.GetDataPtrFromCoord<int>(
+                                    xv, yv, zv, workload_block_idx);
 
                     // Early quit -- no allocated vertex to compute
                     if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
@@ -910,9 +917,9 @@ void ExtractSurfaceMeshCPU
                     }
 
                     // Obtain voxel ptr
-                    voxel_t* voxel_ptr = static_cast<voxel_t*>(
-                            voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                                    xv, yv, zv, block_idx));
+                    voxel_t* voxel_ptr = voxel_block_buffer_indexer
+                                                 .GetDataPtrFromCoord<voxel_t>(
+                                                         xv, yv, zv, block_idx);
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float no[3] = {0}, ne[3] = {0};
                     GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
@@ -939,14 +946,14 @@ void ExtractSurfaceMeshCPU
                         float ratio_y = ratio * int(e == 1);
                         float ratio_z = ratio * int(e == 2);
 
-                        float* vertex_ptr = static_cast<float*>(
-                                vertex_indexer.GetDataPtrFromCoord(idx));
+                        float* vertex_ptr =
+                                vertex_indexer.GetDataPtrFromCoord<float>(idx);
                         vertex_ptr[0] = voxel_size * (x + ratio_x);
                         vertex_ptr[1] = voxel_size * (y + ratio_y);
                         vertex_ptr[2] = voxel_size * (z + ratio_z);
 
-                        float* normal_ptr = static_cast<float*>(
-                                normal_indexer.GetDataPtrFromCoord(idx));
+                        float* normal_ptr =
+                                normal_indexer.GetDataPtrFromCoord<float>(idx);
                         GetNormalAt(static_cast<int>(xv) + (e == 0),
                                     static_cast<int>(yv) + (e == 1),
                                     static_cast<int>(zv) + (e == 2),
@@ -961,8 +968,9 @@ void ExtractSurfaceMeshCPU
                         normal_ptr[2] = nz / norm;
 
                         if (extract_color) {
-                            float* color_ptr = static_cast<float*>(
-                                    color_indexer.GetDataPtrFromCoord(idx));
+                            float* color_ptr =
+                                    color_indexer.GetDataPtrFromCoord<float>(
+                                            idx);
                             float r_o = voxel_ptr->GetR();
                             float g_o = voxel_ptr->GetG();
                             float b_o = voxel_ptr->GetB();
@@ -1002,7 +1010,8 @@ void ExtractSurfaceMeshCPU
     core::kernel::CPULauncher::LaunchGeneralKernel(
             n, [&](int64_t workload_idx) {
 #endif
-                // Natural index (0, N) -> (block_idx, voxel_idx)
+                // Natural index (0, N) -> (block_idx,
+                // voxel_idx)
                 int64_t workload_block_idx = workload_idx / resolution3;
                 int64_t voxel_idx = workload_idx % resolution3;
 
@@ -1011,9 +1020,9 @@ void ExtractSurfaceMeshCPU
                 voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
                 // Obtain voxel's mesh struct ptr
-                int* mesh_struct_ptr = static_cast<int*>(
-                        mesh_structure_indexer.GetDataPtrFromCoord(
-                                xv, yv, zv, workload_block_idx));
+                int* mesh_struct_ptr =
+                        mesh_structure_indexer.GetDataPtrFromCoord<int>(
+                                xv, yv, zv, workload_block_idx);
 
                 int table_idx = mesh_struct_ptr[3];
                 if (tri_count[table_idx] == 0) return;
@@ -1037,18 +1046,20 @@ void ExtractSurfaceMeshCPU
 
                         int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                        int64_t block_idx_i = *static_cast<int64_t*>(
-                                nb_block_indices_indexer.GetDataPtrFromCoord(
-                                        workload_block_idx, nb_idx));
-                        int* mesh_struct_ptr_i = static_cast<int*>(
-                                mesh_structure_indexer.GetDataPtrFromCoord(
+                        int64_t block_idx_i =
+                                *nb_block_indices_indexer
+                                         .GetDataPtrFromCoord<int64_t>(
+                                                 workload_block_idx, nb_idx);
+                        int* mesh_struct_ptr_i =
+                                mesh_structure_indexer.GetDataPtrFromCoord<int>(
                                         xv_i - dxb * resolution,
                                         yv_i - dyb * resolution,
                                         zv_i - dzb * resolution,
-                                        inv_indices_ptr[block_idx_i]));
+                                        inv_indices_ptr[block_idx_i]);
 
-                        int64_t* triangle_ptr = static_cast<int64_t*>(
-                                triangle_indexer.GetDataPtrFromCoord(tri_idx));
+                        int64_t* triangle_ptr =
+                                triangle_indexer.GetDataPtrFromCoord<int64_t>(
+                                        tri_idx);
                         triangle_ptr[2 - vertex] = mesh_struct_ptr_i[edge_i];
                     }
                 }
