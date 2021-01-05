@@ -97,14 +97,67 @@ void pybind_sensor(py::module &m) {
                            "Number of color channels.")
             .def("__repr__", &RGBDVideoMetadata::ToString);
 
+
+    // RGBD video reader trampoline
+    class PyRGBDVideoReader : public RGBDVideoReader {
+
+    public:
+        using RGBDVideoReader::RGBDVideoReader;
+        bool IsOpened() const override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
+        }
+
+        bool IsEOF() const override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
+        }
+
+        bool Open(const std::string &filename) override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, Open, filename);
+        }
+
+        void Close() override {
+            PYBIND11_OVERLOAD_PURE(void, RGBDVideoReader, );
+        }
+
+        RGBDVideoMetadata & GetMetadata() override {
+            PYBIND11_OVERLOAD_PURE(RGBDVideoMetadata &, RGBDVideoReader, );
+        }
+
+        const RGBDVideoMetadata & GetMetadata() const override {
+            PYBIND11_OVERLOAD_PURE(const RGBDVideoMetadata &, RGBDVideoReader, );
+        }
+
+        bool SeekTimestamp(uint64_t timestamp) override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, SeekTimestamp, timestamp);
+        }
+
+        uint64_t GetTimestamp() const override {
+            PYBIND11_OVERLOAD_PURE(uint64_t, RGBDVideoReader, );
+        }
+
+        t::geometry::RGBDImage NextFrame() override {
+            PYBIND11_OVERLOAD_PURE(t::geometry::RGBDImage, RGBDVideoReader, );
+        }
+
+        std::string GetFilename() const override {
+            PYBIND11_OVERLOAD_PURE(std::string, RGBDVideoReader, );
+        }
+    };
+
     // Class RGBD video reader
-    py::class_<RGBDVideoReader, std::shared_ptr<RGBDVideoReader>>
+    py::class_<RGBDVideoReader, PyRGBDVideoReader, std::shared_ptr<RGBDVideoReader>>
             rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
     rgbd_video_reader
+            .def(py::init<>())
             .def_static("create", &RGBDVideoReader::Create, "filename"_a,
                         "Create RGBD video reader based on filename")
+            .def("save_frames", &RGBDVideoReader::SaveFrames, "frame_path"_a,
+                    "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
+                    "Save synchronized and aligned individual frames to subfolders.")
             .def("__repr__", &RGBDVideoReader::ToString);
     docstring::ClassMethodDocInject(m, "RGBDVideoReader", "create",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "RGBDVideoReader", "save_frames",
                                     map_shared_argument_docstrings);
 
     // Class RGBD sensor
@@ -121,9 +174,8 @@ void pybind_sensor(py::module &m) {
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
             .def("is_opened", &RSBagReader::IsOpened,
                  "Check if the RS bag file  is opened.")
-            .def("open",
-                 py::overload_cast<const std::string &>(&RSBagReader::Open),
-                 "filename"_a, "Open an RS bag playback.")
+            .def("open", &RSBagReader::Open, "filename"_a,
+                 "Open an RS bag playback.")
             .def("close", &RSBagReader::Close,
                  "Close the opened RS bag playback.")
             .def("is_eof", &RSBagReader::IsEOF,
