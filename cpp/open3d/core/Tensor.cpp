@@ -230,7 +230,7 @@ Tensor Tensor::Arange(Scalar start,
     Tensor t_start;
     Tensor t_stop;
     Tensor t_step;
-    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t s_start;
         scalar_t s_stop;
         scalar_t s_step;
@@ -242,10 +242,6 @@ Tensor Tensor::Arange(Scalar start,
             s_start = static_cast<scalar_t>(start.ToInt64());
             s_stop = static_cast<scalar_t>(stop.ToInt64());
             s_step = static_cast<scalar_t>(step.ToInt64());
-        } else if (start.IsBool()) {
-            s_start = static_cast<scalar_t>(start.ToBool());
-            s_stop = static_cast<scalar_t>(stop.ToBool());
-            s_step = static_cast<scalar_t>(step.ToBool());
         } else {
             utility::LogError("Arange: ScalarType not supported.");
         }
