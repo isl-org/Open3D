@@ -188,12 +188,12 @@ public:
     template <typename Object>
     void FillObject(const Object& v);
 
-    /// Create a tensor with uninitilized values.
+    /// Create a tensor with uninitialized values.
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
 
-    /// Create a tensor with uninitilized values with the same dtype and device
+    /// Create a tensor with uninitialized values with the same dtype and device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
         return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
@@ -231,7 +231,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 1-D tensor with initilizer list.
+    /// Create a 1-D tensor with initializer list.
     /// For example,
     /// core::Tensor::Init<float>({1,2,3});
     template <typename T>
@@ -245,7 +245,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 2-D tensor with nested initilizer list.
+    /// Create a 2-D tensor with nested initializer list.
     /// For example,
     /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
     template <typename T>
@@ -273,7 +273,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 3-D tensor with nested initilizer list.
+    /// Create a 3-D tensor with nested initializer list.
     /// For example,
     /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
     template <typename T>
