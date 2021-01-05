@@ -43,37 +43,37 @@ public:
     enum class ScalarType { Double, Int64, Bool };
 
     Scalar(float v) {
-        scalar_mode_ = ScalarType::Double;
+        scalar_type_ = ScalarType::Double;
         value_.d = static_cast<double>(v);
     }
     Scalar(double v) {
-        scalar_mode_ = ScalarType::Double;
+        scalar_type_ = ScalarType::Double;
         value_.d = static_cast<double>(v);
     }
     Scalar(int v) {
-        scalar_mode_ = ScalarType::Int64;
+        scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
     Scalar(int64_t v) {
-        scalar_mode_ = ScalarType::Int64;
+        scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
     Scalar(uint8_t v) {
-        scalar_mode_ = ScalarType::Int64;
+        scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
     Scalar(uint16_t v) {
-        scalar_mode_ = ScalarType::Int64;
+        scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
     Scalar(bool v) {
-        scalar_mode_ = ScalarType::Bool;
+        scalar_type_ = ScalarType::Bool;
         value_.b = static_cast<bool>(v);
     }
 
-    bool IsDouble() const { return scalar_mode_ == ScalarType::Double; }
-    bool IsInt64() const { return scalar_mode_ == ScalarType::Int64; }
-    bool IsBool() const { return scalar_mode_ == ScalarType::Bool; }
+    bool IsDouble() const { return scalar_type_ == ScalarType::Double; }
+    bool IsInt64() const { return scalar_type_ == ScalarType::Int64; }
+    bool IsBool() const { return scalar_type_ == ScalarType::Bool; }
 
     double ToDouble() const {
         if (!IsDouble()) {
@@ -96,7 +96,7 @@ public:
 
     void AssertSameScalarType(Scalar other,
                               const std::string& error_msg) const {
-        if (scalar_mode_ != other.scalar_mode_) {
+        if (scalar_type_ != other.scalar_type_) {
             if (error_msg.empty()) {
                 utility::LogError("Scalar mode {} are not the same as {}.",
                                   ToString(), other.ToString());
@@ -108,30 +108,30 @@ public:
     }
 
     std::string ToString() const {
-        std::string scalar_mode_str;
+        std::string scalar_type_str;
         std::string value_str;
-        if (scalar_mode_ == ScalarType::Double) {
-            scalar_mode_str = "Double";
+        if (scalar_type_ == ScalarType::Double) {
+            scalar_type_str = "Double";
             value_str = std::to_string(value_.d);
-        } else if (scalar_mode_ == ScalarType::Int64) {
-            scalar_mode_str = "Int64";
+        } else if (scalar_type_ == ScalarType::Int64) {
+            scalar_type_str = "Int64";
             value_str = std::to_string(value_.i);
-        } else if (scalar_mode_ == ScalarType::Bool) {
-            scalar_mode_str = "Bool";
+        } else if (scalar_type_ == ScalarType::Bool) {
+            scalar_type_str = "Bool";
             value_str = value_.b ? "true" : "false";
         } else {
             utility::LogError("ScalarTypeToString: ScalarType not supported.");
         }
-        return scalar_mode_str + ":" + value_str;
+        return scalar_type_str + ":" + value_str;
     }
 
     template <typename T>
     bool Equal(T value) const {
-        if (scalar_mode_ == ScalarType::Double) {
+        if (scalar_type_ == ScalarType::Double) {
             return value_.d == value;
-        } else if (scalar_mode_ == ScalarType::Int64) {
+        } else if (scalar_type_ == ScalarType::Int64) {
             return value_.i == value;
-        } else if (scalar_mode_ == ScalarType::Bool) {
+        } else if (scalar_type_ == ScalarType::Bool) {
             return false;  // Boolean does not equal to non-boolean values.
         } else {
             utility::LogError("Equals: ScalarType not supported.");
@@ -139,16 +139,16 @@ public:
     }
 
     bool Equal(bool value) const {
-        return scalar_mode_ == ScalarType::Bool && value_.b == value;
+        return scalar_type_ == ScalarType::Bool && value_.b == value;
     }
 
     bool Equal(Scalar other) const {
-        if (other.scalar_mode_ == ScalarType::Double) {
+        if (other.scalar_type_ == ScalarType::Double) {
             return Equal(other.ToDouble());
-        } else if (other.scalar_mode_ == ScalarType::Int64) {
+        } else if (other.scalar_type_ == ScalarType::Int64) {
             return Equal(other.ToInt64());
-        } else if (other.scalar_mode_ == ScalarType::Bool) {
-            return scalar_mode_ == ScalarType::Bool &&
+        } else if (other.scalar_type_ == ScalarType::Bool) {
+            return scalar_type_ == ScalarType::Bool &&
                    value_.b == other.value_.b;
         } else {
             utility::LogError("Equals: ScalarType not supported.");
@@ -156,7 +156,7 @@ public:
     }
 
 private:
-    ScalarType scalar_mode_;
+    ScalarType scalar_type_;
     union value_t {
         double d;
         int64_t i;
