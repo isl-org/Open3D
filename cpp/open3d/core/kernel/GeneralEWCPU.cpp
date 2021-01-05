@@ -154,7 +154,7 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
             utility::LogError("[RayCasting] Unimplemented.");
             break;
         default:
-            break;
+            utility::LogError("Unimplemented.");
     }
 }
 

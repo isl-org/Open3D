@@ -332,6 +332,30 @@ public:
     /// Create a square matrix with specified diagonal elements in input.
     static Tensor Diag(const Tensor& input);
 
+    /// Create a 1D tensor with evenly spaced values in the given interval.
+    static Tensor Arange(const Tensor& start,
+                         const Tensor& stop,
+                         const Tensor& step);
+
+    template <typename T>
+    static Tensor Arange(T start,
+                         T stop,
+                         T step = 1,
+                         const Device& device = core::Device("CPU:0")) {
+        Dtype dtype = Dtype::FromType<T>();
+        if (step == 0) {
+            utility::LogError("Step cannot be 0");
+        }
+        if (stop == start) {
+            return Tensor({0}, dtype, device);
+        }
+
+        Tensor tstart = Tensor::Full({}, start, dtype, device);
+        Tensor tstop = Tensor::Full({}, stop, dtype, device);
+        Tensor tstep = Tensor::Full({}, step, dtype, device);
+        return Arange(tstart, tstop, tstep);
+    }
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is
@@ -1129,16 +1153,20 @@ public:
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
 
     /// Assert that the Tensor has the specified shape.
-    void AssertShape(const SizeVector& expected_shape) const;
+    void AssertShape(const SizeVector& expected_shape,
+                     const std::string& error_msg = "") const;
 
     /// Assert that Tensor's shape is compatible with a dynamic shape.
-    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape,
+                               const std::string& error_msg = "") const;
 
     /// Assert that the Tensor has the specified device.
-    void AssertDevice(const Device& expected_device) const;
+    void AssertDevice(const Device& expected_device,
+                      const std::string& error_msg = "") const;
 
     /// Assert that the Tensor has the specified dtype.
-    void AssertDtype(const Dtype& expected_dtype) const;
+    void AssertDtype(const Dtype& expected_dtype,
+                     const std::string& error_msg = "") const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;

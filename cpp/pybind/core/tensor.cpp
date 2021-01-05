@@ -280,6 +280,50 @@ void pybind_core_tensor(py::module& m) {
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
+    // Tensor creation from arange for int
+    tensor.def_static(
+            "arange",
+            [](int64_t stop, utility::optional<Device> device) {
+                return Tensor::Arange<int64_t>(
+                        0, stop, 1,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "device"_a = py::none());
+    tensor.def_static(
+            "arange",
+            [](utility::optional<int64_t> start, int64_t stop,
+               utility::optional<int64_t> step,
+               utility::optional<Device> device) {
+                return Tensor::Arange<int64_t>(
+                        start.has_value() ? start.value() : 0, stop,
+                        step.has_value() ? step.value() : 1,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
+            "device"_a = py::none());
+
+    // Tensor creation from arange for float
+    tensor.def_static(
+            "arange",
+            [](double stop, utility::optional<Device> device) {
+                return Tensor::Arange<double>(
+                        0.0, stop, 1.0,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "device"_a = py::none());
+    tensor.def_static(
+            "arange",
+            [](utility::optional<double> start, double stop,
+               utility::optional<double> step,
+               utility::optional<Device> device) {
+                return Tensor::Arange<double>(
+                        start.has_value() ? start.value() : 0.0, stop,
+                        step.has_value() ? step.value() : 1.0,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
+            "device"_a = py::none());
+
     // Tensor copy.
     tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 
