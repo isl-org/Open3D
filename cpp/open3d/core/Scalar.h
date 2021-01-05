@@ -81,13 +81,13 @@ public:
         }
         return value_.d;
     }
-    double ToInt64() const {
+    int64_t ToInt64() const {
         if (!IsInt64()) {
             utility::LogError("Scalar is not a ScalarType:Int64 type.");
         }
         return value_.i;
     }
-    double ToBool() const {
+    bool ToBool() const {
         if (!IsBool()) {
             utility::LogError("Scalar is not a ScalarType:Bool type.");
         }
