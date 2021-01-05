@@ -32,7 +32,7 @@
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
-#include "open3d/t/geometry/kernel/MarchingCubesMacros.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGridShared.h"
 #include "open3d/utility/Console.h"
@@ -53,37 +53,18 @@ struct Coord3i {
     int64_t z_;
 };
 
-void CUDATSDFTouchKernel(
-        const std::unordered_map<std::string, core::Tensor>& srcs,
-        std::unordered_map<std::string, core::Tensor>& dsts) {
-    static std::vector<std::string> src_attrs = {
-            "points",
-            "voxel_size",
-            "resolution",
-    };
-
-    for (auto& k : src_attrs) {
-        if (srcs.count(k) == 0) {
-            utility::LogError(
-                    "[CUDATSDFTouchKernel] expected core::Tensor {} in srcs, "
-                    "but "
-                    "did not receive",
-                    k);
-        }
-    }
-
-    core::Tensor pcd = srcs.at("points");
-    float voxel_size = srcs.at("voxel_size").Item<float>();
-    int64_t resolution = srcs.at("resolution").Item<int64_t>();
+void TouchCUDA(const core::Tensor& points,
+               core::Tensor& voxel_block_coords,
+               int64_t voxel_grid_resolution,
+               float voxel_size,
+               float sdf_trunc) {
+    int64_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
 
-    float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
+    int64_t n = points.GetLength();
+    const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
-    core::Device device = pcd.GetDevice();
-
-    int64_t n = pcd.GetLength();
-    float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
-
+    core::Device device = points.GetDevice();
     core::Tensor block_coordi({8 * n, 3}, core::Dtype::Int32, device);
     int* block_coordi_ptr = static_cast<int*>(block_coordi.GetDataPtr());
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32, device);
@@ -133,34 +114,7 @@ void CUDATSDFTouchKernel(
     core::Tensor block_addrs, block_masks;
     pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
                                block_addrs, block_masks);
-    dsts.emplace("block_coords", block_coordi.IndexGet({block_masks}));
-}
-
-void GeneralEWCUDA(const std::unordered_map<std::string, core::Tensor>& srcs,
-                   std::unordered_map<std::string, core::Tensor>& dsts,
-                   GeneralEWOpCode op_code) {
-    switch (op_code) {
-        case GeneralEWOpCode::Unproject:
-            CUDAUnprojectKernel(srcs, dsts);
-            break;
-        case GeneralEWOpCode::TSDFTouch:
-            CUDATSDFTouchKernel(srcs, dsts);
-            break;
-        case GeneralEWOpCode::TSDFIntegrate:
-            CUDATSDFIntegrateKernel(srcs, dsts);
-            break;
-        case GeneralEWOpCode::TSDFPointExtraction:
-            CUDAPointExtractionKernel(srcs, dsts);
-            break;
-        case GeneralEWOpCode::TSDFMeshExtraction:
-            CUDAMeshExtractionKernel(srcs, dsts);
-            break;
-        case GeneralEWOpCode::RayCasting:
-            utility::LogError("[RayCasting] Unimplemented.");
-            break;
-        default:
-            break;
-    }
+    voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
 
 }  // namespace kernel

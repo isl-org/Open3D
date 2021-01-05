@@ -1,10 +1,13 @@
 # Create object library
 set(T_GEOMETRY_KERNEL_SRC
+    kernel/PointCloud.cpp
+    kernel/PointCloudCPU.cpp
     kernel/TSDFVoxelGrid.cpp
     kernel/TSDFVoxelGridCPU.cpp
 )
 
 set(T_GEOMETRY_KERNEL_CUDA_SRC
+    kernel/PointCloudCUDA.cu
     kernel/TSDFVoxelGridCUDA.cu
 )
 

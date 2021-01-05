@@ -35,27 +35,136 @@ namespace t {
 namespace geometry {
 namespace kernel {
 
-enum class GeneralEWOpCode {
-    Unproject,
-    TSDFIntegrate,
-    TSDFTouch,
-    TSDFPointExtraction,
-    TSDFMeshExtraction,
-    RayCasting
-};
+void Touch(const core::Tensor& points,
+           core::Tensor& voxel_block_coords,
+           int64_t voxel_grid_resolution,
+           float voxel_size,
+           float sdf_trunc);
 
-void GeneralEW(const std::unordered_map<std::string, core::Tensor>& srcs,
-               std::unordered_map<std::string, core::Tensor>& dsts,
-               GeneralEWOpCode op_code);
+void Integrate(const core::Tensor& depth,
+               const core::Tensor& color,
+               const core::Tensor& block_indices,
+               const core::Tensor& block_keys,
+               core::Tensor& block_values,
+               const core::Tensor& intrinsics,
+               const core::Tensor& extrinsics,
+               int64_t resolution,
+               float voxel_size,
+               float sdf_trunc,
+               float depth_scale,
+               float depth_max);
 
-void GeneralEWCPU(const std::unordered_map<std::string, core::Tensor>& srcs,
-                  std::unordered_map<std::string, core::Tensor>& dsts,
-                  GeneralEWOpCode op_code);
+void ExtractSurfacePoints(const core::Tensor& block_indices,
+                          const core::Tensor& nb_block_indices,
+                          const core::Tensor& nb_block_masks,
+                          const core::Tensor& block_keys,
+                          const core::Tensor& block_values,
+                          core::Tensor& points,
+                          core::Tensor& normals,
+                          core::Tensor& colors,
+                          int64_t block_resolution,
+                          float voxel_size);
+
+void ExtractSurfaceMesh(const core::Tensor& block_indices,
+                        const core::Tensor& inv_block_indices,
+                        const core::Tensor& nb_block_indices,
+                        const core::Tensor& nb_block_masks,
+                        const core::Tensor& block_keys,
+                        const core::Tensor& block_values,
+                        core::Tensor& vertices,
+                        core::Tensor& triangles,
+                        core::Tensor& vertex_normals,
+                        core::Tensor& vertex_colors,
+                        int64_t block_resolution,
+                        float voxel_size);
+
+void TouchCPU(const core::Tensor& points,
+              core::Tensor& voxel_block_coords,
+              int64_t voxel_grid_resolution,
+              float voxel_size,
+              float sdf_trunc);
+
+void IntegrateCPU(const core::Tensor& depth,
+                  const core::Tensor& color,
+                  const core::Tensor& block_indices,
+                  const core::Tensor& block_keys,
+                  core::Tensor& block_values,
+                  const core::Tensor& intrinsics,
+                  const core::Tensor& extrinsics,
+                  int64_t resolution,
+                  float voxel_size,
+                  float sdf_trunc,
+                  float depth_scale,
+                  float depth_max);
+
+void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
+                             const core::Tensor& nb_block_indices,
+                             const core::Tensor& nb_block_masks,
+                             const core::Tensor& block_keys,
+                             const core::Tensor& block_values,
+                             core::Tensor& points,
+                             core::Tensor& normals,
+                             core::Tensor& colors,
+                             int64_t block_resolution,
+                             float voxel_size);
+
+void ExtractSurfaceMeshCPU(const core::Tensor& block_indices,
+                           const core::Tensor& inv_block_indices,
+                           const core::Tensor& nb_block_indices,
+                           const core::Tensor& nb_block_masks,
+                           const core::Tensor& block_keys,
+                           const core::Tensor& block_values,
+                           core::Tensor& vertices,
+                           core::Tensor& triangles,
+                           core::Tensor& vertex_normals,
+                           core::Tensor& vertex_colors,
+                           int64_t block_resolution,
+                           float voxel_size);
 
 #ifdef BUILD_CUDA_MODULE
-void GeneralEWCUDA(const std::unordered_map<std::string, core::Tensor>& srcs,
-                   std::unordered_map<std::string, core::Tensor>& dsts,
-                   GeneralEWOpCode op_code);
+void TouchCUDA(const core::Tensor& points,
+               core::Tensor& voxel_block_coords,
+               int64_t voxel_grid_resolution,
+               float voxel_size,
+               float sdf_trunc);
+
+void IntegrateCUDA(const core::Tensor& depth,
+                   const core::Tensor& color,
+                   const core::Tensor& block_indices,
+                   const core::Tensor& block_keys,
+                   core::Tensor& block_values,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& extrinsics,
+                   int64_t resolution,
+                   float voxel_size,
+                   float sdf_trunc,
+                   float depth_scale,
+                   float depth_max);
+
+void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
+                              const core::Tensor& nb_block_indices,
+                              const core::Tensor& nb_block_masks,
+                              const core::Tensor& block_keys,
+                              const core::Tensor& block_values,
+                              core::Tensor& points,
+                              core::Tensor& normals,
+                              core::Tensor& colors,
+                              int64_t block_resolution,
+                              float voxel_size);
+
+void ExtractSurfaceMeshCUDA(const core::Tensor& block_indices,
+                            const core::Tensor& inv_block_indices,
+                            const core::Tensor& nb_block_indices,
+                            const core::Tensor& nb_block_masks,
+                            const core::Tensor& block_keys,
+                            const core::Tensor& block_values,
+                            core::Tensor& vertices,
+                            core::Tensor& triangles,
+                            core::Tensor& vertex_normals,
+                            core::Tensor& vertex_colors,
+                            int64_t block_resolution,
+                            float voxel_size);
+
 #endif
 
 }  // namespace kernel

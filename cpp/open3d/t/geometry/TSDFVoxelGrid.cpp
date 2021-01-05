@@ -133,25 +133,11 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, 4);
 
-    // Determine voxel blocks to allocate.
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"points", pcd.GetPoints().Contiguous()},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)},
-            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
-                                       core::Dtype::Float32, device_)}};
-    std::unordered_map<std::string, core::Tensor> dsts;
-
-    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFTouch);
-    if (dsts.count("block_coords") == 0) {
-        utility::LogError(
-                "[TSDFVoxelGrid] touch launch failed, expected block_coords");
-    }
+    core::Tensor block_coords;
+    kernel::Touch(pcd.GetPoints().Contiguous(), block_coords, block_resolution_,
+                  voxel_size_, sdf_trunc_);
 
     // Active voxel blocks in the block hashmap.
-    core::Tensor block_coords = dsts.at("block_coords");
     core::Tensor addrs, masks;
     int64_t n = block_hashmap_->Size();
     try {
@@ -171,25 +157,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // previous launches and return false.
     block_hashmap_->Find(block_coords, addrs, masks);
 
-    // TSDF Integration.
-    srcs = {{"depth", depth.AsTensor().Contiguous()},
-            {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
-            {"block_keys", block_hashmap_->GetKeyTensor()},
-            {"intrinsics", intrinsics.Copy(device_)},
-            {"extrinsics", extrinsics.Copy(device_)},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"depth_scale",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
-                          {}, core::Dtype::Float32, device_)},
-            {"depth_max",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
-                          core::Dtype::Float32, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)},
-            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
-                                       core::Dtype::Float32, device_)}};
-
+    core::Tensor depth_tensor = depth.AsTensor().Contiguous();
+    core::Tensor color_tensor;
     if (color.IsEmpty()) {
         utility::LogDebug(
                 "[TSDFIntegrate] color image is empty, perform depth "
@@ -197,9 +166,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     } else if (color.GetRows() == depth.GetRows() &&
                color.GetCols() == depth.GetCols() && color.GetChannels() == 3) {
         if (attr_dtype_map_.count("color") != 0) {
-            srcs.emplace(
-                    "color",
-                    color.AsTensor().To(core::Dtype::Float32).Contiguous());
+            color_tensor =
+                    color.AsTensor().To(core::Dtype::Float32).Contiguous();
         } else {
             utility::LogWarning(
                     "[TSDFIntegrate] color image is ignored since voxels do "
@@ -211,8 +179,12 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                 "shape.");
     }
 
-    dsts = {{"block_values", block_hashmap_->GetValueTensor()}};
-    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFIntegrate);
+    core::Tensor dst = block_hashmap_->GetValueTensor();
+    kernel::Integrate(depth_tensor, color_tensor,
+                      addrs.To(core::Dtype::Int64).IndexGet({masks}),
+                      block_hashmap_->GetKeyTensor(), dst, intrinsics,
+                      extrinsics, block_resolution_, voxel_size_, sdf_trunc_,
+                      depth_scale, depth_max);
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
@@ -224,28 +196,16 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
             BufferRadiusNeighbors(active_addrs);
 
     // Extract points around zero-crossings.
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"indices", active_addrs.To(core::Dtype::Int64)},
-            {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
-            {"nb_masks", active_nb_masks},
-            {"block_keys", block_hashmap_->GetKeyTensor()},
-            {"block_values", block_hashmap_->GetValueTensor()},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)}};
-
-    std::unordered_map<std::string, core::Tensor> dsts;
-    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFPointExtraction);
-    if (dsts.count("points") == 0) {
-        utility::LogError(
-                "[TSDFVoxelGrid] extract surface launch failed, points "
-                "expected to return.");
-    }
-    auto pcd = PointCloud(dsts.at("points"));
-    pcd.SetPointNormals(dsts.at("normals"));
-    if (attr_dtype_map_.count("color") != 0) {
-        pcd.SetPointColors(dsts.at("colors"));
+    core::Tensor points, normals, colors;
+    kernel::ExtractSurfacePoints(
+            active_addrs.To(core::Dtype::Int64),
+            active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
+            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
+            points, normals, colors, block_resolution_, voxel_size_);
+    auto pcd = PointCloud(points);
+    pcd.SetPointNormals(normals);
+    if (colors.NumElements() != 0) {
+        pcd.SetPointColors(colors);
     }
 
     return pcd;
@@ -269,26 +229,18 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             {active_addrs.To(core::Dtype::Int64)},
             core::Tensor(iota_map, {num_blocks}, core::Dtype::Int64, device_));
 
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"indices", active_addrs.To(core::Dtype::Int64)},
-            {"inv_indices", inverse_index_map},
-            {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
-            {"nb_masks", active_nb_masks},
-            {"block_keys", block_hashmap_->GetKeyTensor()},
-            {"block_values", block_hashmap_->GetValueTensor()},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)}};
+    core::Tensor vertices, triangles, vertex_normals, vertex_colors;
+    kernel::ExtractSurfaceMesh(
+            active_addrs.To(core::Dtype::Int64), inverse_index_map,
+            active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
+            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
+            vertices, triangles, vertex_normals, vertex_colors,
+            block_resolution_, voxel_size_);
 
-    std::unordered_map<std::string, core::Tensor> dsts;
-
-    kernel::GeneralEW(srcs, dsts, kernel::GeneralEWOpCode::TSDFMeshExtraction);
-
-    TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
-    mesh.SetVertexNormals(dsts.at("normals"));
-    if (attr_dtype_map_.count("color") != 0) {
-        mesh.SetVertexColors(dsts.at("colors"));
+    TriangleMesh mesh(vertices, triangles);
+    mesh.SetVertexNormals(vertex_normals);
+    if (vertex_colors.NumElements() != 0) {
+        mesh.SetVertexColors(vertex_colors);
     }
     return mesh;
 }
