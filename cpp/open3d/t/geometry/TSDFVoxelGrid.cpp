@@ -110,8 +110,8 @@ TSDFVoxelGrid::TSDFVoxelGrid(
 void TSDFVoxelGrid::Integrate(const Image &depth,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
-                              double depth_scale,
-                              double depth_max) {
+                              float depth_scale,
+                              float depth_max) {
     Image empty_color;
     Integrate(depth, empty_color, intrinsics, extrinsics, depth_scale,
               depth_max);
@@ -121,8 +121,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                               const Image &color,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
-                              double depth_scale,
-                              double depth_max) {
+                              float depth_scale,
+                              float depth_max) {
     if (depth.IsEmpty()) {
         utility::LogError(
                 "[TSDFVoxelGrid] input depth is empty for integration.");

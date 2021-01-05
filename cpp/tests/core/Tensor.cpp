@@ -210,6 +210,58 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
                  std::runtime_error);
 }
 
+TEST_P(TensorPermuteDevices, Arange) {
+    core::Device device = GetParam();
+
+    // Test float.
+    std::vector<float> valsf{0, 1, 2, 3, 4};
+    float startf = 0.0;
+    float stopf = 5.0;
+    float stepf = 1.0;
+    core::Tensor arangef =
+            core::Tensor::Arange<float>(startf, stopf, stepf, device);
+    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+
+    // Test float with non-one step.
+    valsf = {0.1, 2.1, 4.1};
+    startf = 0.1;
+    stopf = 6.0;
+    stepf = 2.0;
+    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
+    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+
+    // Test float with negative step.
+    valsf = {0, -2.0, -4.0};
+    startf = 0.0;
+    stopf = -4.1;
+    stepf = -2.0;
+    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
+    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+
+    // Test empty set -- empty Tensor.
+    startf = 0.0;
+    stopf = 2.0;
+    stepf = -2.0;
+    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
+    EXPECT_EQ(arangef.NumElements(), 0);
+
+    // Test zero step -- error.
+    startf = 0.0;
+    stopf = 2.0;
+    stepf = 0.0;
+    EXPECT_THROW(core::Tensor::Arange<float>(startf, stopf, stepf, device),
+                 std::runtime_error);
+
+    // Test int.
+    std::vector<int64_t> valsi{0, 1, 2, 3, 4};
+    int64_t starti = 0;
+    int64_t stopi = 5;
+    int64_t stepi = 1;
+    core::Tensor arangei =
+            core::Tensor::Arange<int64_t>(starti, stopi, stepi, device);
+    EXPECT_EQ(arangei.ToFlatVector<int64_t>(), valsi);
+}
+
 TEST_P(TensorPermuteDevices, Fill) {
     core::Device device = GetParam();
     core::Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
@@ -2030,6 +2082,62 @@ TEST_P(TensorPermuteDevices, Abs) {
     // Inplace version.
     src.Abs_();
     EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, Floor) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-2.4, -1.6, 0, 1.4, 2.6, 3.5};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::floor(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.Floor();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, Ceil) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-2.4, -1.6, 0, 1.4, 2.6, 3.5};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::ceil(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.Ceil();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, Round) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-2.4, -1.6, 0, 1.4, 2.6, 3.5};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::round(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.Round();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, Trunc) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-2.4, -1.6, 0, 1.4, 2.6, 3.5};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::trunc(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.Trunc();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
 }
 
 TEST_P(TensorPermuteDevices, LogicalNot) {

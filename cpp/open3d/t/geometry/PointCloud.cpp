@@ -148,8 +148,8 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
                                             const core::Tensor &extrinsics,
-                                            double depth_scale,
-                                            double depth_max,
+                                            float depth_scale,
+                                            float depth_max,
                                             int stride) {
     depth.AsTensor().AssertDtype(core::Dtype::UInt16);
 

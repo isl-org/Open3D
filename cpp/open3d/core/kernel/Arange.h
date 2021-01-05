@@ -27,42 +27,23 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
-enum class UnaryEWOpCode {
-    Sqrt,
-    Sin,
-    Cos,
-    Neg,
-    Exp,
-    Abs,
-    Floor,
-    Ceil,
-    Round,
-    Trunc,
-    LogicalNot
-};
+Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step);
 
-void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
-
-void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
+void ArangeCPU(const Tensor& start,
+               const Tensor& stop,
+               const Tensor& step,
+               Tensor& dst);
 
 #ifdef BUILD_CUDA_MODULE
-void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
-#endif
-
-// Copy is separated from other unary ops since it support cross-device copy and
-// dtype casting.
-void Copy(const Tensor& src, Tensor& dst);
-
-void CopyCPU(const Tensor& src, Tensor& dst);
-
-#ifdef BUILD_CUDA_MODULE
-void CopyCUDA(const Tensor& src, Tensor& dst);
+void ArangeCUDA(const Tensor& start,
+                const Tensor& stop,
+                const Tensor& step,
+                Tensor& dst);
 #endif
 
 }  // namespace kernel

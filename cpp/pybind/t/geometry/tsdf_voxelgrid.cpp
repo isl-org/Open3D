@@ -55,12 +55,12 @@ void pybind_tsdf_voxelgrid(py::module& m) {
 
     tsdf_voxelgrid.def("integrate",
                        py::overload_cast<const Image&, const core::Tensor&,
-                                         const core::Tensor&, double, double>(
+                                         const core::Tensor&, float, float>(
                                &TSDFVoxelGrid::Integrate));
     tsdf_voxelgrid.def(
             "integrate",
             py::overload_cast<const Image&, const Image&, const core::Tensor&,
-                              const core::Tensor&, double, double>(
+                              const core::Tensor&, float, float>(
                     &TSDFVoxelGrid::Integrate));
 
     tsdf_voxelgrid.def("extract_surface_points",

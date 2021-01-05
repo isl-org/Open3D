@@ -22,7 +22,6 @@ requirements:
         - notebook
         - numpy
         - addict # Open3D-ML deps starts here (https://github.com/intel-isl/Open3D-ML/blob/master/requirements.txt)
-        - matplotlib
         - pandas
         - plyfile
         - pyyaml
