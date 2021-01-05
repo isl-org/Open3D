@@ -36,6 +36,7 @@
 #include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -181,8 +182,8 @@ public:
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
-    template <typename Scalar>
-    void Fill(Scalar v);
+    template <typename S>
+    void Fill(S v);
 
     template <typename Object>
     void FillObject(const Object& v);
@@ -333,28 +334,11 @@ public:
     static Tensor Diag(const Tensor& input);
 
     /// Create a 1D tensor with evenly spaced values in the given interval.
-    static Tensor Arange(const Tensor& start,
-                         const Tensor& stop,
-                         const Tensor& step);
-
-    template <typename T>
-    static Tensor Arange(T start,
-                         T stop,
-                         T step = 1,
-                         const Device& device = core::Device("CPU:0")) {
-        Dtype dtype = Dtype::FromType<T>();
-        if (step == 0) {
-            utility::LogError("Step cannot be 0");
-        }
-        if (stop == start) {
-            return Tensor({0}, dtype, device);
-        }
-
-        Tensor tstart = Tensor::Full({}, start, dtype, device);
-        Tensor tstop = Tensor::Full({}, stop, dtype, device);
-        Tensor tstep = Tensor::Full({}, step, dtype, device);
-        return Arange(tstart, tstop, tstep);
-    }
+    static Tensor Arange(Scalar start,
+                         Scalar stop,
+                         Scalar step = 1,
+                         Dtype dtype = Dtype::Int64,
+                         const Device& device = core::Device("CPU:0"));
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -1264,8 +1248,8 @@ inline bool Tensor::Item() const {
     return static_cast<bool>(value);
 }
 
-template <typename Scalar>
-inline void Tensor::Fill(Scalar v) {
+template <typename S>
+inline void Tensor::Fill(S v) {
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
         scalar_t casted_v = static_cast<scalar_t>(v);
         Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
