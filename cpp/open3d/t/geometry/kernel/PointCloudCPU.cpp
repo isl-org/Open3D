@@ -24,39 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <unordered_map>
-
-#include "open3d/core/Tensor.h"
-
-namespace open3d {
-namespace core {
-namespace kernel {
-
-enum class GeneralEWOpCode {
-    Unproject,
-    TSDFIntegrate,
-    TSDFTouch,
-    TSDFPointExtraction,
-    TSDFMeshExtraction,
-    RayCasting
-};
-
-void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
-               std::unordered_map<std::string, Tensor>& dsts,
-               GeneralEWOpCode op_code);
-
-void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
-                  std::unordered_map<std::string, Tensor>& dsts,
-                  GeneralEWOpCode op_code);
-
-#ifdef BUILD_CUDA_MODULE
-void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
-                   std::unordered_map<std::string, Tensor>& dsts,
-                   GeneralEWOpCode op_code);
-#endif
-
-}  // namespace kernel
-}  // namespace core
-}  // namespace open3d
+#include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/t/geometry/kernel/PointCloudShared.h"

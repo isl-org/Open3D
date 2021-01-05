@@ -26,18 +26,42 @@
 
 #pragma once
 
-#include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/IndexGetSet.h"
-#include "open3d/core/kernel/NonZero.h"
-#include "open3d/core/kernel/Reduction.h"
-#include "open3d/core/kernel/UnaryEW.h"
+#include <unordered_map>
+
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
+namespace pointcloud {
+void Unproject(const core::Tensor& depth,
+               core::Tensor& points,
+               const core::Tensor& intrinsics,
+               const core::Tensor& extrinsics,
+               float depth_scale,
+               float depth_max,
+               int64_t stride);
 
-void TestLinalgIntegration();
+void UnprojectCPU(const core::Tensor& depth,
+                  core::Tensor& points,
+                  const core::Tensor& intrinsics,
+                  const core::Tensor& extrinsics,
+                  float depth_scale,
+                  float depth_max,
+                  int64_t stride);
 
+#ifdef BUILD_CUDA_MODULE
+void UnprojectCUDA(const core::Tensor& depth,
+                   core::Tensor& points,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& extrinsics,
+                   float depth_scale,
+                   float depth_max,
+                   int64_t stride);
+#endif
+}  // namespace pointcloud
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

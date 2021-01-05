@@ -27,7 +27,6 @@
 #include "open3d/core/kernel/Arange.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/GeneralEW.h"
 
 namespace open3d {
 namespace core {

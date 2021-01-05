@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/GeneralEW.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
 
 #include <vector>
 
@@ -33,47 +33,46 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
+namespace pointcloud {
+void Unproject(const core::Tensor& depth,
+               core::Tensor& points,
+               const core::Tensor& intrinsics,
+               const core::Tensor& extrinsics,
+               float depth_scale,
+               float depth_max,
+               int64_t stride) {
+    core::Device device = depth.GetDevice();
 
-void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
-               std::unordered_map<std::string, Tensor>& dsts,
-               GeneralEWOpCode op_code) {
-    // srcs cannot be empty. dsts can be empty on initialization and emplaced at
-    // runtime in specific kernels.
-    if (srcs.size() == 0) {
-        utility::LogError(
-                "[GeneralEW]: one or more inputs expected, but received 0.");
+    core::Tensor intrinsics_d = intrinsics;
+    if (intrinsics.GetDevice() != device) {
+        intrinsics_d = intrinsics.Copy(device);
     }
 
-    // srcs and dsts must be on the same device.
-    Device device = srcs.begin()->second.GetDevice();
-    for (auto it = srcs.begin(); it != srcs.end(); ++it) {
-        if (device != it->second.GetDevice()) {
-            utility::LogError("[GeneralEW]: incompatible device in inputs");
-        }
-    }
-    for (auto it = dsts.begin(); it != dsts.end(); ++it) {
-        if (device != it->second.GetDevice()) {
-            utility::LogError("[GeneralEW]: incompatible device in outputs");
-        }
+    core::Tensor extrinsics_d = extrinsics;
+    if (extrinsics.GetDevice() != device) {
+        extrinsics_d = extrinsics.Copy(device);
     }
 
-    // We don't assume shape consistency: general ops are less constrained.
-    Device::DeviceType device_type = device.GetType();
-    if (device_type == Device::DeviceType::CPU) {
-        GeneralEWCPU(srcs, dsts, op_code);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        UnprojectCPU(depth, points, intrinsics_d, extrinsics_d, depth_scale,
+                     depth_max, stride);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        GeneralEWCUDA(srcs, dsts, op_code);
+        UnprojectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
+                      depth_max, stride);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        utility::LogError("GeneralEW: Unimplemented device");
+        utility::LogError("Unimplemented device");
     }
 }
-
+}  // namespace pointcloud
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

@@ -24,20 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/IndexGetSet.h"
-#include "open3d/core/kernel/NonZero.h"
-#include "open3d/core/kernel/Reduction.h"
-#include "open3d/core/kernel/UnaryEW.h"
-
-namespace open3d {
-namespace core {
-namespace kernel {
-
-void TestLinalgIntegration();
-
-}  // namespace kernel
-}  // namespace core
-}  // namespace open3d
+#include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/t/geometry/kernel/PointCloudShared.h"
