@@ -106,5 +106,11 @@ TEST(Scalar, LiteralEquality) {
     EXPECT_FALSE(core::Scalar(0).Equal(false));
 }
 
+TEST(Scalar, To) {
+    EXPECT_EQ(ToScalar(1.25f).To<float>(), 1.25f);
+    EXPECT_EQ(ToScalar(1.25f).To<int>(), 1);
+    EXPECT_EQ(ToScalar(1.25f).To<bool>(), true);
+}
+
 }  // namespace tests
 }  // namespace open3d

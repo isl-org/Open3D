@@ -94,6 +94,20 @@ public:
         return value_.b;
     }
 
+    /// To<T>() does not check for scalar type and overflows.
+    template <typename T>
+    T To() const {
+        if (scalar_type_ == ScalarType::Double) {
+            return static_cast<T>(value_.d);
+        } else if (scalar_type_ == ScalarType::Int64) {
+            return static_cast<T>(value_.i);
+        } else if (scalar_type_ == ScalarType::Bool) {
+            return static_cast<T>(value_.b);
+        } else {
+            utility::LogError("To: ScalarType not supported.");
+        }
+    }
+
     void AssertSameScalarType(Scalar other,
                               const std::string& error_msg) const {
         if (scalar_type_ != other.scalar_type_) {

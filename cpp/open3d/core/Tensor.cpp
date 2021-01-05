@@ -231,23 +231,9 @@ Tensor Tensor::Arange(Scalar start,
     Tensor t_stop;
     Tensor t_step;
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t s_start;
-        scalar_t s_stop;
-        scalar_t s_step;
-        if (start.IsDouble()) {
-            s_start = static_cast<scalar_t>(start.ToDouble());
-            s_stop = static_cast<scalar_t>(stop.ToDouble());
-            s_step = static_cast<scalar_t>(step.ToDouble());
-        } else if (start.IsInt64()) {
-            s_start = static_cast<scalar_t>(start.ToInt64());
-            s_stop = static_cast<scalar_t>(stop.ToInt64());
-            s_step = static_cast<scalar_t>(step.ToInt64());
-        } else {
-            utility::LogError("Arange: ScalarType not supported.");
-        }
-        t_start = Tensor::Full({}, s_start, dtype, device);
-        t_stop = Tensor::Full({}, s_stop, dtype, device);
-        t_step = Tensor::Full({}, s_step, dtype, device);
+        t_start = Tensor::Full({}, start.To<scalar_t>(), dtype, device);
+        t_stop = Tensor::Full({}, stop.To<scalar_t>(), dtype, device);
+        t_step = Tensor::Full({}, step.To<scalar_t>(), dtype, device);
     });
 
     return kernel::Arange(t_start, t_stop, t_step);
