@@ -2747,7 +2747,7 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     t = core::Tensor::Init<float>({{1, 2}, {3, 4}}, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load));
+    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
 
     // Non-contiguous tensor will be stored as contiguous tensor.
     t = core::Tensor::Init<float>(
