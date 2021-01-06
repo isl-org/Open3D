@@ -32,6 +32,7 @@
 namespace open3d {
 namespace t {
 namespace pipelines {
+namespace kernel {
 
 __global__ void PoseToTransformationKernel(float *transformation_ptr,
                                            const float *X_ptr) {
@@ -42,6 +43,7 @@ void PoseToTransformationCUDA(float *transformation_ptr, const float *X_ptr) {
     PoseToTransformationKernel<<<1, 1>>>(transformation_ptr, X_ptr);
 }
 
+}  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

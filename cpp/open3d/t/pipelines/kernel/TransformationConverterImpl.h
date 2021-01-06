@@ -35,6 +35,7 @@
 namespace open3d {
 namespace t {
 namespace pipelines {
+namespace kernel {
 
 /// Shared implementation for PoseToTransformation function.
 OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
@@ -66,6 +67,7 @@ OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
 void PoseToTransformationCUDA(float *transformation_ptr, const float *pose_ptr);
 #endif
 
+}  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

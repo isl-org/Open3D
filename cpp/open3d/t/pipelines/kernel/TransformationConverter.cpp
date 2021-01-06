@@ -34,6 +34,7 @@
 namespace open3d {
 namespace t {
 namespace pipelines {
+namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     core::Dtype dtype = core::Dtype::Float32;
@@ -92,6 +93,7 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     return transformation;
 }
 
+}  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
