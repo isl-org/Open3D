@@ -34,7 +34,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 
