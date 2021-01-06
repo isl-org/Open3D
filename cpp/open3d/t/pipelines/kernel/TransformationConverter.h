@@ -31,6 +31,7 @@
 namespace open3d {
 namespace t {
 namespace pipelines {
+namespace kernel {
 
 /// \brief Convert rotation and translation to the transformation matrix.
 ///
@@ -46,6 +47,7 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t);
 /// \return Transformation, a tensor of shape {4, 4}, dtype Float32.
 core::Tensor PoseToTransformation(const core::Tensor &pose);
 
+}  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
