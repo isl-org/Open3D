@@ -494,7 +494,7 @@ public:
     /// \param dim The dimension to slice.
     /// \param start The start index (inclusive).
     /// \param stop The end index (exclusive).
-    /// \param step Pick one eleemnt for every \p step elements.
+    /// \param step Pick one element for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
