@@ -473,9 +473,6 @@ public:
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);
 
-    /// Shallow copy a tensor, returning a tensor sharing the same memory.
-    void ShallowCopyFrom(const Tensor& other);
-
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy

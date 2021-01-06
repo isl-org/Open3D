@@ -251,32 +251,6 @@ TEST_P(TensorListPermuteDevices, CopyFrom) {
     EXPECT_TRUE(tl_a_inplace.IsResizable());
 }
 
-TEST_P(TensorListPermuteDevices, ShallowCopyFrom) {
-    core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
-    core::Tensor t_a = core::Tensor::Ones({10, 4, 5}, dtype, device);
-    core::Tensor t_b = core::Tensor::Ones({0, 2, 3}, dtype, device);
-
-    core::TensorList tl_a = core::TensorList::FromTensor(t_a);
-    core::TensorList tl_b = core::TensorList::FromTensor(t_b);
-    EXPECT_NE(tl_a.GetElementShape(), tl_b.GetElementShape());
-    EXPECT_NE(tl_a.GetSize(), tl_b.GetSize());
-    EXPECT_NE(tl_a.GetReservedSize(), tl_b.GetReservedSize());
-
-    tl_b.ShallowCopyFrom(tl_a);
-    EXPECT_EQ(tl_a.GetElementShape(), tl_b.GetElementShape());
-    EXPECT_EQ(tl_a.GetSize(), tl_b.GetSize());
-    EXPECT_EQ(tl_a.GetReservedSize(), tl_b.GetReservedSize());
-    EXPECT_TRUE(tl_b.AsTensor().AllClose(tl_a.AsTensor()));
-    EXPECT_TRUE(tl_b.AsTensor().IsSame(tl_a.AsTensor()));
-
-    // The is_resizable_ property will be overwritten.
-    core::TensorList tl_a_inplace = core::TensorList::FromTensor(t_a, true);
-    EXPECT_FALSE(tl_a_inplace.IsResizable());
-    tl_a_inplace.ShallowCopyFrom(tl_b);
-    EXPECT_TRUE(tl_a_inplace.IsResizable());
-}
-
 TEST_P(TensorListPermuteDevices, CopyBecomesResizable) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
