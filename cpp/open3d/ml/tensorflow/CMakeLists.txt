@@ -14,6 +14,14 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 set(TF_OPS_SOURCES
+    "sparse_conv/SparseConvBackpropFilterOpKernel.cpp"
+    "sparse_conv/SparseConvOpKernel.cpp"
+    "sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp"
+    "sparse_conv/SparseConvTransposeOpKernel.cpp"
+    "sparse_conv/SparseConvBackpropFilterOps.cpp"
+    "sparse_conv/SparseConvOps.cpp"
+    "sparse_conv/SparseConvTransposeBackpropFilterOps.cpp"
+    "sparse_conv/SparseConvTransposeOps.cpp"
     "continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp"
     "continuous_conv/ContinuousConvOpKernel.cpp"
     "continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cpp"
