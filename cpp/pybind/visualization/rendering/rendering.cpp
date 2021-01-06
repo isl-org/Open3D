@@ -83,10 +83,11 @@ private:
 };
 
 void pybind_rendering_classes(py::module &m) {
-    py::class_<Renderer> renderer(
-            m, "Renderer",
-            "The class provides methods to manage the global objects required to render an object."
-            "You can use this class to manage material, texture, indirect light, and skybox.");
+    py::class_<Renderer> renderer(m, "Renderer",
+                                  "The class provides methods to manage the "
+                                  "global objects required to render an object."
+                                  "You can use this class to manage material, "
+                                  "texture, indirect light, and skybox.");
     renderer.def("set_clear_color", &Renderer::SetClearColor,
                  "Sets the background color for the renderer, "
                  "based on the [r, g, b, a] passed. "
@@ -109,7 +110,8 @@ void pybind_rendering_classes(py::module &m) {
                  }),
                  "width"_a, "height"_a, "resource_path"_a = "",
                  "headless"_a = false,
-                 "The method takes width, height and optionally a resource_path and "
+                 "The method takes width, height and optionally a "
+                 "resource_path and "
                  "headless flag. If resource_path is not specified, then"
                  " the installed Open3D library is used as resource_path. "
                  "By default a running windowing session is required. "
@@ -117,27 +119,32 @@ void pybind_rendering_classes(py::module &m) {
                  "headless to True")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
-                    "This returns the Open3DScene for this renderer during rendering."
+                    "This returns the Open3DScene for this renderer during "
+                    "rendering."
                     " This is destructed with renderer, and andd should not be"
                     " accessed after that point.")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
-                 "This renders scene to an image, and blocks until the image is "
+                 "This renders scene to an image, and blocks until the image "
+                 "is "
                  "returned");
 
     // ---- Camera ----
-    py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
-                                                    "This class provides methods"
-                                                    "that let you manage cameras in your rendered scene.");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
-                                        "The Enum class for camera's field of view types, "
-                                        "and accepts these two values:");
+    py::class_<Camera, std::shared_ptr<Camera>> cam(
+            m, "Camera",
+            "This class provides methods"
+            "that let you manage cameras in your rendered scene.");
+    py::enum_<Camera::FovType> fov_type(
+            cam, "FovType", py::arithmetic(),
+            "The Enum class for camera's field of view types, "
+            "and accepts these two values:");
     fov_type.value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
             .export_values();
 
-    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
-                                            "The enum class for camera's projection types, and accepts these "
-                                            "two values:");
+    py::enum_<Camera::Projection> proj_type(
+            cam, "Projection", py::arithmetic(),
+            "The enum class for camera's projection types, and accepts these "
+            "two values:");
     proj_type.value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
             .export_values();
@@ -146,13 +153,15 @@ void pybind_rendering_classes(py::module &m) {
             (void (Camera::*)(double, double, double, double,
                               Camera::FovType)) &
                     Camera::SetProjection,
-                 "The method sets the camera projection using a viewing frustum, and "
-                 "accepts projection_type, left, right, bottom, top, near, and far)")
+            "The method sets the camera projection using a viewing frustum, "
+            "and "
+            "accepts projection_type, left, right, bottom, top, near, and far)")
             .def("set_projection",
                  (void (Camera::*)(Camera::Projection, double, double, double,
                                    double, double, double)) &
                          Camera::SetProjection,
-                 "The method sets the camera projection through a viewing frustum. "
+                 "The method sets the camera projection through a viewing "
+                 "frustum. "
                  "set_projection(projection_type, left, right, bottom, top, "
                  "near, far)")
             .def("set_projection",
@@ -165,13 +174,15 @@ void pybind_rendering_classes(py::module &m) {
             .def("look_at", &Camera::LookAt,
                  "The method sets the position and orientation of the camera: "
                  "look_at(center, eye, up)");
-
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
             m, "Gradient",
             "The class provides methods to manage a gradient for the unlitGradient shader.
-            In the Gradient mode, the array of points indicates the points along "
-            "the gradient, from 0 to 1 (inclusive) and need to be evenly spaced."
+            In the Gradient mode,
+            the array of points indicates the points along
+            "
+            "the gradient, from 0 to 1 (inclusive) and need to be evenly "
+            "spaced."
             "Simple greyscale:"
             "    [ ( 0.0, black ),"
             "      ( 1.0, white ) ]"
@@ -193,7 +204,8 @@ void pybind_rendering_classes(py::module &m) {
     gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
             .value("LUT", Gradient::Mode::kLUT)
             .export_values();
-    py::class_<Gradient::Point> gpt(gradient, "Point","Lets you get a point in the gradient.");
+    py::class_<Gradient::Point> gpt(gradient, "Point",
+                                    "Lets you get a point in the gradient.");
     gpt.def(py::init<float, const Eigen::Vector4f>())
             .def("__repr__",
                  [](const Gradient::Point &p) {
@@ -206,7 +218,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("value", &Gradient::Point::value,
                            "The value must be within 0.0 and 1.0.")
             .def_readwrite("color", &Gradient::Point::color,
-                           "The color in [R, G, B, A]. The values must be in [0.0, 1.0].");
+                           "The color in [R, G, B, A]. The values must be in "
+                           "[0.0, 1.0].");
     gradient.def(py::init<>())
             .def(py::init<std::vector<Gradient::Point>>())
             .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
@@ -214,7 +227,8 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- Material ----
     py::class_<Material> mat(m, "Material",
-                             "The class provides methods to use real-world, physically based (PBR) "
+                             "The class provides methods to use real-world, "
+                             "physically based (PBR) "
                              "material that can used to render a geometry."
                              "You can use one of the following materials:");
     mat.def(py::init<>())
@@ -255,8 +269,10 @@ void pybind_rendering_classes(py::module &m) {
     // ---- TriangleMeshModel ----
     py::class_<TriangleMeshModel> tri_model(
             m, "TriangleMeshModel",
-            "The class provides a list of geometry.TriangleMesh and Material that can"
-            " describe a complex model with multiple meshes. These can be stored in an "
+            "The class provides a list of geometry.TriangleMesh and Material "
+            "that can"
+            " describe a complex model with multiple meshes. These can be "
+            "stored in an "
             "FBX, OBJ, or GLTF file.");
     py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
                                                            "MeshInfo", "");
@@ -276,43 +292,49 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(
-            m, "ColorGrading", "The class provides parameters to control color grading options.");
+            m, "ColorGrading",
+            "The class provides parameters to control color grading options.");
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
                              ColorGradingParams::ToneMapping algorithm) {
                 return ColorGradingParams(q, algorithm);
             }))
-            .def_property("quality", &ColorGradingParams::GetQuality,
-                          &ColorGradingParams::SetQuality,
-                          "The quality of color grading operations. High quality "
-                          "is more accurate but slower")
-            .def_property("tone_mapping", &ColorGradingParams::GetToneMapping,
-                          &ColorGradingParams::SetToneMapping,
-                          "The tone mapping algorithm to use, and must be one of "
-                          "Linear, AcesLegacy, Aces, Filmic, Uchimura, "
-                          "Rienhard, or Display Range(for debug).")
+            .def_property(
+                    "quality", &ColorGradingParams::GetQuality,
+                    &ColorGradingParams::SetQuality,
+                    "The quality of color grading operations. High quality "
+                    "is more accurate but slower")
+            .def_property(
+                    "tone_mapping", &ColorGradingParams::GetToneMapping,
+                    &ColorGradingParams::SetToneMapping,
+                    "The tone mapping algorithm to use, and must be one of "
+                    "Linear, AcesLegacy, Aces, Filmic, Uchimura, "
+                    "Rienhard, or Display Range(for debug).")
             .def_property("temperature", &ColorGradingParams::GetTemperature,
                           &ColorGradingParams::SetTemperature,
                           "The white balance color temperature to use.")
-            .def_property(
-                    "tint", &ColorGradingParams::GetTint,
-                    &ColorGradingParams::SetTint,
-                    "The tint on the green/magenta axis. Ranges from -1.0 to 1.0.");
+            .def_property("tint", &ColorGradingParams::GetTint,
+                          &ColorGradingParams::SetTint,
+                          "The tint on the green/magenta axis. Ranges from "
+                          "-1.0 to 1.0.");
 
     // ---- View ----
-    py::class_<View, UnownedPointer<View>> view(m, "View",
-                                                "The class lets you render a low-level view.");
+    py::class_<View, UnownedPointer<View>> view(
+            m, "View", "The class lets you render a low-level view.");
     view.def("set_color_grading", &View::SetColorGrading,
-             "The method sets the parameters to be used for the color grading algorithms");
+             "The method sets the parameters to be used for the color grading "
+             "algorithms");
 
     // ---- Scene ----
-    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
-                                                   "The class lets you render low-level scene.");
-    scene.def("add_camera", &Scene::AddCamera, "The method adds a camera to the scene.")
+    py::class_<Scene, UnownedPointer<Scene>> scene(
+            m, "Scene", "The class lets you render low-level scene.");
+    scene.def("add_camera", &Scene::AddCamera,
+              "The method adds a camera to the scene.")
             .def("remove_camera", &Scene::RemoveCamera,
                  "The method removes the camera with the given name.")
             .def("set_active_camera", &Scene::SetActiveCamera,
-                 "The method sets the camera with the given name as the active camera for "
+                 "The method sets the camera with the given name as the active "
+                 "camera for "
                  "the scene.")
             .def("add_geometry",
                  (bool (Scene::*)(
@@ -334,52 +356,65 @@ void pybind_rendering_classes(py::module &m) {
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
             .def("update_geometry", &Scene::UpdateGeometry,
-                 "The method updates the flagged arrays from the tgeometry.PointCloud. "
+                 "The method updates the flagged arrays from the "
+                 "tgeometry.PointCloud. "
                  "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG.")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
                  "The method enables or disables indirect lighting.")
             .def("set_indirect_light", &Scene::SetIndirectLight,
-                 "The method loads the indirect light. The name parameter is the name of "
+                 "The method loads the indirect light. The name parameter is "
+                 "the name of "
                  "the file to load.")
             .def("set_indirect_light_intensity",
                  &Scene::SetIndirectLightIntensity,
                  "The method sets the brightness of the indirect light.")
-            .def("enable_sun_light", &Scene::EnableSunLight, "The method enables or "
-                    "disables sun light.")
+            .def("enable_sun_light", &Scene::EnableSunLight,
+                 "The method enables or "
+                 "disables sun light.")
             .def("set_sun_light", &Scene::SetSunLight,
-                 "The method sets the parameters of the sun light such as direction, "
+                 "The method sets the parameters of the sun light such as "
+                 "direction, "
                  "color, or intensity.")
             .def("add_point_light", &Scene::AddPointLight,
-                 "The method adds a point light to the scene: add_point_light(name, "
+                 "The method adds a point light to the scene: "
+                 "add_point_light(name, "
                  "color, position, intensity, falloff, cast_shadows).")
             .def("add_spot_light", &Scene::AddSpotLight,
-                 "The method adds a spot light to the scene: add_point_light(name, "
+                 "The method adds a spot light to the scene: "
+                 "add_point_light(name, "
                  "color, position, direction, intensity, falloff, "
                  "inner_cone_angle, outer_cone_angle, cast_shadows).")
             .def("add_directional_light", &Scene::AddDirectionalLight,
-                 "The method adds a directional light to the scene: add_point_light(name, "
+                 "The method adds a directional light to the scene: "
+                 "add_point_light(name, "
                  "color, intensity, cast_shadows).")
             .def("remove_light", &Scene::RemoveLight,
-                 "The method removes the named light from the scene: remove_light(name).")
+                 "The method removes the named light from the scene: "
+                 "remove_light(name).")
             .def("update_light_color", &Scene::UpdateLightColor,
-                 "The method changes a point, spot, or directional light's color.")
+                 "The method changes a point, spot, or directional light's "
+                 "color.")
             .def("update_light_position", &Scene::UpdateLightPosition,
                  "The method changes a point or spot light's position.")
             .def("update_light_direction", &Scene::UpdateLightDirection,
                  "The method changes a spot or directional light's direction.")
             .def("update_light_intensity", &Scene::UpdateLightIntensity,
-                 "The method changes a point, spot or directional light's intensity.")
+                 "The method changes a point, spot or directional light's "
+                 "intensity.")
             .def("update_light_falloff", &Scene::UpdateLightFalloff,
                  "The method changes a point or spot light's falloff.")
             .def("update_light_cone_angles", &Scene::UpdateLightConeAngles,
-                 "The method changes a spot light's inner and outer cone angles.")
+                 "The method changes a spot light's inner and outer cone "
+                 "angles.")
             .def("enable_light_shadow", &Scene::EnableLightShadow,
-                 "The method changes whether a point, spot, or directional light can "
+                 "The method changes whether a point, spot, or directional "
+                 "light can "
                  "cast shadows:  enable_light_shadow(name, can_cast_shadows).")
             .def("render_to_image", &Scene::RenderToImage,
-                 "The method renders the scene to an image. This can only be used in a "
+                 "The method renders the scene to an image. This can only be "
+                 "used in a "
                  "GUI app. To render without a window, use "
                  "Application.render_to_image.");
 
@@ -390,7 +425,9 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- Open3DScene ----
     py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
-            m, "Open3DScene", "The class provides methods to manage a high-level rendering scene.");
+            m, "Open3DScene",
+            "The class provides methods to manage a high-level rendering "
+            "scene.");
     py::enum_<Open3DScene::LightingProfile> lighting(
             o3dscene, "LightingProfile", py::arithmetic(),
             "The enum for quickly setting the lighting.");
@@ -424,7 +461,8 @@ void pybind_rendering_classes(py::module &m) {
                     "set_background() instead.")
             .def("set_background", &Open3DScene::SetBackground, "color"_a,
                  "image"_a = nullptr,
-                 "Lets you set the background color of the scene using [r, g, b, a]."
+                 "Lets you set the background color of the scene using [r, g, "
+                 "b, a]."
                  " Sets the "
                  "background color and (optionally) image of the scene. ")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
@@ -435,16 +473,21 @@ void pybind_rendering_classes(py::module &m) {
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true,
-                 "Lets you add a geometry using Geometry3D. You must pass the scene name"
-                 ", geometry, material, and specify if you want to add downloaded sample for faster rendering.")
+                 "Lets you add a geometry using Geometry3D. You must pass the "
+                 "scene name"
+                 ", geometry, material, and specify if you want to add "
+                 "downloaded sample for faster rendering.")
             .def("add_geometry",
                  py::overload_cast<const std::string &,
                                    const t::geometry::PointCloud *,
                                    const Material &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
-                 "add_downsampled_copy_for_fast_rendering"_a = true, "Lets you add a geometry using PointCloud. You must pass the scene name"
-                 ", geometry, material, and specify if you want to add downloaded sample for faster rendering.")
+                 "add_downsampled_copy_for_fast_rendering"_a = true,
+                 "Lets you add a geometry using PointCloud. You must pass the "
+                 "scene name"
+                 ", geometry, material, and specify if you want to add "
+                 "downloaded sample for faster rendering.")
             .def("add_model", &Open3DScene::AddModel,
                  "Adds TriangleMeshModel to the scene.")
             .def("has_geometry", &Open3DScene::HasGeometry,
