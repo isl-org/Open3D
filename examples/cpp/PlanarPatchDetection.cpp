@@ -39,10 +39,10 @@ int main(int argc, char **argv) {
         PrintOpen3DVersion();
         // clang-format off
         utility::LogInfo("Usage:");
-        utility::LogInfo("    > PlanarPatchSegmentation [filename]");
+        utility::LogInfo("    > PlanarPatchDetection [filename]");
         utility::LogInfo("    The program will :");
-        utility::LogInfo("    1. load the pointcloud in [filename].");
-        utility::LogInfo("    2. estimate planar patches within pointcloud");
+        utility::LogInfo("    1. load the point cloud in [filename].");
+        utility::LogInfo("    2. estimate planar patches within point cloud");
         utility::LogInfo("    3. visualize those planar patches");
         // clang-format on
         return 1;
@@ -67,23 +67,20 @@ int main(int argc, char **argv) {
               << " seconds" << std::endl;
 
 
+    // set parameters
+    constexpr double normal_similarity = 0.5;
+    constexpr double coplanarity = 0.25;
+    constexpr double outlier_ratio = 0.75;
+    constexpr double min_plane_edge_length = 0.0;
+    constexpr size_t min_num_points = 30;
+
     t1 = std::chrono::high_resolution_clock::now();
-    const auto patches = cloud_ptr->DetectPlanarPatches();
+    const auto patches = cloud_ptr->DetectPlanarPatches(normal_similarity, coplanarity, outlier_ratio, min_plane_edge_length, min_num_points, search_param);
     std::cout << "DetectPlanarPatches: " << patches.size() << " in "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
                          .count()
               << " seconds" << std::endl;
-
-    // std::cout << "==============================" << std::endl;
-    // for (const auto& p : patches) {
-    //     std::cout << p->normal_.transpose() << " ";
-    //     std::cout << p->dist_from_origin_ << " |\t";
-    //     std::cout << p->center_.transpose() << " |\t";
-    //     std::cout << p->basis_x_.transpose() << " |\t";
-    //     std::cout << p->basis_y_.transpose() << std::endl;
-    // }
-    // std::cout << "==============================" << std::endl;
 
     // for const-correctness
     std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
@@ -95,23 +92,7 @@ int main(int argc, char **argv) {
     // visualize point cloud, too
     geometries.push_back(cloud_ptr);
 
-    // const auto ret = geometry::Qhull::ComputeConvexHull(cloud_ptr->points_);
-    // geometries.push_back(std::get<0>(ret));
-
-    // auto cloud2 = cloud_ptr->SelectByIndex(std::get<1>(ret));
-    // cloud2->PaintUniformColor(Eigen::Vector3d(255,0,0));
-    // geometries.push_back(cloud2);
-
     visualization::DrawGeometries(geometries, "Visualize", 1600, 900);
-
-    // const auto patch = geometry::PlanarPatch::CreateFromPointCloud(*cloud_ptr);
-    // utility::LogInfo("Patch with center {} and normal {}", patch->center_, patch->normal_);
-
-
-    // auto cloud_ptr_without_normals = std::make_shared<geometry::PointCloud>();
-    // io::ReadPointCloud(argv[1], *cloud_ptr_without_normals);
-
-    // visualization::DrawGeometries({/*cloud_ptr_without_normals,*/ patch}, "Visualize", 1600, 900);
 
     return 0;
 }

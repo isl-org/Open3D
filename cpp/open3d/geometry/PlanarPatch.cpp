@@ -43,11 +43,11 @@ PlanarPatch& PlanarPatch::Clear() { return *this; }
 
 bool PlanarPatch::IsEmpty() const { return false; }
 
-Eigen::Vector3d PlanarPatch::GetMinBound() const { return Eigen::Vector3d::Zero(); }
+Eigen::Vector3d PlanarPatch::GetMinBound() const { return center_ + basis_x_ + basis_y_; }
 
-Eigen::Vector3d PlanarPatch::GetMaxBound() const { return Eigen::Vector3d::Zero(); }
+Eigen::Vector3d PlanarPatch::GetMaxBound() const { return center_ - basis_x_ - basis_y_; }
 
-Eigen::Vector3d PlanarPatch::GetCenter() const { return Eigen::Vector3d::Zero(); }
+Eigen::Vector3d PlanarPatch::GetCenter() const { return center_; }
 
 AxisAlignedBoundingBox PlanarPatch::GetAxisAlignedBoundingBox() const {
     AxisAlignedBoundingBox box;
@@ -82,6 +82,15 @@ PlanarPatch& PlanarPatch::Rotate(const Eigen::Matrix3d& R,
                                const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
+}
+
+PlanarPatch& PlanarPatch::PaintUniformColor(const Eigen::Vector3d &color) {
+    color_ = color;
+    return *this;
+}
+
+double PlanarPatch::GetSignedDistanceToPoint(const Eigen::Vector3d& point) const {
+    return normal_.dot(point) + dist_from_origin_;
 }
 
 }  // namespace geometry

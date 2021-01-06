@@ -64,17 +64,12 @@ public:
     /// \brief Assigns a color to the PlanarPatch.
     ///
     /// \param color  RGB colors of points.
-    PlanarPatch &PaintUniformColor(const Eigen::Vector3d &color) {
-        color_ = color;
-        return *this;
-    }
+    PlanarPatch &PaintUniformColor(const Eigen::Vector3d &color);
 
     /// \brief Compute the (signed) distance from the planar surface to a point.
     ///
     /// \param point  Point to find distance to.
-    double GetSignedDistanceToPoint(const Eigen::Vector3d& point) const {
-        return normal_.dot(point) + dist_from_origin_;
-    }
+    double GetSignedDistanceToPoint(const Eigen::Vector3d& point) const;
 
 public:
     Eigen::Vector3d center_ = Eigen::Vector3d::Zero();

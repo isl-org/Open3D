@@ -313,10 +313,28 @@ public:
             const int ransac_n = 3,
             const int num_iterations = 100) const;
 
-    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    /// \brief Robustly detect planar patches in the point cloud using.
+    /// Araújo and Oliveira, “A robust statistics approach for plane
+    /// detection in unorganized point clouds,” Pattern Recognition, 2020.
     ///
-    ///
-    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches(double normal_similarity = 0.5, double coplanarity = 0.25, double outlier_ratio = 0.75) const;
+    /// \param normal_similarity Planes having point normals with high variance
+    /// are rejected. Higher values allow more noisy planes to be detected.
+    /// Default is cos(60 deg).
+    /// \param coplanarity Smaller values encourage a tighter distribution of
+    /// points around the detected plane. Default is cos(75 deg).
+    /// \param outlier_ratio Maximum allowable ratio of outliers in associated
+    /// plane points before plane is rejected.
+    /// \param min_plane_edge_length A patch's largest edge must greater than
+    /// this value to be considered a true planar patch. If set to 0, defaults
+    /// to 1% of largest span of point cloud.
+    /// \param min_num_points Determines the how deep the associated octree
+    /// becomes and how many points must be used for estimating a plane.
+    /// If set to 0, defaults to 0.1% of the number of points in point cloud.
+    /// \param search_param Point neighbors are used to grow and merge detected
+    /// planes. Neighbors are found with KDTree search using these params. More
+    /// neighbors results in higher quality patches at the cost of compute.
+    /// \return Returns a list of detected PlanarPatch objects.
+    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches(double normal_similarity = 0.5, double coplanarity = 0.25, double outlier_ratio = 0.75, double min_plane_edge_length = 0.0, size_t min_num_points = 0, const geometry::KDTreeSearchParam &search_param = geometry::KDTreeSearchParamKNN()) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.
