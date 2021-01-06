@@ -59,7 +59,7 @@ public:
 
     SizeVector GetShape() const { return shape_; }
 
-    bool GetFortranOrder() const { return fortran_order_; }
+    bool IsFortranOrder() const { return fortran_order_; }
 
     int64_t NumBytes() const { return num_elements_ * word_size_; }
 

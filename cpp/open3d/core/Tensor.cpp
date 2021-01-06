@@ -447,7 +447,7 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
     bool can_restride;
     SizeVector new_strides;
     std::tie(can_restride, new_strides) =
-            shape_util::ComputeNewStrides(shape_, strides_, inferred_dst_shape);
+            shape_util::Restride(shape_, strides_, inferred_dst_shape);
     if (can_restride) {
         return AsStrided(inferred_dst_shape, new_strides);
     } else {
@@ -461,7 +461,7 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     bool can_restride;
     SizeVector new_strides;
     std::tie(can_restride, new_strides) =
-            shape_util::ComputeNewStrides(shape_, strides_, inferred_dst_shape);
+            shape_util::Restride(shape_, strides_, inferred_dst_shape);
     if (can_restride) {
         return AsStrided(inferred_dst_shape, new_strides);
     } else {

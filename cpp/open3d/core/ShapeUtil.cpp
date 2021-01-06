@@ -241,9 +241,9 @@ SizeVector DefaultStrides(const SizeVector& shape) {
     return strides;
 }
 
-std::pair<bool, SizeVector> ComputeNewStrides(const SizeVector& old_shape,
-                                              const SizeVector& old_strides,
-                                              const SizeVector& new_shape) {
+std::pair<bool, SizeVector> Restride(const SizeVector& old_shape,
+                                     const SizeVector& old_strides,
+                                     const SizeVector& new_shape) {
     if (old_shape.empty()) {
         return std::make_pair(true, SizeVector(new_shape.size(), 1));
     }

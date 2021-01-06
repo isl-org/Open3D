@@ -114,9 +114,9 @@ SizeVector DefaultStrides(const SizeVector& shape);
 ///    ``numel'', i.e., number of subspaces, as the corresponding chunk of
 ///    `oldshape`.
 /// Ref: aten/src/ATen/TensorUtils.cpp
-std::pair<bool, SizeVector> ComputeNewStrides(const SizeVector& old_shape,
-                                              const SizeVector& old_strides,
-                                              const SizeVector& new_shape);
+std::pair<bool, SizeVector> Restride(const SizeVector& old_shape,
+                                     const SizeVector& old_strides,
+                                     const SizeVector& new_shape);
 
 }  // namespace shape_util
 }  // namespace core
