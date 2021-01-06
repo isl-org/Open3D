@@ -36,6 +36,7 @@
 #include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -181,18 +182,18 @@ public:
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
-    template <typename Scalar>
-    void Fill(Scalar v);
+    template <typename S>
+    void Fill(S v);
 
     template <typename Object>
     void FillObject(const Object& v);
 
-    /// Create a tensor with uninitilized values.
+    /// Create a tensor with uninitialized values.
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
 
-    /// Create a tensor with uninitilized values with the same dtype and device
+    /// Create a tensor with uninitialized values with the same dtype and device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
         return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
@@ -230,7 +231,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 1-D tensor with initilizer list.
+    /// Create a 1-D tensor with initializer list.
     /// For example,
     /// core::Tensor::Init<float>({1,2,3});
     template <typename T>
@@ -244,7 +245,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 2-D tensor with nested initilizer list.
+    /// Create a 2-D tensor with nested initializer list.
     /// For example,
     /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
     template <typename T>
@@ -272,7 +273,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 3-D tensor with nested initilizer list.
+    /// Create a 3-D tensor with nested initializer list.
     /// For example,
     /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
     template <typename T>
@@ -331,6 +332,13 @@ public:
 
     /// Create a square matrix with specified diagonal elements in input.
     static Tensor Diag(const Tensor& input);
+
+    /// Create a 1D tensor with evenly spaced values in the given interval.
+    static Tensor Arange(Scalar start,
+                         Scalar stop,
+                         Scalar step = 1,
+                         Dtype dtype = Dtype::Int64,
+                         const Device& device = core::Device("CPU:0"));
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -1129,16 +1137,20 @@ public:
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
 
     /// Assert that the Tensor has the specified shape.
-    void AssertShape(const SizeVector& expected_shape) const;
+    void AssertShape(const SizeVector& expected_shape,
+                     const std::string& error_msg = "") const;
 
     /// Assert that Tensor's shape is compatible with a dynamic shape.
-    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape,
+                               const std::string& error_msg = "") const;
 
     /// Assert that the Tensor has the specified device.
-    void AssertDevice(const Device& expected_device) const;
+    void AssertDevice(const Device& expected_device,
+                      const std::string& error_msg = "") const;
 
     /// Assert that the Tensor has the specified dtype.
-    void AssertDtype(const Dtype& expected_dtype) const;
+    void AssertDtype(const Dtype& expected_dtype,
+                     const std::string& error_msg = "") const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
@@ -1236,8 +1248,8 @@ inline bool Tensor::Item() const {
     return static_cast<bool>(value);
 }
 
-template <typename Scalar>
-inline void Tensor::Fill(Scalar v) {
+template <typename S>
+inline void Tensor::Fill(S v) {
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
         scalar_t casted_v = static_cast<scalar_t>(v);
         Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),

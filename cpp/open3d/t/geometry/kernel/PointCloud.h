@@ -26,20 +26,42 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
+namespace pointcloud {
+void Unproject(const core::Tensor& depth,
+               core::Tensor& points,
+               const core::Tensor& intrinsics,
+               const core::Tensor& extrinsics,
+               float depth_scale,
+               float depth_max,
+               int64_t stride);
 
-Tensor NonZero(const Tensor& src);
-
-Tensor NonZeroCPU(const Tensor& src);
+void UnprojectCPU(const core::Tensor& depth,
+                  core::Tensor& points,
+                  const core::Tensor& intrinsics,
+                  const core::Tensor& extrinsics,
+                  float depth_scale,
+                  float depth_max,
+                  int64_t stride);
 
 #ifdef BUILD_CUDA_MODULE
-Tensor NonZeroCUDA(const Tensor& src);
+void UnprojectCUDA(const core::Tensor& depth,
+                   core::Tensor& points,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& extrinsics,
+                   float depth_scale,
+                   float depth_max,
+                   int64_t stride);
 #endif
-
+}  // namespace pointcloud
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

@@ -24,54 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/GeneralEW.h"
-
-#include <vector>
-
-#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/core/kernel/Arange.h"
+#include "open3d/core/kernel/CPULauncher.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
-void GeneralEW(const std::unordered_map<std::string, Tensor>& srcs,
-               std::unordered_map<std::string, Tensor>& dsts,
-               GeneralEWOpCode op_code) {
-    // srcs cannot be empty. dsts can be empty on initialization and emplaced at
-    // runtime in specific kernels.
-    if (srcs.size() == 0) {
-        utility::LogError(
-                "[GeneralEW]: one or more inputs expected, but received 0.");
-    }
-
-    // srcs and dsts must be on the same device.
-    Device device = srcs.begin()->second.GetDevice();
-    for (auto it = srcs.begin(); it != srcs.end(); ++it) {
-        if (device != it->second.GetDevice()) {
-            utility::LogError("[GeneralEW]: incompatible device in inputs");
-        }
-    }
-    for (auto it = dsts.begin(); it != dsts.end(); ++it) {
-        if (device != it->second.GetDevice()) {
-            utility::LogError("[GeneralEW]: incompatible device in outputs");
-        }
-    }
-
-    // We don't assume shape consistency: general ops are less constrained.
-    Device::DeviceType device_type = device.GetType();
-    if (device_type == Device::DeviceType::CPU) {
-        GeneralEWCPU(srcs, dsts, op_code);
-    } else if (device_type == Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        GeneralEWCUDA(srcs, dsts, op_code);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-    } else {
-        utility::LogError("GeneralEW: Unimplemented device");
-    }
+void ArangeCPU(const Tensor& start,
+               const Tensor& stop,
+               const Tensor& step,
+               Tensor& dst) {
+    Dtype dtype = start.GetDtype();
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t sstart = start.Item<scalar_t>();
+        scalar_t sstep = step.Item<scalar_t>();
+        scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
+        int64_t n = dst.GetLength();
+        CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+            dst_ptr[workload_idx] =
+                    sstart + static_cast<scalar_t>(sstep * workload_idx);
+        });
+    });
 }
 
 }  // namespace kernel
