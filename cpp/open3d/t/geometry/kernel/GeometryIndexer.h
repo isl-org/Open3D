@@ -33,7 +33,8 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
 
 /// Helper class for converting coordinates/indices between 3D/3D, 3D/2D, 2D/3D.
@@ -41,8 +42,8 @@ class TransformIndexer {
 public:
     /// intrinsic: simple pinhole camera matrix, stored in fx, fy, cx, cy
     /// extrinsic: world to camera transform, stored in a 3x4 matrix
-    TransformIndexer(const Tensor& intrinsic,
-                     const Tensor& extrinsic = Tensor::Eye(
+    TransformIndexer(const core::Tensor& intrinsic,
+                     const core::Tensor& extrinsic = core::Tensor::Eye(
                              4, core::Dtype::Float32, core::Device("CPU:0")),
                      float scale = 1.0f) {
         intrinsic.AssertShape({3, 3});
@@ -138,18 +139,19 @@ public:
         }
     }
 
-    NDArrayIndexer(const Tensor& ndarray, int64_t active_dims) {
+    NDArrayIndexer(const core::Tensor& ndarray, int64_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(
                     "[NDArrayIndexer] Only support contiguous tensors for "
                     "general operations.");
         }
 
-        SizeVector shape = ndarray.GetShape();
+        core::SizeVector shape = ndarray.GetShape();
         int64_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
-                    "[NDArrayIndexer] Tensor shape too large, only <= {} is "
+                    "[NDArrayIndexer] Tensor shape too large, only <= {} "
+                    "is "
                     "supported, but received {}.",
                     MAX_RESOLUTION_DIMS, active_dims);
         }
@@ -168,7 +170,7 @@ public:
     }
 
     /// Only used for simple shapes
-    NDArrayIndexer(const SizeVector& shape) {
+    NDArrayIndexer(const core::SizeVector& shape) {
         int64_t n = static_cast<int64_t>(shape.size());
         if (n > MAX_RESOLUTION_DIMS) {
             utility::LogError(
@@ -275,34 +277,40 @@ public:
         return shape_[i];
     }
 
-    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x) const {
-        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
-                                  x * element_byte_size_);
+    template <typename T>
+    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x) const {
+        return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +
+                                                  x * element_byte_size_));
     }
 
-    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x,
-                                                        int64_t y) const {
+    template <typename T>
+    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
+                                                     int64_t y) const {
         int64_t workload;
         CoordToWorkload(x, y, &workload);
-        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
-                                  workload * element_byte_size_);
+        return static_cast<T*>(static_cast<void*>(
+                static_cast<uint8_t*>(ptr_) + workload * element_byte_size_));
     }
-    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x,
-                                                        int64_t y,
-                                                        int64_t z) const {
+
+    template <typename T>
+    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
+                                                     int64_t y,
+                                                     int64_t z) const {
         int64_t workload;
         CoordToWorkload(x, y, z, &workload);
-        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
-                                  workload * element_byte_size_);
+        return static_cast<T*>(static_cast<void*>(
+                static_cast<uint8_t*>(ptr_) + workload * element_byte_size_));
     }
-    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x,
-                                                        int64_t y,
-                                                        int64_t z,
-                                                        int64_t t) const {
+
+    template <typename T>
+    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
+                                                     int64_t y,
+                                                     int64_t z,
+                                                     int64_t t) const {
         int64_t workload;
         CoordToWorkload(x, y, z, t, &workload);
-        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
-                                  workload * element_byte_size_);
+        return static_cast<T*>(static_cast<void*>(
+                static_cast<uint8_t*>(ptr_) + workload * element_byte_size_));
     }
 
 private:
@@ -314,5 +322,6 @@ private:
 };
 
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d
