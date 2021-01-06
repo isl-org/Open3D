@@ -330,9 +330,6 @@ void pybind_core_tensor(py::module& m) {
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
-    // Tensor copy.
-    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
-
     // Device transfer.
     tensor.def(
             "cuda",

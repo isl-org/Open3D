@@ -86,12 +86,6 @@ void TensorList::CopyFrom(const TensorList& other) {
     is_resizable_ = true;
 }
 
-void TensorList::ShallowCopyFrom(const TensorList& other) {
-    // Copy assignment operator is performing shallow copy.
-    // After copy, this.is_resizable_ == other.is_resizable_.
-    *this = other;
-}
-
 Tensor TensorList::AsTensor() const {
     return internal_tensor_.Slice(0, 0, size_);
 }

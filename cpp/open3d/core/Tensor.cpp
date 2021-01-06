@@ -495,14 +495,6 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
 
 void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 
-void Tensor::ShallowCopyFrom(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = other.strides_;
-    dtype_ = other.dtype_;
-    blob_ = other.blob_;
-    data_ptr_ = other.data_ptr_;
-}
-
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
         // Returns a shallow copy of the current Tensor
