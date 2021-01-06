@@ -88,6 +88,7 @@ void pybind_geometry_classes(py::module &m) {
             .value("Image", Geometry::GeometryType::Image)
             .value("RGBDImage", Geometry::GeometryType::RGBDImage)
             .value("TetraMesh", Geometry::GeometryType::TetraMesh)
+            .value("PlanarPatch", Geometry::GeometryType::PlanarPatch)
             .export_values();
 
     py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
@@ -213,6 +214,7 @@ void pybind_geometry(py::module &m) {
     pybind_octree_methods(m_submodule);
     pybind_octree(m_submodule);
     pybind_boundingvolume(m_submodule);
+    pybind_planarpatch(m_submodule);
 }
 
 }  // namespace geometry
