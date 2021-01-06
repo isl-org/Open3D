@@ -57,7 +57,7 @@ The following section of the script set up the camera and lighting for the scene
    :linenos:
 
 Initialize the window and rendering the scene
-=====================================
+==============================================
 The following section of the script initiliazes the window, and adds the scene to the window.
 
 .. literalinclude:: ../../../examples/python/visualization/render_scene.py
