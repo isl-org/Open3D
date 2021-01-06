@@ -470,7 +470,7 @@ public:
     /// Copy Tensor to the same device.
     Tensor Copy() const { return Copy(GetDevice()); };
 
-    /// Copy Tensor values to current tensor for source tensor
+    /// Copy Tensor values to current tensor from the source tensor.
     void CopyFrom(const Tensor& other);
 
     /// Returns a tensor with the specified \p dtype.
