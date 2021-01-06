@@ -104,11 +104,11 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
 
     float voxel_size = utility::GetProgramOptionAsDouble(
-            argc, argv, "--voxel_size", 3.0f / 512f);
+            argc, argv, "--voxel_size", 3.f / 512.f);
     float depth_scale = utility::GetProgramOptionAsDouble(
-            argc, argv, "--depth_scale", 1000.0f);
+            argc, argv, "--depth_scale", 1000.f);
     float max_depth =
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.0f);
+            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f);
     float sdf_trunc =
             utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc", 0.04f);
 
