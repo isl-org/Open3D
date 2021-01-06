@@ -27,7 +27,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "open3d/t/pipelines/TransformationConverterImpl.h"
+#include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 
 namespace open3d {
 namespace t {

@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 #include <cmath>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/TransformationConverterImpl.h"
+#include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 
 namespace open3d {
 namespace t {

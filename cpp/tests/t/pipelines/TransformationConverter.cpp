@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
