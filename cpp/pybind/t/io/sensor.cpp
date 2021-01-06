@@ -145,7 +145,7 @@ void pybind_sensor(py::module &m) {
     };
 
     // Class RGBD video reader
-    py::class_<RGBDVideoReader, PyRGBDVideoReader, std::shared_ptr<RGBDVideoReader>>
+    py::class_<RGBDVideoReader, PyRGBDVideoReader, std::unique_ptr<RGBDVideoReader>>
             rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
     rgbd_video_reader
             .def(py::init<>())
@@ -167,7 +167,7 @@ void pybind_sensor(py::module &m) {
 
 #ifdef BUILD_LIBREALSENSE
     // Class RS bag reader
-    py::class_<RSBagReader, std::shared_ptr<RSBagReader>, RGBDVideoReader>
+    py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
             rs_bag_reader(m, "RSBagReader", "RealSense Bag file reader.");
     rs_bag_reader.def(py::init<>())
             .def(py::init<size_t>(),

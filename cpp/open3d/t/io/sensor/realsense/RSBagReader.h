@@ -40,7 +40,6 @@
 // Forward declarations for librealsense classes
 namespace rs2 {
 class pipeline;
-class config;
 }  // namespace rs2
 
 namespace open3d {
@@ -152,7 +151,6 @@ private:
     std::thread frame_reader_thread_;
 
     std::unique_ptr<rs2::pipeline> pipe_;
-    std::unique_ptr<rs2::config> cfg_;
 
     Json::Value GetMetadataJson();
     std::string GetTagInMetadata(const std::string &tag_name);

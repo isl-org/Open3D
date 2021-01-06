@@ -45,8 +45,7 @@ namespace io {
 RSBagReader::RSBagReader(size_t buffer_size)
     : frame_buffer_(buffer_size),
       frame_position_us_(buffer_size),
-      pipe_(nullptr),
-      cfg_(nullptr) {}
+      pipe_(nullptr) { }
 
 RSBagReader::~RSBagReader() {
     if (IsOpened()) Close();
@@ -57,14 +56,13 @@ bool RSBagReader::Open(const std::string &filename) {
         Close();
     }
     try {
-        cfg_.reset(new rs2::config);
-        cfg_->enable_device_from_file(filename, false);  // Do not repeat playback
+        rs2::config cfg;
+        cfg.enable_device_from_file(filename, false);  // Do not repeat playback
         pipe_.reset(new rs2::pipeline);
-        auto profile = pipe_->start(
-                *cfg_);  // File will be opened in read mode at this point
+        auto profile = pipe_->start(cfg);   // Open file in read mode
         // do not drop frames: Causes deadlock after 4 frames on macOS/Linux
         // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
-        /* rs_device.set_real_time(false); */
+        /* profile.get_device().as<rs2::playback>().set_real_time(false); */
         metadata_.ConvertFromJsonValue(
                 RealSenseSensorConfig::GetMetadataJson(profile));
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
