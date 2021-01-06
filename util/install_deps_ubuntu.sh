@@ -29,7 +29,7 @@ dependencies=(
     # Headless rendering deps
     libosmesa6-dev
     # RealSense deps
-    libusb-1.0-0-dev
+    libudev-dev
 )
 
 $SUDO apt-get update
