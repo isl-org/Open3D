@@ -247,7 +247,7 @@ bool AxisAlignedBoundingBoxRenderer::UpdateGeometry() {
 }
 
 bool PlanarPatchRenderer::Render(const RenderOption &option,
-                                            const ViewControl &view) {
+                                 const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
     // const auto &patch = (const geometry::PlanarPatch &)(*geometry_ptr_);
     bool success = true;
@@ -258,12 +258,13 @@ bool PlanarPatchRenderer::Render(const RenderOption &option,
     //     } else {
     //         success &= phong_point_shader_.Render(pointcloud, option, view);
     //     }
-        if (option.point_show_normal_) {
-            success &=
-                    simpleblack_normal_shader_.Render(*geometry_ptr_, option, view);
-        }
+    if (option.point_show_normal_) {
+        success &=
+                simpleblack_normal_shader_.Render(*geometry_ptr_, option, view);
+    }
     // } else {
-        success &= simple_shader_for_planar_patch_.Render(*geometry_ptr_, option, view);
+    success &= simple_shader_for_planar_patch_.Render(*geometry_ptr_, option,
+                                                      view);
     // }
     return success;
 }

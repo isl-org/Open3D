@@ -334,7 +334,14 @@ public:
     /// planes. Neighbors are found with KDTree search using these params. More
     /// neighbors results in higher quality patches at the cost of compute.
     /// \return Returns a list of detected PlanarPatch objects.
-    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches(double normal_similarity = 0.5, double coplanarity = 0.25, double outlier_ratio = 0.75, double min_plane_edge_length = 0.0, size_t min_num_points = 0, const geometry::KDTreeSearchParam &search_param = geometry::KDTreeSearchParamKNN()) const;
+    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches(
+            double normal_similarity = 0.5,
+            double coplanarity = 0.25,
+            double outlier_ratio = 0.75,
+            double min_plane_edge_length = 0.0,
+            size_t min_num_points = 0,
+            const geometry::KDTreeSearchParam &search_param =
+                    geometry::KDTreeSearchParamKNN()) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.

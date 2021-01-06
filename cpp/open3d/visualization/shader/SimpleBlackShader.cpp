@@ -26,9 +26,9 @@
 
 #include "open3d/visualization/shader/SimpleBlackShader.h"
 
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/visualization/shader/Shader.h"
 #include "open3d/visualization/utility/ColorMap.h"
 
@@ -206,7 +206,7 @@ bool SimpleBlackShaderForPlanarPatchNormal::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::PlanarPatch) {
+        geometry::Geometry::GeometryType::PlanarPatch) {
         PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
         return false;
     }
@@ -221,7 +221,7 @@ bool SimpleBlackShaderForPlanarPatchNormal::PrepareBinding(
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::PlanarPatch) {
+        geometry::Geometry::GeometryType::PlanarPatch) {
         PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
         return false;
     }
@@ -232,7 +232,8 @@ bool SimpleBlackShaderForPlanarPatchNormal::PrepareBinding(
         return false;
     }
     points.resize(2);
-    double line_length = option.point_size_ * 0.02 * view.GetBoundingBox().GetMaxExtent();
+    double line_length =
+            option.point_size_ * 0.02 * view.GetBoundingBox().GetMaxExtent();
     points[0] = patch.center_.cast<float>();
     points[1] = (patch.center_ + patch.normal_ * line_length).cast<float>();
 

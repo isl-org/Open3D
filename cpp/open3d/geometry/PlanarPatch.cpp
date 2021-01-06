@@ -26,11 +26,10 @@
 
 #include "open3d/geometry/PlanarPatch.h"
 
+#include <Eigen/Dense>
 #include <algorithm>
 #include <numeric>
 #include <vector>
-
-#include <Eigen/Dense>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
@@ -43,9 +42,13 @@ PlanarPatch& PlanarPatch::Clear() { return *this; }
 
 bool PlanarPatch::IsEmpty() const { return false; }
 
-Eigen::Vector3d PlanarPatch::GetMinBound() const { return center_ + basis_x_ + basis_y_; }
+Eigen::Vector3d PlanarPatch::GetMinBound() const {
+    return center_ + basis_x_ + basis_y_;
+}
 
-Eigen::Vector3d PlanarPatch::GetMaxBound() const { return center_ - basis_x_ - basis_y_; }
+Eigen::Vector3d PlanarPatch::GetMaxBound() const {
+    return center_ - basis_x_ - basis_y_;
+}
 
 Eigen::Vector3d PlanarPatch::GetCenter() const { return center_; }
 
@@ -67,29 +70,30 @@ PlanarPatch& PlanarPatch::Transform(const Eigen::Matrix4d& transformation) {
 }
 
 PlanarPatch& PlanarPatch::Translate(const Eigen::Vector3d& translation,
-                                  bool relative) {
+                                    bool relative) {
     utility::LogError("Not implemented");
     return *this;
 }
 
 PlanarPatch& PlanarPatch::Scale(const double scale,
-                              const Eigen::Vector3d& center) {
+                                const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
 PlanarPatch& PlanarPatch::Rotate(const Eigen::Matrix3d& R,
-                               const Eigen::Vector3d& center) {
+                                 const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-PlanarPatch& PlanarPatch::PaintUniformColor(const Eigen::Vector3d &color) {
+PlanarPatch& PlanarPatch::PaintUniformColor(const Eigen::Vector3d& color) {
     color_ = color;
     return *this;
 }
 
-double PlanarPatch::GetSignedDistanceToPoint(const Eigen::Vector3d& point) const {
+double PlanarPatch::GetSignedDistanceToPoint(
+        const Eigen::Vector3d& point) const {
     return normal_.dot(point) + dist_from_origin_;
 }
 

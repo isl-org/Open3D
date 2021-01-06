@@ -39,10 +39,9 @@ void pybind_planarpatch(py::module &m) {
     py::class_<PlanarPatch, PyGeometry3D<PlanarPatch>,
                std::shared_ptr<PlanarPatch>, Geometry3D>
             planar_patch(m, "PlanarPatch",
-                                  "A planar patch in 3D, typically "
-                                  "detected from a point cloud.");
-    py::detail::bind_default_constructor<PlanarPatch>(
-            planar_patch);
+                         "A planar patch in 3D, typically "
+                         "detected from a point cloud.");
+    py::detail::bind_default_constructor<PlanarPatch>(planar_patch);
     py::detail::bind_copy_functions<PlanarPatch>(planar_patch);
     planar_patch
             .def("__repr__",
@@ -50,8 +49,8 @@ void pybind_planarpatch(py::module &m) {
                      std::stringstream s;
                      const Eigen::Vector3d n = patch.normal_;
                      const double d = patch.dist_from_origin_;
-                     s << "PlanarPatch: (n, d) = (" << n.x() << ", "
-                       << n.y() << ", " << n.z() << ", " << d << ")";
+                     s << "PlanarPatch: (n, d) = (" << n.x() << ", " << n.y()
+                       << ", " << n.z() << ", " << d << ")";
                      return s.str();
                  })
             .def_readwrite("center", &PlanarPatch::center_,
@@ -65,7 +64,7 @@ void pybind_planarpatch(py::module &m) {
             .def_readwrite("basis_y", &PlanarPatch::basis_y_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("color", &PlanarPatch::color_,
-                           "``float64`` array of shape ``(3, )``");   
+                           "``float64`` array of shape ``(3, )``");
 }
 
 }  // namespace geometry

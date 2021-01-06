@@ -58,14 +58,14 @@ int main(int argc, char **argv) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
     static constexpr int nrNeighbors = 75;
-    const geometry::KDTreeSearchParam &search_param = geometry::KDTreeSearchParamKNN(nrNeighbors);
+    const geometry::KDTreeSearchParam &search_param =
+            geometry::KDTreeSearchParamKNN(nrNeighbors);
     cloud_ptr->EstimateNormals(search_param);
     std::cout << "EstimateNormals: "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
                          .count()
               << " seconds" << std::endl;
-
 
     // set parameters
     constexpr double normal_similarity = 0.5;
@@ -75,7 +75,9 @@ int main(int argc, char **argv) {
     constexpr size_t min_num_points = 30;
 
     t1 = std::chrono::high_resolution_clock::now();
-    const auto patches = cloud_ptr->DetectPlanarPatches(normal_similarity, coplanarity, outlier_ratio, min_plane_edge_length, min_num_points, search_param);
+    const auto patches = cloud_ptr->DetectPlanarPatches(
+            normal_similarity, coplanarity, outlier_ratio,
+            min_plane_edge_length, min_num_points, search_param);
     std::cout << "DetectPlanarPatches: " << patches.size() << " in "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
@@ -85,7 +87,7 @@ int main(int argc, char **argv) {
     // for const-correctness
     std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
     geometries.reserve(patches.size());
-    for (const auto& patch : patches) {
+    for (const auto &patch : patches) {
         geometries.push_back(patch);
     }
 

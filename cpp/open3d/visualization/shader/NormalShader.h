@@ -107,8 +107,7 @@ protected:
 
 class NormalShaderForPlanarPatch : public NormalShader {
 public:
-    NormalShaderForPlanarPatch()
-        : NormalShader("NormalShaderForPlanarPatch") {}
+    NormalShaderForPlanarPatch() : NormalShader("NormalShaderForPlanarPatch") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,

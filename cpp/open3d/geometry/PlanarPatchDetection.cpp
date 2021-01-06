@@ -24,22 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
 #include <algorithm>
 #include <numeric>
 #include <queue>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "libqhullcpp/PointCoordinates.h"
 #include "libqhullcpp/Qhull.h"
 #include "libqhullcpp/QhullVertex.h"
-
-#include <Eigen/Dense>
-
-#include "open3d/geometry/PlanarPatch.h"
-#include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
+#include "open3d/geometry/PlanarPatch.h"
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -95,18 +93,21 @@ public:
 
         // Does this node have enough data to be able to partition further
         if (indices_.size() <= min_points_ || child_size < min_size_ ||
-            indices_.size() < 2) return;
+            indices_.size() < 2)
+            return;
 
         // split points and create children
         for (const size_t& pidx : indices_) {
             // calculate child index comparing position to child center
-            const size_t cidx = calculateChildIndex(point_cloud_->points_[pidx]);
+            const size_t cidx =
+                    calculateChildIndex(point_cloud_->points_[pidx]);
             // if child does not yet exist, create and initialize
             if (children_[cidx] == nullptr) {
                 const Eigen::Vector3d child_center =
                         calculateChildCenter(cidx, child_size);
                 children_[cidx].reset(new BoundaryVolumeHierarchy(
-                        point_cloud_, level_ + 1, child_center, min_points_, min_size_, child_size, cidx));
+                        point_cloud_, level_ + 1, child_center, min_points_,
+                        min_size_, child_size, cidx));
                 children_[cidx]->indices_.reserve(indices_.size());
             }
             children_[cidx]->indices_.push_back(pidx);
@@ -199,7 +200,8 @@ private:
 /// \return Median of buffer data.
 double getMedian(std::vector<double> buffer) {
     const size_t N = buffer.size();
-    std::nth_element(buffer.begin(), buffer.begin() + N / 2, buffer.begin() + N);
+    std::nth_element(buffer.begin(), buffer.begin() + N / 2,
+                     buffer.begin() + N);
     return buffer[N / 2];
 }
 
@@ -214,8 +216,9 @@ double getMAD(const std::vector<double>& buffer, double median) {
     for (size_t i = 0; i < N; i++) {
         shifted[i] = std::abs(buffer[i] - median);
     }
-    std::nth_element(shifted.begin(), shifted.begin() + N / 2, shifted.begin() + N);
-    static constexpr double k = 1.4826; // assumes normally distributed data
+    std::nth_element(shifted.begin(), shifted.begin() + N / 2,
+                     shifted.begin() + N);
+    static constexpr double k = 1.4826;  // assumes normally distributed data
     return k * shifted[N / 2];
 }
 
@@ -226,7 +229,10 @@ double getMAD(const std::vector<double>& buffer, double median) {
 /// \param buffer Container of scalar data to find spread of.
 /// \param min Alpha MADs below median.
 /// \param max Alpha MADs above median.
-void getMinMaxRScore(const std::vector<double>& buffer, double& min, double& max, double alpha) {
+void getMinMaxRScore(const std::vector<double>& buffer,
+                     double& min,
+                     double& max,
+                     double alpha) {
     double median = getMedian(buffer);
     double mad = getMAD(buffer, median);
     min = median - alpha * mad;
@@ -237,7 +243,8 @@ void getMinMaxRScore(const std::vector<double>& buffer, double& min, double& max
 ///
 /// \param points  Set of 2D points to find convex hull of.
 /// \param indices  Indices of resulting convex hull.
-void getConvexHull2D(const std::vector<Eigen::Vector2d>& points, std::vector<size_t>& indices) {
+void getConvexHull2D(const std::vector<Eigen::Vector2d>& points,
+                     std::vector<size_t>& indices) {
     static constexpr int DIM = 2;
     std::vector<size_t> pt_map;
 
@@ -259,7 +266,7 @@ void getConvexHull2D(const std::vector<Eigen::Vector2d>& points, std::vector<siz
     indices.clear();
     indices.reserve(vertices.size());
     for (orgQhull::QhullVertexList::iterator it = vertices.begin();
-        it != vertices.end(); ++it) {
+         it != vertices.end(); ++it) {
         indices.push_back(it->point().id());
     }
 }
@@ -316,8 +323,7 @@ private:
 ///     detection in unorganized point clouds,” Pattern Recognition, 2020.
 ///
 /// See also https://www.inf.ufrgs.br/~oliveira/pubs_files/RE/RE.html
-class PlaneDetector
-{
+class PlaneDetector {
 public:
     /// \brief Constructor to initialize detection parameters.
     ///
@@ -327,12 +333,15 @@ public:
     /// detected plane normal and auxiliary planarity test vector. An
     /// ideal plane has score 0, i.e., normal orthogonal to test vector.
     /// \param outlier_ratio is the max allowable ratio of outlier points.
-    PlaneDetector(double normal_similarity, double coplanarity, double outlier_ratio, double plane_edge_length)
+    PlaneDetector(double normal_similarity,
+                  double coplanarity,
+                  double outlier_ratio,
+                  double plane_edge_length)
         : patch_(std::make_shared<PlanarPatch>()),
-            normal_similarity_thr_(normal_similarity),
-            coplanarity_thr_(coplanarity),
-            outlier_ratio_thr_(outlier_ratio),
-            plane_edge_length_thr_(plane_edge_length) {}
+          normal_similarity_thr_(normal_similarity),
+          coplanarity_thr_(coplanarity),
+          outlier_ratio_thr_(outlier_ratio),
+          plane_edge_length_thr_(plane_edge_length) {}
     ~PlaneDetector() = default;
 
     /// \brief Estimate plane from point cloud and selected point indices.
@@ -340,7 +349,8 @@ public:
     /// \param point_cloud The point cloud (with points and normals).
     /// \param indices Point indices within point cloud to use.
     /// \return True if indices of point cloud pass robust planarity tests.
-    bool DetectFromPointCloud(const PointCloud* point_cloud, const std::vector<size_t>& indices) {
+    bool DetectFromPointCloud(const PointCloud* point_cloud,
+                              const std::vector<size_t>& indices) {
         if (point_cloud->IsEmpty()) return false;
 
         // Hold a reference to the point cloud. This PlaneDetector
@@ -360,9 +370,7 @@ public:
     /// \brief Delimit the plane using its perimeter points.
     ///
     /// \return A patch which is the bounded version of the plane.
-    std::shared_ptr<PlanarPatch> DelimitPlane()
-    {
-
+    std::shared_ptr<PlanarPatch> DelimitPlane() {
         Eigen::Matrix3Xd M;
         GetPlanePerimeterPoints(M);
 
@@ -372,7 +380,6 @@ public:
         double max_angled = 90;
         static constexpr double ANGLE_RESOLUTION_DEG = 5;
         while (max_angled - min_angled > ANGLE_RESOLUTION_DEG) {
-
             const double mid = (max_angled + min_angled) / 2.;
             const double left = (min_angled + mid) / 2.;
             const double right = (max_angled + mid) / 2.;
@@ -393,8 +400,10 @@ public:
         // Update the center of the patch
         patch_->center_ -= rect.B.col(0).dot(patch_->center_) * rect.B.col(0);
         patch_->center_ -= rect.B.col(1).dot(patch_->center_) * rect.B.col(1);
-        patch_->center_ += (rect.bottom_left(0) + rect.top_right(0)) / 2. * rect.B.col(0);
-        patch_->center_ += (rect.bottom_left(1) + rect.top_right(1)) / 2. * rect.B.col(1);
+        patch_->center_ +=
+                (rect.bottom_left(0) + rect.top_right(0)) / 2. * rect.B.col(0);
+        patch_->center_ +=
+                (rect.bottom_left(1) + rect.top_right(1)) / 2. * rect.B.col(1);
 
         // Scale basis to fit points
         const double sx = (rect.top_right.x() - rect.bottom_left.x()) / 2.;
@@ -411,8 +420,11 @@ public:
     bool IsInlier(size_t idx) {
         const Eigen::Vector3d& point = point_cloud_->points_[idx];
         const Eigen::Vector3d& normal = point_cloud_->normals_[idx];
-        const bool valid_normal = std::abs(patch_->normal_.dot(normal)) > min_normal_diff_;
-        const bool valid_dist = std::abs(patch_->GetSignedDistanceToPoint(point)) < max_point_dist_;
+        const bool valid_normal =
+                std::abs(patch_->normal_.dot(normal)) > min_normal_diff_;
+        const bool valid_dist =
+                std::abs(patch_->GetSignedDistanceToPoint(point)) <
+                max_point_dist_;
         return valid_normal && valid_dist;
     }
 
@@ -422,9 +434,7 @@ public:
     }
 
     /// \brief Mark the cloud point at index idx as visited.
-    void MarkVisited(size_t idx) {
-        visited_indices_.insert(idx);
-    }
+    void MarkVisited(size_t idx) { visited_indices_.insert(idx); }
 
     /// \brief Include an addition point at index idx as part of plane set.
     void AddPoint(size_t idx) {
@@ -442,7 +452,7 @@ public:
 
     /// \brief Check if plane is considered a false positive
     bool IsFalsePositive() {
-        EstimatePlane(); // TODO: just recalc longest_edge?
+        EstimatePlane();  // TODO: just recalc longest_edge?
         return num_updates_ == 0 || longest_edge_ < plane_edge_length_thr_;
     }
 
@@ -471,7 +481,6 @@ public:
     size_t index_;
 
 private:
-
     /// Bounds of the estimate plane
     Eigen::Vector3d min_bound_;
     Eigen::Vector3d max_bound_;
@@ -482,8 +491,9 @@ private:
 
     /// Minimum allowable similarity score for point normal to plane normal.
     double normal_similarity_thr_;
-    /// Maximum allowable similarity between normal and auxiliary planarity test vector.
-    /// An ideal plane has score 0, i.e., normal orthogonal to test vector.
+    /// Maximum allowable similarity between normal and auxiliary planarity test
+    /// vector. An ideal plane has score 0, i.e., normal orthogonal to test
+    /// vector.
     double coplanarity_thr_;
     /// Maximum allowable outlier ratio
     double outlier_ratio_thr_;
@@ -494,17 +504,19 @@ private:
     std::unordered_set<size_t> visited_indices_;
 
     /// \brief Rotates an orthogonal basis, creating a new rotated basis
-    struct RotatedRect
-    {
+    struct RotatedRect {
         Eigen::Matrix3d B;
         Eigen::Matrix3Xd M;
         double area;
         Eigen::Vector3d bottom_left;
         Eigen::Vector3d top_right;
 
-        RotatedRect(const Eigen::Matrix3Xd& M, const Eigen::Matrix3d& B, double degrees) {
+        RotatedRect(const Eigen::Matrix3Xd& M,
+                    const Eigen::Matrix3d& B,
+                    double degrees) {
             Eigen::Matrix3d R;
-            R = Eigen::AngleAxisd(degrees * M_PI / 180., Eigen::Vector3d::UnitZ());
+            R = Eigen::AngleAxisd(degrees * M_PI / 180.,
+                                  Eigen::Vector3d::UnitZ());
 
             this->B = B * R;
             this->M = this->B.transpose() * M;
@@ -518,8 +530,10 @@ private:
 
     /// \brief Estimate plane from point cloud and selected point indices.
     void EstimatePlane() {
-        min_bound_ =  Eigen::Vector3d::Constant(std::numeric_limits<double>::max());
-        max_bound_ = -Eigen::Vector3d::Constant(std::numeric_limits<double>::max());
+        min_bound_ =
+                Eigen::Vector3d::Constant(std::numeric_limits<double>::max());
+        max_bound_ =
+                -Eigen::Vector3d::Constant(std::numeric_limits<double>::max());
 
         // Calculate the median of the points and normals to estimate plane.
         const size_t N = indices_.size();
@@ -532,8 +546,10 @@ private:
                 normal_buf[i] = point_cloud_->normals_[indices_[i]](d);
 
                 // Simultaneously calculate the bounds of the associated points
-                min_bound_(d) = std::min(min_bound_(d), point_cloud_->points_[indices_[i]](d));
-                max_bound_(d) = std::max(max_bound_(d), point_cloud_->points_[indices_[i]](d));
+                min_bound_(d) = std::min(min_bound_(d),
+                                         point_cloud_->points_[indices_[i]](d));
+                max_bound_(d) = std::max(max_bound_(d),
+                                         point_cloud_->points_[indices_[i]](d));
             }
             // compute the median along this dimension
             patch_->center_(d) = getMedian(center_buf);
@@ -563,11 +579,13 @@ private:
         std::vector<double> normal_similarities(N, 0);
         for (size_t i = 0; i < N; i++) {
             const Eigen::Vector3d& normal = point_cloud_->normals_[indices_[i]];
-            const Eigen::Vector3d& position = point_cloud_->points_[indices_[i]];
+            const Eigen::Vector3d& position =
+                    point_cloud_->points_[indices_[i]];
             // similarity of estimated plane normal to point normal
             normal_similarities[i] = std::abs(patch_->normal_.dot(normal));
             // distance from estimated plane to point
-            point_distances[i] = std::abs(patch_->normal_.dot(position) + patch_->dist_from_origin_);
+            point_distances[i] = std::abs(patch_->normal_.dot(position) +
+                                          patch_->dist_from_origin_);
         }
 
         double tmp;
@@ -578,7 +596,8 @@ private:
         // of how close the points associated with the patch are to the patch.
         getMinMaxRScore(point_distances, tmp, max_point_dist_, 3);
 
-        // Fail if too much "variance" in how similar point normals are to patch normal
+        // Fail if too much "variance" in how similar point normals are to patch
+        // normal
         if (!IsNormalValid()) return false;
 
         // Fail if too much "variance" in distances of points to patch
@@ -589,8 +608,8 @@ private:
         outliers.reserve(N);
         size_t num_outliers = 0;
         for (size_t i = 0; i < N; i++) {
-            const bool is_outlier = normal_similarities[i] < min_normal_diff_
-                                    || point_distances[i] > max_point_dist_;
+            const bool is_outlier = normal_similarities[i] < min_normal_diff_ ||
+                                    point_distances[i] > max_point_dist_;
             outliers[indices_[i]] = is_outlier;
             num_outliers += static_cast<int>(is_outlier);
         }
@@ -598,16 +617,20 @@ private:
 
         // Remove outliers
         if (num_outliers > 0) {
-            indices_.erase(std::remove_if(indices_.begin(), indices_.end(), [&outliers](const size_t& idx) {
-                return outliers[idx];
-            }), indices_.end());
+            indices_.erase(std::remove_if(indices_.begin(), indices_.end(),
+                                          [&outliers](const size_t& idx) {
+                                              return outliers[idx];
+                                          }),
+                           indices_.end());
         }
 
         return true;
     }
 
     /// \brief Check if detected plane normal is similar to point normals.
-    inline bool IsNormalValid() const { return min_normal_diff_ > normal_similarity_thr_; }
+    inline bool IsNormalValid() const {
+        return min_normal_diff_ > normal_similarity_thr_;
+    }
 
     /// \brief Check if point distances from detected plane are reasonable.
     ///
@@ -616,15 +639,16 @@ private:
     bool IsDistanceValid() /*const*/ {
         // Test point-to-plane distance w.r.t coplanarity of points.
         // See Fig. 4 of [ArujoOliveira2020].
-        const Eigen::Vector3d F = (B_.col(0) * longest_edge_ + patch_->normal_ * max_point_dist_).normalized();
+        const Eigen::Vector3d F =
+                (B_.col(0) * longest_edge_ + patch_->normal_ * max_point_dist_)
+                        .normalized();
         return std::abs(F.dot(patch_->normal_)) < coplanarity_thr_;
     }
 
     /// \brief Find perimeter of 3D points describing a plane
     ///
     /// \param M  3D perimeter points
-    void GetPlanePerimeterPoints(Eigen::Matrix3Xd& M)
-    {
+    void GetPlanePerimeterPoints(Eigen::Matrix3Xd& M) {
         // project each point onto the 2D span (x-y) of orthogonal basis
         std::vector<Eigen::Vector2d> projectedPoints2d(indices_.size());
         for (size_t i = 0; i < indices_.size(); i++) {
@@ -642,7 +666,6 @@ private:
         for (size_t i = 0; i < perimeter.size(); i++) {
             M.col(i) = point_cloud_->points_[indices_[perimeter[i]]];
         }
-
     }
 
     /// \brief Builds an orthogonal basis of the plane using the normal for up.
@@ -655,15 +678,21 @@ private:
     /// (expressed in the world frame) into the "plane" frame via M' = B^T*M
     ///
     /// \param B The 3x3 basis matrix.
-    void ConstructOrthogonalBasis(Eigen::Matrix3d& B)
-    {
+    void ConstructOrthogonalBasis(Eigen::Matrix3d& B) {
         static constexpr double tol = 1e-3;
         if ((Eigen::Vector3d(0, 1, 1) - patch_->normal_).squaredNorm() > tol) {
             // construct x-vec by cross(normal, [0;1;1])
-            B.col(0) = Eigen::Vector3d(patch_->normal_.y() - patch_->normal_.z(), -patch_->normal_.x(), patch_->normal_.x()).normalized();
+            B.col(0) =
+                    Eigen::Vector3d(patch_->normal_.y() - patch_->normal_.z(),
+                                    -patch_->normal_.x(), patch_->normal_.x())
+                            .normalized();
         } else {
             // construct x-vec by cross(normal, [1;0;1])
-            B.col(0) = Eigen::Vector3d(patch_->normal_.y(), patch_->normal_.z() - patch_->normal_.x(), -patch_->normal_.y()).normalized();
+            B.col(0) =
+                    Eigen::Vector3d(patch_->normal_.y(),
+                                    patch_->normal_.z() - patch_->normal_.x(),
+                                    -patch_->normal_.y())
+                            .normalized();
         }
         B.col(1) = patch_->normal_.cross(B.col(0)).normalized();
         B.col(2) = patch_->normal_;
@@ -683,14 +712,15 @@ using PlaneDetectorPtr = std::shared_ptr<PlaneDetector>;
 /// \param plane_edge_length  Scoring threshold for robust plane detection
 /// \param planes  Detected planes during partitioning
 /// \param plane_points  A map of points associated to detected planes
-bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
-                                    size_t min_num_points,
-                                    double normal_similarity,
-                                    double coplanarity,
-                                    double outlier_ratio,
-                                    double plane_edge_length,
-                                    std::vector<PlaneDetectorPtr>& planes,
-                                    std::vector<PlaneDetectorPtr>& plane_points) {
+bool SplitAndDetectPlanesRecursive(
+        const BoundaryVolumeHierarchyPtr& node,
+        size_t min_num_points,
+        double normal_similarity,
+        double coplanarity,
+        double outlier_ratio,
+        double plane_edge_length,
+        std::vector<PlaneDetectorPtr>& planes,
+        std::vector<PlaneDetectorPtr>& plane_points) {
     // if there aren't enough points to find a good plane, don't even try
     if (node->indices_.size() < min_num_points) return false;
 
@@ -702,13 +732,17 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
 
     for (const auto& child : node->children_) {
         if (child != nullptr &&
-            SplitAndDetectPlanesRecursive(child, min_num_points, normal_similarity, coplanarity, outlier_ratio, plane_edge_length, planes, plane_points)) {
+            SplitAndDetectPlanesRecursive(
+                    child, min_num_points, normal_similarity, coplanarity,
+                    outlier_ratio, plane_edge_length, planes, plane_points)) {
             child_has_plane = true;
         }
     }
 
     if (!child_has_plane && node->level_ > 2) {
-        auto plane = std::make_shared<PlaneDetector>(normal_similarity, coplanarity, outlier_ratio, plane_edge_length);
+        auto plane = std::make_shared<PlaneDetector>(normal_similarity,
+                                                     coplanarity, outlier_ratio,
+                                                     plane_edge_length);
         if (plane->DetectFromPointCloud(node->point_cloud_, node->indices_)) {
             node_has_plane = true;
             planes.push_back(plane);
@@ -726,17 +760,19 @@ bool SplitAndDetectPlanesRecursive(const BoundaryVolumeHierarchyPtr& node,
 /// \brief Using unused neighboring points, consider if planes can be expanded.
 ///
 /// \param planes  Collection of planes to consider
-/// \param plane_points  Vector indicating if a given point cloud point is claimed
-/// \param neighbors  Neighboring points of each point cloud point
-void Grow(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& plane_points, const std::vector<std::vector<int>>& neighbors) {
+/// \param plane_points  Vector indicating if a given point cloud point is
+/// claimed \param neighbors  Neighboring points of each point cloud point
+void Grow(std::vector<PlaneDetectorPtr>& planes,
+          std::vector<PlaneDetectorPtr>& plane_points,
+          const std::vector<std::vector<int>>& neighbors) {
     // Sort so that least noisy planes grow first
-    std::sort(planes.begin(), planes.end(), [](const PlaneDetectorPtr& a, const PlaneDetectorPtr& b) {
-        return a->min_normal_diff_ > b->min_normal_diff_;
-    });
+    std::sort(planes.begin(), planes.end(),
+              [](const PlaneDetectorPtr& a, const PlaneDetectorPtr& b) {
+                  return a->min_normal_diff_ > b->min_normal_diff_;
+              });
 
     std::queue<size_t> queue;
     for (auto&& plane : planes) {
-
         if (plane->stable_) continue;
 
         // Consider each neighbor of each point associated with this plane
@@ -750,7 +786,8 @@ void Grow(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& 
             for (const int& nbr : neighbors[idx]) {
                 // Skip if this neighboring point has been claimed, or,
                 // if this plane has already visited.
-                if (plane_points[nbr] != nullptr || plane->HasVisited(nbr)) continue;
+                if (plane_points[nbr] != nullptr || plane->HasVisited(nbr))
+                    continue;
                 if (plane->IsInlier(nbr)) {
                     // Add this point to the plane and claim ownership
                     plane->AddPoint(nbr);
@@ -770,10 +807,13 @@ void Grow(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& 
 /// \brief Attempt to merge planes together if sufficiently close and similar.
 ///
 /// \param planes  Collection of planes to consider
-/// \param plane_points  Vector indicating if a given point cloud point is claimed
-/// \param neighbors  Neighboring points of each point cloud point
+/// \param plane_points  Vector indicating if a given point cloud point is
+/// claimed \param neighbors  Neighboring points of each point cloud point
 /// \param point_cloud  PointCloud object containing 3D coordinates of points
-void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>& plane_points, const std::vector<std::vector<int>>& neighbors, const PointCloud& point_cloud) {
+void Merge(std::vector<PlaneDetectorPtr>& planes,
+           std::vector<PlaneDetectorPtr>& plane_points,
+           const std::vector<std::vector<int>>& neighbors,
+           const PointCloud& point_cloud) {
     const size_t n = planes.size();
     for (size_t i = 0; i < n; i++) {
         planes[i]->index_ = i;
@@ -785,7 +825,8 @@ void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>&
         for (size_t j = i + 1; j < n; j++) {
             const Eigen::Vector3d& ni = planes[i]->patch_->normal_;
             const Eigen::Vector3d& nj = planes[j]->patch_->normal_;
-            const double normal_thr = std::min(planes[i]->min_normal_diff_, planes[j]->min_normal_diff_);
+            const double normal_thr = std::min(planes[i]->min_normal_diff_,
+                                               planes[j]->min_normal_diff_);
             disconnected_planes[i * n + j] = std::abs(ni.dot(nj)) < normal_thr;
             disconnected_planes[j * n + i] = disconnected_planes[i * n + j];
         }
@@ -799,11 +840,10 @@ void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>&
                 if (nplane == nullptr) continue;
                 const size_t j = nplane->index_;
 
-                if (nplane == plane
-                    || graph[i * n + j] || graph[j * n + i]
-                    || disconnected_planes[i * n + j]
-                    || plane->HasVisited(nbr)
-                    || nplane->HasVisited(idx)) continue;
+                if (nplane == plane || graph[i * n + j] || graph[j * n + i] ||
+                    disconnected_planes[i * n + j] || plane->HasVisited(nbr) ||
+                    nplane->HasVisited(idx))
+                    continue;
 
                 plane->MarkVisited(nbr);
                 nplane->MarkVisited(idx);
@@ -812,14 +852,19 @@ void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>&
                 const Eigen::Vector3d& ni = point_cloud.normals_[idx];
                 const Eigen::Vector3d& pj = point_cloud.points_[nbr];
                 const Eigen::Vector3d& nj = point_cloud.normals_[nbr];
-                const double dist_thr = std::max(plane->max_point_dist_, nplane->max_point_dist_);
-                const double normal_thr = std::min(plane->min_normal_diff_, nplane->min_normal_diff_);
+                const double dist_thr = std::max(plane->max_point_dist_,
+                                                 nplane->max_point_dist_);
+                const double normal_thr = std::min(plane->min_normal_diff_,
+                                                   nplane->min_normal_diff_);
 
                 graph[i * n + j] =
-                    std::abs(plane->patch_->normal_.dot(nj)) > normal_thr &&
-                    std::abs(nplane->patch_->normal_.dot(ni)) > normal_thr &&
-                    std::abs(plane->patch_->GetSignedDistanceToPoint(pj)) < dist_thr &&
-                    std::abs(nplane->patch_->GetSignedDistanceToPoint(pi)) < dist_thr;
+                        std::abs(plane->patch_->normal_.dot(nj)) > normal_thr &&
+                        std::abs(nplane->patch_->normal_.dot(ni)) >
+                                normal_thr &&
+                        std::abs(plane->patch_->GetSignedDistanceToPoint(pj)) <
+                                dist_thr &&
+                        std::abs(nplane->patch_->GetSignedDistanceToPoint(pi)) <
+                                dist_thr;
             }
         }
     }
@@ -837,7 +882,8 @@ void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>&
     std::iota(largest_planes.begin(), largest_planes.end(), 0);
     for (size_t i = 0; i < n; i++) {
         const size_t root = ds.Find(i);
-        if (planes[largest_planes[root]]->indices_.size() < planes[i]->indices_.size()) {
+        if (planes[largest_planes[root]]->indices_.size() <
+            planes[i]->indices_.size()) {
             largest_planes[root] = i;
         }
     }
@@ -849,21 +895,26 @@ void Merge(std::vector<PlaneDetectorPtr>& planes, std::vector<PlaneDetectorPtr>&
             planes[root]->AddPoint(idx);
             plane_points[idx] = planes[root];
         }
-        planes[root]->max_point_dist_ = std::max(planes[root]->max_point_dist_, planes[i]->max_point_dist_);
-        planes[root]->min_normal_diff_ = std::min(planes[root]->min_normal_diff_, planes[i]->min_normal_diff_);
+        planes[root]->max_point_dist_ = std::max(planes[root]->max_point_dist_,
+                                                 planes[i]->max_point_dist_);
+        planes[root]->min_normal_diff_ = std::min(
+                planes[root]->min_normal_diff_, planes[i]->min_normal_diff_);
         planes[i].reset();
     }
 
-    planes.erase(std::remove_if(planes.begin(), planes.end(), [](const PlaneDetectorPtr& plane) {
-        return plane == nullptr;
-    }), planes.end());
+    planes.erase(std::remove_if(planes.begin(), planes.end(),
+                                [](const PlaneDetectorPtr& plane) {
+                                    return plane == nullptr;
+                                }),
+                 planes.end());
 }
 
 /// \brief Determines if planes are stable, if not then cause them to update.
 bool Update(std::vector<PlaneDetectorPtr>& planes) {
     bool changed = false;
     for (auto&& plane : planes) {
-        const bool more_than_half_points_are_new = 3 * plane->num_new_points_ > plane->indices_.size();
+        const bool more_than_half_points_are_new =
+                3 * plane->num_new_points_ > plane->indices_.size();
         if (more_than_half_points_are_new) {
             plane->Update();
             plane->stable_ = false;
@@ -876,23 +927,24 @@ bool Update(std::vector<PlaneDetectorPtr>& planes) {
 }
 
 /// \brief Finds the bounds of each plane and forms planar patches.
-void ExtractPatchesFromPlanes(const std::vector<PlaneDetectorPtr>& planes, std::vector<std::shared_ptr<PlanarPatch>>& patches) {
+void ExtractPatchesFromPlanes(
+        const std::vector<PlaneDetectorPtr>& planes,
+        std::vector<std::shared_ptr<PlanarPatch>>& patches) {
     // Colors (default MATLAB colors)
     static constexpr int NUM_COLORS = 6;
     static std::array<Eigen::Vector3d, NUM_COLORS> colors_ = {
-        Eigen::Vector3d(0.8500, 0.3250, 0.0980),
-        Eigen::Vector3d(0.9290, 0.6940, 0.1250),
-        Eigen::Vector3d(0.4940, 0.1840, 0.5560),
-        Eigen::Vector3d(0.4660, 0.6740, 0.1880),
-        Eigen::Vector3d(0.3010, 0.7450, 0.9330),
-        Eigen::Vector3d(0.6350, 0.0780, 0.1840)
-    };
+            Eigen::Vector3d(0.8500, 0.3250, 0.0980),
+            Eigen::Vector3d(0.9290, 0.6940, 0.1250),
+            Eigen::Vector3d(0.4940, 0.1840, 0.5560),
+            Eigen::Vector3d(0.4660, 0.6740, 0.1880),
+            Eigen::Vector3d(0.3010, 0.7450, 0.9330),
+            Eigen::Vector3d(0.6350, 0.0780, 0.1840)};
 
     for (size_t i = 0; i < planes.size(); i++) {
         if (!planes[i]->IsFalsePositive()) {
             // create a patch by delimiting the plane using its perimeter points
             auto patch = planes[i]->DelimitPlane();
-            patch->PaintUniformColor(colors_[i%NUM_COLORS]);
+            patch->PaintUniformColor(colors_[i % NUM_COLORS]);
             patches.push_back(patch);
         }
     }
@@ -900,8 +952,13 @@ void ExtractPatchesFromPlanes(const std::vector<PlaneDetectorPtr>& planes, std::
 
 }  // unnamed namespace
 
-std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(double normal_similarity, double coplanarity, double outlier_ratio, double min_plane_edge_length, size_t min_num_points, const geometry::KDTreeSearchParam &search_param)
-        const {
+std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(
+        double normal_similarity,
+        double coplanarity,
+        double outlier_ratio,
+        double min_plane_edge_length,
+        size_t min_num_points,
+        const geometry::KDTreeSearchParam& search_param) const {
     if (!HasNormals()) {
         utility::LogError(
                 "DetectPlanarPatches requires pre-computed normal vectors.");
@@ -915,7 +972,8 @@ std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(double
     }
 
     if (min_num_points == 0) {
-        min_num_points = std::max(static_cast<size_t>(10), static_cast<size_t>(points_.size() * 0.001));
+        min_num_points = std::max(static_cast<size_t>(10),
+                                  static_cast<size_t>(points_.size() * 0.001));
     }
 
     // identify the neighbors of each point in point cloud
@@ -931,11 +989,13 @@ std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(double
     }
 
     // partition the point cloud and search for planar regions
-    BoundaryVolumeHierarchyPtr root =
-            std::make_shared<BoundaryVolumeHierarchy>(this, min_bound, max_bound);
+    BoundaryVolumeHierarchyPtr root = std::make_shared<BoundaryVolumeHierarchy>(
+            this, min_bound, max_bound);
     std::vector<PlaneDetectorPtr> planes;
     std::vector<PlaneDetectorPtr> plane_points(points_.size(), nullptr);
-    SplitAndDetectPlanesRecursive(root, min_num_points, normal_similarity, coplanarity, outlier_ratio, min_plane_edge_length, planes, plane_points);
+    SplitAndDetectPlanesRecursive(root, min_num_points, normal_similarity,
+                                  coplanarity, outlier_ratio,
+                                  min_plane_edge_length, planes, plane_points);
 
     // iteratively grow and merge planes until each is stable
     bool changed;

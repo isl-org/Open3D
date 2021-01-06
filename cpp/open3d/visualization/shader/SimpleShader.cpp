@@ -29,11 +29,11 @@
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/Octree.h"
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/geometry/VoxelGrid.h"
-#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/visualization/shader/Shader.h"
 #include "open3d/visualization/utility/ColorMap.h"
 
@@ -898,7 +898,8 @@ bool SimpleShaderForPlanarPatch::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
         return false;
     }
-    const geometry::PlanarPatch &patch = (const geometry::PlanarPatch &)geometry;
+    const geometry::PlanarPatch &patch =
+            (const geometry::PlanarPatch &)geometry;
     if (patch.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty PlanarPatch.");
         return false;

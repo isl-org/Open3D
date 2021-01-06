@@ -26,9 +26,9 @@
 
 #include "open3d/visualization/shader/NormalShader.h"
 
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/visualization/shader/Shader.h"
 
 namespace open3d {
@@ -245,14 +245,14 @@ bool NormalShaderForPlanarPatch::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::PlanarPatch) {
+        geometry::Geometry::GeometryType::PlanarPatch) {
         PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
         return false;
     }
     // if (option.mesh_show_back_face_) {
     //     glDisable(GL_CULL_FACE);
     // } else {
-        // glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     // }
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GLenum(option.GetGLDepthFunc()));
@@ -261,7 +261,7 @@ bool NormalShaderForPlanarPatch::PrepareRendering(
     //     glEnable(GL_POLYGON_OFFSET_FILL);
     //     glPolygonOffset(1.0, 1.0);
     // } else {
-        glDisable(GL_POLYGON_OFFSET_FILL);
+    glDisable(GL_POLYGON_OFFSET_FILL);
     // }
     return true;
 }
@@ -273,7 +273,7 @@ bool NormalShaderForPlanarPatch::PrepareBinding(
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::PlanarPatch) {
+        geometry::Geometry::GeometryType::PlanarPatch) {
         PrintShaderWarning("Rendering type is not geometry::PlanarPatch.");
         return false;
     }
