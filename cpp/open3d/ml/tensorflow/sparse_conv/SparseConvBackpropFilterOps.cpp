@@ -35,18 +35,19 @@ using namespace tensorflow;
 REGISTER_OP("Open3DSparseConvBackpropFilter")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
+        .Attr("TKernelIndex: {uint8, int16}")
         .Attr("normalize: bool = false")
         .Attr("max_temp_mem_MB: int = 64")
         .Input("filters: TReal")       // [depth, height, width, in_ch, out_ch]
         .Input("inp_features: TReal")  // [num_points_in, in_ch]
-        .Input("inp_importance: TReal")          // [num_points_in]
-        .Input("neighbors_index: TIndex")        // [?]
-        .Input("neighbors_kernel_index: int16")  // [?]
-        .Input("neighbors_importance: TReal")    // [?]
-        .Input("neighbors_row_splits: int64")    // [num_points_out]
-        .Input("out_features_gradient: TReal")   // [num_points_out, out_ch]
-        .Output("filter_backprop : TReal")  // [depth, height, width, in_ch,
-                                            // out_ch]
+        .Input("inp_importance: TReal")                 // [num_points_in]
+        .Input("neighbors_index: TIndex")               // [?]
+        .Input("neighbors_kernel_index: TKernelIndex")  // [?]
+        .Input("neighbors_importance: TReal")           // [?]
+        .Input("neighbors_row_splits: int64")           // [num_points_out]
+        .Input("out_features_gradient: TReal")  // [num_points_out, out_ch]
+        .Output("filter_backprop : TReal")      // [depth, height, width, in_ch,
+                                                // out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             using namespace open3d::ml::op_util;

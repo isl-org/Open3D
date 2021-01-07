@@ -34,8 +34,10 @@ namespace impl {
 /// Copies and transforms the features to a column, which can be multiplied
 /// with the filter matrix.
 ///
-/// \tparam TReal    Type for positions and features.
-/// \tparam TIndex    Type for addressing neighbors.
+/// \tparam TReal          Type for positions and features.
+/// \tparam TIndex         Type for addressing neighbors.
+/// \tparam TKernelIndex   Type for addressing the spatial dimension in a
+///                        kernel.
 ///
 /// \param columns    Output array with shape
 ///        [num_out, spatial filter dims, in_channels].
@@ -80,7 +82,7 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void FillColumn(const cudaStream_t& stream,
                 TReal* columns,
                 int in_channels,
@@ -92,13 +94,15 @@ void FillColumn(const cudaStream_t& stream,
                 const TReal* const __restrict__ inp_importance,
                 size_t neighbors_index_size,
                 const TIndex* const __restrict__ neighbors_index,
-                const int16_t* const __restrict__ neighbors_kernel_index,
+                const TKernelIndex* const __restrict__ neighbors_kernel_index,
                 const TReal* const __restrict__ neighbors_importance,
                 const int64_t* const __restrict__ neighbors_row_splits,
                 const int num_kernel_elements,
                 bool normalize);
 
-template <class TReal, class TIndex>
+/// Similar as FillColumn but used in the transpose convolution to create
+/// the patch matrix.
+template <class TReal, class TIndex, class TKernelIndex>
 void FillColumnTranspose(
         const cudaStream_t& stream,
         TReal* columns,
@@ -112,7 +116,7 @@ void FillColumnTranspose(
         const int64_t* const __restrict__ inp_neighbors_prefix_sum,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const int16_t* const __restrict__ neighbors_kernel_index,
+        const TKernelIndex* const __restrict__ neighbors_kernel_index,
         const TReal* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const int num_kernel_elements,

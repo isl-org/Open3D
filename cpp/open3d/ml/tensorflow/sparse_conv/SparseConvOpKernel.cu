@@ -29,15 +29,16 @@
 #include "open3d/ml/Helper.h"
 #include "open3d/ml/impl/sparse_conv/SparseConv.cuh"
 
+using namespace open3d::ml;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 class SparseConvOpKernelCUDA : public SparseConvOpKernel<TIndex> {
 public:
     explicit SparseConvOpKernelCUDA(OpKernelConstruction* construction)
         : SparseConvOpKernel<TIndex>(construction) {
-        texture_alignment = open3d::GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
@@ -59,7 +60,7 @@ public:
         size_t max_temp_size = 0;
 
         // determine temp_size
-        SparseConvComputeFeaturesCUDA<TReal, TIndex>(
+        SparseConvComputeFeaturesCUDA<TReal, TIndex, TKernelIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
                 texture_alignment, out_features.flat<TReal>().data(),
                 filter_dims, filter.flat<TReal>().data(),
@@ -69,7 +70,8 @@ public:
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
-                (int16_t*)neighbors_kernel_index.flat<int16_t>().data(),
+                (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
+                        .data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TReal>().data()
                         : nullptr,
@@ -89,7 +91,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the operation
-        SparseConvComputeFeaturesCUDA<TReal, TIndex>(
+        SparseConvComputeFeaturesCUDA<TReal, TIndex, TKernelIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
                 texture_alignment, out_features.flat<TReal>().data(),
                 filter_dims, filter.flat<TReal>().data(),
@@ -99,7 +101,8 @@ public:
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
-                (int16_t*)neighbors_kernel_index.flat<int16_t>().data(),
+                (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
+                        .data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TReal>().data()
                         : nullptr,
@@ -111,11 +114,14 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DSparseConv")                      \
-                                    .Device(DEVICE_GPU)                   \
-                                    .TypeConstraint<type>("TReal")        \
-                                    .TypeConstraint<indextype>("TIndex"), \
-                            SparseConvOpKernelCUDA<type, indextype>);
-REG_KB(float, int32)
+#define REG_KB(type, indextype, kernelindextype)                      \
+    REGISTER_KERNEL_BUILDER(                                          \
+            Name("Open3DSparseConv")                                  \
+                    .Device(DEVICE_GPU)                               \
+                    .TypeConstraint<type>("TReal")                    \
+                    .TypeConstraint<indextype>("TIndex")              \
+                    .TypeConstraint<kernelindextype>("TKernelIndex"), \
+            SparseConvOpKernelCUDA<type, indextype, kernelindextype>);
+REG_KB(float, int32, int16)
+REG_KB(float, int32, uint8_t)
 #undef REG_KB

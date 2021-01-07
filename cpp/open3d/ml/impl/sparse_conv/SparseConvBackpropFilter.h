@@ -34,7 +34,7 @@ namespace ml {
 namespace impl {
 
 // Implementation of SparseConvBackropFilterCPU
-template <class TReal, class TIndex, bool POINT_IMPORTANCE>
+template <class TReal, class TIndex, class TKernelIndex, bool POINT_IMPORTANCE>
 void _SparseConvBackropFilterCPU(TReal* filter_backprop,
                                  const std::vector<int>& filter_dims,
                                  size_t num_out,
@@ -42,7 +42,7 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
                                  const TReal* inp_features,
                                  const TReal* inp_importance,
                                  const TIndex* neighbors_index,
-                                 const int16_t* neighbors_kernel_index,
+                                 const TKernelIndex* neighbors_kernel_index,
                                  const TReal* neighbors_importance,
                                  const int64_t* neighbors_row_splits,
                                  const TReal* out_features_gradient,
@@ -190,7 +190,7 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
 ///        by the number of points (neighbors_importance is null) or by the sum
 ///        of the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvBackpropFilterCPU(TReal* filter_backprop,
                                  const std::vector<int>& filter_dims,
                                  size_t num_out,
@@ -198,7 +198,7 @@ void SparseConvBackpropFilterCPU(TReal* filter_backprop,
                                  const TReal* inp_features,
                                  const TReal* inp_importance,
                                  const TIndex* neighbors_index,
-                                 const int16_t* neighbors_kernel_index,
+                                 const TKernelIndex* neighbors_kernel_index,
                                  const TReal* neighbors_importance,
                                  const int64_t* neighbors_row_splits,
                                  const TReal* out_features_gradient,
@@ -211,10 +211,10 @@ void SparseConvBackpropFilterCPU(TReal* filter_backprop,
             neighbors_importance, neighbors_row_splits, out_features_gradient, \
             normalize
 
-#define CALL_TEMPLATE(HAS_IMPORTANCE)                               \
-    if (HAS_IMPORTANCE == has_importance)                           \
-        _SparseConvBackropFilterCPU<TReal, TIndex, HAS_IMPORTANCE>( \
-                FN_PARAMETERS);
+#define CALL_TEMPLATE(HAS_IMPORTANCE)                            \
+    if (HAS_IMPORTANCE == has_importance)                        \
+        _SparseConvBackropFilterCPU<TReal, TIndex, TKernelIndex, \
+                                    HAS_IMPORTANCE>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \
     CALL_TEMPLATE(true) \

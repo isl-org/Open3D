@@ -30,6 +30,7 @@
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
 
+#include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h"
 #include "open3d/utility/Helper.h"
@@ -108,7 +109,7 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvTransposeBackpropFilterCUDA(
         const cudaStream_t& stream,
         void* temp,
@@ -125,7 +126,7 @@ void SparseConvTransposeBackpropFilterCUDA(
         const int64_t* inp_neighbors_row_splits,
         size_t neighbors_index_size,
         const TIndex* neighbors_index,
-        const int16_t* neighbors_kernel_index,
+        const TKernelIndex* neighbors_kernel_index,
         const TReal* neighbors_importance,
         const int64_t* neighbors_row_splits,
         const TReal* out_features_gradient,

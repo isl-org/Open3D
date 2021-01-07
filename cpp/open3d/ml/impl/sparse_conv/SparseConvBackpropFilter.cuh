@@ -96,7 +96,7 @@ namespace impl {
 ///        by the number of points (neighbors_importance is null) or by the sum
 ///        of the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
                                   void* temp,
                                   size_t& temp_size,
@@ -110,7 +110,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
                                   const TReal* inp_importance,
                                   size_t neighbors_index_size,
                                   const TIndex* neighbors_index,
-                                  const int16_t* neighbors_kernel_index,
+                                  const TKernelIndex* neighbors_kernel_index,
                                   const TReal* neighbors_importance,
                                   const int64_t* neighbors_row_splits,
                                   const TReal* out_features_gradient,
@@ -188,7 +188,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run);
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumn<TReal, TIndex>(
+        FillColumn<TReal, TIndex, TKernelIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,

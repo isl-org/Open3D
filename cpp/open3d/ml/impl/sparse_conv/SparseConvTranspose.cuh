@@ -30,6 +30,7 @@
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
 
+#include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h"
 #include "open3d/utility/Helper.h"
@@ -40,7 +41,7 @@ namespace open3d {
 namespace ml {
 namespace impl {
 
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvTransposeComputeFeaturesCUDA(
         const cudaStream_t& stream,
         void* temp,
@@ -58,7 +59,7 @@ void SparseConvTransposeComputeFeaturesCUDA(
         const int64_t* inp_neighbors_prefix_sum,
         size_t neighbors_index_size,
         const TIndex* neighbors_index,
-        const int16_t* neighbors_kernel_index,
+        const TKernelIndex* neighbors_kernel_index,
         const TReal* neighbors_importance,
         const int64_t* neighbors_row_splits,
         bool normalize) {
@@ -133,7 +134,7 @@ void SparseConvTransposeComputeFeaturesCUDA(
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run);
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumnTranspose<TReal, TIndex>(
+        FillColumnTranspose<TReal, TIndex, TKernelIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_neighbors_importance_sum,
                 inp_neighbors_prefix_sum, neighbors_index_size, neighbors_index,

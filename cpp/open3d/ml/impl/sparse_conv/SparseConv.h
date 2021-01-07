@@ -33,7 +33,7 @@ namespace impl {
 
 /// Implementation of SparseConvComputeFeatures with template parameters for
 /// configuration.
-template <class TReal, class TIndex, bool POINT_IMPORTANCE>
+template <class TReal, class TIndex, class TKernelIndex, bool POINT_IMPORTANCE>
 void _SparseConvComputeFeaturesCPU(TReal* out_features,
                                    const std::vector<int>& filter_dims,
                                    const TReal* filter,
@@ -43,7 +43,7 @@ void _SparseConvComputeFeaturesCPU(TReal* out_features,
                                    const TReal* inp_importance,
                                    size_t neighbors_index_size,
                                    const TIndex* neighbors_index,
-                                   const int16_t* neighbors_kernel_index,
+                                   const TKernelIndex* neighbors_kernel_index,
                                    const TReal* neighbors_importance,
                                    const int64_t* neighbors_row_splits,
                                    bool normalize) {
@@ -161,7 +161,7 @@ void _SparseConvComputeFeaturesCPU(TReal* out_features,
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvComputeFeaturesCPU(TReal* out_features,
                                   const std::vector<int>& filter_dims,
                                   const TReal* filter,
@@ -171,7 +171,7 @@ void SparseConvComputeFeaturesCPU(TReal* out_features,
                                   const TReal* inp_importance,
                                   size_t neighbors_index_size,
                                   const TIndex* neighbors_index,
-                                  const int16_t* neighbors_kernel_index,
+                                  const TKernelIndex* neighbors_kernel_index,
                                   const TReal* neighbors_importance,
                                   const int64_t* neighbors_row_splits,
                                   bool normalize) {
@@ -184,10 +184,10 @@ void SparseConvComputeFeaturesCPU(TReal* out_features,
             neighbors_kernel_index, neighbors_importance,              \
             neighbors_row_splits, normalize
 
-#define CALL_TEMPLATE(HAS_IMPORTANCE)                                 \
-    if (HAS_IMPORTANCE == has_importance)                             \
-        _SparseConvComputeFeaturesCPU<TReal, TIndex, HAS_IMPORTANCE>( \
-                FN_PARAMETERS);
+#define CALL_TEMPLATE(HAS_IMPORTANCE)                              \
+    if (HAS_IMPORTANCE == has_importance)                          \
+        _SparseConvComputeFeaturesCPU<TReal, TIndex, TKernelIndex, \
+                                      HAS_IMPORTANCE>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \
     CALL_TEMPLATE(true) \

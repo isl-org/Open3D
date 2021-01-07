@@ -99,7 +99,7 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
                                    void* temp,
                                    size_t& temp_size,
@@ -114,7 +114,7 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
                                    const TReal* inp_importance,
                                    size_t neighbors_index_size,
                                    const TIndex* neighbors_index,
-                                   const int16_t* neighbors_kernel_index,
+                                   const TKernelIndex* neighbors_kernel_index,
                                    const TReal* neighbors_importance,
                                    const int64_t* neighbors_row_splits,
                                    bool normalize) {

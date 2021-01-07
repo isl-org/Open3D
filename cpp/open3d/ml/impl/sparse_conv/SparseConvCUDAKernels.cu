@@ -34,7 +34,7 @@ namespace ml {
 namespace impl {
 
 /// Kernel for FillColumn
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 __global__ void FillColumnKernel(
         TReal* columns,
         int in_channels,
@@ -46,7 +46,7 @@ __global__ void FillColumnKernel(
         const TReal* const __restrict__ inp_importance,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const int16_t* const __restrict__ neighbors_kernel_index,
+        const TKernelIndex* const __restrict__ neighbors_kernel_index,
         const TReal* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const int num_kernel_elements,
@@ -98,7 +98,7 @@ __global__ void FillColumnKernel(
     }  // for n
 }
 
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void FillColumn(const cudaStream_t& stream,
                 TReal* columns,
                 int in_channels,
@@ -110,7 +110,7 @@ void FillColumn(const cudaStream_t& stream,
                 const TReal* const __restrict__ inp_importance,
                 size_t neighbors_index_size,
                 const TIndex* const __restrict__ neighbors_index,
-                const int16_t* const __restrict__ neighbors_kernel_index,
+                const TKernelIndex* const __restrict__ neighbors_kernel_index,
                 const TReal* const __restrict__ neighbors_importance,
                 const int64_t* const __restrict__ neighbors_row_splits,
                 const int num_kernel_elements,
@@ -145,7 +145,7 @@ void FillColumn(const cudaStream_t& stream,
 #undef FN_PARAMETERS
 }
 
-template void FillColumn<float, int32_t>(
+template void FillColumn<float, int32_t, int16_t>(
         const cudaStream_t& stream,
         float* columns,
         int in_channels,
@@ -163,7 +163,25 @@ template void FillColumn<float, int32_t>(
         const int num_kernel_elements,
         bool normalize);
 
-template <class TReal, class TIndex>
+template void FillColumn<float, int32_t, int8_t>(
+        const cudaStream_t& stream,
+        float* columns,
+        int in_channels,
+        int32_t begin_idx,
+        int32_t end_idx,
+        int32_t num_out,
+        int32_t num_inp,
+        const float* const __restrict__ inp_features,
+        const float* const __restrict__ inp_importance,
+        size_t neighbors_index_size,
+        const int32_t* const __restrict__ neighbors_index,
+        const int8_t* const __restrict__ neighbors_kernel_index,
+        const float* const __restrict__ neighbors_importance,
+        const int64_t* const __restrict__ neighbors_row_splits,
+        const int num_kernel_elements,
+        bool normalize);
+
+template <class TReal, class TIndex, class TKernelIndex>
 __global__ void FillColumnTransposeKernel(
         TReal* columns,
         int in_channels,
@@ -174,7 +192,7 @@ __global__ void FillColumnTransposeKernel(
         const TReal* const __restrict__ inp_features,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const int16_t* const __restrict__ neighbors_kernel_index,
+        const TKernelIndex* const __restrict__ neighbors_kernel_index,
         const TReal* const __restrict__ inp_neighbors_importance_sum,
         const int64_t* const __restrict__ inp_neighbors_prefix_sum,
         const TReal* const __restrict__ neighbors_importance,
@@ -225,7 +243,7 @@ __global__ void FillColumnTransposeKernel(
     }  // for n
 }
 
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void FillColumnTranspose(
         const cudaStream_t& stream,
         TReal* columns,
@@ -239,7 +257,7 @@ void FillColumnTranspose(
         const int64_t* const __restrict__ inp_neighbors_prefix_sum,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const int16_t* const __restrict__ neighbors_kernel_index,
+        const TKernelIndex* const __restrict__ neighbors_kernel_index,
         const TReal* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const int num_kernel_elements,
@@ -276,7 +294,7 @@ void FillColumnTranspose(
 #undef FN_PARAMETERS
 }
 
-template void FillColumnTranspose<float, int32_t>(
+template void FillColumnTranspose<float, int32_t, int16_t>(
         const cudaStream_t& stream,
         float* columns,
         int in_channels,
@@ -290,6 +308,25 @@ template void FillColumnTranspose<float, int32_t>(
         size_t neighbors_index_size,
         const int32_t* const __restrict__ neighbors_index,
         const int16_t* const __restrict__ neighbors_kernel_index,
+        const float* const __restrict__ neighbors_importance,
+        const int64_t* const __restrict__ neighbors_row_splits,
+        const int num_kernel_elements,
+        bool normalize);
+
+template void FillColumnTranspose<float, int32_t, int8_t>(
+        const cudaStream_t& stream,
+        float* columns,
+        int in_channels,
+        int32_t begin_idx,
+        int32_t end_idx,
+        int32_t num_out,
+        int32_t num_inp,
+        const float* const __restrict__ inp_features,
+        const float* const __restrict__ inp_neighbors_importance_sum,
+        const int64_t* const __restrict__ inp_neighbors_prefix_sum,
+        size_t neighbors_index_size,
+        const int32_t* const __restrict__ neighbors_index,
+        const int8_t* const __restrict__ neighbors_kernel_index,
         const float* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const int num_kernel_elements,

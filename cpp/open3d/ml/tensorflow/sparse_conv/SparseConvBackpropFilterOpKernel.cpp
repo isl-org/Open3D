@@ -31,7 +31,7 @@ using namespace open3d;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 class SparseConvBackpropFilterOpKernelCPU
     : public SparseConvBackpropFilterOpKernel<TIndex> {
 public:
@@ -60,7 +60,8 @@ public:
                 point_importances ? inp_importance.flat<TReal>().data()
                                   : nullptr,
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
-                (int16_t*)neighbors_kernel_index.flat<int16_t>().data(),
+                (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
+                        .data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TReal>().data()
                         : nullptr,
@@ -69,12 +70,15 @@ public:
     }
 };
 
-#define REG_KB(type, indextype)                           \
-    REGISTER_KERNEL_BUILDER(                              \
-            Name("Open3DSparseConvBackpropFilter")        \
-                    .Device(DEVICE_CPU)                   \
-                    .TypeConstraint<type>("TReal")        \
-                    .TypeConstraint<indextype>("TIndex"), \
-            SparseConvBackpropFilterOpKernelCPU<type, indextype>);
-REG_KB(float, int32)
+#define REG_KB(type, indextype, kernelindextype)                      \
+    REGISTER_KERNEL_BUILDER(                                          \
+            Name("Open3DSparseConvBackpropFilter")                    \
+                    .Device(DEVICE_CPU)                               \
+                    .TypeConstraint<type>("TReal")                    \
+                    .TypeConstraint<indextype>("TIndex")              \
+                    .TypeConstraint<kernelindextype>("TKernelIndex"), \
+            SparseConvBackpropFilterOpKernelCPU<type, indextype,      \
+                                                kernelindextype>);
+REG_KB(float, int32, int16_t)
+REG_KB(float, int32, uint8_t)
 #undef REG_KB

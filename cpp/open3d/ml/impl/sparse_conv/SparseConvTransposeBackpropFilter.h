@@ -35,7 +35,7 @@ namespace impl {
 
 /// Implementation of SparseConvTransposeBackpropFilterCPU with template
 /// parameters for configuration.
-template <class TReal, class TIndex, bool NORMALIZE>
+template <class TReal, class TIndex, class TKernelIndex, bool NORMALIZE>
 void _SparseConvTransposeBackpropFilterCPU(
         TReal* filter_backprop,
         const std::vector<int>& filter_dims,
@@ -46,7 +46,7 @@ void _SparseConvTransposeBackpropFilterCPU(
         const TReal* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbors_index,
-        const int16_t* neighbors_kernel_index,
+        const TKernelIndex* neighbors_kernel_index,
         const TReal* neighbors_importance,
         const int64_t* neighbors_row_splits,
         const TReal* out_features_gradient) {
@@ -204,7 +204,7 @@ void _SparseConvTransposeBackpropFilterCPU(
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvTransposeBackpropFilterCPU(
         TReal* filter_backprop,
         const std::vector<int>& filter_dims,
@@ -215,7 +215,7 @@ void SparseConvTransposeBackpropFilterCPU(
         const TReal* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbors_index,
-        const int16_t* neighbors_kernel_index,
+        const TKernelIndex* neighbors_kernel_index,
         const TReal* neighbors_importance,
         const int64_t* neighbors_row_splits,
         const TReal* out_features_gradient,
@@ -226,10 +226,10 @@ void SparseConvTransposeBackpropFilterCPU(
             inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
             neighbors_importance, neighbors_row_splits, out_features_gradient
 
-#define CALL_TEMPLATE(NORMALIZE)                                         \
-    if (NORMALIZE == normalize)                                          \
-        _SparseConvTransposeBackpropFilterCPU<TReal, TIndex, NORMALIZE>( \
-                FN_PARAMETERS);
+#define CALL_TEMPLATE(NORMALIZE)                                           \
+    if (NORMALIZE == normalize)                                            \
+        _SparseConvTransposeBackpropFilterCPU<TReal, TIndex, TKernelIndex, \
+                                              NORMALIZE>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \
     CALL_TEMPLATE(true) \

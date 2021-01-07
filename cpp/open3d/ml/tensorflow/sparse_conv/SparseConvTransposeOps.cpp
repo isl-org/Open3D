@@ -35,6 +35,7 @@ using namespace tensorflow;
 REGISTER_OP("Open3DSparseConvTranspose")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
+        .Attr("TKernelIndex: {uint8, int16}")
         .Attr("normalize: bool = false")
         .Attr("max_temp_mem_MB: int = 64")
         .Input("filters: TReal")  // [depth, height, width, in_ch, out_ch]
@@ -44,9 +45,9 @@ REGISTER_OP("Open3DSparseConvTranspose")
         .Input("inp_neighbors_importance_sum: TReal")  // [num_points_in]
         .Input("inp_neighbors_row_splits: int64")      // [num_points_in+1]
         .Input("neighbors_index: TIndex")              // [?]
-        .Input("neighbors_kernel_index: int16")        // [?]
-        .Input("neighbors_importance: TReal")          // [?]
-        .Input("neighbors_row_splits: int64")          // [num_points_out+1]
+        .Input("neighbors_kernel_index: TKernelIndex")  // [?]
+        .Input("neighbors_importance: TReal")           // [?]
+        .Input("neighbors_row_splits: int64")           // [num_points_out+1]
         .Output("out_features : TReal")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;

@@ -33,7 +33,7 @@ namespace impl {
 
 /// Implementation of SparseConvTransposeComputeFeatures with template
 /// parameters for configuration.
-template <class TReal, class TIndex, bool NORMALIZE>
+template <class TReal, class TIndex, class TKernelIndex, bool NORMALIZE>
 void _SparseConvTransposeComputeFeaturesCPU(
         TReal* out_features,
         const std::vector<int>& filter_dims,
@@ -45,7 +45,7 @@ void _SparseConvTransposeComputeFeaturesCPU(
         const TReal* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbor_index,
-        const int16_t* neighbors_kernel_index,
+        const TKernelIndex* neighbors_kernel_index,
         const TReal* neighbor_importance,
         const int64_t* neighbors_row_splits) {
     const bool NEIGHBOR_IMPORTANCE = inp_neighbors_importance_sum;
@@ -171,7 +171,7 @@ void _SparseConvTransposeComputeFeaturesCPU(
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 void SparseConvTransposeComputeFeaturesCPU(
         TReal* out_features,
         const std::vector<int>& filter_dims,
@@ -183,7 +183,7 @@ void SparseConvTransposeComputeFeaturesCPU(
         const TReal* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbor_index,
-        const int16_t* neighbors_kernel_index,
+        const TKernelIndex* neighbors_kernel_index,
         const TReal* neighbor_importance,
         const int64_t* neighbors_row_splits,
         bool normalize) {
@@ -193,10 +193,10 @@ void SparseConvTransposeComputeFeaturesCPU(
             inp_neighbors_row_splits, neighbor_index, neighbors_kernel_index, \
             neighbor_importance, neighbors_row_splits
 
-#define CALL_TEMPLATE(NORMALIZE)                                          \
-    if (NORMALIZE == normalize)                                           \
-        _SparseConvTransposeComputeFeaturesCPU<TReal, TIndex, NORMALIZE>( \
-                FN_PARAMETERS);
+#define CALL_TEMPLATE(NORMALIZE)                                            \
+    if (NORMALIZE == normalize)                                             \
+        _SparseConvTransposeComputeFeaturesCPU<TReal, TIndex, TKernelIndex, \
+                                               NORMALIZE>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \
     CALL_TEMPLATE(true) \

@@ -30,10 +30,11 @@
 #include "open3d/ml/impl/sparse_conv/SparseConvTransposeBackpropFilter.cuh"
 
 using namespace open3d;
+using namespace open3d::ml;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TReal, class TIndex, class TKernelIndex>
 class SparseConvTransposeBackpropFilterOpKernelCUDA
     : public SparseConvTransposeBackpropFilterOpKernel<TIndex> {
 public:
@@ -65,7 +66,7 @@ public:
         size_t max_temp_size = 0;
 
         // determine temp_size
-        SparseConvTransposeBackpropFilterCUDA<TReal, TIndex>(
+        SparseConvTransposeBackpropFilterCUDA<TReal, TIndex, TKernelIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
                 texture_alignment, filter_backprop.flat<TReal>().data(),
                 filter_dims, neighbors_row_splits.dim_size(0) - 1,
@@ -79,7 +80,8 @@ public:
                 (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
-                (int16_t*)neighbors_kernel_index.flat<int16_t>().data(),
+                (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
+                        .data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TReal>().data()
                         : nullptr,
@@ -99,7 +101,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the operation
-        SparseConvTransposeBackpropFilterCUDA<TReal, TIndex>(
+        SparseConvTransposeBackpropFilterCUDA<TReal, TIndex, TKernelIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
                 texture_alignment, filter_backprop.flat<TReal>().data(),
                 filter_dims, neighbors_row_splits.dim_size(0) - 1,
@@ -113,7 +115,8 @@ public:
                 (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
-                (int16_t*)neighbors_kernel_index.flat<int16_t>().data(),
+                (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
+                        .data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TReal>().data()
                         : nullptr,
@@ -125,12 +128,15 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype)                             \
-    REGISTER_KERNEL_BUILDER(                                \
-            Name("Open3DSparseConvTransposeBackpropFilter") \
-                    .Device(DEVICE_GPU)                     \
-                    .TypeConstraint<type>("TReal")          \
-                    .TypeConstraint<indextype>("TIndex"),   \
-            SparseConvTransposeBackpropFilterOpKernelCUDA<type, indextype>);
-REG_KB(float, int32)
+#define REG_KB(type, indextype, kernelindextype)                           \
+    REGISTER_KERNEL_BUILDER(                                               \
+            Name("Open3DSparseConvTransposeBackpropFilter")                \
+                    .Device(DEVICE_GPU)                                    \
+                    .TypeConstraint<type>("TReal")                         \
+                    .TypeConstraint<indextype>("TIndex")                   \
+                    .TypeConstraint<kernelindextype>("TKernelIndex"),      \
+            SparseConvTransposeBackpropFilterOpKernelCUDA<type, indextype, \
+                                                          kernelindextype>);
+REG_KB(float, int32, int16_t)
+REG_KB(float, int32, uint8_t)
 #undef REG_KB
