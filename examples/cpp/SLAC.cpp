@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
             utility::ProgramOptionExists(argc, argv, "--debug");
     option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
 
-    t::pipelines::slac::RunSLACOptimizerForFragments(fragment_fnames,
-                                                     *pose_graph, option);
+    t::pipelines::slac::RunRigidOptimizerForFragments(fragment_fnames,
+                                                      *pose_graph, option);
     return 0;
 }

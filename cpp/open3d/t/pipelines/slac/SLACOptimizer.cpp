@@ -179,7 +179,7 @@ std::vector<std::string> PreprocessPointClouds(
 /// correspondences.
 void GetCorrespondencesForPointClouds(
         const std::vector<std::string>& fragment_down_fnames,
-        const open3d::pipelines::registration::PoseGraph& pose_graph,
+        const PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
     // Enumerate pose graph edges
     for (auto& edge : pose_graph.edges_) {
@@ -268,13 +268,12 @@ void InitializeControlGrid(ControlGrid& ctr_grid,
     }
 }
 
-void FillInAlignmentTerm(
-        core::Tensor& AtA,
-        core::Tensor& Atb,
-        ControlGrid& ctr_grid,
-        const std::vector<std::string>& fnames,
-        const open3d::pipelines::registration::PoseGraph& pose_graph,
-        const SLACOptimizerOption& option) {
+void FillInSLACAlignmentTerm(core::Tensor& AtA,
+                             core::Tensor& Atb,
+                             ControlGrid& ctr_grid,
+                             const std::vector<std::string>& fnames,
+                             const PoseGraph& pose_graph,
+                             const SLACOptimizerOption& option) {
     core::Device device(option.device_);
 
     // Enumerate pose graph edges
@@ -315,11 +314,48 @@ void FillInAlignmentTerm(
     }
 }
 
-void FillInRegularizer(core::Tensor& AtA,
-                       core::Tensor& Atb,
-                       ControlGrid& ctr_grid,
-                       const SLACOptimizerOption& option) {
+void FillInSLACRegularizer(core::Tensor& AtA,
+                           core::Tensor& Atb,
+                           ControlGrid& ctr_grid,
+                           const SLACOptimizerOption& option) {
     utility::LogError("Unimplemented.");
+}
+
+void FillInRigidAlignmentTerm(core::Tensor& AtA,
+                              core::Tensor& Atb,
+                              const std::vector<std::string>& fnames,
+                              const PoseGraph& pose_graph,
+                              const SLACOptimizerOption& option) {
+    core::Device device(option.device_);
+
+    // Enumerate pose graph edges
+    for (auto& edge : pose_graph.edges_) {
+        int i = edge.source_node_id_;
+        int j = edge.target_node_id_;
+        utility::LogInfo("edge {} -> {}", i, j);
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
+                                               option.buffer_folder_, i, j);
+        if (!utility::filesystem::FileExists(corres_fname)) {
+            utility::LogError("Correspondence not processed");
+        }
+
+        utility::LogInfo("pcd {}", i);
+        auto pcd_i = io::CreatePointCloudFromFile(fnames[i]);
+        auto tpcd_i = t::geometry::PointCloud::FromLegacyPointCloud(
+                *pcd_i, core::Dtype::Float32, device);
+
+        utility::LogInfo("pcd {}", j);
+        auto pcd_j = io::CreatePointCloudFromFile(fnames[j]);
+        auto tpcd_j = t::geometry::PointCloud::FromLegacyPointCloud(
+                *pcd_j, core::Dtype::Float32, device);
+
+        // auto pose_i = pose_graph.nodes_[i].pose_;
+        // auto pose_j = pose_graph.nodes_[j].pose_;
+        utility::LogInfo("corres {}{}", i, j);
+        auto corres_ij = SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
+
+        // TODO: use parameterization to update normals and points per grid
+    }
 }
 
 core::Tensor Solve(core::Tensor& AtA,
@@ -329,10 +365,9 @@ core::Tensor Solve(core::Tensor& AtA,
     return Atb;
 }
 
-void UpdatePoses(
-        const open3d::pipelines::registration::PoseGraph& fragment_pose_graph,
-        core::Tensor& result,
-        const SLACOptimizerOption& option) {
+void UpdatePoses(const PoseGraph& fragment_pose_graph,
+                 core::Tensor& result,
+                 const SLACOptimizerOption& option) {
     utility::LogError("Unimplemented.");
 }
 
@@ -342,9 +377,9 @@ void UpdateControlGrid(ControlGrid& ctr_grid,
     utility::LogError("Unimplemented.");
 }
 
-ControlGrid RunSLACOptimizerForFragments(
+std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fnames,
-        const open3d::pipelines::registration::PoseGraph& pose_graph,
+        const PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
     core::Device device(option.device_);
     if (!option.buffer_folder_.empty()) {
@@ -360,6 +395,8 @@ ControlGrid RunSLACOptimizerForFragments(
     ControlGrid ctr_grid(3.0 / 8, 1000, device);
     InitializeControlGrid(ctr_grid, fnames_down, option);
 
+    PoseGraph updated_pose_graph;
+
     // Fill-in
     // fragments x 6 (se3) + control_grids x 3 (R^3)
     int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
@@ -368,9 +405,9 @@ ControlGrid RunSLACOptimizerForFragments(
     core::Tensor Atb({num_params, 1}, core::Dtype::Float32, device);
     for (int itr = 0; itr < option.max_iterations_; ++itr) {
         utility::LogInfo("Iteration {}", itr);
-        FillInAlignmentTerm(AtA, Atb, ctr_grid, fnames_down, pose_graph,
-                            option);
-        FillInRegularizer(AtA, Atb, ctr_grid, option);
+        FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down, pose_graph,
+                                option);
+        FillInSLACRegularizer(AtA, Atb, ctr_grid, option);
 
         core::Tensor delta = Solve(AtA, Atb, option);
 
@@ -379,7 +416,38 @@ ControlGrid RunSLACOptimizerForFragments(
 
         utility::LogError("Unimplemented!");
     }
-    return ctr_grid;
+    return std::make_pair(updated_pose_graph, ctr_grid);
+}
+
+PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
+                                        const PoseGraph& pose_graph,
+                                        const SLACOptimizerOption& option) {
+    core::Device device(option.device_);
+    if (!option.buffer_folder_.empty()) {
+        utility::filesystem::MakeDirectory(option.buffer_folder_);
+    }
+
+    // First preprocess the point cloud with downsampling and normal estimation.
+    auto fnames_down = PreprocessPointClouds(fnames, option);
+    // Then obtain the correspondences given the pose graph
+    GetCorrespondencesForPointClouds(fnames_down, pose_graph, option);
+
+    // Fill-in
+    // fragments x 6 (se3)
+    int64_t num_params = fnames_down.size() * 6;
+    utility::LogInfo("Initializing {}^2 matrices", num_params);
+    core::Tensor AtA({num_params, num_params}, core::Dtype::Float32, device);
+    core::Tensor Atb({num_params, 1}, core::Dtype::Float32, device);
+    for (int itr = 0; itr < option.max_iterations_; ++itr) {
+        utility::LogInfo("Iteration {}", itr);
+        FillInRigidAlignmentTerm(AtA, Atb, fnames_down, pose_graph, option);
+
+        core::Tensor delta = Solve(AtA, Atb, option);
+        UpdatePoses(pose_graph, delta, option);
+
+        utility::LogError("Unimplemented!");
+    }
+    return pose_graph;
 }
 
 }  // namespace slac

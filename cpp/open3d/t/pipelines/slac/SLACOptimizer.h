@@ -35,6 +35,7 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
+using PoseGraph = open3d::pipelines::registration::PoseGraph;
 /// Simultaneous Localization and Calibration: Self-Calibration of Consumer
 /// Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
 struct SLACOptimizerOption {
@@ -48,15 +49,14 @@ struct SLACOptimizerOption {
 
 /// Estimate a shared control grid for all fragments for scene reconstruction,
 /// implemented in https://github.com/qianyizh/ElasticReconstruction.
-ControlGrid RunSLACOptimizerForFragments(
+std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
-        const open3d::pipelines::registration::PoseGraph& fragment_pose_graph,
+        const PoseGraph& fragment_pose_graph,
         const SLACOptimizerOption& option);
 
-/// Estimate a shared control grid for depth images for fragment reconstruction.
-ControlGrid RunSLACOptimizerForRGBDImages(
-        const std::vector<std::string>& rgbd_fnames,
-        const open3d::pipelines::registration::PoseGraph& rgbd_pose_graph,
+PoseGraph RunRigidOptimizerForFragments(
+        const std::vector<std::string>& fragment_fnames,
+        const PoseGraph& fragment_pose_graph,
         const SLACOptimizerOption& option);
 
 }  // namespace slac
