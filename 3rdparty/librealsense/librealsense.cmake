@@ -6,23 +6,25 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
     GIT_TAG v2.40.0 # 18 Nov 2020
     UPDATE_COMMAND ""
-    # Patch for libusb static build failure
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
-        <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
+    # Patch for libusb static build failure on Linux
+    PATCH_COMMAND  ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
+    <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
+    # Patch for libstdc++ regex bug
+    COMMAND git -C <SOURCE_DIR> apply
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-2837.patch
     CMAKE_ARGS
         -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-        -D BUILD_SHARED_LIBS=ON
+        -D BUILD_SHARED_LIBS=OFF
         -D BUILD_EXAMPLES=OFF
         -D BUILD_UNIT_TESTS=OFF
         -D BUILD_GLSL_EXTENSIONS=OFF
         -D BUILD_GRAPHICAL_EXAMPLES=OFF
-        -D BUILD_PYTHON_BINDINGS=ON
+        -D BUILD_PYTHON_BINDINGS=OFF
         -D BUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
-        -D PYBIND11_PYTHON_VERSION=3.6
         -D FORCE_RSUSB_BACKEND=ON      # https://github.com/IntelRealSense/librealsense/wiki/Release-Notes#release-2400
         -D USE_EXTERNAL_USB=ON
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
