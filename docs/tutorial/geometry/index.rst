@@ -15,6 +15,7 @@ Geometry
     file_io
     pointcloud_outlier_removal
     voxelization
+    octree
     surface_reconstruction
     transformation
     mesh_deformation

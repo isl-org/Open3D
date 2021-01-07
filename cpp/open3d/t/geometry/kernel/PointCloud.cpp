@@ -24,22 +24,55 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/kernel/PointCloud.h"
 
+#include <vector>
+
+#include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 namespace kernel {
+namespace pointcloud {
+void Unproject(const core::Tensor& depth,
+               core::Tensor& points,
+               const core::Tensor& intrinsics,
+               const core::Tensor& extrinsics,
+               float depth_scale,
+               float depth_max,
+               int64_t stride) {
+    core::Device device = depth.GetDevice();
 
-Tensor NonZero(const Tensor& src);
+    core::Tensor intrinsics_d = intrinsics;
+    if (intrinsics.GetDevice() != device) {
+        intrinsics_d = intrinsics.Copy(device);
+    }
 
-Tensor NonZeroCPU(const Tensor& src);
+    core::Tensor extrinsics_d = extrinsics;
+    if (extrinsics.GetDevice() != device) {
+        extrinsics_d = extrinsics.Copy(device);
+    }
 
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        UnprojectCPU(depth, points, intrinsics_d, extrinsics_d, depth_scale,
+                     depth_max, stride);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-Tensor NonZeroCUDA(const Tensor& src);
+        UnprojectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
+                      depth_max, stride);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
-
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+}  // namespace pointcloud
 }  // namespace kernel
-}  // namespace core
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d
