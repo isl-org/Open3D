@@ -256,7 +256,7 @@ Tensor Hashmap::GetKeyTensor() {
     int64_t capacity = GetCapacity();
     SizeVector key_shape = element_shape_key_;
     key_shape.insert(key_shape.begin(), capacity);
-    return Tensor(key_shape, Tensor::DefaultStrides(key_shape),
+    return Tensor(key_shape, shape_util::DefaultStrides(key_shape),
                   GetKeyBuffer().GetDataPtr(), dtype_key_,
                   GetKeyBuffer().GetBlob());
 }
@@ -265,7 +265,7 @@ Tensor Hashmap::GetValueTensor() {
     int64_t capacity = GetCapacity();
     SizeVector value_shape = element_shape_value_;
     value_shape.insert(value_shape.begin(), capacity);
-    return Tensor(value_shape, Tensor::DefaultStrides(value_shape),
+    return Tensor(value_shape, shape_util::DefaultStrides(value_shape),
                   GetValueBuffer().GetDataPtr(), dtype_value_,
                   GetValueBuffer().GetBlob());
 }

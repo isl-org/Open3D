@@ -55,7 +55,7 @@ public:
            Dtype dtype,
            const Device& device = Device("CPU:0"))
         : shape_(shape),
-          strides_(DefaultStrides(shape)),
+          strides_(shape_util::DefaultStrides(shape)),
           dtype_(dtype),
           blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
                                        device)) {
@@ -1038,7 +1038,7 @@ public:
     /// Returns True if the underlying memory buffer is contiguous. A contiguous
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
-        return DefaultStrides(shape_) == strides_;
+        return shape_util::DefaultStrides(shape_) == strides_;
     };
 
     /// Returns a contiguous Tensor containing the same data in the same device.
@@ -1113,28 +1113,17 @@ public:
         }
     }
 
-    static SizeVector DefaultStrides(const SizeVector& shape);
-
-    /// 1. Separate `oldshape` into chunks of dimensions, where the
-    /// dimensions
-    ///    are ``contiguous'' in each chunk, i.e.,
-    ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
-    /// 2. `newshape` must be able to be separated into same number of
-    /// chunks as
-    ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching ``numel'', i.e., number of subspaces, as the
-    ///    corresponding chunk of `oldshape`.
-    /// Ref: aten/src/ATen/TensorUtils.cpp
-    static std::pair<bool, SizeVector> ComputeNewStrides(
-            const SizeVector& old_shape,
-            const SizeVector& old_strides,
-            const SizeVector& new_shape);
-
     /// Convert the Tensor to DLManagedTensor.
     DLManagedTensor* ToDLPack() const;
 
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
+
+    /// Save tensor to numpy's npy format.
+    void Save(const std::string& file_name) const;
+
+    /// Load tensor from numpy's npy format.
+    static Tensor Load(const std::string& file_name);
 
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape,
