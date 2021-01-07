@@ -60,6 +60,10 @@ set(TF_OPS_SOURCES
 )
 
 set(TF_OPS_CUDA_SOURCES
+    "sparse_conv/SparseConvBackpropFilterOpKernel.cu"
+    "sparse_conv/SparseConvOpKernel.cu"
+    "sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu"
+    "sparse_conv/SparseConvTransposeOpKernel.cu"
     "continuous_conv/ContinuousConvBackpropFilterOpKernel.cu"
     "continuous_conv/ContinuousConvOpKernel.cu"
     "continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cu"
@@ -71,6 +75,7 @@ set(TF_OPS_CUDA_SOURCES
     "misc/VoxelizeOpKernel.cu"
     "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "../impl/sparse_conv/SparseConvCUDAKernels.cu"
     "../contrib/Nms.cu"
 )
 
