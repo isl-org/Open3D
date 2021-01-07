@@ -483,14 +483,28 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
-
-    // We only support scalar type conversion
+    // We only support scalar type conversion.
     if (dtype_.IsObject() || dtype.IsObject()) {
         utility::LogError("Cannot cast type from {} to {}.", dtype_.ToString(),
                           dtype.ToString());
     }
     Tensor dst_tensor(shape_, dtype, GetDevice());
     kernel::Copy(*this, dst_tensor);
+    return dst_tensor;
+}
+
+Tensor Tensor::To(const Device& device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+    Tensor dst_tensor(shape_, dtype_, device);
+    kernel::Copy(*this, dst_tensor);
+    return dst_tensor;
+}
+
+Tensor Tensor::To(const Device& device, Dtype dtype, bool copy) const {
+    Tensor dst_tensor = To(dtype, copy);
+    dst_tensor = dst_tensor.To(device, copy);
     return dst_tensor;
 }
 
