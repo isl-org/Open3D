@@ -173,10 +173,11 @@ private:
                                          double child_size) const {
         Eigen::Vector3d center;
         for (size_t d = 0; d < DIMENSION; d++) {
-            const int32_t signal = (((child_index & (1 << (DIMENSION - d - 1))) >>
-                                 (DIMENSION - d - 1))
-                                << 1) -
-                               1;
+            const int32_t signal =
+                    (((child_index & (1 << (DIMENSION - d - 1))) >>
+                      (DIMENSION - d - 1))
+                     << 1) -
+                    1;
             center(d) = center_(d) + (child_size / 2.) * signal;
         }
         return center;
