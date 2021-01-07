@@ -244,14 +244,7 @@ NumpyArray::NumpyArray(const Tensor& t)
       word_size_(t.GetDtype().ByteSize()),
       fortran_order_(false),
       num_elements_(t.GetShape().NumElements()) {
-    // No copy if already contiguous.
-    Tensor t_contiguous = t.Contiguous();
-    if (t_contiguous.GetDevice().GetType() != Device::DeviceType::CPU) {
-        // TODO: Improve Tensor::To to make this more convenient.
-        t_contiguous = t_contiguous.Copy(Device("CPU:0"));
-    }
-    // Blob memory is shared.
-    blob_ = t_contiguous.GetBlob();
+    blob_ = t.Contiguous().To(Device("CPU:0"), /*copy=*/false).GetBlob();
 }
 
 Dtype NumpyArray::GetDtype() const {

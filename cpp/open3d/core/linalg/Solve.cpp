@@ -86,10 +86,10 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     }
 
     // A and B are modified in-place
-    Tensor A_copy = A.T().Copy(device);
+    Tensor A_copy = A.T().To(device, /*copy=*/true);
     void *A_data = A_copy.GetDataPtr();
 
-    X = B.T().Copy(device);
+    X = B.T().To(device, /*copy=*/true);
     void *B_data = X.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {

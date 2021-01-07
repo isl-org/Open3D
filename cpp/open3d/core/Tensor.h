@@ -463,10 +463,6 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
-    /// Copy Tensor to a specified device.
-    /// The resulting Tensor will be compacted and contiguous.
-    Tensor Copy(const Device& device) const;
-
     /// Copy Tensor to the same device.
     Tensor Clone() const { return To(GetDevice(), /*copy=*/true); }
 

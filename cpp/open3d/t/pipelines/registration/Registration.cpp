@@ -54,12 +54,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
     transformation.AssertShape({4, 4});
     transformation.AssertDtype(dtype);
-    core::Tensor transformation_device;
-    if (transformation.GetDevice() == device) {
-        transformation_device = transformation;
-    } else {
-        transformation_device = transformation.Copy(device);
-    }
+    core::Tensor transformation_device =
+            transformation.To(device, /*copy=*/false);
 
     RegistrationResult result(transformation_device);
     if (max_correspondence_distance <= 0.0) {
@@ -120,12 +116,8 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     }
     transformation.AssertShape({4, 4});
     transformation.AssertDtype(dtype);
-    core::Tensor transformation_device;
-    if (transformation.GetDevice() == device) {
-        transformation_device = transformation;
-    } else {
-        transformation_device = transformation.Copy(device);
-    }
+    core::Tensor transformation_device =
+            transformation.To(device, /*copy=*/false);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
@@ -153,12 +145,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     }
     init.AssertShape({4, 4});
     init.AssertDtype(dtype);
-    core::Tensor transformation_device;
-    if (init.GetDevice() == device) {
-        transformation_device = init;
-    } else {
-        transformation_device = init.Copy(device);
-    }
+    core::Tensor transformation_device = init.To(device, /*copy=*/false);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud source_transformed = source.Copy();

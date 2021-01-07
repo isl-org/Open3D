@@ -39,11 +39,11 @@ static Tensor CastOptionalDtypeDevice(const Tensor& t,
                                       utility::optional<Dtype> dtype,
                                       utility::optional<Device> device) {
     Tensor t_cast = t;
-    if (dtype.has_value() && dtype.value() != t_cast.GetDtype()) {
+    if (dtype.has_value()) {
         t_cast = t_cast.To(dtype.value(), /*copy=*/false);
     }
-    if (device.has_value() && device.value() != t_cast.GetDevice()) {
-        t_cast = t_cast.Copy(device.value());
+    if (device.has_value()) {
+        t_cast = t_cast.To(device.value(), /*copy=*/false);
     }
     return t_cast;
 }

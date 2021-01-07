@@ -207,8 +207,8 @@ Hashmap Hashmap::Copy(const Device& device) {
     Hashmap new_hashmap(GetCapacity(), dtype_key_, dtype_value_,
                         element_shape_key_, element_shape_value_, device);
 
-    Tensor keys = GetKeyTensor().Copy(device);
-    Tensor values = GetValueTensor().Copy(device);
+    Tensor keys = GetKeyTensor().To(device, /*copy=*/true);
+    Tensor values = GetValueTensor().To(device, /*copy=*/true);
 
     core::Tensor active_addrs;
     GetActiveIndices(active_addrs);

@@ -215,9 +215,8 @@ void pybind_core_tensor(py::module& m) {
                    if (dtype.has_value()) {
                        t = t.To(dtype.value(), /*copy=*/false);
                    }
-                   if (device.has_value() &&
-                       device.value() != core::Device("CPU:0")) {
-                       t = t.Copy(device.value());
+                   if (device.has_value()) {
+                       t = t.To(device.value(), /*copy=*/false);
                    }
                    return t;
                }),
@@ -347,11 +346,12 @@ void pybind_core_tensor(py::module& m) {
                             "device_id < {}",
                             device_id, cuda::DeviceCount());
                 }
-                return tensor.Copy(Device(Device::DeviceType::CUDA, device_id));
+                return tensor.To(Device(Device::DeviceType::CUDA, device_id),
+                                 /*copy=*/false);
             },
             "device_id"_a = 0);
     tensor.def("cpu", [](const Tensor& tensor) {
-        return tensor.Copy(Device(Device::DeviceType::CPU, 0));
+        return tensor.To(Device(Device::DeviceType::CPU, 0), /*copy=*/false);
     });
 
     // Buffer I/O for Numpy and DLPack(PyTorch).

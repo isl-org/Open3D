@@ -91,11 +91,7 @@ static core::Tensor EigenVector3xVectorToTensor(
     });
 
     // Copy Tensor to device if necessary.
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        return tensor_cpu;
-    } else {
-        return tensor_cpu.Copy(device);
-    }
+    return tensor_cpu.To(device, /*copy=*/false);
 }
 
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(

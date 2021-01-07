@@ -76,7 +76,7 @@ core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 PointCloud PointCloud::Copy(const core::Device device) const {
     PointCloud pcd(device);
     for (auto &value : point_attr_) {
-        pcd.SetPointAttr(value.first, value.second.Copy(device));
+        pcd.SetPointAttr(value.first, value.second.To(device, /*copy=*/true));
     }
     return pcd;
 }

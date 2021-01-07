@@ -473,12 +473,6 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::Copy(const Device& device) const {
-    Tensor dst_tensor(shape_, dtype_, device);
-    kernel::Copy(*this, dst_tensor);
-    return dst_tensor;
-}
-
 Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
@@ -520,11 +514,9 @@ void Tensor::ShallowCopyFrom(const Tensor& other) {
 
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
-        // Returns a shallow copy of the current Tensor
-        return Tensor(shape_, strides_, data_ptr_, dtype_, blob_);
+        return *this;
     } else {
-        // Compact the tensor to contiguous on the same device
-        return Copy(GetDevice());
+        return To(GetDevice(), /*copy=*/true);
     }
 }
 
@@ -532,7 +524,7 @@ std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
     if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
-        Tensor host_contiguous_tensor = Copy(Device("CPU:0"));
+        Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
         if (shape_.NumElements() == 0) {
@@ -1076,7 +1068,7 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
     Tensor result = kernel::NonZero(*this);
     std::vector<Tensor> results;
     for (int64_t dim = 0; dim < NumDims(); dim++) {
-        results.push_back(result[dim].Copy(GetDevice()));
+        results.push_back(result[dim].Clone());
     }
     return results;
 }
