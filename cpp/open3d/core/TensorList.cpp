@@ -81,7 +81,7 @@ TensorList TensorList::Copy() const {
 void TensorList::CopyFrom(const TensorList& other) {
     *this = other;
     // Copy the full other.internal_tensor_, not just other.AsTensor().
-    internal_tensor_ = other.internal_tensor_.Copy();
+    internal_tensor_ = other.internal_tensor_.Clone();
     // After copy, the resulting tensorlist is always resizable.
     is_resizable_ = true;
 }

@@ -468,7 +468,7 @@ public:
     Tensor Copy(const Device& device) const;
 
     /// Copy Tensor to the same device.
-    Tensor Copy() const { return Copy(GetDevice()); };
+    Tensor Clone() const { return To(GetDevice(), /*copy=*/true); }
 
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);

@@ -133,7 +133,7 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     if (inplace) {
         return t_inplace;
     } else {
-        return t_inplace.Copy();
+        return t_inplace.Clone();
     }
 }
 
@@ -217,7 +217,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
         try {
             Tensor* tensor = handle.cast<Tensor*>();
             if (force_copy) {
-                return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
+                return CastOptionalDtypeDevice(tensor->Clone(), dtype, device);
             } else {
                 return CastOptionalDtypeDevice(*tensor, dtype, device);
             }
