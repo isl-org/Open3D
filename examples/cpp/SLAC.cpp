@@ -64,7 +64,9 @@ int main(int argc, char** argv) {
 
     auto option = t::pipelines::slac::SLACOptimizerOption();
     option.buffer_folder_ = slac_folder;
-    option.visual_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
+    option.correspondence_debug_ =
+            utility::ProgramOptionExists(argc, argv, "--debug");
+    option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
 
     t::pipelines::slac::RunSLACOptimizerForFragments(fragment_fnames,
                                                      *pose_graph, option);

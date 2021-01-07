@@ -108,6 +108,49 @@ struct SLACPairwiseCorrespondence {
     }
 };
 
+void VisualizePCDGridCorres(std::shared_ptr<open3d::geometry::PointCloud>& pcd,
+                            t::geometry::PointCloud& tpcd_param) {
+    // Prepare all ctr grid point cloud for lineset
+    t::geometry::PointCloud tpcd_grid(
+            tpcd_param.GetPointAttr("ctr_grid_positions"));
+    auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_grid.ToLegacyPointCloud());
+
+    // Prepare n x 8 corres for visualization
+    core::Tensor corres = tpcd_param.GetPointAttr("ctr_grid_nb_idx")
+                                  .Copy(core::Device("CPU:0"));
+    std::vector<std::pair<int, int>> corres_lines;
+    for (int64_t i = 0; i < corres.GetLength(); ++i) {
+        for (int k = 0; k < 8; ++k) {
+            std::pair<int, int> pair = {i, corres[i][k].Item<int>()};
+            corres_lines.push_back(pair);
+        }
+    }
+    auto lineset =
+            open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                    *pcd, *pcd_grid, corres_lines);
+
+    core::Tensor corres_interp = tpcd_param.GetPointAttr("ctr_grid_nb_ratio")
+                                         .Copy(core::Device("CPU:0"));
+    for (int64_t i = 0; i < corres.GetLength(); ++i) {
+        for (int k = 0; k < 8; ++k) {
+            float ratio = corres_interp[i][k].Item<float>();
+            Eigen::Vector3d color = Jet(ratio, 0, 0.5);
+            lineset->colors_.push_back(color);
+        }
+    }
+
+    // Prepare nb point cloud for visualization
+    t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
+            {corres.View({-1}).To(core::Dtype::Int64)}));
+    auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_grid_nb.ToLegacyPointCloud());
+    pcd_grid_nb->PaintUniformColor({1, 0, 0});
+
+    visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
+    visualization::DrawGeometries({pcd});
+}
+
 /// Write point clouds after downsampling and normal estimation for
 /// correspondence check.
 std::vector<std::string> PreprocessPointClouds(
@@ -190,18 +233,8 @@ void GetCorrespondencesForPointClouds(
         utility::LogInfo("Edge: {:02d} -> {:02d}, corres {}", i, j,
                          corres.GetLength());
 
-        // For IO debug
-        // auto corres_read =
-        //         SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
-        // utility::LogInfo("written = {}", corres.GetShape());
-        // utility::LogInfo("read = {}",
-        // corres_read.correspondence_.GetShape()); if
-        // (!corres.AllClose(corres_read.correspondence_)) {
-        //     utility::LogError("IO of correspondences mismatch");
-        // }
-
         // For visual debug
-        if (option.visual_debug_) {
+        if (option.correspondence_debug_) {
             pcd_i->Transform(pose_ij);
             visualization::DrawGeometries({pcd_i, pcd_j});
             pcd_i->Transform(pose_ij.inverse());
@@ -222,153 +255,133 @@ void GetCorrespondencesForPointClouds(
 }
 
 void InitializeControlGrid(ControlGrid& ctr_grid,
-                           const std::vector<std::string>& fnames) {
+                           const std::vector<std::string>& fnames,
+                           const SLACOptimizerOption& option) {
+    core::Device device(option.device_);
     for (auto& fname : fnames) {
         utility::LogInfo("Initializing grid for {}", fname);
 
         auto pcd = io::CreatePointCloudFromFile(fname);
         auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd, core::Dtype::Float32);
+                *pcd, core::Dtype::Float32, device);
         ctr_grid.Touch(tpcd);
     }
 }
 
-std::pair<core::Tensor, core::Tensor> FillInControlGrid(
+void FillInAlignmentTerm(
+        core::Tensor& AtA,
+        core::Tensor& Atb,
         ControlGrid& ctr_grid,
         const std::vector<std::string>& fnames,
-        const open3d::pipelines::registration::PoseGraph& rgbd_pose_graph,
+        const open3d::pipelines::registration::PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
-    core::Tensor AtA, Atb;
+    core::Device device(option.device_);
 
-    for (auto& fname : fnames) {
-        utility::LogInfo("Parameterizing {}", fname);
-
-        auto pcd = io::CreatePointCloudFromFile(fname);
-        auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd, core::Dtype::Float32);
-        auto tpcd_param = ctr_grid.Parameterize(tpcd);
-
-        // Prepare all ctr grid point cloud for lineset
-        t::geometry::PointCloud tpcd_grid(
-                tpcd_param.GetPointAttr("ctr_grid_positions"));
-        auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_grid.ToLegacyPointCloud());
-
-        // Prepare n x 8 corres for visualization
-        core::Tensor corres = tpcd_param.GetPointAttr("ctr_grid_nb_idx");
-        std::vector<std::pair<int, int>> corres_lines;
-        for (int64_t i = 0; i < corres.GetLength(); ++i) {
-            for (int k = 0; k < 8; ++k) {
-                std::pair<int, int> pair = {i, corres[i][k].Item<int>()};
-                corres_lines.push_back(pair);
-            }
-        }
-        auto lineset =
-                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
-                        *pcd, *pcd_grid, corres_lines);
-
-        core::Tensor corres_interp =
-                tpcd_param.GetPointAttr("ctr_grid_nb_ratio");
-        for (int64_t i = 0; i < corres.GetLength(); ++i) {
-            for (int k = 0; k < 8; ++k) {
-                float ratio = corres_interp[i][k].Item<float>();
-                Eigen::Vector3d color = Jet(ratio, 0, 0.5);
-                utility::LogInfo("{}: ({} {} {})", ratio, color(0), color(1),
-                                 color(2));
-                lineset->colors_.push_back(color);
-            }
+    // Enumerate pose graph edges
+    for (auto& edge : pose_graph.edges_) {
+        int i = edge.source_node_id_;
+        int j = edge.target_node_id_;
+        utility::LogInfo("edge {} -> {}", i, j);
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
+                                               option.buffer_folder_, i, j);
+        if (!utility::filesystem::FileExists(corres_fname)) {
+            utility::LogError("Correspondence not processed");
         }
 
-        // Prepare nb point cloud for visualization
-        t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
-                {corres.View({-1}).To(core::Dtype::Int64)}));
-        auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_grid_nb.ToLegacyPointCloud());
-        pcd_grid_nb->PaintUniformColor({1, 0, 0});
+        utility::LogInfo("pcd {}", i);
+        auto pcd_i = io::CreatePointCloudFromFile(fnames[i]);
+        auto tpcd_i = t::geometry::PointCloud::FromLegacyPointCloud(
+                *pcd_i, core::Dtype::Float32, device);
+        auto tpcd_param_i = ctr_grid.Parameterize(tpcd_i);
 
-        visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
-        visualization::DrawGeometries({pcd});
+        utility::LogInfo("pcd {}", j);
+        auto pcd_j = io::CreatePointCloudFromFile(fnames[j]);
+        auto tpcd_j = t::geometry::PointCloud::FromLegacyPointCloud(
+                *pcd_j, core::Dtype::Float32, device);
+        auto tpcd_param_j = ctr_grid.Parameterize(tpcd_j);
+
+        // auto pose_i = pose_graph.nodes_[i].pose_;
+        // auto pose_j = pose_graph.nodes_[j].pose_;
+        utility::LogInfo("corres {}{}", i, j);
+        auto corres_ij = SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
+
+        if (option.grid_debug_) {
+            utility::LogInfo("visualizing", j);
+            VisualizePCDGridCorres(pcd_i, tpcd_param_i);
+            VisualizePCDGridCorres(pcd_j, tpcd_param_j);
+        }
+
+        // TODO: use parameterization to update normals and points per grid
     }
-
-    return std::make_pair(AtA, Atb);
 }
 
-std::vector<SLACPairwiseCorrespondence> GetCorrespondencesForRGBDImages(
-        const std::vector<std::string>& rgbd_fnames,
-        const open3d::pipelines::registration::PoseGraph& rgbd_pose_graph) {
+void FillInRegularizer(core::Tensor& AtA,
+                       core::Tensor& Atb,
+                       ControlGrid& ctr_grid,
+                       const SLACOptimizerOption& option) {
     utility::LogError("Unimplemented.");
 }
 
-void FillInAlignmentTerm(core::Tensor& tensor) {
+core::Tensor Solve(core::Tensor& AtA,
+                   core::Tensor& Atb,
+                   const SLACOptimizerOption& option) {
+    utility::LogError("Unimplemented.");
+    return Atb;
+}
+
+void UpdatePoses(
+        const open3d::pipelines::registration::PoseGraph& fragment_pose_graph,
+        core::Tensor& result,
+        const SLACOptimizerOption& option) {
     utility::LogError("Unimplemented.");
 }
 
-void FillInRegularizer(core::Tensor& tensor) {
+void UpdateControlGrid(ControlGrid& ctr_grid,
+                       core::Tensor& result,
+                       const SLACOptimizerOption& option) {
     utility::LogError("Unimplemented.");
 }
 
 ControlGrid RunSLACOptimizerForFragments(
-        const std::vector<std::string>& fragment_fnames,
-        const open3d::pipelines::registration::PoseGraph& fragment_pose_graph,
+        const std::vector<std::string>& fnames,
+        const open3d::pipelines::registration::PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
+    core::Device device(option.device_);
     if (!option.buffer_folder_.empty()) {
         utility::filesystem::MakeDirectory(option.buffer_folder_);
     }
 
     // First preprocess the point cloud with downsampling and normal estimation.
-    auto fragment_down_fnames = PreprocessPointClouds(fragment_fnames, option);
+    auto fnames_down = PreprocessPointClouds(fnames, option);
     // Then obtain the correspondences given the pose graph
-    GetCorrespondencesForPointClouds(fragment_down_fnames, fragment_pose_graph,
-                                     option);
+    GetCorrespondencesForPointClouds(fnames_down, pose_graph, option);
 
     // First initialize ctr_grid
-    ControlGrid ctr_grid(3.0 / 8);
-    InitializeControlGrid(ctr_grid, fragment_down_fnames);
+    ControlGrid ctr_grid(3.0 / 8, 1000, device);
+    InitializeControlGrid(ctr_grid, fnames_down, option);
 
-    // Fill-in using
-    core::Tensor AtA, Atb;
-    std::tie(AtA, Atb) = FillInControlGrid(ctr_grid, fragment_down_fnames,
-                                           fragment_pose_graph, option);
+    // Fill-in
+    // fragments x 6 (se3) + control_grids x 3 (R^3)
+    int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
+    utility::LogInfo("Initializing {}^2 matrices", num_params);
+    core::Tensor AtA({num_params, num_params}, core::Dtype::Float32, device);
+    core::Tensor Atb({num_params, 1}, core::Dtype::Float32, device);
+    for (int itr = 0; itr < option.max_iterations_; ++itr) {
+        utility::LogInfo("Iteration {}", itr);
+        FillInAlignmentTerm(AtA, Atb, ctr_grid, fnames_down, pose_graph,
+                            option);
+        FillInRegularizer(AtA, Atb, ctr_grid, option);
 
-    // // Then allocate the Hessian matrix.
-    // // TODO: write a sparse matrix representation / helper.
-    // int64_t n = 6 * num_fragments + control_grids.count);
-    // core::Tensor AtA({n, n}, core::Dtype::Float32);
-    // core::Tensor Atb({n}, core::Dtype::Float32);
+        core::Tensor delta = Solve(AtA, Atb, option);
 
-    // // Core: iterative optimization
-    // for (int itr = 0; itr < max_itr; ++itr) {
-    //     // First: alignment term from correspondences
-    //     for (auto pair : pairs) {
-    //         auto pcd_i = io::ReadPointCloud(pair.i_);
-    //         auto pcd_j = io::ReadPointCloud(pair.j_);
-    //         auto corres_ij = pair.correspondences_;
-    //         pcd_i = ctr_grid.Warp(pcd_i);
-    //         pcd_j = ctr_grid.Warp(pcd_j);
+        UpdatePoses(pose_graph, delta, option);
+        UpdateControlGrid(ctr_grid, delta, option);
 
-    //         // Parallel fill-in
-    //         FillInAlignmentTerm(AtA, pcd_i, pcd_j, corres_ij, ctr_grid);
-    //     }
-
-    //     // Next: regularization term from neighbors in the control grid
-    //     FillInRegularizer(AtA, ctr_grid);
-
-    //     // Solve the linear system
-    //     std::tie(poses, ctr_grid) = Solve(AtA, Atb);
-
-    //     // Update
-    //     UpdateRotationsAndNormals();
-    // }
-
-    utility::LogError("Unimplemented!");
+        utility::LogError("Unimplemented!");
+    }
+    return ctr_grid;
 }
 
-ControlGrid RunSLACOptimizerForRGBDImages(
-        const std::vector<std::string>& rgbd_fnames,
-        const open3d::pipelines::registration::PoseGraph& rgbd_pose_graph,
-        const SLACOptimizerOption& option) {
-    utility::LogError("Unimplemented!");
-}
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

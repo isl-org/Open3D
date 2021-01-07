@@ -52,6 +52,8 @@ public:
                 const core::Device& device = core::Device("CPU:0"));
     ~ControlGrid(){};
 
+    int64_t Size() { return ctr_hashmap_->Size(); }
+
     /// Allocate control grids in the shared camera space.
     void Touch(const geometry::PointCloud& pcd);
 
