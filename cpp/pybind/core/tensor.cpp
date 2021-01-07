@@ -410,13 +410,25 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
 
-    // Casting.
+    // Casting can copying.
     tensor.def(
             "to",
-            [](const Tensor& tensor, const Dtype& dtype, bool copy) {
+            [](const Tensor& tensor, Dtype dtype, bool copy) {
                 return tensor.To(dtype, copy);
             },
             "dtype"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, bool copy) {
+                return tensor.To(device, copy);
+            },
+            "device"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, Dtype dtype,
+               bool copy) { return tensor.To(device, dtype, copy); },
+            "device"_a, "dtype"_a, "copy"_a = false);
+    tensor.def("clone", &Tensor::Clone);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
     tensor.def("is_contiguous", &Tensor::IsContiguous);
