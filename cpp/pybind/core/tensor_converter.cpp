@@ -40,10 +40,10 @@ static Tensor CastOptionalDtypeDevice(const Tensor& t,
                                       utility::optional<Device> device) {
     Tensor t_cast = t;
     if (dtype.has_value()) {
-        t_cast = t_cast.To(dtype.value(), /*copy=*/false);
+        t_cast = t_cast.To(dtype.value());
     }
     if (device.has_value()) {
-        t_cast = t_cast.To(device.value(), /*copy=*/false);
+        t_cast = t_cast.To(device.value());
     }
     return t_cast;
 }
@@ -168,7 +168,7 @@ Tensor DoubleToTensor(double scalar_value,
     }
     return Tensor(std::vector<double>{scalar_value}, {}, Dtype::Float64,
                   device_value)
-            .To(dtype_value, /*copy=*/false);
+            .To(dtype_value);
 }
 
 Tensor IntToTensor(int64_t scalar_value,
@@ -184,7 +184,7 @@ Tensor IntToTensor(int64_t scalar_value,
     }
     return Tensor(std::vector<int64_t>{scalar_value}, {}, Dtype::Int64,
                   device_value)
-            .To(dtype_value, /*copy=*/false);
+            .To(dtype_value);
 }
 
 Tensor PyHandleToTensor(const py::handle& handle,

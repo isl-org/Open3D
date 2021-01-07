@@ -244,7 +244,7 @@ NumpyArray::NumpyArray(const Tensor& t)
       word_size_(t.GetDtype().ByteSize()),
       fortran_order_(false),
       num_elements_(t.GetShape().NumElements()) {
-    blob_ = t.Contiguous().To(Device("CPU:0"), /*copy=*/false).GetBlob();
+    blob_ = t.Contiguous().To(Device("CPU:0")).GetBlob();
 }
 
 Dtype NumpyArray::GetDtype() const {

@@ -70,7 +70,7 @@ void IndexSet(const Tensor& src,
               const SizeVector& indexed_strides) {
     // index_tensors has been preprocessed to be on the same device as dst,
     // however, src may be on a different device.
-    Tensor src_same_device = src.To(dst.GetDevice(), /*copy=*/false);
+    Tensor src_same_device = src.To(dst.GetDevice());
 
     if (dst.GetDevice().GetType() == Device::DeviceType::CPU) {
         IndexSetCPU(src_same_device, dst, index_tensors, indexed_shape,
