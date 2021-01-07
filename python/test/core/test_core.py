@@ -1081,25 +1081,42 @@ def test_save_load(device):
     with tempfile.TemporaryDirectory() as temp_dir:
         file_name = f"{temp_dir}/tensor.npy"
 
-        # 2x2 tensor.
-        o3_t = o3d.core.Tensor([[1, 2], [3, 4]],
-                               dtype=o3d.core.Dtype.Float32,
-                               device=device)
-        o3_t.save(file_name)
-        np_t_load = np.load(file_name)
-        o3_t_load = o3d.core.Tensor.load(file_name)
-        np.testing.assert_equal(o3_t.cpu().numpy(), np_t_load)
-        np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t_load)
+        o3_tensors = [
+            o3d.core.Tensor([[1, 2], [3, 4]],
+                            dtype=o3d.core.Dtype.Float32,
+                            device=device),
+            o3d.core.Tensor(3.14, dtype=o3d.core.Dtype.Float32, device=device),
+            o3d.core.Tensor.ones((0,),
+                                 dtype=o3d.core.Dtype.Float32,
+                                 device=device),
+            o3d.core.Tensor.ones((0, 0),
+                                 dtype=o3d.core.Dtype.Float32,
+                                 device=device),
+            o3d.core.Tensor.ones((0, 1, 0),
+                                 dtype=o3d.core.Dtype.Float32,
+                                 device=device)
+        ]
+        np_tensors = [
+            np.array([[1, 2], [3, 4]], dtype=np.float32),
+            np.array(3.14, dtype=np.float32),
+            np.ones((0,), dtype=np.float32),
+            np.ones((0, 0), dtype=np.float32),
+            np.ones((0, 1, 0), dtype=np.float32)
+        ]
+        for o3_t, np_t in zip(o3_tensors, np_tensors):
+            # Open3D -> Numpy.
+            o3_t.save(file_name)
+            o3_t_load = o3d.core.Tensor.load(file_name)
+            np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
 
-        # Scalar tensor.
-        o3_t = o3d.core.Tensor(3.14,
-                               dtype=o3d.core.Dtype.Float32,
-                               device=device)
-        o3_t.save(file_name)
-        np_t_load = np.load(file_name)
-        o3_t_load = o3d.core.Tensor.load(file_name)
-        np.testing.assert_equal(o3_t.cpu().numpy(), np_t_load)
-        np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t_load)
+            # Open3D -> Numpy.
+            np_t_load = np.load(file_name)
+            np.testing.assert_equal(np_t_load, np_t_load)
+
+            # Numpy -> Open3D.
+            np.save(file_name, np_t)
+            o3_t_load = o3d.core.Tensor.load(file_name)
+            np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
 
         # Ragged tensor: exception.
         np_t = np.array([[1, 2, 3], [4, 5]], dtype=np.dtype(object))
