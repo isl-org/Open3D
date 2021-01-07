@@ -26,6 +26,7 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <cstdint>
 #include <numeric>
 #include <queue>
 #include <unordered_map>
@@ -172,7 +173,7 @@ private:
                                          double child_size) const {
         Eigen::Vector3d center;
         for (size_t d = 0; d < DIMENSION; d++) {
-            const int signal = (((child_index & (1 << (DIMENSION - d - 1))) >>
+            const int32_t signal = (((child_index & (1 << (DIMENSION - d - 1))) >>
                                  (DIMENSION - d - 1))
                                 << 1) -
                                1;
@@ -982,7 +983,7 @@ std::vector<std::shared_ptr<PlanarPatch>> PointCloud::DetectPlanarPatches(
     std::vector<std::vector<int>> neighbors;
     neighbors.resize(points_.size());
 #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < points_.size(); i++) {
+    for (int i = 0; i < static_cast<int>(points_.size()); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
         kdtree.Search(points_[i], search_param, neighbors[i], distance2);
