@@ -33,7 +33,19 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-enum class UnaryEWOpCode { Sqrt, Sin, Cos, Neg, Exp, Abs, LogicalNot };
+enum class UnaryEWOpCode {
+    Sqrt,
+    Sin,
+    Cos,
+    Neg,
+    Exp,
+    Abs,
+    Floor,
+    Ceil,
+    Round,
+    Trunc,
+    LogicalNot
+};
 
 void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
 

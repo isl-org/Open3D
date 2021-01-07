@@ -471,6 +471,10 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
     tensor.def("abs_", &Tensor::Abs_);
+    tensor.def("floor", &Tensor::Floor);
+    tensor.def("ceil", &Tensor::Ceil);
+    tensor.def("round", &Tensor::Round);
+    tensor.def("trunc", &Tensor::Trunc);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
