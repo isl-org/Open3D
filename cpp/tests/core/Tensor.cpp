@@ -2744,6 +2744,7 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     core::Tensor t;
     core::Tensor t_load;
 
+    // 2x2 tensor.
     t = core::Tensor::Init<float>({{1, 2}, {3, 4}}, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
@@ -2764,6 +2765,31 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     EXPECT_EQ(t_load.ToFlatVector<float>(),
               std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
 
+    // {} tensor (scalar).
+    t = core::Tensor::Init<float>(3.14, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+
+    // {0} tensor.
+    t = core::Tensor::Ones({0}, core::Dtype::Float32, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+
+    // {0, 0} tensor.
+    t = core::Tensor::Ones({0, 0}, core::Dtype::Float32, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+
+    // {0, 1, 0} tensor.
+    t = core::Tensor::Ones({0, 1, 0}, core::Dtype::Float32, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+
+    // Clean up.
     utility::filesystem::RemoveFile(file_name);
 }
 
