@@ -76,7 +76,7 @@ jobs:
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
             ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/
+            pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
             ccache -s
 
   arm64:
@@ -163,6 +163,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
               -DBUILD_GUI=ON \
+              -DBUILD_LIBREALSENSE=ON \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_TENSORFLOW_OPS=OFF \

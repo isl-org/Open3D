@@ -45,7 +45,7 @@ namespace io {
 RSBagReader::RSBagReader(size_t buffer_size)
     : frame_buffer_(buffer_size),
       frame_position_us_(buffer_size),
-      pipe_(nullptr) { }
+      pipe_(nullptr) {}
 
 RSBagReader::~RSBagReader() {
     if (IsOpened()) Close();
@@ -62,7 +62,7 @@ bool RSBagReader::Open(const std::string &filename) {
         cfg.enable_stream(RS2_STREAM_DEPTH);
         cfg.enable_stream(RS2_STREAM_COLOR);
         pipe_.reset(new rs2::pipeline);
-        auto profile = pipe_->start(cfg);   // Open file in read mode
+        auto profile = pipe_->start(cfg);  // Open file in read mode
         // do not drop frames: Causes deadlock after 4 frames on macOS/Linux
         // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
         /* profile.get_device().as<rs2::playback>().set_real_time(false); */
@@ -98,7 +98,7 @@ void RSBagReader::fill_frame_buffer() try {
             static_cast<unsigned int>(10 * 1000.0 / metadata_.fps_);
     rs2::frameset frames;
     rs2::playback rs_device =
-        pipe_->get_active_profile().get_device().as<rs2::playback>();
+            pipe_->get_active_profile().get_device().as<rs2::playback>();
     rs2::align align_to_color(rs2_stream::RS2_STREAM_COLOR);
     head_fid_ = 0;
     tail_fid_ = 0;
