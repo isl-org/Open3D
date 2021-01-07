@@ -37,7 +37,7 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, True, distance_threshold,
+            source, target, source_fpfh, target_fpfh, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(
                 False), 3,
             [
@@ -46,7 +46,7 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
+            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 1000))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
