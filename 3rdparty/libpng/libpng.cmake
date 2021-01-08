@@ -21,4 +21,4 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/lib)
-set(LIBPNG_LIBRARIES png)
+set(LIBPNG_LIBRARIES png16)
