@@ -195,7 +195,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
                            count);
 }
 
-void Hashmap::GetActiveIndices(Tensor& output_addrs) {
+void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
     int64_t count = device_hashmap_->Size();
     output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
 
@@ -203,9 +203,9 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) {
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
 
-Hashmap Hashmap::Clone() { return To(GetDevice(), /*copy=*/true); }
+Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-Hashmap Hashmap::To(const Device& device, bool copy) {
+Hashmap Hashmap::To(const Device& device, bool copy) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
@@ -227,9 +227,9 @@ Hashmap Hashmap::To(const Device& device, bool copy) {
     return new_hashmap;
 }
 
-Hashmap Hashmap::CPU() { return To(Device("CPU:0"), /*copy=*/false); }
+Hashmap Hashmap::CPU() const { return To(Device("CPU:0"), /*copy=*/false); }
 
-Hashmap Hashmap::CUDA(int device_id) {
+Hashmap Hashmap::CUDA(int device_id) const {
     return To(Device(Device::DeviceType::CUDA, device_id), /*copy=*/false);
 }
 
@@ -247,10 +247,14 @@ int64_t Hashmap::GetValueBytesize() const {
     return device_hashmap_->GetValueBytesize();
 }
 
-Tensor& Hashmap::GetKeyBuffer() { return device_hashmap_->GetKeyBuffer(); }
-Tensor& Hashmap::GetValueBuffer() { return device_hashmap_->GetValueBuffer(); }
+Tensor& Hashmap::GetKeyBuffer() const {
+    return device_hashmap_->GetKeyBuffer();
+}
+Tensor& Hashmap::GetValueBuffer() const {
+    return device_hashmap_->GetValueBuffer();
+}
 
-Tensor Hashmap::GetKeyTensor() {
+Tensor Hashmap::GetKeyTensor() const {
     int64_t capacity = GetCapacity();
     SizeVector key_shape = element_shape_key_;
     key_shape.insert(key_shape.begin(), capacity);
@@ -259,7 +263,7 @@ Tensor Hashmap::GetKeyTensor() {
                   GetKeyBuffer().GetBlob());
 }
 
-Tensor Hashmap::GetValueTensor() {
+Tensor Hashmap::GetValueTensor() const {
     int64_t capacity = GetCapacity();
     SizeVector value_shape = element_shape_value_;
     value_shape.insert(value_shape.begin(), capacity);
