@@ -24,7 +24,7 @@ ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/lib)
 if(MSVC)
-    set(LIBPNG_LIBRARIES libpng16_staticd)
+    set(LIBPNG_LIBRARIES libpng16_static$<$<CONFIG:Debug>:d>)
 else()
     set(LIBPNG_LIBRARIES png16)
 endif()

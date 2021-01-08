@@ -20,7 +20,7 @@ set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZLIB_LIB_DIR ${INSTALL_DIR}/lib)
 set(ZLIB_LIBRARIES z)
 if(MSVC)
-    set(ZLIB_LIBRARIES zlibd)
+    set(ZLIB_LIBRARIES zlibstatic$<$<CONFIG:Debug>:d>)
 else()
     set(ZLIB_LIBRARIES z)
 endif()
