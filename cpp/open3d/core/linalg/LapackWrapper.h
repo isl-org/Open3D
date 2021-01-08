@@ -98,6 +98,18 @@ inline OPEN3D_CPU_LINALG_INT gesvd_cpu(int matrix_layout,
     return -1;
 }
 
+// TODO: Explore _compact routines for optimisation
+
+template <typename scalar_t>
+inline OPEN3D_CPU_LINALG_INT getrfnp_cpu(int layout,
+                                         OPEN3D_CPU_LINALG_INT m,
+                                         OPEN3D_CPU_LINALG_INT n,
+                                         scalar_t* A_data,
+                                         OPEN3D_CPU_LINALG_INT lda) {
+    utility::LogError("Unsupported data type.");
+    return -1;
+}
+
 template <>
 inline OPEN3D_CPU_LINALG_INT getrf_cpu<float>(
         int layout,
@@ -108,6 +120,7 @@ inline OPEN3D_CPU_LINALG_INT getrf_cpu<float>(
         OPEN3D_CPU_LINALG_INT* ipiv_data) {
     return LAPACKE_sgetrf(layout, m, n, A_data, lda, ipiv_data);
 }
+
 template <>
 inline OPEN3D_CPU_LINALG_INT getrf_cpu<double>(
         int layout,
@@ -223,6 +236,24 @@ inline OPEN3D_CPU_LINALG_INT gesvd_cpu<double>(int layout,
                                                double* superb) {
     return LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
+}
+
+template <>
+inline OPEN3D_CPU_LINALG_INT getrfnp_cpu<float>(int layout,
+                                                OPEN3D_CPU_LINALG_INT m,
+                                                OPEN3D_CPU_LINALG_INT n,
+                                                float* A_data,
+                                                OPEN3D_CPU_LINALG_INT lda) {
+    return LAPACKE_mkl_sgetrfnp(layout, m, n, A_data, lda);
+}
+
+template <>
+inline OPEN3D_CPU_LINALG_INT getrfnp_cpu<double>(int layout,
+                                                 OPEN3D_CPU_LINALG_INT m,
+                                                 OPEN3D_CPU_LINALG_INT n,
+                                                 double* A_data,
+                                                 OPEN3D_CPU_LINALG_INT lda) {
+    return LAPACKE_mkl_dgetrfnp(layout, m, n, A_data, lda);
 }
 
 #ifdef BUILD_CUDA_MODULE
