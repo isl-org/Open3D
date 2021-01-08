@@ -233,11 +233,15 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Returns deep copy of the pointcloud
-    PointCloud Copy(const core::Device device) const;
+    /// Returns deep copy of the pointcloud.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new PointCloud is always created; if false, the
+    /// copy is avoided when the original PointCloud is already on the targeted
+    /// device.
+    PointCloud To(const core::Device device, bool copy = false) const;
 
-    /// Returns deep copy of the pointcloud on the same device
-    PointCloud Copy() const;
+    /// Returns deep copy of the pointcloud on the same device.
+    PointCloud Clone() const;
 
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.

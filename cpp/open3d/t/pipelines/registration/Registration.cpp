@@ -119,7 +119,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
-    geometry::PointCloud source_transformed = source.Copy();
+    geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation_device);
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
@@ -146,7 +146,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     core::Tensor transformation_device = init.To(device);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-    geometry::PointCloud source_transformed = source.Copy();
+    geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation_device);
 
     // TODO: Default constructor absent in RegistrationResult class.
