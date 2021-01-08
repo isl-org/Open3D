@@ -118,14 +118,14 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype, kernelindextype)                  \
-    REGISTER_KERNEL_BUILDER(                                      \
-            Name("Open3DSparseConvBackpropFilter")                \
-                    .Device(DEVICE_GPU)                           \
-                    .TypeConstraint<type>("TReal")                \
-                    .TypeConstraint<indextype>("TIndex")          \
-                    .TypeConstraint<indextype>("TKernelIndex"),   \
-            SparseConvBackpropFilterOpKernelCUDA<type, indextype, \
+#define REG_KB(type, indextype, kernelindextype)                      \
+    REGISTER_KERNEL_BUILDER(                                          \
+            Name("Open3DSparseConvBackpropFilter")                    \
+                    .Device(DEVICE_GPU)                               \
+                    .TypeConstraint<type>("TReal")                    \
+                    .TypeConstraint<indextype>("TIndex")              \
+                    .TypeConstraint<kernelindextype>("TKernelIndex"), \
+            SparseConvBackpropFilterOpKernelCUDA<type, indextype,     \
                                                  kernelindextype>);
 REG_KB(float, int32, int16_t)
 REG_KB(float, int32, uint8_t)
