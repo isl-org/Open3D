@@ -582,41 +582,7 @@ if(USE_SYSTEM_PNG)
         set(USE_SYSTEM_PNG OFF)
     endif()
 endif()
-# if(NOT USE_SYSTEM_PNG)
-#     message(STATUS "Building third-party library zlib from source")
-#     add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-#     import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
-#     add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
-#     message(STATUS "Building third-party library libpng from source")
-#     add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-#     import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
-#     add_dependencies(3rdparty_png ${PNG_LIBRARIES})
-#     target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
-#     set(PNG_TARGET "3rdparty_png")
-#     set(ZLIB_TARGET "3rdparty_zlib")
-# endif()
-
-# include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-# import_3rdparty_library(3rdparty_tbb
-#     INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
-#     LIB_DIR      ${STATIC_TBB_LIB_DIR}
-#     LIBRARIES    ${STATIC_TBB_LIBRARIES}
-# )
-# set(TBB_TARGET "3rdparty_tbb")
-# add_dependencies(3rdparty_tbb ext_tbb)
-# list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
-
 if(NOT USE_SYSTEM_PNG)
-    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
-    import_3rdparty_library(3rdparty_libpng
-        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
-        LIB_DIR      ${LIBPNG_LIB_DIR}
-        LIBRARIES    ${LIBPNG_LIBRARIES}
-    )
-    set(LIBPNG_TARGET "3rdparty_libpng")
-    add_dependencies(3rdparty_libpng ext_libpng)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
-
     include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
     import_3rdparty_library(3rdparty_zlib
         INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
@@ -626,10 +592,17 @@ if(NOT USE_SYSTEM_PNG)
     set(ZLIB_TARGET "3rdparty_zlib")
     add_dependencies(3rdparty_zlib ext_zlib)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
+
+    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
+    import_3rdparty_library(3rdparty_libpng
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+    )
+    set(LIBPNG_TARGET "3rdparty_libpng")
+    add_dependencies(3rdparty_libpng ext_libpng)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
 endif()
-
-
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 
 # rply
 build_3rdparty_library(3rdparty_rply DIRECTORY rply SOURCES rply/rply.c INCLUDE_DIRS rply/)
