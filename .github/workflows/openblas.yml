@@ -129,7 +129,7 @@ jobs:
             apt-get install -y xorg-dev libglu1-mesa-dev ccache
             apt-get install -y libblas-dev liblapack-dev liblapacke-dev libssl-dev
             apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
-            apt-get install -y libusb-1.0.0-dev # librealsense
+            apt-get install -y libudev-dev autoconf # librealsense
             apt-get install -y clang-7
             update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
             update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
