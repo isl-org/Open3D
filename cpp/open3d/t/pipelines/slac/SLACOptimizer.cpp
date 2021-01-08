@@ -34,8 +34,8 @@
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/utility/Draw.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -79,33 +79,6 @@ struct SLACPairwiseCorrespondence {
     // N x 2 for point clouds, storing corresponding point indices;
     // N x 4 for RGBD images, storing corresponding uv coordinates.
     core::Tensor correspondence_;
-
-    static SLACPairwiseCorrespondence ReadFromFile(const std::string& fname) {
-        int i, j;
-        int64_t len;
-
-        std::ifstream fin(fname, std::ifstream::binary);
-        fin.read(reinterpret_cast<char*>(&i), sizeof(int));
-        fin.read(reinterpret_cast<char*>(&j), sizeof(int));
-        fin.read(reinterpret_cast<char*>(&len), sizeof(int64_t));
-
-        core::Tensor corres({len, 2}, core::Dtype::Int64);
-        fin.read(static_cast<char*>(corres.GetDataPtr()),
-                 corres.NumElements() * core::Dtype::Int64.ByteSize());
-
-        return SLACPairwiseCorrespondence(i, j, corres);
-    }
-
-    void Write(const std::string& fname) {
-        std::ofstream fout(fname, std::ofstream::binary);
-        int64_t len = correspondence_.GetLength();
-        fout.write(reinterpret_cast<const char*>(&i_), sizeof(int));
-        fout.write(reinterpret_cast<const char*>(&j_), sizeof(int));
-        fout.write(reinterpret_cast<const char*>(&len), sizeof(int64_t));
-        fout.write(
-                static_cast<const char*>(correspondence_.GetDataPtr()),
-                correspondence_.NumElements() * core::Dtype::Int64.ByteSize());
-    }
 };
 
 void VisualizePCDGridCorres(std::shared_ptr<open3d::geometry::PointCloud>& pcd,
@@ -185,7 +158,7 @@ void GetCorrespondencesForPointClouds(
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
-        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.buffer_folder_, i, j);
         if (utility::filesystem::FileExists(corres_fname)) continue;
 
@@ -209,7 +182,7 @@ void GetCorrespondencesForPointClouds(
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32));
         core::Tensor corres =
-                core::Tensor({result.correspondence_set_.GetLength(), 2},
+                core::Tensor({2, result.correspondence_set_.GetLength()},
                              core::Dtype::Int64);
 
         // Make correspondence indices
@@ -219,17 +192,13 @@ void GetCorrespondencesForPointClouds(
         core::Tensor indices(arange,
                              {result.correspondence_select_bool_.GetLength()},
                              core::Dtype::Int64);
-        corres.SetItem(
-                {core::TensorKey::Slice(core::None, core::None, core::None),
-                 core::TensorKey::Index(0)},
-                indices.IndexGet({result.correspondence_select_bool_}));
-        corres.SetItem(
-                {core::TensorKey::Slice(core::None, core::None, core::None),
-                 core::TensorKey::Index(1)},
-                result.correspondence_set_);
+        corres.SetItem({core::TensorKey::Index(0)},
+                       indices.IndexGet({result.correspondence_select_bool_}));
+        corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
+        corres = corres.T();
 
         auto pair_corres = SLACPairwiseCorrespondence(i, j, corres);
-        pair_corres.Write(corres_fname);
+        corres.Save(corres_fname);
         utility::LogInfo("Edge: {:02d} -> {:02d}, corres {}", i, j,
                          corres.GetLength());
 
@@ -281,7 +250,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
         utility::LogInfo("edge {} -> {}", i, j);
-        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.buffer_folder_, i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
             utility::LogError("Correspondence not processed");
@@ -302,7 +271,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         // auto pose_i = pose_graph.nodes_[i].pose_;
         // auto pose_j = pose_graph.nodes_[j].pose_;
         utility::LogInfo("corres {}{}", i, j);
-        auto corres_ij = SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
+        core::Tensor corres = core::Tensor::Load(corres_fname);
 
         if (option.grid_debug_) {
             utility::LogInfo("visualizing", j);
@@ -333,7 +302,7 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
         utility::LogInfo("edge {} -> {}", i, j);
-        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.corres",
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.buffer_folder_, i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
             utility::LogError("Correspondence not processed");
@@ -343,18 +312,37 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         auto pcd_i = io::CreatePointCloudFromFile(fnames[i]);
         auto tpcd_i = t::geometry::PointCloud::FromLegacyPointCloud(
                 *pcd_i, core::Dtype::Float32, device);
+        auto pose_i = core::eigen_converter::EigenMatrixToTensor(
+                              pose_graph.nodes_[i].pose_)
+                              .To(core::Dtype::Float32);
+        tpcd_i = tpcd_i.Transform(pose_i);
 
         utility::LogInfo("pcd {}", j);
         auto pcd_j = io::CreatePointCloudFromFile(fnames[j]);
         auto tpcd_j = t::geometry::PointCloud::FromLegacyPointCloud(
                 *pcd_j, core::Dtype::Float32, device);
+        auto pose_j = core::eigen_converter::EigenMatrixToTensor(
+                              pose_graph.nodes_[j].pose_)
+                              .To(core::Dtype::Float32);
+        tpcd_j = tpcd_j.Transform(pose_j);
 
-        // auto pose_i = pose_graph.nodes_[i].pose_;
-        // auto pose_j = pose_graph.nodes_[j].pose_;
         utility::LogInfo("corres {}{}", i, j);
-        auto corres_ij = SLACPairwiseCorrespondence::ReadFromFile(corres_fname);
+        auto corres_ij = core::Tensor::Load(corres_fname);
+
+        auto pts_i = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]});
+        auto pts_j = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]});
+        t::geometry::PointCloud tpcd_i_corres(pts_i);
+        t::geometry::PointCloud tpcd_j_corres(pts_j);
+
+        auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_i_corres.ToLegacyPointCloud());
+        pcd_i_corres->PaintUniformColor({1, 0, 0});
+        auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_j_corres.ToLegacyPointCloud());
+        pcd_j_corres->PaintUniformColor({0, 1, 0});
 
         // TODO: use parameterization to update normals and points per grid
+        visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
     }
 }
 
@@ -401,8 +389,10 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     // fragments x 6 (se3) + control_grids x 3 (R^3)
     int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
     utility::LogInfo("Initializing {}^2 matrices", num_params);
-    core::Tensor AtA({num_params, num_params}, core::Dtype::Float32, device);
-    core::Tensor Atb({num_params, 1}, core::Dtype::Float32, device);
+    core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
+                                           core::Dtype::Float32, device);
+    core::Tensor Atb =
+            core::Tensor::Zeros({num_params, 1}, core::Dtype::Float32, device);
     for (int itr = 0; itr < option.max_iterations_; ++itr) {
         utility::LogInfo("Iteration {}", itr);
         FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down, pose_graph,
@@ -435,9 +425,11 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
     // Fill-in
     // fragments x 6 (se3)
     int64_t num_params = fnames_down.size() * 6;
-    utility::LogInfo("Initializing {}^2 matrices", num_params);
-    core::Tensor AtA({num_params, num_params}, core::Dtype::Float32, device);
-    core::Tensor Atb({num_params, 1}, core::Dtype::Float32, device);
+    utility::LogInfo("Initializing {}^2 Hessian matrix", num_params);
+    core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
+                                           core::Dtype::Float32, device);
+    core::Tensor Atb =
+            core::Tensor::Zeros({num_params, 1}, core::Dtype::Float32, device);
     for (int itr = 0; itr < option.max_iterations_; ++itr) {
         utility::LogInfo("Iteration {}", itr);
         FillInRigidAlignmentTerm(AtA, Atb, fnames_down, pose_graph, option);
