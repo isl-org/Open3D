@@ -41,16 +41,5 @@ void LUfactorisationCPU(
     });
 }
 
-/*  TO BE REMOVED [JUST FOR DEVELOPMENT REFERENCE]
-    LAPACK: [TO SUPPRT BATCH: REFER COMPACT ROUTINES]
-        inline OPEN3D_CPU_LINALG_INT getrfnp_cpu<float>(int layout,
-                                                    OPEN3D_CPU_LINALG_INT m,
-                                                    OPEN3D_CPU_LINALG_INT n,
-                                                    float* A_data,
-                                                    OPEN3D_CPU_LINALG_INT lda) {
-            return LAPACKE_mkl_sgetrfnp(layout, m, n, A_data, lda);
-        }
-*/
-
 }  // namespace core
 }  // namespace open3d

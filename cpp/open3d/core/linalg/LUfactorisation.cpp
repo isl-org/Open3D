@@ -67,19 +67,9 @@ void LUfactorisation(
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        // Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
-        // void* ipiv_data = ipiv.GetDataPtr();
 
-        // // cuSolver does not support getri, so we have to provide an identity
-        // // matrix. This matrix is modified in-place as output.
-        // Tensor A_ = A.Contiguous();
-        // void* A_data = A_.GetDataPtr();
+        // TO BE ADDED
 
-        // output = Tensor::Eye(n, dtype, device);
-        // void* output_data = output.GetDataPtr();
-
-        // LUfactorisationCUDA(A_data, ipiv_data, output_data, n, dtype,
-        // device); output = output.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif

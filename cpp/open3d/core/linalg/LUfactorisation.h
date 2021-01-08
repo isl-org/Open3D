@@ -38,7 +38,8 @@ namespace core {
 /// upper triangular matrix.
 /// \param A [input] Batch of 2D square matrices to be factorised. [Tensor of
 /// dtype Float32 or Float64, dim {m,n,n} where {n,n} is the dim. of square
-/// matrices and m is the batch size]. \param L [output] Lower triangular matrix
+/// matrices and m is the batch size].
+/// \param L [output] Lower triangular matrix
 /// \param U [output] Upper triangular matrix
 /// \param P [output] Permutation matrix
 /// \param info [output] array of size batchSize that info(=infoArray[i])
@@ -53,29 +54,6 @@ void LUfactorisationCPU(
 void LUfactorisationCUDA(
         void* A_data, int64_t n, int64_t k, Dtype dtype, const Device& device);
 #endif
-
-/*  TO BE REMOVED [JUST FOR DEVELOPMENT REFERENCE]
-    cuBLAS: [SUPPORTS BATCH and RECT. MAT.]
-        inline cublasStatus_t getrfBatched_cuda<float>(cublasHandle_t handle,
-                                        int n,
-                                        float* A_data,
-                                        int lda,
-                                        int *PivotArray,
-                                        int *infoArray,
-                                        int batchSize); {
-            return cublasSgetrfBatched(handle, n, A_data, lda, PivotArray,
-   infoArray, batchSize);
-        }
-
-    LAPACK: [TO SUPPRT BATCH: REFER COMPACT ROUTINES]
-        inline OPEN3D_CPU_LINALG_INT getrfnp_cpu<float>(int layout,
-                                                    OPEN3D_CPU_LINALG_INT m,
-                                                    OPEN3D_CPU_LINALG_INT n,
-                                                    float* A_data,
-                                                    OPEN3D_CPU_LINALG_INT lda) {
-            return LAPACKE_mkl_sgetrfnp(layout, m, n, A_data, lda);
-        }
-*/
 
 }  // namespace core
 }  // namespace open3d
