@@ -603,6 +603,8 @@ if(NOT USE_SYSTEM_PNG)
     set(ZLIB_TARGET "3rdparty_zlib")
     add_dependencies(3rdparty_zlib ext_zlib)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
+
+    add_dependencies(ext_libpng ext_zlib)
 endif()
 
 # rply
