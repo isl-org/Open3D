@@ -583,19 +583,29 @@ if(USE_SYSTEM_PNG)
     endif()
 endif()
 if(NOT USE_SYSTEM_PNG)
-    message(STATUS "Building third-party library zlib from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-    import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
-    add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
-    message(STATUS "Building third-party library libpng from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-    import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
-    add_dependencies(3rdparty_png ${PNG_LIBRARIES})
-    target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
-    set(PNG_TARGET "3rdparty_png")
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    import_3rdparty_library(3rdparty_zlib
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+    )
     set(ZLIB_TARGET "3rdparty_zlib")
+    add_dependencies(3rdparty_zlib ext_zlib)
+
+    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
+    import_3rdparty_library(3rdparty_libpng
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+    )
+    set(LIBPNG_TARGET "3rdparty_libpng")
+    add_dependencies(3rdparty_libpng ext_libpng)
+    add_dependencies(ext_libpng ext_zlib)
+
+    # Putting zlib after libpng somehow works for Ubuntu.
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 
 # rply
 build_3rdparty_library(3rdparty_rply DIRECTORY rply SOURCES rply/rply.c INCLUDE_DIRS rply/)
