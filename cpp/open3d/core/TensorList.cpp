@@ -72,7 +72,7 @@ TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
     }
 }
 
-TensorList TensorList::Copy() const {
+TensorList TensorList::Clone() const {
     TensorList copied(*this);
     copied.CopyFrom(*this);
     return copied;
@@ -155,7 +155,7 @@ void TensorList::Extend(const TensorList& other) {
 
 TensorList TensorList::Concatenate(const TensorList& a, const TensorList& b) {
     // A full copy of a is required.
-    TensorList result = a.Copy();
+    TensorList result = a.Clone();
     result.Extend(b);
     return result;
 }
