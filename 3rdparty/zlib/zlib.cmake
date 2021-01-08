@@ -19,3 +19,8 @@ ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZLIB_LIB_DIR ${INSTALL_DIR}/lib)
 set(ZLIB_LIBRARIES z)
+if(MSVC)
+    set(ZLIB_LIBRARIES zlibd)
+else()
+    set(ZLIB_LIBRARIES z)
+endif()
