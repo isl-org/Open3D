@@ -31,6 +31,7 @@ dependencies=(
     # RealSense deps
     libudev-dev
     autoconf
+    libtool
 )
 
 $SUDO apt-get update
