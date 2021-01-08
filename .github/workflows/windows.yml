@@ -95,7 +95,7 @@ jobs:
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
             wheel==${{ env.WHEEL_VER }} `
             setuptools==${{ env.STOOLS_VER }} `
-            jedi=${{ env.JEDI_VER }}
+            jedi==${{ env.JEDI_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
