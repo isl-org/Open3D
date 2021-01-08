@@ -593,6 +593,7 @@ if(NOT USE_SYSTEM_PNG)
     add_dependencies(3rdparty_libpng ext_libpng)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
 
+    # Putting zlib after libpng somehow works.
     include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
     import_3rdparty_library(3rdparty_zlib
         INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
