@@ -114,7 +114,8 @@ public:
     /// indexing in Tensor key/value buffers.
     void GetActiveIndices(Tensor& output_indices);
 
-    Hashmap Copy(const Device& device);
+    Hashmap Clone();
+    Hashmap To(const Device& device, bool copy = false);
     Hashmap CPU();
     Hashmap CUDA(int device_id = 0);
 

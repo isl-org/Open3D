@@ -203,7 +203,13 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) {
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
 
-Hashmap Hashmap::Copy(const Device& device) {
+Hashmap Hashmap::Clone() { return To(GetDevice(), /*copy=*/true); }
+
+Hashmap Hashmap::To(const Device& device, bool copy) {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+
     Hashmap new_hashmap(GetCapacity(), dtype_key_, dtype_value_,
                         element_shape_key_, element_shape_value_, device);
 
@@ -221,18 +227,10 @@ Hashmap Hashmap::Copy(const Device& device) {
     return new_hashmap;
 }
 
-Hashmap Hashmap::CPU() {
-    if (GetDevice().GetType() == Device::DeviceType::CPU) {
-        return *this;
-    }
-    return Copy(Device("CPU:0"));
-}
+Hashmap Hashmap::CPU() { return To(Device("CPU:0"), /*copy=*/false); }
 
 Hashmap Hashmap::CUDA(int device_id) {
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
-        return *this;
-    }
-    return Copy(Device(Device::DeviceType::CUDA, device_id));
+    return To(Device(Device::DeviceType::CUDA, device_id), /*copy=*/false);
 }
 
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
