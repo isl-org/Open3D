@@ -15,6 +15,7 @@ ExternalProject_Add(
         -DPNG_SHARED=OFF
         -DPNG_EXECUTABLES=OFF
         -DPNG_TESTS=OFF
+        -DPNG_BUILD_ZLIB=ON # Prevent libpng from calling find_pacakge(zlib).
     BUILD_ALWAYS ON
 )
 
