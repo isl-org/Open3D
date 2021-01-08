@@ -616,6 +616,16 @@ if(NOT USE_SYSTEM_PNG)
     set(LIBPNG_TARGET "3rdparty_libpng")
     add_dependencies(3rdparty_libpng ext_libpng)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    import_3rdparty_library(3rdparty_zlib
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+    )
+    set(ZLIB_TARGET "3rdparty_zlib")
+    add_dependencies(3rdparty_zlib ext_zlib)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
 
 
