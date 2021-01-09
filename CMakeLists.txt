@@ -227,7 +227,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Global Security options (including 3rd party code)
-# -Wall and -Werror are enabled for Open3D code (not 3rd party)
+# -Wall -Wextra -Werror or /W4 /WX are enabled for Open3D code (not 3rd party)
 if (MSVC)
     set(HARDENING_CFLAGS
         /sdl            # SDL Checks
@@ -310,10 +310,18 @@ foreach(FLAG ${HARDENING_LDFLAGS})
     endif()
     unset(FLAG${FLAG} CACHE)
 endforeach()
+string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
+string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
 message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
 linker flags: ${HARDENING_LDFLAGS}")
-add_compile_options(${HARDENING_CFLAGS})
-add_link_options(${HARDENING_LDFLAGS})
+add_compile_options(
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
+    )
+add_link_options(
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_LDFLAGS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
+    )
 
 # Build CUDA module by default if CUDA is available
 # Compatible with CMake 3.8+
