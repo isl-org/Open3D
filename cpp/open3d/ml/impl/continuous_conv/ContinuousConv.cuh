@@ -45,6 +45,11 @@ namespace impl {
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
+/// \tparam TFeat    Type for the features and weights
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
+///
 /// \param temp    Pointer to temporary memory. If nullptr then the required
 ///        size of temporary memory will be written to \p temp_size and no
 ///        work is done. This function can make use of more memory and
@@ -127,24 +132,24 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
                               void* temp,
                               size_t& temp_size,
                               size_t& max_temp_size,
                               int texture_alignment,
-                              TReal* out_features,
+                              TOut* out_features,
                               const std::vector<int>& filter_dims,
-                              const TReal* filter,
+                              const TFeat* filter,
                               TIndex num_out,
                               const TReal* out_positions,
                               TIndex num_inp,
                               const TReal* inp_positions,
-                              const TReal* inp_features,
-                              const TReal* inp_importance,
+                              const TFeat* inp_features,
+                              const TFeat* inp_importance,
                               size_t neighbors_index_size,
                               const TIndex* neighbors_index,
-                              const TReal* neighbors_importance,
+                              const TFeat* neighbors_importance,
                               const int64_t* neighbors_row_splits,
                               const TReal* extents,
                               const TReal* offsets,
@@ -174,7 +179,7 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     const size_t bytes_per_column =
-            sizeof(TReal) * (spatial_filter_size * in_channels);
+            sizeof(TFeat) * (spatial_filter_size * in_channels);
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -199,7 +204,7 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
     }
 
     // init output
-    cudaMemsetAsync(out_features, 0, sizeof(TReal) * num_out * out_channels,
+    cudaMemsetAsync(out_features, 0, sizeof(TOut) * num_out * out_channels,
                     stream);
 
     size_t num_cols_per_run =
@@ -216,7 +221,7 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
     // this is the pointer to the patch matrix
-    TReal* columns = (TReal*)mem_columns.first;
+    TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
     const size_t num_runs = DivUp(num_out, num_cols_per_run);
@@ -227,7 +232,7 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
         const size_t num_cols_this_run = end_idx - begin_idx;
 
         // compute the patch matrix
-        FillColumn<TReal, TIndex>(
+        FillColumn<TFeat, TReal, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_importance, neighbors_index_size, neighbors_index,

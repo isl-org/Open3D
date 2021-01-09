@@ -36,7 +36,9 @@ namespace impl {
 
 /// Implementation of CConvComputeFeatures with template parameters for
 /// configuration.
-template <class TReal,
+template <class TFeat,
+          class TOut,
+          class TReal,
           class TIndex,
           InterpolationMode INTERPOLATION,
           CoordinateMapping MAPPING,
@@ -45,20 +47,20 @@ template <class TReal,
           bool ISOTROPIC_EXTENT,
           bool NORMALIZE>
 void _CConvTransposeComputeFeaturesCPU(
-        TReal* out_features,
+        TOut* out_features,
         const std::vector<int>& filter_dims,
-        const TReal* filter,
+        const TFeat* filter,
         size_t num_out,
         const TReal* out_positions,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         size_t num_inp,
         const TReal* inp_positions,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         size_t neighbors_index_size,
         const TIndex* neighbor_index,
-        const TReal* neighbor_importance,
+        const TFeat* neighbor_importance,
         const int64_t* neighbors_row_splits,
         const TReal* extents,
         const TReal* offsets) {
@@ -76,18 +78,18 @@ void _CConvTransposeComputeFeaturesCPU(
     Eigen::Array<int, 3, 1> filter_size_xyz(filter_dims[2], filter_dims[1],
                                             filter_dims[0]);
 
-    memset(out_features, 0, sizeof(TReal) * num_out * out_channels);
+    memset(out_features, 0, sizeof(TOut) * num_out * out_channels);
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * spatial_filter_size, range_length);
                 B.setZero();
 
-                typedef Eigen::Array<TReal, VECSIZE, Eigen::Dynamic> Matrix;
+                typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
                 Matrix infeat(VECSIZE, in_channels);
 
                 Eigen::Array<TReal, 3, 1> offsets_(offsets[0], offsets[1],
@@ -148,7 +150,7 @@ void _CConvTransposeComputeFeaturesCPU(
                             }
                         }
 
-                        TReal n_importance = NEIGHBOR_IMPORTANCE
+                        TFeat n_importance = NEIGHBOR_IMPORTANCE
                                                      ? neighbor_importance[n]
                                                      : 1;
                         for (int ic = 0; ic < in_channels; ++ic)
@@ -157,7 +159,7 @@ void _CConvTransposeComputeFeaturesCPU(
                                     n_importance;
 
                         if (NORMALIZE) {
-                            TReal normalizer = 1;
+                            TFeat normalizer = 1;
                             if (NEIGHBOR_IMPORTANCE) {
                                 if (inp_neighbors_importance_sum[inp_idx] != 0)
                                     normalizer /= inp_neighbors_importance_sum
@@ -201,11 +203,11 @@ void _CConvTransposeComputeFeaturesCPU(
 
                 }  // out_idx
 
-                Eigen::Map<const Eigen::Matrix<TReal, Eigen::Dynamic,
+                Eigen::Map<const Eigen::Matrix<TFeat, Eigen::Dynamic,
                                                Eigen::Dynamic>>
                         A(filter, out_channels,
                           spatial_filter_size * in_channels);
-                Eigen::Map<Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic>>
+                Eigen::Map<Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic>>
                         C(out_features + (r.begin() * out_channels),
                           out_channels, range_length);
 
@@ -218,6 +220,11 @@ void _CConvTransposeComputeFeaturesCPU(
 }
 
 /// Computes the output features of a transpose continuous convolution.
+///
+/// \tparam TFeat    Type for the features and weights
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
 ///
 /// \param out_features    Output array for the computed features with shape
 ///        [num_out, out channels]
@@ -293,21 +300,21 @@ void _CConvTransposeComputeFeaturesCPU(
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
-void CConvTransposeComputeFeaturesCPU(TReal* out_features,
+template <class TFeat, class TOut, class TReal, class TIndex>
+void CConvTransposeComputeFeaturesCPU(TOut* out_features,
                                       const std::vector<int>& filter_dims,
-                                      const TReal* filter,
+                                      const TFeat* filter,
                                       size_t num_out,
                                       const TReal* out_positions,
-                                      const TReal* out_importance,
+                                      const TFeat* out_importance,
                                       size_t num_inp,
                                       const TReal* inp_positions,
-                                      const TReal* inp_features,
-                                      const TReal* inp_neighbors_importance_sum,
+                                      const TFeat* inp_features,
+                                      const TFeat* inp_neighbors_importance_sum,
                                       const int64_t* inp_neighbors_row_splits,
                                       size_t neighbors_index_size,
                                       const TIndex* neighbor_index,
-                                      const TReal* neighbor_importance,
+                                      const TFeat* neighbor_importance,
                                       const int64_t* neighbors_row_splits,
                                       const TReal* extents,
                                       const TReal* offsets,
@@ -324,15 +331,16 @@ void CConvTransposeComputeFeaturesCPU(TReal* out_features,
             neighbors_index_size, neighbor_index, neighbor_importance,         \
             neighbors_row_splits, extents, offsets
 
-#define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,               \
-                      INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, NORMALIZE)      \
-    if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping && \
-        ALIGN_CORNERS == align_corners &&                                  \
-        INDIVIDUAL_EXTENT == individual_extent &&                          \
-        ISOTROPIC_EXTENT == isotropic_extent && NORMALIZE == normalize)    \
-        _CConvTransposeComputeFeaturesCPU<                                 \
-                TReal, TIndex, INTERPOLATION, MAPPING, ALIGN_CORNERS,      \
-                INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, NORMALIZE>(           \
+#define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,                \
+                      INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, NORMALIZE)       \
+    if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping &&  \
+        ALIGN_CORNERS == align_corners &&                                   \
+        INDIVIDUAL_EXTENT == individual_extent &&                           \
+        ISOTROPIC_EXTENT == isotropic_extent && NORMALIZE == normalize)     \
+        _CConvTransposeComputeFeaturesCPU<TFeat, TOut, TReal, TIndex,       \
+                                          INTERPOLATION, MAPPING,           \
+                                          ALIGN_CORNERS, INDIVIDUAL_EXTENT, \
+                                          ISOTROPIC_EXTENT, NORMALIZE>(     \
                 FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(INTERPOLATION, MAPPING)                       \
