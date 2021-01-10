@@ -258,15 +258,6 @@ TSDFVoxelGrid TSDFVoxelGrid::To(const core::Device &device, bool copy) const {
     return device_tsdf_voxelgrid;
 }
 
-TSDFVoxelGrid TSDFVoxelGrid::CPU() const {
-    return To(core::Device("CPU:0"), /*copy=*/false);
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CUDA(int device_id) const {
-    return To(core::Device(core::Device::DeviceType::CUDA, device_id),
-              /*copy=*/false);
-}
-
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         const core::Tensor &active_addrs) {
     // Fixed radius search for spatially hashed voxel blocks.

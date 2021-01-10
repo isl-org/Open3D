@@ -69,8 +69,9 @@ void pybind_tsdf_voxelgrid(py::module& m) {
                        &TSDFVoxelGrid::ExtractSurfaceMesh);
 
     tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
+    tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);
     tsdf_voxelgrid.def("cpu", &TSDFVoxelGrid::CPU);
-    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA);
+    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA, "device_id"_a);
 
     tsdf_voxelgrid.def("get_device", &TSDFVoxelGrid::GetDevice);
 }

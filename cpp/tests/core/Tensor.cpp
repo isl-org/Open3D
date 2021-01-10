@@ -2738,7 +2738,7 @@ TEST_P(TensorPermuteDevices, IsSame) {
 }
 
 TEST_P(TensorPermuteDevices, NumpyIO) {
-    const core::Device device = GetParam();
+    const core::Device &device = GetParam();
     const std::string file_name = "tensor.npy";
 
     core::Tensor t;

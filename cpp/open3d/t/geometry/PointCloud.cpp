@@ -73,13 +73,13 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
-PointCloud PointCloud::To(const core::Device device, bool copy) const {
+PointCloud PointCloud::To(const core::Device &device, bool copy) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
     PointCloud pcd(device);
-    for (auto &value : point_attr_) {
-        pcd.SetPointAttr(value.first, value.second.To(device, /*copy=*/true));
+    for (auto &kv : point_attr_) {
+        pcd.SetPointAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return pcd;
 }

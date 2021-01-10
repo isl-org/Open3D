@@ -97,11 +97,17 @@ public:
     /// targeted device.
     TSDFVoxelGrid To(const core::Device &device, bool copy = false) const;
 
+    /// Clone TSDFVoxelGrid on the same device.
+    TSDFVoxelGrid Clone() const { return To(GetDevice(), true); }
+
     /// Copy TSDFVoxelGrid to CPU.
-    TSDFVoxelGrid CPU() const;
+    TSDFVoxelGrid CPU() const { return To(core::Device("CPU:0"), false); }
 
     /// Copy TSDFVoxelGrid to CUDA.
-    TSDFVoxelGrid CUDA(int device_id = 0) const;
+    TSDFVoxelGrid CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id),
+                  false);
+    }
 
     core::Device GetDevice() const { return device_; }
 
