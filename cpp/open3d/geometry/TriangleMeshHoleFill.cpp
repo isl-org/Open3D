@@ -26,6 +26,7 @@
 
 #include <Eigen/Dense>
 #include <cmath>
+#include <map>
 
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -124,19 +125,8 @@ public:
                 front[adjacent_front_indices_to_neighbors.second]);
     }
 
-    void AddTriangle(int vidx0, int vidx1, int vidx2) {
-        mesh_->triangles_.emplace_back(Eigen::Vector3i(vidx0, vidx1, vidx2));
-
-        auto &triangle = mesh_->triangles_.back();
-        Eigen::Vector3d v1 =
-                mesh_->vertices_[triangle(1)] - mesh_->vertices_[triangle(0)];
-        Eigen::Vector3d v2 =
-                mesh_->vertices_[triangle(2)] - mesh_->vertices_[triangle(0)];
-        mesh_->triangle_normals_.push_back(v1.cross(v2));
-
-        mesh_->vertex_normals_[triangle(0)] += mesh_->triangle_normals_.back();
-        mesh_->vertex_normals_[triangle(1)] += mesh_->triangle_normals_.back();
-        mesh_->vertex_normals_[triangle(2)] += mesh_->triangle_normals_.back();
+    void RelaxEdge() {
+        // TODO
     }
 
     void IdentifyHoles() {
@@ -154,10 +144,12 @@ public:
     }
 
     void TriangulateHoles() {
-        for (std::vector<int> front : boundaries_) {
+        for (auto front : boundaries_) {
             int size = int(front.size());
             std::vector<double> angles(size, 0);
             hole_normal_ = Eigen::Vector3d::Zero();
+            std::shared_ptr<TriangleMesh> patching_mesh =
+                    std::make_shared<TriangleMesh>();
 
             // Compute the averaged hole normal.
             for (int i = 0; i < size; i++) {
@@ -189,13 +181,11 @@ public:
 
                 auto adjacent_front_indices =
                         GetAdjacentFrontIndices(int(min_angle_index), front);
-                const int &vidx_prev = front[adjacent_front_indices.first];
-                const int &vidx_next = front[adjacent_front_indices.second];
+                const int vidx_prev = front[adjacent_front_indices.first];
+                const int vidx_next = front[adjacent_front_indices.second];
 
-                AddTriangle(vidx_prev, vidx_next, vidx);
-
-                mesh_->adjacency_list_[vidx_prev].insert(vidx_next);
-                mesh_->adjacency_list_[vidx_next].insert(vidx_prev);
+                patching_mesh->triangles_.push_back(
+                        Eigen::Vector3i(vidx_prev, vidx_next, vidx));
 
                 front.erase(front.begin() + min_angle_index);
                 angles.erase(angles.begin() + min_angle_index);
@@ -203,14 +193,124 @@ public:
                                           adjacent_front_indices);
             }
 
-            AddTriangle(front[2], front[1], front[0]);
+            patching_mesh->triangles_.push_back(
+                    Eigen::Vector3i(front[2], front[1], front[0]));
+
+            patching_meshes_.push_back(patching_mesh);
+        }
+    }
+
+    void RefineHolePatching() {
+        int front_idx = 0;
+        for (auto &front : boundaries_) {
+            std::map<int, double> scale_attributes;
+            for (int vidx : front) {
+                double scale_attribute = 0;
+                for (auto adjacent_vidx : mesh_->adjacency_list_[vidx]) {
+                    scale_attribute += (mesh_->vertices_[vidx] -
+                                        mesh_->vertices_[adjacent_vidx])
+                                               .norm();
+                }
+                scale_attributes.insert({vidx, scale_attribute});
+            }
+
+            auto patching_mesh = patching_meshes_[front_idx];
+            std::shared_ptr<TriangleMesh> new_patching_mesh =
+                    std::make_shared<TriangleMesh>();
+            bool has_added_new_triangles = false;
+            while (!has_added_new_triangles) {
+                has_added_new_triangles = false;
+                for (auto &triangle : patching_mesh->triangles_) {
+                    Eigen::Vector3d centroid = (mesh_->vertices_[triangle[0]] +
+                                                mesh_->vertices_[triangle[1]] +
+                                                mesh_->vertices_[triangle[2]]) /
+                                               3;
+                    double centroid_scale_attribute =
+                            (scale_attributes[triangle[0]] +
+                             scale_attributes[triangle[1]] +
+                             scale_attributes[triangle[2]]) /
+                            3;
+
+                    auto ComputeTriangleAngle = [&](int vidx0, int vidx1,
+                                                    int vidx2) {
+                        Eigen::Vector3d &vertex0 = mesh_->vertices_[vidx0];
+                        Eigen::Vector3d &vertex1 = mesh_->vertices_[vidx1];
+                        Eigen::Vector3d &vertex2 = mesh_->vertices_[vidx2];
+                        return utility::ComputeAcuteAngle(vertex0 - vertex1,
+                                                          vertex2 - vertex1);
+                    };
+                    double max_inner_triangle_angle = 0;
+                    for (int i = 0; i < 3; i++) {
+                        double angle = ComputeTriangleAngle(
+                                triangle[i], triangle[(i + 1) % 3],
+                                triangle[(i + 2) % 3]);
+                        if (angle > max_inner_triangle_angle) {
+                            max_inner_triangle_angle = angle;
+                        }
+                    }
+
+                    bool replace_triangle = false;
+                    for (int vidx : {triangle[0], triangle[1], triangle[2]}) {
+                        auto density_control =
+                                density_control_factor *
+                                (centroid - mesh_->vertices_[vidx]).norm();
+                        if (density_control > scale_attributes[vidx] &&
+                            density_control > centroid_scale_attribute &&
+                            max_inner_triangle_angle < 5 * M_PI / 6) {
+                            replace_triangle = true;
+                            has_added_new_triangles = true;
+                        }
+                    }
+                    if (replace_triangle) {
+                        mesh_->vertices_.push_back(centroid);
+                        int vidx_centroid = int(mesh_->vertices_.size() - 1);
+                        new_patching_mesh->triangles_.push_back(Eigen::Vector3i(
+                                vidx_centroid, triangle[1], triangle[2]));
+                        new_patching_mesh->triangles_.push_back(Eigen::Vector3i(
+                                triangle[0], vidx_centroid, triangle[2]));
+                        new_patching_mesh->triangles_.push_back(Eigen::Vector3i(
+                                triangle[0], triangle[1], vidx_centroid));
+                    } else {
+                        new_patching_mesh->triangles_.push_back(triangle);
+                    }
+                }
+                patching_meshes_[front_idx] = new_patching_mesh;
+
+                if (!has_added_new_triangles) {
+                    break;
+                }
+
+                bool has_edges_been_swapped = false;
+                while (!has_edges_been_swapped) {
+                    // Relax all interior edges of the patching mesh
+                    auto edges = patching_mesh->GetEdgeToTrianglesMap();
+                    for (auto &kv : edges) {
+                        if (kv.second.size() == 2u) {
+                            RelaxEdge();
+                            has_edges_been_swapped = true;  // TODO
+                        }
+                    }
+                }
+            }
+
+            front_idx++;
+        }
+    }
+
+    void AddNewTrianglesToMesh() {
+        for (auto patching_mesh : patching_meshes_) {
+            mesh_->triangles_.insert(mesh_->triangles_.end(),
+                                     patching_mesh->triangles_.begin(),
+                                     patching_mesh->triangles_.end());
         }
     }
 
     std::shared_ptr<TriangleMesh> Run() {
         IdentifyHoles();
         TriangulateHoles();
+        RefineHolePatching();
 
+        AddNewTrianglesToMesh();
         mesh_->ComputeVertexNormals();
         return mesh_;
     }
@@ -222,8 +322,10 @@ private:
                        std::vector<int>,
                        utility::hash_eigen<Eigen::Vector2i>>
             edges_to_triangles_;
+    std::vector<std::shared_ptr<TriangleMesh>> patching_meshes_;
 
     Eigen::Vector3d hole_normal_;
+    double density_control_factor = M_SQRT2;
 };
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FillHoles() {

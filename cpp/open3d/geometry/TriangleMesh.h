@@ -518,8 +518,8 @@ public:
             double smoothed_alpha = 0.01) const;
 
     /// \brief This function fills in holes in the mesh to make it watertight
-    /// based on the advancing front mesh (AFM) technique. See Zhao, Gao and
-    /// Lin, "A robust hole-filling algorithm for triangular mesh", 2007.
+    /// based on the approach described by Hu, Wang, Li and Lio, "Filling Holes
+    /// in Triangular Meshes in Engineering", 2012.
     /// \return A watertight TriangleMesh.
     std::shared_ptr<TriangleMesh> FillHoles();
 
