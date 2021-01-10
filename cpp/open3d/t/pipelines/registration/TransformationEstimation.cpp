@@ -90,7 +90,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     R = U.Matmul(S.Matmul(VT));
     t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
 
-    return t::pipelines::RtToTransformation(R, t);
+    return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -189,7 +189,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
               target_n_select);
 
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
-    return t::pipelines::PoseToTransformation(Pose);
+    return t::pipelines::kernel::PoseToTransformation(Pose);
 }
 
 }  // namespace registration

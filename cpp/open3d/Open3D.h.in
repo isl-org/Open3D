@@ -84,7 +84,7 @@
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
