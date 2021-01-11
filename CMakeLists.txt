@@ -232,14 +232,14 @@ if (MSVC)
     set(HARDENING_CFLAGS
         /sdl            # SDL Checks
         /GS             # Code Generation: Security Check
-        /GUARD:CF       # Code Generation: Control Flow Guard
+        /guard:cf       # Code Generation: Control Flow Guard
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
-        /INCREMENTAL:NO  # Incremental Linking
-        /NXCOMPAT:YES    # Data Execution Prevention
+        /INCREMENTAL:NO  # Disable incremental Linking
+        #/NXCOMPAT       # Data Execution Prevention: On by default in VS2019
         /DYNAMICBASE     # Randomized Base Address
         /HIGHENTROPYVA   #
-        # Not enabled: /INTEGRITYCHECK  # Signed binary
+        #/INTEGRITYCHECK # Signed binary: Disabled
         CACHE STRING "Linker flags for security hardening")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(HARDENING_CFLAGS
@@ -299,16 +299,14 @@ foreach(FLAG ${HARDENING_CFLAGS})
         list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
         message(WARNING "Compiler does not support security option ${FLAG}")
     endif()
-    unset(FLAG${FLAG} CACHE)
 endforeach()
 include(CheckLinkerFlag)
 foreach(FLAG ${HARDENING_LDFLAGS})
-    check_linker_flag(CXX ${FLAG} FLAG${FLAG})              # 3.18
+    check_linker_flag(CXX ${FLAG} FLAG${FLAG})              # cmake 3.18+
     if (NOT FLAG${FLAG})
         list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
         message(WARNING "Linker does not support security option ${FLAG}")
     endif()
-    unset(FLAG${FLAG} CACHE)
 endforeach()
 string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
 string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")

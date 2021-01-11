@@ -37,12 +37,18 @@
 #include "open3d/utility/Console.h"
 
 // clang-format off
+#pragma warning(push)
+#pragma warning (disable: 4701 4245 4189)
+// 4701: potentially uninitialized local variable
+// 4245: signed/unsigned mismatch 
+// 4189: local variable is initialized but not referenced 
 #include "PoissonRecon/Src/PreProcessor.h"
 #include "PoissonRecon/Src/MyMiscellany.h"
 #include "PoissonRecon/Src/CmdLineParser.h"
 #include "PoissonRecon/Src/FEMTree.h"
 #include "PoissonRecon/Src/PPolynomial.h"
 #include "PoissonRecon/Src/PointStreamData.h"
+#pragma warning(pop)
 // clang-format on
 
 namespace open3d {
