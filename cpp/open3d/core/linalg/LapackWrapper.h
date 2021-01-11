@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "mkl.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/LinalgHeadersCUDA.h"
 #include "open3d/utility/Console.h"
@@ -94,18 +93,6 @@ inline OPEN3D_CPU_LINALG_INT gesvd_cpu(int matrix_layout,
                                        scalar_t* VT_data,
                                        OPEN3D_CPU_LINALG_INT ldvt,
                                        scalar_t* superb) {
-    utility::LogError("Unsupported data type.");
-    return -1;
-}
-
-// TODO: Explore _compact routines for optimisation
-
-template <typename scalar_t>
-inline OPEN3D_CPU_LINALG_INT getrfnp_cpu(int layout,
-                                         OPEN3D_CPU_LINALG_INT m,
-                                         OPEN3D_CPU_LINALG_INT n,
-                                         scalar_t* A_data,
-                                         OPEN3D_CPU_LINALG_INT lda) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
@@ -236,24 +223,6 @@ inline OPEN3D_CPU_LINALG_INT gesvd_cpu<double>(int layout,
                                                double* superb) {
     return LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
-}
-
-template <>
-inline OPEN3D_CPU_LINALG_INT getrfnp_cpu<float>(int layout,
-                                                OPEN3D_CPU_LINALG_INT m,
-                                                OPEN3D_CPU_LINALG_INT n,
-                                                float* A_data,
-                                                OPEN3D_CPU_LINALG_INT lda) {
-    return LAPACKE_mkl_sgetrfnp(layout, m, n, A_data, lda);
-}
-
-template <>
-inline OPEN3D_CPU_LINALG_INT getrfnp_cpu<double>(int layout,
-                                                 OPEN3D_CPU_LINALG_INT m,
-                                                 OPEN3D_CPU_LINALG_INT n,
-                                                 double* A_data,
-                                                 OPEN3D_CPU_LINALG_INT lda) {
-    return LAPACKE_mkl_dgetrfnp(layout, m, n, A_data, lda);
 }
 
 #ifdef BUILD_CUDA_MODULE

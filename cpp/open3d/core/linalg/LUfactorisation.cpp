@@ -31,14 +31,9 @@
 namespace open3d {
 namespace core {
 
-void LUfactorisation(
-        const Tensor& A, Tensor& L, Tensor& U, Tensor& P, Tensor& info) {
+void LUfactorisation(const Tensor &A, Tensor &output) {
     // Check devices
     Device device = A.GetDevice();
-    L.AssertDevice(device);
-    U.AssertDevice(device);
-    P.AssertDevice(device);
-    info.AssertDevice(device);
 
     // Check dtypes
     Dtype dtype = A.GetDtype();
@@ -48,9 +43,6 @@ void LUfactorisation(
                 "received {}.",
                 dtype.ToString());
     }
-    L.AssertDtype(dtype);
-    U.AssertDtype(dtype);
-    P.AssertDtype(dtype);
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
@@ -67,27 +59,40 @@ void LUfactorisation(
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
+        void *ipiv_data = ipiv.GetDataPtr();
 
-        // TO BE ADDED
+        // cuSolver does not support getri, so we have to provide an identity
+        // matrix. This matrix is modified in-place as output.
+        Tensor A_T = A.T().Contiguous();
+        void *A_data = A_T.GetDataPtr();
 
+        output = Tensor::Eye(n, dtype, device);
+        void *output_data = output.GetDataPtr();
+
+        LUfactorisationCUDA(A_data, ipiv_data, output_data, n, dtype, device);
+        output = output.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        Dtype dtype;
+        Dtype ipiv_dtype;
         if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
-            dtype = Dtype::Int32;
+            ipiv_dtype = Dtype::Int32;
         } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            dtype = Dtype::Int64;
+            ipiv_dtype = Dtype::Int64;
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
+        Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
+        void *ipiv_data = ipiv.GetDataPtr();
 
         // LAPACKE supports getri, A is in-place modified as output.
-        Tensor A_ = A.Copy(device);
-        void* A_data = A_.GetDataPtr();
+        Tensor A_T = A.T().Copy(device);
+        void *A_data = A_T.GetDataPtr();
 
-        LUfactorisationCPU(A_data, n, 1, dtype, device);
+        LUfactorisationCPU(A_data, ipiv_data, nullptr, n, dtype, device);
+        output = A_T.T();
     }
 }
 }  // namespace core

@@ -40,6 +40,7 @@
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LUfactorisation.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
@@ -1299,6 +1300,12 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     core::LeastSquares(*this, rhs, output);
     return output;
 };
+
+Tensor Tensor::LUfactorisation() const {
+    Tensor output;
+    core::LUfactorisation(*this, output);
+    return output;
+}
 
 Tensor Tensor::Inverse() const {
     Tensor output;

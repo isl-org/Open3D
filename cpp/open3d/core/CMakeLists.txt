@@ -28,6 +28,8 @@ set(LINALG_SRC
     linalg/MatmulCPU.cpp
     linalg/LeastSquares.cpp
     linalg/LeastSquaresCPU.cpp
+    linalg/LUfactorisation.cpp
+    linalg/LUfactorisationCPU.cpp
     linalg/Solve.cpp
     linalg/SolveCPU.cpp
     linalg/Inverse.cpp
@@ -40,6 +42,7 @@ set(LINALG_CUDA_SRC
     linalg/LinalgUtils.cpp
     linalg/MatmulCUDA.cpp
     linalg/LeastSquaresCUDA.cpp
+    linalg/LUfactorisationCUDA.cpp
     linalg/SolveCUDA.cpp
     linalg/InverseCUDA.cpp
     linalg/SVDCUDA.cpp

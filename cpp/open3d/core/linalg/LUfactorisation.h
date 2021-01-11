@@ -31,28 +31,32 @@
 namespace open3d {
 namespace core {
 
-/// \brief This function performs the LU factorization of each Aarray[i] for i =
-/// 0, ..., batchSize-1 by the following equation P * Aarray [ i ] = L * U where
-/// P is a permutation matrix which represents partial pivoting with row
-/// interchanges. L is a lower triangular matrix with unit diagonal and U is an
-/// upper triangular matrix.
-/// \param A [input] Batch of 2D square matrices to be factorised. [Tensor of
-/// dtype Float32 or Float64, dim {m,n,n} where {n,n} is the dim. of square
-/// matrices and m is the batch size].
-/// \param L [output] Lower triangular matrix
-/// \param U [output] Upper triangular matrix
-/// \param P [output] Permutation matrix
-/// \param info [output] array of size batchSize that info(=infoArray[i])
-///           contains the information of factorization of Aarray[i].
-void LUfactorisation(
-        const Tensor& A, Tensor& L, Tensor& U, Tensor& P, Tensor& info);
+// TODO: Batch LU factorisation to be added.
 
-void LUfactorisationCPU(
-        void* A_data, int64_t n, int64_t k, Dtype dtype, const Device& device);
+/// \brief This function performs the LU factorization, [batch is NOT supported
+/// currectly] following equation P * Aarray [ i ] = L * U where P is a
+/// permutation matrix which represents partial pivoting with row interchanges.
+/// L is a lower triangular matrix with unit diagonal and U is an upper
+/// triangular matrix.
+/// \param A [input] 2D matrix to be factorised. [Tensor of dtype Float32/64]
+/// \param output [output] Lower triangular matrix, Upper triangular matrix
+/// [diag. element of L matrix are not included (=1)]
+void LUfactorisation(const Tensor& A, Tensor& output);
+
+void LUfactorisationCPU(void* A_data,
+                        void* ipiv_data,
+                        void* output_data,
+                        int64_t n,
+                        Dtype dtype,
+                        const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
-void LUfactorisationCUDA(
-        void* A_data, int64_t n, int64_t k, Dtype dtype, const Device& device);
+void LUfactorisationCUDA(void* A_data,
+                         void* ipiv_data,
+                         void* output_data,
+                         int64_t n,
+                         Dtype dtype,
+                         const Device& device);
 #endif
 
 }  // namespace core

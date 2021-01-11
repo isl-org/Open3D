@@ -31,13 +31,18 @@
 namespace open3d {
 namespace core {
 
-void LUfactorisationCPU(
-        void* A_data, int64_t n, int64_t k, Dtype dtype, const Device& device) {
+void LUfactorisationCPU(void* A_data,
+                        void* ipiv_data,
+                        void* output,
+                        int64_t n,
+                        Dtype dtype,
+                        const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         OPEN3D_LAPACK_CHECK(
-                getrfnp_cpu<scalar_t>(LAPACK_COL_MAJOR, n, n,
-                                      static_cast<scalar_t*>(A_data), n),
-                "getrfnp failed in LUfactorisationCPU");
+                getrf_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, n, n, static_cast<scalar_t*>(A_data),
+                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
+                "getrf failed in LUfactorisationCPU");
     });
 }
 

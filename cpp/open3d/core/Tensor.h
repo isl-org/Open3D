@@ -1058,6 +1058,11 @@ public:
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
 
+    /// Computes LU factorisation of the sqaure matrix *this and returns a
+    /// square matrix, with lower triangular part having values for L,
+    /// upper triangular and diagonal part having values for U.
+    Tensor LUfactorisation() const;
+
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
     Tensor Inverse() const;
