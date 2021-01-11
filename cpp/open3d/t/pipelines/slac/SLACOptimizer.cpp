@@ -66,24 +66,43 @@ Eigen::Vector3d Jet(double v, double vmin, double vmax) {
     return c;
 }
 
-struct SLACPairwiseCorrespondence {
-    SLACPairwiseCorrespondence() {}
-    SLACPairwiseCorrespondence(int i, int j, const core::Tensor& corres)
-        : i_(i), j_(j), correspondence_(corres) {}
+t::geometry::PointCloud CreateTPCDFromFile(
+        const std::string& fname,
+        const core::Device& device = core::Device("CPU:0")) {
+    auto pcd = io::CreatePointCloudFromFile(fname);
+    return t::geometry::PointCloud::FromLegacyPointCloud(
+            *pcd, core::Dtype::Float32, device);
+}
 
-    // Source index
-    int i_;
-    // Target index
-    int j_;
+void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
+                        t::geometry::PointCloud& tpcd_j,
+                        core::Tensor& corres,
+                        const Eigen::Matrix4d& pose_ij) {
+    auto pcd_i = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_i.ToLegacyPointCloud());
+    auto pcd_j = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_j.ToLegacyPointCloud());
+    pcd_i->Transform(pose_ij);
 
-    // N x 2 for point clouds, storing corresponding point indices;
-    // N x 4 for RGBD images, storing corresponding uv coordinates.
-    core::Tensor correspondence_;
-};
+    std::vector<std::pair<int, int>> corres_lines;
+    for (int64_t i = 0; i < corres.GetLength(); ++i) {
+        std::pair<int, int> pair = {corres[i][0].Item<int64_t>(),
+                                    corres[i][1].Item<int64_t>()};
+        corres_lines.push_back(pair);
+    }
+    auto lineset =
+            open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                    *pcd_i, *pcd_j, corres_lines);
+    lineset->PaintUniformColor({0, 1, 0});
+    visualization::DrawGeometries({pcd_i, pcd_j, lineset});
+}
 
-void VisualizePCDGridCorres(std::shared_ptr<open3d::geometry::PointCloud>& pcd,
+void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
                             t::geometry::PointCloud& tpcd_param) {
     // Prepare all ctr grid point cloud for lineset
+    auto pcd = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd.ToLegacyPointCloud());
+
     t::geometry::PointCloud tpcd_grid(
             tpcd_param.GetPointAttr("ctr_grid_positions"));
     auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
@@ -158,68 +177,38 @@ void GetCorrespondencesForPointClouds(
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
+
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.buffer_folder_, i, j);
         if (utility::filesystem::FileExists(corres_fname)) continue;
 
-        auto pcd_i = io::CreatePointCloudFromFile(fragment_down_fnames[i]);
-        t::geometry::PointCloud tpcd_i =
-                t::geometry::PointCloud::FromLegacyPointCloud(
-                        *pcd_i, core::Dtype::Float32);
-
-        auto pcd_j = io::CreatePointCloudFromFile(fragment_down_fnames[j]);
-        t::geometry::PointCloud tpcd_j =
-                t::geometry::PointCloud::FromLegacyPointCloud(
-                        *pcd_j, core::Dtype::Float32);
+        auto tpcd_i = CreateTPCDFromFile(fragment_down_fnames[i]);
+        auto tpcd_j = CreateTPCDFromFile(fragment_down_fnames[j]);
 
         auto pose_i = pose_graph.nodes_[i].pose_;
         auto pose_j = pose_graph.nodes_[j].pose_;
         auto pose_ij = (pose_j.inverse() * pose_i).eval();
 
-        // Obtain correspondence
+        // Obtain correspondence via nns
         auto result = t::pipelines::registration::EvaluateRegistration(
                 tpcd_i, tpcd_j, option.voxel_size_,
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32));
+
+        // Make correspondence indices (N x 2)
         core::Tensor corres =
                 core::Tensor({2, result.correspondence_set_.GetLength()},
                              core::Dtype::Int64);
-
-        // Make correspondence indices
-        std::vector<int64_t> arange(
-                result.correspondence_select_bool_.GetLength());
-        std::iota(arange.begin(), arange.end(), 0);
-        core::Tensor indices(arange,
-                             {result.correspondence_select_bool_.GetLength()},
-                             core::Dtype::Int64);
+        core::Tensor indices = core::Tensor::Arange(
+                0, result.correspondence_select_bool_.GetLength(), 1,
+                core::Dtype::Int64);
         corres.SetItem({core::TensorKey::Index(0)},
                        indices.IndexGet({result.correspondence_select_bool_}));
         corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
         corres = corres.T();
-
-        auto pair_corres = SLACPairwiseCorrespondence(i, j, corres);
         corres.Save(corres_fname);
-        utility::LogInfo("Edge: {:02d} -> {:02d}, corres {}", i, j,
-                         corres.GetLength());
-
-        // For visual debug
-        if (option.correspondence_debug_) {
-            pcd_i->Transform(pose_ij);
-            visualization::DrawGeometries({pcd_i, pcd_j});
-            pcd_i->Transform(pose_ij.inverse());
-
-            std::vector<std::pair<int, int>> corres_lines;
-            for (int64_t i = 0; i < corres.GetLength(); ++i) {
-                std::pair<int, int> pair = {corres[i][0].Item<int64_t>(),
-                                            corres[i][1].Item<int64_t>()};
-                corres_lines.push_back(pair);
-            }
-            auto lineset = open3d::geometry::LineSet::
-                    CreateFromPointCloudCorrespondences(*pcd_i, *pcd_j,
-                                                        corres_lines);
-            lineset->PaintUniformColor({0, 1, 0});
-            visualization::DrawGeometries({pcd_i, pcd_j, lineset});
-        }
+        utility::LogInfo("Saving {} corres for {:02d} -> {:02d}",
+                         corres.GetLength(), i, j);
     }
 }
 
@@ -230,9 +219,7 @@ void InitializeControlGrid(ControlGrid& ctr_grid,
     for (auto& fname : fnames) {
         utility::LogInfo("Initializing grid for {}", fname);
 
-        auto pcd = io::CreatePointCloudFromFile(fname);
-        auto tpcd = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd, core::Dtype::Float32, device);
+        auto tpcd = CreateTPCDFromFile(fname, device);
         ctr_grid.Touch(tpcd);
     }
 }
@@ -256,27 +243,21 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
             utility::LogError("Correspondence not processed");
         }
 
-        utility::LogInfo("pcd {}", i);
-        auto pcd_i = io::CreatePointCloudFromFile(fnames[i]);
-        auto tpcd_i = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd_i, core::Dtype::Float32, device);
+        auto tpcd_i = CreateTPCDFromFile(fnames[i], device);
         auto tpcd_param_i = ctr_grid.Parameterize(tpcd_i);
 
-        utility::LogInfo("pcd {}", j);
-        auto pcd_j = io::CreatePointCloudFromFile(fnames[j]);
-        auto tpcd_j = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd_j, core::Dtype::Float32, device);
+        auto tpcd_j = CreateTPCDFromFile(fnames[j]);
         auto tpcd_param_j = ctr_grid.Parameterize(tpcd_j);
 
-        // auto pose_i = pose_graph.nodes_[i].pose_;
-        // auto pose_j = pose_graph.nodes_[j].pose_;
-        utility::LogInfo("corres {}{}", i, j);
+        auto pose_i = pose_graph.nodes_[i].pose_;
+        auto pose_j = pose_graph.nodes_[j].pose_;
+        auto pose_ij = (pose_j.inverse() * pose_i).eval();
         core::Tensor corres = core::Tensor::Load(corres_fname);
 
         if (option.grid_debug_) {
-            utility::LogInfo("visualizing", j);
-            VisualizePCDGridCorres(pcd_i, tpcd_param_i);
-            VisualizePCDGridCorres(pcd_j, tpcd_param_j);
+            VisualizePCDCorres(tpcd_i, tpcd_j, corres, pose_ij);
+            VisualizePCDGridCorres(tpcd_i, tpcd_param_i);
+            VisualizePCDGridCorres(tpcd_j, tpcd_param_j);
         }
 
         // TODO: use parameterization to update normals and points per grid
@@ -308,41 +289,41 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
             utility::LogError("Correspondence not processed");
         }
 
-        utility::LogInfo("pcd {}", i);
-        auto pcd_i = io::CreatePointCloudFromFile(fnames[i]);
-        auto tpcd_i = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd_i, core::Dtype::Float32, device);
+        auto tpcd_i = CreateTPCDFromFile(fnames[i]);
         auto pose_i = core::eigen_converter::EigenMatrixToTensor(
                               pose_graph.nodes_[i].pose_)
                               .To(core::Dtype::Float32);
         tpcd_i = tpcd_i.Transform(pose_i);
 
-        utility::LogInfo("pcd {}", j);
-        auto pcd_j = io::CreatePointCloudFromFile(fnames[j]);
-        auto tpcd_j = t::geometry::PointCloud::FromLegacyPointCloud(
-                *pcd_j, core::Dtype::Float32, device);
+        auto tpcd_j = CreateTPCDFromFile(fnames[j]);
         auto pose_j = core::eigen_converter::EigenMatrixToTensor(
                               pose_graph.nodes_[j].pose_)
                               .To(core::Dtype::Float32);
         tpcd_j = tpcd_j.Transform(pose_j);
 
-        utility::LogInfo("corres {}{}", i, j);
         auto corres_ij = core::Tensor::Load(corres_fname);
+        auto points_i = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]});
+        auto points_j = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]});
+        auto normals_i = tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]});
+        auto normals_j = tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]});
 
-        auto pts_i = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]});
-        auto pts_j = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]});
-        t::geometry::PointCloud tpcd_i_corres(pts_i);
-        t::geometry::PointCloud tpcd_j_corres(pts_j);
+        // For debug
+        if (option.grid_debug_) {
+            VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij,
+                               Eigen::Matrix4d::Identity());
 
-        auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_i_corres.ToLegacyPointCloud());
-        pcd_i_corres->PaintUniformColor({1, 0, 0});
-        auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_j_corres.ToLegacyPointCloud());
-        pcd_j_corres->PaintUniformColor({0, 1, 0});
+            t::geometry::PointCloud tpcd_i_corres(points_i);
+            t::geometry::PointCloud tpcd_j_corres(points_j);
+            auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+                    tpcd_i_corres.ToLegacyPointCloud());
+            pcd_i_corres->PaintUniformColor({1, 0, 0});
+            auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+                    tpcd_j_corres.ToLegacyPointCloud());
+            pcd_j_corres->PaintUniformColor({0, 1, 0});
 
-        // TODO: use parameterization to update normals and points per grid
-        visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
+            // TODO: use parameterization to update normals and points per grid
+            visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
+        }
     }
 }
 
