@@ -135,7 +135,7 @@ TEST_P(PointCloudPermuteDevicePairs, CopyDevice) {
     pcd.SetPointAttr("labels", labels);
 
     // Copy is created on the dst_device.
-    t::geometry::PointCloud pcd_copy = pcd.Copy(dst_device);
+    t::geometry::PointCloud pcd_copy = pcd.To(dst_device, /*copy=*/true);
 
     EXPECT_EQ(pcd_copy.GetDevice(), dst_device);
     EXPECT_EQ(pcd_copy.GetPoints().GetDtype(), pcd.GetPoints().GetDtype());
@@ -156,7 +156,7 @@ TEST_P(PointCloudPermuteDevices, Copy) {
     pcd.SetPointAttr("labels", labels);
 
     // Copy is on the same device as source.
-    t::geometry::PointCloud pcd_copy = pcd.Copy();
+    t::geometry::PointCloud pcd_copy = pcd.Clone();
 
     // Copy does not share the same memory with source (deep copy).
     EXPECT_FALSE(pcd_copy.GetPoints().IsSame(pcd.GetPoints()));

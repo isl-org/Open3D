@@ -463,24 +463,31 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
-    /// Copy Tensor to a specified device.
-    /// The resulting Tensor will be compacted and contiguous.
-    Tensor Copy(const Device& device) const;
-
     /// Copy Tensor to the same device.
-    Tensor Copy() const { return Copy(GetDevice()); };
+    Tensor Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-    /// Copy Tensor values to current tensor for source tensor
+    /// Copy Tensor values to current tensor from the source tensor.
     void CopyFrom(const Tensor& other);
-
-    /// Shallow copy a tensor, returning a tensor sharing the same memory.
-    void ShallowCopyFrom(const Tensor& other);
 
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
     /// is avoided when the original tensor already have the targeted dtype.
     Tensor To(Dtype dtype, bool copy = false) const;
+
+    /// Returns a tensor with the specified \p device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor is already on the targeted device.
+    Tensor To(const Device& device, bool copy = false) const;
+
+    /// Returns a tensor with the specified \p device and \p dtype.
+    /// \param device The targeted device to convert to.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor is already on the targeted device
+    /// and have the targeted dtype.
+    Tensor To(const Device& device, Dtype dtype, bool copy = false) const;
 
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
@@ -497,7 +504,7 @@ public:
     /// \param dim The dimension to slice.
     /// \param start The start index (inclusive).
     /// \param stop The end index (exclusive).
-    /// \param step Pick one eleemnt for every \p step elements.
+    /// \param step Pick one element for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,

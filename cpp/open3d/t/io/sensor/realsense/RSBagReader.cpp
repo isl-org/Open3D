@@ -45,8 +45,7 @@ namespace io {
 RSBagReader::RSBagReader(size_t buffer_size)
     : frame_buffer_(buffer_size),
       frame_position_us_(buffer_size),
-      pipe_(new rs2::pipeline),
-      align_to_color_(new rs2::align(rs2_stream::RS2_STREAM_COLOR)) {}
+      pipe_(nullptr) {}
 
 RSBagReader::~RSBagReader() {
     if (IsOpened()) Close();
@@ -59,11 +58,14 @@ bool RSBagReader::Open(const std::string &filename) {
     try {
         rs2::config cfg;
         cfg.enable_device_from_file(filename, false);  // Do not repeat playback
-        auto profile = pipe_->start(
-                cfg);  // File will be opened in read mode at this point
+        cfg.disable_all_streams();
+        cfg.enable_stream(RS2_STREAM_DEPTH);
+        cfg.enable_stream(RS2_STREAM_COLOR);
+        pipe_.reset(new rs2::pipeline);
+        auto profile = pipe_->start(cfg);  // Open file in read mode
         // do not drop frames: Causes deadlock after 4 frames on macOS/Linux
         // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
-        /* rs_device.set_real_time(false); */
+        /* profile.get_device().as<rs2::playback>().set_real_time(false); */
         metadata_.ConvertFromJsonValue(
                 RealSenseSensorConfig::GetMetadataJson(profile));
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
@@ -97,6 +99,7 @@ void RSBagReader::fill_frame_buffer() try {
     rs2::frameset frames;
     rs2::playback rs_device =
             pipe_->get_active_profile().get_device().as<rs2::playback>();
+    rs2::align align_to_color(rs2_stream::RS2_STREAM_COLOR);
     head_fid_ = 0;
     tail_fid_ = 0;
     uint64_t next_dev_color_fid = 0;
@@ -130,7 +133,7 @@ void RSBagReader::fill_frame_buffer() try {
                 auto &current_frame =
                         frame_buffer_[head_fid_ % frame_buffer_.size()];
 
-                frames = align_to_color_->process(frames);
+                frames = align_to_color.process(frames);
                 const auto &color_frame = frames.get_color_frame();
                 // Copy frame data to Tensors
                 current_frame.color_ = core::Tensor(

@@ -89,7 +89,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
         core::Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);

@@ -55,7 +55,7 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
     // safe to write directly into std vector memory, see:
     // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
     std::vector<Eigen::Matrix<T, 3, 1>> eigen_vector(tensor.GetLength());
-    core::Tensor t = tensor.Contiguous().To(dtype, /*copy=*/false);
+    core::Tensor t = tensor.Contiguous().To(dtype);
     MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
                                 t.GetDevice(),
                                 t.GetDtype().ByteSize() * t.NumElements());
@@ -91,11 +91,7 @@ static core::Tensor EigenVector3xVectorToTensor(
     });
 
     // Copy Tensor to device if necessary.
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        return tensor_cpu;
-    } else {
-        return tensor_cpu.Copy(device);
-    }
+    return tensor_cpu.To(device);
 }
 
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(

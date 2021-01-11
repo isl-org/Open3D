@@ -97,14 +97,68 @@ void pybind_sensor(py::module &m) {
                            "Number of color channels.")
             .def("__repr__", &RGBDVideoMetadata::ToString);
 
+    // RGBD video reader trampoline
+    class PyRGBDVideoReader : public RGBDVideoReader {
+    public:
+        using RGBDVideoReader::RGBDVideoReader;
+        bool IsOpened() const override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
+        }
+
+        bool IsEOF() const override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
+        }
+
+        bool Open(const std::string &filename) override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, Open, filename);
+        }
+
+        void Close() override {
+            PYBIND11_OVERLOAD_PURE(void, RGBDVideoReader, );
+        }
+
+        RGBDVideoMetadata &GetMetadata() override {
+            PYBIND11_OVERLOAD_PURE(RGBDVideoMetadata &, RGBDVideoReader, );
+        }
+
+        const RGBDVideoMetadata &GetMetadata() const override {
+            PYBIND11_OVERLOAD_PURE(const RGBDVideoMetadata &,
+                                   RGBDVideoReader, );
+        }
+
+        bool SeekTimestamp(uint64_t timestamp) override {
+            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, SeekTimestamp,
+                                   timestamp);
+        }
+
+        uint64_t GetTimestamp() const override {
+            PYBIND11_OVERLOAD_PURE(uint64_t, RGBDVideoReader, );
+        }
+
+        t::geometry::RGBDImage NextFrame() override {
+            PYBIND11_OVERLOAD_PURE(t::geometry::RGBDImage, RGBDVideoReader, );
+        }
+
+        std::string GetFilename() const override {
+            PYBIND11_OVERLOAD_PURE(std::string, RGBDVideoReader, );
+        }
+    };
+
     // Class RGBD video reader
-    py::class_<RGBDVideoReader, std::shared_ptr<RGBDVideoReader>>
+    py::class_<RGBDVideoReader, PyRGBDVideoReader,
+               std::unique_ptr<RGBDVideoReader>>
             rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
-    rgbd_video_reader
+    rgbd_video_reader.def(py::init<>())
             .def_static("create", &RGBDVideoReader::Create, "filename"_a,
                         "Create RGBD video reader based on filename")
+            .def("save_frames", &RGBDVideoReader::SaveFrames, "frame_path"_a,
+                 "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
+                 "Save synchronized and aligned individual frames to "
+                 "subfolders.")
             .def("__repr__", &RGBDVideoReader::ToString);
     docstring::ClassMethodDocInject(m, "RGBDVideoReader", "create",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "RGBDVideoReader", "save_frames",
                                     map_shared_argument_docstrings);
 
     // Class RGBD sensor
@@ -114,16 +168,34 @@ void pybind_sensor(py::module &m) {
 
 #ifdef BUILD_LIBREALSENSE
     // Class RS bag reader
-    py::class_<RSBagReader, std::shared_ptr<RSBagReader>, RGBDVideoReader>
-            rs_bag_reader(m, "RSBagReader", "RealSense Bag file reader.");
+    py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
+            rs_bag_reader(
+                    m, "RSBagReader",
+                    "RealSense Bag file reader."
+                    "Only the first color and depth streams from the bag file "
+                    "will be read.\n"
+                    " - The streams must have the same frame rate.\n"
+                    " - The color stream must have RGB 8 bit (RGB8/BGR8) pixel "
+                    "format\n"
+                    " - The depth stream must have 16 bit unsigned int (Z16) "
+                    "pixel format\n"
+                    "The output is synchronized color and depth frame pairs "
+                    "with the depth frame aligned to the color frame."
+                    "Unsynchronized frames will be dropped. With alignment,"
+                    "the depth and color frames have the same  viewpoint and"
+                    "resolution. See "
+                    "https://intelrealsense.github.io/librealsense/doxygen/"
+                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7"
+                    "for format documentation\n"
+                    "Note: A few frames may be dropped if user code takes a "
+                    "long time (>10 frame intervals) to process a frame.");
     rs_bag_reader.def(py::init<>())
             .def(py::init<size_t>(),
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
             .def("is_opened", &RSBagReader::IsOpened,
                  "Check if the RS bag file  is opened.")
-            .def("open",
-                 py::overload_cast<const std::string &>(&RSBagReader::Open),
-                 "filename"_a, "Open an RS bag playback.")
+            .def("open", &RSBagReader::Open, "filename"_a,
+                 "Open an RS bag playback.")
             .def("close", &RSBagReader::Close,
                  "Close the opened RS bag playback.")
             .def("is_eof", &RSBagReader::IsEOF,
@@ -214,7 +286,9 @@ void pybind_sensor(py::module &m) {
                  "start_record"_a = false,
                  "Start capturing synchronized depth and color frames.")
             .def("pause_record", &RealSenseSensor::PauseRecord,
-                 "Pause recording to the bag file.")
+                 "Pause recording to the bag file. Note: If this is called "
+                 "immediately after start_capture, the bag file may have an "
+                 "incorrect end time.")
             .def("resume_record", &RealSenseSensor::ResumeRecord,
                  "Resume recording to the bag file. The file will contain "
                  "discontinuous segments.")
