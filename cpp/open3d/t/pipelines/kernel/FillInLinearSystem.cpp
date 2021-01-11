@@ -33,6 +33,7 @@ namespace kernel {
 
 void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               core::Tensor &Atb,
+                              core::Tensor &residual,
                               const core::Tensor &points_i,
                               const core::Tensor &points_j,
                               const core::Tensor &normals_i,
@@ -40,6 +41,7 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               int j) {
     AtA.AssertDtype(core::Dtype::Float32);
     Atb.AssertDtype(core::Dtype::Float32);
+    residual.AssertDtype(core::Dtype::Float32);
     points_i.AssertDtype(core::Dtype::Float32);
     points_j.AssertDtype(core::Dtype::Float32);
     normals_i.AssertDtype(core::Dtype::Float32);
@@ -63,13 +65,13 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        FillInRigidAlignmentTermCPU(AtA, Atb, points_i, points_j, normals_i, i,
-                                    j);
+        FillInRigidAlignmentTermCPU(AtA, Atb, residual, points_i, points_j,
+                                    normals_i, i, j);
 
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        FillInRigidAlignmentTermCUDA(AtA, Atb, points_i, points_j, normals_i, i,
-                                     j);
+        FillInRigidAlignmentTermCUDA(AtA, Atb, residual, points_i, points_j,
+                                     normals_i, i, j);
 
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");

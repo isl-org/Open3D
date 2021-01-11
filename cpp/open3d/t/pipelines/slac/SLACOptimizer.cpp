@@ -237,7 +237,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
-        utility::LogInfo("edge {} -> {}", i, j);
+        // utility::LogInfo("edge {} -> {}", i, j);
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.buffer_folder_, i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
@@ -274,6 +274,7 @@ void FillInSLACRegularizerTerm(core::Tensor& AtA,
 
 void FillInRigidAlignmentTerm(core::Tensor& AtA,
                               core::Tensor& Atb,
+                              core::Tensor& residual,
                               const std::vector<std::string>& fnames,
                               const PoseGraph& pose_graph,
                               const SLACOptimizerOption& option) {
@@ -283,7 +284,7 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
-        utility::LogInfo("edge {} -> {}", i, j);
+        // utility::LogInfo("edge {} -> {}", i, j);
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.buffer_folder_, i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
@@ -308,28 +309,27 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         auto normals_i = tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]});
         auto normals_j = tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]});
 
-        kernel::FillInRigidAlignmentTerm(AtA, Atb, points_i, points_j,
+        kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, points_i, points_j,
                                          normals_i, i, j);
 
         // For debug
-        // if (option.grid_debug_) {
-        //     VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij,
-        //                        Eigen::Matrix4d::Identity());
+        if (option.grid_debug_) {
+            VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij,
+                               Eigen::Matrix4d::Identity());
 
-        //     t::geometry::PointCloud tpcd_i_corres(points_i);
-        //     t::geometry::PointCloud tpcd_j_corres(points_j);
-        //     auto pcd_i_corres =
-        //     std::make_shared<open3d::geometry::PointCloud>(
-        //             tpcd_i_corres.ToLegacyPointCloud());
-        //     pcd_i_corres->PaintUniformColor({1, 0, 0});
-        //     auto pcd_j_corres =
-        //     std::make_shared<open3d::geometry::PointCloud>(
-        //             tpcd_j_corres.ToLegacyPointCloud());
-        //     pcd_j_corres->PaintUniformColor({0, 1, 0});
+            t::geometry::PointCloud tpcd_i_corres(points_i);
+            t::geometry::PointCloud tpcd_j_corres(points_j);
+            auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+                    tpcd_i_corres.ToLegacyPointCloud());
+            pcd_i_corres->PaintUniformColor({1, 0, 0});
+            auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+                    tpcd_j_corres.ToLegacyPointCloud());
+            pcd_j_corres->PaintUniformColor({0, 1, 0});
 
-        //     // TODO: use parameterization to update normals and points per
-        //     grid visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
-        // }
+            // TODO: use parameterization to update normals and points per
+            // grid
+            visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
+        }
     }
 
     AtA.Save(fmt::format("{}/hessian.npy", option.buffer_folder_));
@@ -339,14 +339,47 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
 core::Tensor Solve(core::Tensor& AtA,
                    core::Tensor& Atb,
                    const SLACOptimizerOption& option) {
-    utility::LogError("Unimplemented.");
-    return Atb;
+    core::Tensor Atb_neg = -1 * Atb;
+    return AtA.Solve(Atb_neg);
 }
 
-void UpdatePoses(const PoseGraph& fragment_pose_graph,
-                 core::Tensor& result,
+void UpdatePoses(PoseGraph& fragment_pose_graph,
+                 core::Tensor& delta,
                  const SLACOptimizerOption& option) {
-    utility::LogError("Unimplemented.");
+    core::Tensor delta_poses = delta.View({-1, 6});
+
+    if (delta_poses.GetLength() != int64_t(fragment_pose_graph.nodes_.size())) {
+        utility::LogError("Dimension Mismatch");
+    }
+    for (int64_t i = 0; i < delta_poses.GetLength(); ++i) {
+        // std::cout << i << "\n";
+        core::Tensor pose_tensor =
+                kernel::PoseToTransformation(delta_poses[i])
+                        .Matmul(core::eigen_converter::EigenMatrixToTensor(
+                                        fragment_pose_graph.nodes_[i].pose_)
+                                        .To(core::Dtype::Float32));
+        // std::cout << fragment_pose_graph.nodes_[i].pose_ << " ";
+        Eigen::Matrix4d pose_eigen;
+        pose_eigen << pose_tensor[0][0].Item<float>(),
+                pose_tensor[0][1].Item<float>(),
+                pose_tensor[0][2].Item<float>(),
+                pose_tensor[0][3].Item<float>(),
+                pose_tensor[1][0].Item<float>(),
+                pose_tensor[1][1].Item<float>(),
+                pose_tensor[1][2].Item<float>(),
+                pose_tensor[1][3].Item<float>(),
+                pose_tensor[2][0].Item<float>(),
+                pose_tensor[2][1].Item<float>(),
+                pose_tensor[2][2].Item<float>(),
+                pose_tensor[2][3].Item<float>(),
+                pose_tensor[3][0].Item<float>(),
+                pose_tensor[3][1].Item<float>(),
+                pose_tensor[3][2].Item<float>(),
+                pose_tensor[3][3].Item<float>();
+
+        fragment_pose_graph.nodes_[i].pose_ = pose_eigen;
+        // std::cout << fragment_pose_graph.nodes_[i].pose_ << "\n";
+    }
 }
 
 void UpdateControlGrid(ControlGrid& ctr_grid,
@@ -373,30 +406,35 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     ControlGrid ctr_grid(3.0 / 8, 1000, device);
     InitializeControlGrid(ctr_grid, fnames_down, option);
 
-    PoseGraph updated_pose_graph;
-
     // Fill-in
     // fragments x 6 (se3) + control_grids x 3 (R^3)
     int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
     utility::LogInfo("Initializing {}^2 matrices", num_params);
+
+    core::Tensor indices_eye0 = core::Tensor::Arange(0, 6, 1);
     core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
                                            core::Dtype::Float32, device);
+    // Fix pose 0
+    AtA.IndexSet({indices_eye0, indices_eye0},
+                 1e12 * core::Tensor::Ones({}, core::Dtype::Float32, device));
     core::Tensor Atb =
             core::Tensor::Zeros({num_params, 1}, core::Dtype::Float32, device);
+
+    PoseGraph pose_graph_update(pose_graph);
     for (int itr = 0; itr < option.max_iterations_; ++itr) {
         utility::LogInfo("Iteration {}", itr);
-        FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down, pose_graph,
-                                option);
+        FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down,
+                                pose_graph_update, option);
         FillInSLACRegularizerTerm(AtA, Atb, ctr_grid, option);
 
         core::Tensor delta = Solve(AtA, Atb, option);
 
-        UpdatePoses(pose_graph, delta, option);
+        UpdatePoses(pose_graph_update, delta, option);
         UpdateControlGrid(ctr_grid, delta, option);
 
         utility::LogError("Unimplemented!");
     }
-    return std::make_pair(updated_pose_graph, ctr_grid);
+    return std::make_pair(pose_graph_update, ctr_grid);
 }
 
 PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
@@ -416,20 +454,32 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
     // fragments x 6 (se3)
     int64_t num_params = fnames_down.size() * 6;
     utility::LogInfo("Initializing {}^2 Hessian matrix", num_params);
-    core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
-                                           core::Dtype::Float32, device);
-    core::Tensor Atb =
-            core::Tensor::Zeros({num_params, 1}, core::Dtype::Float32, device);
+
+    PoseGraph pose_graph_update(pose_graph);
     for (int itr = 0; itr < option.max_iterations_; ++itr) {
+        core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
+                                               core::Dtype::Float32, device);
+        core::Tensor Atb = core::Tensor::Zeros({num_params, 1},
+                                               core::Dtype::Float32, device);
+        core::Tensor residual =
+                core::Tensor::Zeros({1}, core::Dtype::Float32, device);
+
+        // Fix pose 0
+        core::Tensor indices_eye0 = core::Tensor::Arange(0, 6, 1);
+        AtA.IndexSet(
+                {indices_eye0, indices_eye0},
+                1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
+
         utility::LogInfo("Iteration {}", itr);
-        FillInRigidAlignmentTerm(AtA, Atb, fnames_down, pose_graph, option);
+        FillInRigidAlignmentTerm(AtA, Atb, residual, fnames_down,
+                                 pose_graph_update, option);
+        utility::LogInfo("Residual = {}", residual[0].Item<float>());
 
         core::Tensor delta = Solve(AtA, Atb, option);
-        UpdatePoses(pose_graph, delta, option);
-
-        utility::LogError("Unimplemented!");
+        UpdatePoses(pose_graph_update, delta, option);
     }
-    return pose_graph;
+
+    return pose_graph_update;
 }
 
 }  // namespace slac

@@ -33,6 +33,7 @@ namespace kernel {
 
 void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               core::Tensor &Atb,
+                              core::Tensor &residual,
                               const core::Tensor &points_i,
                               const core::Tensor &points_j,
                               const core::Tensor &normals_i,
@@ -41,6 +42,7 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
 
 void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
                                  core::Tensor &Atb,
+                                 core::Tensor &residual,
                                  const core::Tensor &points_i,
                                  const core::Tensor &points_j,
                                  const core::Tensor &normals_i,
@@ -49,6 +51,7 @@ void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
 #ifdef BUILD_CUDA_MODULE
 void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
                                   core::Tensor &Atb,
+                                  core::Tensor &residual,
                                   const core::Tensor &points_i,
                                   const core::Tensor &points_j,
                                   const core::Tensor &normals_i,

@@ -38,6 +38,7 @@ void FillInRigidAlignmentTermCPU
 #endif
         (core::Tensor &AtA,
          core::Tensor &Atb,
+         core::Tensor &residual,
          const core::Tensor &points_i,
          const core::Tensor &points_j,
          const core::Tensor &normals_i,
@@ -59,6 +60,7 @@ void FillInRigidAlignmentTermCPU
 
     float *AtA_local_ptr = static_cast<float *>(AtA_local.GetDataPtr());
     float *Atb_local_ptr = static_cast<float *>(Atb_local.GetDataPtr());
+    float *residual_ptr = static_cast<float *>(residual.GetDataPtr());
 
     const float *points_i_ptr =
             static_cast<const float *>(points_i.GetDataPtr());
@@ -101,6 +103,7 @@ void FillInRigidAlignmentTermCPU
             }
             atomicAdd(&Atb_local_ptr[i_local], J_ij[i_local] * r);
         }
+        atomicAdd(residual_ptr, r * r);
 #else
 #pragma omp critical
         {
@@ -111,6 +114,7 @@ void FillInRigidAlignmentTermCPU
                  }
                  Atb_local_ptr[i_local] += J_ij[i_local] * r;
             }
+            *residual_ptr += r * r;
         }
 #endif
     });
@@ -141,11 +145,11 @@ void FillInRigidAlignmentTermCPU
     AtA.IndexSet({indices_i, indices_j}, AtA_sub + AtA_local.View({12 * 12}));
 
     core::Tensor Atb_sub = Atb.IndexGet({indices});
-    utility::LogInfo("Atb_sub before = {}", Atb_sub.ToString());
-    utility::LogInfo("Atb_local = {}", Atb_local.ToString());
+    // utility::LogInfo("Atb_sub before = {}", Atb_sub.ToString());
+    // utility::LogInfo("Atb_local = {}", Atb_local.ToString());
     Atb.IndexSet({indices}, Atb_sub + Atb_local.View({12, 1}));
-    Atb_sub = Atb.IndexGet({indices});
-    utility::LogInfo("Atb_sub after = {}", Atb_sub.ToString());
+    // Atb_sub = Atb.IndexGet({indices});
+    // utility::LogInfo("Atb_sub after = {}", Atb_sub.ToString());
 }
 }  // namespace kernel
 }  // namespace pipelines
