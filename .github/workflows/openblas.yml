@@ -153,9 +153,8 @@ jobs:
             ccache -s
 
       - name: Upload cache to GCS
-        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
 
   arm64:
     runs-on: ubuntu-20.04
