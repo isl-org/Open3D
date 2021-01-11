@@ -560,17 +560,9 @@ void MaxKnnThreshold(const cudaStream_t& stream,
     grid.x = utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
-#define FN_PARAMETERS                                                   \
-    prev_indices, prev_distances, indices, distances, neighbors_counts, \
-            neighbors_row_splits, num_queries, max_knn
-
-#define CALL_TEMPLATE \
-    MaxKnnThresholdKernel<T><<<grid, block, 0, stream>>>(FN_PARAMETERS);
-
-        CALL_TEMPLATE
-
-#undef CALL_TEMPLATE
-#undef FN_PARAMETERS
+        MaxKnnThresholdKernel<T><<<grid, block, 0, stream>>>(
+                prev_indices, prev_distances, indices, distances,
+                neighbors_counts, neighbors_row_splits, num_queries, max_knn);
     }
 }
 
