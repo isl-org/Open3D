@@ -20,6 +20,7 @@ env:
   STOOLS_VER: "50.3.2"
   PYTEST_VER: "6.0.1"
   SCIPY_VER: "1.4.1"
+  JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   NPROC: 2
   CONDA_BUILD_VER: "3.20.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
@@ -55,6 +56,7 @@ jobs:
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
+          $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
           cmake -G "Visual Studio 16 2019" -A x64 `
@@ -68,12 +70,14 @@ jobs:
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
         run: |
+          $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target build-examples-iteratively
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
       - name: Linking to Open3D
         run: |
+          $ErrorActionPreference = 'Stop'
           cd docs\_static\C++
           mkdir build
           cd build
@@ -87,9 +91,11 @@ jobs:
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
+          $ErrorActionPreference = 'Stop'
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
             wheel==${{ env.WHEEL_VER }} `
-            setuptools==${{ env.STOOLS_VER }}
+            setuptools==${{ env.STOOLS_VER }} `
+            jedi==${{ env.JEDI_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
@@ -133,6 +139,7 @@ jobs:
       - name: Config
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
@@ -153,6 +160,7 @@ jobs:
         shell: pwsh
         working-directory: ${{ env.BUILD_DIR }}
         run: |
+          $ErrorActionPreference = 'Stop'
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
             wheel==${{ env.WHEEL_VER }} `
             setuptools==${{ env.STOOLS_VER }}
@@ -194,6 +202,7 @@ jobs:
           python_version: ${{ matrix.python_version }}
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         run: |
+          $ErrorActionPreference = 'Stop'
           $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
           gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           if ($LastExitCode -eq 0) {
@@ -244,6 +253,7 @@ jobs:
 
       - name: Test Python package
         run: |
+          $ErrorActionPreference = 'Stop'
           python -V
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
@@ -264,6 +274,7 @@ jobs:
 
       - name: Run Python unit tests (benchmarks)
         run: |
+          $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Testing ML and ML Ops disabled"

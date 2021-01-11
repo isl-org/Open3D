@@ -280,8 +280,55 @@ void pybind_core_tensor(py::module& m) {
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
-    // Tensor copy.
-    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
+    // Tensor creation from arange for int.
+    tensor.def_static(
+            "arange",
+            [](int64_t stop, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        0, stop, 1,
+                        dtype.has_value() ? dtype.value() : Dtype::Int64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            "arange",
+            [](utility::optional<int64_t> start, int64_t stop,
+               utility::optional<int64_t> step, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        start.has_value() ? start.value() : 0, stop,
+                        step.has_value() ? step.value() : 1,
+                        dtype.has_value() ? dtype.value() : Dtype::Int64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
+            "dtype"_a = py::none(), "device"_a = py::none());
+
+    // Tensor creation from arange for float.
+    tensor.def_static(
+            "arange",
+            [](double stop, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        0.0, stop, 1.0,
+                        dtype.has_value() ? dtype.value() : Dtype::Float64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            "arange",
+            [](utility::optional<double> start, double stop,
+               utility::optional<double> step, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        start.has_value() ? start.value() : 0.0, stop,
+                        step.has_value() ? step.value() : 1.0,
+                        dtype.has_value() ? dtype.value() : Dtype::Float64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
+            "dtype"_a = py::none(), "device"_a = py::none());
 
     // Device transfer.
     tensor.def(
@@ -348,6 +395,10 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    // Numpy IO.
+    tensor.def("save", &Tensor::Save);
+    tensor.def_static("load", &Tensor::Load);
+
     /// Linalg operations.
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
@@ -365,6 +416,7 @@ void pybind_core_tensor(py::module& m) {
             "dtype"_a, "copy"_a = false);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
+    tensor.def("is_contiguous", &Tensor::IsContiguous);
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
@@ -471,6 +523,10 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
     tensor.def("abs_", &Tensor::Abs_);
+    tensor.def("floor", &Tensor::Floor);
+    tensor.def("ceil", &Tensor::Ceil);
+    tensor.def("round", &Tensor::Round);
+    tensor.def("trunc", &Tensor::Trunc);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 

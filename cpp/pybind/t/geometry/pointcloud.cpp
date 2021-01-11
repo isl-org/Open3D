@@ -78,7 +78,7 @@ void pybind_pointcloud(py::module& m) {
             "depth"_a, "intrinsics"_a,
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
-            "depth_scale"_a = 1000.0, "depth_max"_a = 3.0, "stride"_a = 1);
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1);
     pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,

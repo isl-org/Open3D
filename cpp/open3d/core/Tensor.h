@@ -36,6 +36,7 @@
 #include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -54,7 +55,7 @@ public:
            Dtype dtype,
            const Device& device = Device("CPU:0"))
         : shape_(shape),
-          strides_(DefaultStrides(shape)),
+          strides_(shape_util::DefaultStrides(shape)),
           dtype_(dtype),
           blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
                                        device)) {
@@ -181,18 +182,18 @@ public:
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
-    template <typename Scalar>
-    void Fill(Scalar v);
+    template <typename S>
+    void Fill(S v);
 
     template <typename Object>
     void FillObject(const Object& v);
 
-    /// Create a tensor with uninitilized values.
+    /// Create a tensor with uninitialized values.
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
 
-    /// Create a tensor with uninitilized values with the same dtype and device
+    /// Create a tensor with uninitialized values with the same dtype and device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
         return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
@@ -219,11 +220,125 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
+    /// Create a 0-D tensor (scalar) with given value.
+    /// For example,
+    /// core::Tensor::Init<float>(1);
+    template <typename T>
+    static Tensor Init(const T val, const Device& device = Device("CPU:0")) {
+        Dtype type = Dtype::FromType<T>();
+        std::vector<T> ele_list{val};
+        SizeVector shape;
+        return Tensor(ele_list, shape, type, device);
+    };
+
+    /// Create a 1-D tensor with initializer list.
+    /// For example,
+    /// core::Tensor::Init<float>({1,2,3});
+    template <typename T>
+    static Tensor Init(const std::initializer_list<T> in_list,
+                       const Device& device = Device("CPU:0")) {
+        Dtype type = Dtype::FromType<T>();
+        std::vector<T> ele_list;
+        ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
+
+        SizeVector shape{static_cast<int64_t>(in_list.size())};
+        return Tensor(ele_list, shape, type, device);
+    };
+
+    /// Create a 2-D tensor with nested initializer list.
+    /// For example,
+    /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
+    template <typename T>
+    static Tensor Init(
+            const std::initializer_list<std::initializer_list<T>> in_list,
+            const Device& device = Device("CPU:0")) {
+        Dtype type = Dtype::FromType<T>();
+        std::vector<T> ele_list;
+        int64_t dim0_size = static_cast<int64_t>(in_list.size());
+        int64_t dim1_size = -1;
+        for (const auto& ele0 : in_list) {
+            if (dim1_size == -1) {
+                dim1_size = static_cast<int64_t>(ele0.size());
+            } else {
+                if (static_cast<int64_t>(ele0.size()) != dim1_size) {
+                    utility::LogError(
+                            "Cannot create Tensor with ragged nested sequences "
+                            "(nested lists with unequal sizes or shapes).");
+                }
+            }
+            ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
+        }
+
+        SizeVector shape{dim0_size, dim1_size};
+        return Tensor(ele_list, shape, type, device);
+    };
+
+    /// Create a 3-D tensor with nested initializer list.
+    /// For example,
+    /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
+    template <typename T>
+    static Tensor Init(
+            const std::initializer_list<
+                    std::initializer_list<std::initializer_list<T>>> in_list,
+            const Device& device = Device("CPU:0")) {
+        Dtype type = Dtype::FromType<T>();
+        std::vector<T> ele_list;
+        int64_t dim0_size = static_cast<int64_t>(in_list.size());
+        int64_t dim1_size = -1;
+        int64_t dim2_size = -1;
+
+        for (const auto& ele1 : in_list) {
+            if (dim1_size == -1) {
+                dim1_size = static_cast<int64_t>(ele1.size());
+            } else {
+                if (static_cast<int64_t>(ele1.size()) != dim1_size) {
+                    utility::LogError(
+                            "Cannot create Tensor with ragged nested sequences "
+                            "(nested lists with unequal sizes or shapes).");
+                }
+            }
+
+            for (const auto& ele0 : ele1) {
+                if (dim2_size == -1) {
+                    dim2_size = static_cast<int64_t>(ele0.size());
+                } else {
+                    if (static_cast<int64_t>(ele0.size()) != dim2_size) {
+                        utility::LogError(
+                                "Cannot create Tensor with ragged nested "
+                                "sequences (nested lists with unequal sizes or "
+                                "shapes).");
+                    }
+                }
+
+                ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
+            }
+        }
+
+        // Handles 0-sized input lists.
+        SizeVector shape;
+        if (dim1_size == -1) {
+            shape = {dim0_size};
+        } else if (dim2_size == -1) {
+            shape = {dim0_size, dim1_size};
+        } else {
+            shape = {dim0_size, dim1_size, dim2_size};
+        }
+
+        return Tensor(ele_list, shape, type, device);
+    };
+
     /// Create a identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
 
     /// Create a square matrix with specified diagonal elements in input.
     static Tensor Diag(const Tensor& input);
+
+    /// Create a 1D tensor with evenly spaced values in the given interval.
+    static Tensor Arange(Scalar start,
+                         Scalar stop,
+                         Scalar step = 1,
+                         Dtype dtype = Dtype::Int64,
+                         const Device& device = core::Device("CPU:0"));
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -355,11 +470,8 @@ public:
     /// Copy Tensor to the same device.
     Tensor Copy() const { return Copy(GetDevice()); };
 
-    /// Copy Tensor values to current tensor for source tensor
+    /// Copy Tensor values to current tensor from the source tensor.
     void CopyFrom(const Tensor& other);
-
-    /// Shallow copy a tensor, returning a tensor sharing the same memory.
-    void ShallowCopyFrom(const Tensor& other);
 
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
@@ -382,7 +494,7 @@ public:
     /// \param dim The dimension to slice.
     /// \param start The start index (inclusive).
     /// \param stop The end index (exclusive).
-    /// \param step Pick one eleemnt for every \p step elements.
+    /// \param step Pick one element for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
@@ -635,6 +747,19 @@ public:
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+
+    /// Element-wise floor value of a tensor, returning a new tensor.
+    Tensor Floor() const;
+
+    /// Element-wise ceil value of a tensor, returning a new tensor.
+    Tensor Ceil() const;
+
+    /// Element-wise round value of a tensor, returning a new tensor.
+    Tensor Round() const;
+
+    /// Element-wise trunc value of a tensor, returning a new tensor.
+    Tensor Trunc() const;
+
     /// Element-wise logical not of a tensor, returning a new boolean tensor.
     ///
     /// If the tensor is not boolean, 0 will be treated as False, while non-zero
@@ -910,7 +1035,7 @@ public:
     /// Returns True if the underlying memory buffer is contiguous. A contiguous
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
-        return DefaultStrides(shape_) == strides_;
+        return shape_util::DefaultStrides(shape_) == strides_;
     };
 
     /// Returns a contiguous Tensor containing the same data in the same device.
@@ -985,40 +1110,33 @@ public:
         }
     }
 
-    static SizeVector DefaultStrides(const SizeVector& shape);
-
-    /// 1. Separate `oldshape` into chunks of dimensions, where the
-    /// dimensions
-    ///    are ``contiguous'' in each chunk, i.e.,
-    ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
-    /// 2. `newshape` must be able to be separated into same number of
-    /// chunks as
-    ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching ``numel'', i.e., number of subspaces, as the
-    ///    corresponding chunk of `oldshape`.
-    /// Ref: aten/src/ATen/TensorUtils.cpp
-    static std::pair<bool, SizeVector> ComputeNewStrides(
-            const SizeVector& old_shape,
-            const SizeVector& old_strides,
-            const SizeVector& new_shape);
-
     /// Convert the Tensor to DLManagedTensor.
     DLManagedTensor* ToDLPack() const;
 
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
 
+    /// Save tensor to numpy's npy format.
+    void Save(const std::string& file_name) const;
+
+    /// Load tensor from numpy's npy format.
+    static Tensor Load(const std::string& file_name);
+
     /// Assert that the Tensor has the specified shape.
-    void AssertShape(const SizeVector& expected_shape) const;
+    void AssertShape(const SizeVector& expected_shape,
+                     const std::string& error_msg = "") const;
 
     /// Assert that Tensor's shape is compatible with a dynamic shape.
-    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape,
+                               const std::string& error_msg = "") const;
 
     /// Assert that the Tensor has the specified device.
-    void AssertDevice(const Device& expected_device) const;
+    void AssertDevice(const Device& expected_device,
+                      const std::string& error_msg = "") const;
 
     /// Assert that the Tensor has the specified dtype.
-    void AssertDtype(const Dtype& expected_dtype) const;
+    void AssertDtype(const Dtype& expected_dtype,
+                     const std::string& error_msg = "") const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
@@ -1116,8 +1234,8 @@ inline bool Tensor::Item() const {
     return static_cast<bool>(value);
 }
 
-template <typename Scalar>
-inline void Tensor::Fill(Scalar v) {
+template <typename S>
+inline void Tensor::Fill(S v) {
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
         scalar_t casted_v = static_cast<scalar_t>(v);
         Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),

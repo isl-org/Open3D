@@ -89,7 +89,7 @@ public:
     virtual std::string ToString() const;
 
     /// Factory function to create object based on RGBD video file type.
-    static std::shared_ptr<RGBDVideoReader> Create(const std::string &filename);
+    static std::unique_ptr<RGBDVideoReader> Create(const std::string &filename);
 };
 
 }  // namespace io

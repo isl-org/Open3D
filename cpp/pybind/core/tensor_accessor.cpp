@@ -46,12 +46,20 @@ static TensorKey ToTensorKey(const py::slice& key) {
     Py_ssize_t step;
     PySlice_Unpack(key.ptr(), &start, &stop, &step);
     PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
-    return TensorKey::Slice(static_cast<int64_t>(start),
-                            static_cast<int64_t>(stop),
-                            static_cast<int64_t>(step),
-                            py::detail::PyNone_Check(slice_key->start),
-                            py::detail::PyNone_Check(slice_key->stop),
-                            py::detail::PyNone_Check(slice_key->step));
+
+    utility::optional<int64_t> start_opt = None;
+    if (!py::detail::PyNone_Check(slice_key->start)) {
+        start_opt = static_cast<int64_t>(start);
+    }
+    utility::optional<int64_t> stop_opt = None;
+    if (!py::detail::PyNone_Check(slice_key->stop)) {
+        stop_opt = static_cast<int64_t>(stop);
+    }
+    utility::optional<int64_t> step_opt = None;
+    if (!py::detail::PyNone_Check(slice_key->step)) {
+        step_opt = static_cast<int64_t>(step);
+    }
+    return TensorKey::Slice(start_opt, stop_opt, step_opt);
 }
 
 static TensorKey ToTensorKey(const py::list& key) {
