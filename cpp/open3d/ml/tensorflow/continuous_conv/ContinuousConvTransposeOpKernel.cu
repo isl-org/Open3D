@@ -145,7 +145,7 @@ private:
             Name("Open3DContinuousConvTranspose")                            \
                     .Device(DEVICE_GPU)                                      \
                     .TypeConstraint<feattype>("TFeat")                       \
-                    .TypeConstraint<outtype>("TOut")                         \
+                    .TypeConstraint<outtype>("output_type")                  \
                     .TypeConstraint<realtype>("TReal")                       \
                     .TypeConstraint<indextype>("TIndex"),                    \
             ContinuousConvTransposeOpKernelCUDA<feattype, outtype, realtype, \

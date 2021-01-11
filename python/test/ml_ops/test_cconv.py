@@ -79,7 +79,7 @@ def test_compare_to_conv3d(ml, feat_out_type, real_type, filter_size,
         'normalize': with_normalization,
         'interpolation': 'nearest_neighbor',
         'max_temp_mem_MB': 0,
-        'TOut': getattr(tf, out_type),
+        'output_type': getattr(tf, out_type),
     }
 
     filters = mltensor.random_uniform(size=(*filter_size, in_channels,

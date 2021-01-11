@@ -76,14 +76,14 @@ public:
     }
 };
 
-#define REG_KB(feattype, outtype, realtype, indextype)                    \
-    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                  \
-                                    .Device(DEVICE_CPU)                   \
-                                    .TypeConstraint<feattype>("TFeat")    \
-                                    .TypeConstraint<outtype>("TOut")      \
-                                    .TypeConstraint<realtype>("TReal")    \
-                                    .TypeConstraint<indextype>("TIndex"), \
-                            ContinuousConvOpKernelCPU<feattype, outtype,  \
+#define REG_KB(feattype, outtype, realtype, indextype)                      \
+    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                    \
+                                    .Device(DEVICE_CPU)                     \
+                                    .TypeConstraint<feattype>("TFeat")      \
+                                    .TypeConstraint<outtype>("output_type") \
+                                    .TypeConstraint<realtype>("TReal")      \
+                                    .TypeConstraint<indextype>("TIndex"),   \
+                            ContinuousConvOpKernelCPU<feattype, outtype,    \
                                                       realtype, indextype>);
 REG_KB(float, float, float, int32)
 REG_KB(bfloat16, float, float, int32)

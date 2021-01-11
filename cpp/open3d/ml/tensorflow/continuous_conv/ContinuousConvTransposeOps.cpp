@@ -34,8 +34,8 @@ using namespace tensorflow;
 REGISTER_OP("Open3DContinuousConvTranspose")
         .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
                                                    // weights
-        .Attr("TOut: {float, double} = DT_FLOAT")  // Type for the output
-                                                   // features
+        .Attr("output_type: {float, double} = DT_FLOAT")  // Type for the output
+                                                          // features
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")
@@ -60,7 +60,7 @@ REGISTER_OP("Open3DContinuousConvTranspose")
         .Input("neighbors_index: TIndex")              // [?]
         .Input("neighbors_importance: TFeat")          // [?]
         .Input("neighbors_row_splits: int64")          // [num_points_out+1]
-        .Output("out_features : TOut")  // [num_points_out, out_ch]
+        .Output("out_features : output_type")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle filters_shape, out_positions_shape,
@@ -304,6 +304,7 @@ neighbors_row_splits:
   the total neighbor count as the last element. The size of this array is the
   number of output points + 1.
 
+output_type: The type for the output.
 
 out_features:
   A Tensor with the output feature vectors for each output point.

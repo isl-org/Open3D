@@ -89,7 +89,7 @@ public:
             Name("Open3DContinuousConvTranspose")                           \
                     .Device(DEVICE_CPU)                                     \
                     .TypeConstraint<feattype>("TFeat")                      \
-                    .TypeConstraint<outtype>("TOut")                        \
+                    .TypeConstraint<outtype>("output_type")                 \
                     .TypeConstraint<realtype>("TReal")                      \
                     .TypeConstraint<indextype>("TIndex"),                   \
             ContinuousConvTransposeOpKernelCPU<feattype, outtype, realtype, \

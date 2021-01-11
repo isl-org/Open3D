@@ -89,8 +89,8 @@ public:
     REGISTER_KERNEL_BUILDER(                                    \
             Name("Open3DContinuousConvTransposeBackpropFilter") \
                     .Device(DEVICE_CPU)                         \
-                    .TypeConstraint<feattype>("TOut")           \
-                    .TypeConstraint<outtype>("TFeat")           \
+                    .TypeConstraint<feattype>("TFeat")          \
+                    .TypeConstraint<outtype>("output_type")     \
                     .TypeConstraint<realtype>("TReal")          \
                     .TypeConstraint<indextype>("TIndex"),       \
             ContinuousConvTransposeBackpropFilterOpKernelCPU<   \

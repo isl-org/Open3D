@@ -134,7 +134,7 @@ private:
             Name("Open3DContinuousConvBackpropFilter")                  \
                     .Device(DEVICE_GPU)                                 \
                     .TypeConstraint<feattype>("TFeat")                  \
-                    .TypeConstraint<outtype>("TOut")                    \
+                    .TypeConstraint<outtype>("output_type")             \
                     .TypeConstraint<realtype>("TReal")                  \
                     .TypeConstraint<indextype>("TIndex"),               \
             ContinuousConvBackpropFilterOpKernelCUDA<feattype, outtype, \

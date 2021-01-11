@@ -128,14 +128,14 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(feattype, outtype, realtype, indextype)                    \
-    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                  \
-                                    .Device(DEVICE_GPU)                   \
-                                    .TypeConstraint<feattype>("TFeat")    \
-                                    .TypeConstraint<outtype>("TOut")      \
-                                    .TypeConstraint<realtype>("TReal")    \
-                                    .TypeConstraint<indextype>("TIndex"), \
-                            ContinuousConvOpKernelCUDA<feattype, outtype, \
+#define REG_KB(feattype, outtype, realtype, indextype)                      \
+    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                    \
+                                    .Device(DEVICE_GPU)                     \
+                                    .TypeConstraint<feattype>("TFeat")      \
+                                    .TypeConstraint<outtype>("output_type") \
+                                    .TypeConstraint<realtype>("TReal")      \
+                                    .TypeConstraint<indextype>("TIndex"),   \
+                            ContinuousConvOpKernelCUDA<feattype, outtype,   \
                                                        realtype, indextype>);
 REG_KB(float, float, float, int32)
 #undef REG_KB

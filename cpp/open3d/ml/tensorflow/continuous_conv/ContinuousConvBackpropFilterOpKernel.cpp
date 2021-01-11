@@ -84,7 +84,7 @@ public:
             Name("Open3DContinuousConvBackpropFilter")                 \
                     .Device(DEVICE_CPU)                                \
                     .TypeConstraint<feattype>("TFeat")                 \
-                    .TypeConstraint<outtype>("TOut")                   \
+                    .TypeConstraint<outtype>("output_type")            \
                     .TypeConstraint<realtype>("TReal")                 \
                     .TypeConstraint<indextype>("TIndex"),              \
             ContinuousConvBackpropFilterOpKernelCPU<feattype, outtype, \
