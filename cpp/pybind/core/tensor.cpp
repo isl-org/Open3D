@@ -213,11 +213,10 @@ void pybind_core_tensor(py::module& m) {
                            utility::optional<Device> device) {
                    Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
                    if (dtype.has_value()) {
-                       t = t.To(dtype.value(), /*copy=*/false);
+                       t = t.To(dtype.value());
                    }
-                   if (device.has_value() &&
-                       device.value() != core::Device("CPU:0")) {
-                       t = t.Copy(device.value());
+                   if (device.has_value()) {
+                       t = t.To(device.value());
                    }
                    return t;
                }),
@@ -330,9 +329,6 @@ void pybind_core_tensor(py::module& m) {
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
-    // Tensor copy.
-    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
-
     // Device transfer.
     tensor.def(
             "cuda",
@@ -347,11 +343,11 @@ void pybind_core_tensor(py::module& m) {
                             "device_id < {}",
                             device_id, cuda::DeviceCount());
                 }
-                return tensor.Copy(Device(Device::DeviceType::CUDA, device_id));
+                return tensor.To(Device(Device::DeviceType::CUDA, device_id));
             },
             "device_id"_a = 0);
     tensor.def("cpu", [](const Tensor& tensor) {
-        return tensor.Copy(Device(Device::DeviceType::CPU, 0));
+        return tensor.To(Device(Device::DeviceType::CPU, 0));
     });
 
     // Buffer I/O for Numpy and DLPack(PyTorch).
@@ -410,13 +406,25 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
 
-    // Casting.
+    // Casting can copying.
     tensor.def(
             "to",
-            [](const Tensor& tensor, const Dtype& dtype, bool copy) {
+            [](const Tensor& tensor, Dtype dtype, bool copy) {
                 return tensor.To(dtype, copy);
             },
             "dtype"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, bool copy) {
+                return tensor.To(device, copy);
+            },
+            "device"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, Dtype dtype,
+               bool copy) { return tensor.To(device, dtype, copy); },
+            "device"_a, "dtype"_a, "copy"_a = false);
+    tensor.def("clone", &Tensor::Clone);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
     tensor.def("is_contiguous", &Tensor::IsContiguous);

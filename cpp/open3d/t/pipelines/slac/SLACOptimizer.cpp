@@ -110,7 +110,7 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
 
     // Prepare n x 8 corres for visualization
     core::Tensor corres = tpcd_param.GetPointAttr("ctr_grid_nb_idx")
-                                  .Copy(core::Device("CPU:0"));
+                                  .To(core::Device("CPU:0"));
     std::vector<std::pair<int, int>> corres_lines;
     for (int64_t i = 0; i < corres.GetLength(); ++i) {
         for (int k = 0; k < 8; ++k) {
@@ -123,7 +123,7 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
                     *pcd, *pcd_grid, corres_lines);
 
     core::Tensor corres_interp = tpcd_param.GetPointAttr("ctr_grid_nb_ratio")
-                                         .Copy(core::Device("CPU:0"));
+                                         .To(core::Device("CPU:0"));
     for (int64_t i = 0; i < corres.GetLength(); ++i) {
         for (int k = 0; k < 8; ++k) {
             float ratio = corres_interp[i][k].Item<float>();
@@ -264,10 +264,10 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     }
 }
 
-void FillInSLACRegularizer(core::Tensor& AtA,
-                           core::Tensor& Atb,
-                           ControlGrid& ctr_grid,
-                           const SLACOptimizerOption& option) {
+void FillInSLACRegularizerTerm(core::Tensor& AtA,
+                               core::Tensor& Atb,
+                               ControlGrid& ctr_grid,
+                               const SLACOptimizerOption& option) {
     utility::LogError("Unimplemented.");
 }
 
@@ -378,7 +378,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         utility::LogInfo("Iteration {}", itr);
         FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down, pose_graph,
                                 option);
-        FillInSLACRegularizer(AtA, Atb, ctr_grid, option);
+        FillInSLACRegularizerTerm(AtA, Atb, ctr_grid, option);
 
         core::Tensor delta = Solve(AtA, Atb, option);
 

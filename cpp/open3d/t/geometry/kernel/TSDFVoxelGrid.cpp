@@ -86,16 +86,8 @@ void Integrate(const core::Tensor& depth,
 
     core::Tensor depthf32 = depth.To(core::Dtype::Float32);
     core::Tensor colorf32 = color.To(core::Dtype::Float32);
-
-    core::Tensor intrinsicsf32 = intrinsics.To(core::Dtype::Float32);
-    if (intrinsicsf32.GetDevice() != device) {
-        intrinsicsf32 = intrinsicsf32.Copy(device);
-    }
-
-    core::Tensor extrinsicsf32 = extrinsics.To(core::Dtype::Float32);
-    if (extrinsicsf32.GetDevice() != device) {
-        extrinsicsf32 = extrinsicsf32.Copy(device);
-    }
+    core::Tensor intrinsicsf32 = intrinsics.To(device, core::Dtype::Float32);
+    core::Tensor extrinsicsf32 = extrinsics.To(device, core::Dtype::Float32);
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

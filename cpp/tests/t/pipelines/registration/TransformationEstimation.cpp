@@ -137,7 +137,7 @@ TEST_P(TransformationEstimationPermuteDevices,
     core::Tensor p2p_transform = estimation_p2p.ComputeTransformation(
             source_device, target_device, corres);
     // Apply transform.
-    t::geometry::PointCloud source_transformed_p2p = source_device.Copy();
+    t::geometry::PointCloud source_transformed_p2p = source_device.Clone();
     source_transformed_p2p.Transform(p2p_transform.To(dtype));
     double p2p_rmse_ = estimation_p2p.ComputeRMSE(source_transformed_p2p,
                                                   target_device, corres);
@@ -282,7 +282,7 @@ TEST_P(TransformationEstimationPermuteDevices,
             estimation_p2plane;
     core::Tensor p2plane_transform = estimation_p2plane.ComputeTransformation(
             source_device, target_device, corres);
-    t::geometry::PointCloud source_transformed_p2plane = source_device.Copy();
+    t::geometry::PointCloud source_transformed_p2plane = source_device.Clone();
     source_transformed_p2plane.Transform(p2plane_transform.To(dtype));
     double p2plane_rmse_ = estimation_p2plane.ComputeRMSE(
             source_transformed_p2plane, target_device, corres);

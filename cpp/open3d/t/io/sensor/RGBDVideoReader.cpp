@@ -94,12 +94,12 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                      idx, frame_path);
 }
 
-std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(
+std::unique_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         const std::string &filename) {
 #ifdef BUILD_LIBREALSENSE
     if (utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
         0) {
-        auto reader = std::make_shared<RSBagReader>();
+        auto reader = std::make_unique<RSBagReader>();
         reader->Open(filename);
         return reader;
     } else

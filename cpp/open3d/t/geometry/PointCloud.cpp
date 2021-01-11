@@ -73,15 +73,18 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
-PointCloud PointCloud::Copy(const core::Device device) const {
+PointCloud PointCloud::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
     PointCloud pcd(device);
-    for (auto &value : point_attr_) {
-        pcd.SetPointAttr(value.first, value.second.Copy(device));
+    for (auto &kv : point_attr_) {
+        pcd.SetPointAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return pcd;
 }
 
-PointCloud PointCloud::Copy() const { return Copy(GetDevice()); }
+PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
