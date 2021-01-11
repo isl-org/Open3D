@@ -39,6 +39,23 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               int i,
                               int j);
 
+void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
+                                 core::Tensor &Atb,
+                                 const core::Tensor &points_i,
+                                 const core::Tensor &points_j,
+                                 const core::Tensor &normals_i,
+                                 int i,
+                                 int j);
+#ifdef BUILD_CUDA_MODULE
+void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
+                                  core::Tensor &Atb,
+                                  const core::Tensor &points_i,
+                                  const core::Tensor &points_j,
+                                  const core::Tensor &normals_i,
+                                  int i,
+                                  int j);
+#endif
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

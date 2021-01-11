@@ -11,10 +11,13 @@ set (SLAC_SRC
 
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
+    kernel/FillInLinearSystem.cpp
+    kernel/FillInLinearSystemCPU.cpp
 )
 
 set(KERNEL_CUDA_SRC
     kernel/TransformationConverter.cu
+    kernel/FillInLinearSystemCUDA.cu
 )
 
 set(ALL_PIPELINE_SRC

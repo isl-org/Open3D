@@ -23,3 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+
+#include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/t/pipelines/kernel/FillInLinearSystemImpl.h"

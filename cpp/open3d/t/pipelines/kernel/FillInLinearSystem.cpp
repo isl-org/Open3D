@@ -38,24 +38,30 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               const core::Tensor &normals_i,
                               int i,
                               int j) {
+    AtA.AssertDtype(core::Dtype::Float32);
+    Atb.AssertDtype(core::Dtype::Float32);
+    points_i.AssertDtype(core::Dtype::Float32);
+    points_j.AssertDtype(core::Dtype::Float32);
+    normals_i.AssertDtype(core::Dtype::Float32);
+
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
-        utility::LogError("AtA should have the same device as Atb");
+        utility::LogError("AtA should have the same device as Atb.");
     }
     if (points_i.GetDevice() != device) {
         utility::LogError(
-                "Points_i should have the same device as the linear system");
+                "Points i should have the same device as the linear system.");
     }
     if (points_j.GetDevice() != device) {
         utility::LogError(
-                "Points_j should have the same device as the linear system");
+                "Points j should have the same device as the linear system.");
     }
     if (normals_i.GetDevice() != device) {
         utility::LogError(
-                "Normals_i should have the same device as the linear system");
+                "Normals i should have the same device as the linear system.");
     }
 
-    core::Device::DeviceType device = device.GetType();
+    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         FillInRigidAlignmentTermCPU(AtA, Atb, points_i, points_j, normals_i, i,
                                     j);

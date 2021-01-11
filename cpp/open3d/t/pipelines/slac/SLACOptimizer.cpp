@@ -32,6 +32,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/Draw.h"
@@ -307,24 +308,32 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         auto normals_i = tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]});
         auto normals_j = tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]});
 
+        kernel::FillInRigidAlignmentTerm(AtA, Atb, points_i, points_j,
+                                         normals_i, i, j);
+
         // For debug
-        if (option.grid_debug_) {
-            VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij,
-                               Eigen::Matrix4d::Identity());
+        // if (option.grid_debug_) {
+        //     VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij,
+        //                        Eigen::Matrix4d::Identity());
 
-            t::geometry::PointCloud tpcd_i_corres(points_i);
-            t::geometry::PointCloud tpcd_j_corres(points_j);
-            auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
-                    tpcd_i_corres.ToLegacyPointCloud());
-            pcd_i_corres->PaintUniformColor({1, 0, 0});
-            auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
-                    tpcd_j_corres.ToLegacyPointCloud());
-            pcd_j_corres->PaintUniformColor({0, 1, 0});
+        //     t::geometry::PointCloud tpcd_i_corres(points_i);
+        //     t::geometry::PointCloud tpcd_j_corres(points_j);
+        //     auto pcd_i_corres =
+        //     std::make_shared<open3d::geometry::PointCloud>(
+        //             tpcd_i_corres.ToLegacyPointCloud());
+        //     pcd_i_corres->PaintUniformColor({1, 0, 0});
+        //     auto pcd_j_corres =
+        //     std::make_shared<open3d::geometry::PointCloud>(
+        //             tpcd_j_corres.ToLegacyPointCloud());
+        //     pcd_j_corres->PaintUniformColor({0, 1, 0});
 
-            // TODO: use parameterization to update normals and points per grid
-            visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
-        }
+        //     // TODO: use parameterization to update normals and points per
+        //     grid visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
+        // }
     }
+
+    AtA.Save(fmt::format("{}/hessian.npy", option.buffer_folder_));
+    Atb.Save(fmt::format("{}/residual.npy", option.buffer_folder_));
 }
 
 core::Tensor Solve(core::Tensor& AtA,
