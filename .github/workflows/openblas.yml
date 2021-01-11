@@ -122,13 +122,10 @@ jobs:
           dockerRunArgs: |
             --volume "${HOME}/.ccache:/root/.ccache"
 
-          # Install dependencies
-          install: |
-            source util/ci_utils.sh
-            install_arm64_dependencies
-
           # Build and run Open3D tests
           run: |
+            source util/ci_utils.sh
+            install_arm64_dependencies
             PATH=/usr/lib/ccache:$PATH
             PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
@@ -199,13 +196,10 @@ jobs:
           dockerRunArgs: |
             --volume "${HOME}/.ccache:/root/.ccache"
 
-          # Install dependencies
-          install: |
-            source util/ci_utils.sh
-            install_arm64_dependencies
-
           # Build and run Open3D tests
           run: |
+            source util/ci_utils.sh
+            install_arm64_dependencies
             PATH=/usr/lib/ccache:$PATH
             PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
