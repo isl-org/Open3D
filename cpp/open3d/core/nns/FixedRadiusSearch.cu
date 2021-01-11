@@ -536,11 +536,11 @@ __global__ void MaxKnnThresholdKernel(
     size_t indices_offset = neighbors_row_splits[query_idx];
     uint32_t num_neighbors = neighbors_counts[query_idx];
 
-    int n = (int)min(num_neighbors, (uint32_t)max_knn);
-
-    for (int j = 0; j < n; j++) {
-        indices[max_knn * query_idx + j] = prev_indices[indices_offset + j];
-        distances[max_knn * query_idx + j] = prev_distances[indices_offset + j];
+    for (int j = 0; j < max_knn; j++) {
+        indices[max_knn * query_idx + j] =
+                j >= num_neighbors ? -1 : prev_indices[indices_offset + j];
+        distances[max_knn * query_idx + j] =
+                j >= num_neighbors ? -1 : prev_distances[indices_offset + j];
     }
 }
 

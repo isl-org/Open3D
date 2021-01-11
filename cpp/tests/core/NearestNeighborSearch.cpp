@@ -182,7 +182,7 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
     core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::NearestNeighborSearch nns(ref);
     double radius = 0.1;
-    int max_knn = 1;
+    int max_knn = 3;
     nns.HybridIndex(radius);
 
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
@@ -193,9 +193,9 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
 
     core::Tensor indices = result.first;
     core::Tensor distainces = result.second;
-    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
+    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, -1}));
     ExpectEQ(distainces.ToFlatVector<float>(),
-             std::vector<float>({0.00626358}));
+             std::vector<float>({0.00626358, 0.00747938, -1}));
 }
 
 }  // namespace tests
