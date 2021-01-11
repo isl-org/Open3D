@@ -170,11 +170,12 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                     std::vector<std::pair<int64_t, scalar_t>> ret_matches;
                     for (size_t i = r.begin(); i != r.end(); ++i) {
                         scalar_t radius = radii[i].Item<scalar_t>();
+                        scalar_t radius_squared = radius * radius;
 
                         size_t num_results = holder->index_->radiusSearch(
                                 static_cast<scalar_t *>(
                                         query_points[i].GetDataPtr()),
-                                radius * radius, ret_matches, params);
+                                radius_squared, ret_matches, params);
                         ret_matches.resize(num_results);
                         std::vector<size_t> single_indices;
                         std::vector<scalar_t> single_distances;
@@ -245,7 +246,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                 "0.");
     }
 
-    radius = radius * radius;
+    double radius_squared = radius * radius;
 
     Tensor indices;
     Tensor distances;
@@ -253,7 +254,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
     Dtype dtype = GetDtype();
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        Tensor invalid = distances.Gt(radius);
+        Tensor invalid = distances.Gt(radius_squared);
         Tensor invalid_indices =
                 Tensor(std::vector<int64_t>({-1}), {1}, indices.GetDtype(),
                        indices.GetDevice());

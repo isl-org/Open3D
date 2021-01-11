@@ -73,16 +73,7 @@ public:
                 "FixedRadiusIndex::SearchRadius with multi-radii not "
                 "implemented.");
     }
-    /// Perform radius search.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radius Radius.
-    /// \return Tuple of Tensors, (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n}, dtype Int64.
+
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor& query_points, double radius) const override;
 
