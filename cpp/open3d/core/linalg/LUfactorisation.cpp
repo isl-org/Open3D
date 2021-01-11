@@ -88,7 +88,7 @@ void LUfactorisation(const Tensor &A, Tensor &output) {
         void *ipiv_data = ipiv.GetDataPtr();
 
         // LAPACKE supports getri, A is in-place modified as output.
-        Tensor A_T = A.T().Copy(device);
+        Tensor A_T = A.T().To(device, /*copy=*/true);
         void *A_data = A_T.GetDataPtr();
 
         LUfactorisationCPU(A_data, ipiv_data, nullptr, n, dtype, device);
