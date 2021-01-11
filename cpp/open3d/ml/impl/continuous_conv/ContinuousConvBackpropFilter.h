@@ -90,7 +90,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                 Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * spatial_filter_size, range_length);
                 B.setZero();
-                Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic> C(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> C(
                         out_channels, range_length);
 
                 typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
@@ -116,7 +116,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                     const size_t neighbor_start = neighbors_row_splits[out_idx];
                     const size_t neighbor_end =
                             neighbors_row_splits[out_idx + 1];
-                    TOut normalizer = 0;
+                    TOut normalizer(0);
 
                     if (INDIVIDUAL_EXTENT) {
                         if (ISOTROPIC_EXTENT) {
@@ -151,14 +151,14 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
 
                         const TFeat n_importance =
                                 (NEIGHBOR_IMPORTANCE ? neighbors_importance[n]
-                                                     : 1);
-                        normalizer += n_importance;
+                                                     : TFeat(1));
+                        normalizer += TOut(n_importance);
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
                                     inp_features[inp_idx * in_channels + ic];
 
-                        TOut importance = 1;
+                        TFeat importance = TFeat(1);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
                         if (NEIGHBOR_IMPORTANCE) importance *= n_importance;
@@ -181,7 +181,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                                      ++j) {
                                     for (int ic = 0; ic < in_channels; ++ic)
                                         B(interp_indices(j, k) + ic, out_col) +=
-                                                interp_weights(j, k) *
+                                                TFeat(interp_weights(j, k)) *
                                                 infeat(k, ic);
                                 }
                             vec_valid_count = 0;
@@ -199,7 +199,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                                  ++j) {
                                 for (int ic = 0; ic < in_channels; ++ic)
                                     B(interp_indices(j, k) + ic, out_col) +=
-                                            interp_weights(j, k) *
+                                            TFeat(interp_weights(j, k)) *
                                             infeat(k, ic);
                             }
                     }
@@ -209,15 +209,15 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                             out_features_gradient + out_idx * out_channels,
                             out_channels, 1);
 
-                    if (normalize && normalizer != 0)
-                        C.col(out_col) /= normalizer;
+                    if (normalize && normalizer != TOut(0))
+                        C.col(out_col) /= TFeat(normalizer);
 
                 }  // out_idx
 
                 Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic> A(
                         out_channels, spatial_filter_size * in_channels);
 
-                A = C * B.transpose();
+                A = (C * B.transpose()).template cast<TOut>();
 
                 {
                     std::lock_guard<std::mutex> lock(filter_backprop_mutex);

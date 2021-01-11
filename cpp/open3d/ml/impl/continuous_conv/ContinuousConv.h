@@ -148,14 +148,14 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
 
                         const TFeat n_importance =
                                 (NEIGHBOR_IMPORTANCE ? neighbor_importance[n]
-                                                     : 1);
-                        normalizers(out_col) += n_importance;
+                                                     : TFeat(1));
+                        normalizers(out_col) += TOut(n_importance);
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
                                     inp_features[inp_idx * in_channels + ic];
 
-                        TFeat importance = 1.0;
+                        TFeat importance(1.0);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
                         if (NEIGHBOR_IMPORTANCE) importance *= n_importance;
@@ -178,7 +178,7 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                                      ++j) {
                                     for (int ic = 0; ic < in_channels; ++ic)
                                         B(interp_indices(j, k) + ic, out_col) +=
-                                                interp_weights(j, k) *
+                                                TFeat(interp_weights(j, k)) *
                                                 infeat(k, ic);
                                 }
                             vec_valid_count = 0;
@@ -196,7 +196,7 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                                  ++j) {
                                 for (int ic = 0; ic < in_channels; ++ic)
                                     B(interp_indices(j, k) + ic, out_col) +=
-                                            interp_weights(j, k) *
+                                            TFeat(interp_weights(j, k)) *
                                             infeat(k, ic);
                             }
                     }
@@ -211,10 +211,11 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                         C(out_features + (r.begin() * out_channels),
                           out_channels, range_length);
 
-                C = A * B;
+                C = (A * B).template cast<TOut>();
                 if (normalize) {
                     for (int i = 0; i < range_length; ++i) {
-                        if (normalizers(i) != 0) C.col(i) /= normalizers(i);
+                        if (normalizers(i) != TOut(0))
+                            C.col(i) /= normalizers(i);
                     }
                 }
             });

@@ -34,8 +34,8 @@ using namespace tensorflow;
 REGISTER_OP("Open3DContinuousConv")
         .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
                                                    // weights
-        .Attr("TOut: {float, double} = DT_FLOAT")  // Type for the output
-                                                   // features
+        .Attr("TOut: {float, double, bfloat16} = DT_FLOAT")  // Type for the
+                                                             // output features
         .Attr("TReal: {float, double}")  // Type for point positions and extents
         .Attr("TIndex: {int32, int64}")  // Type for neighbor indexing
         .Attr("align_corners: bool = true")

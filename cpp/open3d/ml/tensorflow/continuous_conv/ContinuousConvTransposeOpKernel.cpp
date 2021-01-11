@@ -95,4 +95,6 @@ public:
             ContinuousConvTransposeOpKernelCPU<feattype, outtype, realtype, \
                                                indextype>);
 REG_KB(float, float, float, int32)
+REG_KB(bfloat16, float, float, int32)
+REG_KB(bfloat16, bfloat16, float, int32)
 #undef REG_KB

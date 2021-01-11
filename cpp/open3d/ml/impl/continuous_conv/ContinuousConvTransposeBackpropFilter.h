@@ -160,16 +160,17 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
 
                         TFeat n_importance = NEIGHBOR_IMPORTANCE
                                                      ? neighbors_importance[n]
-                                                     : 1;
+                                                     : TFeat(1);
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
                                     inp_features[inp_idx * in_channels + ic] *
                                     n_importance;
 
                         if (NORMALIZE) {
-                            TFeat normalizer = 1;
+                            TFeat normalizer(1);
                             if (NEIGHBOR_IMPORTANCE) {
-                                if (inp_neighbors_importance_sum[inp_idx] != 0)
+                                if (inp_neighbors_importance_sum[inp_idx] !=
+                                    TFeat(0))
                                     normalizer /= inp_neighbors_importance_sum
                                             [inp_idx];
                             } else {
@@ -181,7 +182,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                                 num_inp_neighbors =
                                         inp_neighbor_end - inp_neighbor_start;
                                 if (num_inp_neighbors > 0)
-                                    normalizer /= num_inp_neighbors;
+                                    normalizer /= TFeat(num_inp_neighbors);
                             }
                             for (int ic = 0; ic < in_channels; ++ic)
                                 infeat(i, ic) *= normalizer;
@@ -201,7 +202,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                                      ++j) {
                                     for (int ic = 0; ic < in_channels; ++ic)
                                         B(interp_indices(j, k) + ic, out_col) +=
-                                                interp_weights(j, k) *
+                                                TFeat(interp_weights(j, k)) *
                                                 infeat(k, ic);
                                 }
                             }
@@ -222,7 +223,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                 Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic> A(
                         out_channels, spatial_filter_size * in_channels);
 
-                A = C * B.transpose();
+                A = (C * B.transpose()).template cast<TOut>();
 
                 {
                     std::lock_guard<std::mutex> lock(filter_backprop_mutex);
