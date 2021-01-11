@@ -101,36 +101,75 @@ protected:
     Tensor hash_table_index_;
 };
 
+enum class SearchOpCode {
+    FixedRadius = 0,
+    Hybrid = 1,
+};
+
 template <class T>
 class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
-        neighbors_index = Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
-        *ptr = static_cast<int32_t*>(neighbors_index.GetDataPtr());
+    void AllocIndices(int32_t** ptr,
+                      size_t num,
+                      SearchOpCode search_type = SearchOpCode::FixedRadius) {
+        if (!indices.count(search_type)) {
+            indices[search_type] =
+                    Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
+            *ptr = static_cast<int32_t*>(indices[search_type].GetDataPtr());
+        }
     }
 
-    void AllocDistances(T** ptr, size_t num) {
-        neighbors_distance =
-                Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = static_cast<T*>(neighbors_distance.GetDataPtr());
+    void AllocDistances(T** ptr,
+                        size_t num,
+                        SearchOpCode search_type = SearchOpCode::FixedRadius) {
+        if (!distances.count(search_type)) {
+            distances[search_type] = Tensor::Empty(
+                    {int64_t(num)}, Dtype::FromType<T>(), device_);
+            *ptr = static_cast<T*>(distances[search_type].GetDataPtr());
+        }
     }
 
-    const int32_t* IndicesPtr() const {
-        return static_cast<const int32_t*>(neighbors_index.GetDataPtr());
+    const int32_t* IndicesPtr(
+            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
+        if (!indices.count(search_type))
+            utility::LogError(
+                    "Indices pointer is not allocated. Please allocate pointer "
+                    "for indices with AllocIndices function.");
+        return static_cast<const int32_t*>(
+                indices.at(search_type).GetDataPtr());
     }
 
-    const T* DistancesPtr() const {
-        return static_cast<const T*>(neighbors_distance.GetDataPtr());
+    const T* DistancesPtr(
+            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
+        if (!distances.count(search_type))
+            utility::LogError(
+                    "Distances pointer is not allocated. Please allocate "
+                    "pointer for distances with AllocDistances function.");
+        return static_cast<const T*>(distances.at(search_type).GetDataPtr());
     }
 
-    const Tensor& NeighborsIndex() const { return neighbors_index; }
-    const Tensor& NeighborsDistance() const { return neighbors_distance; }
+    const Tensor& NeighborsIndex(
+            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
+        if (!indices.count(search_type))
+            utility::LogError(
+                    "Indices is not allocated. Please allocate pointer for "
+                    "indices with AllocIndices function.");
+        return indices.at(search_type);
+    }
+    const Tensor& NeighborsDistance(
+            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
+        if (!distances.count(search_type))
+            utility::LogError(
+                    "Distances pointer is not allocated. Please allocate "
+                    "pointer for distances with AllocDistances function.");
+        return distances.at(search_type);
+    }
 
 private:
-    Tensor neighbors_index;
-    Tensor neighbors_distance;
+    std::unordered_map<SearchOpCode, Tensor> indices;
+    std::unordered_map<SearchOpCode, Tensor> distances;
     Device device_;
 };
 }  // namespace nns

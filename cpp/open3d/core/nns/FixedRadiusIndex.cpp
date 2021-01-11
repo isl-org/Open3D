@@ -83,6 +83,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
     Dtype dtype = GetDtype();
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        // Determine temp_size.
         BuildSpatialHashTableCUDA(
                 temp_ptr, temp_size, dataset_points_.GetShape()[1],
                 static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
@@ -97,6 +98,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                            dataset_points_.GetDevice());
         temp_ptr = temp_tensor.GetDataPtr();
 
+        // Actually run the function.
         BuildSpatialHashTableCUDA(
                 temp_ptr, temp_size, dataset_points_.GetShape()[1],
                 static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
@@ -148,6 +150,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(
                 dataset_points_.GetDevice());
+        // Determine temp_size.
         FixedRadiusSearchCUDA(
                 temp_ptr, temp_size,
                 static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
@@ -169,6 +172,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                                            dataset_points_.GetDevice());
         temp_ptr = temp_tensor.GetDataPtr();
 
+        // Actually run the function.
         FixedRadiusSearchCUDA(
                 temp_ptr, temp_size,
                 static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
@@ -217,6 +221,7 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         utility::LogError(
                 "[FixedRadiusIndex::SearchRadius] radius should be positive.");
     }
+
     Tensor query_points_ = query_points.Contiguous();
     int64_t num_query_points = query_points_.GetShape()[0];
     std::vector<int64_t> queries_row_splits({0, num_query_points});
@@ -226,16 +231,16 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
     Dtype dtype = GetDtype();
     Device device = GetDevice();
-    Tensor neighbors_index = Tensor::Full({num_query_points * max_knn}, -1,
-                                          Dtype::Int32, device);
-    Tensor neighbors_distance =
-            Tensor::Full({num_query_points * max_knn}, -1, dtype, device);
-    Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Dtype::Int64,
-                                         dataset_points_.GetDevice());
+    Tensor neighbors_index;
+    Tensor neighbors_distance;
+    Tensor neighbors_row_splits =
+            Tensor({num_query_points + 1}, Dtype::Int64, device);
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
-        HybridSearchCUDA(
+
+        // Determine temp_size;
+        FixedRadiusSearchCUDA(
                 temp_ptr, temp_size,
                 static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
                 GetDatasetSize(),
@@ -250,15 +255,14 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
                         hash_table_cell_splits_.GetDataPtr()),
                 (uint32_t *)static_cast<const int32_t *>(
                         hash_table_index_.GetDataPtr()),
-                output_allocator, max_knn,
-                static_cast<int32_t *>(neighbors_index.GetDataPtr()),
-                static_cast<scalar_t *>(neighbors_distance.GetDataPtr()));
+                output_allocator, max_knn);
 
         Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
                                            dataset_points_.GetDevice());
         temp_ptr = temp_tensor.GetDataPtr();
 
-        HybridSearchCUDA(
+        // Actually run the function.
+        FixedRadiusSearchCUDA(
                 temp_ptr, temp_size,
                 static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
                 GetDatasetSize(),
@@ -273,14 +277,14 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
                         hash_table_cell_splits_.GetDataPtr()),
                 (uint32_t *)static_cast<const int32_t *>(
                         hash_table_index_.GetDataPtr()),
-                output_allocator, max_knn,
-                static_cast<int32_t *>(neighbors_index.GetDataPtr()),
-                static_cast<scalar_t *>(neighbors_distance.GetDataPtr()));
+                output_allocator, max_knn);
 
-        neighbors_index = neighbors_index.To(Dtype::Int64)
+        neighbors_index = output_allocator.NeighborsIndex(SearchOpCode::Hybrid)
+                                  .To(Dtype::Int64)
                                   .View({num_query_points, max_knn});
         neighbors_distance =
-                neighbors_distance.View({num_query_points, max_knn});
+                output_allocator.NeighborsDistance(SearchOpCode::Hybrid)
+                        .View({num_query_points, max_knn});
     });
 
     return std::make_pair(neighbors_index, neighbors_distance);
