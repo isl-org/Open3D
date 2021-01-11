@@ -245,29 +245,17 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
     return mesh;
 }
 
-TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
+TSDFVoxelGrid TSDFVoxelGrid::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+
     TSDFVoxelGrid device_tsdf_voxelgrid(attr_dtype_map_, voxel_size_,
                                         sdf_trunc_, block_resolution_,
                                         block_count_, device);
     auto device_tsdf_hashmap = device_tsdf_voxelgrid.block_hashmap_;
-    *device_tsdf_hashmap = block_hashmap_->Copy(device);
+    *device_tsdf_hashmap = block_hashmap_->To(device);
     return device_tsdf_voxelgrid;
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CPU() {
-    if (GetDevice().GetType() == core::Device::DeviceType::CPU) {
-        return *this;
-    }
-    return Copy(core::Device("CPU:0"));
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CUDA(int device_id) {
-    core::Device device =
-            core::Device(core::Device::DeviceType::CUDA, device_id);
-    if (GetDevice() == device) {
-        return *this;
-    }
-    return Copy(device);
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(

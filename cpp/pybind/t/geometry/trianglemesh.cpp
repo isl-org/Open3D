@@ -58,9 +58,23 @@ void pybind_trianglemesh(py::module& m) {
             "triangles",
             py::overload_cast<>(&TriangleMesh::GetTriangleAttr, py::const_));
 
+    // Device transfers.
+    triangle_mesh.def("to", &TriangleMesh::To,
+                      "Transfer the triangle mesh to a specified device.",
+                      "device"_a, "copy"_a = false);
+    triangle_mesh.def("clone", &TriangleMesh::Clone,
+                      "Returns copy of the triangle mesh on the same device.");
+    triangle_mesh.def("cpu", &TriangleMesh::CPU,
+                      "Transfer the triangle mesh to CPU. If the triangle mesh "
+                      "is already on CPU, no copy will be performed.");
+    triangle_mesh.def(
+            "cuda", &TriangleMesh::CUDA,
+            "Transfer the triangle mesh to a CUDA device. If the triangle mesh "
+            "is already on the specified CUDA device, no copy will be "
+            "performed.",
+            "device_id"_a = 0);
+
     // Triangle Mesh's specific functions.
-    // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to
-    //       o3d.core.Tensor (pure Python wrapper).
     triangle_mesh.def("get_min_bound", &TriangleMesh::GetMinBound,
                       "Returns the min bound for point coordinates.");
     triangle_mesh.def("get_max_bound", &TriangleMesh::GetMaxBound,

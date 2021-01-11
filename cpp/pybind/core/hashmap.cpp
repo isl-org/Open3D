@@ -102,6 +102,11 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def("rehash", &Hashmap::Rehash);
     hashmap.def("size", &Hashmap::Size);
     hashmap.def("capacity", &Hashmap::GetCapacity);
+
+    hashmap.def("to", &Hashmap::To, "device"_a, "copy"_a = false);
+    hashmap.def("clone", &Hashmap::Clone);
+    hashmap.def("cpu", &Hashmap::CPU);
+    hashmap.def("cuda", &Hashmap::CUDA, "device_id"_a = 0);
 }
 }  // namespace core
 }  // namespace open3d

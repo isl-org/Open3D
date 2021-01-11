@@ -187,7 +187,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // Put index tensors_ on the same device as tensor_.
     for (size_t i = 0; i < index_tensors_.size(); ++i) {
         if (index_tensors_[i].GetDevice() != tensor_.GetDevice()) {
-            index_tensors_[i] = index_tensors_[i].Copy(tensor_.GetDevice());
+            index_tensors_[i] = index_tensors_[i].To(tensor_.GetDevice());
         }
     }
 

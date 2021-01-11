@@ -69,19 +69,16 @@ void IndexSet(const Tensor& src,
               const SizeVector& indexed_shape,
               const SizeVector& indexed_strides) {
     // index_tensors has been preprocessed to be on the same device as dst,
-    // however, src may be in a deifferent device.
-    if (dst.GetDevice() != src.GetDevice()) {
-        Tensor src_same_device = src.Copy(dst.GetDevice());
-        IndexSet(src_same_device, dst, index_tensors, indexed_shape,
-                 indexed_strides);
-        return;
-    }
+    // however, src may be on a different device.
+    Tensor src_same_device = src.To(dst.GetDevice());
 
     if (dst.GetDevice().GetType() == Device::DeviceType::CPU) {
-        IndexSetCPU(src, dst, index_tensors, indexed_shape, indexed_strides);
+        IndexSetCPU(src_same_device, dst, index_tensors, indexed_shape,
+                    indexed_strides);
     } else if (dst.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        IndexSetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
+        IndexSetCUDA(src_same_device, dst, index_tensors, indexed_shape,
+                     indexed_strides);
 #endif
     } else {
         utility::LogError("IndexSet: Unimplemented device");
