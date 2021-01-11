@@ -125,8 +125,35 @@ public:
                 front[adjacent_front_indices_to_neighbors.second]);
     }
 
-    void RelaxEdge() {
-        // TODO
+    bool IsInsideCircumsphere(int vidx, const Eigen::Vector2i &edge) {
+        Eigen::Vector3d midpoint =
+                0.5 * (mesh_->vertices_[edge[0]] + mesh_->vertices_[edge[1]]);
+        double radius = (midpoint - mesh_->vertices_[edge[0]]).norm();
+        return (mesh_->vertices_[vidx] - midpoint).norm() < radius;
+    }
+
+    bool RelaxEdge(
+            std::shared_ptr<open3d::geometry::TriangleMesh> &patching_mesh,
+            const Eigen::Vector2i &edge,
+            std::vector<int> &triangle_indices) {
+        for (int tidx : triangle_indices) {
+            Eigen::Vector3i &triangle = patching_mesh->triangles_[tidx];
+            int non_mutual_vertex_idx;
+            if (triangle[0] != edge[0] && triangle[0] != edge[1]) {
+                non_mutual_vertex_idx = triangle[0];
+            } else if (triangle[1] != edge[0] && triangle[1] != edge[1]) {
+                non_mutual_vertex_idx = triangle[1];
+            } else {
+                non_mutual_vertex_idx = triangle[2];
+            }
+
+            if (IsInsideCircumsphere(non_mutual_vertex_idx, edge)) {
+                // TODO: Swap edge
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void IdentifyHoles() {
@@ -283,11 +310,15 @@ public:
                 bool has_edges_been_swapped = false;
                 while (!has_edges_been_swapped) {
                     // Relax all interior edges of the patching mesh
+                    has_edges_been_swapped = false;
                     auto edges = patching_mesh->GetEdgeToTrianglesMap();
                     for (auto &kv : edges) {
                         if (kv.second.size() == 2u) {
-                            RelaxEdge();
-                            has_edges_been_swapped = true;  // TODO
+                            bool swapped_edge = RelaxEdge(patching_mesh,
+                                                          kv.first, kv.second);
+                            if (swapped_edge) {
+                                has_edges_been_swapped = true;
+                            }
                         }
                     }
                 }
@@ -298,7 +329,7 @@ public:
     }
 
     void AddNewTrianglesToMesh() {
-        for (auto patching_mesh : patching_meshes_) {
+        for (auto &patching_mesh : patching_meshes_) {
             mesh_->triangles_.insert(mesh_->triangles_.end(),
                                      patching_mesh->triangles_.begin(),
                                      patching_mesh->triangles_.end());
