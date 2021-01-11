@@ -89,13 +89,13 @@ py::array Iou3dCPU(py::array boxes_a, py::array boxes_b) {
 py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
     core::Device cuda_device("CUDA:0");
     core::Tensor boxes_a_tensor =
-            core::PyArrayToTensor(boxes_a, true).Contiguous().Copy(cuda_device);
+            core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
     boxes_a_tensor.AssertDtype(core::Dtype::Float32);
     boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
-            core::PyArrayToTensor(boxes_b, true).Contiguous().Copy(cuda_device);
+            core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
     boxes_b_tensor.AssertDtype(core::Dtype::Float32);
     boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
@@ -108,19 +108,19 @@ py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
                      static_cast<const float*>(boxes_b_tensor.GetDataPtr()),
                      static_cast<float*>(iou_tensor.GetDataPtr()), num_a,
                      num_b);
-    return core::TensorToPyArray(iou_tensor.Copy(core::Device("CPU:0")));
+    return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
 }
 
 py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
     core::Device cuda_device("CUDA:0");
     core::Tensor boxes_a_tensor =
-            core::PyArrayToTensor(boxes_a, true).Contiguous().Copy(cuda_device);
+            core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
     boxes_a_tensor.AssertDtype(core::Dtype::Float32);
     boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
-            core::PyArrayToTensor(boxes_b, true).Contiguous().Copy(cuda_device);
+            core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
     boxes_b_tensor.AssertDtype(core::Dtype::Float32);
     boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
@@ -132,7 +132,7 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
     IoU3dCUDAKernel(static_cast<const float*>(boxes_a_tensor.GetDataPtr()),
                     static_cast<const float*>(boxes_b_tensor.GetDataPtr()),
                     static_cast<float*>(iou_tensor.GetDataPtr()), num_a, num_b);
-    return core::TensorToPyArray(iou_tensor.Copy(core::Device("CPU:0")));
+    return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
 }
 #endif
 

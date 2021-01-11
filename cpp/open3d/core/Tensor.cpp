@@ -473,18 +473,11 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::Copy(const Device& device) const {
-    Tensor dst_tensor(shape_, dtype_, device);
-    kernel::Copy(*this, dst_tensor);
-    return dst_tensor;
-}
-
 Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
-
-    // We only support scalar type conversion
+    // We only support scalar type conversion.
     if (dtype_.IsObject() || dtype.IsObject()) {
         utility::LogError("Cannot cast type from {} to {}.", dtype_.ToString(),
                           dtype.ToString());
@@ -494,23 +487,28 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     return dst_tensor;
 }
 
-void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
-
-void Tensor::ShallowCopyFrom(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = other.strides_;
-    dtype_ = other.dtype_;
-    blob_ = other.blob_;
-    data_ptr_ = other.data_ptr_;
+Tensor Tensor::To(const Device& device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+    Tensor dst_tensor(shape_, dtype_, device);
+    kernel::Copy(*this, dst_tensor);
+    return dst_tensor;
 }
+
+Tensor Tensor::To(const Device& device, Dtype dtype, bool copy) const {
+    Tensor dst_tensor = To(dtype, copy);
+    dst_tensor = dst_tensor.To(device, copy);
+    return dst_tensor;
+}
+
+void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
-        // Returns a shallow copy of the current Tensor
-        return Tensor(shape_, strides_, data_ptr_, dtype_, blob_);
+        return *this;
     } else {
-        // Compact the tensor to contiguous on the same device
-        return Copy(GetDevice());
+        return To(GetDevice(), /*copy=*/true);
     }
 }
 
@@ -518,7 +516,7 @@ std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
     if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
-        Tensor host_contiguous_tensor = Copy(Device("CPU:0"));
+        Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
         if (shape_.NumElements() == 0) {
@@ -724,7 +722,7 @@ double Tensor::Det() const {
     // TODO: Create a proper op for Determinant.
     this->AssertShape({3, 3});
     this->AssertDtype(core::Dtype::Float32);
-    core::Tensor D_ = this->Copy();
+    core::Tensor D_ = this->Clone();
     D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
                D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
                D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
@@ -1062,7 +1060,7 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
     Tensor result = kernel::NonZero(*this);
     std::vector<Tensor> results;
     for (int64_t dim = 0; dim < NumDims(); dim++) {
-        results.push_back(result[dim].Copy(GetDevice()));
+        results.push_back(result[dim].Clone());
     }
     return results;
 }

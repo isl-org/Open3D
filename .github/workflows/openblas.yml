@@ -76,7 +76,7 @@ jobs:
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
             ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/
+            pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
             ccache -s
 
   arm64:
@@ -129,6 +129,7 @@ jobs:
             apt-get install -y xorg-dev libglu1-mesa-dev ccache
             apt-get install -y libblas-dev liblapack-dev liblapacke-dev libssl-dev
             apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
+            apt-get install -y libudev-dev autoconf libtool # librealsense
             apt-get install -y clang-7
             update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
             update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
@@ -163,6 +164,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
               -DBUILD_GUI=ON \
+              -DBUILD_LIBREALSENSE=ON \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_TENSORFLOW_OPS=OFF \

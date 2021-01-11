@@ -313,7 +313,7 @@ TEST_P(TensorPermuteDevicePairs, Copy) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     core::Tensor src_t(vals, shape, dtype, src_device);
 
-    core::Tensor dst_t = src_t.Copy(dst_device);
+    core::Tensor dst_t = src_t.To(dst_device, /*copy=*/true);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
@@ -332,7 +332,7 @@ TEST_P(TensorPermuteDevicePairs, CopyBool) {
     std::vector<bool> vals{true, false, true, false, true, true};
     core::Tensor src_t(vals, shape, dtype, src_device);
 
-    core::Tensor dst_t = src_t.Copy(dst_device);
+    core::Tensor dst_t = src_t.To(dst_device, /*copy=*/true);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
@@ -628,7 +628,7 @@ TEST_P(TensorPermuteDevicePairs, CopyContiguous) {
     EXPECT_NE(t_1.GetDataPtr(), t_1.GetBlob()->GetDataPtr());
     EXPECT_TRUE(t_1.IsContiguous());
 
-    core::Tensor t_1_copy = t_1.Copy(dst_device);
+    core::Tensor t_1_copy = t_1.To(dst_device, /*copy=*/true);
     EXPECT_EQ(t_1_copy.GetShape(), core::SizeVector({3, 4}));
     EXPECT_EQ(t_1_copy.GetStrides(), core::SizeVector({4, 1}));
     EXPECT_EQ(t_1_copy.GetDataPtr(),
@@ -866,7 +866,7 @@ TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
 
     // Copy ensures contiguous
     {
-        core::Tensor t_1_copy = t_1.Copy(src_device);
+        core::Tensor t_1_copy = t_1.To(src_device, /*copy=*/true);
         EXPECT_TRUE(t_1_copy.IsContiguous());
         EXPECT_EQ(t_1_copy.GetShape(), core::SizeVector({2, 2, 2}));
         EXPECT_EQ(t_1_copy.GetStrides(), core::SizeVector({4, 2, 1}));
@@ -874,7 +874,7 @@ TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
                   std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
     }
     {
-        core::Tensor t_1_copy = t_1.Copy(dst_device);
+        core::Tensor t_1_copy = t_1.To(dst_device, /*copy=*/true);
         EXPECT_TRUE(t_1_copy.IsContiguous());
         EXPECT_EQ(t_1_copy.GetShape(), core::SizeVector({2, 2, 2}));
         EXPECT_EQ(t_1_copy.GetStrides(), core::SizeVector({4, 2, 1}));
@@ -2725,7 +2725,7 @@ TEST_P(TensorPermuteDevices, IsSame) {
     EXPECT_TRUE(t1_slice.IsSame(t0_slice));
 
     // Explicit copy to the same device.
-    core::Tensor t0_copy = t0.Copy(device);
+    core::Tensor t0_copy = t0.Clone();
     EXPECT_FALSE(t0.IsSame(t0_copy));
     EXPECT_FALSE(t0_copy.IsSame(t0));
 
@@ -2738,7 +2738,7 @@ TEST_P(TensorPermuteDevices, IsSame) {
 }
 
 TEST_P(TensorPermuteDevices, NumpyIO) {
-    const core::Device device = GetParam();
+    const core::Device &device = GetParam();
     const std::string file_name = "tensor.npy";
 
     core::Tensor t;
@@ -2748,7 +2748,7 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     t = core::Tensor::Init<float>({{1, 2}, {3, 4}}, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // Non-contiguous tensor will be stored as contiguous tensor.
     t = core::Tensor::Init<float>(
@@ -2769,25 +2769,25 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     t = core::Tensor::Init<float>(3.14, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // {0} tensor.
     t = core::Tensor::Ones({0}, core::Dtype::Float32, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // {0, 0} tensor.
     t = core::Tensor::Ones({0, 0}, core::Dtype::Float32, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // {0, 1, 0} tensor.
     t = core::Tensor::Ones({0, 1, 0}, core::Dtype::Float32, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.Copy(device)));
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // Clean up.
     utility::filesystem::RemoveFile(file_name);

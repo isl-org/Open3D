@@ -4,23 +4,23 @@ set(REGISTRATION_SRC
     registration/TransformationEstimation.cpp
 )
 
-set(UTILITY_SRC
-    TransformationConverter.cpp
+set(KERNEL_SRC
+    kernel/TransformationConverter.cpp
 )
 
-set(UTILITY_CUDA_SRC
-    TransformationConverter.cu
+set(KERNEL_CUDA_SRC
+    kernel/TransformationConverter.cu
 )
 
 set(ALL_PIPELINE_SRC
     ${REGISTRATION_SRC}
-    ${UTILITY_SRC}
+    ${KERNEL_SRC}
 )
 
 if(BUILD_CUDA_MODULE)
     set(ALL_PIPELINE_SRC
         ${ALL_PIPELINE_SRC}
-        ${UTILITY_CUDA_SRC}
+        ${KERNEL_CUDA_SRC}
     )
 endif()
 
