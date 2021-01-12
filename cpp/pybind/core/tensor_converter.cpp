@@ -28,9 +28,16 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 #include "pybind/core/core.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 namespace open3d {
 namespace core {
@@ -197,7 +204,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
     /// 4) tuple
     /// 5) numpy.ndarray (value will be copied)
     /// 6) Tensor (value will be copied)
-    std::string class_name = py::str(handle);
+    std::string class_name(handle.get_type().str());
     if (class_name == "<class 'int'>") {
         return IntToTensor(static_cast<int64_t>(handle.cast<py::int_>()), dtype,
                            device);
@@ -233,7 +240,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
 SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
     SizeVector shape;
     for (const py::handle& item : tuple) {
-        if (std::string(py::str(item)) == "<class 'int'>") {
+        if (std::string(item.get_type().str()) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -247,7 +254,7 @@ SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
 SizeVector PyListToSizeVector(const py::list& list) {
     SizeVector shape;
     for (const py::handle& item : list) {
-        if (std::string(py::str(item)) == "<class 'int'>") {
+        if (std::string(item.get_type().str()) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -259,7 +266,7 @@ SizeVector PyListToSizeVector(const py::list& list) {
 }
 
 SizeVector PyHandleToSizeVector(const py::handle& handle) {
-    std::string class_name = py::str(handle);
+    std::string class_name(handle.get_type().str());
     if (class_name == "<class 'int'>") {
         return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
     } else if (class_name == "<class 'list'>") {

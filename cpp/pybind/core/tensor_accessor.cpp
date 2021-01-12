@@ -29,11 +29,18 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/utility/Optional.h"
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 namespace open3d {
 namespace core {
@@ -105,7 +112,7 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
 static TensorKey PyHandleToTensorKey(const py::handle& item) {
     // Infer types from type name and dynamic casting.
     // See: https://github.com/pybind/pybind11/issues/84.
-    std::string class_name = py::str(item);
+    std::string class_name(item.get_type().str());
     if (class_name == "<class 'int'>") {
         return ToTensorKey(static_cast<int64_t>(item.cast<py::int_>()));
     } else if (class_name == "<class 'slice'>") {

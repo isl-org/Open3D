@@ -9,10 +9,10 @@ function(open3d_show_and_abort_on_warning trgt)
     else()
         set(CUDA_FLAGS "")
     endif()
-    set(DISABLE_MSVC_WARNINGS 
+    set(DISABLE_MSVC_WARNINGS
             /wd4201        # non-standard extention nameless struct (filament includes)
             /wd4310        # cast truncates const value (filament)
-            /wd4505        # unreferenced local function has been removed (dirent) 
+            /wd4505        # unreferenced local function has been removed (dirent)
             /wd4127        # conditional expression is const (Eigen)
             /wd4189        # local variable is initialized but not referenced (PoissonRecon)
             /wd4324        # structure was padded due to alignment specifier (qhull)
