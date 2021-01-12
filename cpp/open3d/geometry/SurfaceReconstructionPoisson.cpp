@@ -39,8 +39,9 @@
 // clang-format off
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4701 4245 4189)
+#pragma warning(disable: 4701 4703 4245 4189)
 // 4701: potentially uninitialized local variable
+// 4703: potentially uninitialized local pointer variable
 // 4245: signed/unsigned mismatch
 // 4189: local variable is initialized but not referenced
 #endif
