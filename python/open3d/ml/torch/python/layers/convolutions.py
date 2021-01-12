@@ -262,8 +262,8 @@ class ContinuousConv(torch.nn.Module):
 
         offset = self.offset
 
-        if isinstance(extents, float):
-            extents = torch.tensor(extents)
+        if isinstance(extents, (float, int)):
+            extents = torch.tensor(extents, dtype=inp_positions.dtype)
 
         if inp_importance is None:
             inp_importance = torch.empty((0,),

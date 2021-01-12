@@ -281,20 +281,6 @@ class SphinxDocsBuilder:
         self.skip_notebooks = skip_notebooks
 
     def run(self):
-        self._gen_python_api_docs()
-        self._run_sphinx()
-
-    def _gen_python_api_docs(self):
-        """
-        Generate Python docs.
-        Each module, class and function gets one .rst file.
-        """
-        # self.python_api_output_dir cannot be a temp dir, since other
-        # "*.rst" files reference it
-        pd = PyAPIDocsBuilder()
-        pd.generate_rst()
-
-    def _run_sphinx(self):
         """
         Call Sphinx command with hard-coded "html" target
         """
@@ -303,7 +289,7 @@ class SphinxDocsBuilder:
         if self.is_release:
             version_list = [
                 line.rstrip("\n").split(" ")[1]
-                for line in open("../src/Open3D/version.txt")
+                for line in open("../cpp/open3d/version.txt")
             ]
             release_version = ".".join(version_list[:3])
             print("Building docs for release:", release_version)
@@ -470,7 +456,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--clean_notebooks",
-        dest="clean_notebooks",
         action="store_true",
         default=False,
         help=("Whether to clean existing notebooks in docs/tutorial. "
@@ -478,36 +463,35 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--execute_notebooks",
-        dest="execute_notebooks",
         default="auto",
-        help="Jupyter notebook execution mode, one of {auto, always, never}.",
+        choices=("auto", "always", "never"),
+        help="Jupyter notebook execution mode.",
+    )
+    parser.add_argument(
+        "--pyapi_rst",
+        default="always",
+        choices=("always", "never"),
+        help="Build Python API documentation in reST format.",
     )
     parser.add_argument(
         "--sphinx",
-        dest="build_sphinx",
         action="store_true",
         default=False,
         help="Build Sphinx for main docs and Python API docs.",
     )
     parser.add_argument(
         "--doxygen",
-        dest="build_doxygen",
         action="store_true",
         default=False,
         help="Build Doxygen for C++ API docs.",
     )
     parser.add_argument(
         "--is_release",
-        dest="is_release",
         action="store_true",
         default=False,
         help="Show Open3D version number rather than git hash.",
     )
     args = parser.parse_args()
-
-    # Sanity checks
-    if args.execute_notebooks not in {"auto", "always", "never"}:
-        raise ValueError(f"Invalid execute option: {execute_notebooks}.")
 
     pwd = os.path.dirname(os.path.realpath(__file__))
 
@@ -521,16 +505,24 @@ if __name__ == "__main__":
         shutil.rmtree(cpp_build_dir)
         print("Removed directory %s" % cpp_build_dir)
 
-    # Sphinx is hard-coded to build with the "html" option
-    # To customize build, run sphinx-build manually
-    if args.build_sphinx:
-        print("Sphinx build enabled")
+    # Python API reST docs
+    if not args.pyapi_rst == "never":
+        print("Building Python API reST")
+        pd = PyAPIDocsBuilder()
+        pd.generate_rst()
+
+    if not args.execute_notebooks == "never":
         print("Building Jupyter docs")
         jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
                                  args.execute_notebooks)
         jdb.run()
+
+    # Sphinx is hard-coded to build with the "html" option
+    # To customize build, run sphinx-build manually
+    if args.sphinx:
         print("Building Sphinx docs")
-        skip_notebooks = args.execute_notebooks == "never"
+        skip_notebooks = (args.execute_notebooks == "never" and
+                          args.clean_notebooks)
         sdb = SphinxDocsBuilder(html_output_dir, args.is_release,
                                 skip_notebooks)
         sdb.run()
@@ -539,7 +531,7 @@ if __name__ == "__main__":
 
     # Doxygen is hard-coded to build with default option
     # To customize build, customize Doxyfile or run doxygen manually
-    if args.build_doxygen:
+    if args.doxygen:
         print("Doxygen build enabled")
         ddb = DoxygenDocsBuilder(html_output_dir)
         ddb.run()

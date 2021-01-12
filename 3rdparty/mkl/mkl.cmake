@@ -11,18 +11,45 @@
 include(ExternalProject)
 
 if(WIN32)
-    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2")
-    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2")
-elseif(APPLE)
-    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2")
-    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2")
-else()
-    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2")
+    set_local_or_remote_url(
+        MKL_INCLUDE_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-include-2020.1-intel_216-win-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-win-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2"
+    )
     set_local_or_remote_url(
         MKL_URL
-        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_217.tar.bz2"
-        REMOTE_URLS "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2"
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_216-win-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-win-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2"
     )
+elseif(APPLE)
+    set_local_or_remote_url(
+        MKL_INCLUDE_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-include-2020.1-intel_216-osx-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-osx-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2"
+    )
+    set_local_or_remote_url(
+        MKL_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_216-osx-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-osx-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2"
+    )
+else()
+    set_local_or_remote_url(
+        MKL_INCLUDE_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-include-2020.1-intel_217-linux-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_217-linux-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2"
+    )
+    set_local_or_remote_url(
+        MKL_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_217-linux-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_217-linux-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2"
+    )
+    # URL for merged libmkl_merged.a for Ubuntu.
     set_local_or_remote_url(
         MKL_MERGED_URL
         LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/linux-merged-mkl-static-2020.1-intel_217.zip"

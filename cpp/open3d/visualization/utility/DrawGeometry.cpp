@@ -74,15 +74,6 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     " geometry type.");
             return false;
         }
-        for (const auto &geometry_ptr : geometry_ptrs) {
-            if (!visualizer.AddGeometry(geometry_ptr)) {
-                utility::LogWarning("[DrawGeometries] Failed adding geometry.");
-                utility::LogWarning(
-                        "[DrawGeometries] Possibly due to bad geometry or wrong"
-                        " geometry type.");
-                return false;
-            }
-        }
     }
 
     ViewControl &view_control = visualizer.GetViewControl();

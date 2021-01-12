@@ -232,6 +232,10 @@ void pybind_trianglemesh(py::module &m) {
                          TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
+            .def("get_volume",
+                 (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 "Function that computes the volume of the mesh, under the "
+                 "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
                  &TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
@@ -266,7 +270,8 @@ void pybind_trianglemesh(py::module &m) {
                  "Decimation by "
                  "Garland and Heckbert",
                  "target_number_of_triangles"_a,
-                 "maximum_error"_a = std::numeric_limits<double>::infinity())
+                 "maximum_error"_a = std::numeric_limits<double>::infinity(),
+                 "boundary_weight"_a = 1.0)
             .def("compute_convex_hull", &TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
@@ -445,6 +450,11 @@ void pybind_trianglemesh(py::module &m) {
                            "``numpy.asarray()`` to access data: List of "
                            "uvs denoted by the index of points forming "
                            "the triangle.")
+            .def_readwrite("triangle_material_ids",
+                           &TriangleMesh::triangle_material_ids_,
+                           "`int` array of shape ``(num_trianges, 1)``, use "
+                           "``numpy.asarray()`` to access data: material index "
+                           "associated with each triangle")
             .def_readwrite("textures", &TriangleMesh::textures_,
                            "open3d.geometry.Image: The texture images.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
@@ -599,7 +609,10 @@ void pybind_trianglemesh(py::module &m) {
               "The number of triangles that the simplified mesh should have. "
               "It is not guaranteed that this number will be reached."},
              {"maximum_error",
-              "The maximum error where a vertex is allowed to be merged"}});
+              "The maximum error where a vertex is allowed to be merged"},
+             {"boundary_weight",
+              "A weight applied to edge vertices used to preserve "
+              "boundaries"}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");

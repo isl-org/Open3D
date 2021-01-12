@@ -38,6 +38,7 @@ void pybind_feature(py::module &m);
 void pybind_feature_methods(py::module &m);
 void pybind_global_optimization(py::module &m);
 void pybind_global_optimization_methods(py::module &m);
+void pybind_robust_kernels(py::module &m);
 
 }  // namespace registration
 }  // namespace pipelines

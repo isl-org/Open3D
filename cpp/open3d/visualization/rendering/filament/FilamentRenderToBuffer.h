@@ -54,11 +54,19 @@ public:
     FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
 
+    void Configure(const View* view,
+                   Scene* scene,
+                   int width,
+                   int height,
+                   BufferReadyCallback cb) override;
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
-    void CopySettings(const View* view) override;
     View& GetView() override;
 
-    void RequestFrame(Scene* scene, BufferReadyCallback cb) override;
+    void Render() override;
+
+    // Renders the minimum necessary to get Filament to tick its rendering
+    // thread.
+    void RenderTick();
 
 private:
     friend class FilamentRenderer;
@@ -79,7 +87,7 @@ private:
     bool pending_ = false;
 
     static void ReadPixelsCallback(void* buffer, size_t size, void* user);
-    void Render();
+    void CopySettings(const View* view);
 };
 
 }  // namespace rendering

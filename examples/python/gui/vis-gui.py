@@ -23,7 +23,7 @@ class Settings:
     LIGHTING_PROFILES = {
         DEFAULT_PROFILE_NAME: {
             "ibl_intensity": 45000,
-            "ibl_intensity": 45000,
+            "sun_intensity": 45000,
             "sun_dir": [0.577, -0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -31,7 +31,7 @@ class Settings:
         },
         "Bright day with sun at -Y": {
             "ibl_intensity": 45000,
-            "ibl_intensity": 45000,
+            "sun_intensity": 45000,
             "sun_dir": [0.577, 0.577, 0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -39,7 +39,7 @@ class Settings:
         },
         "Bright day with sun at +Z": {
             "ibl_intensity": 45000,
-            "ibl_intensity": 45000,
+            "sun_intensity": 45000,
             "sun_dir": [0.577, 0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -47,7 +47,7 @@ class Settings:
         },
         "Less Bright day with sun at +Y": {
             "ibl_intensity": 35000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "sun_dir": [0.577, -0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -55,7 +55,7 @@ class Settings:
         },
         "Less Bright day with sun at -Y": {
             "ibl_intensity": 35000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "sun_dir": [0.577, 0.577, 0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -63,7 +63,7 @@ class Settings:
         },
         "Less Bright day with sun at +Z": {
             "ibl_intensity": 35000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "sun_dir": [0.577, 0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -71,7 +71,7 @@ class Settings:
         },
         POINT_CLOUD_PROFILE_NAME: {
             "ibl_intensity": 60000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "use_ibl": True,
             "use_sun": False,
             # "ibl_rotation":
@@ -197,7 +197,8 @@ class AppWindow:
         resource_path = gui.Application.instance.resource_path
         self.settings.new_ibl_name = resource_path + "/" + AppWindow.DEFAULT_IBL
 
-        self.window = gui.Window("Open3D", width, height)
+        self.window = gui.Application.instance.create_window(
+            "Open3D", width, height)
         w = self.window  # to make the code more concise
 
         # 3D widget
@@ -459,7 +460,7 @@ class AppWindow:
             self.settings.bg_color.red, self.settings.bg_color.green,
             self.settings.bg_color.blue, self.settings.bg_color.alpha
         ]
-        self.window.renderer.set_clear_color(bg_color)
+        self._scene.scene.set_background(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
@@ -475,9 +476,9 @@ class AppWindow:
             self.settings.sun_color.red, self.settings.sun_color.green,
             self.settings.sun_color.blue
         ]
-        self._scene.scene.scene.set_directional_light(
-            self.settings.sun_dir, sun_color, self.settings.sun_intensity)
-        self._scene.scene.scene.enable_directional_light(self.settings.use_sun)
+        self._scene.scene.scene.set_sun_light(self.settings.sun_dir, sun_color,
+                                              self.settings.sun_intensity)
+        self._scene.scene.scene.enable_sun_light(self.settings.use_sun)
 
         if self.settings.apply_material:
             self._scene.scene.update_material(self.settings.material)
@@ -716,14 +717,12 @@ class AppWindow:
                 mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
         else:
             print("[Info]", path, "appears to be a point cloud")
-            mesh = None
 
         if geometry is None:
-            ioProgressAmount = 0.5
             cloud = None
             try:
                 cloud = o3d.io.read_point_cloud(path)
-            except:
+            except Exception:
                 pass
             if cloud is not None:
                 print("[Info] Successfully read", path)
@@ -733,20 +732,27 @@ class AppWindow:
                 geometry = cloud
             else:
                 print("[WARNING] Failed to read points", path)
-                cloud = None
 
         if geometry is not None:
-            self._scene.scene.add_geometry("__model__", geometry,
-                                           self.settings.material)
-            bounds = geometry.get_axis_aligned_bounding_box()
-            self._scene.setup_camera(60, bounds, bounds.get_center())
+            try:
+                self._scene.scene.add_geometry("__model__", geometry,
+                                               self.settings.material)
+                bounds = geometry.get_axis_aligned_bounding_box()
+                self._scene.setup_camera(60, bounds, bounds.get_center())
+            except Exception as e:
+                print(e)
 
     def export_image(self, path, width, height):
 
-        def _on_image(image):
-            o3d.io.write_image(path, image, 100)
+        def on_image(image):
+            img = image
 
-        self._scene.scene.scene.render_to_image(width, height, _on_image)
+            quality = 9  # png
+            if path.endswith(".jpg"):
+                quality = 100
+            o3d.io.write_image(path, img, quality)
+
+        self._scene.scene.scene.render_to_image(on_image)
 
 
 def main():
@@ -755,9 +761,6 @@ def main():
     gui.Application.instance.initialize()
 
     w = AppWindow(1024, 768)
-
-    # Add the window to the applicaiton, which will make it visible
-    gui.Application.instance.add_window(w.window)
 
     if len(sys.argv) > 1:
         path = sys.argv[1]

@@ -2,4 +2,3 @@ ipywidgets
 widgetsnbextension
 notebook
 numpy
-matplotlib

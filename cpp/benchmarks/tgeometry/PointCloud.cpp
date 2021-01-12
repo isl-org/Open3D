@@ -28,6 +28,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/Tensor.h"
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -37,7 +39,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     size_t num_points = 1000000;  // 1M
     legacy_pcd.points_ =
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
-    legacy_pcd.points_ =
+    legacy_pcd.colors_ =
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
 
     // Warm up.
@@ -52,11 +54,33 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
+void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
+    int64_t num_points = 1000000;  // 1M
+    PointCloud pcd(device);
+    pcd.SetPoints(core::Tensor({num_points, 3}, core::Dtype::Float32, device));
+    pcd.SetPointColors(
+            core::Tensor({num_points, 3}, core::Dtype::Float32, device));
+
+    // Warm up.
+    open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    (void)legacy_pcd;
+
+    for (auto _ : state) {
+        open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    }
+}
+
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(ToLegacyPointCloud, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 

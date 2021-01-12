@@ -283,6 +283,9 @@ function(set_local_or_remote_url URL)
     endif()
 endfunction()
 
+include(ProcessorCount)
+ProcessorCount(NPROC)
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
@@ -537,15 +540,24 @@ build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller IN
 set(TRITRIINTERSECT_TARGET "3rdparty_tritriintersect")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
-# RealSense
+# librealsense SDK
 if (BUILD_LIBREALSENSE)
-    message(STATUS "Building third-party library librealsense from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/librealsense)
-    import_3rdparty_library(3rdparty_realsense INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
-    add_dependencies(3rdparty_realsense ${REALSENSE_LIBRARY})
-    set(LIBREALSENSE_TARGET "3rdparty_realsense")
+    include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+    import_3rdparty_library(3rdparty_librealsense
+        INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
+        LIBRARIES    ${LIBREALSENSE_LIBRARIES}
+        LIB_DIR      ${LIBREALSENSE_LIB_DIR}
+    )
+    add_dependencies(3rdparty_librealsense ext_librealsense)
+    set(LIBREALSENSE_TARGET "3rdparty_librealsense")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
-endif ()
+
+    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+        find_library(UDEV_LIBRARY udev REQUIRED
+            DOC "Library provided by the deb package libudev-dev")
+        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+    endif()
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -562,19 +574,29 @@ if(USE_SYSTEM_PNG)
     endif()
 endif()
 if(NOT USE_SYSTEM_PNG)
-    message(STATUS "Building third-party library zlib from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-    import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
-    add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
-    message(STATUS "Building third-party library libpng from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-    import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
-    add_dependencies(3rdparty_png ${PNG_LIBRARIES})
-    target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
-    set(PNG_TARGET "3rdparty_png")
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    import_3rdparty_library(3rdparty_zlib
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+    )
     set(ZLIB_TARGET "3rdparty_zlib")
+    add_dependencies(3rdparty_zlib ext_zlib)
+
+    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
+    import_3rdparty_library(3rdparty_libpng
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+    )
+    set(LIBPNG_TARGET "3rdparty_libpng")
+    add_dependencies(3rdparty_libpng ext_libpng)
+    add_dependencies(ext_libpng ext_zlib)
+
+    # Putting zlib after libpng somehow works for Ubuntu.
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 
 # rply
 build_3rdparty_library(3rdparty_rply DIRECTORY rply SOURCES rply/rply.c INCLUDE_DIRS rply/)
@@ -735,18 +757,14 @@ if(TARGET pybind11::module)
 endif()
 
 # Azure Kinect
-include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
-if(BUILD_AZURE_KINECT)
-    if(TARGET k4a::k4a)
-        set(K4A_TARGET "k4a::k4a")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "k4a" "k4arecord")
-        endif()
-    else()
-        add_library(3rdparty_k4a INTERFACE)
-        target_include_directories(3rdparty_k4a INTERFACE ${k4a_INCLUDE_DIRS})
-        set(K4A_TARGET "3rdparty_k4a")
-    endif()
+set(BUILD_AZURE_KINECT_COMMENT "//") # Set include header files in Open3D.h
+if (BUILD_AZURE_KINECT)
+    include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
+    import_3rdparty_library(3rdparty_k4a
+        INCLUDE_DIRS ${K4A_INCLUDE_DIR}
+    )
+    add_dependencies(3rdparty_k4a ext_k4a)
+    set(K4A_TARGET "3rdparty_k4a")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${K4A_TARGET}")
 endif()
 
@@ -869,8 +887,8 @@ if(BUILD_GUI)
             endif()
             # If the default version is not sufficient, look for some specific versions
             if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                find_program(CLANG_VERSIONED_CC NAMES clang-10 clang-9 clang-8 clang-7)
-                find_program(CLANG_VERSIONED_CXX NAMES clang++-10 clang++-9 clang++-8 clang++-7)
+                find_program(CLANG_VERSIONED_CC NAMES clang-11 clang-10 clang-9 clang-8 clang-7)
+                find_program(CLANG_VERSIONED_CXX NAMES clang++11 clang++-10 clang++-9 clang++-8 clang++-7)
                 if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
                     set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
                     set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
@@ -879,6 +897,17 @@ if(BUILD_GUI)
                     message(FATAL_ERROR "Need Clang >= 7 to compile Filament from source")
                 endif()
             endif()
+        endif()
+        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+        # /usr/lib/aarch64-linux-gnu.
+        # For aarch64, the symbolic link path may not work for CMake's
+        # find_library. Therefore, when compiling Filament from source, we
+        # explicitly find the corresponidng path based on the clang version.
+        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+        if(clang_version MATCHES "clang version ([0-9]+)")
+            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
         endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
@@ -901,11 +930,28 @@ if(BUILD_GUI)
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
-        find_library(CPP_LIBRARY c++)
-        if(CPP_LIBRARY)
-            # Ensure that libstdc++ gets linked first
-            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ ${CPP_LIBRARY})
+        # Find CLANG_LIBDIR if it is not defined. Mutiple paths will be searched.
+        if (NOT CLANG_LIBDIR)
+            find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                         llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
+                         REQUIRED)
+            get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
         endif()
+        # Find clang libraries at the exact path ${CLANG_LIBDIR}.
+        find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        if(CPP_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPP_LIBRARY-NOTFOUND")
+        endif()
+        if(CPPABI_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPPABI_LIBRARY-NOTFOUND")
+        endif()
+        # Ensure that libstdc++ gets linked first
+        target_link_libraries(3rdparty_filament INTERFACE -lstdc++
+                              ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+        message(STATUS "CLANG_LIBDIR: ${CLANG_LIBDIR}")
+        message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
+        message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
     endif()
     if (APPLE)
         find_library(CORE_VIDEO CoreVideo)
@@ -948,6 +994,9 @@ if(BUILD_RPC_INTERFACE)
     set(ZEROMQ_TARGET "3rdparty_zeromq")
     add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+    if( DEFINED ZEROMQ_ADDITIONAL_LIBS )
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
+    endif()
 
     # msgpack
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
@@ -987,11 +1036,13 @@ if(USE_BLAS)
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
         message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR ${OPENBLAS_LIB_DIR}
-            LIBRARIES ${OPENBLAS_LIBRARIES}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
         )
         set(OPENBLAS_TARGET "3rdparty_openblas")
         add_dependencies(3rdparty_openblas ext_openblas)
@@ -1034,3 +1085,36 @@ else()
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
+
+# Faiss
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+elseif(WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+endif()
+if (WITH_FAISS)
+    message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
+    message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
+    import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
+        LIB_DIR ${FAISS_LIB_DIR}
+    )
+    add_dependencies(3rdparty_faiss ext_faiss)
+    if (FAISS_EXTRA_DEPENDENCIES)
+        add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
+    endif()
+    set(FAISS_TARGET "3rdparty_faiss")
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")

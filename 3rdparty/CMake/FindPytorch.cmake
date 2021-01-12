@@ -1,4 +1,4 @@
-# Find the Pytorch root and use the provided cmake module
+# Find the PyTorch root and use the provided cmake module
 #
 # The following variables will be set:
 # - Pytorch_FOUND
@@ -18,7 +18,7 @@ if(NOT Pytorch_FOUND)
     # Searching for pytorch requires the python executable
     find_package(PythonExecutable REQUIRED)
 
-    message(STATUS "Getting Pytorch properties ...")
+    message(STATUS "Getting PyTorch properties ...")
 
     # Get Pytorch_VERSION
     execute_process(
@@ -37,10 +37,10 @@ if(NOT Pytorch_FOUND)
     find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}/share/cmake/Torch"
                  NO_DEFAULT_PATH)
 
-    # Note: older versions of Pytorch have hard-coded cuda library paths, see:
+    # Note: older versions of PyTorch have hard-coded cuda library paths, see:
     # https://github.com/pytorch/pytorch/issues/15476.
     # This issue has been addressed but we observed for the conda packages for
-    # Pytorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
+    # PyTorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
     #  ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake
     # Try to fix those here
     get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
@@ -71,7 +71,7 @@ if(NOT Pytorch_FOUND)
     )
 endif()
 
-message(STATUS "Pytorch         version: ${Pytorch_VERSION}")
+message(STATUS "PyTorch         version: ${Pytorch_VERSION}")
 message(STATUS "               root dir: ${Pytorch_ROOT}")
 message(STATUS "          compile flags: ${TORCH_CXX_FLAGS}")
 message(STATUS "          use cxx11 abi: ${Pytorch_CXX11_ABI}")

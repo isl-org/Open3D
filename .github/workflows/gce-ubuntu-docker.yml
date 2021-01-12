@@ -52,7 +52,7 @@ jobs:
           submodules: 'recursive'
 
       - name: GCloud CLI setup
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
@@ -92,7 +92,7 @@ jobs:
           submodules: 'false'
 
       - name: GCloud CLI setup
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
@@ -130,7 +130,7 @@ jobs:
           submodules: 'false'
 
       - name: GCloud CLI setup
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}

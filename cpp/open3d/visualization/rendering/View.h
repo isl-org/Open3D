@@ -34,6 +34,7 @@ namespace rendering {
 
 class Scene;
 class Camera;
+class ColorGradingParams;
 
 class View {
 public:
@@ -59,6 +60,11 @@ public:
         ColorMapZ
     };
 
+    enum class ShadowType : std::uint8_t {
+        kPCF, /* Percentage closer filter, the default */
+        kVSM  /* Variance shadow map */
+    };
+
     virtual ~View() {}
 
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
@@ -72,8 +78,17 @@ public:
                              std::int32_t y,
                              std::uint32_t w,
                              std::uint32_t h) = 0;
+    virtual std::array<int, 4> GetViewport() const = 0;
 
-    virtual void SetSSAOEnabled(bool enabled) = 0;
+    virtual void SetPostProcessing(bool enabled) = 0;
+    virtual void SetAmbientOcclusion(bool enabled,
+                                     bool ssct_enabled = false) = 0;
+    virtual void SetAntiAliasing(bool enabled, bool temporal = false) = 0;
+    virtual void SetShadowing(bool enabled, ShadowType type) = 0;
+
+    virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
+
+    virtual void ConfigureForColorPicking() = 0;
 
     virtual Camera* GetCamera() const = 0;
 };

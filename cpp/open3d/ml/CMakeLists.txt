@@ -1,5 +1,5 @@
 if (BUILD_TENSORFLOW_OPS AND WIN32)
-    message( FATAL_ERROR "Building Tensorflow ops on Windows is currently not supported." )
+    message( FATAL_ERROR "Building TensorFlow ops on Windows is currently not supported." )
     # see https://github.com/tensorflow/custom-op/issues/24
 endif ()
 

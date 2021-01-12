@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/MaterialModifier.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 
@@ -104,8 +103,6 @@ public:
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
 
     void RenderToImage(
-            std::size_t width,
-            std::size_t height,
             View* view,
             Scene* scene,
             std::function<void(std::shared_ptr<geometry::Image>)> cb);

@@ -212,6 +212,7 @@ struct Material {
     ,   transparent( ai_real( 1.0), ai_real (1.0), ai_real(1.0))
     ,   roughness (ai_real(1.0))
     ,   metallic (ai_real(0.0))
+    ,   sheen (ai_real(0.5))
     ,   clearcoat_thickness (ai_real(0.0))
     ,   clearcoat_roughness (ai_real(0.0))
     ,   anisotropy (ai_real(0.0)) {

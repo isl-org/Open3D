@@ -1,11 +1,17 @@
-cmake_minimum_required(VERSION 3.15.0)
-# CMake 3.15+ is required to allow linking with OBJECT libraries,
-# to prevent erroneous -gencode option deduplication with CUDA,
-# and to simplify generator expressions for selecting compile flags.
-# If you're using Ubuntu 18.04 or older, we suggest you install
-# a backported CMake from https://apt.kitware.com/
 
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
+if (WIN32)
+    cmake_minimum_required(VERSION 3.18)
+else()
+    # If you're using Ubuntu 18.04, we suggest you install the latest
+    # CMake from the official repository https://apt.kitware.com/.
+    # CMake 3.17+ is required to allow linking with OBJECT libraries,
+    # to prevent erroneous -gencode option deduplication with CUDA,
+    # and to simplify generator expressions for selecting compile flags.
+    cmake_minimum_required(VERSION 3.17)
+endif()
+
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+    "Minimum OS X deployment version" FORCE)
 
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
@@ -14,7 +20,7 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
-option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON)
+option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
@@ -40,13 +46,17 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+option(WITH_FAISS                 "Enable Faiss"                             ON )
+
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
+option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"    OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
 # ML library options
-option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
-option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
+option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
+option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
 
 # In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
@@ -102,10 +112,10 @@ if(POLICY CMP0091)
 endif()
 
 # Catch a few incompatible build options
-if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
-    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
-    set(BUILD_LIBREALSENSE OFF)
-endif()
+#if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
+#    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
+#    set(BUILD_LIBREALSENSE OFF)
+#endif()
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(STATUS "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
@@ -119,77 +129,58 @@ if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
-if(BUILD_RPC_INTERFACE AND WIN32)
-    message(STATUS "The RPC interface is currently unsupported on Windows.")
-    set(BUILD_RPC_INTERFACE OFF)
-endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
-    message(SEND_ERROR "3DML depends on Tensorflow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+    message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
-    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
+    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
         set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
     endif()
 endforeach()
+set(OPEN3D_VERSION_DEVHASH "")
+if(DEVELOPER_BUILD)
+    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV)
+    if (GIT_REV)
+        set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
+    endif()
+endif()
 string(CONCAT OPEN3D_VERSION
     "${OPEN3D_VERSION_MAJOR}"
     ".${OPEN3D_VERSION_MINOR}"
     ".${OPEN3D_VERSION_PATCH}"
-    ".${OPEN3D_VERSION_TWEAK}"
 )
+set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
-message(STATUS "Open3D ${PROJECT_VERSION}")
+message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
-# Detect process or architecture.
-# Ref: https://stackoverflow.com/a/12024211/1255535
-set(detect_arch_code "
-#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || \
-        defined(_M_X64)
-#define PROCESSOR_ARCH \"x86_64\"
-#elif defined(__ARMv8_A__) || defined(__ARM64_ARCH_8__) || \
-        defined(__aarch64__) || defined(__ARMv8__) || defined(_M_ARM64)
-#define PROCESSOR_ARCH \"armv8\"
-#elif defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) ||    \
-        defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__) || \
-        defined(__ARM_ARCH_7EM__)
-#define PROCESSOR_ARCH \"armv7\"
-#else
-#define PROCESSOR_ARCH \"unknown\"
-#endif
-
-#include <iostream>
-int main() {
-    std::cout << PROCESSOR_ARCH;
-    return 0;
-}
-")
-file(WRITE "${CMAKE_BINARY_DIR}/detect_arch.cpp" "${detect_arch_code}")
-try_run(
-    dummy_run_result                       # <runResultVar>
-    dummy_compile_result                   # <compileResultVar>
-    "${CMAKE_BINARY_DIR}/bin"              # <bindir>
-    "${CMAKE_BINARY_DIR}/detect_arch.cpp"  # <srcfile>
-    RUN_OUTPUT_VARIABLE PROCESSOR_ARCH
-)
-if("${PROCESSOR_ARCH}" STREQUAL "unknown")
-    message(FATAL_ERROR "Unsupported processor architecture.")
-else()
-    message(STATUS "Detected processor architecture: ${PROCESSOR_ARCH}.")
+if(UNIX AND NOT APPLE)
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
 endif()
 
 # Set BLAS/LAPACK library preference.
-if(("${PROCESSOR_ARCH}" STREQUAL "armv8") OR (${PROCESSOR_ARCH} STREQUAL "armv7"))
+if(LINUX_AARCH64)
     if(NOT USE_BLAS)
         set(USE_BLAS ON)
         message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
     endif()
-    if(BUILD_GUI)
-        set(BUILD_GUI OFF)
-        message(WARNING "ARM CPU detected, setting BUILD_GUI=OFF.")
+    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
+        set(BUILD_FILAMENT_FROM_SOURCE ON)
+        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
     endif()
 endif()
 
@@ -379,11 +370,14 @@ function(open3d_set_global_properties target)
             target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
         endif()
     endif()
+    if(BUILD_GUI)
+        target_compile_definitions(${target} PRIVATE BUILD_GUI)
+    endif()
     if(USE_BLAS)
         target_compile_definitions(${target} PRIVATE USE_BLAS)
     endif()
     if(BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE)
+        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if(GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -436,6 +430,9 @@ function(open3d_set_global_properties target)
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+    if(WITH_FAISS)
+        target_compile_definitions(${target} PRIVATE WITH_FAISS)
+    endif()
 endfunction()
 
 macro(add_source_group module_name)
@@ -507,6 +504,7 @@ message(STATUS "Enabled Features:")
 open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
+open3d_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
@@ -519,8 +517,8 @@ open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
 if(BUILD_PYTHON_MODULE)
     open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
 endif()
-open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
-open3d_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
+open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
+open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
@@ -534,6 +532,7 @@ message(STATUS "================================================================
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
+    FAISS
     FILAMENT
     FLANN
     FMT

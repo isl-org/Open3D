@@ -45,6 +45,7 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
         int row,
         std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
         std::vector<double> &r,
+        std::vector<double> &w,
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const geometry::Image &source_xyz,
@@ -82,12 +83,15 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     J_r[0](5) = c2;
     r.resize(1);
     r[0] = diff;
+    w.resize(1);
+    w[0] = 1.0;
 }
 
 void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
         int row,
         std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
         std::vector<double> &r,
+        std::vector<double> &w,
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const geometry::Image &source_xyz,
@@ -133,6 +137,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
 
     J_r.resize(2);
     r.resize(2);
+    w.resize(2);
     J_r[0](0) = sqrt_lambda_img * (-p3d_trans(2) * c1 + p3d_trans(1) * c2);
     J_r[0](1) = sqrt_lambda_img * (p3d_trans(2) * c0 - p3d_trans(0) * c2);
     J_r[0](2) = sqrt_lambda_img * (-p3d_trans(1) * c0 + p3d_trans(0) * c1);
@@ -141,6 +146,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     J_r[0](5) = sqrt_lambda_img * (c2);
     double r_photo = sqrt_lambda_img * diff_photo;
     r[0] = r_photo;
+    w[0] = 1.0;
 
     J_r[1](0) = sqrt_lamba_dep *
                 ((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
@@ -152,6 +158,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     J_r[1](5) = sqrt_lamba_dep * (d2 - 1.0f);
     double r_geo = sqrt_lamba_dep * diff_geo;
     r[1] = r_geo;
+    w[1] = 1.0;
 }
 
 }  // namespace odometry

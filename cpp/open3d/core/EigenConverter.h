@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <vector>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
@@ -37,14 +38,59 @@ namespace open3d {
 namespace core {
 namespace eigen_converter {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+/// Converts a Eigen matrix of shape (M, N) with alignment A and type T to a
+/// Tensor.
+/// \param matrix A templated Eigen matrix.
+/// \return A tensor converted from the eigen matrix.
+template <class T, int M, int N, int A>
+core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
+    core::Dtype dtype = core::Dtype::FromType<T>();
+    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
+    return core::Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
+                        dtype);
+}
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
+/// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
+/// exception will be thrown if the tensor shape is not (N, 3). Regardless of
+/// the tensor dtype, the output will be converted to to double.
+///
+/// \param tensor A tensor of shape (N, 3).
+/// \return A vector of N Eigen::Vector3d values.
+std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
+        const core::Tensor &tensor);
 
-core::TensorList EigenVector3dVectorToTensorList(
+/// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3i>. An
+/// exception will be thrown if the tensor shape is not (N, 3). Regardless of
+/// the tensor dtype, the output will be converted to to double.
+///
+/// \param tensor A tensor of shape (N, 3).
+/// \return A vector of N Eigen::Vector3i values.
+std::vector<Eigen::Vector3i> TensorToEigenVector3iVector(
+        const core::Tensor &tensor);
+
+/// Converts a vector of Eigen::Vector3d to a (N, 3) tensor. This
+/// function also takes care of dtype conversion and device transfer if
+/// necessary.
+///
+/// \param values A vector of Eigen::Vector3d values, e.g. a list of 3D points.
+/// \param dtype Dtype of the output tensor.
+/// \param device Device of the output tensor.
+/// \return A tensor of shape (N, 3) with the specified dtype and device.
+core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+
+/// Converts a vector of Eigen::Vector3i to a (N, 3) tensor. This
+/// function also takes care of dtype conversion and device transfer if
+/// necessary.
+///
+/// \param values A vector of Eigen::Vector3i values, e.g. a list of 3D points.
+/// \param dtype Dtype of the output tensor.
+/// \param device Device of the output tensor.
+/// \return A tensor of shape (N, 3) with the specified dtype and device.
+core::Tensor EigenVector3iVectorToTensor(
+        const std::vector<Eigen::Vector3i> &values,
         core::Dtype dtype,
         const core::Device &device);
 

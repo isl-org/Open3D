@@ -99,7 +99,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 /// vector.
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType &, double &)> f,
+        std::function<void(int, VecType &, double &, double &)> f,
         int iteration_num,
         bool verbose = true);
 
@@ -113,6 +113,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<
                 void(int,
                      std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &,
                      std::vector<double> &)> f,
         int iteration_num,
         bool verbose = true);

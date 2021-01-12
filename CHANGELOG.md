@@ -1,5 +1,12 @@
 ## Master
 
+* RealSense SDK v2 integrated for reading RS bag files (PR #2646)
+* Tensor based RGBDImage class, Python bindings for Image and RGBDImage
+* RealSense sensor configuration, live capture and recording (with example and tutorial) (PR #2748)
+
+## 0.11
+
+* Fixes bug for preloading libc++ and libc++abi in Python
 * Added GUI widgets and model-viewing app
 * Fixes travis for race-condition on macOS
 * Fixes appveyor configuration and to build all branches
@@ -12,7 +19,17 @@
 * Corrected documentation of PointCloud.h
 * Added ISS Keypoint Detector
 * Added an RPC interface for external visualizers running in a separate process
-* Added `maximum_error` parameter to `simplify_quadric_decimation`
+* Added `maximum_error` and `boundary_weight` parameter to `simplify_quadric_decimation`
+* Remove support for Python 3.5
+* Development wheels are available for user testing. See [Getting Started](http://www.open3d.org/docs/latest/getting_started.html) page for installation.
+* PointCloud File IO support for new tensor data types.
+* New PointCloud format support: XYZI (ASCII).
+* Fast compression mode for PNG writing. (Issue #846)
+* Ubuntu 20.04 (Focal) support.
+* Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
+* Updated Open3D.h.in to add certain missing header files
+* Add Open3D-ML to Open3D wheel
+* Fix a bug in PointCloud file format, use `float` instead of `float_t`
 
 ## 0.9.0
 

@@ -29,10 +29,25 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
+namespace rendering {
+class Open3DScene;
+}
+
 namespace gui {
 
+void InitializeForPython(std::string resource_path = "");
+std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height);
+
 void pybind_gui(py::module &m);
+
+void pybind_gui_events(py::module &m);
+void pybind_gui_classes(py::module &m);
 
 }  // namespace gui
 }  // namespace visualization

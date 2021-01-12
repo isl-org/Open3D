@@ -36,7 +36,7 @@ _o3d_torch_version = _build_config["Pytorch_VERSION"].split('.')
 if _torch.__version__.split('.')[:2] != _o3d_torch_version[:2]:
     _o3d_torch_version[2] = '*'  # Any patch level is OK
     match_torch_ver = '.'.join(_o3d_torch_version)
-    raise Exception('Version mismatch: Open3D needs Pytorch version {}, but '
+    raise Exception('Version mismatch: Open3D needs PyTorch version {}, but '
                     'version {} is installed!'.format(match_torch_ver,
                                                       _torch.__version__))
 
@@ -49,7 +49,16 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-_lib_arch = ('cuda', 'cpu') if _build_config["BUILD_CUDA_MODULE"] else ('cpu',)
+_lib_arch = ('cpu',)
+if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available():
+    if _torch.version.cuda == _build_config["CUDA_VERSION"]:
+        _lib_arch = ('cuda', 'cpu')
+    else:
+        print("Warning: Open3D was built with CUDA {} but"
+              "PyTorch was built with CUDA {}. Falling back to CPU for now."
+              "Otherwise, install PyTorch with CUDA {}.".format(
+                  _build_config["CUDA_VERSION"], _torch.version.cuda,
+                  _build_config["CUDA_VERSION"]))
 _lib_path.extend([
     _os.path.join(_package_root, la,
                   'open3d_torch_ops' + _lib_suffix + _lib_ext)
@@ -76,26 +85,16 @@ if not _loaded:
 from . import layers
 from . import ops
 
-if _build_config['BUNDLE_OPEN3D_ML']:
-    if 'OPEN3D_ML_ROOT' in _os.environ:
-        from ml3d import configs
-        from ml3d import datasets  # this is for convenience to have everything on the same level.
-        from ml3d import utils
-        from ml3d import vis
-        from ml3d.torch import dataloaders
-        from ml3d.torch import models
-        from ml3d.torch import modules
-        from ml3d.torch import pipelines
-    else:
-        # import from the bundled ml3d module.
-        from open3d._ml3d import configs
-        from open3d._ml3d import datasets  # this is for convenience to have everything on the same level.
-        from open3d._ml3d import utils
-        from open3d._ml3d import vis
-        from open3d._ml3d.torch import dataloaders
-        from open3d._ml3d.torch import models
-        from open3d._ml3d.torch import modules
-        from open3d._ml3d.torch import pipelines
+# put framework independent modules here for convenience
+from . import configs
+from . import datasets
+from . import vis
+
+# framework specific modules from open3d-ml
+from . import models
+from . import modules
+from . import pipelines
+from . import dataloaders
 
 # put contrib at the same level
 from open3d.ml import contrib

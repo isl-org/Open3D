@@ -34,12 +34,13 @@
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/LineSetIO.h"
+#include "open3d/io/ModelIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/PoseGraphIO.h"
-#include "open3d/io/TPointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
 
@@ -107,7 +108,7 @@ void pybind_class_io(py::module &m_io) {
                 return "Geometry types";
             }),
             py::none(), py::none(), "");
-    geom_type.value("CONTENTS_UKNWOWN", FileGeometry::CONTENTS_UNKNOWN)
+    geom_type.value("CONTENTS_UNKNOWN", FileGeometry::CONTENTS_UNKNOWN)
             .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
             .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
             .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
@@ -207,52 +208,19 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
-    // open3d::t::geometry::PointCloud
-    m_io.def(
-            "read_t_point_cloud",
-            [](const std::string &filename, const std::string &format,
-               bool remove_nan_points, bool remove_infinite_points,
-               bool print_progress) {
-                py::gil_scoped_release release;
-                t::geometry::PointCloud pcd;
-                ReadPointCloud(filename, pcd,
-                               {format, remove_nan_points,
-                                remove_infinite_points, print_progress});
-                return pcd;
-            },
-            "Function to read PointCloud with tensor attributes from file",
-            "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
-            "remove_infinite_points"_a = false, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "read_point_cloud",
-                                 map_shared_argument_docstrings);
-
-    m_io.def(
-            "write_t_point_cloud",
-            [](const std::string &filename,
-               const t::geometry::PointCloud &pointcloud, bool write_ascii,
-               bool compressed, bool print_progress) {
-                py::gil_scoped_release release;
-                return WritePointCloud(
-                        filename, pointcloud,
-                        {write_ascii, compressed, print_progress});
-            },
-            "Function to write PointCloud with tensor attributes to file",
-            "filename"_a, "pointcloud"_a, "write_ascii"_a = true,
-            "compressed"_a = false, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "write_point_cloud",
-                                 map_shared_argument_docstrings);
-
     // open3d::geometry::TriangleMesh
     m_io.def(
             "read_triangle_mesh",
-            [](const std::string &filename, bool print_progress) {
+            [](const std::string &filename, bool enable_post_processing,
+               bool print_progress) {
                 py::gil_scoped_release release;
                 geometry::TriangleMesh mesh;
-                ReadTriangleMesh(filename, mesh, print_progress);
+                ReadTriangleMesh(filename, mesh, enable_post_processing,
+                                 print_progress);
                 return mesh;
             },
             "Function to read TriangleMesh from file", "filename"_a,
-            "print_progress"_a = false);
+            "enable_post_processing"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_mesh",
                                  map_shared_argument_docstrings);
 
@@ -273,6 +241,21 @@ void pybind_class_io(py::module &m_io) {
             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
             "write_triangle_uvs"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_shared_argument_docstrings);
+
+    // open3d::visualization::rendering::TriangleMeshModel (Model.h)
+    m_io.def(
+            "read_triangle_model",
+            [](const std::string &filename, bool print_progress) {
+                py::gil_scoped_release release;
+                visualization::rendering::TriangleMeshModel model;
+                ReadTriangleModel(filename, model, print_progress);
+                return model;
+            },
+            "Function to read visualization.rendering.TriangleMeshModel from "
+            "file",
+            "filename"_a, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_triangle_model",
                                  map_shared_argument_docstrings);
 
     // open3d::geometry::VoxelGrid

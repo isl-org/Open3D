@@ -125,15 +125,60 @@ public:
             const std::shared_ptr<OctreeNodeInfo>& node_info,
             const Eigen::Vector3d& point);
 
+    /// \brief Get lambda function for initializing OctreeInternalNode.
+    ///
+    /// When the init function is called, an empty OctreeInternalNode is
+    /// created.
+    static std::function<std::shared_ptr<OctreeInternalNode>()>
+    GetInitFunction();
+
+    /// \brief Get lambda function for updating OctreeInternalNode.
+    ///
+    /// This update function does nothing.
+    static std::function<void(std::shared_ptr<OctreeInternalNode>)>
+    GetUpdateFunction();
+
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
-    // Use vector instead of C-array for Pybind11, otherwise, need to define
-    // more helper functions
-    // https://github.com/pybind/pybind11/issues/546#issuecomment-265707318
+    /// Use vector instead of C-array for Pybind11, otherwise, need to define
+    /// more helper functions
+    /// https://github.com/pybind/pybind11/issues/546#issuecomment-265707318
     /// List of children Nodes.
     std::vector<std::shared_ptr<OctreeNode>> children_;
+};
+
+/// \class OctreeInternalPointNode
+///
+/// \brief OctreeInternalPointNode class is an OctreeInternalNode containing
+/// a list of indices which is the union of all its children's list of indices.
+class OctreeInternalPointNode : public OctreeInternalNode {
+public:
+    /// \brief Default Constructor.
+    ///
+    OctreeInternalPointNode() : OctreeInternalNode() {}
+
+    /// \brief Get lambda function for initializing OctreeInternalPointNode.
+    ///
+    /// When the init function is called, an empty OctreeInternalPointNode is
+    /// created.
+    static std::function<std::shared_ptr<OctreeInternalNode>()>
+    GetInitFunction();
+
+    /// \brief Get lambda function for updating OctreeInternalPointNode.
+    ///
+    /// When called, the update function adds the input point index to the
+    /// corresponding node's list of indices of children points.
+    static std::function<void(std::shared_ptr<OctreeInternalNode>)>
+    GetUpdateFunction(size_t idx);
+
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
+
+public:
+    /// Indices of points associated with any children of this node
+    std::vector<size_t> indices_;
 };
 
 /// \class OctreeLeafNode
@@ -152,27 +197,64 @@ public:
 class OctreeColorLeafNode : public OctreeLeafNode {
 public:
     bool operator==(const OctreeLeafNode& other) const override;
+
     /// Clone this OctreeLeafNode.
     std::shared_ptr<OctreeLeafNode> Clone() const override;
+
     /// \brief Get lambda function for initializing OctreeLeafNode.
     ///
     /// When the init function is called, an empty OctreeColorLeafNode is
     /// created.
     static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
-    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+
     /// \brief Get lambda function for updating OctreeLeafNode.
     ///
-    /// When called, the update function update the corresponding node with the
+    /// When called, the update function updates the corresponding node with the
     /// input color.
     ///
     /// \param color Color of the node.
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(const Eigen::Vector3d& color);
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
-    // TODO: flexible data, with lambda function for handling node
+    /// TODO: flexible data, with lambda function for handling node
     /// Color of the node.
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
+};
+
+/// \class OctreePointColorLeafNode
+///
+/// \brief OctreePointColorLeafNode class is an OctreeColorLeafNode containing
+/// a list of indices corresponding to the point cloud points contained in
+/// this leaf node.
+class OctreePointColorLeafNode : public OctreeColorLeafNode {
+public:
+    bool operator==(const OctreeLeafNode& other) const override;
+    /// Clone this OctreeLeafNode.
+    std::shared_ptr<OctreeLeafNode> Clone() const override;
+
+    /// \brief Get lambda function for initializing OctreeLeafNode.
+    ///
+    /// When the init function is called, an empty OctreePointColorLeafNode is
+    /// created.
+    static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
+
+    /// \brief Get lambda function for updating OctreeLeafNode.
+    ///
+    /// When called, the update function adds the point cloud point index to
+    /// the corresponding node index list.
+    ///
+    /// \param idx Point cloud point index associated with node.
+    /// \param color Color of the node.
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+    GetUpdateFunction(size_t index, const Eigen::Vector3d& color);
+
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
+
+    /// Associated point indices with this node.
+    std::vector<size_t> indices_;
 };
 
 /// \class Octree
@@ -254,23 +336,47 @@ public:
     /// \brief Insert a point to the octree.
     ///
     /// \param point Coordinates of the point.
+    /// \param fl_init Initialization fcn used to create new leaf node
+    /// (if needed) associated with the point.
+    /// \param fl_update Update fcn used to update the leaf node
+    /// associated with the point.
+    /// \param fi_init Initialize fcn used to create a new internal node
+    /// (if needed) which is an ancestor of the point's leaf node. If omitted,
+    /// the default OctreeInternalNode function is used.
+    /// \param fi_update Update fcn used to update the internal node
+    /// which is an ancestor of the point's leaf node. If omitted, the default
+    /// OctreeInternalNode function is used.
     void InsertPoint(
             const Eigen::Vector3d& point,
-            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+            const std::function<std::shared_ptr<OctreeLeafNode>()>& fl_init,
             const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
-                    f_update);
+                    fl_update,
+            const std::function<std::shared_ptr<OctreeInternalNode>()>&
+                    fi_init = nullptr,
+            const std::function<void(std::shared_ptr<OctreeInternalNode>)>&
+                    fi_update = nullptr);
 
     /// \brief DFS traversal of Octree from the root, with callback function
     /// called for each node.
+    ///
+    /// \param f  Callback which fires with each traversed internal/leaf node.
+    /// Arguments supply information about the node being traversed and other
+    /// node-specific data. A Boolean return value is used for early-stopping.
+    /// If f returns true, children of this node will not be traversed.
     void Traverse(
-            const std::function<void(const std::shared_ptr<OctreeNode>&,
+            const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f);
 
     /// \brief Const version of Traverse. DFS traversal of Octree from the root,
     /// with callback function called for each node.
+    ///
+    /// \param f  Callback which fires with each traversed internal/leaf node.
+    /// Arguments supply information about the node being traversed and other
+    /// node-specific data. A Boolean return value is used for early-stopping.
+    /// If f returns true, children of this node will not be traversed.
     void Traverse(
-            const std::function<void(const std::shared_ptr<OctreeNode>&,
+            const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f) const;
 
@@ -305,7 +411,7 @@ private:
     static void TraverseRecurse(
             const std::shared_ptr<OctreeNode>& node,
             const std::shared_ptr<OctreeNodeInfo>& node_info,
-            const std::function<void(const std::shared_ptr<OctreeNode>&,
+            const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f);
 
@@ -313,9 +419,13 @@ private:
             const std::shared_ptr<OctreeNode>& node,
             const std::shared_ptr<OctreeNodeInfo>& node_info,
             const Eigen::Vector3d& point,
-            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_l_init,
             const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
-                    f_update);
+                    f_l_update,
+            const std::function<std::shared_ptr<OctreeInternalNode>()>&
+                    f_i_init,
+            const std::function<void(std::shared_ptr<OctreeInternalNode>)>&
+                    f_i_update);
 };
 
 }  // namespace geometry

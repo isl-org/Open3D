@@ -2,28 +2,45 @@ name: Documentation build
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release documentation'
+        required: false
+        default: 'ON'
+
   push:
     branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize]
 
 env:
-  SHARED: OFF
-  BUILD_TENSORFLOW_OPS: ON
-  BUILD_CUDA_MODULE: OFF
-  NPROC: 2
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   headless-docs:
     # Build headless and docs
     runs-on: ubuntu-18.04
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
-      - name: Checkout source code
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Checkout Open3D source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -42,7 +59,7 @@ jobs:
         with:
           python-version: 3.6
       - name: GCloud CLI setup
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
@@ -53,62 +70,28 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # Install Kinect k4a package
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
-          # Accept EULA using a temporary workaround
-          # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
-          echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' \
-            | sudo debconf-set-selections
-          echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' \
-            | sudo debconf-set-selections
-          sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
-          # Install ubuntu dependencie
-          # Update cmake needed in Ubuntu 18.04
-          sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
-          sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
-          ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get install --yes cmake
-          sudo apt-get install --yes doxygen
-          sudo apt-get install --yes texlive
-          sudo apt-get install --yes texlive-latex-extra
-          sudo apt-get install --yes ghostscript
-          sudo apt-get install --yes pandoc
-          sudo apt-get install --yes ccache
-          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
-          # Install Python dependencies for building docs
-          which python
-          python -V
-          python -m pip install -U -q wheel "sphinx==3.1.2" "sphinx-rtd-theme==0.5.0" "nbsphinx==0.7.1" "Pillow==7.2.0"
-          # m2r needs a patch for sphinx 3
-          # https://github.com/sphinx-doc/sphinx/issues/7420
-          python -m pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
-          # dependencies for building the ml ops
-          python -m pip install -U -q "yapf==0.30.0" "tensorflow==2.3.0"
-          python -m pip install -U -q "torch==1.6.0+cpu" -f https://download.pytorch.org/whl/torch_stable.html
+          # the build system of the main repo expects a master branch. make sure
+          # master exists
+          pushd "${OPEN3D_ML_ROOT}"
+          git checkout -b master || true
+          popd
+          source util/ci_utils.sh
+          install_docs_dependencies "${OPEN3D_ML_ROOT}"
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           ccache -s
-          nproc
-          mkdir build
-          cd build
-          cmake \
-                -DENABLE_HEADLESS_RENDERING=ON \
-                -DBUILD_GUI=OFF \
-                -DBUILD_JUPYTER_EXTENSION=ON \
-                -DWITH_OPENMP=ON \
-                -DBUILD_AZURE_KINECT=ON \
-                -DBUILD_TENSORFLOW_OPS=ON \
-                -DBUILD_PYTORCH_OPS=ON \
-                ..
-          make install-pip-package -j$NPROC
-          make -j$NPROC
-          bin/GLInfo
-          python -c "from open3d import *; import open3d; print(open3d)"
-          cd .. # Back to Open3D/
-          ./util/make_documentation.sh
+          source util/ci_utils.sh
+          build_docs "$DEVELOPER_BUILD"
           ccache -s
+
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_docs
+          path: docs/_out/html
+          if-no-files-found: error
 
       - name: Deploy docs
         if: ${{ github.ref == 'refs/heads/master' }}

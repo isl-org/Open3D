@@ -28,23 +28,30 @@ import open3d as o3d
 import open3d.core as o3c
 import numpy as np
 import pytest
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
 
-def test_knn_index():
-    dtype = o3c.Dtype.Float64
-    device = o3c.Device("CPU:0")
+@pytest.mark.parametrize("device", list_devices())
+def test_knn_index(device):
+    dtype = o3c.Dtype.Float32
 
     t = o3c.Tensor.zeros((10, 3), dtype, device=device)
     nns = o3c.nns.NearestNeighborSearch(t)
     assert nns.knn_index()
-    assert nns.multi_radius_index()
-    assert nns.fixed_radius_index()
+    assert nns.fixed_radius_index(0.1)
     assert nns.hybrid_index()
 
+    # Multi radii search is only supported on CPU.
+    if device.get_type() == o3d.core.Device.DeviceType.CPU:
+        assert nns.multi_radius_index()
 
-def test_knn_search():
-    dtype = o3c.Dtype.Float64
-    device = o3c.Device("CPU:0")
+
+@pytest.mark.parametrize("device", list_devices())
+def test_knn_search(device):
+    dtype = o3c.Dtype.Float32
 
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
@@ -84,9 +91,9 @@ def test_knn_search():
                                atol=0)
 
 
-def test_fixed_radius_search():
+@pytest.mark.parametrize("device", list_devices())
+def test_fixed_radius_search(device):
     dtype = o3c.Dtype.Float64
-    device = o3c.Device("CPU:0")
 
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
@@ -95,7 +102,7 @@ def test_fixed_radius_search():
         dtype=dtype,
         device=device)
     nns = o3c.nns.NearestNeighborSearch(dataset_points)
-    nns.fixed_radius_index()
+    nns.fixed_radius_index(0.1)
 
     # Single query point.
     query_points = o3c.Tensor([[0.064705, 0.043921, 0.087843]],

@@ -111,6 +111,10 @@ public:
     virtual void GeometryShadows(const std::string& object_name,
                                  bool cast_shadows,
                                  bool receive_shadows) = 0;
+    virtual void SetGeometryCulling(const std::string& object_name,
+                                    bool enable) = 0;
+    virtual void SetGeometryPriority(const std::string& object_name,
+                                     uint8_t priority) = 0;
     virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;
     virtual void SetGeometryTransform(const std::string& object_name,
                                       const Transform& transform) = 0;
@@ -136,6 +140,11 @@ public:
                               float inner_cone_angle,
                               float outer_cone_angle,
                               bool cast_shadows) = 0;
+    virtual bool AddDirectionalLight(const std::string& light_name,
+                                     const Eigen::Vector3f& color,
+                                     const Eigen::Vector3f& direction,
+                                     float intensity,
+                                     bool cast_shadows) = 0;
     virtual Light& GetLight(const std::string& light_name) = 0;
     virtual void RemoveLight(const std::string& light_name) = 0;
     virtual void UpdateLight(const std::string& light_name,
@@ -156,14 +165,17 @@ public:
     virtual void EnableLightShadow(const std::string& light_name,
                                    bool cast_shadows) = 0;
 
-    virtual void SetDirectionalLight(const Eigen::Vector3f& direction,
-                                     const Eigen::Vector3f& color,
-                                     float intensity) = 0;
-    virtual void EnableDirectionalLight(bool enable) = 0;
-    virtual void EnableDirectionalLightShadows(bool enable) = 0;
-    virtual void SetDirectionalLightDirection(
-            const Eigen::Vector3f& direction) = 0;
-    virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
+    virtual void SetSunLight(const Eigen::Vector3f& direction,
+                             const Eigen::Vector3f& color,
+                             float intensity) = 0;
+    virtual void EnableSunLight(bool enable) = 0;
+    virtual void EnableSunLightShadows(bool enable) = 0;
+    virtual float GetSunLightIntensity() = 0;
+    virtual void SetSunLightDirection(const Eigen::Vector3f& direction) = 0;
+    virtual Eigen::Vector3f GetSunLightDirection() = 0;
+    virtual void SetSunAngularRadius(float radius) = 0;
+    virtual void SetSunHaloSize(float size) = 0;
+    virtual void SetSunHaloFalloff(float falloff) = 0;
 
     virtual bool SetIndirectLight(const std::string& ibl_name) = 0;
     virtual const std::string& GetIndirectLight() = 0;
@@ -173,10 +185,12 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
+    virtual void SetBackground(
+            const Eigen::Vector4f& color,
+            const std::shared_ptr<geometry::Image> image = nullptr) = 0;
 
+    /// Size of image is the size of the window.
     virtual void RenderToImage(
-            int width,
-            int height,
             std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
 protected:

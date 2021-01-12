@@ -55,6 +55,7 @@ struct NumberEdit::Impl {
     double min_value_ = -2e9;  // -2 billion, which is roughly -INT_MAX
     double max_value_ = 2e9;
     int num_decimal_digits_ = -1;
+    int preferred_width_ = 0;
     std::function<void(double)> on_changed_;
 };
 
@@ -100,6 +101,10 @@ void NumberEdit::SetDecimalPrecision(int num_digits) {
     impl_->num_decimal_digits_ = num_digits;
 }
 
+void NumberEdit::SetPreferredWidth(int width) {
+    impl_->preferred_width_ = width;
+}
+
 void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
@@ -121,8 +126,12 @@ Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
         // padding is for the spacing between buttons and between text box
         incdec_width = 2 * height + padding;
     }
-    return Size((num_digits * theme.font_size) / 2 + padding + incdec_width,
-                height);
+
+    int width = (num_digits * theme.font_size) / 2 + padding + incdec_width;
+    if (impl_->preferred_width_ > 0) {
+        width = impl_->preferred_width_;
+    }
+    return Size(width, height);
 }
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {

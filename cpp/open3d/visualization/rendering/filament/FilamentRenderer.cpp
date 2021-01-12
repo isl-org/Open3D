@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
+#include <utils/Entity.h>
+
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
 //       an unsigned int.
@@ -73,6 +75,18 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
 }
 
+FilamentRenderer::FilamentRenderer(filament::Engine& engine,
+                                   int width,
+                                   int height,
+                                   FilamentResourceManager& resource_mgr)
+    : engine_(engine), resource_mgr_(resource_mgr) {
+    swap_chain_ = engine_.createSwapChain(width, height,
+                                          filament::SwapChain::CONFIG_READABLE);
+    renderer_ = engine_.createRenderer();
+
+    materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+}
+
 FilamentRenderer::~FilamentRenderer() {
     scenes_.clear();
 
@@ -107,7 +121,7 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clearColor.g = color.y();
     co.clearColor.b = color.z();
     co.clearColor.a = color.w();
-    co.clear = !preserve_buffer_;
+    co.clear = false;
     co.discard = !preserve_buffer_;
     renderer_->setClearOptions(co);
 
@@ -125,7 +139,7 @@ void FilamentRenderer::SetPreserveBuffer(bool preserve) {
     co.clearColor.b = clear_color_[2];
     co.clearColor.a = clear_color_[3];
     preserve_buffer_ = preserve;
-    co.clear = !preserve;
+    co.clear = false;
     co.discard = !preserve;
     renderer_->setClearOptions(co);
 }

@@ -8,7 +8,7 @@
     create and deploy documentation. Documentation is created for every branch
     as a CI test, but deployed only for `master`.
 
--   `util/make_documentation.sh`: Called by GitHub Actions to buld documentation.
+-   `util/ci_utils.sh:build_docs()`: Called by GitHub Actions to buld documentation.
 
 -   `unpack_docs.sh`: Called by the documentation server to deploy the docs into
     the website.
@@ -159,3 +159,52 @@ used for running CI.
     with name `GCE_SA_KEY_GPU_CI`
 
 2.  Also add secret `GCE_PROJECT: open3d-dev`
+
+## C. Ccache strategy
+
+-   Typically, a build generates ~500MB cache. A build with Filament compiled from
+    source generates ~600MB cache.
+
+-   Typically, regular X86 Ubuntu and macOS builds take about 40 mins without
+    caching.
+
+-   The bottleneck of the CI is in the ARM build since it runs on a simulator.
+    When building Filament from source, the build time can exceed GitHub's 6-hour
+    limit if caching is not properly activated. With proper caching and good cache
+    hit rate, the ARM build job can run within 1 hour.
+
+-   Both Ubuntu and macOS have a max cache setting of 2GB each out of a total
+    cache limit of 5GB for the whole repository.  Windows MSVC does not use
+    caching at present since `ccache` does not officially support MSVC.
+
+-   ARM64 cache (limit 1.5GB) is stored on Google cloud bucket
+    (`open3d-ci-cache` in the `isl-buckets` project). The bucket is world
+    readable, but needs the `open3d-ci-sa` service account for writing. Every
+    ARM64 build downloads the cache contents before build. Only `master` branch
+    builds use `gsutil rsync` to update the cache in GCS. Cache transfer only
+    takes a few minutes, but reduces ARM64 CI time to about 1:15 hours.
+
+## D. Development wheels for user testing
+
+`master` branch Python wheels are uploaded to a world readable GCS bucket for
+users to try out development wheels.
+
+### Google Cloud storage
+
+Follow instructions in A. Documentation deployment to setup a Google cloud
+bucket with:
+
+-   Project: open3d-dev
+-   Service account: open3d-ci-sa-gpu
+-   Bucket name: open3d-ci-sa-gpu
+-   Public read permissions
+-   One week object lifecycle
+
+```bash
+gsutil mb -p open3d-dev -c STANDARD -l US -b on gs://open3d-releases-master
+gsutil acl ch -u AllUsers:R gs://open3d-releases-master
+gsutil lifecycle set gcs.lifecycle.json gs:/open3d-releases-master
+gsutil iam ch \
+    serviceAccount:open3d-ci-sa-gpu@open3d-dev.iam.gserviceaccount.com:objectAdmin \
+    gs://open3d-releases-master
+```

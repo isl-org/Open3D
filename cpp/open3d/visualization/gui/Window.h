@@ -52,6 +52,7 @@ class Window {
     friend class Renderer;
 
 public:
+    static const int FLAG_HIDDEN;
     static const int FLAG_TOPMOST;
 
     /// Creates a Window that is auto-sized and centered. Window creation is
@@ -136,6 +137,9 @@ public:
     void SetOnMenuItemActivated(Menu::ItemId item_id,
                                 std::function<void()> callback);
 
+    /// Sets a callback that will be called on every UI tick (about 10 msec).
+    /// Callback should return true if a redraw is required (i.e. the UI or
+    /// a 3D scene has changed), false otherwise.
     void SetOnTickEvent(std::function<bool()> callback);
 
     /// Shows the dialog. If a dialog is currently being shown it will be
@@ -175,6 +179,7 @@ private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
+    void ForceRedrawSceneWidget();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);

@@ -73,8 +73,16 @@ public:
                      std::int32_t y,
                      std::uint32_t w,
                      std::uint32_t h) override;
+    std::array<int, 4> GetViewport() const override;
 
-    void SetSSAOEnabled(bool enabled) override;
+    void SetPostProcessing(bool enabled) override;
+    void SetAmbientOcclusion(bool enabled, bool ssct_enabled = false) override;
+    void SetAntiAliasing(bool enabled, bool temporal = false) override;
+    void SetShadowing(bool enabled, ShadowType type) override;
+
+    void SetColorGrading(const ColorGradingParams& color_grading) override;
+
+    void ConfigureForColorPicking() override;
 
     Camera* GetCamera() const override;
 

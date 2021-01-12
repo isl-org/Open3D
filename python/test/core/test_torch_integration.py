@@ -62,7 +62,7 @@ def test_tensor_from_to_pytorch(device):
     device_id = device.get_id()
     device_type = device.get_type()
 
-    # a, b, c share memory
+    # a, b, c share memory.
     a = torch.ones((2, 2))
     if device_type == o3d.core.Device.DeviceType.CUDA:
         a = a.cuda(device_id)
@@ -76,7 +76,7 @@ def test_tensor_from_to_pytorch(device):
     np.testing.assert_equal(r, b.cpu().numpy())
     np.testing.assert_equal(r, c.cpu().numpy())
 
-    # Special strides
+    # Special strides.
     np_r = np.random.randint(10, size=(10, 10)).astype(np.int32)
     th_r = torch.Tensor(np_r)
     th_t = th_r[1:10:2, 1:10:3].T
@@ -88,6 +88,15 @@ def test_tensor_from_to_pytorch(device):
 
     th_t[0, 0] = 100
     np.testing.assert_equal(th_t.cpu().numpy(), o3_t.cpu().numpy())
+
+    # Zero-sized tensors.
+    for shape in [(), (0), (0, 0), (0, 3)]:
+        np_t = np.ones(shape)
+        th_t = torch.Tensor(np_t)
+        o3_t = o3d.core.Tensor.from_dlpack(torch.utils.dlpack.to_dlpack(th_t))
+        th_t_v2 = torch.utils.dlpack.from_dlpack(o3_t.to_dlpack())
+        np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+        np.testing.assert_equal(th_t_v2.cpu().numpy(), np_t)
 
 
 def test_tensor_numpy_to_open3d_to_pytorch():

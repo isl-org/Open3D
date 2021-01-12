@@ -17,11 +17,9 @@ CMakeSettings.json
 build*/
 cmake-build-debug/
 cmake-build-release/
-docs/_out/
 util/pip_package/dist/
 util/conda_package/dist/
 doxygen/
-docs/python_api/
 node_modules/
 
 # Editor files
@@ -49,6 +47,7 @@ __pycache__
 node_modules/
 static/
 *.old*
+dist/
 compile_commands.json
 
 # Example resources
@@ -85,3 +84,7 @@ docs/tutorial/**/*.jpg
 docs/tutorial/**/*.ply
 docs/tutorial/**/*.pcd
 docs/tutorial/**/*.json
+docs/_out/
+docs/python_api/
+docs/Doxyfile
+docs/getting_started.rst

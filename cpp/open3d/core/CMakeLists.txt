@@ -1,4 +1,6 @@
 set(KERNEL_SRC
+    kernel/Arange.cpp
+    kernel/ArangeCPU.cpp
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
     kernel/NonZero.cpp
@@ -13,6 +15,7 @@ set(KERNEL_SRC
 )
 
 set(KERNEL_CUDA_SRC
+    kernel/ArangeCUDA.cu
     kernel/IndexGetSetCUDA.cu
     kernel/NonZeroCUDA.cu
     kernel/UnaryEWCUDA.cu
@@ -51,6 +54,7 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
+    NumpyIO.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
@@ -72,9 +76,23 @@ set(HASHMAP_CUDA_SRC
   )
 
 set(CORE_NNS_SRC
+    nns/NNSIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
+    nns/FixedRadiusIndex.cpp
 )
+
+if (WITH_FAISS)
+    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FaissIndex.cpp)
+endif()
+
+if (BUILD_CUDA_MODULE)
+    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FixedRadiusSearch.cu)
+endif()
+
+if (BUILD_CUDA_MODULE)
+    list(APPEND CORE_NNS_SRC nns/FixedRadiusSearch.cu)
+endif()
 
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
@@ -107,4 +125,6 @@ open3d_show_and_abort_on_warning(core)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    find_package(CUB REQUIRED)
+    target_include_directories(core SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()

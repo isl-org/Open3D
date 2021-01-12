@@ -26,13 +26,27 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "open3d/visualization/gui/Menu.h"
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
+
+namespace rendering {
+class View;
+class Scene;
+}  // namespace rendering
+
 namespace gui {
 
 struct Theme;
@@ -54,6 +68,29 @@ public:
     void Initialize(int argc, const char *argv[]);
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
+
+    /// Sets the font for the character range in language specified two-letter
+    /// lowercase ISO 639-1 codes. The font can be a path to a TrueType (.ttf),
+    /// TrueType Collection (.ttc), or OpenType (.otf) file, or it can be the
+    /// name of the font, in which case the system font paths will be searched
+    /// from the file. Supported languages are:
+    ///   "en" (English)
+    ///   "ja" (Japanese)
+    ///   "ko" (Korean)
+    ///   "th" (Thai)
+    ///   "vi" (Vietnamese)
+    ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
+    ///   "zh_all" (Chinese, all characters, ~200 MB per window)
+    //  All other languages will be assumed to be Cyrillic.
+    void SetFontForLanguage(const char *font, const char *lang_code);
+
+    /// Sets the font for the specified code points. The font can be a path to
+    /// a TrueType (.ttf), TrueType Collection (.ttc), or OpenType (.otf) file,
+    /// or it can be the name of the font, in which case the system font paths
+    /// will be searched. The font is assumed to contain the code points;
+    /// if it does not no error will be produced.
+    void SetFontForCodePoints(const char *font,
+                              const std::vector<uint32_t> &code_points);
 
     /// Does not return until the UI is completely finished.
     void Run();
@@ -122,10 +159,33 @@ public:
         virtual void unlock() {}
         virtual void relock() {}
     };
-    /// For internal use. EnvUnlocker allows an external environment to provide
+    /// For internal use. Returns true if the run loop has not finished, and
+    /// false if the last window has closed or Quit() has been called.
+    /// EnvUnlocker allows an external environment to provide
     /// a way to unlock the environment while we wait for the next event.
-    /// This is useful to release the Python GIL, for example.
-    bool RunOneTick(EnvUnlocker &unlocker);
+    /// This is useful to release the Python GIL, for example. Callers of
+    /// of Open3D's GUI from languages such as scripting languages which do
+    /// not expect the author to need to clean up after themselves may want to
+    /// write their own Run() function that calls RunOneTick() with
+    /// cleanup_if_no_windows=false and schedule a call to OnTerminate() with
+    /// atexit().
+    bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
+
+    /// Returns the scene rendered to an image. This MUST NOT be called while
+    /// in Run(). It is intended for use when no windows are shown. If you
+    /// need to render from a GUI, use Scene::RenderToImage().
+    std::shared_ptr<geometry::Image> RenderToImage(EnvUnlocker &unlocker,
+                                                   rendering::View *view,
+                                                   rendering::Scene *scene,
+                                                   int width,
+                                                   int height);
+
+    struct UserFontInfo {
+        std::string path;
+        std::string lang;
+        std::vector<uint32_t> code_points;
+    };
+    const std::vector<UserFontInfo> &GetUserFontInfo() const;
 
 private:
     Application();

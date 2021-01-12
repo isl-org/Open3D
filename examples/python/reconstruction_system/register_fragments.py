@@ -37,16 +37,16 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, distance_threshold,
+            source, target, source_fpfh, target_fpfh, True, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 4,
+                False), 3,
             [
                 o3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500))
+            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
@@ -149,7 +149,7 @@ def make_posegraph_for_scene(ply_file_names, config):
         for t in range(s + 1, n_files):
             matching_results[s * n_files + t] = matching_result(s, t)
 
-    if config["python_multi_threading"].lower() == "true":
+    if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess

@@ -47,6 +47,7 @@ void pybind_core_dtype(py::module &m) {
 
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
                                                     "Open3D data types.");
+    dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
     dtype.def_readonly_static("Undefined", &Dtype::Undefined);
     dtype.def_readonly_static("Float32", &Dtype::Float32);
     dtype.def_readonly_static("Float64", &Dtype::Float64);

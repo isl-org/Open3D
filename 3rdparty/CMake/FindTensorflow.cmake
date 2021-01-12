@@ -1,4 +1,4 @@
-# Find Tensorflow include dir and library
+# Find TensorFlow include dir and library
 #
 # The following variables will be set:
 # - Tensorflow_FOUND
@@ -11,7 +11,7 @@ if(NOT Tensorflow_FOUND)
     # Searching for tensorflow requires the python executable
     find_package(PythonExecutable REQUIRED)
 
-    message(STATUS "Getting Tensorflow properties ...")
+    message(STATUS "Getting TensorFlow properties ...")
 
     # Get Tensorflow_VERSION
     execute_process(
@@ -59,7 +59,7 @@ if(NOT Tensorflow_FOUND)
     )
 endif()
 
-message(STATUS "Tensorflow       version: ${Tensorflow_VERSION}")
+message(STATUS "TensorFlow       version: ${Tensorflow_VERSION}")
 message(STATUS "             include dir: ${Tensorflow_INCLUDE_DIR}")
 message(STATUS "             library dir: ${Tensorflow_LIB_DIR}")
 message(STATUS "           framework lib: ${Tensorflow_FRAMEWORK_LIB}")
