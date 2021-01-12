@@ -68,7 +68,7 @@ void _SparseConvTransposeComputeFeaturesCPU(
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Map<Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic>>
+                Eigen::Map<Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic>>
                         C(out_features + (r.begin() * out_channels),
                           out_channels, range_length);
 
@@ -90,7 +90,8 @@ void _SparseConvTransposeComputeFeaturesCPU(
                         TFeat normalizer(1);
                         if (NORMALIZE) {
                             if (NEIGHBOR_IMPORTANCE) {
-                                if (inp_neighbors_importance_sum[inp_idx] != 0)
+                                if (inp_neighbors_importance_sum[inp_idx] !=
+                                    TFeat(0))
                                     normalizer /= inp_neighbors_importance_sum
                                             [inp_idx];
                             } else {
@@ -102,7 +103,7 @@ void _SparseConvTransposeComputeFeaturesCPU(
                                 num_inp_neighbors =
                                         inp_neighbor_end - inp_neighbor_start;
                                 if (num_inp_neighbors > 0)
-                                    normalizer /= num_inp_neighbors;
+                                    normalizer /= TFeat(num_inp_neighbors);
                             }
                         }
 
@@ -117,14 +118,15 @@ void _SparseConvTransposeComputeFeaturesCPU(
                                 B(inp_features + inp_idx * in_channels,
                                   in_channels, 1);
                         TFeat scale = normalizer * n_importance;
-                        C.col(out_col) += A * (scale * B);
+                        C.col(out_col) +=
+                                (A * (scale * B)).template cast<TOut>();
                     }
 
                 }  // out_idx
 
                 if (out_importance) {
                     for (int i = 0; i < range_length; ++i)
-                        C.col(i) *= out_importance[r.begin() + i];
+                        C.col(i) *= TOut(out_importance[r.begin() + i]);
                 }
             });
 }

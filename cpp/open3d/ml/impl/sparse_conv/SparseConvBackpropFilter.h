@@ -119,7 +119,7 @@ void _SparseConvBackropFilterCPU(TOut* filter_backprop,
                             out_features_gradient + out_idx * out_channels,
                             out_channels, 1);
 
-                    if (normalize && normalizer != 0)
+                    if (normalize && normalizer != TFeat(0))
                         C.col(out_col) /= normalizer;
 
                 }  // out_idx
@@ -134,7 +134,7 @@ void _SparseConvBackropFilterCPU(TOut* filter_backprop,
                     int linear_i = 0;
                     for (int j = 0; j < num_kernel_elements * in_channels; ++j)
                         for (int i = 0; i < out_channels; ++i, ++linear_i) {
-                            filter_backprop[linear_i] += A(i, j);
+                            filter_backprop[linear_i] += TOut(A(i, j));
                         }
                 }
             });

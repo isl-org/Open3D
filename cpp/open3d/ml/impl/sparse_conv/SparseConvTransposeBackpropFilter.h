@@ -35,8 +35,8 @@ namespace impl {
 
 /// Implementation of SparseConvTransposeBackpropFilterCPU with template
 /// parameters for configuration.
-template <class TOut,
-          class TFeat,
+template <class TFeat,
+          class TOut,
           class TIndex,
           class TKernelIndex,
           bool NORMALIZE>
@@ -107,7 +107,8 @@ void _SparseConvTransposeBackpropFilterCPU(
                         if (NORMALIZE) {
                             TFeat normalizer(1);
                             if (NEIGHBOR_IMPORTANCE) {
-                                if (inp_neighbors_importance_sum[inp_idx] != 0)
+                                if (inp_neighbors_importance_sum[inp_idx] !=
+                                    TFeat(0))
                                     normalizer /= inp_neighbors_importance_sum
                                             [inp_idx];
                             } else {
@@ -119,7 +120,7 @@ void _SparseConvTransposeBackpropFilterCPU(
                                 num_inp_neighbors =
                                         inp_neighbor_end - inp_neighbor_start;
                                 if (num_inp_neighbors > 0)
-                                    normalizer /= num_inp_neighbors;
+                                    normalizer /= TFeat(num_inp_neighbors);
                             }
                             for (int ic = 0; ic < in_channels; ++ic)
                                 infeat(ic) *= normalizer;
@@ -144,7 +145,7 @@ void _SparseConvTransposeBackpropFilterCPU(
                 Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic> A(
                         out_channels, num_kernel_elements * in_channels);
 
-                A = C * B.transpose();
+                A = (C * B.transpose()).template cast<TOut>();
 
                 {
                     std::lock_guard<std::mutex> lock(filter_backprop_mutex);

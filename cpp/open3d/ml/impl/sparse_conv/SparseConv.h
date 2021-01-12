@@ -67,8 +67,8 @@ void _SparseConvComputeFeaturesCPU(TOut* out_features,
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Matrix<TFeat, Eigen::Dynamic, 1> normalizers(
-                        range_length, 1);
+                Eigen::Matrix<TOut, Eigen::Dynamic, 1> normalizers(range_length,
+                                                                   1);
                 normalizers.setZero();
 
                 Eigen::Map<Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic>>
@@ -89,7 +89,7 @@ void _SparseConvComputeFeaturesCPU(TOut* out_features,
                         const TFeat n_importance =
                                 (NEIGHBOR_IMPORTANCE ? neighbors_importance[n]
                                                      : TFeat(1));
-                        normalizers(out_col) += n_importance;
+                        normalizers(out_col) += TOut(n_importance);
 
                         TFeat importance(1.0);
                         if (POINT_IMPORTANCE)
@@ -107,14 +107,16 @@ void _SparseConvComputeFeaturesCPU(TOut* out_features,
                                 B(inp_features + inp_idx * in_channels,
                                   in_channels, 1);
 
-                        C.col(out_col) += A * (importance * B);
+                        C.col(out_col) +=
+                                (A * (importance * B)).template cast<TOut>();
                     }
 
                 }  // out_idx
 
                 if (normalize) {
                     for (int i = 0; i < range_length; ++i) {
-                        if (normalizers(i) != 0) C.col(i) /= normalizers(i);
+                        if (normalizers(i) != TOut(0))
+                            C.col(i) /= normalizers(i);
                     }
                 }
             });
