@@ -96,24 +96,24 @@ namespace impl {
 ///        by the number of points (neighbors_importance is null) or by the sum
 ///        of the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
                                   void* temp,
                                   size_t& temp_size,
                                   size_t& max_temp_size,
                                   int texture_alignment,
-                                  TReal* filter_backprop,
+                                  TOut* filter_backprop,
                                   const std::vector<int>& filter_dims,
                                   TIndex num_out,
                                   TIndex num_inp,
-                                  const TReal* inp_features,
-                                  const TReal* inp_importance,
+                                  const TFeat* inp_features,
+                                  const TFeat* inp_importance,
                                   size_t neighbors_index_size,
                                   const TIndex* neighbors_index,
                                   const TKernelIndex* neighbors_kernel_index,
-                                  const TReal* neighbors_importance,
+                                  const TFeat* neighbors_importance,
                                   const int64_t* neighbors_row_splits,
-                                  const TReal* out_features_gradient,
+                                  const TFeat* out_features_gradient,
                                   bool normalize) {
     const bool get_temp_size = !temp;
 
@@ -136,7 +136,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     const size_t bytes_per_column =
-            sizeof(TReal) * (num_kernel_elements * in_channels);
+            sizeof(TFeat) * (num_kernel_elements * in_channels);
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -163,7 +163,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
     // init output
     cudaMemsetAsync(
             filter_backprop, 0,
-            sizeof(TReal) * num_kernel_elements * in_channels * out_channels,
+            sizeof(TOut) * num_kernel_elements * in_channels * out_channels,
             stream);
 
     size_t num_cols_per_run =
@@ -178,7 +178,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
-    TReal* columns = (TReal*)mem_columns.first;
+    TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
     size_t num_runs = DivUp(num_out, num_cols_per_run);
@@ -188,7 +188,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run);
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumn<TReal, TIndex, TKernelIndex>(
+        FillColumn<TFeat, TIndex, TKernelIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,

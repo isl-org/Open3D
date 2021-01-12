@@ -35,21 +35,25 @@ namespace impl {
 
 /// Implementation of SparseConvTransposeBackpropFilterCPU with template
 /// parameters for configuration.
-template <class TReal, class TIndex, class TKernelIndex, bool NORMALIZE>
+template <class TOut,
+          class TFeat,
+          class TIndex,
+          class TKernelIndex,
+          bool NORMALIZE>
 void _SparseConvTransposeBackpropFilterCPU(
-        TReal* filter_backprop,
+        TOut* filter_backprop,
         const std::vector<int>& filter_dims,
         size_t num_out,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         size_t num_inp,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbors_index,
         const TKernelIndex* neighbors_kernel_index,
-        const TReal* neighbors_importance,
+        const TFeat* neighbors_importance,
         const int64_t* neighbors_row_splits,
-        const TReal* out_features_gradient) {
+        const TFeat* out_features_gradient) {
     const bool NEIGHBOR_IMPORTANCE = neighbors_importance;
 
     const int in_channels = filter_dims[filter_dims.size() - 2];
@@ -60,7 +64,7 @@ void _SparseConvTransposeBackpropFilterCPU(
         num_kernel_elements *= filter_dims[i];
 
     memset(filter_backprop, 0,
-           sizeof(TReal) * num_kernel_elements * in_channels * out_channels);
+           sizeof(TOut) * num_kernel_elements * in_channels * out_channels);
     std::mutex filter_backprop_mutex;
 
     tbb::parallel_for(
@@ -68,13 +72,13 @@ void _SparseConvTransposeBackpropFilterCPU(
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * num_kernel_elements, range_length);
                 B.setZero();
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> C(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> C(
                         out_channels, range_length);
 
-                Eigen::Array<TReal, Eigen::Dynamic, 1> infeat(in_channels, 1);
+                Eigen::Array<TFeat, Eigen::Dynamic, 1> infeat(in_channels, 1);
 
                 for (size_t out_idx = r.begin(); out_idx != r.end();
                      ++out_idx) {
@@ -84,7 +88,7 @@ void _SparseConvTransposeBackpropFilterCPU(
                             neighbors_row_splits[out_idx + 1];
 
                     C.col(out_col) = Eigen::Map<
-                            const Eigen::Array<TReal, Eigen::Dynamic, 1>>(
+                            const Eigen::Array<TFeat, Eigen::Dynamic, 1>>(
                             out_features_gradient + out_idx * out_channels,
                             out_channels, 1);
 
@@ -92,16 +96,16 @@ void _SparseConvTransposeBackpropFilterCPU(
                         const size_t inp_idx = neighbors_index[n];
                         const int kernel_idx = neighbors_kernel_index[n];
 
-                        TReal n_importance = NEIGHBOR_IMPORTANCE
+                        TFeat n_importance = NEIGHBOR_IMPORTANCE
                                                      ? neighbors_importance[n]
-                                                     : 1;
+                                                     : TFeat(1);
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(ic) =
                                     inp_features[inp_idx * in_channels + ic] *
                                     n_importance;
 
                         if (NORMALIZE) {
-                            TReal normalizer = 1;
+                            TFeat normalizer(1);
                             if (NEIGHBOR_IMPORTANCE) {
                                 if (inp_neighbors_importance_sum[inp_idx] != 0)
                                     normalizer /= inp_neighbors_importance_sum
@@ -137,7 +141,7 @@ void _SparseConvTransposeBackpropFilterCPU(
                     }
                 }
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> A(
+                Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic> A(
                         out_channels, num_kernel_elements * in_channels);
 
                 A = C * B.transpose();
@@ -204,21 +208,21 @@ void _SparseConvTransposeBackpropFilterCPU(
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvTransposeBackpropFilterCPU(
-        TReal* filter_backprop,
+        TOut* filter_backprop,
         const std::vector<int>& filter_dims,
         size_t num_out,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         size_t num_inp,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbors_index,
         const TKernelIndex* neighbors_kernel_index,
-        const TReal* neighbors_importance,
+        const TFeat* neighbors_importance,
         const int64_t* neighbors_row_splits,
-        const TReal* out_features_gradient,
+        const TFeat* out_features_gradient,
         bool normalize) {
 #define FN_PARAMETERS                                                          \
     filter_backprop, filter_dims, num_out, out_importance, num_inp,            \
@@ -226,10 +230,11 @@ void SparseConvTransposeBackpropFilterCPU(
             inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
             neighbors_importance, neighbors_row_splits, out_features_gradient
 
-#define CALL_TEMPLATE(NORMALIZE)                                           \
-    if (NORMALIZE == normalize)                                            \
-        _SparseConvTransposeBackpropFilterCPU<TReal, TIndex, TKernelIndex, \
-                                              NORMALIZE>(FN_PARAMETERS);
+#define CALL_TEMPLATE(NORMALIZE)                                        \
+    if (NORMALIZE == normalize)                                         \
+        _SparseConvTransposeBackpropFilterCPU<TFeat, TOut, TIndex,      \
+                                              TKernelIndex, NORMALIZE>( \
+                FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \
     CALL_TEMPLATE(true) \

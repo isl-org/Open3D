@@ -31,7 +31,7 @@ using namespace open3d;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 class SparseConvBackpropFilterOpKernelCPU
     : public SparseConvBackpropFilterOpKernel<TIndex> {
 public:
@@ -52,33 +52,34 @@ public:
                 const bool point_importances,
                 const bool has_neighbors_importances,
                 tensorflow::Tensor& filter_backprop) {
-        SparseConvBackpropFilterCPU<TReal, TIndex>(
-                filter_backprop.flat<TReal>().data(), filter_dims,
+        SparseConvBackpropFilterCPU<TFeat, TOut, TIndex>(
+                filter_backprop.flat<TOut>().data(), filter_dims,
                 neighbors_row_splits.shape().dim_size(0) - 1,
                 inp_features.shape().dim_size(0),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
                         .data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
-                out_features_gradient.flat<TReal>().data(), this->normalize);
+                out_features_gradient.flat<TFeat>().data(), this->normalize);
     }
 };
 
-#define REG_KB(type, indextype, kernelindextype)                      \
-    REGISTER_KERNEL_BUILDER(                                          \
-            Name("Open3DSparseConvBackpropFilter")                    \
-                    .Device(DEVICE_CPU)                               \
-                    .TypeConstraint<type>("TReal")                    \
-                    .TypeConstraint<indextype>("TIndex")              \
-                    .TypeConstraint<kernelindextype>("TKernelIndex"), \
-            SparseConvBackpropFilterOpKernelCPU<type, indextype,      \
+#define REG_KB(feattype, outtype, indextype, kernelindextype)                 \
+    REGISTER_KERNEL_BUILDER(                                                  \
+            Name("Open3DSparseConvBackpropFilter")                            \
+                    .Device(DEVICE_CPU)                                       \
+                    .TypeConstraint<feattype>("TFeat")                        \
+                    .TypeConstraint<outtype>("output_type")                   \
+                    .TypeConstraint<indextype>("TIndex")                      \
+                    .TypeConstraint<kernelindextype>("TKernelIndex"),         \
+            SparseConvBackpropFilterOpKernelCPU<feattype, outtype, indextype, \
                                                 kernelindextype>);
-REG_KB(float, int32, int16_t)
-REG_KB(float, int32, uint8_t)
+REG_KB(float, float, int32, int16_t)
+REG_KB(float, float, int32, uint8_t)
 #undef REG_KB

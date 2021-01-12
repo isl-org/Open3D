@@ -31,7 +31,7 @@ using namespace open3d;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 class SparseConvOpKernelCPU : public SparseConvOpKernel<TIndex> {
 public:
     explicit SparseConvOpKernelCPU(OpKernelConstruction* construction)
@@ -49,33 +49,35 @@ public:
                 const bool point_importances,
                 const bool has_neighbors_importances,
                 tensorflow::Tensor& out_features) {
-        SparseConvComputeFeaturesCPU<TReal, TIndex, TKernelIndex>(
-                out_features.flat<TReal>().data(), filter_dims,
-                filters.flat<TReal>().data(),
+        SparseConvComputeFeaturesCPU<TFeat, TOut, TIndex, TKernelIndex>(
+                out_features.flat<TOut>().data(), filter_dims,
+                filters.flat<TFeat>().data(),
                 neighbors_row_splits.dim_size(0) - 1, inp_features.dim_size(0),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
                         .data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 this->normalize);
     }
 };
 
-#define REG_KB(type, indextype, kernelindextype)                      \
+#define REG_KB(feattype, outtype, indextype, kernelindextype)         \
     REGISTER_KERNEL_BUILDER(                                          \
             Name("Open3DSparseConv")                                  \
                     .Device(DEVICE_CPU)                               \
-                    .TypeConstraint<type>("TReal")                    \
+                    .TypeConstraint<feattype>("TFeat")                \
+                    .TypeConstraint<outtype>("output_type")           \
                     .TypeConstraint<indextype>("TIndex")              \
                     .TypeConstraint<kernelindextype>("TKernelIndex"), \
-            SparseConvOpKernelCPU<type, indextype, kernelindextype>);
-REG_KB(float, int32, int16)
-REG_KB(float, int32, uint8_t)
+            SparseConvOpKernelCPU<feattype, outtype, indextype,       \
+                                  kernelindextype>);
+REG_KB(float, float, int32, int16)
+REG_KB(float, float, int32, uint8_t)
 #undef REG_KB

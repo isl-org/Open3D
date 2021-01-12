@@ -109,27 +109,27 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvTransposeBackpropFilterCUDA(
         const cudaStream_t& stream,
         void* temp,
         size_t& temp_size,
         size_t& max_temp_size,
         int texture_alignment,
-        TReal* filter_backprop,
+        TOut* filter_backprop,
         const std::vector<int>& filter_dims,
         TIndex num_out,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         TIndex num_inp,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         size_t neighbors_index_size,
         const TIndex* neighbors_index,
         const TKernelIndex* neighbors_kernel_index,
-        const TReal* neighbors_importance,
+        const TFeat* neighbors_importance,
         const int64_t* neighbors_row_splits,
-        const TReal* out_features_gradient,
+        const TFeat* out_features_gradient,
         bool normalize) {
     const bool get_temp_size = !temp;
 
@@ -152,8 +152,8 @@ void SparseConvTransposeBackpropFilterCUDA(
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     size_t bytes_per_column =
-            sizeof(TReal) * (num_kernel_elements * in_channels);
-    if (out_importance) bytes_per_column += sizeof(TReal) * out_channels;
+            sizeof(TFeat) * (num_kernel_elements * in_channels);
+    if (out_importance) bytes_per_column += sizeof(TFeat) * out_channels;
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -181,7 +181,7 @@ void SparseConvTransposeBackpropFilterCUDA(
 
     cudaMemsetAsync(
             filter_backprop, 0,
-            sizeof(TReal) * num_kernel_elements * in_channels * out_channels,
+            sizeof(TOut) * num_kernel_elements * in_channels * out_channels,
             stream);
 
     typedef cutlass::gemm::SgemmTraits<
@@ -193,8 +193,8 @@ void SparseConvTransposeBackpropFilterCUDA(
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
-    TReal* columns = (TReal*)mem_columns.first;
-    TReal* gradient = ((TReal*)mem_columns.first) +
+    TFeat* columns = (TFeat*)mem_columns.first;
+    TFeat* gradient = ((TFeat*)mem_columns.first) +
                       num_cols_per_run * num_kernel_elements * in_channels;
 
     // if we cannot process all data at once we need multiple runs
@@ -212,12 +212,12 @@ void SparseConvTransposeBackpropFilterCUDA(
                             (run_i * num_cols_per_run * out_channels),
                     out_importance + (run_i * num_cols_per_run));
         } else {
-            gradient = const_cast<TReal*>(
+            gradient = const_cast<TFeat*>(
                     out_features_gradient +
                     (run_i * num_cols_per_run * out_channels));
         }
 
-        FillColumnTranspose<TReal, TIndex>(
+        FillColumnTranspose<TFeat, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_neighbors_importance_sum,
                 inp_neighbors_row_splits, neighbors_index_size, neighbors_index,

@@ -34,18 +34,22 @@ namespace ml {
 namespace impl {
 
 // Implementation of SparseConvBackropFilterCPU
-template <class TReal, class TIndex, class TKernelIndex, bool POINT_IMPORTANCE>
-void _SparseConvBackropFilterCPU(TReal* filter_backprop,
+template <class TFeat,
+          class TOut,
+          class TIndex,
+          class TKernelIndex,
+          bool POINT_IMPORTANCE>
+void _SparseConvBackropFilterCPU(TOut* filter_backprop,
                                  const std::vector<int>& filter_dims,
                                  size_t num_out,
                                  size_t num_inp,
-                                 const TReal* inp_features,
-                                 const TReal* inp_importance,
+                                 const TFeat* inp_features,
+                                 const TFeat* inp_importance,
                                  const TIndex* neighbors_index,
                                  const TKernelIndex* neighbors_kernel_index,
-                                 const TReal* neighbors_importance,
+                                 const TFeat* neighbors_importance,
                                  const int64_t* neighbors_row_splits,
-                                 const TReal* out_features_gradient,
+                                 const TFeat* out_features_gradient,
                                  bool normalize) {
     const bool NEIGHBOR_IMPORTANCE = neighbors_importance;
 
@@ -58,7 +62,7 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
     const int total_filter_size =
             num_kernel_elements * in_channels * out_channels;
 
-    memset(filter_backprop, 0, sizeof(TReal) * total_filter_size);
+    memset(filter_backprop, 0, sizeof(TOut) * total_filter_size);
     std::mutex filter_backprop_mutex;
 
     tbb::parallel_for(
@@ -66,13 +70,13 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * num_kernel_elements, range_length);
                 B.setZero();
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> C(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> C(
                         out_channels, range_length);
 
-                Eigen::Array<TReal, Eigen::Dynamic, 1> infeat(in_channels, 1);
+                Eigen::Array<TFeat, Eigen::Dynamic, 1> infeat(in_channels, 1);
 
                 for (size_t out_idx = r.begin(); out_idx != r.end();
                      ++out_idx) {
@@ -80,22 +84,22 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
                     const size_t neighbor_start = neighbors_row_splits[out_idx];
                     const size_t neighbor_end =
                             neighbors_row_splits[out_idx + 1];
-                    TReal normalizer = 0;
+                    TFeat normalizer(0);
 
                     for (size_t n = neighbor_start; n < neighbor_end; ++n) {
                         const size_t inp_idx = neighbors_index[n];
                         const int kernel_idx = neighbors_kernel_index[n];
 
-                        const TReal n_importance =
+                        const TFeat n_importance =
                                 (NEIGHBOR_IMPORTANCE ? neighbors_importance[n]
-                                                     : 1);
+                                                     : TFeat(1));
                         normalizer += n_importance;
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(ic) =
                                     inp_features[inp_idx * in_channels + ic];
 
-                        TReal importance = 1;
+                        TFeat importance(1);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
                         if (NEIGHBOR_IMPORTANCE) importance *= n_importance;
@@ -111,7 +115,7 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
                     }
 
                     C.col(out_col) = Eigen::Map<
-                            const Eigen::Array<TReal, Eigen::Dynamic, 1>>(
+                            const Eigen::Array<TFeat, Eigen::Dynamic, 1>>(
                             out_features_gradient + out_idx * out_channels,
                             out_channels, 1);
 
@@ -120,7 +124,7 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
 
                 }  // out_idx
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> A(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> A(
                         out_channels, num_kernel_elements * in_channels);
 
                 A = C * B.transpose();
@@ -190,18 +194,18 @@ void _SparseConvBackropFilterCPU(TReal* filter_backprop,
 ///        by the number of points (neighbors_importance is null) or by the sum
 ///        of the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex, class TKernelIndex>
-void SparseConvBackpropFilterCPU(TReal* filter_backprop,
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
+void SparseConvBackpropFilterCPU(TOut* filter_backprop,
                                  const std::vector<int>& filter_dims,
                                  size_t num_out,
                                  size_t num_inp,
-                                 const TReal* inp_features,
-                                 const TReal* inp_importance,
+                                 const TFeat* inp_features,
+                                 const TFeat* inp_importance,
                                  const TIndex* neighbors_index,
                                  const TKernelIndex* neighbors_kernel_index,
-                                 const TReal* neighbors_importance,
+                                 const TFeat* neighbors_importance,
                                  const int64_t* neighbors_row_splits,
-                                 const TReal* out_features_gradient,
+                                 const TFeat* out_features_gradient,
                                  bool normalize) {
     bool has_importance = inp_importance;
 
@@ -211,9 +215,9 @@ void SparseConvBackpropFilterCPU(TReal* filter_backprop,
             neighbors_importance, neighbors_row_splits, out_features_gradient, \
             normalize
 
-#define CALL_TEMPLATE(HAS_IMPORTANCE)                            \
-    if (HAS_IMPORTANCE == has_importance)                        \
-        _SparseConvBackropFilterCPU<TReal, TIndex, TKernelIndex, \
+#define CALL_TEMPLATE(HAS_IMPORTANCE)                                  \
+    if (HAS_IMPORTANCE == has_importance)                              \
+        _SparseConvBackropFilterCPU<TFeat, TOut, TIndex, TKernelIndex, \
                                     HAS_IMPORTANCE>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \

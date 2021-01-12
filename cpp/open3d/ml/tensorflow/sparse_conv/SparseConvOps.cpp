@@ -33,19 +33,24 @@
 using namespace tensorflow;
 
 REGISTER_OP("Open3DSparseConv")
-        .Attr("TReal: {float, double}")
+        .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
+                                                   // weights
+        .Attr("output_type: {float, double, bfloat16} = DT_FLOAT")  // Type for
+                                                                    // the
+                                                                    // output
+                                                                    // features
         .Attr("TIndex: {int32, int64}")
         .Attr("TKernelIndex: {uint8, int16}")
         .Attr("normalize: bool = false")
         .Attr("max_temp_mem_MB: int = 64")
-        .Input("filters: TReal")       // [depth, height, width, in_ch, out_ch]
-        .Input("inp_features: TReal")  // [num_points_in, in_ch]
-        .Input("inp_importance: TReal")                 // [num_points_in]
+        .Input("filters: TFeat")       // [depth, height, width, in_ch, out_ch]
+        .Input("inp_features: TFeat")  // [num_points_in, in_ch]
+        .Input("inp_importance: TFeat")                 // [num_points_in]
         .Input("neighbors_index: TIndex")               // [?]
         .Input("neighbors_kernel_index: TKernelIndex")  // [?]
-        .Input("neighbors_importance: TReal")           // [?]
+        .Input("neighbors_importance: TFeat")           // [?]
         .Input("neighbors_row_splits: int64")           // [num_points_out+1]
-        .Output("out_features : TReal")  // [num_points_out, out_ch]
+        .Output("out_features : output_type")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             using namespace open3d::ml::op_util;
@@ -134,6 +139,7 @@ neighbors_row_splits:
   the total neighbor count as the last element. The size of this array is the 
   number of output points + 1.
 
+output_type: The type for the output.
 
 out_features:
   A Tensor with the output feature vectors for each output point.

@@ -99,23 +99,23 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
                                    void* temp,
                                    size_t& temp_size,
                                    size_t& max_temp_size,
                                    int texture_alignment,
-                                   TReal* out_features,
+                                   TOut* out_features,
                                    const std::vector<int>& filter_dims,
-                                   const TReal* filter,
+                                   const TFeat* filter,
                                    TIndex num_out,
                                    TIndex num_inp,
-                                   const TReal* inp_features,
-                                   const TReal* inp_importance,
+                                   const TFeat* inp_features,
+                                   const TFeat* inp_importance,
                                    size_t neighbors_index_size,
                                    const TIndex* neighbors_index,
                                    const TKernelIndex* neighbors_kernel_index,
-                                   const TReal* neighbors_importance,
+                                   const TFeat* neighbors_importance,
                                    const int64_t* neighbors_row_splits,
                                    bool normalize) {
     const bool get_temp_size = !temp;
@@ -139,7 +139,7 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     const size_t bytes_per_column =
-            sizeof(TReal) * (num_kernel_elements * in_channels);
+            sizeof(TFeat) * (num_kernel_elements * in_channels);
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -164,7 +164,7 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
     }
 
     // init output
-    cudaMemsetAsync(out_features, 0, sizeof(TReal) * num_out * out_channels,
+    cudaMemsetAsync(out_features, 0, sizeof(TOut) * num_out * out_channels,
                     stream);
 
     size_t num_cols_per_run =
@@ -181,7 +181,7 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
     // this is the pointer to the patch matrix
-    TReal* columns = (TReal*)mem_columns.first;
+    TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
     const size_t num_runs = DivUp(num_out, num_cols_per_run);
@@ -192,7 +192,7 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
         const size_t num_cols_this_run = end_idx - begin_idx;
 
         // compute the patch matrix
-        FillColumn<TReal, TIndex>(
+        FillColumn<TFeat, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,

@@ -33,7 +33,7 @@ using namespace open3d::ml;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 class SparseConvOpKernelCUDA : public SparseConvOpKernel<TIndex> {
 public:
     explicit SparseConvOpKernelCUDA(OpKernelConstruction* construction)
@@ -60,20 +60,20 @@ public:
         size_t max_temp_size = 0;
 
         // determine temp_size
-        SparseConvComputeFeaturesCUDA<TReal, TIndex, TKernelIndex>(
+        SparseConvComputeFeaturesCUDA<TFeat, TOut, TIndex, TKernelIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
-                texture_alignment, out_features.flat<TReal>().data(),
-                filter_dims, filter.flat<TReal>().data(),
+                texture_alignment, out_features.flat<TOut>().data(),
+                filter_dims, filter.flat<TFeat>().data(),
                 neighbors_row_splits.dim_size(0) - 1, inp_features.dim_size(0),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
                         .data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 this->normalize);
@@ -91,20 +91,20 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the operation
-        SparseConvComputeFeaturesCUDA<TReal, TIndex, TKernelIndex>(
+        SparseConvComputeFeaturesCUDA<TFeat, TOut, TIndex, TKernelIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
-                texture_alignment, out_features.flat<TReal>().data(),
-                filter_dims, filter.flat<TReal>().data(),
+                texture_alignment, out_features.flat<TOut>().data(),
+                filter_dims, filter.flat<TFeat>().data(),
                 neighbors_row_splits.dim_size(0) - 1, inp_features.dim_size(0),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
                         .data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 this->normalize);
@@ -114,14 +114,16 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype, kernelindextype)                      \
+#define REG_KB(feattype, outtype, indextype, kernelindextype)         \
     REGISTER_KERNEL_BUILDER(                                          \
             Name("Open3DSparseConv")                                  \
                     .Device(DEVICE_GPU)                               \
-                    .TypeConstraint<type>("TReal")                    \
+                    .TypeConstraint<feattype>("TFeat")                \
+                    .TypeConstraint<outtype>("output_type")           \
                     .TypeConstraint<indextype>("TIndex")              \
                     .TypeConstraint<kernelindextype>("TKernelIndex"), \
-            SparseConvOpKernelCUDA<type, indextype, kernelindextype>);
-REG_KB(float, int32, int16)
-REG_KB(float, int32, uint8_t)
+            SparseConvOpKernelCUDA<feattype, outtype, indextype,      \
+                                   kernelindextype>);
+REG_KB(float, float, int32, int16)
+REG_KB(float, float, int32, uint8_t)
 #undef REG_KB

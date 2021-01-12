@@ -31,7 +31,7 @@ using namespace open3d;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 class SparseConvTransposeBackpropFilterOpKernelCPU
     : public SparseConvTransposeBackpropFilterOpKernel<TIndex> {
 public:
@@ -54,37 +54,38 @@ public:
                 const bool point_importances,
                 const bool has_neighbors_importances,
                 tensorflow::Tensor& filter_backprop) {
-        SparseConvTransposeBackpropFilterCPU<TReal, TIndex, TKernelIndex>(
-                filter_backprop.flat<TReal>().data(), filter_dims,
+        SparseConvTransposeBackpropFilterCPU<TFeat, TOut, TIndex, TKernelIndex>(
+                filter_backprop.flat<TOut>().data(), filter_dims,
                 neighbors_row_splits.shape().dim_size(0) - 1,
-                point_importances ? out_importance.flat<TReal>().data()
+                point_importances ? out_importance.flat<TFeat>().data()
                                   : nullptr,
                 inp_features.shape().dim_size(0),
-                inp_features.flat<TReal>().data(),
+                inp_features.flat<TFeat>().data(),
                 has_neighbors_importances
-                        ? inp_neighbors_importance_sum.flat<TReal>().data()
+                        ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
                         .data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
-                out_features_gradient.flat<TReal>().data(), this->normalize);
+                out_features_gradient.flat<TFeat>().data(), this->normalize);
     }
 };
 
-#define REG_KB(type, indextype, kernelindextype)                          \
-    REGISTER_KERNEL_BUILDER(                                              \
-            Name("Open3DSparseConvTransposeBackpropFilter")               \
-                    .Device(DEVICE_CPU)                                   \
-                    .TypeConstraint<type>("TReal")                        \
-                    .TypeConstraint<indextype>("TIndex")                  \
-                    .TypeConstraint<kernelindextype>("TKernelIndex"),     \
-            SparseConvTransposeBackpropFilterOpKernelCPU<type, indextype, \
-                                                         kernelindextype>);
-REG_KB(float, int32, int16_t)
-REG_KB(float, int32, uint8_t)
+#define REG_KB(feattype, outtype, indextype, kernelindextype)         \
+    REGISTER_KERNEL_BUILDER(                                          \
+            Name("Open3DSparseConvTransposeBackpropFilter")           \
+                    .Device(DEVICE_CPU)                               \
+                    .TypeConstraint<feattype>("TFeat")                \
+                    .TypeConstraint<outtype>("output_type")           \
+                    .TypeConstraint<indextype>("TIndex")              \
+                    .TypeConstraint<kernelindextype>("TKernelIndex"), \
+            SparseConvTransposeBackpropFilterOpKernelCPU<             \
+                    feattype, outtype, indextype, kernelindextype>);
+REG_KB(float, float, int32, int16_t)
+REG_KB(float, float, int32, uint8_t)
 #undef REG_KB

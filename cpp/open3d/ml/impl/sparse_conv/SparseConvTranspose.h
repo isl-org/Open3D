@@ -33,20 +33,24 @@ namespace impl {
 
 /// Implementation of SparseConvTransposeComputeFeatures with template
 /// parameters for configuration.
-template <class TReal, class TIndex, class TKernelIndex, bool NORMALIZE>
+template <class TFeat,
+          class TOut,
+          class TIndex,
+          class TKernelIndex,
+          bool NORMALIZE>
 void _SparseConvTransposeComputeFeaturesCPU(
-        TReal* out_features,
+        TOut* out_features,
         const std::vector<int>& filter_dims,
-        const TReal* filter,
+        const TFeat* filter,
         size_t num_out,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         size_t num_inp,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbor_index,
         const TKernelIndex* neighbors_kernel_index,
-        const TReal* neighbor_importance,
+        const TFeat* neighbor_importance,
         const int64_t* neighbors_row_splits) {
     const bool NEIGHBOR_IMPORTANCE = inp_neighbors_importance_sum;
 
@@ -57,14 +61,14 @@ void _SparseConvTransposeComputeFeaturesCPU(
     for (int i = 0; i < filter_dims.size() - 2; ++i)
         num_kernel_elements *= filter_dims[i];
 
-    memset(out_features, 0, sizeof(TReal) * num_out * out_channels);
+    memset(out_features, 0, sizeof(TOut) * num_out * out_channels);
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Map<Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic>>
+                Eigen::Map<Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic>>
                         C(out_features + (r.begin() * out_channels),
                           out_channels, range_length);
 
@@ -79,11 +83,11 @@ void _SparseConvTransposeComputeFeaturesCPU(
                         const size_t inp_idx = neighbor_index[n];
                         const int kernel_idx = neighbors_kernel_index[n];
 
-                        TReal n_importance = NEIGHBOR_IMPORTANCE
+                        TFeat n_importance = NEIGHBOR_IMPORTANCE
                                                      ? neighbor_importance[n]
-                                                     : 1;
+                                                     : TFeat(1);
 
-                        TReal normalizer = 1;
+                        TFeat normalizer(1);
                         if (NORMALIZE) {
                             if (NEIGHBOR_IMPORTANCE) {
                                 if (inp_neighbors_importance_sum[inp_idx] != 0)
@@ -102,17 +106,17 @@ void _SparseConvTransposeComputeFeaturesCPU(
                             }
                         }
 
-                        Eigen::Map<const Eigen::Matrix<TReal, Eigen::Dynamic,
+                        Eigen::Map<const Eigen::Matrix<TFeat, Eigen::Dynamic,
                                                        Eigen::Dynamic>>
                                 A(filter + kernel_idx * out_channels *
                                                    in_channels,
                                   out_channels, in_channels);
 
-                        Eigen::Map<const Eigen::Matrix<TReal, Eigen::Dynamic,
+                        Eigen::Map<const Eigen::Matrix<TFeat, Eigen::Dynamic,
                                                        Eigen::Dynamic>>
                                 B(inp_features + inp_idx * in_channels,
                                   in_channels, 1);
-                        TReal scale = normalizer * n_importance;
+                        TFeat scale = normalizer * n_importance;
                         C.col(out_col) += A * (scale * B);
                     }
 
@@ -171,20 +175,20 @@ void _SparseConvTransposeComputeFeaturesCPU(
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex, class TKernelIndex>
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvTransposeComputeFeaturesCPU(
-        TReal* out_features,
+        TOut* out_features,
         const std::vector<int>& filter_dims,
-        const TReal* filter,
+        const TFeat* filter,
         size_t num_out,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         size_t num_inp,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         const TIndex* neighbor_index,
         const TKernelIndex* neighbors_kernel_index,
-        const TReal* neighbor_importance,
+        const TFeat* neighbor_importance,
         const int64_t* neighbors_row_splits,
         bool normalize) {
 #define FN_PARAMETERS                                                         \
@@ -193,10 +197,11 @@ void SparseConvTransposeComputeFeaturesCPU(
             inp_neighbors_row_splits, neighbor_index, neighbors_kernel_index, \
             neighbor_importance, neighbors_row_splits
 
-#define CALL_TEMPLATE(NORMALIZE)                                            \
-    if (NORMALIZE == normalize)                                             \
-        _SparseConvTransposeComputeFeaturesCPU<TReal, TIndex, TKernelIndex, \
-                                               NORMALIZE>(FN_PARAMETERS);
+#define CALL_TEMPLATE(NORMALIZE)                                         \
+    if (NORMALIZE == normalize)                                          \
+        _SparseConvTransposeComputeFeaturesCPU<TFeat, TOut, TIndex,      \
+                                               TKernelIndex, NORMALIZE>( \
+                FN_PARAMETERS);
 
 #define CALL_TEMPLATE2  \
     CALL_TEMPLATE(true) \
