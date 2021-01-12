@@ -82,6 +82,8 @@ public:
                                                 kernelindextype>);
 REG_KB(float, float, int32, int16_t)
 REG_KB(float, float, int32, uint8_t)
+REG_KB(bfloat16, float, int32, int16_t)
 REG_KB(bfloat16, float, int32, uint8_t)
+REG_KB(bfloat16, bfloat16, int32, int16_t)
 REG_KB(bfloat16, bfloat16, int32, uint8_t)
 #undef REG_KB
