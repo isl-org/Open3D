@@ -519,8 +519,8 @@ install_arm64_dependencies() {
     source ${HOME}/venv/bin/activate
     which python
     python --version
-    pip install pytest=="6.0.1" -U
-    pip install wheel=="0.35.1" -U
+    pip install pytest=="$PYTEST_VER" -U
+    pip install wheel=="$WHEEL_VER" -U
     # Get pre-compiled CMake
     wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
     tar -xvf cmake-3.18-aarch64.tar.gz
