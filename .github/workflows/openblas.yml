@@ -126,11 +126,11 @@ jobs:
           run: |
             source util/ci_utils.sh
             install_arm64_dependencies
+            source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
             PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
-            source ${HOME}/venv/bin/activate
             mkdir build
             cd build
             cmake \
@@ -200,11 +200,11 @@ jobs:
           run: |
             source util/ci_utils.sh
             install_arm64_dependencies
+            source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
             PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
-            source ${HOME}/venv/bin/activate
             mkdir build
             cd build
             cmake \
