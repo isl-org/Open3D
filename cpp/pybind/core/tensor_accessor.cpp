@@ -30,7 +30,6 @@
 #include "open3d/core/TensorKey.h"
 #include "open3d/utility/Optional.h"
 #ifdef _MSC_VER
-#pragma warning(push)
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 #include "pybind/core/core.h"
@@ -38,9 +37,6 @@
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 namespace open3d {
 namespace core {
