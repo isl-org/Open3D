@@ -61,39 +61,41 @@ void dilate(const core::Tensor &srcim,
     NppiSize oSizeROI = {dstim.GetShape(1), dstim.GetShape(0)};
     NppiPoint oAnchor = {half_kernel_size, half_kernel_size};
 
-    switch (srcim.GetDtype()) {
-        case core::DType::Uint8:
-
-            switch (srcim.GetShape(2)) {
-                case 1:
-                    nppiDilateBorder_8u_C1R(
-                            srcim.GetsrcimPtr(), (int32_t)srcim.GetStride(0),
-                            oSrcSize, oSrcOffset, dstim.GetDataPtr(),
-                            dstim.GetStride(0), oSizeROI, mask.GetDataPtr(),
-                            oMaskSize, oAnchor, NPP_BORDER_REPLICATE);
-
-                    break;
-                case 3:
-                    nppiDilateBorder_8u_C3R(
-                            srcim.GetsrcimPtr(), (int32_t)srcim.GetStride(0),
-                            oSrcSize, oSrcOffset, dstim.GetDataPtr(),
-                            dstim.GetStride(0), oSizeROI, mask.GetDataPtr(),
-                            oMaskSize, oAnchor, NPP_BORDER_REPLICATE);
-
-                    break;
-                case 4:
-                    nppiDilateBorder_8u_C4R(
-                            srcim.GetsrcimPtr(), (int32_t)srcim.GetStride(0),
-                            oSrcSize, oSrcOffset, dstim.GetDataPtr(),
-                            dstim.GetStride(0), oSizeROI, mask.GetDataPtr(),
-                            oMaskSize, oAnchor, NPP_BORDER_REPLICATE);
-
-                    break;
-            }
-            break;
-
-        default:
+#define NPP_ARGS                                                              \
+    static_cast<npp_dtype *>(srcim.GetDataPtr()), srcim.GetStride(0),         \
+            oSrcSize, oSrcOffset,                                             \
+            static_cast<npp_dtype *>(dstim.GetDataPtr()), dstim.GetStride(0), \
+            oSizeROI, static_cast<npp_dtype *>(mask.GetDataPtr()), oMaskSize, \
+            oAnchor, NPP_BORDER_REPLICATE
+    if (srcim.GetDtype() == core::DType::Uint8) {
+        using npp_dtype = Npp8u;
+        if (srcim.GetShape(2) == 1) {
+            nppiDilateBorder_8u_C1R(NPP_ARGS);
+        } else if (srcim.GetShape(2) == 3) {
+            nppiDilateBorder_8u_C3R(NPP_ARGS);
+        } else if (srcim.GetShape(2) == 4) {
+            nppiDilateBorder_8u_C4R(NPP_ARGS);
+        }
+    } else if (srcim.GetDtype() == core::DType::Uint16) {
+        using npp_dtype = Npp16u;
+        if (srcim.GetShape(2) == 1) {
+            nppiDilateBorder_16u_C1R(NPP_ARGS);
+        } else if (srcim.GetShape(2) == 3) {
+            nppiDilateBorder_16u_C3R(NPP_ARGS);
+        } else if (srcim.GetShape(2) == 4) {
+            nppiDilateBorder_16u_C4R(NPP_ARGS);
+        }
+    } else if (srcim.GetDtype() == core::DType::Float32) {
+        using npp_dtype = Npp32f;
+        if (srcim.GetShape(2) == 1) {
+            nppiDilateBorder_32f_C1R(NPP_ARGS);
+        } else if (srcim.GetShape(2) == 3) {
+            nppiDilateBorder_32f_C3R(NPP_ARGS);
+        } else if (srcim.GetShape(2) == 4) {
+            nppiDilateBorder_32f_C4R(NPP_ARGS);
+        }
     }
+#undef NPP_ARGS
 }
 
 }  // namespace npp
@@ -102,21 +104,3 @@ void dilate(const core::Tensor &srcim,
 }  // namespace open3d
 
 #else  // BUILD_CUDA_MODULE
-
-namespace open3d {
-namespace t {
-namespace geometry {
-namespace npp {
-
-void dilate(const core::Tensor &srcim,
-            core::Tensor &dstim,
-            int half_kernel_size) {
-    utility::LogError("NPP not available since Open3D was built without CUDA");
-}
-
-}  // namespace npp
-}  // namespace geometry
-}  // namespace t
-}  // namespace open3d
-
-#endif  // BUILD_CUDA_MODULE

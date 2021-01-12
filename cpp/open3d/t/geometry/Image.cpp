@@ -26,6 +26,7 @@
 
 #include "open3d/t/geometry/Image.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -76,11 +77,11 @@ Image Image::Dilate(int half_kernel_size) const {
     // TODO: row padding for tensor?
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         npp::supported(GetDtype(), GetChannels())) {
-        npp::dilate(data_, dstim.data_, half_kernel_size);
+        CUDA_CALL(npp::dilate, data_, dstim.data_, half_kernel_size);
         /* } else if (data_.GetDevice().GetType() ==
          * core::Device::DeviceType::CPU && */
         /*     ipp::supported(GetDtype(), GetChannels())) { */
-        /*     ipp::dilate(data_, dstim.data_, half_kernel_size); */
+        /*     IPP_CALL(ipp::dilate, data_, dstim.data_, half_kernel_size); */
     } else {
         /*     call to core::kernel::UnaryWindowOp(); */
         utility::LogError("Not implemented");

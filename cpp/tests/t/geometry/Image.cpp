@@ -122,7 +122,7 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
     EXPECT_ANY_THROW(t::geometry::Image im_nc(t_3d_sliced); (void)im_nc;);
 }
 
-TEST(Image, Dilate) {
+TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 
     // reference data used to validate the filtering of an image
@@ -144,9 +144,10 @@ TEST(Image, Dilate) {
     const int cols = 8;
     const int channels = 1;
     core::Dtype dtype = core::Dtype::UInt8;
+    core::Device device = GetParam();
 
-    t::geometry::Image input(core::Tensor{
-            input_data, {rows, cols, channels}, dtype, core::Device("CUDA:0")});
+    t::geometry::Image input(
+            core::Tensor{input_data, {rows, cols, channels}, dtype, device});
     auto output = input.Dilate();
 
     EXPECT_EQ(output.GetRows(), input.GetRows());
