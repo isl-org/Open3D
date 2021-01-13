@@ -726,7 +726,6 @@ double Tensor::Det() const {
 
     // Check dimensions
     SizeVector input_shape = this->GetShape();
-    utility::LogInfo(" input Shape: {}", input_shape.ToString());
     if (input_shape.size() != 2 || input_shape[0] != input_shape[1]) {
         utility::LogError(
                 "Tensor A must be 2D sqaure matrix but got shape: {}.",
@@ -739,18 +738,7 @@ double Tensor::Det() const {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    core::Device device = this->GetDevice();
-    core::Dtype ipiv_dtype = core::Dtype::Int32;
-    if (device.GetType() == Device::DeviceType::CPU) {
-        if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            ipiv_dtype = Dtype::Int64;
-        }
-    }
-
-    core::Tensor A =
-            core::Tensor::Empty(input_shape, core::Dtype::Float32, device);
-    core::Tensor ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
-
+    core::Tensor A, ipiv;
     std::tie(A, ipiv) = this->LUfactorisation();
 
     core::Tensor A_ = A.To(core::Device("CPU:0"));
