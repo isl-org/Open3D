@@ -189,7 +189,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     PLYReaderState state;
 
     const char *element_name;
-    long element_size;
+    long element_size = 0;
     // Loop through ply elements and find "vertex".
     p_ply_element element = ply_get_next_element(ply_file, nullptr);
     while (element) {
