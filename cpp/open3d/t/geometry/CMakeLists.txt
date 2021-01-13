@@ -9,6 +9,7 @@ set(T_GEOMETRY_KERNEL_SRC
 set(T_GEOMETRY_KERNEL_CUDA_SRC
     kernel/PointCloudCUDA.cu
     kernel/TSDFVoxelGridCUDA.cu
+    kernel/nppImage.cpp
 )
 
 set(T_GEOMETRY_SRC

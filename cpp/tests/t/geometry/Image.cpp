@@ -148,13 +148,17 @@ TEST_P(ImagePermuteDevices, Dilate) {
 
     t::geometry::Image input(
             core::Tensor{input_data, {rows, cols, channels}, dtype, device});
-    auto output = input.Dilate();
-
-    EXPECT_EQ(output.GetRows(), input.GetRows());
-    EXPECT_EQ(output.GetCols(), input.GetCols());
-    EXPECT_EQ(output.GetChannels(), input.GetChannels());
-    EXPECT_THAT(output.AsTensor().ToFlatVector<uint8_t>(),
+    t::geometry::Image output;
+    if (device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(input.Dilate(), std::runtime_error);
+    } else {
+        output = input.Dilate();
+        EXPECT_EQ(output.GetRows(), input.GetRows());
+        EXPECT_EQ(output.GetCols(), input.GetCols());
+        EXPECT_EQ(output.GetChannels(), input.GetChannels());
+        EXPECT_THAT(output.AsTensor().ToFlatVector<uint8_t>(),
                 ElementsAreArray(output_ref));
+    }
 }
 
 // tImage: (r, c, ch) | legacy Image: (u, v, ch) = (c, r, ch)

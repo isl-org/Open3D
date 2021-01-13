@@ -30,7 +30,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/nppImage.h"
+#include "open3d/t/geometry/kernel/nppImage.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

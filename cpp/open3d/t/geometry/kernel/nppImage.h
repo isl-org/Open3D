@@ -44,9 +44,12 @@ inline bool supported(core::Dtype dtype, size_t channels) {
                      channels) != supported_channels.end();
 }
 
+#ifdef BUILD_CUDA_MODULE
 void dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);
+
+#endif
 
 }  // namespace npp
 }  // namespace geometry
