@@ -45,6 +45,13 @@ struct SLACOptimizerOption {
     bool grid_debug_ = false;
     std::string device_ = "CPU:0";
     std::string buffer_folder_ = "";
+
+    std::string GetSubfolderName() const {
+        if (voxel_size_ < 0) {
+            return fmt::format("{}/original", buffer_folder_);
+        }
+        return fmt::format("{}/{:.3f}", buffer_folder_, voxel_size_);
+    }
 };
 
 /// Estimate a shared control grid for all fragments for scene reconstruction,

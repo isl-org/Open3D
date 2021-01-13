@@ -35,6 +35,8 @@ void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo(">    SLAC [dataset_folder] [options]");
+    utility::LogInfo("--voxel_size [default: 0.05]");
+    utility::LogInfo("--device [default: CPU:0]");
     utility::LogInfo("--debug");
     // clang-format on
     utility::LogInfo("");
@@ -64,14 +66,19 @@ int main(int argc, char** argv) {
 
     auto option = t::pipelines::slac::SLACOptimizerOption();
     option.buffer_folder_ = slac_folder;
+    option.device_ =
+            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
+    option.voxel_size_ =
+            utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
     option.correspondence_debug_ =
             utility::ProgramOptionExists(argc, argv, "--debug");
     option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
 
     auto pose_graph_updated = t::pipelines::slac::RunRigidOptimizerForFragments(
             fragment_fnames, *pose_graph, option);
-    io::WritePoseGraph(slac_folder + "/rigid_optimized_posegraph.json",
-                       pose_graph_updated);
+    io::WritePoseGraph(
+            option.GetSubfolderName() + "/rigid_optimized_posegraph.json",
+            pose_graph_updated);
 
     camera::PinholeCameraTrajectory trajectory;
     for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
@@ -85,7 +92,8 @@ int main(int argc, char** argv) {
         }
     }
     io::WritePinholeCameraTrajectory(
-            slac_folder + "/rigid_optimized_trajectory.log", trajectory);
+            option.GetSubfolderName() + "/rigid_optimized_trajectory.log",
+            trajectory);
 
     return 0;
 }

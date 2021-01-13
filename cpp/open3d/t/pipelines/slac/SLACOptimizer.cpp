@@ -149,10 +149,15 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
 std::vector<std::string> PreprocessPointClouds(
         const std::vector<std::string>& fragment_fnames,
         const SLACOptimizerOption& option) {
+    std::string subdir_name = option.GetSubfolderName();
+    if (!subdir_name.empty()) {
+        utility::filesystem::MakeDirectory(subdir_name);
+    }
+
     std::vector<std::string> fnames_down;
     for (auto& fname : fragment_fnames) {
         std::string fname_down = fmt::format(
-                "{}/{}", option.buffer_folder_,
+                "{}/{}", subdir_name,
                 utility::filesystem::GetFileNameWithoutDirectory(fname));
         fnames_down.emplace_back(fname_down);
 
@@ -160,9 +165,14 @@ std::vector<std::string> PreprocessPointClouds(
         utility::LogInfo("Processing {}", fname_down);
 
         auto pcd = io::CreatePointCloudFromFile(fname);
-        auto pcd_down = pcd->VoxelDownSample(option.voxel_size_);
-        pcd_down->EstimateNormals();
-        io::WritePointCloud(fname_down, *pcd_down);
+        if (option.voxel_size_ > 0) {
+            auto pcd_down = pcd->VoxelDownSample(option.voxel_size_);
+            pcd_down->EstimateNormals();
+            io::WritePointCloud(fname_down, *pcd_down);
+        } else if (!pcd->HasNormals()) {
+            pcd->EstimateNormals();
+            io::WritePointCloud(fname_down, *pcd);
+        }
     }
 
     return fnames_down;
@@ -180,7 +190,7 @@ void GetCorrespondencesForPointClouds(
         int j = edge.target_node_id_;
 
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
-                                               option.buffer_folder_, i, j);
+                                               option.GetSubfolderName(), i, j);
         if (utility::filesystem::FileExists(corres_fname)) continue;
 
         auto tpcd_i = CreateTPCDFromFile(fragment_down_fnames[i]);
@@ -192,7 +202,8 @@ void GetCorrespondencesForPointClouds(
 
         // Obtain correspondence via nns
         auto result = t::pipelines::registration::EvaluateRegistration(
-                tpcd_i, tpcd_j, option.voxel_size_,
+                tpcd_i, tpcd_j,
+                option.voxel_size_ < 0 ? 0.05 : option.voxel_size_,
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32));
 
@@ -239,7 +250,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         int j = edge.target_node_id_;
         // utility::LogInfo("edge {} -> {}", i, j);
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
-                                               option.buffer_folder_, i, j);
+                                               option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
             utility::LogError("Correspondence not processed");
         }
@@ -284,11 +295,11 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
-        // utility::LogInfo("edge {} -> {}", i, j);
+
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
-                                               option.buffer_folder_, i, j);
+                                               option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
-            utility::LogError("Correspondence not processed");
+            utility::LogError("Correspondence not processed!");
         }
 
         auto tpcd_i = CreateTPCDFromFile(fnames[i]);
@@ -303,11 +314,16 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
                               .To(core::Dtype::Float32);
         tpcd_j = tpcd_j.Transform(pose_j);
 
-        auto corres_ij = core::Tensor::Load(corres_fname);
-        auto points_i = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]});
-        auto points_j = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]});
-        auto normals_i = tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]});
-        auto normals_j = tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]});
+        auto corres_ij = core::Tensor::Load(corres_fname).To(device);
+
+        auto points_i =
+                tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
+        auto normals_i = tpcd_i.GetPointNormals()
+                                 .IndexGet({corres_ij.T()[0]})
+                                 .To(device);
+
+        auto points_j =
+                tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
 
         kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, points_i, points_j,
                                          normals_i, i, j);
@@ -332,8 +348,8 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         }
     }
 
-    AtA.Save(fmt::format("{}/hessian.npy", option.buffer_folder_));
-    Atb.Save(fmt::format("{}/residual.npy", option.buffer_folder_));
+    AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));
+    Atb.Save(fmt::format("{}/residual.npy", option.GetSubfolderName()));
 }
 
 core::Tensor Solve(core::Tensor& AtA,
@@ -346,7 +362,7 @@ core::Tensor Solve(core::Tensor& AtA,
 void UpdatePoses(PoseGraph& fragment_pose_graph,
                  core::Tensor& delta,
                  const SLACOptimizerOption& option) {
-    core::Tensor delta_poses = delta.View({-1, 6});
+    core::Tensor delta_poses = delta.View({-1, 6}).To(core::Device("CPU:0"));
 
     if (delta_poses.GetLength() != int64_t(fragment_pose_graph.nodes_.size())) {
         utility::LogError("Dimension Mismatch");
@@ -446,7 +462,8 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
     }
 
     // First preprocess the point cloud with downsampling and normal estimation.
-    auto fnames_down = PreprocessPointClouds(fnames, option);
+    std::vector<std::string> fnames_down =
+            PreprocessPointClouds(fnames, option);
     // Then obtain the correspondences given the pose graph
     GetCorrespondencesForPointClouds(fnames_down, pose_graph, option);
 
