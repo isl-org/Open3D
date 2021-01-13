@@ -89,32 +89,28 @@ TEST_P(LinalgPermuteDevices, Matmul) {
 }
 
 TEST_P(LinalgPermuteDevices, LUfactorisation) {
-    // const float EPSILON = 1e-5;
-
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Inverse test
-    core::Tensor A(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3}, dtype,
-                   device);
+    // LUfactorisation test 3x3 square 2D matrix
+    core::Tensor A_3x3(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3},
+                       dtype, device);
 
-    core::Tensor A_LU = A.LUfactorisation();
-    utility::LogInfo(" LU factorisation: \n{}", A_LU.ToString());
-    // EXPECT_EQ(A_inv.GetShape(), core::SizeVector({3, 3}));
+    core::Tensor A, ipiv;
+    std::tie(A, ipiv) = A_3x3.LUfactorisation();
 
-    // std::vector<float> A_inv_data = A_inv.ToFlatVector<float>();
-    // std::vector<float> A_inv_gt = {-1, 1, 0, -1, 0, 1, 6, -2, -3};
-    // for (int i = 0; i < 9; ++i) {
-    //     EXPECT_TRUE(std::abs(A_inv_data[i] - A_inv_gt[i]) < EPSILON);
-    // }
+    // utility::LogInfo("A: \n{} IPIV: \n{}", A.ToString(), ipiv.ToString());
+    // EXPECT_EQ(A.ToFlatVector<float>(),
+    //           std::vector<float>({3.0, 3.0, 1.0, 0.666667, 2.0, 0.333333,
+    //                               0.666667, 0.5, 0.166667}));
+    EXPECT_EQ(ipiv.To(core::Dtype::Int32).ToFlatVector<int>(),
+              std::vector<int>({2, 3, 3}));
 
-    // Singular test
-    // EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Inverse());
-
-    // Shape test
-    // EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Inverse());
-    // EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Inverse());
-    // EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Inverse());
+    // LUfactorisation test 4x3 square 2D matrix
+    core::Tensor A_4x3(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1, 1, 1, 1},
+                       {4, 3}, dtype, device);
+    core::Tensor A_, ipiv_;
+    EXPECT_ANY_THROW(std::tie(A_, ipiv_) = A_4x3.LUfactorisation());
 }
 
 TEST_P(LinalgPermuteDevices, Inverse) {

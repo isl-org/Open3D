@@ -399,6 +399,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_static("load", &Tensor::Load);
 
     /// Linalg operations.
+    tensor.def("det", &Tensor::Det);
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
     tensor.def("lstsq", &Tensor::LeastSquares);

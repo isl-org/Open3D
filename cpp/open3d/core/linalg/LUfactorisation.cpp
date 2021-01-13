@@ -31,7 +31,7 @@
 namespace open3d {
 namespace core {
 
-void LUfactorisation(const Tensor &A, Tensor &output) {
+std::tuple<Tensor, Tensor> LUfactorisation(const Tensor &A) {
     // Check devices
     Device device = A.GetDevice();
 
@@ -46,9 +46,10 @@ void LUfactorisation(const Tensor &A, Tensor &output) {
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
-    if (A_shape.size() != 2 && A_shape.size() != 3) {
-        utility::LogError("Tensor A must be 2D or 3D (for batch), but got {}D.",
-                          A_shape.size());
+    if (A_shape.size() != 2 || A_shape[0] != A_shape[1]) {
+        utility::LogError(
+                "Tensor A must be 2D sqaure matrix but got shape: {}.",
+                A_shape.ToString());
     }
 
     int64_t n = A_shape[0];
@@ -64,14 +65,12 @@ void LUfactorisation(const Tensor &A, Tensor &output) {
 
         // cuSolver does not support getri, so we have to provide an identity
         // matrix. This matrix is modified in-place as output.
-        Tensor A_T = A.T().Contiguous();
-        void *A_data = A_T.GetDataPtr();
+        Tensor A_ = A.T().To(device, /*copy=*/true);
+        void *A_data = A_.GetDataPtr();
 
-        output = Tensor::Eye(n, dtype, device);
-        void *output_data = output.GetDataPtr();
+        LUfactorisationCUDA(A_data, ipiv_data, n, dtype, device);
 
-        LUfactorisationCUDA(A_data, ipiv_data, output_data, n, dtype, device);
-        output = output.T();
+        return std::make_tuple(A_.T().Contiguous(), ipiv);
 #else
         utility::LogError("Unimplemented device.");
 #endif
@@ -87,13 +86,15 @@ void LUfactorisation(const Tensor &A, Tensor &output) {
         Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
-        // LAPACKE supports getri, A is in-place modified as output.
-        Tensor A_T = A.T().To(device, /*copy=*/true);
-        void *A_data = A_T.GetDataPtr();
+        // A is in-place modified as output.
+        Tensor A_ = A.To(device, /*copy=*/true);
+        void *A_data = A_.GetDataPtr();
 
-        LUfactorisationCPU(A_data, ipiv_data, nullptr, n, dtype, device);
-        output = A_T.T();
+        LUfactorisationCPU(A_data, ipiv_data, n, dtype, device);
+
+        return std::make_tuple(A_, ipiv);
     }
 }
+
 }  // namespace core
 }  // namespace open3d

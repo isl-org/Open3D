@@ -33,20 +33,18 @@ namespace core {
 
 void LUfactorisationCUDA(void* A_data,
                          void* ipiv_data,
-                         void* output_data,
                          int64_t n,
                          Dtype dtype,
                          const Device& device) {
     cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
-
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;
         int* dinfo =
                 static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
-
         OPEN3D_CUSOLVER_CHECK(
                 getrf_cuda_buffersize<scalar_t>(handle, n, n, n, &len),
                 "getrf_buffersize failed in LUfactorisationCUDA");
+
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(

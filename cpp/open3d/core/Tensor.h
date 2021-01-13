@@ -558,7 +558,7 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 3x3 Matrix.
+    /// \brief Expects input to be 2D square matrix.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
@@ -1068,7 +1068,7 @@ public:
     /// Computes LU factorisation of the sqaure matrix *this and returns a
     /// square matrix, with lower triangular part having values for L,
     /// upper triangular and diagonal part having values for U.
-    Tensor LUfactorisation() const;
+    std::tuple<Tensor, Tensor> LUfactorisation() const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.

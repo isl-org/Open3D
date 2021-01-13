@@ -42,6 +42,7 @@
 #include "open3d/core/linalg/Inverse.h"
 #include "open3d/core/linalg/LUfactorisation.h"
 #include "open3d/core/linalg/LeastSquares.h"
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
@@ -720,14 +721,53 @@ Tensor Tensor::T() const {
 }
 
 double Tensor::Det() const {
-    // TODO: Create a proper op for Determinant.
-    this->AssertShape({3, 3});
+    // Check dtypes
     this->AssertDtype(core::Dtype::Float32);
-    core::Tensor D_ = this->Clone();
-    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
-               D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
-               D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
-    return static_cast<double>(D_[0][0].Item<float>());
+
+    // Check dimensions
+    SizeVector input_shape = this->GetShape();
+    utility::LogInfo(" input Shape: {}", input_shape.ToString());
+    if (input_shape.size() != 2 || input_shape[0] != input_shape[1]) {
+        utility::LogError(
+                "Tensor A must be 2D sqaure matrix but got shape: {}.",
+                input_shape.ToString());
+    }
+
+    int64_t n = input_shape[0];
+    if (n == 0) {
+        utility::LogError(
+                "Tensor shapes should not contain dimensions with zero.");
+    }
+
+    core::Device device = this->GetDevice();
+    core::Dtype ipiv_dtype = core::Dtype::Int32;
+    if (device.GetType() == Device::DeviceType::CPU) {
+        if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
+            ipiv_dtype = Dtype::Int64;
+        }
+    }
+
+    core::Tensor A =
+            core::Tensor::Empty(input_shape, core::Dtype::Float32, device);
+    core::Tensor ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
+
+    std::tie(A, ipiv) = this->LUfactorisation();
+
+    core::Tensor A_ = A.To(core::Device("CPU:0"));
+    core::Tensor ipiv_ = ipiv.To(core::Device("CPU:0"));
+
+    // TODO: use casting template to support Float32 and 64
+    float* A_ptr = static_cast<float*>(A_.GetDataPtr());
+    int* ipiv_ptr = static_cast<int*>(ipiv_.GetDataPtr());
+
+    double det = 1.0;
+    for (int i = 0; i < n; i++) {
+        det *= A_ptr[i * n + i];
+        if (ipiv_ptr[i] != i) {
+            det *= -1;
+        }
+    }
+    return det;
 }
 
 Tensor Tensor::Add(const Tensor& value) const {
@@ -1299,10 +1339,8 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     return output;
 };
 
-Tensor Tensor::LUfactorisation() const {
-    Tensor output;
-    core::LUfactorisation(*this, output);
-    return output;
+std::tuple<Tensor, Tensor> Tensor::LUfactorisation() const {
+    return core::LUfactorisation(*this);
 }
 
 Tensor Tensor::Inverse() const {

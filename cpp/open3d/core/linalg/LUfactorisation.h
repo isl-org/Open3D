@@ -41,11 +41,12 @@ namespace core {
 /// \param A [input] 2D matrix to be factorised. [Tensor of dtype Float32/64]
 /// \param output [output] Lower triangular matrix, Upper triangular matrix
 /// [diag. element of L matrix are not included (=1)]
-void LUfactorisation(const Tensor& A, Tensor& output);
+/// \param ipiv [output] Lower triangular matrix, Upper triangular matrix
+/// [diag. element of L matrix are not included (=1)]
+std::tuple<Tensor, Tensor> LUfactorisation(const Tensor& A);
 
 void LUfactorisationCPU(void* A_data,
                         void* ipiv_data,
-                        void* output_data,
                         int64_t n,
                         Dtype dtype,
                         const Device& device);
@@ -53,7 +54,6 @@ void LUfactorisationCPU(void* A_data,
 #ifdef BUILD_CUDA_MODULE
 void LUfactorisationCUDA(void* A_data,
                          void* ipiv_data,
-                         void* output_data,
                          int64_t n,
                          Dtype dtype,
                          const Device& device);

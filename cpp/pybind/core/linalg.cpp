@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LUfactorisation.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
@@ -47,6 +48,11 @@ void pybind_core_linalg(py::module &m) {
             "Function to perform matrix multiplication of two 2D tensors with "
             "compatible shapes.",
             "A"_a, "B"_a);
+
+    m.def(
+            "lu", [](const Tensor &A) { return A.LUfactorisation(); },
+            "Function to compute LU factorisation of a square 2D tensor.",
+            "A"_a);
 
     m.def(
             "inv",

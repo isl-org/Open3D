@@ -1195,12 +1195,7 @@ TEST_P(TensorPermuteDevices, Det) {
     double t_t = t.Det();
     EXPECT_DOUBLE_EQ(t_t, -40.0);
 
-    // Current implementation does not support any shape other than {3,3}.
-    std::vector<float> vals_4x4{-5, 0, -1, 1, 2, -1, -3, 4,
-                                1,  1, 1,  1, 1, 2,  2,  2};
-    core::Tensor t_4x4(vals_4x4, {4, 4}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x4.Det());
-
+    // Det expects a 2D sqaure matrix
     std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
     core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
     EXPECT_ANY_THROW(t_4x3.Det());
