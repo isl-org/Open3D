@@ -29,7 +29,7 @@ import open3d as o3d
 import numpy as np
 import pytest
 
-# skip all tests if the ml ops were not built
+# skip all tests if the RPC interface was not built
 pytestmark = pytest.mark.skipif(not o3d._build_config['BUILD_RPC_INTERFACE'],
                                 reason='rpc interface not built.')
 if os.name == 'nt':
