@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -162,39 +163,41 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    constexpr static const double SCALE_DEFAULT =
+            -std::numeric_limits<double>::max();
     /// Returns an Image with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param alpha Optional scale value. This is 1./255 for UInt8 ->
-    /// Float{32,64} and 1. otherwise
+    /// Float{32,64}, 1./65535 for UInt16 -> Float{32,64} and 1 otherwise
     /// \param beta Optional shift value. Default 0.
     /// \param copy If true, a new tensor is always created; if false, the copy
     /// is avoided when the original tensor already have the targeted dtype.
     //
     // Use Tensor::To and Tensor operators
-    Image ConvertTo(core::Dtype,
-                    double scale = 1.0,
+    Image ConvertTo(core::Dtype dtype,
+                    double scale = SCALE_DEFAULT,
                     double offset = 0.0,
-                    bool copy = false);
+                    bool copy = false) const;
 
     Image ConvertColor(Image::ColorConversionType cctype);
 
-    /// Function to linearly transform pixel intensities
-    /// image_new = scale * image + offset.
+    /// Function to linearly transform pixel intensities in place.
+    /// image = scale * image + offset.
     Image LinearTransform(double scale = 1.0, double offset = 0.0);
 
-    Image FlipVertical() const;
-    Image FilterHorizontal() const;
-    Image Transpose() const;
+    /* Image FlipVertical() const; */
+    /* Image FilterHorizontal() const; */
+    /* Image Transpose() const; */
 
     /// Filter image with pre-defined filtering type.
-    Image FilterFixed(Image::FilterType type) const;
+    /* Image FilterFixed(Image::FilterType type) const; */
 
     /// Filter image with arbitrary dx, dy separable filters.
-    Image FilterSeparable(const std::vector<double> &dx,
-                          const std::vector<double> &dy) const;
+    /* Image FilterSeparable(const std::vector<double> &dx, */
+    /*                       const std::vector<double> &dy) const; */
 
     /// Function to 2x image downsample using simple 2x2 averaging.
-    Image Downsample() const;
+    /* Image Downsample() const; */
 
     /// Function to dilate 8bit mask map.
     Image Dilate(int half_kernel_size = 1) const;

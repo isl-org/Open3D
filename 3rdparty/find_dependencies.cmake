@@ -1133,3 +1133,21 @@ if (BUILD_CUDA_MODULE)
     set(CUDA_NPP_TARGET 3rdparty_CUDA_NPP)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${CUDA_NPP_TARGET})
 endif ()
+
+# IPP
+if (WITH_IPPICV)
+    include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
+    if (WITH_IPPICV)    # If platform is unsupported, this will fail
+        message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
+        import_3rdparty_library(3rdparty_ippicv
+            INCLUDE_DIRS "${IPPIW_INCLUDE_DIR}" "${IPPICV_INCLUDE_DIR}"
+            LIBRARIES    ${IPPICV_LIBRARY} ${IPPIW_LIBRARY}
+            LIB_DIR      "${IPPICV_LIB_DIR}"
+            )
+        add_dependencies(3rdparty_ippicv ext_ippicv)
+        target_compile_definitions(3rdparty_ippicv INTERFACE
+            ${IPPICV_DEFINITIONS})
+        set(IPPICV_TARGET "3rdparty_ippicv")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IPPICV_TARGET}")
+    endif()
+endif ()

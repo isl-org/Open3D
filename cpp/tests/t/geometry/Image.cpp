@@ -122,42 +122,110 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
     EXPECT_ANY_THROW(t::geometry::Image im_nc(t_3d_sliced); (void)im_nc;);
 }
 
+// Test automatic scale determination for conversion from UInt8 / UInt16 ->
+// Float32/64 and LinearTransform()
+TEST_P(ImagePermuteDevices, ConvertTo_LinearTransform) {
+    using ::testing::ElementsAreArray;
+    using ::testing::FloatEq;
+    core::Device device = GetParam();
+
+    // reference data
+    const std::vector<uint8_t> input_data = {10, 25, 0, 13};
+    const auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255),
+                             FloatEq(0.), FloatEq(13. / 255)};
+    const auto negative_image_ref = {FloatEq(1. - 10. / 255),
+                                     FloatEq(1. - 25. / 255), FloatEq(1.),
+                                     FloatEq(1. - 13. / 255)};
+
+    t::geometry::Image input(
+            core::Tensor{input_data, {2, 2, 1}, core::Dtype::UInt8, device});
+    // UInt8 -> Float32: auto scale = 1./255
+    t::geometry::Image output = input.ConvertTo(core::Dtype::Float32);
+    EXPECT_EQ(output.GetDtype(), core::Dtype::Float32);
+    EXPECT_THAT(output.AsTensor().ToFlatVector<float>(),
+                ElementsAreArray(output_ref));
+
+    // LinearTransform to negative image
+    output.LinearTransform(/* scale= */ -1, /* offset= */ 1);
+    EXPECT_THAT(output.AsTensor().ToFlatVector<float>(),
+                ElementsAreArray(negative_image_ref));
+
+    // UInt8 -> UInt16: auto scale = 1
+    output = input.ConvertTo(core::Dtype::UInt16);
+    EXPECT_EQ(output.GetDtype(), core::Dtype::UInt16);
+    EXPECT_THAT(output.AsTensor().ToFlatVector<uint16_t>(),
+                ElementsAreArray(input_data));
+}
+
 TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 
     // reference data used to validate the filtering of an image
     // clang-format off
-    const std::vector<uint8_t> input_data = {
+    const std::vector<float> input_data = {
         0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 0, 0, 0, 0, 1, 0,
+        1.2, 1, 0, 0, 0, 0, 1, 0,
         0, 0, 1, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0},
-        output_ref = {
-            1, 1, 1, 0, 0, 1, 1, 1,
-            1, 1, 1, 1, 0, 1, 1, 1,
-            1, 1, 1, 1, 0, 1, 1, 1,
-            0, 1, 1, 1, 0, 0, 0, 0};
+        0, 0, 0, 0, 0, 0, 0, 0};
+    const std::vector<float> output_ref = {
+        1.2, 1.2, 1, 0, 0, 1, 1, 1,
+        1.2, 1.2, 1, 1, 0, 1, 1, 1,
+        1.2, 1.2, 1, 1, 0, 1, 1, 1,
+        0, 1, 1, 1, 0, 0, 0, 0};
     // clang-format on
 
     // test image dimensions
     const int rows = 4;
     const int cols = 8;
     const int channels = 1;
-    core::Dtype dtype = core::Dtype::UInt8;
+    const int half_kernel_size = 1;
     core::Device device = GetParam();
 
-    t::geometry::Image input(
-            core::Tensor{input_data, {rows, cols, channels}, dtype, device});
+    t::geometry::Image input(core::Tensor{
+            input_data, {rows, cols, channels}, core::Dtype::Float32, device});
     t::geometry::Image output;
-    if (device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input.Dilate(), std::runtime_error);
+
+    // UInt8
+    t::geometry::Image input_uint8_t = input.ConvertTo(core::Dtype::UInt8);
+    if (!HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(input_uint8_t.Dilate(half_kernel_size),
+                     std::runtime_error);
     } else {
-        output = input.Dilate();
+        output = input_uint8_t.Dilate(half_kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());
         EXPECT_THAT(output.AsTensor().ToFlatVector<uint8_t>(),
-                ElementsAreArray(output_ref));
+                    ElementsAreArray(output_ref));
+    }
+
+    // UInt16
+    t::geometry::Image input_uint16_t = input.ConvertTo(core::Dtype::UInt16);
+    if (!HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(input_uint16_t.Dilate(half_kernel_size),
+                     std::runtime_error);
+    } else {
+        output = input_uint16_t.Dilate(half_kernel_size);
+        EXPECT_EQ(output.GetRows(), input.GetRows());
+        EXPECT_EQ(output.GetCols(), input.GetCols());
+        EXPECT_EQ(output.GetChannels(), input.GetChannels());
+        EXPECT_THAT(output.AsTensor().ToFlatVector<uint16_t>(),
+                    ElementsAreArray(output_ref));
+    }
+
+    // Float32
+    if (!HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(input.Dilate(half_kernel_size), std::runtime_error);
+    } else {
+        output = input.Dilate(half_kernel_size);
+        EXPECT_EQ(output.GetRows(), input.GetRows());
+        EXPECT_EQ(output.GetCols(), input.GetCols());
+        EXPECT_EQ(output.GetChannels(), input.GetChannels());
+        EXPECT_THAT(output.AsTensor().ToFlatVector<float>(),
+                    ElementsAreArray(output_ref));
     }
 }
 

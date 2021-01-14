@@ -26,16 +26,21 @@
 
 #include "open3d/t/geometry/Image.h"
 
+#include <vector>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/kernel/ippImage.h"
 #include "open3d/t/geometry/kernel/nppImage.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
+
+using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
 Image::Image(int64_t rows,
              int64_t cols,
@@ -71,17 +76,76 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
+Image Image::ConvertTo(core::Dtype dtype,
+                       double scale /* = SCALE_DEFAULT */,
+                       double offset /* = 0.0 */,
+                       bool copy /* = false */) const {
+    if (scale == SCALE_DEFAULT) {
+        if (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64) {
+            if (GetDtype() == core::Dtype::UInt8)
+                scale = 1. / 255;
+            else if (GetDtype() == core::Dtype::UInt16)
+                scale = 1. / 65535;
+            else
+                scale = 1.0;
+        } else {
+            scale = 1.0;
+        }
+    }
+    if (scale < 0 &&
+        (GetDtype() == core::Dtype::UInt8 || GetDtype() == core::Dtype::UInt16))
+        utility::LogError("Negative scale not supported for unsigned Dtype!");
+
+    auto new_data = data_.To(dtype, copy);
+    if (scale != 1.0) new_data *= scale;
+    if (offset != 0.0) new_data += offset;
+    return Image(new_data);
+}
+
+Image Image::LinearTransform(double scale /* = 1.0 */,
+                             double offset /* = 0.0 */) {
+    if (scale < 0 &&
+        (GetDtype() == core::Dtype::UInt8 || GetDtype() == core::Dtype::UInt16))
+        utility::LogError("Negative scale not supported for unsigned Dtype!");
+
+    if (scale != 1.0) data_ *= scale;
+    if (offset != 0.0) data_ += offset;
+    return *this;
+}
+
 Image Image::Dilate(int half_kernel_size) const {
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const supported_t npp_supported{
+            {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
+            {core::Dtype::UInt16, 1},  {core::Dtype::Int32, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::Bool, 3},
+            {core::Dtype::UInt8, 3},   {core::Dtype::UInt16, 3},
+            {core::Dtype::Int32, 3},   {core::Dtype::Float32, 3},
+            {core::Dtype::Bool, 4},    {core::Dtype::UInt8, 4},
+            {core::Dtype::UInt16, 4},  {core::Dtype::Int32, 4},
+            {core::Dtype::Float32, 4},
+    };
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const supported_t ipp_supported{
+            {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
+            {core::Dtype::UInt16, 1},  {core::Dtype::Float32, 1},
+            {core::Dtype::Bool, 3},    {core::Dtype::UInt8, 3},
+            {core::Dtype::Float32, 3}, {core::Dtype::Bool, 4},
+            {core::Dtype::UInt8, 4},   {core::Dtype::Float32, 4}};
+
     Image dstim;
     dstim.data_ = core::Tensor::EmptyLike(data_);
-    // TODO: row padding for tensor?
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
-        npp::supported(GetDtype(), GetChannels())) {
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::dilate, data_, dstim.data_, half_kernel_size);
-        /* } else if (data_.GetDevice().GetType() ==
-         * core::Device::DeviceType::CPU && */
-        /*     ipp::supported(GetDtype(), GetChannels())) { */
-        /*     IPP_CALL(ipp::dilate, data_, dstim.data_, half_kernel_size); */
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::dilate, data_, dstim.data_, half_kernel_size);
     } else {
         /*     call to core::kernel::UnaryWindowOp(); */
         utility::LogError("Not implemented");
