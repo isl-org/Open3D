@@ -131,7 +131,13 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
     auto cuda_hashmap = std::dynamic_pointer_cast<
             core::CUDAHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
     auto hashmap_ctx = cuda_hashmap->GetContext();
-    utility::LogError("Unimplemented!");
+
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            1, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int64_t key[3] = {0, 0, 0};
+                int64_t bucket = hashmap_ctx.ComputeBucket(key);
+                printf("bucket = %ld\n", bucket);
+            });
 }
 
 }  // namespace tsdf

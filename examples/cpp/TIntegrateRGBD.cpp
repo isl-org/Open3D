@@ -147,6 +147,8 @@ int main(int argc, char** argv) {
         timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
+        voxel_grid.RayCast(intrinsic_t, extrinsic_t, depth.GetCols(),
+                           depth.GetRows(), max_depth);
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
     }
