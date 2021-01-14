@@ -132,11 +132,41 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
             core::CUDAHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
     auto hashmap_ctx = cuda_hashmap->GetContext();
 
+    TransformIndexer transform_indexer(intrinsics, extrinsics, 1);
+    NDArrayIndexer vertex_map_indexer(vertex_map, 2);
+    core::SizeVector shape = vertex_map.GetShape();
+
+    int64_t rows = vertex_map_indexer.GetShape(0);
+    int64_t cols = vertex_map_indexer.GetShape(1);
+
+    float block_size = voxel_size * block_resolution;
     core::kernel::CUDALauncher::LaunchGeneralKernel(
-            1, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                int64_t key[3] = {0, 0, 0};
-                int64_t bucket = hashmap_ctx.ComputeBucket(key);
-                printf("bucket = %ld\n", bucket);
+            rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                // Copy the constant reference
+                auto hashmap_ctx_instance = hashmap_ctx;
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
+
+                float d = 1.0f;
+                float x_c = 0, y_c = 0, z_c = 0;
+                transform_indexer.Unproject(static_cast<float>(x),
+                                            static_cast<float>(y), d, &x_c,
+                                            &y_c, &z_c);
+
+                int key[3];
+                key[0] = static_cast<int>(floor(x_c / block_size));
+                key[1] = static_cast<int>(floor(y_c / block_size));
+                key[2] = static_cast<int>(floor(z_c / block_size));
+
+                uint32_t bucket_id = hashmap_ctx.ComputeBucket(key);
+                uint32_t lane_id = workload_idx & 0x1F;
+                core::Pair<core::addr_t, bool> result =
+                        hashmap_ctx_instance.Find(
+                                true, lane_id, bucket_id,
+                                static_cast<const void*>(key));
+                if (result.second) {
+                    printf("%d %d\n", result.first, result.second);
+                }
             });
 }
 
