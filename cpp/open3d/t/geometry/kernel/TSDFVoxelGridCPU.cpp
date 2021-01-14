@@ -31,6 +31,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/CPU/HashmapCPU.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -123,6 +124,20 @@ void TouchCPU(const core::Tensor& points,
         block_coords_ptr[offset + 1] = static_cast<int>(it->y_);
         block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
     }
+}
+
+void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                core::Tensor& vertex_map,
+                core::Tensor& color_map,
+                const core::Tensor& intrinsics,
+                const core::Tensor& extrinsics,
+                int64_t block_resolution,
+                float voxel_size,
+                float sdf_trunc,
+                float depth_max) {
+    auto cpu_hashmap = std::dynamic_pointer_cast<
+            core::CPUHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
+    utility::LogError("Unimplemented!");
 }
 }  // namespace tsdf
 }  // namespace kernel

@@ -187,6 +187,23 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             sdf_trunc_, depth_scale, depth_max);
 }
 
+std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        int width,
+        int height,
+        float depth_max) {
+    core::Tensor vertex_map = core::Tensor::Zeros(
+            {height, width, 3}, core::Dtype::Float32, device_);
+    core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
+                                                 core::Dtype::Float32, device_);
+    auto device_hashmap = block_hashmap_->GetDeviceHashmap();
+    kernel::tsdf::RayCast(device_hashmap, vertex_map, color_map, intrinsics,
+                          extrinsics, block_resolution_, voxel_size_,
+                          sdf_trunc_, depth_max);
+    return std::make_tuple(vertex_map, color_map);
+}
+
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
     // Extract active voxel blocks from the hashmap.
     core::Tensor active_addrs;

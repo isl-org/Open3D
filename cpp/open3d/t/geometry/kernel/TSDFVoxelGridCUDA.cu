@@ -29,6 +29,8 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
+#include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
@@ -116,6 +118,22 @@ void TouchCUDA(const core::Tensor& points,
                                block_addrs, block_masks);
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
+
+void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                 core::Tensor& vertex_map,
+                 core::Tensor& color_map,
+                 const core::Tensor& intrinsics,
+                 const core::Tensor& extrinsics,
+                 int64_t block_resolution,
+                 float voxel_size,
+                 float sdf_trunc,
+                 float depth_max) {
+    auto cuda_hashmap = std::dynamic_pointer_cast<
+            core::CUDAHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
+    auto hashmap_ctx = cuda_hashmap->GetContext();
+    utility::LogError("Unimplemented!");
+}
+
 }  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry

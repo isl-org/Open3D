@@ -89,6 +89,8 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
+    CUDAHashmapImplContext<Hash, KeyEq> GetContext() { return gpu_context_; }
+
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a shared
     /// pointer.

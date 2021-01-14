@@ -30,6 +30,7 @@
 
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -99,6 +100,42 @@ void Integrate(const core::Tensor& depth,
         IntegrateCUDA(depthf32, colorf32, block_indices, block_keys,
                       block_values, intrinsicsf32, extrinsicsf32, resolution,
                       voxel_size, sdf_trunc, depth_scale, depth_max);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+             core::Tensor& vertex_map,
+             core::Tensor& color_map,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             int64_t block_resolution,
+             float voxel_size,
+             float sdf_trunc,
+             float depth_max) {
+    core::Device device = hashmap->GetDevice();
+    if (vertex_map.GetDevice() != device) {
+        utility::LogError("Vertex map\'s device mismatches with hashmap");
+    }
+    if (color_map.GetDevice() != device) {
+        utility::LogError("Vertex map\'s device mismatches with hashmap");
+    }
+    core::Tensor intrinsicsf32 = intrinsics.To(device, core::Dtype::Float32);
+    core::Tensor extrinsicsf32 = extrinsics.To(device, core::Dtype::Float32);
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        RayCastCPU(hashmap, vertex_map, color_map, intrinsicsf32, extrinsicsf32,
+                   block_resolution, voxel_size, sdf_trunc, depth_max);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        RayCastCUDA(hashmap, vertex_map, color_map, intrinsicsf32,
+                    extrinsicsf32, block_resolution, voxel_size, sdf_trunc,
+                    depth_max);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

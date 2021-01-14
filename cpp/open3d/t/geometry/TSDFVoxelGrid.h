@@ -84,6 +84,14 @@ public:
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
+    /// Use volumetric ray casting to obtain vertex and color maps.
+    std::tuple<core::Tensor, core::Tensor> RayCast(
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics,
+            int width,
+            int height,
+            float depth_max = 3.0f);
+
     /// Extract point cloud near iso-surfaces.
     PointCloud ExtractSurfacePoints();
 
