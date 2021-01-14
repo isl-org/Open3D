@@ -31,6 +31,12 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
+const std::string ControlGrid::kAttrNbGridIdx = "nb_grid_indices";
+const std::string ControlGrid::kAttrNbGridPointInterp =
+        "nb_grid_point_interp_ratios";
+const std::string ControlGrid::kAttrNbGridNormalInterp =
+        "nb_grid_normal_interp_ratios";
+
 ControlGrid::ControlGrid(float grid_size,
                          int64_t grid_count,
                          const core::Device& device)
@@ -75,6 +81,7 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
 geometry::PointCloud ControlGrid::Parameterize(
         const geometry::PointCloud& pcd) {
     core::Tensor pts = pcd.GetPoints();
+    core::Tensor nms = pcd.GetPointNormals().T().Contiguous();
     int64_t n = pts.GetLength();
 
     core::Tensor pts_quantized = pts / grid_size_;
@@ -93,19 +100,27 @@ geometry::PointCloud ControlGrid::Parameterize(
     }
 
     core::Tensor keys = pts_quantized_floor.To(core::Dtype::Int32);
-
     core::Tensor keys_nb({8, n, 3}, core::Dtype::Int32, device_);
-    core::Tensor residuals_nb({8, n}, core::Dtype::Float32, device_);
+    core::Tensor point_ratios_nb({8, n}, core::Dtype::Float32, device_);
+    core::Tensor normal_ratios_nb({8, n}, core::Dtype::Float32, device_);
     for (int nb = 0; nb < 8; ++nb) {
         int x_sel = (nb & 4) >> 2;
         int y_sel = (nb & 2) >> 1;
         int z_sel = (nb & 1);
 
+        float x_sign = x_sel * 2.0 - 1.0;
+        float y_sign = y_sel * 2.0 - 1.0;
+        float z_sign = z_sel * 2.0 - 1.0;
+
         core::Tensor dt = core::Tensor(std::vector<int>{x_sel, y_sel, z_sel},
                                        {1, 3}, core::Dtype::Int32, device_);
         keys_nb[nb] = keys + dt;
-        residuals_nb[nb] =
+        point_ratios_nb[nb] =
                 residuals[0][x_sel] * residuals[1][y_sel] * residuals[2][z_sel];
+        normal_ratios_nb[nb] =
+                x_sign * nms[0] * residuals[1][y_sel] * residuals[2][z_sel] +
+                y_sign * nms[1] * residuals[0][x_sel] * residuals[2][z_sel] +
+                z_sign * nms[2] * residuals[0][x_sel] * residuals[1][y_sel];
     }
 
     keys_nb = keys_nb.View({8 * n, 3});
@@ -121,18 +136,23 @@ geometry::PointCloud ControlGrid::Parameterize(
     }
 
     geometry::PointCloud pcd_with_params = pcd;
-
-    // Set computed indices (in hashmap) and corresponding ratios.
-    pcd_with_params.SetPointAttr("ctr_grid_nb_idx",
+    pcd_with_params.SetPointAttr(kAttrNbGridIdx,
                                  addrs_nb.View({8, n}).T().Contiguous());
-    pcd_with_params.SetPointAttr("ctr_grid_nb_ratio",
-                                 residuals_nb.T().Contiguous());
+    pcd_with_params.SetPointAttr(kAttrNbGridPointInterp,
+                                 point_ratios_nb.T().Contiguous());
+    pcd_with_params.SetPointAttr(kAttrNbGridNormalInterp,
+                                 normal_ratios_nb.T().Contiguous());
 
-    // Set positions for optimization (and in-place update).
-    core::Tensor positions = ctr_hashmap_->GetValueTensor();
-    pcd_with_params.SetPointAttr("ctr_grid_positions",
-                                 positions.View({-1, 3}).Contiguous());
     return pcd_with_params;
+}
+
+geometry::PointCloud Warp(const geometry::PointCloud& pcd) {
+    if (!pcd.HasPointAttr(ControlGrid::kAttrNbGridIdx) ||
+        !pcd.HasPointAttr(ControlGrid::kAttrNbGridPointInterp)) {
+        utility::LogError(
+                "Please use ControlGrid.Parameterize to obtain neighbor grids "
+                "before calling Warp");
+    }
 }
 }  // namespace slac
 }  // namespace pipelines

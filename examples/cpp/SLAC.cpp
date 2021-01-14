@@ -35,6 +35,7 @@ void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo(">    SLAC [dataset_folder] [options]");
+    utility::LogInfo("--method [default: rigid, optional: slac]");
     utility::LogInfo("--voxel_size [default: 0.05]");
     utility::LogInfo("--device [default: CPU:0]");
     utility::LogInfo("--debug");
@@ -74,26 +75,34 @@ int main(int argc, char** argv) {
             utility::ProgramOptionExists(argc, argv, "--debug");
     option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
 
-    auto pose_graph_updated = t::pipelines::slac::RunRigidOptimizerForFragments(
-            fragment_fnames, *pose_graph, option);
-    io::WritePoseGraph(
-            option.GetSubfolderName() + "/rigid_optimized_posegraph.json",
-            pose_graph_updated);
+    std::string method =
+            utility::GetProgramOptionAsString(argc, argv, "--method", "rigid");
+    if ("rigid" == method) {
+        auto pose_graph_updated =
+                t::pipelines::slac::RunRigidOptimizerForFragments(
+                        fragment_fnames, *pose_graph, option);
+        io::WritePoseGraph(
+                option.GetSubfolderName() + "/rigid_optimized_posegraph.json",
+                pose_graph_updated);
 
-    camera::PinholeCameraTrajectory trajectory;
-    for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
-        auto fragment_pose_graph = io::CreatePoseGraphFromFile(fmt::format(
-                "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
-        for (auto node : fragment_pose_graph->nodes_) {
-            auto pose = pose_graph_updated.nodes_[i].pose_ * node.pose_;
-            camera::PinholeCameraParameters param;
-            param.extrinsic_ = pose.inverse().eval();
-            trajectory.parameters_.push_back(param);
+        camera::PinholeCameraTrajectory trajectory;
+        for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
+            auto fragment_pose_graph = io::CreatePoseGraphFromFile(fmt::format(
+                    "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
+            for (auto node : fragment_pose_graph->nodes_) {
+                auto pose = pose_graph_updated.nodes_[i].pose_ * node.pose_;
+                camera::PinholeCameraParameters param;
+                param.extrinsic_ = pose.inverse().eval();
+                trajectory.parameters_.push_back(param);
+            }
         }
+        io::WritePinholeCameraTrajectory(
+                option.GetSubfolderName() + "/rigid_optimized_trajectory.log",
+                trajectory);
+    } else if ("slac" == method) {
+        auto result = t::pipelines::slac::RunSLACOptimizerForFragments(
+                fragment_fnames, *pose_graph, option);
     }
-    io::WritePinholeCameraTrajectory(
-            option.GetSubfolderName() + "/rigid_optimized_trajectory.log",
-            trajectory);
 
     return 0;
 }

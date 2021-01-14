@@ -47,6 +47,10 @@ namespace pipelines {
 namespace slac {
 class ControlGrid {
 public:
+    static const std::string kAttrNbGridIdx;
+    static const std::string kAttrNbGridPointInterp;
+    static const std::string kAttrNbGridNormalInterp;
+
     ControlGrid(float grid_size,
                 int64_t grid_count = 1000,
                 const core::Device& device = core::Device("CPU:0"));
@@ -66,11 +70,7 @@ public:
     geometry::PointCloud Parameterize(const geometry::PointCloud& pcd);
 
     /// Get control grid positions directly by buffer tensor indices.
-    core::Tensor GetPositions(const core::Tensor& indices);
-
-    /// Update control grid positions directly by buffer tensor indices.
-    core::Tensor SetPositions(const core::Tensor& indices,
-                              const core::Tensor& positions);
+    core::Tensor GetPositions() { return ctr_hashmap_->GetValueTensor(); }
 
     /// Warp a point cloud using control grid.
     geometry::PointCloud Warp(const geometry::PointCloud& pcd);

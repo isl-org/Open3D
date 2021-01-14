@@ -99,18 +99,18 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
 }
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
-                            t::geometry::PointCloud& tpcd_param) {
+                            t::geometry::PointCloud& tpcd_param,
+                            ControlGrid& ctr_grid) {
     // Prepare all ctr grid point cloud for lineset
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
             tpcd.ToLegacyPointCloud());
 
-    t::geometry::PointCloud tpcd_grid(
-            tpcd_param.GetPointAttr("ctr_grid_positions"));
+    t::geometry::PointCloud tpcd_grid(ctr_grid.GetPositions());
     auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_grid.ToLegacyPointCloud());
 
     // Prepare n x 8 corres for visualization
-    core::Tensor corres = tpcd_param.GetPointAttr("ctr_grid_nb_idx")
+    core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kAttrNbGridIdx)
                                   .To(core::Device("CPU:0"));
     std::vector<std::pair<int, int>> corres_lines;
     for (int64_t i = 0; i < corres.GetLength(); ++i) {
@@ -123,8 +123,9 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
             open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
                     *pcd, *pcd_grid, corres_lines);
 
-    core::Tensor corres_interp = tpcd_param.GetPointAttr("ctr_grid_nb_ratio")
-                                         .To(core::Device("CPU:0"));
+    core::Tensor corres_interp =
+            tpcd_param.GetPointAttr(ControlGrid::kAttrNbGridPointInterp)
+                    .To(core::Device("CPU:0"));
     for (int64_t i = 0; i < corres.GetLength(); ++i) {
         for (int k = 0; k < 8; ++k) {
             float ratio = corres_interp[i][k].Item<float>();
@@ -248,7 +249,8 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
-        // utility::LogInfo("edge {} -> {}", i, j);
+
+        utility::LogInfo("edge {} -> {}", i, j);
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
@@ -258,18 +260,19 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         auto tpcd_i = CreateTPCDFromFile(fnames[i], device);
         auto tpcd_param_i = ctr_grid.Parameterize(tpcd_i);
 
-        auto tpcd_j = CreateTPCDFromFile(fnames[j]);
+        auto tpcd_j = CreateTPCDFromFile(fnames[j], device);
         auto tpcd_param_j = ctr_grid.Parameterize(tpcd_j);
 
         auto pose_i = pose_graph.nodes_[i].pose_;
         auto pose_j = pose_graph.nodes_[j].pose_;
         auto pose_ij = (pose_j.inverse() * pose_i).eval();
+
         core::Tensor corres = core::Tensor::Load(corres_fname);
 
         if (option.grid_debug_) {
             VisualizePCDCorres(tpcd_i, tpcd_j, corres, pose_ij);
-            VisualizePCDGridCorres(tpcd_i, tpcd_param_i);
-            VisualizePCDGridCorres(tpcd_j, tpcd_param_j);
+            VisualizePCDGridCorres(tpcd_i, tpcd_param_i, ctr_grid);
+            VisualizePCDGridCorres(tpcd_j, tpcd_param_j, ctr_grid);
         }
 
         // TODO: use parameterization to update normals and points per grid
@@ -321,7 +324,6 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         auto normals_i = tpcd_i.GetPointNormals()
                                  .IndexGet({corres_ij.T()[0]})
                                  .To(device);
-
         auto points_j =
                 tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
 
@@ -374,7 +376,6 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
                         .Matmul(core::eigen_converter::EigenMatrixToTensor(
                                         fragment_pose_graph.nodes_[i].pose_)
                                         .To(core::Dtype::Float32));
-        // std::cout << fragment_pose_graph.nodes_[i].pose_ << " ";
         Eigen::Matrix4d pose_eigen;
         pose_eigen << pose_tensor[0][0].Item<float>(),
                 pose_tensor[0][1].Item<float>(),
@@ -392,9 +393,7 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
                 pose_tensor[3][1].Item<float>(),
                 pose_tensor[3][2].Item<float>(),
                 pose_tensor[3][3].Item<float>();
-
         fragment_pose_graph.nodes_[i].pose_ = pose_eigen;
-        // std::cout << fragment_pose_graph.nodes_[i].pose_ << "\n";
     }
 }
 
@@ -427,17 +426,21 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
     utility::LogInfo("Initializing {}^2 matrices", num_params);
 
-    core::Tensor indices_eye0 = core::Tensor::Arange(0, 6, 1);
-    core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
-                                           core::Dtype::Float32, device);
-    // Fix pose 0
-    AtA.IndexSet({indices_eye0, indices_eye0},
-                 1e12 * core::Tensor::Ones({}, core::Dtype::Float32, device));
-    core::Tensor Atb =
-            core::Tensor::Zeros({num_params, 1}, core::Dtype::Float32, device);
-
     PoseGraph pose_graph_update(pose_graph);
     for (int itr = 0; itr < option.max_iterations_; ++itr) {
+        core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
+                                               core::Dtype::Float32, device);
+        core::Tensor Atb = core::Tensor::Zeros({num_params, 1},
+                                               core::Dtype::Float32, device);
+        core::Tensor residual =
+                core::Tensor::Zeros({1}, core::Dtype::Float32, device);
+
+        core::Tensor indices_eye0 =
+                core::Tensor::Arange(0, 6, 1, core::Dtype::Int64, device);
+        AtA.IndexSet(
+                {indices_eye0, indices_eye0},
+                1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
+
         utility::LogInfo("Iteration {}", itr);
         FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down,
                                 pose_graph_update, option);
