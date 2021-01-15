@@ -145,6 +145,19 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
     visualization::DrawGeometries({pcd});
 }
 
+void VisualizeWarp(const geometry::PointCloud& tpcd_param,
+                   ControlGrid& ctr_grid) {
+    auto pcd = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_param.ToLegacyPointCloud());
+    pcd->PaintUniformColor({1, 0, 0});
+
+    auto tpcd_warped = ctr_grid.Warp(tpcd_param);
+    auto pcd_warped = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_warped.ToLegacyPointCloud());
+    pcd_warped->PaintUniformColor({0, 1, 0});
+    visualization::DrawGeometries({pcd, pcd_warped});
+}
+
 /// Write point clouds after downsampling and normal estimation for
 /// correspondence check.
 std::vector<std::string> PreprocessPointClouds(
@@ -270,6 +283,9 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         core::Tensor corres = core::Tensor::Load(corres_fname);
 
         if (option.grid_debug_) {
+            VisualizeWarp(tpcd_param_i, ctr_grid);
+            VisualizeWarp(tpcd_param_j, ctr_grid);
+
             VisualizePCDCorres(tpcd_i, tpcd_j, corres, pose_ij);
             VisualizePCDGridCorres(tpcd_i, tpcd_param_i, ctr_grid);
             VisualizePCDGridCorres(tpcd_j, tpcd_param_j, ctr_grid);

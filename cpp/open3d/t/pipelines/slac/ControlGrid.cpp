@@ -146,13 +146,45 @@ geometry::PointCloud ControlGrid::Parameterize(
     return pcd_with_params;
 }
 
-geometry::PointCloud Warp(const geometry::PointCloud& pcd) {
-    if (!pcd.HasPointAttr(ControlGrid::kAttrNbGridIdx) ||
-        !pcd.HasPointAttr(ControlGrid::kAttrNbGridPointInterp)) {
+geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
+    if (!pcd.HasPointAttr(kAttrNbGridIdx) ||
+        !pcd.HasPointAttr(kAttrNbGridPointInterp) ||
+        !pcd.HasPointAttr(kAttrNbGridNormalInterp)) {
         utility::LogError(
                 "Please use ControlGrid.Parameterize to obtain neighbor grids "
                 "before calling Warp");
     }
+
+    // N x 3
+    core::Tensor grid_positions = ctr_hashmap_->GetValueTensor();
+
+    // N x 8, we have ensured that every neighbor is valid through grid.Touch()
+    core::Tensor nb_grid_indices =
+            pcd.GetPointAttr(kAttrNbGridIdx).To(core::Dtype::Int64);
+    core::Tensor nb_grid_positions =
+            grid_positions.IndexGet({nb_grid_indices.View({-1})})
+                    .View({-1, 8, 3});
+
+    // N x 8 x 3 => N x 3 position interpolation
+    core::Tensor nb_grid_point_interp =
+            pcd.GetPointAttr(kAttrNbGridPointInterp);
+    core::Tensor interp_positions =
+            (nb_grid_positions * nb_grid_point_interp.View({-1, 8, 1}))
+                    .Sum({1});
+
+    // N x 8 x 3 => N x 3 normal interpolation
+    core::Tensor nb_grid_normal_interp =
+            pcd.GetPointAttr(kAttrNbGridNormalInterp);
+    core::Tensor interp_normals =
+            (nb_grid_positions * nb_grid_normal_interp.View({-1, 8, 1}))
+                    .Sum({1});
+    core::Tensor interp_normals_len =
+            (interp_normals * interp_normals).Sum({1}).Sqrt();
+    interp_normals = interp_normals / interp_normals_len.View({-1, 1});
+
+    geometry::PointCloud interp_pcd(interp_positions);
+    interp_pcd.SetPointNormals(interp_normals);
+    return interp_pcd;
 }
 }  // namespace slac
 }  // namespace pipelines
