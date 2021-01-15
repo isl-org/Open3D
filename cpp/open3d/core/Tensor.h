@@ -221,6 +221,29 @@ public:
                        const Device& device = Device("CPU:0"));
 
     /// Create a 0-D tensor (scalar) with given value.
+    static Tensor Init(const Scalar val,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0"));
+
+    /// Create a 1-D tensor with initializer list.
+    static Tensor Init(const std::initializer_list<Scalar> in_list,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0"));
+
+    /// Create a 2-D tensor with initializer list.
+    static Tensor Init(
+            const std::initializer_list<std::initializer_list<Scalar>> in_list,
+            Dtype dtype,
+            const Device& device = Device("CPU:0"));
+
+    /// Create a 3-D tensor with initializer list.
+    static Tensor
+    Init(const std::initializer_list<
+                 std::initializer_list<std::initializer_list<Scalar>>> in_list,
+         Dtype dtype,
+         const Device& device = Device("CPU:0"));
+
+    /// Create a 0-D tensor (scalar) with given value.
     /// For example,
     /// core::Tensor::Init<float>(1);
     template <typename T>

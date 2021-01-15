@@ -106,6 +106,57 @@ TEST_P(TensorPermuteDevices, WithInitList) {
 
     core::Tensor t;
 
+    // 0-D tesnor with given value without template.
+    t = core::Tensor::Init(1, core::Dtype::Float32, device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(t.GetBlob()->GetDevice(), device);
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1}));
+
+
+    // 1-D tesnor with given value without template.
+    t = core::Tensor::Init({1,2,3}, core::Dtype::Float32, device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({3}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(t.GetBlob()->GetDevice(), device);
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1,2,3}));
+
+    // 2-D tensor initialization with list without template.
+    t = core::Tensor::Init({{1, 2, 3}, {4, 5, 6}}, core::Dtype::Int32, device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 3}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Int32);
+    EXPECT_EQ(t.ToFlatVector<int>(), std::vector<int>({1, 2, 3, 4, 5, 6}));
+
+    // 3-D tensor initialization with list without template.
+    t = core::Tensor::Init({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}}, core::Dtype::Float64,
+                                   device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2, 2}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
+    EXPECT_EQ(t.ToFlatVector<double>(),
+              std::vector<double>({1, 2, 3, 4, 5, 6, 7, 8}));
+
+    // Test shapes with 0-element without template.
+    // These tests don't work with scalar due to ambiguity.
+    /*t = core::Tensor::Init({}, core::Dtype::Float64, device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({0}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
+    EXPECT_EQ(t.ToFlatVector<double>(), std::vector<double>({}));
+
+    t = core::Tensor::Init({{}}, core::Dtype::Bool, device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 0}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
+    EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));
+
+    t = core::Tensor::Init({{}, {}}, core::Dtype::Bool);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({1, 0}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
+    EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));*/
+
+    t = core::Tensor::Init({{{}}}, core::Dtype::UInt8);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({1, 1, 0}));
+    EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({}));
+
     // 0-D tesnor with given value.
     t = core::Tensor::Init<float>(1, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({}));
