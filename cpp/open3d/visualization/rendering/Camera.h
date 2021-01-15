@@ -106,6 +106,10 @@ public:
     virtual Transform GetViewMatrix() const = 0;
     virtual Transform GetProjectionMatrix() const = 0;
 
+    virtual Eigen::Vector3f Unproject(float x, float y, float z,
+                                      float view_width,
+                                      float view_height) const = 0;
+
     // Returns the normalized device coordinates (NDC) of the specified point
     // given the view and projection matrices of the camera. The returned point
     // is in the range [-1, 1] if the point is in view, or outside the range if

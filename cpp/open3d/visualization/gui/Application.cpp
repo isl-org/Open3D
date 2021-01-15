@@ -645,7 +645,7 @@ std::shared_ptr<geometry::Image> Application::RenderToImage(
     auto render = std::make_shared<rendering::FilamentRenderToBuffer>(
             rendering::EngineInstance::GetInstance());
     render->Configure(
-            view, scene, width, height,
+            view, scene, width, height, 3,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, callback](

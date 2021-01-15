@@ -42,6 +42,7 @@ public:
     struct Buffer {
         std::size_t width = 0;
         std::size_t height = 0;
+        std::size_t n_channels = 0;
         const std::uint8_t* bytes = nullptr;
         std::size_t size = 0;
     };
@@ -56,6 +57,7 @@ public:
                            Scene* scene,
                            int width,
                            int height,
+                           int n_channels,
                            BufferReadyCallback cb) = 0;
     virtual void SetDimensions(std::uint32_t width, std::uint32_t height) = 0;
     virtual View& GetView() = 0;

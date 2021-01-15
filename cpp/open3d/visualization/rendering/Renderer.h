@@ -106,6 +106,10 @@ public:
             View* view,
             Scene* scene,
             std::function<void(std::shared_ptr<geometry::Image>)> cb);
+    void RenderToDepthImage(
+            View* view,
+            Scene* scene,
+            std::function<void(std::shared_ptr<geometry::Image>)> cb);
 };
 
 }  // namespace rendering

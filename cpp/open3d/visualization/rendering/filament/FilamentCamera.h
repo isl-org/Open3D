@@ -89,6 +89,10 @@ public:
     Transform GetProjectionMatrix() const override;
     const ProjectionInfo& GetProjection() const override;
 
+    Eigen::Vector3f Unproject(float x, float y, float z,
+                              float view_width,
+                              float view_height) const override;
+
     Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const override;
 
     void CopyFrom(const Camera* camera) override;

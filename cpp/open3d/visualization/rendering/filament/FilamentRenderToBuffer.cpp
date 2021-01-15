@@ -93,27 +93,30 @@ void FilamentRenderToBuffer::Configure(const View* view,
                                        Scene* scene,
                                        int width,
                                        int height,
+                                       int n_channels,
                                        BufferReadyCallback cb) {
     if (!scene) {
         utility::LogDebug(
                 "No Scene object was provided for rendering into buffer");
-        cb({0, 0, nullptr, 0});
+        cb({0, 0, 0, nullptr, 0});
         return;
     }
 
     if (pending_) {
         utility::LogWarning(
                 "Render to buffer can process only one request at time");
-        cb({0, 0, nullptr, 0});
+        cb({0, 0, 0, nullptr, 0});
         return;
     }
 
-    pending_ = true;
-
-    if (buffer_ == nullptr) {
-        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
+    if (n_channels != 3 && n_channels != 4) {
+        utility::LogWarning("Render to buffer must have either 3 or 4 channels");
+        cb({0, 0, 0, nullptr, 0});
+        return;
     }
 
+    n_channels_ = n_channels;
+    pending_ = true;
     callback_ = cb;
 
     CopySettings(view);
@@ -133,9 +136,11 @@ void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
     width_ = width;
     height_ = height;
 
-    buffer_size_ = width * height * 3 * sizeof(std::uint8_t);
+    buffer_size_ = width * height * n_channels_ * sizeof(std::uint8_t);
     if (buffer_) {
         buffer_ = static_cast<std::uint8_t*>(realloc(buffer_, buffer_size_));
+    } else {
+        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
     }
 }
 
@@ -150,11 +155,6 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
         auto vp = view_->GetNativeView()->getViewport();
         SetDimensions(vp.width, vp.height);
     }
-    filament::Renderer::ClearOptions opt;
-    opt.clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
-    opt.clear = true;
-    opt.discard = true;
-    renderer_->setClearOptions(opt);
 }
 
 View& FilamentRenderToBuffer::GetView() { return *view_; }
@@ -168,7 +168,8 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     BufferReadyCallback callback;
     std::tie(self, callback) = *params;
 
-    callback({self->width_, self->height_, self->buffer_, self->buffer_size_});
+    callback({self->width_, self->height_, self->n_channels_,
+              self->buffer_, self->buffer_size_});
 
     self->frame_done_ = true;
     delete params;
@@ -183,7 +184,9 @@ void FilamentRenderToBuffer::Render() {
         using namespace backend;
 
         auto user_param = new PBDParams(this, callback_);
-        PixelBufferDescriptor pd(buffer_, buffer_size_, PixelDataFormat::RGB,
+        PixelBufferDescriptor pd(buffer_, buffer_size_,
+                                 (n_channels_ == 3 ? PixelDataFormat::RGB
+                                                   : PixelDataFormat::RGBA),
                                  PixelDataType::UBYTE, ReadPixelsCallback,
                                  user_param);
 

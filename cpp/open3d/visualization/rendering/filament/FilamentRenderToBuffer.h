@@ -58,6 +58,7 @@ public:
                    Scene* scene,
                    int width,
                    int height,
+                   int n_channels,
                    BufferReadyCallback cb) override;
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     View& GetView() override;
@@ -79,6 +80,7 @@ private:
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;
+    std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
 

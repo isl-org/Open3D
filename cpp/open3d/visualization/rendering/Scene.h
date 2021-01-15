@@ -69,6 +69,8 @@ public:
     Scene(Renderer& renderer) : renderer_(renderer) {}
     virtual ~Scene() = default;
 
+    virtual Scene* Copy() = 0;
+
     // NOTE: Temporarily need to support old View interface for ImGUI
     virtual ViewHandle AddView(std::int32_t x,
                                std::int32_t y,

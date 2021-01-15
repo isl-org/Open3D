@@ -28,7 +28,9 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/utility/Console.h"
+#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
+#include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
@@ -88,7 +90,7 @@ void Renderer::RenderToImage(
     auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
     render->Configure(
-            view, scene, vp[2], vp[3],
+            view, scene, vp[2], vp[3], 3,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
@@ -100,6 +102,41 @@ void Renderer::RenderToImage(
                 image->data_ = std::vector<uint8_t>(buffer.bytes,
                                                     buffer.bytes + buffer.size);
                 cb(image);
+                render = nullptr;
+            });
+}
+
+void Renderer::RenderToDepthImage(
+        View* view,
+        Scene* scene,
+        std::function<void(std::shared_ptr<geometry::Image>)> cb) {
+    Material depth;
+    depth.shader = "depthValue";
+    auto scene_copy = scene->Copy();
+    auto vp = view->GetViewport();
+    auto view_id = scene_copy->AddView(vp[0], vp[1], vp[2], vp[3]);
+    auto view_copy = scene_copy->GetView(view_id);
+    scene_copy->OverrideMaterialAll(depth);
+    scene_copy->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
+
+    view_copy->ConfigureForColorPicking();
+    view_copy->GetCamera()->CopyFrom(view->GetCamera());
+
+    auto render = CreateBufferRenderer();
+    render->Configure(
+            view_copy, scene_copy, vp[2], vp[3], 4,
+            // the shared_ptr (render) is const unless the lambda
+            // is made mutable
+            [render, cb, scene_copy](const RenderToBuffer::Buffer& buffer) mutable {
+                auto image = std::make_shared<geometry::Image>();
+                image->width_ = int(buffer.width);
+                image->height_ = int(buffer.height);
+                image->num_of_channels_ = 4;
+                image->bytes_per_channel_ = 1;
+                image->data_ = std::vector<uint8_t>(buffer.bytes,
+                                                    buffer.bytes + buffer.size);
+                cb(image);
+                delete scene_copy;
                 render = nullptr;
             });
 }
