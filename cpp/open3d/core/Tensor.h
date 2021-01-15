@@ -1068,7 +1068,7 @@ public:
     /// Computes LU factorisation of the sqaure matrix *this and returns a
     /// square matrix, with lower triangular part having values for L,
     /// upper triangular and diagonal part having values for U.
-    std::tuple<Tensor, Tensor> LUfactorisation() const;
+    std::tuple<Tensor, Tensor> LU() const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.

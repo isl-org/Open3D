@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LUfactorisation.h"
+#include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
 namespace core {
 
-void LUfactorisationCPU(void* A_data,
-                        void* ipiv_data,
-                        int64_t n,
-                        Dtype dtype,
-                        const Device& device) {
+void LUCPU(void* A_data,
+           void* ipiv_data,
+           int64_t n,
+           Dtype dtype,
+           const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         OPEN3D_LAPACK_CHECK(
                 getrf_cpu<scalar_t>(

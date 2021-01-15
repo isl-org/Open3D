@@ -24,15 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LUfactorisation.h"
+#include "open3d/core/linalg/LU.h"
 
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 
 namespace open3d {
 namespace core {
 
-std::tuple<Tensor, Tensor> LUfactorisation(const Tensor &A) {
-    // Check devices
+void LU(const Tensor &A, Tensor &output, Tensor &ipiv) {
     Device device = A.GetDevice();
 
     // Check dtypes
@@ -60,17 +59,16 @@ std::tuple<Tensor, Tensor> LUfactorisation(const Tensor &A) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
+        ipiv = core::Tensor::Empty({n}, core::Dtype::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
-        // cuSolver does not support getri, so we have to provide an identity
-        // matrix. This matrix is modified in-place as output.
-        Tensor A_ = A.T().To(device, /*copy=*/true);
-        void *A_data = A_.GetDataPtr();
+        // "output" tensor is modified in-place as ouput.
+        // cuSolver: COL_MAJOR
+        Tensor output_ = A.T().To(device, /*copy=*/true);
+        void *A_data = output_.GetDataPtr();
 
-        LUfactorisationCUDA(A_data, ipiv_data, n, dtype, device);
-
-        return std::make_tuple(A_.T().Contiguous(), ipiv);
+        LUCUDA(A_data, ipiv_data, n, dtype, device);
+        output = output_.T().Contiguous();
 #else
         utility::LogError("Unimplemented device.");
 #endif
@@ -83,17 +81,17 @@ std::tuple<Tensor, Tensor> LUfactorisation(const Tensor &A) {
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
-        Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
+        ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
-        // A is in-place modified as output.
-        Tensor A_ = A.To(device, /*copy=*/true);
-        void *A_data = A_.GetDataPtr();
+        // "output" tensor is modified in-place as ouput.
+        // LAPACKE: ROW_MAJOR
+        output = A.To(device, /*copy=*/true);
+        void *A_data = output.GetDataPtr();
 
-        LUfactorisationCPU(A_data, ipiv_data, n, dtype, device);
-
-        return std::make_tuple(A_, ipiv);
+        LUCPU(A_data, ipiv_data, n, dtype, device);
     }
+    return;
 }
 
 }  // namespace core

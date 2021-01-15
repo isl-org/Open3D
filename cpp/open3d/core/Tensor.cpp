@@ -30,6 +30,7 @@
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Blob.h"
+#include "open3d/core/CoreUtil.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -40,7 +41,7 @@
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Inverse.h"
-#include "open3d/core/linalg/LUfactorisation.h"
+#include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/Matmul.h"
@@ -721,8 +722,7 @@ Tensor Tensor::T() const {
 }
 
 double Tensor::Det() const {
-    // Check dtypes
-    this->AssertDtype(core::Dtype::Float32);
+    core::Dtype dtype = this->GetDtype();
 
     // Check dimensions
     SizeVector input_shape = this->GetShape();
@@ -731,30 +731,29 @@ double Tensor::Det() const {
                 "Tensor A must be 2D sqaure matrix but got shape: {}.",
                 input_shape.ToString());
     }
-
     int64_t n = input_shape[0];
     if (n == 0) {
         utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    core::Tensor A, ipiv;
-    std::tie(A, ipiv) = this->LUfactorisation();
-
-    core::Tensor A_ = A.To(core::Device("CPU:0"));
-    core::Tensor ipiv_ = ipiv.To(core::Device("CPU:0"));
-
-    // TODO: use casting template to support Float32 and 64
-    float* A_ptr = static_cast<float*>(A_.GetDataPtr());
-    int* ipiv_ptr = static_cast<int*>(ipiv_.GetDataPtr());
-
+    Tensor output, ipiv;
+    std::tie(output, ipiv) = this->LU();
+    Tensor output_cpu = output.To(core::Device("CPU:0"));
+    Tensor ipiv_cpu = ipiv.To(core::Device("CPU:0"));
     double det = 1.0;
-    for (int i = 0; i < n; i++) {
-        det *= A_ptr[i * n + i];
-        if (ipiv_ptr[i] != i) {
-            det *= -1;
+
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        scalar_t* output_ptr = static_cast<scalar_t*>(output_cpu.GetDataPtr());
+        int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+
+        for (int i = 0; i < n; i++) {
+            det *= output_ptr[i * n + i];
+            if (ipiv_ptr[i] != i) {
+                det *= -1;
+            }
         }
-    }
+    });
     return det;
 }
 
@@ -1327,8 +1326,10 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     return output;
 };
 
-std::tuple<Tensor, Tensor> Tensor::LUfactorisation() const {
-    return core::LUfactorisation(*this);
+std::tuple<Tensor, Tensor> Tensor::LU() const {
+    Tensor output, ipiv;
+    core::LU(*this, output, ipiv);
+    return std::make_tuple(output, ipiv);
 }
 
 Tensor Tensor::Inverse() const {

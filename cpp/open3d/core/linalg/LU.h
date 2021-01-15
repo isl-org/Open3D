@@ -43,20 +43,20 @@ namespace core {
 /// [diag. element of L matrix are not included (=1)]
 /// \param ipiv [output] Lower triangular matrix, Upper triangular matrix
 /// [diag. element of L matrix are not included (=1)]
-std::tuple<Tensor, Tensor> LUfactorisation(const Tensor& A);
+void LU(const Tensor& A, Tensor& output, Tensor& ipiv);
 
-void LUfactorisationCPU(void* A_data,
-                        void* ipiv_data,
-                        int64_t n,
-                        Dtype dtype,
-                        const Device& device);
+void LUCPU(void* A_data,
+           void* ipiv_data,
+           int64_t n,
+           Dtype dtype,
+           const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
-void LUfactorisationCUDA(void* A_data,
-                         void* ipiv_data,
-                         int64_t n,
-                         Dtype dtype,
-                         const Device& device);
+void LUCUDA(void* A_data,
+            void* ipiv_data,
+            int64_t n,
+            Dtype dtype,
+            const Device& device);
 #endif
 
 }  // namespace core

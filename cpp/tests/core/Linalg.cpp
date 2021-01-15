@@ -88,29 +88,44 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({2, 4}, dtype)));
 }
 
-TEST_P(LinalgPermuteDevices, LUfactorisation) {
+TEST_P(LinalgPermuteDevices, LU) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    // LUfactorisation test 3x3 square 2D matrix
-    core::Tensor A_3x3(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3},
-                       dtype, device);
+    // LU test for 3x3 square 2D tensor of dtype Float32
+    core::Tensor A_3x3f(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3},
+                        core::Dtype::Float32, device);
 
-    core::Tensor A, ipiv;
-    std::tie(A, ipiv) = A_3x3.LUfactorisation();
-
-    // utility::LogInfo("A: \n{} IPIV: \n{}", A.ToString(), ipiv.ToString());
-    // EXPECT_EQ(A.ToFlatVector<float>(),
-    //           std::vector<float>({3.0, 3.0, 1.0, 0.666667, 2.0, 0.333333,
-    //                               0.666667, 0.5, 0.166667}));
-    EXPECT_EQ(ipiv.To(core::Dtype::Int32).ToFlatVector<int>(),
+    core::Tensor A3f, ipiv3f;
+    std::tie(A3f, ipiv3f) = A_3x3f.LU();
+    // utility::LogInfo(" [Debug] Test input 3x3f \n{} \n\n Output: \n{}, ipiv:
+    // \n{}", A_3x3f.ToString(), A3f.ToString(), ipiv3f.ToString());
+    // EXPECT_EQ(A3f.ToFlatVector<float>(),
+    //           std::vector<float>({3.0, 3.0, 1.0,
+    //                              0.666667, 2.0, 0.333333,
+    //                              0.666667, 0.5, 0.166667}));
+    EXPECT_EQ(ipiv3f.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 
-    // LUfactorisation test 4x3 square 2D matrix
+    // LU test for 3x3 square 2D tensor of dtype Float64
+    core::Tensor A_3x3d(std::vector<double>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3},
+                        core::Dtype::Float64, device);
+
+    core::Tensor A3d, ipiv3d;
+    std::tie(A3d, ipiv3d) = A_3x3d.LU();
+    // utility::LogInfo(" [Debug] Test input 3x3d \n{} \n\n Output: \n{}, ipiv:
+    // \n{}", A_3x3d.ToString(), A3d.ToString(), ipiv3d.ToString());
+    // EXPECT_EQ(A3d.ToFlatVector<double>(),
+    //           std::vector<double>({3.0, 3.0, 1.0,
+    //                              0.666667, 2.0, 0.333333,
+    //                              0.666667, 0.5, 0.166667}));
+    EXPECT_EQ(ipiv3d.To(core::Dtype::Int32).ToFlatVector<int>(),
+              std::vector<int>({2, 3, 3}));
+
+    // LU test 4x3 square 2D tensor of dtype Float32
     core::Tensor A_4x3(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1, 1, 1, 1},
-                       {4, 3}, dtype, device);
+                       {4, 3}, core::Dtype::Float32, device);
     core::Tensor A_, ipiv_;
-    EXPECT_ANY_THROW(std::tie(A_, ipiv_) = A_4x3.LUfactorisation());
+    EXPECT_ANY_THROW(std::tie(A_, ipiv_) = A_4x3.LU());
 }
 
 TEST_P(LinalgPermuteDevices, Inverse) {
