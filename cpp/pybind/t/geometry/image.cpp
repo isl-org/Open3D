@@ -61,7 +61,13 @@ static const std::unordered_map<std::string, std::string>
                  "channels == 3; for grayscale image, channels == 1. channels "
                  "must be greater than 0."},
                 {"dtype", "Data type of the image."},
-                {"device", "Device where the image is stored."}};
+                {"device", "Device where the image is stored."},
+                {"scale",
+                 "First multiply image pixel values with this factor. "
+                 "This should be positive for unsigned dtypes."},
+                {"offset", "Then add this factor to all image pixel values."},
+                {"half_kernel_size",
+                 "A dilation mask of size 2*half_kernel_size+1 is used."}};
 
 void pybind_image(py::module &m) {
     py::class_<Image, PyGeometry<Image>, Geometry> image(
@@ -109,9 +115,36 @@ void pybind_image(py::module &m) {
                  "Compute min 2D coordinates for the data (always {0, 0}).")
             .def("get_max_bound", &Image::GetMaxBound,
                  "Compute max 2D coordinates for the data ({rows, cols}).")
+            .def("linear_transform", &Image::LinearTransform,
+                 "Function to linearly transform pixel intensities in place: "
+                 "image = scale * image + offset.",
+                 "scale"_a = 1.0, "offset"_a = 0.0)
+            .def("dilate", &Image::Dilate,
+                 "Return a new image after performing morphological dilation. "
+                 "Supported datatypes are UInt8, UInt16 and Float32 with "
+                 "{1, 3, 4} channels. An 8-connected neighborhood is used to "
+                 "create the dilation mask.",
+                 "half_kernel_size"_a = 1)
             .def("__repr__", &Image::ToString);
+    docstring::ClassMethodDocInject(m, "Image", "linear_transform",
+                                    map_shared_argument_docstrings);
 
     // Conversion.
+    image.def("convert_to", &Image::ConvertTo,
+              "Returns an Image with the specified Dtype.", "dtype"_a,
+              "scale"_a = Image::SCALE_DEFAULT, "offset"_a = 0.0,
+              "copy"_a = false);
+    docstring::ClassMethodDocInject(
+            m, "Image", "convert_to",
+            {{"dtype", "The targeted dtype to convert to."},
+             {"scale",
+              "Optional scale value. This is 1./255 for UInt8 -> Float{32,64}, "
+              "1./65535 for UInt16 -> Float{32,64} and 1 otherwise"},
+             {"offset", "Optional shift value. Default 0."},
+             {"copy",
+              "If true, a new tensor is always created; if false, the copy is "
+              "avoided when the original tensor already has the targeted "
+              "dtype."}});
     image.def("to_legacy_image", &Image::ToLegacyImage,
               "Convert to legacy Image type.");
     image.def_static("from_legacy_image", &Image::FromLegacyImage,

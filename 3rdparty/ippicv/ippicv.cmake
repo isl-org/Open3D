@@ -4,29 +4,27 @@
 include(ExternalProject)
 # Commit SHA in the opencv_3rdparty repo
 set(IPPICV_COMMIT "a56b6ac6f030c312b2dce17430eef13aed9af274")
-# Define actual ICV versions
-if(APPLE AND NOT ARM)
+# Check in order APPLE -> WIN32 -> UNIX, since UNIX may be defined on APPLE /
+# WIN32 as well
+if(APPLE AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL x86_64)
     set(OPENCV_ICV_NAME "ippicv_2020_mac_intel64_20191018_general.tgz")
     set(OPENCV_ICV_HASH "1c3d675c2a2395d094d523024896e01b")
-elseif(UNIX AND NOT ARM)
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(OPENCV_ICV_NAME "ippicv_2020_lnx_intel64_20191018_general.tgz")
-        set(OPENCV_ICV_HASH "7421de0095c7a39162ae13a6098782f9")
-    else()
-        set(OPENCV_ICV_NAME "ippicv_2020_lnx_ia32_20191018_general.tgz")
-        set(OPENCV_ICV_HASH "ad189a940fb60eb71f291321322fe3e8")
-    endif()
-elseif(WIN32 AND NOT ARM)
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "AMD64")
-        set(OPENCV_ICV_NAME "ippicv_2020_win_intel64_20191018_general.zip")
-        set(OPENCV_ICV_HASH "879741a7946b814455eee6c6ffde2984")
-    else()
-        set(OPENCV_ICV_NAME "ippicv_2020_win_ia32_20191018_general.zip")
-        set(OPENCV_ICV_HASH "cd39bdf0c2e1cac9a61101dad7a2413e")
-    endif()
+elseif(WIN32 AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL AMD64)
+    set(OPENCV_ICV_NAME "ippicv_2020_win_intel64_20191018_general.zip")
+    set(OPENCV_ICV_HASH "879741a7946b814455eee6c6ffde2984")
+elseif(WIN32 AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES 86) # {x86, i386, i686}
+    set(OPENCV_ICV_NAME "ippicv_2020_win_ia32_20191018_general.zip")
+    set(OPENCV_ICV_HASH "cd39bdf0c2e1cac9a61101dad7a2413e")
+elseif(UNIX AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL x86_64)
+    set(OPENCV_ICV_NAME "ippicv_2020_lnx_intel64_20191018_general.tgz")
+    set(OPENCV_ICV_HASH "7421de0095c7a39162ae13a6098782f9")
+elseif(UNIX AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES 86) # {x86, i386, i686}
+    set(OPENCV_ICV_NAME "ippicv_2020_lnx_ia32_20191018_general.tgz")
+    set(OPENCV_ICV_HASH "ad189a940fb60eb71f291321322fe3e8")
 else()
     set(WITH_IPPICV OFF)
-    message(WARNING "IPP-ICV: Unsupported Platform.")
+    message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    return()
 endif()
 
 set_local_or_remote_url(

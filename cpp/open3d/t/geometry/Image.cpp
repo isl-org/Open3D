@@ -102,8 +102,8 @@ Image Image::ConvertTo(core::Dtype dtype,
     return Image(new_data);
 }
 
-Image Image::LinearTransform(double scale /* = 1.0 */,
-                             double offset /* = 0.0 */) {
+Image &Image::LinearTransform(double scale /* = 1.0 */,
+                              double offset /* = 0.0 */) {
     if (scale < 0 &&
         (GetDtype() == core::Dtype::UInt8 || GetDtype() == core::Dtype::UInt16))
         utility::LogError("Negative scale not supported for unsigned Dtype!");

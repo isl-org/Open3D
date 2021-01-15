@@ -163,43 +163,35 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    /// Default value of scale for datatype conversion with ConvertTo().
     constexpr static const double SCALE_DEFAULT =
             -std::numeric_limits<double>::max();
-    /// Returns an Image with the specified \p dtype.
+
+    /// Returns an Image with the specified \p Dtype.
     /// \param dtype The targeted dtype to convert to.
-    /// \param alpha Optional scale value. This is 1./255 for UInt8 ->
+    /// \param scale Optional scale value. This is 1./255 for UInt8 ->
     /// Float{32,64}, 1./65535 for UInt16 -> Float{32,64} and 1 otherwise
-    /// \param beta Optional shift value. Default 0.
+    /// \param offset Optional shift value. Default 0.
     /// \param copy If true, a new tensor is always created; if false, the copy
-    /// is avoided when the original tensor already have the targeted dtype.
-    //
-    // Use Tensor::To and Tensor operators
+    /// is avoided when the original tensor already has the targeted dtype.
     Image ConvertTo(core::Dtype dtype,
                     double scale = SCALE_DEFAULT,
                     double offset = 0.0,
                     bool copy = false) const;
 
-    Image ConvertColor(Image::ColorConversionType cctype);
-
     /// Function to linearly transform pixel intensities in place.
     /// image = scale * image + offset.
-    Image LinearTransform(double scale = 1.0, double offset = 0.0);
+    /// \param scale First multiply image pixel values with this factor. This
+    /// should be positive for unsigned dtypes.
+    /// \param offset Then add this factor to all image pixel values.
+    /// \return Reference to self
+    Image &LinearTransform(double scale = 1.0, double offset = 0.0);
 
-    /* Image FlipVertical() const; */
-    /* Image FilterHorizontal() const; */
-    /* Image Transpose() const; */
-
-    /// Filter image with pre-defined filtering type.
-    /* Image FilterFixed(Image::FilterType type) const; */
-
-    /// Filter image with arbitrary dx, dy separable filters.
-    /* Image FilterSeparable(const std::vector<double> &dx, */
-    /*                       const std::vector<double> &dy) const; */
-
-    /// Function to 2x image downsample using simple 2x2 averaging.
-    /* Image Downsample() const; */
-
-    /// Function to dilate 8bit mask map.
+    /// Return a new image after performing morphological dilation. Supported
+    /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
+    /// 8-connected neighborhood is used to create the dilation mask.
+    /// \param half_kernel_size A dilation mask of size 2*half_kernel_size+1 is
+    /// used.
     Image Dilate(int half_kernel_size = 1) const;
 
     /// Compute min 2D coordinates for the data (always {0, 0}).
