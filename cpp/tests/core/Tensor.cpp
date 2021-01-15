@@ -141,12 +141,12 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float64);
     EXPECT_EQ(t.ToFlatVector<double>(), std::vector<double>({}));
 
-    t = core::Tensor::Init({{}}, core::Dtype::Bool, device);
+    t = core::Tensor::Init({{}, {}}, core::Dtype::Bool, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
     EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));
 
-    t = core::Tensor::Init({{}, {}}, core::Dtype::Bool);
+    t = core::Tensor::Init({{}, core::Dtype::Bool);
     EXPECT_EQ(t.GetShape(), core::SizeVector({1, 0}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
     EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>({}));*/
