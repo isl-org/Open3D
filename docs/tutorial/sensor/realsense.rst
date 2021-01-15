@@ -39,7 +39,7 @@ Sample RealSense bag files
 
 You con download sample RealSense bag datasets with this script::
 
-    python examples/python/reconstruction_system/scripts/download_dataset.py L515_test
+    python3 examples/python/reconstruction_system/scripts/download_dataset.py L515_test
 
 Check the script for more RS bag datasets.
 
