@@ -131,11 +131,10 @@ TEST_P(ImagePermuteDevices, ConvertTo_LinearTransform) {
 
     // reference data
     const std::vector<uint8_t> input_data = {10, 25, 0, 13};
-    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255),
-                             FloatEq(0.), FloatEq(13. / 255)};
-    auto negative_image_ref = {FloatEq(1. - 10. / 255),
-                                     FloatEq(1. - 25. / 255), FloatEq(1.),
-                                     FloatEq(1. - 13. / 255)};
+    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255), FloatEq(0.),
+                       FloatEq(13. / 255)};
+    auto negative_image_ref = {FloatEq(1. - 10. / 255), FloatEq(1. - 25. / 255),
+                               FloatEq(1.), FloatEq(1. - 13. / 255)};
 
     t::geometry::Image input(
             core::Tensor{input_data, {2, 2, 1}, core::Dtype::UInt8, device});
