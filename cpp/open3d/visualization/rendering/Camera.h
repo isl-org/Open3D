@@ -106,7 +106,9 @@ public:
     virtual Transform GetViewMatrix() const = 0;
     virtual Transform GetProjectionMatrix() const = 0;
 
-    virtual Eigen::Vector3f Unproject(float x, float y, float z,
+    virtual Eigen::Vector3f Unproject(float x,
+                                      float y,
+                                      float z,
                                       float view_width,
                                       float view_height) const = 0;
 

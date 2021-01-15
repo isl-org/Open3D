@@ -123,22 +123,22 @@ void Renderer::RenderToDepthImage(
     view_copy->GetCamera()->CopyFrom(view->GetCamera());
 
     auto render = CreateBufferRenderer();
-    render->Configure(
-            view_copy, scene_copy, vp[2], vp[3], 4,
-            // the shared_ptr (render) is const unless the lambda
-            // is made mutable
-            [render, cb, scene_copy](const RenderToBuffer::Buffer& buffer) mutable {
-                auto image = std::make_shared<geometry::Image>();
-                image->width_ = int(buffer.width);
-                image->height_ = int(buffer.height);
-                image->num_of_channels_ = 4;
-                image->bytes_per_channel_ = 1;
-                image->data_ = std::vector<uint8_t>(buffer.bytes,
-                                                    buffer.bytes + buffer.size);
-                cb(image);
-                delete scene_copy;
-                render = nullptr;
-            });
+    render->Configure(view_copy, scene_copy, vp[2], vp[3], 4,
+                      // the shared_ptr (render) is const unless the lambda
+                      // is made mutable
+                      [render, cb, scene_copy](
+                              const RenderToBuffer::Buffer& buffer) mutable {
+                          auto image = std::make_shared<geometry::Image>();
+                          image->width_ = int(buffer.width);
+                          image->height_ = int(buffer.height);
+                          image->num_of_channels_ = 4;
+                          image->bytes_per_channel_ = 1;
+                          image->data_ = std::vector<uint8_t>(
+                                  buffer.bytes, buffer.bytes + buffer.size);
+                          cb(image);
+                          delete scene_copy;
+                          render = nullptr;
+                      });
 }
 
 }  // namespace rendering

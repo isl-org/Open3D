@@ -185,9 +185,9 @@ Scene* FilamentScene::Copy() {
     copy->skybox_ = this->skybox_;
     copy->sun_ = this->sun_;
 
-    for (auto &name_geom : copy->geometries_) {
-        auto &name = name_geom.first;
-        auto &geom = name_geom.second;
+    for (auto& name_geom : copy->geometries_) {
+        auto& name = name_geom.first;
+        auto& geom = name_geom.second;
 
         auto& renderable_mgr = copy->engine_.getRenderableManager();
         auto inst = renderable_mgr.getInstance(geom.filament_entity);
@@ -197,18 +197,19 @@ Scene* FilamentScene::Copy() {
         auto new_entity = utils::EntityManager::get().create();
         filament::RenderableManager::Builder builder(1);
         builder.boundingBox(box)
-               .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
-               .castShadows(geom.cast_shadows)
-               .receiveShadows(geom.receive_shadows)
-               .culling(geom.culling_enabled)
-               .geometry(0, geom.primitive_type, vbuf.get(), ibuf.get());
+                .layerMask(FilamentView::kAllLayersMask,
+                           FilamentView::kMainLayer)
+                .castShadows(geom.cast_shadows)
+                .receiveShadows(geom.receive_shadows)
+                .culling(geom.culling_enabled)
+                .geometry(0, geom.primitive_type, vbuf.get(), ibuf.get());
         if (geom.priority >= 0) {
             builder.priority(uint8_t(geom.priority));
         }
         copy->resource_mgr_.ReuseVertexBuffer(geom.vb);
 
-        auto material_instance =
-            copy->AssignMaterialToFilamentGeometry(builder, geom.mat.properties);
+        auto material_instance = copy->AssignMaterialToFilamentGeometry(
+                builder, geom.mat.properties);
 
         auto result = builder.build(copy->engine_, new_entity);
         if (result == filament::RenderableManager::Builder::Success) {
@@ -220,12 +221,12 @@ Scene* FilamentScene::Copy() {
 
             auto transform = this->GetGeometryTransform(name);
             copy->SetGeometryTransform(name, transform);
-            copy->UpdateMaterialProperties(copy->geometries_[name]); // for non-const
-            
+            copy->UpdateMaterialProperties(
+                    copy->geometries_[name]);  // for non-const
+
         } else {
             utility::LogWarning(
-                        "Failed to copy Filament resources for geometry {}",
-                        name);
+                    "Failed to copy Filament resources for geometry {}", name);
         }
     }
     return copy;

@@ -110,7 +110,8 @@ void FilamentRenderToBuffer::Configure(const View* view,
     }
 
     if (n_channels != 3 && n_channels != 4) {
-        utility::LogWarning("Render to buffer must have either 3 or 4 channels");
+        utility::LogWarning(
+                "Render to buffer must have either 3 or 4 channels");
         cb({0, 0, 0, nullptr, 0});
         return;
     }
@@ -168,8 +169,8 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     BufferReadyCallback callback;
     std::tie(self, callback) = *params;
 
-    callback({self->width_, self->height_, self->n_channels_,
-              self->buffer_, self->buffer_size_});
+    callback({self->width_, self->height_, self->n_channels_, self->buffer_,
+              self->buffer_size_});
 
     self->frame_done_ = true;
     delete params;

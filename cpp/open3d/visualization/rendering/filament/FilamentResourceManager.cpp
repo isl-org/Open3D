@@ -829,7 +829,8 @@ void FilamentResourceManager::LoadDefaults() {
     const auto depth_value_path = resource_root + "/depth_value.filamat";
     auto depth_value_mat = LoadMaterialFromFile(depth_value_path, engine_);
     depth_value_mat->setDefaultParameter("pointSize", 3.f);
-    materials_[kDefaultDepthValueShader] = BoxResource(depth_value_mat, engine_);
+    materials_[kDefaultDepthValueShader] =
+            BoxResource(depth_value_mat, engine_);
 
     const auto gradient_path = resource_root + "/unlitGradient.filamat";
     auto gradient_mat = LoadMaterialFromFile(gradient_path, engine_);
