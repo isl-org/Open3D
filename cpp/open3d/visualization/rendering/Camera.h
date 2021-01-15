@@ -37,6 +37,7 @@ public:
     enum class FovType { Vertical, Horizontal };
     enum class Projection { Perspective, Ortho };
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
+    using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective>;
 
     virtual ~Camera() = default;
 
@@ -104,7 +105,7 @@ public:
     virtual Eigen::Vector3f GetUpVector() const = 0;
     virtual Transform GetModelMatrix() const = 0;
     virtual Transform GetViewMatrix() const = 0;
-    virtual Transform GetProjectionMatrix() const = 0;
+    virtual ProjectionMatrix GetProjectionMatrix() const = 0;
 
     virtual Eigen::Vector3f Unproject(float x,
                                       float y,

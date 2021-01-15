@@ -86,7 +86,7 @@ public:
     Eigen::Vector3f GetUpVector() const override;
     Transform GetModelMatrix() const override;
     Transform GetViewMatrix() const override;
-    Transform GetProjectionMatrix() const override;
+    ProjectionMatrix GetProjectionMatrix() const override;
     const ProjectionInfo& GetProjection() const override;
 
     Eigen::Vector3f Unproject(float x,
