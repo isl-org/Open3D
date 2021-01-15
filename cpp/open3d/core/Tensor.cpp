@@ -205,9 +205,7 @@ static const std::vector<T> ConvertVectorType(
 /// Create a 0-D tensor (scalar) with given value.
 /// For example,
 /// core::Tensor::Init(1, core::Dtype::Float32);
-Tensor Tensor::Init(const Scalar val,
-                   Dtype dtype,
-                   const Device& device) {
+Tensor Tensor::Init(const Scalar val, Dtype dtype, const Device& device) {
     std::vector<Scalar> in_list{val};
     SizeVector shape;
     Tensor new_tensor;
@@ -225,8 +223,8 @@ Tensor Tensor::Init(const Scalar val,
 /// For example,
 /// core::Tensor::Init({1,2,3}, core::Dtype::Float32);
 Tensor Tensor::Init(const std::initializer_list<Scalar> in_list,
-                   Dtype dtype,
-                   const Device& device) {
+                    Dtype dtype,
+                    const Device& device) {
     SizeVector shape{static_cast<int64_t>(in_list.size())};
     Tensor new_tensor;
 
@@ -276,7 +274,8 @@ Tensor Tensor::Init(
 
 /// Create a 3-D tensor with nested initializer list.
 /// For example,
-/// core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}}, core::Dtype::Float32);
+/// core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}},
+/// core::Dtype::Float32);
 Tensor Tensor::Init(
         const std::initializer_list<
                 std::initializer_list<std::initializer_list<Scalar>>> in_list,
