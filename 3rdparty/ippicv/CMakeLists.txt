@@ -1,10 +1,8 @@
 # Adapted from https://github.com/opencv/opencv/blob/master/3rdparty/ippicv/CMakeLists.txt
-# ----------------------------------------------------------------------------
-#  CMake file for IPP IW. See root CMakeLists.txt
-# ----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.0)
 project(ippiw)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_definitions(IW_BUILD ICV_BASE)
 include_directories(icv/include iw/include)
 file(GLOB lib_srcs iw/src/*.c)
@@ -18,11 +16,10 @@ if(UNIX)
     if(${CMAKE_C_COMPILER_ID} MATCHES GNU OR
             ${CMAKE_C_COMPILER_ID} MATCHES Clang OR
             ${CMAKE_C_COMPILER_ID} MATCHES Intel)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-function
-    -Wno-missing-braces -Wno-missing-field-initializers")
+        add_compile_options(-Wno-unused-function -Wno-missing-braces -Wno-missing-field-initializers)
   endif()
   if(${CMAKE_C_COMPILER_ID} MATCHES Clang)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-self-assign")
+      add_compile_options(-Wno-self-assign)
   endif()
 endif()
 

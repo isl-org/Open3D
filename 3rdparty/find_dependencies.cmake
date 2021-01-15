@@ -1141,7 +1141,7 @@ if (WITH_IPPICV)
         message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
         import_3rdparty_library(3rdparty_ippicv
             INCLUDE_DIRS "${IPPIW_INCLUDE_DIR}" "${IPPICV_INCLUDE_DIR}"
-            LIBRARIES    ${IPPICV_LIBRARY} ${IPPIW_LIBRARY}
+            LIBRARIES     ${IPPIW_LIBRARY} ${IPPICV_LIBRARY}
             LIB_DIR      "${IPPICV_LIB_DIR}"
             )
         add_dependencies(3rdparty_ippicv ext_ippicv)

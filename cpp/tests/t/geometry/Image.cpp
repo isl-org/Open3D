@@ -131,9 +131,9 @@ TEST_P(ImagePermuteDevices, ConvertTo_LinearTransform) {
 
     // reference data
     const std::vector<uint8_t> input_data = {10, 25, 0, 13};
-    const auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255),
+    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255),
                              FloatEq(0.), FloatEq(13. / 255)};
-    const auto negative_image_ref = {FloatEq(1. - 10. / 255),
+    auto negative_image_ref = {FloatEq(1. - 10. / 255),
                                      FloatEq(1. - 25. / 255), FloatEq(1.),
                                      FloatEq(1. - 13. / 255)};
 
