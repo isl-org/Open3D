@@ -1165,7 +1165,7 @@ void FilamentScene::OverrideMaterialAll(const Material& material,
                                         bool shader_only) {
     for (auto& ge : geometries_) {
         if (ge.first == kBackgroundName) {
-            return;
+            continue;
         }
         OverrideMaterialInternal(&ge.second, material, shader_only);
     }
