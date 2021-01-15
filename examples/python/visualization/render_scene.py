@@ -16,29 +16,29 @@ def main():
     mat.base_color = [1.0, 0.75, 0.0, 1.0]
     mat.shader = "defaultLit"
 
-    #Set the properties of a shape (sphere)
+    # Set the properties of a shape (sphere).
     sphere = o3d.geometry.TriangleMesh.create_sphere(.3)
     sphere.compute_vertex_normals()
     sphere.translate([-2, 0, 3])
 
-    #Add the sphere to the scene
+    # Add the sphere to the scene.
     render.scene.add_geometry("sphere", sphere, yellow)
 
-    #Set up the camera
+    # Set up the camera
     render.scene.camera.look_at([0, 0, 0], [0, 10, 0], [0, 0, 1])
     render.scene.setup_camera(60, sphere, [0, 0, 0])
 
-    #Set up the lighting
+    # Set up the lighting
     render.scene.scene.set_directional_light([0.707, 0.0, -.707],
                                              [1.0, 1.0, 1.0], 75000)
     render.scene.scene.enable_directional_light(True)
     render.scene.show_axes(True)
 
-    #Intialize the window
+    # Intialize the window
     self.window = gui.Application.instance.create_window(
         "Scene Rendering", 1024, 768)
 
-    #Add the scene widget to the GUI
+    # Add the scene widget to the GUI
     self.scene = gui.SceneWidget()
     self.scene.scene = rendering.Open3DScene(render)
 

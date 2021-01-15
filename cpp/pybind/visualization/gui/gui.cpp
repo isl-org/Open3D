@@ -174,8 +174,7 @@ void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(
             m, "Application",
-            "The class lets you manage the global application. It controls "
-            "the menubar, windows, and event loop.");
+            "The global application singleton that that owns the the menubar, windows, and event loop.");
     application
             .def("__repr__",
                  [](const Application &app) {
@@ -198,7 +197,7 @@ void pybind_gui_classes(py::module &m) {
                     [](Application &instance) { InitializeForPython(); },
                     "Initializes the application, using the resources included "
                     "in the wheel. One of the `initialize` functions _must_ be "
-                    "called before using any gui module.")
+                    "called before using the gui module.")
             .def(
                     "initialize",
                     [](Application &instance, const char *resource_dir) {
@@ -211,7 +210,7 @@ void pybind_gui_classes(py::module &m) {
             .def("set_font_for_language", &Application::SetFontForLanguage,
                  "set_font_for_language(font, language_code). The font path "
                  "that can be the path to a TrueType or OpenType font, or "
-                 "name of the font - in which case the font will be located "
+                 "name of the font in which case the font will be located "
                  "from the system directories. The language code must be "
                  "two-letter, lowercase ISO 639-1 codes. Currently, support is "
                  "available for 'en' (English), 'ja' (Japanese), 'ko' "
@@ -224,7 +223,7 @@ void pybind_gui_classes(py::module &m) {
 
             .def("set_font_for_code_points", &Application::SetFontForCodePoints,
                  "set_font_for_code_points(font, [unicode_code_points])."
-                 "The font can the path to a TrueType or OpenType font or "
+                 "The font can be the path to a TrueType or OpenType font or "
                  "it can be the name of the font, in which case the font "
                  "will be located from the system directories. You will "
                  "get an error if the font contains glyphs "
@@ -247,7 +246,7 @@ void pybind_gui_classes(py::module &m) {
                     },
                     "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
                     "x"_a = -1, "y"_a = -1, "flags"_a = 0,
-                    "The method creates a window and adds it to the "
+                    "This method creates a window and adds it to the "
                     "application. "
                     "To programmatically destroy the window do window.close()."
                     "Usage: create_window(title, width, height, x, y, flags). "
@@ -353,9 +352,8 @@ void pybind_gui_classes(py::module &m) {
             m, "WindowBase", "Application window");
     py::class_<PyWindow, UnownedPointer<PyWindow>, Window> window(
             m, "Window",
-            "The class lets you manage the application window. You can create "
-            "a "
-            " with Application.instance.create_window().");
+            "The application window. You can create "
+            "a window using the Application.instance.create_window() method.");
     window.def("__repr__",
                [](const PyWindow &w) { return "Application window"; })
             .def(
@@ -363,7 +361,7 @@ void pybind_gui_classes(py::module &m) {
                     [](PyWindow &w, UnownedPointer<Widget> widget) {
                         w.AddChild(TakeOwnership<Widget>(widget));
                     },
-                    "Lets you add a widget to the window")
+                    "Adds a widget to the window")
             .def_property("os_frame", &PyWindow::GetOSFrame,
                           &PyWindow::SetOSFrame,
                           "The window's rectangle in OS coordinates (not "
@@ -386,7 +384,7 @@ void pybind_gui_classes(py::module &m) {
                                    "and device pixels (read-only).")
             .def_property_readonly(
                     "is_visible", &PyWindow::IsVisible,
-                    "Indicates if window is visible (read-only).")
+                    "True if window is visible (read-only).")
             .def("show", &PyWindow::Show,
                  "The method shows or hides the window.")
             .def("close", &PyWindow::Close,
@@ -511,16 +509,16 @@ void pybind_gui_classes(py::module &m) {
             "(Read-only) The Theme parameters such as colors used for drawing "
             "widgets.");
     theme.def_readonly("font_size", &Theme::font_size,
-                       "(Read-only) The font size, which is also the "
+                       "The font size, which is also the "
                        "conventional size of the "
-                       "em unit.")
+                       "em unit. (read-only)")
             .def_readonly("default_margin", &Theme::default_margin,
-                          "(Read-only) The default value for margins, used for "
-                          "layouts.")
+                          "The default value for margins, used for "
+                          "layouts. (read-only)")
             .def_readonly("default_layout_spacing",
                           &Theme::default_layout_spacing,
-                          "(Read-only) A value for the spacing parameter in "
-                          "layouts.");
+                          "A value for the spacing parameter in "
+                          "layouts. (read-only)");
 
     // ---- Rect ----
     py::class_<Rect> rect(m, "Rect",
@@ -548,7 +546,7 @@ void pybind_gui_classes(py::module &m) {
             .def("get_bottom", &Rect::GetBottom);
 
     // ---- Size ----
-    py::class_<Size> size(m, "Size", "The class lets you manage size.");
+    py::class_<Size> size(m, "Size", "The size of the window.");
     size.def(py::init<>())
             .def(py::init<int, int>())
             .def(py::init([](float w, float h) {
@@ -573,7 +571,7 @@ void pybind_gui_classes(py::module &m) {
     //     to think they own it, leading to a double-free and crash, and
     //  2) if the object is never added, the memory will be leaked.
     py::class_<Widget, UnownedPointer<Widget>> widget(
-            m, "Widget", "The class lets you manage widgets.");
+            m, "Widget", "The base class that is used to create widgets.");
     py::enum_<EventCallbackResult> widget_event_callback_result(
             widget, "EventCallbackResult", "Returned by event handlers",
             py::arithmetic());
@@ -611,23 +609,22 @@ void pybind_gui_classes(py::module &m) {
             .def("get_children", &Widget::GetChildren,
                  "The method returns the array of children. Do not modify.")
             .def_property("frame", &Widget::GetFrame, &Widget::SetFrame,
-                          "The widget's frame. This value overrides "
+                          "The widget's frame. This value is overridden "
                           "if the frame is within a layout.")
             .def_property("visible", &Widget::IsVisible, &Widget::SetVisible,
                           "Indicates if the widget is visible.")
             .def_property("enabled", &Widget::IsEnabled, &Widget::SetEnabled,
                           "Indicates if the widget is enabled.")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
-                 "The function returns the preferred size of a widget. You can "
-                 "use this function only during layout. Although, it will also "
-                 "work "
-                 "during drawing, it is not recommended because the function "
-                 "requires some internal setup in order to function "
+                 "The function returns the preferred size of a widget. It is "
+                 "recommended to use this function only during layout, though, it will also "
+                 "work during drawing. The function does not work in other scenarios "
+                 "because it requires some internal setup in order to function "
                  "properly.");
 
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(
-            m, "Button", "The class lets you manage a button.");
+            m, "Button", "The buttons that can be added to the window.");
     button.def(py::init<const char *>(),
                "The function creates a button with the given text.")
             .def("__repr__",
@@ -1006,30 +1003,35 @@ void pybind_gui_classes(py::module &m) {
                  "model is not changing. Scene caching can help improve UI "
                  "responsiveness for large models and point clouds")
             .def("force_redraw", &PySceneWidget::ForceRedraw,
-                 "This forces scene redraw even when scene caching is enabled.")
+                 "This marks the widget for a forced scene redraw, even when scene caching is enabled.")
             .def("set_view_controls", &PySceneWidget::SetViewControls,
                  "This sets the mouse interaction, such as ROTATE_OBJ.")
             .def("setup_camera", &PySceneWidget::SetupCamera,
-                 "This configures the camera using the passed paraemters "
+                 "This configures the camera using the paramters "
                  "field_of_view, "
                  "model_bounds, and "
                  "center_of_rotation)")
             .def("set_on_mouse", &PySceneWidget::SetOnMouse,
-                 "This sets a callback for mouse events. It passes "
-                 "a MouseEvent object. The callback returns an "
+                 "This sets a callback for mouse events, and takes "
+                 " the scene widget as an argument. The widget then"
+                 " calls a function to widget as an argument. The widget then"
+                 "call the function and passes the MouseEvent object."
+                 "The callback returns an "
                  "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
                  "or EventCallackResult.CONSUMED.")
             .def("set_on_key", &PySceneWidget::SetOnKey,
-                 "This sets a callback for key events. It passes "
-                 "a KeyEvent object. The callback returns an "
+                 "This sets a callback for key events, and takes "
+                 " the scene widget as an argument. The widget then"
+                 " calls a function to widget as an argument. The widget then"
+                 "call the function and passes the KeyEvent object."
+                 "The callback returns an "
                  "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
                  "or EventCallackResult.CONSUMED.")
             .def("set_on_sun_direction_changed",
                  &PySceneWidget::SetOnSunDirectionChanged,
                  "The callback when user changes sun direction, and used only "
-                 "in "
-                 "ROTATE_SUN control mode. This uses the [i, j, k] vector "
-                 "of the new sun direction.")
+                 "in ROTATE_SUN control mode. The callback function accepts"
+                 " the [i, j, k] vector of the new sun direction.")
             .def("add_3d_label", &PySceneWidget::AddLabel,
                  "This adds a 3D text label to the scene. The label will be "
                  "anchored "
@@ -1100,7 +1102,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- TabControl ----
     py::class_<TabControl, UnownedPointer<TabControl>, Widget> tabctrl(
-            m, "TabControl", "The class lets you create a Tab control.");
+            m, "TabControl", "The Tab control.");
     tabctrl.def(py::init<>())
             .def(
                     "add_tab",
@@ -1152,7 +1154,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- TreeView ----
     py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(
-            m, "TreeView", "The class lets you create a hierarchical list.");
+            m, "TreeView", "The class is a hierarchical list.");
     treeview.def(py::init<>(), "Creates an empty TreeView widget")
             .def("__repr__",
                  [](const TreeView &tv) {
@@ -1207,9 +1209,8 @@ void pybind_gui_classes(py::module &m) {
                  }),
                  "The method creates a cell in the treeview with a checkbox "
                  "and text. "
-                 "You pass the text, is_checked (boolean), and "
-                 "on_toggled(boolean). "
-                 "The function returns None.")
+                 "CheckableTextTreeCell(text, is_checked, on_toggled): "
+                 "on_toggled takes a boolean and returns None.")
             .def_property_readonly("checkbox",
                                    &CheckableTextTreeCell::GetCheckbox,
                                    "Returns the checkbox widget "
@@ -1230,14 +1231,12 @@ void pybind_gui_classes(py::module &m) {
                                             on_color);
                  }),
                  "The function creates a TreeView cell with a checkbox, text, "
-                 "and "
-                 "a color editor. You pass the text, is_checked (boolean), "
-                 "color, "
-                 "on_enabled (boolean), on_color (gui.color). The on_enabled "
-                 "is "
-                 "called when the checkbox toggles, and returns None."
-                 "The on_color is called when the user changes the color "
-                 "and returns None.")
+                 "and a color editor."
+                 "LUTTreeCell(text, is_checked, color, "
+                 "on_enabled, on_color): on_enabled is called when the "
+                 "checkbox toggles, and takes a boolean and returns None"
+                 "; on_color is called when the user changes the color "
+                 "and it takes a gui.Color and returns None.")
             .def_property_readonly("checkbox", &LUTTreeCell::GetCheckbox,
                                    "Returns the checkbox widget "
                                    "(The property is read-only)")
@@ -1250,7 +1249,7 @@ void pybind_gui_classes(py::module &m) {
 
     py::class_<ColormapTreeCell, UnownedPointer<ColormapTreeCell>, Widget>
             colormap_cell(m, "ColormapTreeCell",
-                          "The class lets you create a TreeView cell with "
+                          "The class is a TreeView cell with "
                           "a number edit and color edit.");
     colormap_cell
             .def(py::init<>([](float value, const Color &color,
@@ -1302,14 +1301,14 @@ void pybind_gui_classes(py::module &m) {
                     return new Margins(left, top, right, bottom);
                 }),
                 "left"_a = 0, "top"_a = 0, "right"_a = 0, "bottom"_a = 0,
-                "The function creates margins using numbers. Margins are the "
+                "The function creates margins using integers. Margins are the "
                 "spacings from the edge"
                 " of the widget's frame to its content area. They are similar "
                 "to the "
-                "'padding property in CSS. "
+                "`padding` property in CSS. "
                 "You pass left, top, right, bottom. You must use the em-size "
                 "(window.theme.font_size) rather than pixels for more "
-                "consistency across")
+                "consistency across desktop environments.")
             .def(py::init([](float left, float top, float right, float bottom) {
                      return new Margins(
                              int(std::round(left)), int(std::round(top)),
@@ -1324,7 +1323,7 @@ void pybind_gui_classes(py::module &m) {
                  "`padding` property in CSS. "
                  "You pass left, top, right, bottom. You must use the em-size "
                  "(window.theme.font_size) rather than pixels for more "
-                 "consistency across")
+                 "consistency across desktop environments.")
             .def_readwrite("left", &Margins::left)
             .def_readwrite("top", &Margins::top)
             .def_readwrite("right", &Margins::right)

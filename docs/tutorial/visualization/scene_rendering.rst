@@ -3,11 +3,11 @@
 Scene Rendering 
 -------------------------------------
 
-Open3D lets you render scenes that are heavily customized to any application using our ``rendering`` class. You can build a custom application using the ``gui`` class to host the rendering. These classes are built to be flexible and completely extensible while providing speed and complete interaction.
+Open3D lets you render scenes that are heavily customized to any application using our ``rendering`` class. You can build a custom application using the ``gui`` module to host the rendering. These classes are built to be flexible and completely extensible while providing speed and complete interaction.
 
-This tutorial take you through a python script that builds a rendering engine. The engine lets you manage all aspects of the render such as camers, gradient, material, and scenes. You must also review the ``GUI builder`` tutorial to understand how you can create a GUI to host the renderer. Please refer to Open3D/python/visualization/rendering/ for complete class definition. You can view some examples in Open3D/examples/python/rendering/.
+This tutorial take you through a python script that builds a rendering engine. The engine lets you manage all aspects of the render such as cameras, gradients, materials, and scenes. You must also review the ``GUI`` tutorial to understand how you can create a GUI to host the renderer. Please refer to Open3D/python/visualization/rendering/ for complete class definition. You can view some examples in Open3D/examples/python/rendering/.
 
-Before you can render, you must have an application that can host the rendering. To understand how you can build an application using the ``gui`` class, see the Build GUI tutorial.
+Before you can render, you must have an application that can host the rendering. To understand how you can build an application using the ``gui`` module, see the GUI tutorial.
 
 
 Overview

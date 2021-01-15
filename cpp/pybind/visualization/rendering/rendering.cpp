@@ -327,7 +327,7 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(
-            m, "Scene", "The class lets you render low-level scene.");
+            m, "Scene", "The low-level scene.");
     scene.def("add_camera", &Scene::AddCamera,
               "The method adds a camera to the scene.")
             .def("remove_camera", &Scene::RemoveCamera,
