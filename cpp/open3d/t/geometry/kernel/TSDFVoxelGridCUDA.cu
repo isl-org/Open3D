@@ -165,7 +165,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 true, lane_id, bucket_id,
                                 static_cast<const void*>(key));
                 if (result.second) {
-                    printf("%d %d\n", result.first, result.second);
+                    printf("%d\n", result.first);
                 }
             });
 }

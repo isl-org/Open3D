@@ -137,7 +137,38 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                 float depth_max) {
     auto cpu_hashmap = std::dynamic_pointer_cast<
             core::CPUHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
-    utility::LogError("Unimplemented!");
+    auto hashmap_ctx = cpu_hashmap->GetContext();
+
+    TransformIndexer transform_indexer(intrinsics, extrinsics, 1);
+    NDArrayIndexer vertex_map_indexer(vertex_map, 2);
+    core::SizeVector shape = vertex_map.GetShape();
+
+    int64_t rows = vertex_map_indexer.GetShape(0);
+    int64_t cols = vertex_map_indexer.GetShape(1);
+
+    float block_size = voxel_size * block_resolution;
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            rows * cols, [&](int64_t workload_idx) {
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
+
+                float d = 1.0f;
+                float x_c = 0, y_c = 0, z_c = 0;
+                transform_indexer.Unproject(static_cast<float>(x),
+                                            static_cast<float>(y), d, &x_c,
+                                            &y_c, &z_c);
+
+                int key[3];
+                key[0] = static_cast<int>(floor(x_c / block_size));
+                key[1] = static_cast<int>(floor(y_c / block_size));
+                key[2] = static_cast<int>(floor(z_c / block_size));
+
+                auto iter = hashmap_ctx->find(key);
+                bool flag = (iter != hashmap_ctx->end());
+                if (flag) {
+                    printf("%d\n", iter->second);
+                }
+            });
 }
 }  // namespace tsdf
 }  // namespace kernel
