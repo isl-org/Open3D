@@ -174,7 +174,8 @@ void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(
             m, "Application",
-            "The global application singleton that that owns the the menubar, windows, and event loop.");
+            "The global application singleton that that owns the the menubar, "
+            "windows, and event loop.");
     application
             .def("__repr__",
                  [](const Application &app) {
@@ -382,9 +383,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property_readonly("scaling", &PyWindow::GetScaling,
                                    "The scaling factor between OS pixels "
                                    "and device pixels (read-only).")
-            .def_property_readonly(
-                    "is_visible", &PyWindow::IsVisible,
-                    "True if window is visible (read-only).")
+            .def_property_readonly("is_visible", &PyWindow::IsVisible,
+                                   "True if window is visible (read-only).")
             .def("show", &PyWindow::Show,
                  "The method shows or hides the window.")
             .def("close", &PyWindow::Close,
@@ -617,8 +617,10 @@ void pybind_gui_classes(py::module &m) {
                           "Indicates if the widget is enabled.")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
                  "The function returns the preferred size of a widget. It is "
-                 "recommended to use this function only during layout, though, it will also "
-                 "work during drawing. The function does not work in other scenarios "
+                 "recommended to use this function only during layout, though, "
+                 "it will also "
+                 "work during drawing. The function does not work in other "
+                 "scenarios "
                  "because it requires some internal setup in order to function "
                  "properly.");
 
@@ -1003,7 +1005,8 @@ void pybind_gui_classes(py::module &m) {
                  "model is not changing. Scene caching can help improve UI "
                  "responsiveness for large models and point clouds")
             .def("force_redraw", &PySceneWidget::ForceRedraw,
-                 "This marks the widget for a forced scene redraw, even when scene caching is enabled.")
+                 "This marks the widget for a forced scene redraw, even when "
+                 "scene caching is enabled.")
             .def("set_view_controls", &PySceneWidget::SetViewControls,
                  "This sets the mouse interaction, such as ROTATE_OBJ.")
             .def("setup_camera", &PySceneWidget::SetupCamera,
