@@ -94,6 +94,79 @@ def test_matmul(device, dtype):
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
 ])
+def test_det(device, dtype):
+    a = o3d.core.Tensor([[-5, 0, -1], [1, 2, -1], [-3, 4, 1]],
+                        dtype=dtype,
+                        device=device)
+
+    if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a.det()
+        assert 'Only tensors with Float32 or Float64 are supported' in str(
+            excinfo.value)
+        return
+
+    np.testing.assert_allclose(a.det(), np.linalg.det(a))
+
+    # Non-2D
+    for shape in [(), [1], (3, 4, 5)]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
+            a.det()
+        assert 'must be 2D' in str(excinfo.value)
+
+    # Non-square
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
+        a.det()
+    assert 'must be square' in str(excinfo.value)
+
+
+@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("dtype", [
+    o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
+    o3d.core.Dtype.Float64
+])
+def test_lu(device, dtype):
+    a = o3d.core.Tensor([[-5, 0, -1], [1, 2, -1], [-3, 4, 1]],
+                        dtype=dtype,
+                        device=device)
+
+    if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
+        with pytest.raises(RuntimeError) as excinfo:
+            o3d.core.lu(a)
+        assert 'Only tensors with Float32 or Float64 are supported' in str(
+            excinfo.value)
+        return
+
+    a_lu, ipiv = o3d.core.lu(a)
+    a_lu_ = o3d.core.Tensor([[-5, 0, -1], [0.6, 4.0, 1.6], [-0.2, 0.5, -2.0]],
+                            dtype=dtype)
+
+    np.testing.assert_allclose(a_lu.cpu().numpy(),
+                               a_lu_.numpy(),
+                               rtol=1e-5,
+                               atol=1e-5)
+
+    # Non-2D
+    for shape in [(), [1], (3, 4, 5)]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
+            a.lu()
+        assert 'must be 2D' in str(excinfo.value)
+
+    # Non-square
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
+        a.lu()
+    assert 'must be square' in str(excinfo.value)
+
+
+@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("dtype", [
+    o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
+    o3d.core.Dtype.Float64
+])
 def test_inverse(device, dtype):
     a = o3d.core.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
                         dtype=dtype,

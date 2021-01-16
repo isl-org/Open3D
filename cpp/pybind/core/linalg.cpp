@@ -50,7 +50,12 @@ void pybind_core_linalg(py::module &m) {
             "A"_a, "B"_a);
 
     m.def(
-            "lu", [](const Tensor &A) { return A.LU(); },
+            "lu",
+            [](const Tensor &A) {
+                Tensor output, ipiv;
+                LU(A, output, ipiv);
+                return py::make_tuple(output, ipiv);
+            },
             "Function to compute LU factorisation of a square 2D tensor.",
             "A"_a);
 

@@ -1189,16 +1189,28 @@ TEST_P(TensorPermuteDevices, T) {
 
 TEST_P(TensorPermuteDevices, Det) {
     core::Device device = GetParam();
+    // Det supports both Float32 and Float64
+    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
-    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
-    double t_t = t.Det();
-    EXPECT_DOUBLE_EQ(t_t, -40.0);
+    // Float32
+    std::vector<float> vals_f{-5, 0, -1, 1, 2, -1, -3, 4, 1};
+    core::Tensor tf(vals_f, {3, 3}, dtype, device);
+    double tf_det = tf.Det();
+    EXPECT_DOUBLE_EQ(tf_det, -40.0);
 
-    // Det expects a 2D sqaure matrix
-    std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
-    core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x3.Det());
+    // Float64
+    std::vector<double> vals_d{-5, 0, -1, 1, 2, -1, -3, 4, 1};
+    core::Tensor td(vals_d, {3, 3}, core::Dtype::Float64, device);
+    double td_det = td.Det();
+    EXPECT_DOUBLE_EQ(td_det, -40.0);
+
+    // Singular test
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
+
+    // Det expects a 2D sqaure matrix [Shape test]
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
 }
 
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
