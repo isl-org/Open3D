@@ -105,7 +105,7 @@ TEST_P(LinalgPermuteDevices, LU) {
     std::vector<float> A3f_ = A3f.ToFlatVector<float>();
     for (int i = 0; i < 9; ++i) {
         EXPECT_TRUE(std::abs(A3f_[i] - result_vecf[i]) < EPSILON);
-    }    
+    }
     EXPECT_EQ(ipiv3f.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 
@@ -119,7 +119,7 @@ TEST_P(LinalgPermuteDevices, LU) {
     std::vector<double> A3d_ = A3d.ToFlatVector<double>();
     for (int i = 0; i < 9; ++i) {
         EXPECT_TRUE(std::abs(A3d_[i] - result_vecd[i]) < EPSILON);
-    }    
+    }
     EXPECT_EQ(ipiv3d.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 

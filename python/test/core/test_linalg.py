@@ -121,6 +121,7 @@ def test_det(device, dtype):
         a.det()
     assert 'must be square' in str(excinfo.value)
 
+
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
@@ -159,6 +160,7 @@ def test_lu(device, dtype):
         a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         a.lu()
     assert 'must be square' in str(excinfo.value)
+
 
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
