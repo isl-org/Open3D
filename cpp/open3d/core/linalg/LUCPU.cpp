@@ -41,7 +41,7 @@ void LUCPU(void* A_data,
                 getrf_cpu<scalar_t>(
                         LAPACK_ROW_MAJOR, n, n, static_cast<scalar_t*>(A_data),
                         n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
-                "getrf failed in LUfactorisationCPU");
+                "getrf failed in LUCPU");
     });
 }
 

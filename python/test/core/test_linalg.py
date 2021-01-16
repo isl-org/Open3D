@@ -106,7 +106,7 @@ def test_det(device, dtype):
             excinfo.value)
         return
 
-    np.testing.assert_allclose(a.det(), np.linalg.det(a))
+    np.testing.assert_allclose(a.det(), np.linalg.det(a.cpu().numpy()))
 
     # Non-2D
     for shape in [(), [1], (3, 4, 5)]:
@@ -120,7 +120,6 @@ def test_det(device, dtype):
         a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         a.det()
     assert 'must be square' in str(excinfo.value)
-
 
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
@@ -160,7 +159,6 @@ def test_lu(device, dtype):
         a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         a.lu()
     assert 'must be square' in str(excinfo.value)
-
 
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [

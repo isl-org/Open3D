@@ -45,10 +45,12 @@ void LU(const Tensor &A, Tensor &output, Tensor &ipiv) {
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
-    if (A_shape.size() != 2 || A_shape[0] != A_shape[1]) {
-        utility::LogError(
-                "Tensor A must be 2D sqaure matrix but got shape: {}.",
-                A_shape.ToString());
+    if (A_shape.size() != 2) {
+        utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
+    }
+    if (A_shape[0] != A_shape[1]) {
+        utility::LogError("Tensor A must be square, but got {} x {}.",
+                          A_shape[0], A_shape[1]);
     }
 
     int64_t n = A_shape[0];

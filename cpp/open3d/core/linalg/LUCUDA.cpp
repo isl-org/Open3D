@@ -43,7 +43,7 @@ void LUCUDA(void* A_data,
                 static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
         OPEN3D_CUSOLVER_CHECK(
                 getrf_cuda_buffersize<scalar_t>(handle, n, n, n, &len),
-                "getrf_buffersize failed in LUfactorisationCUDA");
+                "getrf_buffersize failed in LUCUDA");
 
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
@@ -52,7 +52,7 @@ void LUCUDA(void* A_data,
                                      static_cast<scalar_t*>(A_data), n,
                                      static_cast<scalar_t*>(workspace),
                                      static_cast<int*>(ipiv_data), dinfo),
-                "getrf failed in LUfactorisationCUDA", dinfo, device);
+                "getrf failed in LUCUDA", dinfo, device);
 
         MemoryManager::Free(workspace, device);
         MemoryManager::Free(dinfo, device);

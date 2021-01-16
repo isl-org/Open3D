@@ -89,6 +89,8 @@ TEST_P(LinalgPermuteDevices, Matmul) {
 }
 
 TEST_P(LinalgPermuteDevices, LU) {
+    const float EPSILON = 1e-6;
+
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
@@ -100,8 +102,10 @@ TEST_P(LinalgPermuteDevices, LU) {
     std::tie(A3f, ipiv3f) = A_3x3f.LU();
     std::vector<float> result_vecf{3.0,      3.0,      1.0, 0.666667, 2.0,
                                    0.333333, 0.666667, 0.5, 0.166667};
-    core::Tensor result_f(result_vecf, {3, 3}, dtype, device);
-    // EXPECT_EQ(A3f.ToFlatVector<float>(), result_f.ToFlatVector<float>());
+    std::vector<float> A3f_ = A3f.ToFlatVector<float>();
+    for (int i = 0; i < 9; ++i) {
+        EXPECT_TRUE(std::abs(A3f_[i] - result_vecf[i]) < EPSILON);
+    }    
     EXPECT_EQ(ipiv3f.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 
@@ -112,8 +116,10 @@ TEST_P(LinalgPermuteDevices, LU) {
     std::tie(A3d, ipiv3d) = A_3x3d.LU();
     std::vector<double> result_vecd{3.0,      3.0,      1.0, 0.666667, 2.0,
                                     0.333333, 0.666667, 0.5, 0.166667};
-    core::Tensor result_d(result_vecd, {3, 3}, core::Dtype::Float64, device);
-    // EXPECT_EQ(A3d.ToFlatVector<double>(), result_d.ToFlatVector<double>());
+    std::vector<double> A3d_ = A3d.ToFlatVector<double>();
+    for (int i = 0; i < 9; ++i) {
+        EXPECT_TRUE(std::abs(A3d_[i] - result_vecd[i]) < EPSILON);
+    }    
     EXPECT_EQ(ipiv3d.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 

@@ -726,10 +726,12 @@ double Tensor::Det() const {
 
     // Check dimensions
     SizeVector input_shape = this->GetShape();
-    if (input_shape.size() != 2 || input_shape[0] != input_shape[1]) {
-        utility::LogError(
-                "Tensor A must be 2D sqaure matrix but got shape: {}.",
-                input_shape.ToString());
+    if (input_shape.size() != 2) {
+        utility::LogError("Tensor A must be 2D, but got {}D.", input_shape.size());
+    }
+    if (input_shape[0] != input_shape[1]) {
+        utility::LogError("Tensor A must be square, but got {} x {}.",
+                          input_shape[0], input_shape[1]);
     }
     int64_t n = input_shape[0];
     if (n == 0) {
