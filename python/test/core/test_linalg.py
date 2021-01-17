@@ -148,9 +148,7 @@ def test_lu(device, dtype):
                                a_lu_.numpy(),
                                rtol=1e-5,
                                atol=1e-5)
-    np.testing.assert_allclose(ipiv.cpu().numpy(),
-                               ipiv_.numpy(),
-                               1e-6)
+    np.testing.assert_allclose(ipiv.cpu().numpy(), ipiv_.numpy(), 1e-6)
 
     # Non-2D
     for shape in [(), [1], (3, 4, 5)]:
