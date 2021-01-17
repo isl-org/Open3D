@@ -142,11 +142,15 @@ def test_lu(device, dtype):
     a_lu, ipiv = o3d.core.lu(a)
     a_lu_ = o3d.core.Tensor([[-5, 0, -1], [0.6, 4.0, 1.6], [-0.2, 0.5, -2.0]],
                             dtype=dtype)
+    ipiv_ = o3d.core.Tensor([1, 3, 3], dtype=dtype)
 
     np.testing.assert_allclose(a_lu.cpu().numpy(),
                                a_lu_.numpy(),
                                rtol=1e-5,
                                atol=1e-5)
+    np.testing.assert_allclose(ipiv.cpu().numpy(),
+                               ipiv_.numpy(),
+                               1e-6)
 
     # Non-2D
     for shape in [(), [1], (3, 4, 5)]:

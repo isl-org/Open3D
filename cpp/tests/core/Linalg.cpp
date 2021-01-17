@@ -102,11 +102,8 @@ TEST_P(LinalgPermuteDevices, LU) {
     std::tie(A3f, ipiv3f) = A_3x3f.LU();
     std::vector<float> result_vecf{3.0,      3.0,      1.0, 0.666667, 2.0,
                                    0.333333, 0.666667, 0.5, 0.166667};
-    std::vector<float> A3f_ = A3f.ToFlatVector<float>();
-    for (int i = 0; i < 9; ++i) {
-        EXPECT_TRUE(std::abs(A3f_[i] - result_vecf[i]) < EPSILON);
-    }
-    EXPECT_EQ(ipiv3f.To(core::Dtype::Int32).ToFlatVector<int>(),
+    ExpectEQ(A3f.ToFlatVector<float>() , result_vecf, EPSILON);
+    ExpectEQ(ipiv3f.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 
     // LU test for 3x3 square 2D tensor of dtype Float64
@@ -116,11 +113,8 @@ TEST_P(LinalgPermuteDevices, LU) {
     std::tie(A3d, ipiv3d) = A_3x3d.LU();
     std::vector<double> result_vecd{3.0,      3.0,      1.0, 0.666667, 2.0,
                                     0.333333, 0.666667, 0.5, 0.166667};
-    std::vector<double> A3d_ = A3d.ToFlatVector<double>();
-    for (int i = 0; i < 9; ++i) {
-        EXPECT_TRUE(std::abs(A3d_[i] - result_vecd[i]) < EPSILON);
-    }
-    EXPECT_EQ(ipiv3d.To(core::Dtype::Int32).ToFlatVector<int>(),
+    ExpectEQ(A3d.ToFlatVector<double>() , result_vecd, EPSILON);                                    
+    ExpectEQ(ipiv3d.To(core::Dtype::Int32).ToFlatVector<int>(),
               std::vector<int>({2, 3, 3}));
 
     // Singular test
