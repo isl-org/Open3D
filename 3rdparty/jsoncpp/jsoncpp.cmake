@@ -1,5 +1,11 @@
 include(ExternalProject)
 
+if(GLIBCXX_USE_CXX11_ABI)
+    set(JSONCPP_CXX_ABI 1)
+else()
+    set(JSONCPP_CXX_ABI 0)
+endif()
+
 ExternalProject_Add(
     ext_jsoncpp
     PREFIX jsoncpp
@@ -16,6 +22,7 @@ ExternalProject_Add(
         -DBUILD_STATIC_LIBS=ON
         -DBUILD_OBJECT_LIBS=OFF
         -DJSONCPP_WITH_TESTS=OFF
+        -DJSONCPP_CXX_ABI=${JSONCPP_CXX_ABI}
     BUILD_ALWAYS ON
 )
 
