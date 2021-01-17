@@ -12,6 +12,7 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
     GIT_TAG 1.9.4
     UPDATE_COMMAND ""
+    COMMAND git apply ${Open3D_3RDPARTY_DIR}/jsoncpp/0001-allows-CXX-ABI-change-with-JSONCPP_CXX_ABI.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
