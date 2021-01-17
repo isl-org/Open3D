@@ -29,6 +29,7 @@
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/LinalgHeadersCUDA.h"
 #include "open3d/utility/Console.h"
+
 namespace open3d {
 namespace core {
 template <typename scalar_t>

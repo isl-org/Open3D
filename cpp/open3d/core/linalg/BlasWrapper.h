@@ -220,26 +220,6 @@ inline cublasStatus_t trsm_cuda<double>(cublasHandle_t handle,
                        ldb);
 }
 
-/// \brief cuBlas: This function performs the LU factorization of each Aarray[i]
-/// for i = 0, ..., batchSize-1 by the following equation
-/// P * Aarray [ i ] = L * U
-/// where P is a permutation matrix which represents partial pivoting with
-/// row interchanges. L is a lower triangular matrix with unit diagonal
-/// and U is an upper triangular matrix.
-///
-/// \param handle handle to the cuBLAS library context [input].
-/// \param n number of rows and columns of Aarray[i]. [input].
-/// \param A_data array of pointers to <type> array, with each array of
-///     dim. n x n with lda>=max(1,n). Matrices Aarray[i] should not overlap;
-///     otherwise, undefined behavior is expected. [input / output].
-/// \param lda leading dimension of two-dimensional array used to store each
-///     matrix Aarray[i]. [input].
-/// \param PivotArray array of size n x batchSize that contains the pivoting
-///     sequence of each factorization of Aarray[i] stored in a linear fashion.
-///     If PivotArray is nil, pivoting is disabled. [output].
-/// \param infoArray array of size batchSize that info(=infoArray[i])
-///           contains the information of factorization of Aarray[i]. [output].
-/// \param batchSize number of pointers contained in A [input].
 template <>
 inline cublasStatus_t getrfBatched_cuda<float>(cublasHandle_t handle,
                                                int n,
