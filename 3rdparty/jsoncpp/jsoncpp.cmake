@@ -1,18 +1,12 @@
 include(ExternalProject)
 
-if(GLIBCXX_USE_CXX11_ABI)
-    set(JSONCPP_CXX_ABI 1)
-else()
-    set(JSONCPP_CXX_ABI 0)
-endif()
-
 ExternalProject_Add(
     ext_jsoncpp
     PREFIX jsoncpp
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
     GIT_TAG 1.9.4
     UPDATE_COMMAND ""
-    PATCH_COMMAND git apply ${Open3D_3RDPARTY_DIR}/jsoncpp/0001-allows-CXX-ABI-change-with-JSONCPP_CXX_ABI.patch
+    PATCH_COMMAND git apply ${Open3D_3RDPARTY_DIR}/jsoncpp/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -23,7 +17,8 @@ ExternalProject_Add(
         -DBUILD_STATIC_LIBS=ON
         -DBUILD_OBJECT_LIBS=OFF
         -DJSONCPP_WITH_TESTS=OFF
-        -DJSONCPP_CXX_ABI=${JSONCPP_CXX_ABI}
+        -DJSONCPP_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}
+        -DJSONCPP_STATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
     BUILD_ALWAYS ON
 )
 
