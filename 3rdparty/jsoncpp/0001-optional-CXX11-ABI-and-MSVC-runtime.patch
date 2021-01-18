@@ -38,7 +38,7 @@ index 51b74fc..b27e7e5 100644
      add_compile_options($<$<CONFIG:Debug>:/W4>)
 +
 +    # This needs cmake_policy (SET CMP0091 NEW).
-+    if (STATIC_WINDOWS_RUNTIME)
++    if (JSONCPP_STATIC_WINDOWS_RUNTIME)
 +        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 +    endif()
  endif()
