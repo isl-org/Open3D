@@ -82,34 +82,45 @@ Image Image::ConvertTo(core::Dtype dtype,
                        bool copy /* = false */) const {
     if (scale == SCALE_DEFAULT) {
         if (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64) {
-            if (GetDtype() == core::Dtype::UInt8)
+            if (GetDtype() == core::Dtype::UInt8) {
                 scale = 1. / 255;
-            else if (GetDtype() == core::Dtype::UInt16)
+            } else if (GetDtype() == core::Dtype::UInt16) {
                 scale = 1. / 65535;
-            else
+            } else {
                 scale = 1.0;
+            }
         } else {
             scale = 1.0;
         }
     }
-    if (scale < 0 &&
-        (GetDtype() == core::Dtype::UInt8 || GetDtype() == core::Dtype::UInt16))
+    if (scale < 0 && (GetDtype() == core::Dtype::UInt8 ||
+                      GetDtype() == core::Dtype::UInt16)) {
         utility::LogError("Negative scale not supported for unsigned Dtype!");
+    }
 
     auto new_data = data_.To(dtype, copy);
-    if (scale != 1.0) new_data *= scale;
-    if (offset != 0.0) new_data += offset;
+    if (scale != 1.0) {
+        new_data *= scale;
+    }
+    if (offset != 0.0) {
+        new_data += offset;
+    }
     return Image(new_data);
 }
 
 Image &Image::LinearTransform(double scale /* = 1.0 */,
                               double offset /* = 0.0 */) {
-    if (scale < 0 &&
-        (GetDtype() == core::Dtype::UInt8 || GetDtype() == core::Dtype::UInt16))
+    if (scale < 0 && (GetDtype() == core::Dtype::UInt8 ||
+                      GetDtype() == core::Dtype::UInt16)) {
         utility::LogError("Negative scale not supported for unsigned Dtype!");
+    }
 
-    if (scale != 1.0) data_ *= scale;
-    if (offset != 0.0) data_ += offset;
+    if (scale != 1.0) {
+        data_ *= scale;
+    }
+    if (offset != 0.0) {
+        data_ += offset;
+    }
     return *this;
 }
 
