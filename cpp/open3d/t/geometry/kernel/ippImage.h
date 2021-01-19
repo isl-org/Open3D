@@ -42,22 +42,23 @@ namespace geometry {
 namespace ipp {
 
 inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
-    if (dtype == core::Dtype::UInt8 || dtype == core::Dtype::Bool)
+    if (dtype == core::Dtype::UInt8 || dtype == core::Dtype::Bool) {
         return ipp8u;
-    else if (dtype == core::Dtype::UInt16)
+    } else if (dtype == core::Dtype::UInt16) {
         return ipp16u;
-    else if (dtype == core::Dtype::UInt16)
+    } else if (dtype == core::Dtype::UInt16) {
         return ipp16u;
-    else if (dtype == core::Dtype::Int32)
+    } else if (dtype == core::Dtype::Int32) {
         return ipp32s;
-    else if (dtype == core::Dtype::Int64)
+    } else if (dtype == core::Dtype::Int64) {
         return ipp64s;
-    else if (dtype == core::Dtype::Float32)
+    } else if (dtype == core::Dtype::Float32) {
         return ipp32f;
-    else if (dtype == core::Dtype::Float64)
+    } else if (dtype == core::Dtype::Float64) {
         return ipp64f;
-    else
+    } else {
         return ippUndef;
+    }
 }
 
 void dilate(const open3d::core::Tensor &srcim,
