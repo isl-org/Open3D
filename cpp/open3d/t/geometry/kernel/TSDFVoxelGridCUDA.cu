@@ -120,6 +120,7 @@ void TouchCUDA(const core::Tensor& points,
 }
 
 void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                 core::Tensor& block_values,
                  core::Tensor& vertex_map,
                  core::Tensor& color_map,
                  const core::Tensor& intrinsics,

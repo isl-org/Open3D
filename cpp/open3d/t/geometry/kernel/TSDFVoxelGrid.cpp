@@ -109,6 +109,7 @@ void Integrate(const core::Tensor& depth,
 }
 
 void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+             core::Tensor& block_values,
              core::Tensor& vertex_map,
              core::Tensor& color_map,
              const core::Tensor& intrinsics,
@@ -129,11 +130,12 @@ void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        RayCastCPU(hashmap, vertex_map, color_map, intrinsicsf32, extrinsicsf32,
-                   block_resolution, voxel_size, sdf_trunc, depth_max);
+        RayCastCPU(hashmap, block_values, vertex_map, color_map, intrinsicsf32,
+                   extrinsicsf32, block_resolution, voxel_size, sdf_trunc,
+                   depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        RayCastCUDA(hashmap, vertex_map, color_map, intrinsicsf32,
+        RayCastCUDA(hashmap, block_values, vertex_map, color_map, intrinsicsf32,
                     extrinsicsf32, block_resolution, voxel_size, sdf_trunc,
                     depth_max);
 #else

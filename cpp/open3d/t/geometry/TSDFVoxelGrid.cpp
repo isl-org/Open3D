@@ -197,10 +197,16 @@ std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
             {height, width, 3}, core::Dtype::Float32, device_);
     core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
                                                  core::Dtype::Float32, device_);
+    core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
-    kernel::tsdf::RayCast(device_hashmap, vertex_map, color_map, intrinsics,
-                          extrinsics, block_resolution_, voxel_size_,
-                          sdf_trunc_, depth_max);
+    kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
+                          intrinsics, extrinsics, block_resolution_,
+                          voxel_size_, sdf_trunc_, depth_max);
+    utility::LogInfo("{}", vertex_map.ToString());
+    t::geometry::PointCloud vertex_pcd(vertex_map.View({-1, 3}));
+    visualization::DrawGeometries(
+            {std::make_shared<open3d::geometry::PointCloud>(
+                    vertex_pcd.ToLegacyPointCloud())});
     return std::make_tuple(vertex_map, color_map);
 }
 
