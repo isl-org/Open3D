@@ -26,6 +26,8 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
+#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlane.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -121,11 +123,10 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
 }
 
-core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    // TODO: If corres empty throw Error.
+// Temp. helper function, for comparing performance diff. of the 2 method.
+inline core::Tensor ComputeP2Plane_1(const geometry::PointCloud &source,
+                                     const geometry::PointCloud &target,
+                                     CorrespondenceSet &corres) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -190,6 +191,34 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
 
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
     return t::pipelines::kernel::PoseToTransformation(Pose);
+}
+
+core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        CorrespondenceSet &corres) const {
+    // TODO: If corres empty throw Error.
+
+    core::Device device = source.GetDevice();
+    core::Dtype dtype = core::Dtype::Float32;
+    source.GetPoints().AssertDtype(dtype);
+    target.GetPoints().AssertDtype(dtype);
+    if (target.GetDevice() != device) {
+        utility::LogError(
+                "Target Pointcloud device {} != Source Pointcloud's device {}.",
+                target.GetDevice().ToString(), device.ToString());
+    }
+
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first}).To(dtype);
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second}).To(dtype);
+    core::Tensor target_n_select =
+            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
+
+    return pipelines::kernel::ComputeTransformPointToPlane(
+            source_select, target_select, target_n_select);
+    // ComputeP2Plane_1(source, target, corres);
 }
 
 }  // namespace registration
