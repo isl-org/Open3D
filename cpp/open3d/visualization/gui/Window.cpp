@@ -361,7 +361,7 @@ Window::Window(const std::string& title,
     //   w = o3d.visualization.Application.instance
     //          .create_window("Crash", 640, 480)
     //   <anything that throws an exception>
-#endif // !WIN32
+#endif  // !WIN32
 }
 
 void Window::CreateRenderer() {
