@@ -39,8 +39,7 @@ static const bool kUseHeadless = false;
 
 static const std::string kOutputFilename = "offscreen.png";
 
-int main(int argc, const char *argv[])
-{
+int main(int argc, const char *argv[]) {
     const int width = 640;
     const int height = 480;
 
@@ -50,9 +49,9 @@ int main(int argc, const char *argv[])
         EngineInstance::EnableHeadless();
     }
 
-    auto *renderer = new FilamentRenderer(EngineInstance::GetInstance(),
-                                          width, height,
-                                          EngineInstance::GetResourceManager());
+    auto *renderer =
+            new FilamentRenderer(EngineInstance::GetInstance(), width, height,
+                                 EngineInstance::GetResourceManager());
     auto *scene = new Open3DScene(*renderer);
 
     Material mat;
@@ -62,10 +61,9 @@ int main(int argc, const char *argv[])
     torus->PaintUniformColor({1.0f, 1.0f, 0.0f});
     scene->AddGeometry("torus", torus.get(), mat);
     scene->ShowAxes(true);
-    scene->GetCamera()->SetProjection(60.0f, float(width) / float(height),
-                                      0.1f, 10.0f, Camera::FovType::Vertical);
-    scene->GetCamera()->LookAt({0.0f, 0.0f, 0.0f},
-                               {3.0f, 3.0f, 3.0f},
+    scene->GetCamera()->SetProjection(60.0f, float(width) / float(height), 0.1f,
+                                      10.0f, Camera::FovType::Vertical);
+    scene->GetCamera()->LookAt({0.0f, 0.0f, 0.0f}, {3.0f, 3.0f, 3.0f},
                                {0.0f, 1.0f, 0.0f});
 
     // This example demonstrates rendering to an image without a window.
