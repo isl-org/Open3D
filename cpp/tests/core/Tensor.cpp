@@ -1189,26 +1189,26 @@ TEST_P(TensorPermuteDevices, T) {
 
 TEST_P(TensorPermuteDevices, Det) {
     core::Device device = GetParam();
-    // Det supports both Float32 and Float64
+    // Det supports both Float32 and Float64.
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Float32
+    // Float32 test.
     core::Tensor A_3x3f = core::Tensor::Init<float>(
             {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
 
     double A_3x3f_det = A_3x3f.Det();
     EXPECT_DOUBLE_EQ(A_3x3f_det, -40.0);
 
-    // Float64
+    // Float64 test.
     core::Tensor A_3x3d = core::Tensor::Init<double>(
             {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
     double A_3x3d_det = A_3x3d.Det();
     EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
 
-    // Singular test
+    // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
 
-    // Det expects a 2D sqaure matrix [Shape test]
+    // Det expects a 2D sqaure matrix [shape test].
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());

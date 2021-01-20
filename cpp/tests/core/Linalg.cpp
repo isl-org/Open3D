@@ -51,7 +51,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Matmul test
+    // Matmul test.
     core::Tensor A(std::vector<float>{1, 2, 3, 4, 5, 6}, {2, 3}, dtype, device);
     core::Tensor B(
             std::vector<float>{7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18},
@@ -65,7 +65,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
         EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
     }
 
-    // Non-contiguous matmul test
+    // Non-contiguous matmul test.
     core::Tensor A_slice = A.GetItem(
             {core::TensorKey::Slice(core::None, core::None, core::None),
              core::TensorKey::Slice(1, core::None, core::None)});
@@ -82,7 +82,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
         EXPECT_TRUE(std::abs(C_slice_data[i] - C_slice_gt[i]) < EPSILON);
     }
 
-    // Incompatible shape test
+    // Incompatible shape test.
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({3, 4, 5}, dtype)));
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({3, 0}, dtype)));
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({2, 4}, dtype)));
@@ -94,7 +94,7 @@ TEST_P(LinalgPermuteDevices, LU) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // LU test for 3x3 square 2D tensor of dtype Float32
+    // LU test for 3x3 square 2D tensor of dtype Float32.
     core::Tensor A_3x3f = core::Tensor::Init<float>(
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
@@ -111,7 +111,7 @@ TEST_P(LinalgPermuteDevices, LU) {
                         .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
                                   EPSILON));
 
-    // LU test for 3x3 square 2D tensor of dtype Float64
+    // LU test for 3x3 square 2D tensor of dtype Float64.
     core::Tensor A_3x3d = core::Tensor::Init<double>(
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
@@ -128,10 +128,10 @@ TEST_P(LinalgPermuteDevices, LU) {
                         .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
                                   EPSILON));
 
-    // Singular test
+    // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
 
-    // Shape test
+    // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
@@ -143,7 +143,7 @@ TEST_P(LinalgPermuteDevices, Inverse) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Inverse test
+    // Inverse test.
     core::Tensor A(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3}, dtype,
                    device);
 
@@ -156,10 +156,10 @@ TEST_P(LinalgPermuteDevices, Inverse) {
         EXPECT_TRUE(std::abs(A_inv_data[i] - A_inv_gt[i]) < EPSILON);
     }
 
-    // Singular test
+    // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Inverse());
 
-    // Shape test
+    // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Inverse());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Inverse());
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Inverse());
@@ -171,7 +171,7 @@ TEST_P(LinalgPermuteDevices, SVD) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // matmul test
+    // Matmul test.
     core::Tensor A(std::vector<float>{2, 4, 1, 3, 0, 0, 0, 0}, {4, 2}, dtype,
                    device);
 
@@ -216,7 +216,7 @@ TEST_P(LinalgPermuteDevices, Solve) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Solve test
+    // Solve test.
     core::Tensor A(std::vector<float>{3, 1, 1, 2}, {2, 2}, dtype, device);
     core::Tensor B(std::vector<float>{9, 8}, {2}, dtype, device);
     core::Tensor X = A.Solve(B);
@@ -228,10 +228,10 @@ TEST_P(LinalgPermuteDevices, Solve) {
         EXPECT_TRUE(std::abs(X_data[i] - X_gt[i]) < EPSILON);
     }
 
-    // Singular test
+    // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({2, 2}, dtype, device).Solve(B));
 
-    // Shape test
+    // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 3}, dtype, device).Solve(B));
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Solve(B));
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 0}, dtype, device).Solve(B));
@@ -244,7 +244,7 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Solve test
+    // Solve test.
     core::Tensor A(std::vector<float>{1.44,  -7.84, -4.39, 4.53,  -9.96, -0.28,
                                       -3.24, 3.83,  -7.55, 3.24,  6.27,  -6.64,
                                       8.34,  8.09,  5.28,  2.06,  7.08,  2.52,
