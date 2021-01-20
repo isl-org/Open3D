@@ -24,24 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// Private header. Do not include in Open3d.h.
+
 #pragma once
 
-#include "open3d/core/Tensor.h"
+#include "open3d/core/linalg/LU.h"
 
 namespace open3d {
 namespace core {
 
-/// \brief This function performs the LU factorization, [batch is NOT supported
-/// currectly] following equation P * Aarray [ i ] = L * U where P is a
-/// permutation matrix which represents partial pivoting with row interchanges.
-/// L is a lower triangular matrix with unit diagonal and U is an upper
-/// triangular matrix.
-/// \param A [input] 2D matrix to be factorised. [Tensor of dtype Float32/64]
-/// \param output [output] Lower triangular matrix, Upper triangular matrix
-/// [diag. element of L matrix are not included (=1)]
-/// \param ipiv [output] Lower triangular matrix, Upper triangular matrix
-/// [diag. element of L matrix are not included (=1)]
-void LU(const Tensor& A, Tensor& output, Tensor& ipiv);
+void LUCPU(void* A_data,
+           void* ipiv_data,
+           int64_t n,
+           Dtype dtype,
+           const Device& device);
+
+#ifdef BUILD_CUDA_MODULE
+void LUCUDA(void* A_data,
+            void* ipiv_data,
+            int64_t n,
+            Dtype dtype,
+            const Device& device);
+#endif
 
 }  // namespace core
 }  // namespace open3d

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LU.h"
+#include "open3d/core/linalg/LUImp.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 
