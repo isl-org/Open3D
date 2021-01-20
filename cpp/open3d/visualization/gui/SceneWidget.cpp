@@ -473,7 +473,7 @@ private:
                                 int x,
                                 int y) {
         const int radius_px = 2;  // should be even;  total size is 2*r+1
-        float far_z = 0.999999;   // 1.0 - epsilon
+        float far_z = 0.999999f;   // 1.0 - epsilon
         float win_z = GetWinZFromPixel(depth_img, x, y);
         if (win_z >= far_z) {
             for (int v = y - radius_px; v < y + radius_px; ++v) {
