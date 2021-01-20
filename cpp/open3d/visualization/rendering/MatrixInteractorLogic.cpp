@@ -74,17 +74,6 @@ void MatrixInteractorLogic::Rotate(int dx, int dy) {
     auto matrix = matrix_at_mouse_down_;  // copy
     Eigen::AngleAxisf rot_matrix(0, Eigen::Vector3f(1, 0, 0));
 
-    // We want to rotate as if we were rotating an imaginary trackball
-    // centered at the point of rotation. To do this we need an axis
-    // of rotation and an angle about the axis. To find the axis, we
-    // imagine that the viewing plane has been translated into the screen
-    // so that it intersects the center of rotation. The axis we want
-    // to rotate around is perpendicular to the vector defined by (dx, dy)
-    // (assuming +x is right and +y is up). (Imagine the situation if the
-    // mouse movement is (100, 0) or (0, 100).) Now it is easy to find
-    // the perpendicular in 2D. Conveniently, (axis.x, axis.y, 0) is the
-    // correct axis in camera-local coordinates. We can multiply by the
-    // camera's rotation matrix to get the correct world vector.
     dy = -dy;  // up is negative, but the calculations are easiest to
                // imagine up is positive.
     float theta_right = float(M_PI) * float(dx) / float(view_width_);
