@@ -93,8 +93,8 @@ void MatrixInteractorLogic::Rotate(int dx, int dy) {
     forward_axis = matrix.rotation() * forward_axis;  // convert to world coords
     Eigen::Vector3f up_axis(0.0f, 1.0f, 0.0f);
     up_axis = matrix.rotation() * up_axis;  // convert to world coords
-    rot_matrix = rot_matrix * Eigen::AngleAxisf(-theta_right, up_axis)
-                            * Eigen::AngleAxisf(theta_y, forward_axis);
+    rot_matrix = rot_matrix * Eigen::AngleAxisf(-theta_right, up_axis) *
+                 Eigen::AngleAxisf(theta_y, forward_axis);
 
     auto pos = matrix * Eigen::Vector3f(0, 0, 0);
     Eigen::Vector3f to_cor = center_of_rotation_ - pos;
