@@ -87,12 +87,14 @@ void MatrixInteractorLogic::Rotate(int dx, int dy) {
     // camera's rotation matrix to get the correct world vector.
     dy = -dy;  // up is negative, but the calculations are easiest to
                // imagine up is positive.
-    Eigen::Vector3f axis(float(-dy), float(dx), 0);  // rotate by 90 deg in 2D
-    axis = axis.normalized();
-    float theta = CalcRotateRadians(dx, dy);
-
-    axis = matrix.rotation() * axis;  // convert axis to world coords
-    rot_matrix = rot_matrix * Eigen::AngleAxisf(-theta, axis);
+    float theta_right = float(M_PI) * float(dx) / float(view_width_);
+    float theta_y = float(M_PI) * float(dy) / float(view_height_);
+    Eigen::Vector3f forward_axis(1.0f, 0.0f, 0.0f);
+    forward_axis = matrix.rotation() * forward_axis;  // convert to world coords
+    Eigen::Vector3f up_axis(0.0f, 1.0f, 0.0f);
+    up_axis = matrix.rotation() * up_axis;  // convert to world coords
+    rot_matrix = rot_matrix * Eigen::AngleAxisf(-theta_right, up_axis)
+                            * Eigen::AngleAxisf(theta_y, forward_axis);
 
     auto pos = matrix * Eigen::Vector3f(0, 0, 0);
     Eigen::Vector3f to_cor = center_of_rotation_ - pos;
