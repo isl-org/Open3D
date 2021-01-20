@@ -1057,7 +1057,7 @@ public:
     /// result.
     Tensor Matmul(const Tensor& rhs) const;
 
-    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// Solves the linear system AX = B with LU decomposition and returns X.
     /// A must be a square matrix.
     Tensor Solve(const Tensor& rhs) const;
 

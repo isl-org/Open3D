@@ -34,16 +34,9 @@ namespace kernel {
 core::Tensor ComputeTransformPointToPlane(
         const core::Tensor &source_points_alligned,
         const core::Tensor &target_points_alligned,
-        const core::Tensor &target_normals_alligned) {
-    // Asserts
-    core::Device device = source_points_alligned.GetDevice();
-    target_points_alligned.AssertDevice(device);
-    target_normals_alligned.AssertDevice(device);
-    core::Dtype dtype = core::Dtype::Float32;
-    source_points_alligned.AssertDtype(dtype);
-    target_points_alligned.AssertDtype(dtype);
-    target_normals_alligned.AssertDtype(dtype);
-
+        const core::Tensor &target_normals_alligned,
+        const core::Dtype dtype,
+        const core::Device device) {
     // transformation tensor [ouput]
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
 

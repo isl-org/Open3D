@@ -124,26 +124,11 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 }
 
 // Temp. helper function, for comparing performance diff. of the 2 method.
-inline core::Tensor ComputeP2Plane_1(const geometry::PointCloud &source,
-                                     const geometry::PointCloud &target,
-                                     CorrespondenceSet &corres) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
-
+inline core::Tensor ComputeP2Plane_1(const core::Tensor &source_select,
+                                     const core::Tensor &target_select,
+                                     const core::Tensor &target_n_select,
+                                     const core::Dtype dtype,
+                                     const core::Device device) {
     core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
                              .Sum({1}, true)
                              .To(dtype);
@@ -190,6 +175,7 @@ inline core::Tensor ComputeP2Plane_1(const geometry::PointCloud &source,
               target_n_select);
 
     core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
+    utility::LogInfo(" Pose: {}", Pose.ToString());
     return t::pipelines::kernel::PoseToTransformation(Pose);
 }
 
@@ -197,8 +183,6 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
-    // TODO: If corres empty throw Error.
-
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -217,8 +201,9 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
             target.GetPointNormals().IndexGet({corres.second}).To(dtype);
 
     return pipelines::kernel::ComputeTransformPointToPlane(
-            source_select, target_select, target_n_select);
-    // ComputeP2Plane_1(source, target, corres);
+            source_select, target_select, target_n_select, dtype, device);
+    // return ComputeP2Plane_1(source_select, target_select, target_n_select,
+    // dtype, device);
 }
 
 }  // namespace registration

@@ -41,39 +41,41 @@ void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
                                      core::Tensor &tranformation,
                                      const core::Dtype dtype,
                                      const core::Device device) {
-    core::Tensor atai = core::Tensor::Empty({n, 21}, dtype, device);
-    core::Tensor atbi = core::Tensor::Empty({n, 6}, dtype, device);
-    float *atai_ptr = static_cast<float *>(atai.GetDataPtr());
-    float *atbi_ptr = static_cast<float *>(atbi.GetDataPtr());
+    core::Tensor atai =
+            core::Tensor::Empty({n, 21}, core::Dtype::Float64, device);
+    core::Tensor atbi =
+            core::Tensor::Empty({n, 6}, core::Dtype::Float64, device);
+    double *atai_ptr = static_cast<double *>(atai.GetDataPtr());
+    double *atbi_ptr = static_cast<double *>(atbi.GetDataPtr());
 
-    // This kernel computes the {n,21} shape atai tensor and {n,6} shape atbi
-    // tensor.
+    // This kernel computes the {n,21} shape atai tensor
+    // and {n,6} shape atbi tensor.
     core::kernel::CPULauncher::LaunchGeneralKernel(
             n, [&] OPEN3D_DEVICE(int64_t workload_idx) {
                 const int64_t pcd_stride = 3 * workload_idx;
                 const int64_t atai_stride = 21 * workload_idx;
                 const int64_t atbi_stride = 6 * workload_idx;
 
-                const float sx = src_pcd_ptr[pcd_stride + 0];
-                const float sy = src_pcd_ptr[pcd_stride + 1];
-                const float sz = src_pcd_ptr[pcd_stride + 2];
-                const float tx = tar_pcd_ptr[pcd_stride + 0];
-                const float ty = tar_pcd_ptr[pcd_stride + 1];
-                const float tz = tar_pcd_ptr[pcd_stride + 2];
-                const float nx = tar_norm_ptr[pcd_stride + 0];
-                const float ny = tar_norm_ptr[pcd_stride + 1];
-                const float nz = tar_norm_ptr[pcd_stride + 2];
+                const double sx = (src_pcd_ptr[pcd_stride + 0]);
+                const double sy = (src_pcd_ptr[pcd_stride + 1]);
+                const double sz = (src_pcd_ptr[pcd_stride + 2]);
+                const double tx = (tar_pcd_ptr[pcd_stride + 0]);
+                const double ty = (tar_pcd_ptr[pcd_stride + 1]);
+                const double tz = (tar_pcd_ptr[pcd_stride + 2]);
+                const double nx = (tar_norm_ptr[pcd_stride + 0]);
+                const double ny = (tar_norm_ptr[pcd_stride + 1]);
+                const double nz = (tar_norm_ptr[pcd_stride + 2]);
 
-                float bi = (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                float ai[] = {(nz * sy - ny * sz),
-                              (nx * sz - nz * sx),
-                              (ny * sx - nx * sy),
-                              nx,
-                              ny,
-                              ny};
+                double bi = (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
+                double ai[] = {(nz * sy - ny * sz),
+                               (nx * sz - nz * sx),
+                               (ny * sx - nx * sy),
+                               nx,
+                               ny,
+                               ny};
 
                 for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = j; k < 6; k++) {
+                    for (int k = 0; k <= j; k++) {
                         atai_ptr[atai_stride + i] = ai[j] * ai[k];
                         i++;
                     }
@@ -83,29 +85,35 @@ void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
 
     // Reduce matrix atai (to 1x21) and atbi (to 1x6).
     core::Tensor ata_1x21 = atai.Sum({0}, true);
-    core::Tensor atb_t = atbi.Sum({0}, true);
+    core::Tensor ATB = atbi.Sum({0}, true).T();
 
     // Get the ATA matrix back:
-    // Getting ATA and ATB in orginial form is NOT required if LeastSq is going
-    // to be hardcoded with values.
-    core::Tensor ATA = core::Tensor::Empty({6, 6}, dtype, device);
-    float *ATA_ptr = static_cast<float *>(ATA.GetDataPtr());
-    const float *ata_1x21_ptr =
-            static_cast<const float *>(ata_1x21.GetDataPtr());
+    // Getting ATA and ATB in orginial form is NOT required if
+    // ATA.Inverse().Matmul(ATB) is going to be hardcoded with values.
+    core::Tensor ATA =
+            core::Tensor::Empty({6, 6}, core::Dtype::Float64, device);
+    double *ATA_ptr = static_cast<double *>(ATA.GetDataPtr());
+    const double *ata_1x21_ptr =
+            static_cast<const double *>(ata_1x21.GetDataPtr());
 
     for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = j; k < 6; k++) {
+        for (int k = 0; k <= j; k++) {
             ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
             ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
             i++;
         }
     }
 
-    core::Tensor ATB = atb_t.T();
-    utility::LogInfo(" ATA: \n{},\n ATB: \n{}", ATA.ToString(), ATB.ToString());
-    core::Tensor Pose = (ATA.LeastSquares(ATB)).Reshape({-1});
-    utility::LogInfo("\n POSE: \n{}", Pose.ToString());
-    tranformation = t::pipelines::kernel::PoseToTransformation(Pose);
+    // utility::LogInfo(" ATA: \n{},\n ATB: \n{},\n ATA.Inverse(CPU): \n{}, \n
+    // ATA.Inverse().Matmul(ATB): \n{}\n",
+    //                 ATA.ToString(), ATB.ToString(), ATA.Inverse().ToString(),
+    //                 ATA.Inverse().Matmul(ATB).ToString());
+
+    // core::Tensor Pose = (ATA.Inverse().Matmul(ATB)).Reshape({-1});
+    core::Tensor Pose = (ATA.Solve(ATB)).Reshape({-1});
+    // utility::LogInfo("\n POSE: \n{}", Pose.ToString());
+
+    tranformation = t::pipelines::kernel::PoseToTransformation(Pose.To(dtype));
     return;
 }
 

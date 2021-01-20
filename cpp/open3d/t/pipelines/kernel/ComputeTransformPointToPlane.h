@@ -36,7 +36,9 @@ namespace kernel {
 core::Tensor ComputeTransformPointToPlane(
         const core::Tensor &source_points_alligned,
         const core::Tensor &target_points_alligned,
-        const core::Tensor &target_normals_alligned);
+        const core::Tensor &target_normals_alligned,
+        const core::Dtype dtype,
+        const core::Device device);
 
 void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
                                      const float *tar_pcd_ptr,
