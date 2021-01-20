@@ -558,7 +558,7 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 2D square tensor.
+    /// \brief Compute the determinant of a 2D square tensor.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
@@ -1065,8 +1065,8 @@ public:
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
 
-    /// Computes LU factorisation of the sqaure tensor *this, using P * A = L *
-    /// U \returns tuple of square matrix (with lower triangular values as L,
+    /// Computes LU factorisation of the sqaure tensor, using P * A = L * U.
+    /// \returns tuple of square matrix (with lower triangular values as L,
     /// and upper triangle values including the main diagonal as U), and IPIV
     /// 1D int tensor (The pivot indices, indicating row i of the matrix was
     /// interchanged with row IPIV(i)).

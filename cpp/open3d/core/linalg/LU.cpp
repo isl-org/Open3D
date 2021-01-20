@@ -66,7 +66,7 @@ void LU(const Tensor &A, Tensor &output, Tensor &ipiv) {
 
         // "output" tensor is modified in-place as ouput.
         // cuSolver: COL_MAJOR
-        Tensor output_ = A.T().To(device, /*copy=*/true);
+        Tensor output_ = A.T().Clone();
         void *A_data = output_.GetDataPtr();
 
         LUCUDA(A_data, ipiv_data, n, dtype, device);
@@ -93,7 +93,6 @@ void LU(const Tensor &A, Tensor &output, Tensor &ipiv) {
 
         LUCPU(A_data, ipiv_data, n, dtype, device);
     }
-    return;
 }
 
 }  // namespace core

@@ -31,8 +31,6 @@
 namespace open3d {
 namespace core {
 
-// TODO: Batch LU factorisation to be added.
-
 /// \brief This function performs the LU factorization, [batch is NOT supported
 /// currectly] following equation P * Aarray [ i ] = L * U where P is a
 /// permutation matrix which represents partial pivoting with row interchanges.

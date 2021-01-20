@@ -102,8 +102,8 @@ def test_det(device, dtype):
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             a.det()
-        assert 'Only tensors with Float32 or Float64 are supported' in str(
-            excinfo.value)
+            assert 'Only tensors with Float32 or Float64 are supported' in str(
+                excinfo.value)
         return
 
     np.testing.assert_allclose(a.det(), np.linalg.det(a.cpu().numpy()))
@@ -113,13 +113,13 @@ def test_det(device, dtype):
         with pytest.raises(RuntimeError) as excinfo:
             a = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
             a.det()
-        assert 'must be 2D' in str(excinfo.value)
+            assert 'must be 2D' in str(excinfo.value)
 
     # Non-square
     with pytest.raises(RuntimeError) as excinfo:
         a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         a.det()
-    assert 'must be square' in str(excinfo.value)
+        assert 'must be square' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -135,8 +135,8 @@ def test_lu(device, dtype):
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3d.core.lu(a)
-        assert 'Only tensors with Float32 or Float64 are supported' in str(
-            excinfo.value)
+            assert 'Only tensors with Float32 or Float64 are supported' in str(
+                excinfo.value)
         return
 
     a_lu, ipiv = o3d.core.lu(a)
@@ -155,13 +155,13 @@ def test_lu(device, dtype):
         with pytest.raises(RuntimeError) as excinfo:
             a = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
             a.lu()
-        assert 'must be 2D' in str(excinfo.value)
+            assert 'must be 2D' in str(excinfo.value)
 
     # Non-square
     with pytest.raises(RuntimeError) as excinfo:
         a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         a.lu()
-    assert 'must be square' in str(excinfo.value)
+        assert 'must be square' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())

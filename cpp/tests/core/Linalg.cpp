@@ -95,27 +95,38 @@ TEST_P(LinalgPermuteDevices, LU) {
     core::Dtype dtype = core::Dtype::Float32;
 
     // LU test for 3x3 square 2D tensor of dtype Float32
-    core::Tensor A_3x3f(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3},
-                        dtype, device);
+    core::Tensor A_3x3f = core::Tensor::Init<float>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
     core::Tensor A3f, ipiv3f;
     std::tie(A3f, ipiv3f) = A_3x3f.LU();
-    std::vector<float> result_vecf{3.0,      3.0,      1.0, 0.666667, 2.0,
-                                   0.333333, 0.666667, 0.5, 0.166667};
-    ExpectEQ(A3f.ToFlatVector<float>(), result_vecf, EPSILON);
-    ExpectEQ(ipiv3f.To(core::Dtype::Int32).ToFlatVector<int>(),
-             std::vector<int>({2, 3, 3}));
+
+    EXPECT_TRUE(
+            A3f.AllClose(core::Tensor::Init<float>({{3.0, 3.0, 1.0},
+                                                    {0.666667, 2.0, 0.333333},
+                                                    {0.666667, 0.5, 0.166667}},
+                                                   device),
+                         EPSILON, EPSILON));
+    EXPECT_TRUE(ipiv3f.To(core::Dtype::Int32)
+                        .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
+                                  EPSILON));
 
     // LU test for 3x3 square 2D tensor of dtype Float64
-    core::Tensor A_3x3d(std::vector<double>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3},
-                        core::Dtype::Float64, device);
+    core::Tensor A_3x3d = core::Tensor::Init<double>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+
     core::Tensor A3d, ipiv3d;
     std::tie(A3d, ipiv3d) = A_3x3d.LU();
-    std::vector<double> result_vecd{3.0,      3.0,      1.0, 0.666667, 2.0,
-                                    0.333333, 0.666667, 0.5, 0.166667};
-    ExpectEQ(A3d.ToFlatVector<double>(), result_vecd, EPSILON);
-    ExpectEQ(ipiv3d.To(core::Dtype::Int32).ToFlatVector<int>(),
-             std::vector<int>({2, 3, 3}));
+
+    EXPECT_TRUE(
+            A3d.AllClose(core::Tensor::Init<double>({{3.0, 3.0, 1.0},
+                                                     {0.666667, 2.0, 0.333333},
+                                                     {0.666667, 0.5, 0.166667}},
+                                                    device),
+                         EPSILON, EPSILON));
+    EXPECT_TRUE(ipiv3d.To(core::Dtype::Int32)
+                        .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
+                                  EPSILON));
 
     // Singular test
     EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());

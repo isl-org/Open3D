@@ -131,9 +131,9 @@ inline cublasStatus_t getrfBatched_cuda(cublasHandle_t handle,
                                         int n,
                                         scalar_t *A_data[],
                                         int lda,
-                                        int *PivotArray,
-                                        int *infoArray,
-                                        int batchSize) {
+                                        int *pivot_array,
+                                        int *info_array,
+                                        int batch_size) {
     utility::LogError("Unsupported data type.");
     return CUBLAS_STATUS_NOT_SUPPORTED;
 }
@@ -225,11 +225,11 @@ inline cublasStatus_t getrfBatched_cuda<float>(cublasHandle_t handle,
                                                int n,
                                                float *A_data[],
                                                int lda,
-                                               int *PivotArray,
-                                               int *infoArray,
-                                               int batchSize) {
-    return cublasSgetrfBatched(handle, n, A_data, lda, PivotArray, infoArray,
-                               batchSize);
+                                               int *pivot_array,
+                                               int *info_array,
+                                               int batch_size) {
+    return cublasSgetrfBatched(handle, n, A_data, lda, pivot_array, info_array,
+                               batch_size);
 }
 
 template <>
@@ -237,11 +237,11 @@ inline cublasStatus_t getrfBatched_cuda<double>(cublasHandle_t handle,
                                                 int n,
                                                 double *A_data[],
                                                 int lda,
-                                                int *PivotArray,
-                                                int *infoArray,
-                                                int batchSize) {
-    return cublasDgetrfBatched(handle, n, A_data, lda, PivotArray, infoArray,
-                               batchSize);
+                                                int *pivot_array,
+                                                int *info_array,
+                                                int batch_size) {
+    return cublasDgetrfBatched(handle, n, A_data, lda, pivot_array, info_array,
+                               batch_size);
 }
 #endif
 
