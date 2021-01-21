@@ -26,7 +26,7 @@
 
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/SVD.h"
+#include "open3d/core/linalg/SVDImp.h"
 
 namespace open3d {
 namespace core {

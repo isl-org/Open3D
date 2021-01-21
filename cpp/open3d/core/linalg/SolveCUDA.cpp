@@ -28,7 +28,7 @@
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
+#include "open3d/core/linalg/SolveImp.h"
 
 namespace open3d {
 namespace core {

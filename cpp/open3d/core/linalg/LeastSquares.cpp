@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include "open3d/core/linalg/LeastSquaresImp.h"
+
 namespace open3d {
 namespace core {
 

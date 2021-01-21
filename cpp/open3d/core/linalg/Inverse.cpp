@@ -28,6 +28,7 @@
 
 #include <unordered_map>
 
+#include "open3d/core/linalg/InverseImp.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 
 namespace open3d {

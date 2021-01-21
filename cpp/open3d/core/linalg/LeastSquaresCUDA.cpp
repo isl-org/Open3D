@@ -27,7 +27,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LeastSquares.h"
+#include "open3d/core/linalg/LeastSquaresImp.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {

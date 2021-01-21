@@ -26,6 +26,8 @@
 
 #include "open3d/core/linalg/Solve.h"
 
+#include "open3d/core/linalg/SolveImp.h"
+
 #ifdef BUILD_CUDA_MODULE
 #include <cuda_runtime_api.h>
 #endif

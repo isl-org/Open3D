@@ -26,7 +26,7 @@
 
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/linalg/MatmulImp.h"
 
 namespace open3d {
 namespace core {
