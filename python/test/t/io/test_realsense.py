@@ -124,5 +124,5 @@ def test_RealSenseSensor():
         assert os.path.exists(bag_filename)
         os.remove(bag_filename)
     except RuntimeError as err:
-        assert "[Open3D ERROR] Invalid RealSense camera configuration, or camera not connected" in str(
+        assert "Invalid RealSense camera configuration, or camera not connected" in str(
             err)
