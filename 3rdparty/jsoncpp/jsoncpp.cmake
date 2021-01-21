@@ -5,6 +5,7 @@ ExternalProject_Add(
     PREFIX jsoncpp
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
     GIT_TAG 1.9.4
+    GIT_SHALLOW ON  # Do not download the history.
     UPDATE_COMMAND ""
     PATCH_COMMAND git apply ${Open3D_3RDPARTY_DIR}/jsoncpp/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
     CMAKE_ARGS
