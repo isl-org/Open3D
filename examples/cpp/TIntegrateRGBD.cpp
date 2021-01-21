@@ -147,8 +147,22 @@ int main(int argc, char** argv) {
         timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
-        voxel_grid.RayCast(intrinsic_t, extrinsic_t, depth.GetCols(),
-                           depth.GetRows(), max_depth);
+
+        core::Tensor vertex_map, color_map;
+        std::tie(vertex_map, color_map) =
+                voxel_grid.RayCast(intrinsic_t, extrinsic_t.Inverse(),
+                                   depth.GetCols(), depth.GetRows(), max_depth);
+        if (i % 100 == 0) {
+            t::geometry::Image vertex_im(vertex_map);
+            visualization::DrawGeometries(
+                    {std::make_shared<open3d::geometry::Image>(
+                            vertex_im.ToLegacyImage())});
+
+            t::geometry::PointCloud vertex_pcd(vertex_map.View({-1, 3}));
+            visualization::DrawGeometries(
+                    {std::make_shared<open3d::geometry::PointCloud>(
+                            vertex_pcd.ToLegacyPointCloud())});
+        }
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
     }

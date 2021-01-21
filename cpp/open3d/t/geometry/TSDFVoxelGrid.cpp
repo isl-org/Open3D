@@ -202,11 +202,7 @@ std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
     kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
                           intrinsics, extrinsics, block_resolution_,
                           voxel_size_, sdf_trunc_, depth_max);
-    utility::LogInfo("{}", vertex_map.ToString());
-    t::geometry::PointCloud vertex_pcd(vertex_map.View({-1, 3}));
-    visualization::DrawGeometries(
-            {std::make_shared<open3d::geometry::PointCloud>(
-                    vertex_pcd.ToLegacyPointCloud())});
+    // utility::LogInfo("{}", vertex_map.ToString());
     return std::make_tuple(vertex_map, color_map);
 }
 
