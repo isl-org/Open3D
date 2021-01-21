@@ -166,6 +166,8 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                 float tsdf_prev = 1.0f;
                 bool active = true;
 
+                // (274, 113) (452, 343)
+                bool print_flag = false;  // (y == 113) && (x == 274);
                 for (int step = 0; step < 100; ++step) {
                     transform_indexer.Unproject(static_cast<float>(x),
                                                 static_cast<float>(y), t, &x_c,
@@ -191,6 +193,10 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                     if (!flag) {
                         t_prev = t;
                         t += block_size;
+                        if (print_flag) {
+                            printf("%d, t=%f: skip block (%d %d %d)\n", step, t,
+                                   x_b, y_b, z_b);
+                        }
                         continue;
                     }
 
@@ -201,21 +207,34 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             floor((y_g - y_b * block_size) / voxel_size));
                     z_v = static_cast<int>(
                             floor((z_g - z_b * block_size) / voxel_size));
+                    if (x_v < 0 || x_v >= block_resolution || y_v < 0 ||
+                        y_v >= block_resolution || z_v < 0 ||
+                        z_v >= block_resolution) {
+                        printf("Error!\n");
+                    }
 
                     float* voxel_ptr =
                             voxel_block_buffer_indexer
                                     .GetDataPtrFromCoord<float>(x_v, y_v, z_v,
                                                                 block_addr);
                     float tsdf = voxel_ptr[0];
+                    uint16_t w = *(reinterpret_cast<uint16_t*>(voxel_ptr) + 2);
                     if (tsdf > 0) {
                         tsdf_prev = tsdf;
                         t_prev = t;
                         float delta = tsdf * sdf_trunc;
                         t += delta < voxel_size ? voxel_size : delta;
+                        if (print_flag) {
+                            printf("%d, t=%f: (%f %d) at (%d %d %d) in block "
+                                   "(%d %d "
+                                   "%d), marching \n",
+                                   step, t, tsdf, w, x_v, y_v, z_v, x_b, y_b,
+                                   z_b);
+                        }
                         continue;
                     }
 
-                    if (tsdf_prev > 0 && tsdf < 0) {
+                    if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
                         float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
                         transform_indexer.Unproject(
@@ -230,10 +249,28 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                         vertex[1] = y_g;
                         vertex[2] = z_g;
                         active = false;
+                        if (print_flag) {
+                            printf("%d, t=%f: (%f %d) at (%d %d %d) in block "
+                                   "(%d %d "
+                                   "%d), intersecting \n",
+                                   step, t, tsdf, w, x_v, y_v, z_v, x_b, y_b,
+                                   z_b);
+                        }
                     }
-                    __syncthreads();
+                    if (print_flag) {
+                        printf("%d, t=%f: (%f %d) at (%d %d %d) in block (%d "
+                               "%d "
+                               "%d), updating \n",
+                               step, t, tsdf, w, x_v, y_v, z_v, x_b, y_b, z_b);
+                    }
+
+                    t += voxel_size;
+                    t_prev = t;
+                    tsdf_prev = tsdf;
+                    if (t > depth_max) active = false;
                 }
             });
+    cudaDeviceSynchronize();
 }
 
 }  // namespace tsdf

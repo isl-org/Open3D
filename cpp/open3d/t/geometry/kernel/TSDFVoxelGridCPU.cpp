@@ -205,6 +205,7 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                     .GetDataPtrFromCoord<float>(x_v, y_v, z_v,
                                                                 block_addr);
                     float tsdf = voxel_ptr[0];
+                    uint16_t w = *(reinterpret_cast<uint16_t*>(voxel_ptr) + 2);
                     if (tsdf > 0) {
                         tsdf_prev = tsdf;
                         t_prev = t;
@@ -212,7 +213,7 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                         continue;
                     }
 
-                    if (tsdf_prev > 0 && tsdf < 0) {
+                    if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
                         float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
                         transform_indexer.Unproject(
@@ -228,6 +229,11 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                         vertex[2] = z_g;
                         active = false;
                     }
+
+                    t += voxel_size;
+                    t_prev = t;
+                    tsdf_prev = tsdf;
+                    if (t > depth_max) active = false;
                 }
             });
 }

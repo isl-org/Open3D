@@ -153,6 +153,7 @@ int main(int argc, char** argv) {
                 voxel_grid.RayCast(intrinsic_t, extrinsic_t.Inverse(),
                                    depth.GetCols(), depth.GetRows(), max_depth);
         if (i % 100 == 0) {
+            vertex_map.Save("vtxmap.npy");
             t::geometry::Image vertex_im(vertex_map);
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::Image>(
@@ -162,6 +163,11 @@ int main(int argc, char** argv) {
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::PointCloud>(
                             vertex_pcd.ToLegacyPointCloud())});
+
+            auto mesh = voxel_grid.ExtractSurfaceMesh();
+            auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
+                    mesh.ToLegacyTriangleMesh());
+            visualization::DrawGeometries({mesh_legacy});
         }
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
