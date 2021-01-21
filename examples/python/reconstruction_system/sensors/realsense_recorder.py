@@ -47,7 +47,7 @@ def make_clean_folder(path_folder):
 def save_intrinsic_as_json(filename, frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
     with open(filename, 'w') as outfile:
-        obj = json.dump(
+        json.dump(
             {
                 'width':
                     intrinsics.width,

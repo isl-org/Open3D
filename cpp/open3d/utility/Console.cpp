@@ -98,7 +98,9 @@ std::string Logger::ColorString(const std::string &text,
 
 std::string GetCurrentTimeStamp() {
     std::time_t t = std::time(nullptr);
-    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
+    std::tm time_in_units;
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}",
+                       *localtime_r(&t, &time_in_units));
 }
 
 std::string GetProgramOptionAsString(
