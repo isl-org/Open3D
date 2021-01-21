@@ -123,62 +123,6 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
 }
 
-// Temp. helper function, for comparing performance diff. of the 2 method.
-inline core::Tensor ComputeP2Plane_1(const core::Tensor &source_select,
-                                     const core::Tensor &target_select,
-                                     const core::Tensor &target_n_select,
-                                     const core::Dtype dtype,
-                                     const core::Device device) {
-    core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
-                             .Sum({1}, true)
-                             .To(dtype);
-
-    // --- Computing A in AX = B.
-    int64_t num_corres = source_select.GetShape()[0];
-    // Slicing normals: (nx, ny, nz) and source points: (sx, sy, sz).
-    core::Tensor nx =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor ny =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor nz =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(2, 3, 1)});
-    core::Tensor sx =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor sy =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor sz =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(2, 3, 1)});
-    // Cross product calculation.
-    core::Tensor a1 = (nz * sy) - (ny * sz);
-    core::Tensor a2 = (nx * sz) - (nz * sx);
-    core::Tensor a3 = (ny * sx) - (nx * sy);
-
-    // Putting the pieces back together.
-    core::Tensor A({num_corres, 6}, dtype, device);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(0, 1, 1)},
-              a1);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(1, 2, 1)},
-              a2);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(2, 3, 1)},
-              a3);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(3, 6, 1)},
-              target_n_select);
-
-    core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
-    utility::LogInfo(" Pose: {}", Pose.ToString());
-    return t::pipelines::kernel::PoseToTransformation(Pose);
-}
-
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -202,8 +146,6 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
 
     return pipelines::kernel::ComputeTransformPointToPlane(
             source_select, target_select, target_n_select, dtype, device);
-    // return ComputeP2Plane_1(source_select, target_select, target_n_select,
-    // dtype, device);
 }
 
 }  // namespace registration

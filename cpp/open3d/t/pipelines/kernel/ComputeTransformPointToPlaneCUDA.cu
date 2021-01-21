@@ -26,7 +26,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
-#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlane.h"
+#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlaneImp.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -41,13 +41,14 @@ void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
                                       core::Tensor &tranformation,
                                       const core::Dtype dtype,
                                       const core::Device device) {
-    core::Tensor atai =
-            core::Tensor::Empty({n, 21}, core::Dtype::Float64, device);
-    core::Tensor atbi =
-            core::Tensor::Empty({n, 6}, core::Dtype::Float64, device);
+    core::Dtype solve_dtype = core::Dtype::Float64;
+    core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
+    core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
     double *atai_ptr = static_cast<double *>(atai.GetDataPtr());
     double *atbi_ptr = static_cast<double *>(atbi.GetDataPtr());
 
+    // This kernel computes the {n,21} shape atai tensor
+    // and {n,6} shape atbi tensor.
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 const int64_t pcd_stride = 3 * workload_idx;
@@ -70,7 +71,7 @@ void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
                                (ny * sx - nx * sy),
                                nx,
                                ny,
-                               ny};
+                               nz};
 
                 for (int i = 0, j = 0; j < 6; j++) {
                     for (int k = 0; k <= j; k++) {
@@ -81,46 +82,29 @@ void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
                 }
             });
 
-    // Solve on CUDA
-    core::Device cpu_device = core::Device("CPU:0");
     // Reduce matrix atai (to 1x21) and atbi (to 1x6).
-    // core::Tensor ata_1x21 = atai.Sum({0}, true);
-    // core::Tensor atb_t = atbi.Sum({0}, true);
+    core::Tensor ata_1x21 = atai.Sum({0}, true);
+    core::Tensor ATB = atbi.Sum({0}, true).T();
 
-    core::Tensor ata_1x21 = atai.Sum({0}, true).To(cpu_device);
-    core::Tensor ATB = atbi.Sum({0}, true).T().To(cpu_device);
-
-    // Get the ATA matrix back:
-    // Getting ATA and ATB in orginial form is NOT required if LeastSq is going
-    // to be hardcoded with values.
-    core::Tensor ATA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float64, cpu_device);
+    // Get the ATA matrix back.
+    core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
     double *ATA_ptr = static_cast<double *>(ATA.GetDataPtr());
     const double *ata_1x21_ptr =
             static_cast<const double *>(ata_1x21.GetDataPtr());
 
-    // core::kernel::CUDALauncher::LaunchGeneralKernel(
-    // 1, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
-            ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
-            i++;
-        }
-    }
-    // });
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            1, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                for (int i = 0, j = 0; j < 6; j++) {
+                    for (int k = 0; k <= j; k++) {
+                        ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
+                        ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
+                        i++;
+                    }
+                }
+            });
 
-    utility::LogInfo(
-            " ATA: \n{},\n ATB: \n{},\n ATA.Inverse(CPU): \n{}, \n "
-            "ATA.Inverse().Matmul(ATB): \n{}\n",
-            ATA.ToString(), ATB.ToString(), ATA.Inverse().ToString(),
-            ATA.Inverse().Matmul(ATB).ToString());
-    // core::Tensor Pose = (ATA.Solve(ATB)).Reshape({-1});
-
-    core::Tensor Pose = ATA.Inverse().Matmul(ATB).Reshape({-1});
-    utility::LogInfo("\n POSE: \n{}", Pose.ToString());
-    tranformation = t::pipelines::kernel::PoseToTransformation(Pose.To(dtype))
-                            .To(device);
+    core::Tensor Pose = ATA.Solve(ATB).Reshape({-1});
+    tranformation = t::pipelines::kernel::PoseToTransformation(Pose.To(dtype));
 
     return;
 }

@@ -26,7 +26,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlane.h"
+#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlaneImp.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -41,10 +41,9 @@ void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
                                      core::Tensor &tranformation,
                                      const core::Dtype dtype,
                                      const core::Device device) {
-    core::Tensor atai =
-            core::Tensor::Empty({n, 21}, core::Dtype::Float64, device);
-    core::Tensor atbi =
-            core::Tensor::Empty({n, 6}, core::Dtype::Float64, device);
+    core::Dtype solve_dtype = core::Dtype::Float64;
+    core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
+    core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
     double *atai_ptr = static_cast<double *>(atai.GetDataPtr());
     double *atbi_ptr = static_cast<double *>(atbi.GetDataPtr());
 
@@ -72,7 +71,7 @@ void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
                                (ny * sx - nx * sy),
                                nx,
                                ny,
-                               ny};
+                               nz};
 
                 for (int i = 0, j = 0; j < 6; j++) {
                     for (int k = 0; k <= j; k++) {
@@ -87,11 +86,8 @@ void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
     core::Tensor ata_1x21 = atai.Sum({0}, true);
     core::Tensor ATB = atbi.Sum({0}, true).T();
 
-    // Get the ATA matrix back:
-    // Getting ATA and ATB in orginial form is NOT required if
-    // ATA.Inverse().Matmul(ATB) is going to be hardcoded with values.
-    core::Tensor ATA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float64, device);
+    // Get the ATA matrix back.
+    core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
     double *ATA_ptr = static_cast<double *>(ATA.GetDataPtr());
     const double *ata_1x21_ptr =
             static_cast<const double *>(ata_1x21.GetDataPtr());
@@ -104,15 +100,7 @@ void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
         }
     }
 
-    // utility::LogInfo(" ATA: \n{},\n ATB: \n{},\n ATA.Inverse(CPU): \n{}, \n
-    // ATA.Inverse().Matmul(ATB): \n{}\n",
-    //                 ATA.ToString(), ATB.ToString(), ATA.Inverse().ToString(),
-    //                 ATA.Inverse().Matmul(ATB).ToString());
-
-    // core::Tensor Pose = (ATA.Inverse().Matmul(ATB)).Reshape({-1});
-    core::Tensor Pose = (ATA.Solve(ATB)).Reshape({-1});
-    // utility::LogInfo("\n POSE: \n{}", Pose.ToString());
-
+    core::Tensor Pose = ATA.Solve(ATB).Reshape({-1});
     tranformation = t::pipelines::kernel::PoseToTransformation(Pose.To(dtype));
     return;
 }

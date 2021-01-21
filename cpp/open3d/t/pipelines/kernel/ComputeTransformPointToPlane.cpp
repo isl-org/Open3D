@@ -26,6 +26,8 @@
 
 #include "open3d/t/pipelines/kernel/ComputeTransformPointToPlane.h"
 
+#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlaneImp.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
