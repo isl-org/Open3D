@@ -286,9 +286,9 @@ TEST_P(TransformationEstimationPermuteDevices,
     source_transformed_p2plane.Transform(p2plane_transform.To(dtype));
     double p2plane_rmse_ = estimation_p2plane.ComputeRMSE(
             source_transformed_p2plane, target_device, corres);
-    utility::LogInfo(" RMSE after transformation: {}", p2plane_rmse_);
+
     // Compare the new RMSE, after transformation.
-    EXPECT_TRUE(p2plane_rmse_ < 0.338);
+    EXPECT_NEAR(p2plane_rmse_, 0.33768, 0.0005);
 }
 
 }  // namespace tests

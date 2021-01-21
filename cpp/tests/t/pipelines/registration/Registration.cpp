@@ -277,12 +277,8 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
                     open3d::pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
 
-    utility::LogInfo(" Legacy: Fitness: {}, Inlier RMSE: {}",
-                     reg_p2plane_l.fitness_, reg_p2plane_l.inlier_rmse_);
-    utility::LogInfo(" Tensor: Fitness: {}, Inlier RMSE: {}",
-                     reg_p2plane_t.fitness_, reg_p2plane_t.inlier_rmse_);
-    EXPECT_TRUE(reg_p2plane_t.fitness_ >= reg_p2plane_l.fitness_);
-    EXPECT_TRUE(reg_p2plane_t.inlier_rmse_ <= reg_p2plane_l.inlier_rmse_);
+    EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
+    EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_, 0.0005);
 }
 
 }  // namespace tests
