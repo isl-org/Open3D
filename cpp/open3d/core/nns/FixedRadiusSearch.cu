@@ -821,6 +821,14 @@ void FixedRadiusSearchCUDA(void* temp,
     mem_temp.Free(query_neighbors_count);
 }
 
+void InitializeHeapSize(size_t size) {
+    cudaError_t err = cudaDeviceSetLimit(cudaLimitMallocHeapSize, size);
+}
+
+void GetHeapSize(size_t* size) {
+    cudaDeviceGetLimit(size, cudaLimitMallocHeapSize);
+}
+
 template void BuildSpatialHashTableCUDA(
         void* temp,
         size_t& temp_size,

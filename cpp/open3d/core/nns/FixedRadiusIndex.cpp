@@ -49,6 +49,13 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
 #ifdef BUILD_CUDA_MODULE
+    // Increase heap size as 1GB.
+    size_t size = 0;
+    GetHeapSize(&size);
+    if (size == 8 * 1024 * 1024) {
+        InitializeHeapSize(1024 * 1024 * 1024);
+    }
+
     if (dataset_points.GetDevice().GetType() != Device::DeviceType::CUDA) {
         utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] dataset_points should be "

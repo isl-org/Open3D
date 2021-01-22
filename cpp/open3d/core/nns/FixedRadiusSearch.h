@@ -206,6 +206,11 @@ void FixedRadiusSearchCUDA(void* temp,
                            const uint32_t* const hash_table_index,
                            NeighborSearchAllocator<T>& output_allocator,
                            int max_knn = 0);
+
+void InitializeHeapSize(size_t size);
+
+void GetHeapSize(size_t* size);
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
