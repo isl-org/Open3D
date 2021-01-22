@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
+#ifdef BUILD_CUDA_MODULE
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 
@@ -33,25 +34,13 @@ namespace t {
 namespace geometry {
 namespace npp {
 
-inline bool supported(core::Dtype dtype, size_t channels) {
-    static const std::vector<core::Dtype> supported_dtypes = {
-            core::Dtype::Bool, core::Dtype::UInt8, core::Dtype::UInt16,
-            core::Dtype::Int32, core::Dtype::Float32};
-    static const std::vector<size_t> supported_channels = {1, 3, 4};
-    return std::find(supported_dtypes.begin(), supported_dtypes.end(), dtype) !=
-                   supported_dtypes.end() &&
-           std::find(supported_channels.begin(), supported_channels.end(),
-                     channels) != supported_channels.end();
-}
-
-#ifdef BUILD_CUDA_MODULE
-void dilate(const open3d::core::Tensor &srcim,
+void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);
-
-#endif
 
 }  // namespace npp
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
+
+#endif  // BUILD_CUDA_MODULE

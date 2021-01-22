@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/kernel/nppImage.h"
+#include "open3d/t/geometry/kernel/NPPImage.h"
 
 #include <nppdefs.h>
 #include <nppi.h>
@@ -40,65 +40,67 @@ namespace t {
 namespace geometry {
 namespace npp {
 
-void dilate(const core::Tensor &srcim,
-            core::Tensor &dstim,
+void Dilate(const core::Tensor &src_im,
+            core::Tensor &dst_im,
             int half_kernel_size) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
 
-    // create nask
-    core::Tensor mask(core::SizeVector{2 * half_kernel_size + 1,
-                                       2 * half_kernel_size + 1, 1},
-                      core::Dtype::UInt8, srcim.GetDevice());
-    mask.Fill(1);
-    NppiSize oMaskSize = {2 * half_kernel_size + 1, 2 * half_kernel_size + 1};
+    // Create mask.
+    core::Tensor mask =
+            core::Tensor::Ones(core::SizeVector{2 * half_kernel_size + 1,
+                                                2 * half_kernel_size + 1, 1},
+                               core::Dtype::UInt8, src_im.GetDevice());
+    NppiSize mask_size = {2 * half_kernel_size + 1, 2 * half_kernel_size + 1};
 
-    NppiSize oSrcSize = {static_cast<int>(srcim.GetShape(1)),
-                         static_cast<int>(srcim.GetShape(0))};
-    NppiPoint oSrcOffset = {0, 0};
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiPoint src_offset = {0, 0};
 
     // create struct with ROI size
-    NppiSize oSizeROI = {static_cast<int>(dstim.GetShape(1)),
-                         static_cast<int>(dstim.GetShape(0))};
-    NppiPoint oAnchor = {half_kernel_size, half_kernel_size};
+    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+    NppiPoint anchor = {half_kernel_size, half_kernel_size};
 
-    auto dt = srcim.GetDtype();
-#define NPP_ARGS                                                        \
-    static_cast<const npp_dtype *>(srcim.GetDataPtr()),                 \
-            srcim.GetStride(0) * dt.ByteSize(), oSrcSize, oSrcOffset,   \
-            static_cast<npp_dtype *>(dstim.GetDataPtr()),               \
-            dstim.GetStride(0) * dt.ByteSize(), oSizeROI,               \
-            static_cast<const uint8_t *>(mask.GetDataPtr()), oMaskSize, \
-            oAnchor, NPP_BORDER_REPLICATE
-    if (dt == core::Dtype::UInt8) {
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                                          \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
+            static_cast<const uint8_t *>(mask.GetDataPtr()), mask_size,   \
+            anchor, NPP_BORDER_REPLICATE
+    if (dtype == core::Dtype::UInt8) {
         using npp_dtype = Npp8u;
-        if (srcim.GetShape(2) == 1) {
+        if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_8u_C1R(NPP_ARGS);
-        } else if (srcim.GetShape(2) == 3) {
+        } else if (src_im.GetShape(2) == 3) {
             nppiDilateBorder_8u_C3R(NPP_ARGS);
-        } else if (srcim.GetShape(2) == 4) {
+        } else if (src_im.GetShape(2) == 4) {
             nppiDilateBorder_8u_C4R(NPP_ARGS);
         }
-    } else if (dt == core::Dtype::UInt16) {
+    } else if (dtype == core::Dtype::UInt16) {
         using npp_dtype = Npp16u;
-        if (srcim.GetShape(2) == 1) {
+        if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_16u_C1R(NPP_ARGS);
-        } else if (srcim.GetShape(2) == 3) {
+        } else if (src_im.GetShape(2) == 3) {
             nppiDilateBorder_16u_C3R(NPP_ARGS);
-        } else if (srcim.GetShape(2) == 4) {
+        } else if (src_im.GetShape(2) == 4) {
             nppiDilateBorder_16u_C4R(NPP_ARGS);
         }
-    } else if (dt == core::Dtype::Float32) {
+    } else if (dtype == core::Dtype::Float32) {
         using npp_dtype = Npp32f;
-        if (srcim.GetShape(2) == 1) {
+        if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_32f_C1R(NPP_ARGS);
-        } else if (srcim.GetShape(2) == 3) {
+        } else if (src_im.GetShape(2) == 3) {
             nppiDilateBorder_32f_C3R(NPP_ARGS);
-        } else if (srcim.GetShape(2) == 4) {
+        } else if (src_im.GetShape(2) == 4) {
             nppiDilateBorder_32f_C4R(NPP_ARGS);
         }
-    } else
-        utility::LogError("npp::dilate(): Unspported dtype {}", dt.ToString());
+    } else {
+        utility::LogError("npp::Dilate(): Unspported dtype {}",
+                          dtype.ToString());
+    }
 #undef NPP_ARGS
 }
 

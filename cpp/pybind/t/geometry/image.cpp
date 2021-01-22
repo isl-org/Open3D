@@ -130,12 +130,11 @@ void pybind_image(py::module &m) {
                                     map_shared_argument_docstrings);
 
     // Conversion.
-    image.def("convert_to", &Image::ConvertTo,
-              "Returns an Image with the specified Dtype.", "dtype"_a,
-              "scale"_a = Image::SCALE_DEFAULT, "offset"_a = 0.0,
+    image.def("to", &Image::To, "Returns an Image with the specified Dtype.",
+              "dtype"_a, "scale"_a = py::none(), "offset"_a = 0.0,
               "copy"_a = false);
     docstring::ClassMethodDocInject(
-            m, "Image", "convert_to",
+            m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},
              {"scale",
               "Optional scale value. This is 1./255 for UInt8 -> Float{32,64}, "

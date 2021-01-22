@@ -758,12 +758,16 @@ public:
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
 
-    /// Element wise clipping of tensor values so that resulting values lie in
-    /// the range [\p min_val, \p max_val], returning a new tensor
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val], returning a new tensor.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
     Tensor Clip(double min_val, double max_val) const;
 
-    /// Element wise clipping of tensor values so that resulting values lie in
+    /// Element-wise clipping of tensor values so that resulting values lie in
     /// the range [\p min_val, \p max_val]. In-place version.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
     Tensor Clip_(double min_val, double max_val);
 
     /// Element-wise floor value of a tensor, returning a new tensor.

@@ -124,7 +124,7 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
 
 // Test automatic scale determination for conversion from UInt8 / UInt16 ->
 // Float32/64 and LinearTransform()
-TEST_P(ImagePermuteDevices, ConvertTo_LinearTransform) {
+TEST_P(ImagePermuteDevices, To_LinearTransform) {
     using ::testing::ElementsAreArray;
     using ::testing::FloatEq;
     core::Device device = GetParam();
@@ -139,7 +139,7 @@ TEST_P(ImagePermuteDevices, ConvertTo_LinearTransform) {
     t::geometry::Image input(
             core::Tensor{input_data, {2, 2, 1}, core::Dtype::UInt8, device});
     // UInt8 -> Float32: auto scale = 1./255
-    t::geometry::Image output = input.ConvertTo(core::Dtype::Float32);
+    t::geometry::Image output = input.To(core::Dtype::Float32);
     EXPECT_EQ(output.GetDtype(), core::Dtype::Float32);
     EXPECT_THAT(output.AsTensor().ToFlatVector<float>(),
                 ElementsAreArray(output_ref));
@@ -150,7 +150,7 @@ TEST_P(ImagePermuteDevices, ConvertTo_LinearTransform) {
                 ElementsAreArray(negative_image_ref));
 
     // UInt8 -> UInt16: auto scale = 1
-    output = input.ConvertTo(core::Dtype::UInt16);
+    output = input.To(core::Dtype::UInt16);
     EXPECT_EQ(output.GetDtype(), core::Dtype::UInt16);
     EXPECT_THAT(output.AsTensor().ToFlatVector<uint16_t>(),
                 ElementsAreArray(input_data));
@@ -185,8 +185,8 @@ TEST_P(ImagePermuteDevices, Dilate) {
     t::geometry::Image output;
 
     // UInt8
-    t::geometry::Image input_uint8_t = input.ConvertTo(core::Dtype::UInt8);
-    if (!HAVE_IPPICV &&
+    t::geometry::Image input_uint8_t = input.To(core::Dtype::UInt8);
+    if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
         ASSERT_THROW(input_uint8_t.Dilate(half_kernel_size),
                      std::runtime_error);
@@ -200,8 +200,8 @@ TEST_P(ImagePermuteDevices, Dilate) {
     }
 
     // UInt16
-    t::geometry::Image input_uint16_t = input.ConvertTo(core::Dtype::UInt16);
-    if (!HAVE_IPPICV &&
+    t::geometry::Image input_uint16_t = input.To(core::Dtype::UInt16);
+    if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
         ASSERT_THROW(input_uint16_t.Dilate(half_kernel_size),
                      std::runtime_error);
@@ -215,7 +215,7 @@ TEST_P(ImagePermuteDevices, Dilate) {
     }
 
     // Float32
-    if (!HAVE_IPPICV &&
+    if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
         ASSERT_THROW(input.Dilate(half_kernel_size), std::runtime_error);
     } else {

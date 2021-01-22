@@ -104,7 +104,7 @@ public:
     ///
     /// \param tensor: Tensor of the image. The tensor must be contiguous. The
     /// tensor must be 2D (rows, cols) or 3D (rows, cols, channels).
-    Image(const core::Tensor &tensor);
+    explicit Image(const core::Tensor &tensor);
 
     virtual ~Image() override {}
 
@@ -163,21 +163,17 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
-    /// Default value of scale for datatype conversion with ConvertTo().
-    constexpr static const double SCALE_DEFAULT =
-            -std::numeric_limits<double>::max();
-
-    /// Returns an Image with the specified \p Dtype.
+    /// Returns an Image with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor already has the targeted dtype.
     /// \param scale Optional scale value. This is 1./255 for UInt8 ->
     /// Float{32,64}, 1./65535 for UInt16 -> Float{32,64} and 1 otherwise
     /// \param offset Optional shift value. Default 0.
-    /// \param copy If true, a new tensor is always created; if false, the copy
-    /// is avoided when the original tensor already has the targeted dtype.
-    Image ConvertTo(core::Dtype dtype,
-                    double scale = SCALE_DEFAULT,
-                    double offset = 0.0,
-                    bool copy = false) const;
+    Image To(core::Dtype dtype,
+             bool copy = false,
+             utility::optional<double> scale = utility::nullopt,
+             double offset = 0.0) const;
 
     /// Function to linearly transform pixel intensities in place.
     /// image = scale * image + offset.
@@ -197,13 +193,13 @@ public:
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
-    };
+    }
 
     /// Compute max 2D coordinates for the data ({rows, cols}).
     core::Tensor GetMaxBound() const {
         return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
                             core::Dtype::Int64);
-    };
+    }
 
     /// Create from a legacy Open3D Image.
     static Image FromLegacyImage(
@@ -215,6 +211,13 @@ public:
 
     /// Text description
     std::string ToString() const;
+
+    /// Do we use IPP ICV for accelerating image processing operations?
+#ifdef WITH_IPPICV
+    static constexpr bool HAVE_IPPICV = true;
+#else
+    static constexpr bool HAVE_IPPICV = false;
+#endif
 
 protected:
     /// Internal data of the Image, represented as a contiguous 3D tensor of

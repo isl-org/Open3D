@@ -905,13 +905,11 @@ Tensor Tensor::Abs_() {
 
 Tensor Tensor::Clip(double min_val, double max_val) const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
-    /* kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Abs) ; */
     utility::LogError("Not Implemented!");
     return dst_tensor;
 }
 
 Tensor Tensor::Clip_(double min_val, double max_val) {
-    /* kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Abs); */
     utility::LogError("Not Implemented!");
     return *this;
 }

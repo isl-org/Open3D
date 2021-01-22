@@ -1,22 +1,9 @@
 # Create object library
-set(T_GEOMETRY_KERNEL_SRC
+set(T_GEOMETRY_SRC
     kernel/PointCloud.cpp
     kernel/PointCloudCPU.cpp
     kernel/TSDFVoxelGrid.cpp
     kernel/TSDFVoxelGridCPU.cpp
-)
-
-set(T_GEOMETRY_KERNEL_CUDA_SRC
-    kernel/PointCloudCUDA.cu
-    kernel/TSDFVoxelGridCUDA.cu
-    kernel/nppImage.cpp
-)
-
-set(T_GEOMETRY_KERNEL_IPP_SRC
-    kernel/ippImage.cpp
-)
-
-set(T_GEOMETRY_SRC
     PointCloud.cpp
     Image.cpp
     RGBDImage.cpp
@@ -25,18 +12,19 @@ set(T_GEOMETRY_SRC
     TSDFVoxelGrid.cpp
 )
 
-set(ALL_T_GEOMETRY_SRC
-    ${T_GEOMETRY_KERNEL_SRC}
-    ${T_GEOMETRY_SRC}
-    )
 if (BUILD_CUDA_MODULE)
-    list(APPEND ALL_T_GEOMETRY_SRC ${T_GEOMETRY_KERNEL_CUDA_SRC})
-endif()
-if (WITH_IPPICV)
-    list(APPEND ALL_T_GEOMETRY_SRC ${T_GEOMETRY_KERNEL_IPP_SRC})
+    list(APPEND T_GEOMETRY_SRC
+        kernel/PointCloudCUDA.cu
+        kernel/TSDFVoxelGridCUDA.cu
+        kernel/nppImage.cpp
+        )
 endif()
 
-add_library(tgeometry OBJECT ${ALL_T_GEOMETRY_SRC})
+if (WITH_IPPICV)
+    list(APPEND T_GEOMETRY_SRC kernel/IPPImage.cpp)
+endif()
+
+add_library(tgeometry OBJECT ${T_GEOMETRY_SRC})
 open3d_show_and_abort_on_warning(tgeometry)
 open3d_set_global_properties(tgeometry)
 open3d_set_open3d_lib_properties(tgeometry)
@@ -47,7 +35,5 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 if (WITH_IPPICV)
-    target_compile_definitions(tgeometry PRIVATE WITH_IPPICV HAVE_IPPICV=true)
-else ()
-    target_compile_definitions(tgeometry PRIVATE HAVE_IPPICV=false)
+    target_compile_definitions(tgeometry PRIVATE WITH_IPPICV)
 endif()

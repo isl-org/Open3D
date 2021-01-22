@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/kernel/ippImage.h"
+#include "open3d/t/geometry/kernel/IPPImage.h"
 
 #include <iw++/iw_image_filter.hpp>
 
@@ -39,38 +39,38 @@ namespace t {
 namespace geometry {
 namespace ipp {
 
-void dilate(const core::Tensor &srcim,
+void Dilate(const core::Tensor &src_im,
             core::Tensor &dstim,
             int half_kernel_size) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
 
-    // create nask
-    core::Tensor mask(core::SizeVector{2 * half_kernel_size + 1,
-                                       2 * half_kernel_size + 1, 1},
-                      core::Dtype::UInt8, srcim.GetDevice());
-    mask.Fill(1);
+    // Create mask.
+    core::Tensor mask =
+            core::Tensor::Ones(core::SizeVector{2 * half_kernel_size + 1,
+                                                2 * half_kernel_size + 1, 1},
+                               core::Dtype::UInt8, src_im.GetDevice());
 
-    auto dt = srcim.GetDtype();
+    auto dtype = src_im.GetDtype();
     // Create IPP wrappers for all Open3D tensors
-    const ::ipp::IwiImage srcImage(
-            ::ipp::IwiSize(srcim.GetShape(1), srcim.GetShape(0)),
-            ToIppDataType(dt), srcim.GetShape(2) /* channels */,
-            0 /* border buffer size */, const_cast<void *>(srcim.GetDataPtr()),
-            srcim.GetStride(0) * dt.ByteSize());
-    ::ipp::IwiImage dstImage(
+    const ::ipp::IwiImage ipp_src_im(
+            ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
+            ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
+            src_im.GetStride(0) * dtype.ByteSize());
+    ::ipp::IwiImage ipp_dst_im(
             ::ipp::IwiSize(dstim.GetShape(1), dstim.GetShape(0)),
-            ToIppDataType(dt), dstim.GetShape(2) /* channels */,
+            ToIppDataType(dtype), dstim.GetShape(2) /* channels */,
             0 /* border buffer size */, dstim.GetDataPtr(),
-            dstim.GetStride(0) * dt.ByteSize());
-    ::ipp::IwiImage maskImage(
+            dstim.GetStride(0) * dtype.ByteSize());
+    ::ipp::IwiImage ipp_mask_im(
             ::ipp::IwiSize(mask.GetShape(1), mask.GetShape(0)),
             ToIppDataType(mask.GetDtype()), mask.GetShape(2) /* channels */,
             0 /* border buffer size */, mask.GetDataPtr(),
             mask.GetStride(0) * mask.GetDtype().ByteSize());
     try {
         ::ipp::iwiFilterMorphology(
-                srcImage, dstImage, ::ipp::iwiMorphDilate, maskImage,
+                ipp_src_im, ipp_dst_im, ::ipp::iwiMorphDilate, ipp_mask_im,
                 ::ipp::IwDefault(), /* Do not use IwiFilterMorphologyParams() */
                 ippBorderRepl);
     } catch (const ::ipp::IwException &e) {

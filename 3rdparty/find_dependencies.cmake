@@ -1136,18 +1136,26 @@ endif ()
 
 # IPP
 if (WITH_IPPICV)
-    include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
-    if (WITH_IPPICV)    # If platform is unsupported, this will fail
-        message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
-        import_3rdparty_library(3rdparty_ippicv
-            INCLUDE_DIRS "${IPPIW_INCLUDE_DIR}" "${IPPICV_INCLUDE_DIR}"
-            LIBRARIES     ${IPPIW_LIBRARY} ${IPPICV_LIBRARY}
-            LIB_DIR      "${IPPICV_LIB_DIR}"
-            )
-        add_dependencies(3rdparty_ippicv ext_ippicv)
-        target_compile_definitions(3rdparty_ippicv INTERFACE
-            ${IPPICV_DEFINITIONS})
-        set(IPPICV_TARGET "3rdparty_ippicv")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IPPICV_TARGET}")
+    # Ref: https://stackoverflow.com/a/45125525
+    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
+        set(WITH_IPPICV OFF)
+        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    else ()
+        include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
+        if (WITH_IPPICV)
+            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
+            import_3rdparty_library(3rdparty_ippicv
+                INCLUDE_DIRS "${IPPICV_INCLUDE_DIR}"
+                LIBRARIES     ${IPPICV_LIBRARIES}
+                LIB_DIR      "${IPPICV_LIB_DIR}"
+                )
+            add_dependencies(3rdparty_ippicv ext_ippicv)
+            target_compile_definitions(3rdparty_ippicv INTERFACE
+                ${IPPICV_DEFINITIONS})
+            set(IPPICV_TARGET "3rdparty_ippicv")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IPPICV_TARGET}")
+        endif()
     endif()
 endif ()

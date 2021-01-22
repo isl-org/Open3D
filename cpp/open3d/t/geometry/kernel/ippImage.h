@@ -61,7 +61,7 @@ inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
     }
 }
 
-void dilate(const open3d::core::Tensor &srcim,
+void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);
 

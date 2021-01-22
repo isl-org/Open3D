@@ -23,7 +23,7 @@ elseif(UNIX AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES 86) # {x86, i386, i686}
     set(OPENCV_ICV_HASH "ad189a940fb60eb71f291321322fe3e8")
 else()
     set(WITH_IPPICV OFF)
-    message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    message(FATAL_ERROR "IPP-ICV disabled: Unsupported Platform.")
     return()
 endif()
 
@@ -37,7 +37,8 @@ ExternalProject_Add(ext_ippicv
     PREFIX ippicv
     URL "${IPPICV_URL}"
     URL_HASH MD5=${OPENCV_ICV_HASH}
-    UPDATE_COMMAND ${CMAKE_COMMAND} -E copy
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/ippicv/CMakeLists.txt <SOURCE_DIR>
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -47,13 +48,11 @@ ExternalProject_Add(ext_ippicv
     )
 
 ExternalProject_Get_Property(ext_ippicv INSTALL_DIR)
-set(IPPICV_INCLUDE_DIR "${INSTALL_DIR}/include/icv/")
-set(IPPIW_INCLUDE_DIR "${INSTALL_DIR}/include/")
+set(IPPICV_INCLUDE_DIR "${INSTALL_DIR}/include/icv/" "${INSTALL_DIR}/include/")
 if (WIN32)
-    set(IPPICV_LIBRARY ippicvmt)
+    set(IPPICV_LIBRARIES ippicvmt ippiw)
 else ()
-    set(IPPICV_LIBRARY ippicv)
-endif()
-set(IPPIW_LIBRARY ippiw)
+    set(IPPICV_LIBRARIES ippicv ippiw)
+endif ()
 set(IPPICV_LIB_DIR "${INSTALL_DIR}/lib")
 set(IPPICV_VERSION_STRING "2020.0.0 Gold")  # From icv/ippversion.h

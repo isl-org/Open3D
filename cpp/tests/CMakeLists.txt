@@ -48,9 +48,7 @@ else()
 endif()
 
 if (WITH_IPPICV)
-    target_compile_definitions(tests PRIVATE WITH_IPPICV HAVE_IPPICV=true)
-else()
-    target_compile_definitions(tests PRIVATE HAVE_IPPICV=false)
+    target_compile_definitions(tests PRIVATE WITH_IPPICV)
 endif()
 
 find_package(Threads)

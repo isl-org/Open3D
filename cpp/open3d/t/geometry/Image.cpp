@@ -26,14 +26,17 @@
 
 #include "open3d/t/geometry/Image.h"
 
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/kernel/ippImage.h"
-#include "open3d/t/geometry/kernel/nppImage.h"
+#include "open3d/t/geometry/kernel/IPPImage.h"
+#include "open3d/t/geometry/kernel/NPPImage.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -76,36 +79,23 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
-Image Image::ConvertTo(core::Dtype dtype,
-                       double scale /* = SCALE_DEFAULT */,
-                       double offset /* = 0.0 */,
-                       bool copy /* = false */) const {
-    if (scale == SCALE_DEFAULT) {
-        if (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64) {
-            if (GetDtype() == core::Dtype::UInt8) {
-                scale = 1. / 255;
-            } else if (GetDtype() == core::Dtype::UInt16) {
-                scale = 1. / 65535;
-            } else {
-                scale = 1.0;
-            }
-        } else {
-            scale = 1.0;
+Image Image::To(core::Dtype dtype,
+                bool copy /* = false */,
+                utility::optional<double> scale_ /* = utility::nullopt */,
+                double offset /* = 0.0 */) const {
+    double scale = 1.0;
+    if (!scale_.has_value() &&
+        (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64)) {
+        if (GetDtype() == core::Dtype::UInt8) {
+            scale = 1. / 255;
+        } else if (GetDtype() == core::Dtype::UInt16) {
+            scale = 1. / 65535;
         }
+    } else {
+        scale = scale_.value_or(1.0);
     }
-    if (scale < 0 && (GetDtype() == core::Dtype::UInt8 ||
-                      GetDtype() == core::Dtype::UInt16)) {
-        utility::LogError("Negative scale not supported for unsigned Dtype!");
-    }
-
-    auto new_data = data_.To(dtype, copy);
-    if (scale != 1.0) {
-        new_data *= scale;
-    }
-    if (offset != 0.0) {
-        new_data += offset;
-    }
-    return Image(new_data);
+    auto new_image = Image(data_.To(dtype, copy));
+    return new_image.LinearTransform(scale, offset);
 }
 
 Image &Image::LinearTransform(double scale /* = 1.0 */,
@@ -151,18 +141,15 @@ Image Image::Dilate(int half_kernel_size) const {
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::dilate, data_, dstim.data_, half_kernel_size);
+        CUDA_CALL(npp::Dilate, data_, dstim.data_, half_kernel_size);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::dilate, data_, dstim.data_, half_kernel_size);
+        IPP_CALL(ipp::Dilate, data_, dstim.data_, half_kernel_size);
     } else {
-        /*     call to core::kernel::UnaryWindowOp(); */
-        utility::LogError("Not implemented");
+        utility::LogError("Not implemented!");
     }
-    if (!dstim.data_.IsContiguous())
-        utility::LogError("Logic error: Output image is not contiguous!");
     return dstim;
 }
 
