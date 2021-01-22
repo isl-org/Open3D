@@ -65,7 +65,10 @@ void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
              int64_t block_resolution,
              float voxel_size,
              float sdf_trunc,
-             float depth_max);
+             int max_steps,
+             float depth_min,
+             float depth_max,
+             float weight_threshold);
 
 void ExtractSurfacePoints(const core::Tensor& block_indices,
                           const core::Tensor& nb_block_indices,
@@ -121,7 +124,10 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                 int64_t block_resolution,
                 float voxel_size,
                 float sdf_trunc,
-                float depth_max);
+                int max_steps,
+                float depth_min,
+                float depth_max,
+                float weight_threshold);
 
 void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              const core::Tensor& nb_block_indices,
@@ -178,7 +184,10 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                  int64_t block_resolution,
                  float voxel_size,
                  float sdf_trunc,
-                 float depth_max);
+                 int max_steps,
+                 float depth_min,
+                 float depth_max,
+                 float weight_threshold);
 
 void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
                               const core::Tensor& nb_block_indices,

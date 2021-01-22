@@ -128,7 +128,10 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                  int64_t block_resolution,
                  float voxel_size,
                  float sdf_trunc,
-                 float depth_max) {
+                 int max_steps,
+                 float depth_min,
+                 float depth_max,
+                 float weight_threshold) {
     auto cuda_hashmap = std::dynamic_pointer_cast<
             core::CUDAHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
     auto hashmap_ctx = cuda_hashmap->GetContext();
@@ -152,7 +155,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             int64_t x = workload_idx % cols;
                             uint32_t lane_id = workload_idx & 0x1F;
 
-                            float t = 0.3f;
+                            float t = depth_min;
 
                             // Coordinates in camera and global
                             float x_c = 0, y_c = 0, z_c = 0;
@@ -168,7 +171,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             float tsdf_prev = 1.0f;
                             bool active = true;
 
-                            for (int step = 0; step < 50; ++step) {
+                            for (int step = 0; step < max_steps; ++step) {
                                 // Release a warp if all of the threads are
                                 // inactive.
                                 int all_inactive = __all_sync(
@@ -222,7 +225,8 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 float tsdf = voxel_ptr->GetTSDF();
                                 float w = voxel_ptr->GetWeight();
 
-                                if (tsdf_prev > 0 && w >= 3 && tsdf <= 0) {
+                                if (tsdf_prev > 0 && w >= weight_threshold &&
+                                    tsdf <= 0) {
                                     float t_intersect =
                                             (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);

@@ -192,7 +192,10 @@ std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
         const core::Tensor &extrinsics,
         int width,
         int height,
-        float depth_max) {
+        int max_steps,
+        float depth_min,
+        float depth_max,
+        float weight_threshold) {
     core::Tensor vertex_map = core::Tensor::Zeros(
             {height, width, 3}, core::Dtype::Float32, device_);
     core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
@@ -201,8 +204,8 @@ std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
     kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
                           intrinsics, extrinsics, block_resolution_,
-                          voxel_size_, sdf_trunc_, depth_max);
-    // utility::LogInfo("{}", vertex_map.ToString());
+                          voxel_size_, sdf_trunc_, max_steps, depth_min,
+                          depth_max, weight_threshold);
     return std::make_tuple(vertex_map, color_map);
 }
 

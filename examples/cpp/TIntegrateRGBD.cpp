@@ -151,23 +151,12 @@ int main(int argc, char** argv) {
         core::Tensor vertex_map, color_map;
         std::tie(vertex_map, color_map) =
                 voxel_grid.RayCast(intrinsic_t, extrinsic_t.Inverse(),
-                                   depth.GetCols(), depth.GetRows(), max_depth);
+                                   depth.GetCols(), depth.GetRows());
         if (i % 100 == 0) {
-            vertex_map.Save("vtxmap.npy");
             t::geometry::Image vertex_im(vertex_map);
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::Image>(
                             vertex_im.ToLegacyImage())});
-
-            t::geometry::PointCloud vertex_pcd(vertex_map.View({-1, 3}));
-            visualization::DrawGeometries(
-                    {std::make_shared<open3d::geometry::PointCloud>(
-                            vertex_pcd.ToLegacyPointCloud())});
-
-            auto mesh = voxel_grid.ExtractSurfaceMesh();
-            auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                    mesh.ToLegacyTriangleMesh());
-            visualization::DrawGeometries({mesh_legacy});
         }
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());

@@ -90,7 +90,10 @@ public:
             const core::Tensor &extrinsics,
             int width,
             int height,
-            float depth_max = 3.0f);
+            int max_steps = 50,
+            float depth_min = 0.1f,
+            float depth_max = 3.0f,
+            float weight_threshold = 3.0);
 
     /// Extract point cloud near iso-surfaces.
     /// Weight threshold is used to filter outliers. By default we use 3.0,

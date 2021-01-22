@@ -117,7 +117,10 @@ void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
              int64_t block_resolution,
              float voxel_size,
              float sdf_trunc,
-             float depth_max) {
+             int max_steps,
+             float depth_min,
+             float depth_max,
+             float weight_threshold) {
     core::Device device = hashmap->GetDevice();
     if (vertex_map.GetDevice() != device) {
         utility::LogError("Vertex map\'s device mismatches with hashmap");
@@ -132,12 +135,12 @@ void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
     if (device_type == core::Device::DeviceType::CPU) {
         RayCastCPU(hashmap, block_values, vertex_map, color_map, intrinsicsf32,
                    extrinsicsf32, block_resolution, voxel_size, sdf_trunc,
-                   depth_max);
+                   max_steps, depth_min, depth_max, weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         RayCastCUDA(hashmap, block_values, vertex_map, color_map, intrinsicsf32,
                     extrinsicsf32, block_resolution, voxel_size, sdf_trunc,
-                    depth_max);
+                    max_steps, depth_min, depth_max, weight_threshold);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

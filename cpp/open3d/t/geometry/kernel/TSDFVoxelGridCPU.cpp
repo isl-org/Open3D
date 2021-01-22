@@ -135,7 +135,10 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                 int64_t block_resolution,
                 float voxel_size,
                 float sdf_trunc,
-                float depth_max) {
+                int max_steps,
+                float depth_min,
+                float depth_max,
+                float weight_threshold) {
     auto cpu_hashmap = std::dynamic_pointer_cast<
             core::CPUHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
     auto hashmap_ctx = cpu_hashmap->GetContext();
@@ -156,7 +159,7 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             int64_t y = workload_idx / cols;
                             int64_t x = workload_idx % cols;
 
-                            float t = 0.3f;
+                            float t = depth_min;
 
                             // Coordinates in camera and global
                             float x_c = 0, y_c = 0, z_c = 0;
@@ -171,7 +174,7 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             float t_prev = t;
                             float tsdf_prev = 1.0f;
 
-                            for (int step = 0; step < 50; ++step) {
+                            for (int step = 0; step < max_steps; ++step) {
                                 transform_indexer.Unproject(
                                         static_cast<float>(x),
                                         static_cast<float>(y), t, &x_c, &y_c,
@@ -213,7 +216,8 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 float tsdf = voxel_ptr->GetTSDF();
                                 float w = voxel_ptr->GetWeight();
 
-                                if (tsdf_prev > 0 && w > 3 && tsdf <= 0) {
+                                if (tsdf_prev > 0 && w > weight_threshold &&
+                                    tsdf <= 0) {
                                     float t_intersect =
                                             (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
