@@ -104,9 +104,9 @@ py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
             {boxes_a_tensor.GetLength(), boxes_b_tensor.GetLength()},
             core::Dtype::Float32, cuda_device);
 
-    IoUBevCUDAKernel(boxes_a_tensor.GetDataPtr<const float*>(),
-                     boxes_b_tensor.GetDataPtr<const float*>()),
-                     iou_tensor.GetDataPtr<float*>(), num_a,
+    IoUBevCUDAKernel(boxes_a_tensor.GetDataPtr<const float>(),
+                     boxes_b_tensor.GetDataPtr<const float>()),
+                     iou_tensor.GetDataPtr<float>(), num_a,
                      num_b);
     return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
 }
@@ -129,9 +129,9 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
             {boxes_a_tensor.GetLength(), boxes_b_tensor.GetLength()},
             core::Dtype::Float32, cuda_device);
 
-    IoU3dCUDAKernel(boxes_a_tensor.GetDataPtr<const float*>(),
-                    boxes_b_tensor.GetDataPtr<const float*>(),
-                    iou_tensor.GetDataPtr<float*>(), num_a, num_b);
+    IoU3dCUDAKernel(boxes_a_tensor.GetDataPtr<const float>(),
+                    boxes_b_tensor.GetDataPtr<const float>(),
+                    iou_tensor.GetDataPtr<float>(), num_a, num_b);
     return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
 }
 #endif
