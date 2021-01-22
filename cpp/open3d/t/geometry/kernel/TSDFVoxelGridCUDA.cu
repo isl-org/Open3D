@@ -168,10 +168,15 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             float tsdf_prev = 1.0f;
                             bool active = true;
 
-                            // (274, 113) (452, 343)
-                            bool print_flag =
-                                    false;  // (y == 113) && (x == 274);
-                            for (int step = 0; step < 100; ++step) {
+                            for (int step = 0; step < 50; ++step) {
+                                // Release a warp if all of the threads are
+                                // inactive.
+                                int all_inactive = __all_sync(
+                                        core::kSyncLanesMask, !active);
+                                if (all_inactive) {
+                                    break;
+                                }
+
                                 transform_indexer.Unproject(
                                         static_cast<float>(x),
                                         static_cast<float>(y), t, &x_c, &y_c,
@@ -198,26 +203,16 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 if (!flag) {
                                     t_prev = t;
                                     t += block_size;
-                                    if (print_flag) {
-                                        printf("%d, t=%f: skip block (%d %d "
-                                               "%d)\n",
-                                               step, t, x_b, y_b, z_b);
-                                    }
                                     continue;
                                 }
 
                                 core::addr_t block_addr = result.first;
-                                x_v = static_cast<int>(floor(
-                                        (x_g - x_b * block_size) / voxel_size));
-                                y_v = static_cast<int>(floor(
-                                        (y_g - y_b * block_size) / voxel_size));
-                                z_v = static_cast<int>(floor(
-                                        (z_g - z_b * block_size) / voxel_size));
-                                if (x_v < 0 || x_v >= block_resolution ||
-                                    y_v < 0 || y_v >= block_resolution ||
-                                    z_v < 0 || z_v >= block_resolution) {
-                                    printf("Error!\n");
-                                }
+                                x_v = int((x_g - x_b * block_size) /
+                                          voxel_size);
+                                y_v = int((y_g - y_b * block_size) /
+                                          voxel_size);
+                                z_v = int((z_g - z_b * block_size) /
+                                          voxel_size);
 
                                 voxel_t* voxel_ptr =
                                         voxel_block_buffer_indexer
@@ -226,16 +221,8 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                                         block_addr);
                                 float tsdf = voxel_ptr->GetTSDF();
                                 float w = voxel_ptr->GetWeight();
-                                if (tsdf > 0) {
-                                    tsdf_prev = tsdf;
-                                    t_prev = t;
-                                    float delta = tsdf * sdf_trunc;
-                                    t += delta < voxel_size ? voxel_size
-                                                            : delta;
-                                    continue;
-                                }
 
-                                if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
+                                if (tsdf_prev > 0 && w >= 3 && tsdf <= 0) {
                                     float t_intersect =
                                             (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
@@ -253,15 +240,19 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                     vertex[1] = y_g;
                                     vertex[2] = z_g;
                                     active = false;
+                                    continue;
                                 }
 
-                                t += voxel_size;
-                                t_prev = t;
                                 tsdf_prev = tsdf;
-                                if (t > depth_max) active = false;
+                                t_prev = t;
+                                float delta = tsdf * sdf_trunc;
+                                t += delta < voxel_size ? voxel_size : delta;
+                                continue;
                             }
                         });
             });
+    // For profiling
+    cudaDeviceSynchronize();
 }
 
 }  // namespace tsdf

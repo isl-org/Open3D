@@ -170,9 +170,8 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             // Iterative ray intersection check
                             float t_prev = t;
                             float tsdf_prev = 1.0f;
-                            bool active = true;
 
-                            for (int step = 0; step < 100 && active; ++step) {
+                            for (int step = 0; step < 50; ++step) {
                                 transform_indexer.Unproject(
                                         static_cast<float>(x),
                                         static_cast<float>(y), t, &x_c, &y_c,
@@ -199,12 +198,12 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 }
 
                                 core::addr_t block_addr = iter->second;
-                                x_v = static_cast<int>(std::floor(
-                                        (x_g - x_b * block_size) / voxel_size));
-                                y_v = static_cast<int>(std::floor(
-                                        (y_g - y_b * block_size) / voxel_size));
-                                z_v = static_cast<int>(std::floor(
-                                        (z_g - z_b * block_size) / voxel_size));
+                                x_v = int((x_g - x_b * block_size) /
+                                          voxel_size);
+                                y_v = int((y_g - y_b * block_size) /
+                                          voxel_size);
+                                z_v = int((z_g - z_b * block_size) /
+                                          voxel_size);
 
                                 voxel_t* voxel_ptr =
                                         voxel_block_buffer_indexer
@@ -213,14 +212,8 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                                         block_addr);
                                 float tsdf = voxel_ptr->GetTSDF();
                                 float w = voxel_ptr->GetWeight();
-                                if (tsdf > 0) {
-                                    tsdf_prev = tsdf;
-                                    t_prev = t;
-                                    t += std::max(tsdf * sdf_trunc, voxel_size);
-                                    continue;
-                                }
 
-                                if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
+                                if (tsdf_prev > 0 && w > 3 && tsdf <= 0) {
                                     float t_intersect =
                                             (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
@@ -237,13 +230,12 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                     vertex[0] = x_g;
                                     vertex[1] = y_g;
                                     vertex[2] = z_g;
-                                    active = false;
+                                    break;
                                 }
 
-                                t += voxel_size;
-                                t_prev = t;
                                 tsdf_prev = tsdf;
-                                if (t > depth_max) active = false;
+                                t_prev = t;
+                                t += std::max(tsdf * sdf_trunc, voxel_size);
                             }
                         });
             });
