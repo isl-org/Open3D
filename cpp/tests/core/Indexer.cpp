@@ -162,9 +162,9 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     core::Tensor output({3, 2, 1}, core::Dtype::Float32, device);
     core::Indexer indexer({input0, input1}, output);
 
-    char* input0_base_ptr = static_cast<char*>(input0.GetDataPtr());
-    char* input1_base_ptr = static_cast<char*>(input1.GetDataPtr());
-    char* output_base_ptr = static_cast<char*>(output.GetDataPtr());
+    char* input0_base_ptr = input0.GetDataPtr<char>();
+    char* input1_base_ptr = input1.GetDataPtr<char>();
+    char* output_base_ptr = output.GetDataPtr<char>();
     int64_t dtype_byte_size = core::Dtype::Float32.ByteSize();
 
     EXPECT_EQ(indexer.GetInputPtr(0, 0), input0_base_ptr + 0 * dtype_byte_size);

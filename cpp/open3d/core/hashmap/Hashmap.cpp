@@ -112,9 +112,8 @@ void Hashmap::Insert(const Tensor& input_keys,
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
-                            static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                            static_cast<bool*>(output_masks.GetDataPtr()),
-                            count);
+                            output_addrs.GetDataPtr<addr_t>(),
+                            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,

@@ -85,21 +85,19 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         BuildSpatialHashTableCUDA(
                 temp_ptr, temp_size, dataset_points_.GetShape()[1],
-                static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
+                dataset_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<int32_t *>(
-                        hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<int32_t *>(
-                        hash_table_index_.GetDataPtr()));
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<int32_t>());
         Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
                                            dataset_points_.GetDevice());
         temp_ptr = temp_tensor.GetDataPtr();
 
         BuildSpatialHashTableCUDA(
                 temp_ptr, temp_size, dataset_points_.GetShape()[1],
-                static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
+                dataset_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
@@ -149,20 +147,15 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         NeighborSearchAllocator<scalar_t> output_allocator(
                 dataset_points_.GetDevice());
         FixedRadiusSearchCUDA(
-                temp_ptr, temp_size,
-                static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
-                GetDatasetSize(),
-                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
-                num_query_points,
-                static_cast<scalar_t *>(query_points_.GetDataPtr()),
+                temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
+                GetDatasetSize(), dataset_points_.GetDataPtr<const scalar_t>(),
+                num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_index_.GetDataPtr()),
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<const int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<const int32_t>(),
                 output_allocator);
 
         Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
@@ -170,20 +163,15 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         temp_ptr = temp_tensor.GetDataPtr();
 
         FixedRadiusSearchCUDA(
-                temp_ptr, temp_size,
-                static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
-                GetDatasetSize(),
-                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
-                num_query_points,
-                static_cast<scalar_t *>(query_points_.GetDataPtr()),
+                temp_ptr, temp_size, eighbors_row_splits.GetDataPtr<int64_t>(),
+                GetDatasetSize(), dataset_points_.GetDataPtr<const scalar_t>(),
+                num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_index_.GetDataPtr()),
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<const int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<const int32_t>(),
                 output_allocator);
 
         neighbors_index = output_allocator.NeighborsIndex().To(Dtype::Int64);

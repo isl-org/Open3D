@@ -135,7 +135,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     if (iterator_count > 0) {
         Tensor active_addrs =
                 Tensor({iterator_count}, Dtype::Int32, this->device_);
-        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
+        GetActiveIndices(active_addrs.GetDataPtr<addr_t>());
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
         active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
@@ -156,9 +156,8 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
         Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
 
         InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
-                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                   static_cast<bool*>(output_masks.GetDataPtr()),
-                   iterator_count);
+                   output_addrs.GetDataPtr<addr_t>(),
+                   output_masks.GetDataPtr<bool>(), iterator_count);
     }
     CUDACachedMemoryManager::ReleaseCache();
 }

@@ -1093,6 +1093,16 @@ public:
         return strides_[shape_util::WrapDim(dim, NumDims())];
     }
 
+    template <typename T>
+    inline T* GetDataPtr() {
+        return static_cast<T*>(data_ptr_);
+    }
+
+    template <typename T>
+    inline const T* GetDataPtr() const {
+        return static_cast<T*>(data_ptr_);
+    }
+
     inline void* GetDataPtr() { return data_ptr_; }
 
     inline const void* GetDataPtr() const { return data_ptr_; }
