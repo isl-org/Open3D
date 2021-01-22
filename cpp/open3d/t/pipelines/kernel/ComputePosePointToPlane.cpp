@@ -34,34 +34,34 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_alligned,
-        const core::Tensor &target_points_alligned,
-        const core::Tensor &target_normals_alligned) {
+        const core::Tensor &source_points_aligned,
+        const core::Tensor &target_points_aligned,
+        const core::Tensor &target_normals_aligned) {
     // Get dtype and device.
-    core::Dtype dtype = source_points_alligned.GetDtype();
-    core::Device device = source_points_alligned.GetDevice();
+    core::Dtype dtype = source_points_aligned.GetDtype();
+    core::Device device = source_points_aligned.GetDevice();
 
     // Checks.
     // TODO: These checks are redundant, so provide a environment
     // variable based method to skip these redundant tests.
-    target_points_alligned.AssertDtype(dtype);
-    target_normals_alligned.AssertDtype(dtype);
-    target_points_alligned.AssertDevice(device);
-    target_normals_alligned.AssertDevice(device);
+    target_points_aligned.AssertDtype(dtype);
+    target_normals_aligned.AssertDtype(dtype);
+    target_points_aligned.AssertDevice(device);
+    target_normals_aligned.AssertDevice(device);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, dtype, device);
 
     // Number of correspondences.
-    int n = source_points_alligned.GetShape()[0];
+    int n = source_points_aligned.GetShape()[0];
 
-    // Pointer to point cloud data - alligned according to correspondences.
+    // Pointer to point cloud data - aligned according to correspondences.
     const float *src_pcd_ptr = static_cast<const float *>(
-            source_points_alligned.Contiguous().GetDataPtr());
+            source_points_aligned.Contiguous().GetDataPtr());
     const float *tar_pcd_ptr = static_cast<const float *>(
-            target_points_alligned.Contiguous().GetDataPtr());
+            target_points_aligned.Contiguous().GetDataPtr());
     const float *tar_norm_ptr = static_cast<const float *>(
-            target_normals_alligned.Contiguous().GetDataPtr());
+            target_normals_aligned.Contiguous().GetDataPtr());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

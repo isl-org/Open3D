@@ -34,15 +34,15 @@ namespace pipelines {
 namespace kernel {
 
 /// \brief Computes pose for point to plane registration method.
-/// \param source_points_alligned source points alligned according to
-/// correspondences. \param target_points_alligned target points alligned
-/// according to correspondences. \param target_normals_alligned target normals
-/// alligned according to correspondences. \return Pose [X Y Z alpha beta
+/// \param source_points_aligned source points aligned according to
+/// correspondences. \param target_points_aligned target points aligned
+/// according to correspondences. \param target_normals_aligned target normals
+/// aligned according to correspondences. \return Pose [X Y Z alpha beta
 /// gamma], a shape {6} tensor of dtype float32.
 core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_alligned,
-        const core::Tensor &target_points_alligned,
-        const core::Tensor &target_normals_alligned);
+        const core::Tensor &source_points_aligned,
+        const core::Tensor &target_points_aligned,
+        const core::Tensor &target_normals_aligned);
 
 }  // namespace kernel
 }  // namespace pipelines

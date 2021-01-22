@@ -42,15 +42,15 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
                                 const core::Dtype dtype,
                                 const core::Device device) {
     // Float64 is used for solving for higher precision.
-    core::Dtype solve_dtype = core::Dtype::Float64;
+    core::Dtype solve_dtype = core::Dtype::Float32;
 
     // atai: {n, 21} Stores local sum for ATA stacked vertically
     core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
-    double *atai_ptr = static_cast<double *>(atai.GetDataPtr());
+    float *atai_ptr = static_cast<float *>(atai.GetDataPtr());
 
     // atbi: {n, 6} Stores local sum for ATB.T() stacked vertically
     core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
-    double *atbi_ptr = static_cast<double *>(atbi.GetDataPtr());
+    float *atbi_ptr = static_cast<float *>(atbi.GetDataPtr());
 
     // This kernel computes the {n,21} shape atai tensor
     // and {n,6} shape atbi tensor.
@@ -60,23 +60,23 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
                 const int64_t atai_stride = 21 * workload_idx;
                 const int64_t atbi_stride = 6 * workload_idx;
 
-                const double sx = (src_pcd_ptr[pcd_stride + 0]);
-                const double sy = (src_pcd_ptr[pcd_stride + 1]);
-                const double sz = (src_pcd_ptr[pcd_stride + 2]);
-                const double tx = (tar_pcd_ptr[pcd_stride + 0]);
-                const double ty = (tar_pcd_ptr[pcd_stride + 1]);
-                const double tz = (tar_pcd_ptr[pcd_stride + 2]);
-                const double nx = (tar_norm_ptr[pcd_stride + 0]);
-                const double ny = (tar_norm_ptr[pcd_stride + 1]);
-                const double nz = (tar_norm_ptr[pcd_stride + 2]);
+                const float sx = (src_pcd_ptr[pcd_stride + 0]);
+                const float sy = (src_pcd_ptr[pcd_stride + 1]);
+                const float sz = (src_pcd_ptr[pcd_stride + 2]);
+                const float tx = (tar_pcd_ptr[pcd_stride + 0]);
+                const float ty = (tar_pcd_ptr[pcd_stride + 1]);
+                const float tz = (tar_pcd_ptr[pcd_stride + 2]);
+                const float nx = (tar_norm_ptr[pcd_stride + 0]);
+                const float ny = (tar_norm_ptr[pcd_stride + 1]);
+                const float nz = (tar_norm_ptr[pcd_stride + 2]);
 
-                double bi = (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                double ai[] = {(nz * sy - ny * sz),
-                               (nx * sz - nz * sx),
-                               (ny * sx - nx * sy),
-                               nx,
-                               ny,
-                               nz};
+                float bi = (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
+                float ai[] = {(nz * sy - ny * sz),
+                              (nx * sz - nz * sx),
+                              (ny * sx - nx * sy),
+                              nx,
+                              ny,
+                              nz};
 
                 for (int i = 0, j = 0; j < 6; j++) {
                     for (int k = 0; k <= j; k++) {
@@ -105,9 +105,9 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
     */
     // Get the ATA matrix back.
     core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
-    double *ATA_ptr = static_cast<double *>(ATA.GetDataPtr());
-    const double *ata_1x21_ptr =
-            static_cast<const double *>(ata_1x21.GetDataPtr());
+    float *ATA_ptr = static_cast<float *>(ATA.GetDataPtr());
+    const float *ata_1x21_ptr =
+            static_cast<const float *>(ata_1x21.GetDataPtr());
 
     for (int i = 0, j = 0; j < 6; j++) {
         for (int k = 0; k <= j; k++) {
