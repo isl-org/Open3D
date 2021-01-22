@@ -224,13 +224,6 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                         t_prev = t;
                         float delta = tsdf * sdf_trunc;
                         t += delta < voxel_size ? voxel_size : delta;
-                        if (print_flag) {
-                            printf("%d, t=%f: (%f %d) at (%d %d %d) in block "
-                                   "(%d %d "
-                                   "%d), marching \n",
-                                   step, t, tsdf, w, x_v, y_v, z_v, x_b, y_b,
-                                   z_b);
-                        }
                         continue;
                     }
 
@@ -249,19 +242,6 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                         vertex[1] = y_g;
                         vertex[2] = z_g;
                         active = false;
-                        if (print_flag) {
-                            printf("%d, t=%f: (%f %d) at (%d %d %d) in block "
-                                   "(%d %d "
-                                   "%d), intersecting \n",
-                                   step, t, tsdf, w, x_v, y_v, z_v, x_b, y_b,
-                                   z_b);
-                        }
-                    }
-                    if (print_flag) {
-                        printf("%d, t=%f: (%f %d) at (%d %d %d) in block (%d "
-                               "%d "
-                               "%d), updating \n",
-                               step, t, tsdf, w, x_v, y_v, z_v, x_b, y_b, z_b);
                     }
 
                     t += voxel_size;
