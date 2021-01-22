@@ -149,92 +149,103 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
     int64_t cols = vertex_map_indexer.GetShape(1);
 
     float block_size = voxel_size * block_resolution;
-    core::kernel::CPULauncher::LaunchGeneralKernel(
-            rows * cols, [&](int64_t workload_idx) {
-                int64_t y = workload_idx / cols;
-                int64_t x = workload_idx % cols;
+    DISPATCH_BYTESIZE_TO_VOXEL(
+            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                core::kernel::CPULauncher::LaunchGeneralKernel(
+                        rows * cols, [&](int64_t workload_idx) {
+                            int64_t y = workload_idx / cols;
+                            int64_t x = workload_idx % cols;
 
-                float t = 0.3f;
+                            float t = 0.3f;
 
-                // Coordinates in camera and global
-                float x_c = 0, y_c = 0, z_c = 0;
-                float x_g = 0, y_g = 0, z_g = 0;
+                            // Coordinates in camera and global
+                            float x_c = 0, y_c = 0, z_c = 0;
+                            float x_g = 0, y_g = 0, z_g = 0;
 
-                // Coordinates in voxel blocks and voxels
-                int key[3] = {0};
-                int x_b = 0, y_b = 0, z_b = 0;
-                int x_v = 0, y_v = 0, z_v = 0;
+                            // Coordinates in voxel blocks and voxels
+                            int key[3] = {0};
+                            int x_b = 0, y_b = 0, z_b = 0;
+                            int x_v = 0, y_v = 0, z_v = 0;
 
-                // Iterative ray intersection check
-                float t_prev = t;
-                float tsdf_prev = 1.0f;
-                bool active = true;
+                            // Iterative ray intersection check
+                            float t_prev = t;
+                            float tsdf_prev = 1.0f;
+                            bool active = true;
 
-                for (int step = 0; step < 100 && active; ++step) {
-                    transform_indexer.Unproject(static_cast<float>(x),
-                                                static_cast<float>(y), t, &x_c,
-                                                &y_c, &z_c);
-                    transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g, &y_g,
-                                                     &z_g);
+                            for (int step = 0; step < 100 && active; ++step) {
+                                transform_indexer.Unproject(
+                                        static_cast<float>(x),
+                                        static_cast<float>(y), t, &x_c, &y_c,
+                                        &z_c);
+                                transform_indexer.RigidTransform(
+                                        x_c, y_c, z_c, &x_g, &y_g, &z_g);
 
-                    x_b = static_cast<int>(std::floor(x_g / block_size));
-                    y_b = static_cast<int>(std::floor(y_g / block_size));
-                    z_b = static_cast<int>(std::floor(z_g / block_size));
+                                x_b = static_cast<int>(
+                                        std::floor(x_g / block_size));
+                                y_b = static_cast<int>(
+                                        std::floor(y_g / block_size));
+                                z_b = static_cast<int>(
+                                        std::floor(z_g / block_size));
 
-                    key[0] = x_b;
-                    key[1] = y_b;
-                    key[2] = z_b;
-                    auto iter = hashmap_ctx->find(key);
-                    bool flag = (iter != hashmap_ctx->end());
-                    if (!flag) {
-                        t_prev = t;
-                        t += block_size;
-                        continue;
-                    }
+                                key[0] = x_b;
+                                key[1] = y_b;
+                                key[2] = z_b;
+                                auto iter = hashmap_ctx->find(key);
+                                bool flag = (iter != hashmap_ctx->end());
+                                if (!flag) {
+                                    t_prev = t;
+                                    t += block_size;
+                                    continue;
+                                }
 
-                    core::addr_t block_addr = iter->second;
-                    x_v = static_cast<int>(
-                            std::floor((x_g - x_b * block_size) / voxel_size));
-                    y_v = static_cast<int>(
-                            std::floor((y_g - y_b * block_size) / voxel_size));
-                    z_v = static_cast<int>(
-                            std::floor((z_g - z_b * block_size) / voxel_size));
+                                core::addr_t block_addr = iter->second;
+                                x_v = static_cast<int>(std::floor(
+                                        (x_g - x_b * block_size) / voxel_size));
+                                y_v = static_cast<int>(std::floor(
+                                        (y_g - y_b * block_size) / voxel_size));
+                                z_v = static_cast<int>(std::floor(
+                                        (z_g - z_b * block_size) / voxel_size));
 
-                    float* voxel_ptr =
-                            voxel_block_buffer_indexer
-                                    .GetDataPtrFromCoord<float>(x_v, y_v, z_v,
-                                                                block_addr);
-                    float tsdf = voxel_ptr[0];
-                    uint16_t w = *(reinterpret_cast<uint16_t*>(voxel_ptr) + 2);
-                    if (tsdf > 0) {
-                        tsdf_prev = tsdf;
-                        t_prev = t;
-                        t += std::max(tsdf * sdf_trunc, voxel_size);
-                        continue;
-                    }
+                                voxel_t* voxel_ptr =
+                                        voxel_block_buffer_indexer
+                                                .GetDataPtrFromCoord<voxel_t>(
+                                                        x_v, y_v, z_v,
+                                                        block_addr);
+                                float tsdf = voxel_ptr->GetTSDF();
+                                float w = voxel_ptr->GetWeight();
+                                if (tsdf > 0) {
+                                    tsdf_prev = tsdf;
+                                    t_prev = t;
+                                    t += std::max(tsdf * sdf_trunc, voxel_size);
+                                    continue;
+                                }
 
-                    if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
-                        float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
+                                if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
+                                    float t_intersect =
+                                            (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
-                        transform_indexer.Unproject(
-                                static_cast<float>(x), static_cast<float>(y),
-                                t_intersect, &x_c, &y_c, &z_c);
-                        transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g,
-                                                         &y_g, &z_g);
-                        float* vertex =
-                                vertex_map_indexer.GetDataPtrFromCoord<float>(
-                                        x, y);
-                        vertex[0] = x_g;
-                        vertex[1] = y_g;
-                        vertex[2] = z_g;
-                        active = false;
-                    }
+                                    transform_indexer.Unproject(
+                                            static_cast<float>(x),
+                                            static_cast<float>(y), t_intersect,
+                                            &x_c, &y_c, &z_c);
+                                    transform_indexer.RigidTransform(
+                                            x_c, y_c, z_c, &x_g, &y_g, &z_g);
+                                    float* vertex =
+                                            vertex_map_indexer
+                                                    .GetDataPtrFromCoord<float>(
+                                                            x, y);
+                                    vertex[0] = x_g;
+                                    vertex[1] = y_g;
+                                    vertex[2] = z_g;
+                                    active = false;
+                                }
 
-                    t += voxel_size;
-                    t_prev = t;
-                    tsdf_prev = tsdf;
-                    if (t > depth_max) active = false;
-                }
+                                t += voxel_size;
+                                t_prev = t;
+                                tsdf_prev = tsdf;
+                                if (t > depth_max) active = false;
+                            }
+                        });
             });
 }
 }  // namespace tsdf

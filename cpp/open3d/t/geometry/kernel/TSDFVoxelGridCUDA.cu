@@ -142,115 +142,126 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
     int64_t cols = vertex_map_indexer.GetShape(1);
 
     float block_size = voxel_size * block_resolution;
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                auto hashmap_ctx_instance = hashmap_ctx;
+    DISPATCH_BYTESIZE_TO_VOXEL(
+            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                core::kernel::CUDALauncher::LaunchGeneralKernel(
+                        rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                            auto hashmap_ctx_instance = hashmap_ctx;
 
-                int64_t y = workload_idx / cols;
-                int64_t x = workload_idx % cols;
-                uint32_t lane_id = workload_idx & 0x1F;
+                            int64_t y = workload_idx / cols;
+                            int64_t x = workload_idx % cols;
+                            uint32_t lane_id = workload_idx & 0x1F;
 
-                float t = 0.3f;
+                            float t = 0.3f;
 
-                // Coordinates in camera and global
-                float x_c = 0, y_c = 0, z_c = 0;
-                float x_g = 0, y_g = 0, z_g = 0;
+                            // Coordinates in camera and global
+                            float x_c = 0, y_c = 0, z_c = 0;
+                            float x_g = 0, y_g = 0, z_g = 0;
 
-                // Coordinates in voxel blocks and voxels
-                int key[3] = {0};
-                int x_b = 0, y_b = 0, z_b = 0;
-                int x_v = 0, y_v = 0, z_v = 0;
+                            // Coordinates in voxel blocks and voxels
+                            int key[3] = {0};
+                            int x_b = 0, y_b = 0, z_b = 0;
+                            int x_v = 0, y_v = 0, z_v = 0;
 
-                // Iterative ray intersection check
-                float t_prev = t;
-                float tsdf_prev = 1.0f;
-                bool active = true;
+                            // Iterative ray intersection check
+                            float t_prev = t;
+                            float tsdf_prev = 1.0f;
+                            bool active = true;
 
-                // (274, 113) (452, 343)
-                bool print_flag = false;  // (y == 113) && (x == 274);
-                for (int step = 0; step < 100; ++step) {
-                    transform_indexer.Unproject(static_cast<float>(x),
-                                                static_cast<float>(y), t, &x_c,
-                                                &y_c, &z_c);
-                    transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g, &y_g,
-                                                     &z_g);
+                            // (274, 113) (452, 343)
+                            bool print_flag =
+                                    false;  // (y == 113) && (x == 274);
+                            for (int step = 0; step < 100; ++step) {
+                                transform_indexer.Unproject(
+                                        static_cast<float>(x),
+                                        static_cast<float>(y), t, &x_c, &y_c,
+                                        &z_c);
+                                transform_indexer.RigidTransform(
+                                        x_c, y_c, z_c, &x_g, &y_g, &z_g);
 
-                    x_b = static_cast<int>(floor(x_g / block_size));
-                    y_b = static_cast<int>(floor(y_g / block_size));
-                    z_b = static_cast<int>(floor(z_g / block_size));
+                                x_b = static_cast<int>(floor(x_g / block_size));
+                                y_b = static_cast<int>(floor(y_g / block_size));
+                                z_b = static_cast<int>(floor(z_g / block_size));
 
-                    key[0] = x_b;
-                    key[1] = y_b;
-                    key[2] = z_b;
+                                key[0] = x_b;
+                                key[1] = y_b;
+                                key[2] = z_b;
 
-                    uint32_t bucket_id = hashmap_ctx.ComputeBucket(key);
-                    core::Pair<core::addr_t, bool> result =
-                            hashmap_ctx_instance.Find(
-                                    active, lane_id, bucket_id,
-                                    static_cast<const void*>(key));
+                                uint32_t bucket_id =
+                                        hashmap_ctx.ComputeBucket(key);
+                                core::Pair<core::addr_t, bool> result =
+                                        hashmap_ctx_instance.Find(
+                                                active, lane_id, bucket_id,
+                                                static_cast<const void*>(key));
 
-                    bool flag = active && result.second;
-                    if (!flag) {
-                        t_prev = t;
-                        t += block_size;
-                        if (print_flag) {
-                            printf("%d, t=%f: skip block (%d %d %d)\n", step, t,
-                                   x_b, y_b, z_b);
-                        }
-                        continue;
-                    }
+                                bool flag = active && result.second;
+                                if (!flag) {
+                                    t_prev = t;
+                                    t += block_size;
+                                    if (print_flag) {
+                                        printf("%d, t=%f: skip block (%d %d "
+                                               "%d)\n",
+                                               step, t, x_b, y_b, z_b);
+                                    }
+                                    continue;
+                                }
 
-                    core::addr_t block_addr = result.first;
-                    x_v = static_cast<int>(
-                            floor((x_g - x_b * block_size) / voxel_size));
-                    y_v = static_cast<int>(
-                            floor((y_g - y_b * block_size) / voxel_size));
-                    z_v = static_cast<int>(
-                            floor((z_g - z_b * block_size) / voxel_size));
-                    if (x_v < 0 || x_v >= block_resolution || y_v < 0 ||
-                        y_v >= block_resolution || z_v < 0 ||
-                        z_v >= block_resolution) {
-                        printf("Error!\n");
-                    }
+                                core::addr_t block_addr = result.first;
+                                x_v = static_cast<int>(floor(
+                                        (x_g - x_b * block_size) / voxel_size));
+                                y_v = static_cast<int>(floor(
+                                        (y_g - y_b * block_size) / voxel_size));
+                                z_v = static_cast<int>(floor(
+                                        (z_g - z_b * block_size) / voxel_size));
+                                if (x_v < 0 || x_v >= block_resolution ||
+                                    y_v < 0 || y_v >= block_resolution ||
+                                    z_v < 0 || z_v >= block_resolution) {
+                                    printf("Error!\n");
+                                }
 
-                    float* voxel_ptr =
-                            voxel_block_buffer_indexer
-                                    .GetDataPtrFromCoord<float>(x_v, y_v, z_v,
-                                                                block_addr);
-                    float tsdf = voxel_ptr[0];
-                    uint16_t w = *(reinterpret_cast<uint16_t*>(voxel_ptr) + 2);
-                    if (tsdf > 0) {
-                        tsdf_prev = tsdf;
-                        t_prev = t;
-                        float delta = tsdf * sdf_trunc;
-                        t += delta < voxel_size ? voxel_size : delta;
-                        continue;
-                    }
+                                voxel_t* voxel_ptr =
+                                        voxel_block_buffer_indexer
+                                                .GetDataPtrFromCoord<voxel_t>(
+                                                        x_v, y_v, z_v,
+                                                        block_addr);
+                                float tsdf = voxel_ptr->GetTSDF();
+                                float w = voxel_ptr->GetWeight();
+                                if (tsdf > 0) {
+                                    tsdf_prev = tsdf;
+                                    t_prev = t;
+                                    float delta = tsdf * sdf_trunc;
+                                    t += delta < voxel_size ? voxel_size
+                                                            : delta;
+                                    continue;
+                                }
 
-                    if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
-                        float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
+                                if (tsdf_prev > 0 && w > 0 && tsdf <= 0) {
+                                    float t_intersect =
+                                            (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
-                        transform_indexer.Unproject(
-                                static_cast<float>(x), static_cast<float>(y),
-                                t_intersect, &x_c, &y_c, &z_c);
-                        transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g,
-                                                         &y_g, &z_g);
-                        float* vertex =
-                                vertex_map_indexer.GetDataPtrFromCoord<float>(
-                                        x, y);
-                        vertex[0] = x_g;
-                        vertex[1] = y_g;
-                        vertex[2] = z_g;
-                        active = false;
-                    }
+                                    transform_indexer.Unproject(
+                                            static_cast<float>(x),
+                                            static_cast<float>(y), t_intersect,
+                                            &x_c, &y_c, &z_c);
+                                    transform_indexer.RigidTransform(
+                                            x_c, y_c, z_c, &x_g, &y_g, &z_g);
+                                    float* vertex =
+                                            vertex_map_indexer
+                                                    .GetDataPtrFromCoord<float>(
+                                                            x, y);
+                                    vertex[0] = x_g;
+                                    vertex[1] = y_g;
+                                    vertex[2] = z_g;
+                                    active = false;
+                                }
 
-                    t += voxel_size;
-                    t_prev = t;
-                    tsdf_prev = tsdf;
-                    if (t > depth_max) active = false;
-                }
+                                t += voxel_size;
+                                t_prev = t;
+                                tsdf_prev = tsdf;
+                                if (t > depth_max) active = false;
+                            }
+                        });
             });
-    cudaDeviceSynchronize();
 }
 
 }  // namespace tsdf
