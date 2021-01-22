@@ -367,6 +367,4 @@ OPEN3D_DEVICE const int edge_to_vert[12][2] = {
         {0, 1}, {1, 2}, {3, 2}, {0, 3}, {4, 5}, {5, 6},
         {7, 6}, {4, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
-
-OPEN3D_DEVICE const float kWeightThreshold = 3.0;
 }  // unnamed namespace

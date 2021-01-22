@@ -93,10 +93,18 @@ public:
             float depth_max = 3.0f);
 
     /// Extract point cloud near iso-surfaces.
-    PointCloud ExtractSurfacePoints();
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    PointCloud ExtractSurfacePoints(float weight_threshold = 3.0f);
 
     /// Extract mesh near iso-surfaces with Marching Cubes.
-    TriangleMesh ExtractSurfaceMesh();
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    TriangleMesh ExtractSurfaceMesh(float weight_threshold = 3.0f);
 
     /// Convert TSDFVoxelGrid to the target device.
     /// \param device The targeted device to convert to.
