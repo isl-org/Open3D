@@ -5,9 +5,12 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import sys, os
 
+
 def main():
     if len(sys.argv) < 2:
-        print ("Usage: texture-model.py [model directory]\n\t This example will load [model direcotry].obj plus any of albedo, normal, ao, metallic and roughness textures present.")
+        print(
+            "Usage: texture-model.py [model directory]\n\t This example will load [model direcotry].obj plus any of albedo, normal, ao, metallic and roughness textures present."
+        )
         exit()
 
     model_dir = sys.argv[1]
@@ -33,7 +36,12 @@ def main():
     if os.path.exists(roughness_name):
         material.roughness_img = o3d.io.read_image(roughness_name)
 
-    o3d.visualization.draw([{"name": "cube", "geometry": model, "material": material}])
+    o3d.visualization.draw([{
+        "name": "cube",
+        "geometry": model,
+        "material": material
+    }])
+
 
 if __name__ == "__main__":
     main()
