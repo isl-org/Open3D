@@ -26,7 +26,8 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlane.h"
+#include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
@@ -137,15 +138,21 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    core::Tensor source_select =
+    // Get alligned source and target points and target normals, according to
+    // correspondences.
+    core::Tensor source_alligned =
             source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
+    core::Tensor target_alligned =
             target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_n_select =
+    core::Tensor target_norm_alligned =
             target.GetPointNormals().IndexGet({corres.second}).To(dtype);
 
-    return pipelines::kernel::ComputeTransformPointToPlane(
-            source_select, target_select, target_n_select, dtype, device);
+    // Get pose {6} from correspondences alligned source and target point cloud.
+    core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
+            source_alligned, target_alligned, target_norm_alligned);
+
+    // Get transformation {4,4} from pose {6}.
+    return pipelines::kernel::PoseToTransformation(pose);
 }
 
 }  // namespace registration

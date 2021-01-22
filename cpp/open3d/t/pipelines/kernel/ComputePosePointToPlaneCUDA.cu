@@ -26,7 +26,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
-#include "open3d/t/pipelines/kernel/ComputeTransformPointToPlaneImp.h"
+#include "open3d/t/pipelines/kernel/ComputePosePointToPlaneImp.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -34,17 +34,22 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
-                                      const float *tar_pcd_ptr,
-                                      const float *tar_norm_ptr,
-                                      const int n,
-                                      core::Tensor &tranformation,
-                                      const core::Dtype dtype,
-                                      const core::Device device) {
+void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
+                                 const float *tar_pcd_ptr,
+                                 const float *tar_norm_ptr,
+                                 const int n,
+                                 core::Tensor &pose,
+                                 const core::Dtype dtype,
+                                 const core::Device device) {
+    // Float64 is used for solving for higher precision.
     core::Dtype solve_dtype = core::Dtype::Float64;
+
+    // atai: {n, 21} Stores local sum for ATA stacked vertically
     core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
-    core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
     double *atai_ptr = static_cast<double *>(atai.GetDataPtr());
+
+    // atbi: {n, 6} Stores local sum for ATB.T() stacked vertically
+    core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
     double *atbi_ptr = static_cast<double *>(atbi.GetDataPtr());
 
     // This kernel computes the {n,21} shape atai tensor
@@ -82,10 +87,22 @@ void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
                 }
             });
 
-    // Reduce matrix atai (to 1x21) and atbi (to 1x6).
+    // Reduce matrix atai (to 1x21) and atbi (to ATB.T() 1x6).
     core::Tensor ata_1x21 = atai.Sum({0}, true);
     core::Tensor ATB = atbi.Sum({0}, true).T();
 
+    /*  ata_1x21 is a {1,21} vector having elements of the matrix ATA such
+        that the corresponding elemetes in ATA are like:
+
+        0
+        1   2
+        3   4   5
+        6   7   8   9
+        10  11  12  13  14
+        15  16  17  18  19  20
+
+        Since, ATA is a symmertric matrix, it can be regenerated from this
+    */
     // Get the ATA matrix back.
     core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
     double *ATA_ptr = static_cast<double *>(ATA.GetDataPtr());
@@ -103,10 +120,8 @@ void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
                 }
             });
 
-    core::Tensor Pose = ATA.Solve(ATB).Reshape({-1});
-    tranformation = t::pipelines::kernel::PoseToTransformation(Pose.To(dtype));
-
-    return;
+    // ATA(6,6) . Pose(6,1) = ATB(6,1)
+    pose = ATA.Solve(ATB).Reshape({-1}).To(dtype);
 }
 
 }  // namespace kernel

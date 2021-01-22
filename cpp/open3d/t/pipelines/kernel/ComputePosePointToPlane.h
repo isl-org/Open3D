@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Private header. Do not include in Open3d.h.
-
 #pragma once
 
 #include "open3d/core/Tensor.h"
@@ -35,23 +33,16 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputeTransformPointToPlaneCPU(const float *src_pcd_ptr,
-                                     const float *tar_pcd_ptr,
-                                     const float *tar_norm_ptr,
-                                     const int n,
-                                     core::Tensor &tranformation,
-                                     const core::Dtype dtype,
-                                     const core::Device device);
-
-#ifdef BUILD_CUDA_MODULE
-void ComputeTransformPointToPlaneCUDA(const float *src_pcd_ptr,
-                                      const float *tar_pcd_ptr,
-                                      const float *tar_norm_ptr,
-                                      const int n,
-                                      core::Tensor &tranformation,
-                                      const core::Dtype dtype,
-                                      const core::Device device);
-#endif
+/// \brief Computes pose for point to plane registration method.
+/// \param source_points_alligned source points alligned according to
+/// correspondences. \param target_points_alligned target points alligned
+/// according to correspondences. \param target_normals_alligned target normals
+/// alligned according to correspondences. \return Pose [X Y Z alpha beta
+/// gamma], a shape {6} tensor of dtype float32.
+core::Tensor ComputePosePointToPlane(
+        const core::Tensor &source_points_alligned,
+        const core::Tensor &target_points_alligned,
+        const core::Tensor &target_normals_alligned);
 
 }  // namespace kernel
 }  // namespace pipelines
