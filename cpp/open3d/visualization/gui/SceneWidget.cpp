@@ -659,6 +659,26 @@ struct SceneWidget::Impl {
 #endif  // NO_RENDER_TARGET
 
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
+
+    void UpdateFarPlane(const Rect& frame, float verticalFoV) {
+        float aspect = 1.0f;
+        if (frame.height > 0) {
+            aspect = float(frame.width) / float(frame.height);
+        }
+        // The far plane needs to be the max absolute distance, not just the
+        // max extent, so that axes are visible if requested.
+        // See also RotationInteractorLogic::UpdateCameraFarPlane().
+        auto* camera = scene_->GetCamera();
+        auto far1 = bounds_.GetMinBound().norm();
+        auto far2 = bounds_.GetMaxBound().norm();
+        auto far3 =
+                camera->GetModelMatrix().translation().cast<double>().norm();
+        auto model_size = 2.0 * bounds_.GetExtent().norm();
+        auto far = std::max(MIN_FAR_PLANE,
+                            std::max(std::max(far1, far2), far3) + model_size);
+        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
+                              rendering::Camera::FovType::Vertical);
+    }
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -684,26 +704,19 @@ void SceneWidget::SetupCamera(
         const Eigen::Vector3f& center_of_rotation) {
     impl_->bounds_ = geometry_bounds;
     impl_->controls_->SetBoundingBox(geometry_bounds);
+    impl_->controls_->SetCenterOfRotation(center_of_rotation);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 
-    auto f = GetFrame();
-    float aspect = 1.0f;
-    if (f.height > 0) {
-        aspect = float(f.width) / float(f.height);
-    }
-    // The far plane needs to be the max absolute distance, not just the
-    // max extent, so that axes are visible if requested.
-    // See also RotationInteractorLogic::UpdateCameraFarPlane().
-    auto far1 = impl_->bounds_.GetMinBound().norm();
-    auto far2 = impl_->bounds_.GetMaxBound().norm();
-    auto far3 =
-            GetCamera()->GetModelMatrix().translation().cast<double>().norm();
-    auto model_size = 2.0 * impl_->bounds_.GetExtent().norm();
-    auto far = std::max(MIN_FAR_PLANE,
-                        std::max(std::max(far1, far2), far3) + model_size);
-    GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
-                               rendering::Camera::FovType::Vertical);
+    impl_->UpdateFarPlane(GetFrame(), verticalFoV);
+}
+
+void SceneWidget::LookAt(const Eigen::Vector3f& center,
+                         const Eigen::Vector3f& eye,
+                         const Eigen::Vector3f& up) {
+    GetCamera()->LookAt(center, eye, up);
+    impl_->controls_->SetCenterOfRotation(center);
+    impl_->UpdateFarPlane(GetFrame(), GetCamera()->GetFieldOfView());
 }
 
 void SceneWidget::SetOnCameraChanged(

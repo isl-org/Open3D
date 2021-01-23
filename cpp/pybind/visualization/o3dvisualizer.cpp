@@ -31,6 +31,8 @@
 #include <open3d/visualization/visualizer/O3DVisualizer.h>
 #include <pybind/visualization/visualization.h>
 
+#include <iostream> // debugging; remove
+
 namespace open3d {
 namespace visualization {
 
@@ -186,6 +188,10 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
+            .def("setup_camera", &O3DVisualizer::SetupCamera,
+                 "setup_camera(field_of_view, center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("reset_camera_to_default",
                  &O3DVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
