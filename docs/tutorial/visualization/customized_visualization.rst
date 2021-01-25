@@ -129,7 +129,7 @@ This function takes the object model directory as the input and loads the object
 
     def main():
         if len(sys.argv) < 2:
-            print ("Usage: texture-model.py [model directory]\n\t This example will load [model directory].obj plus any of albedo, normal, ao, metallic and roughness textures present.")
+            print ("Usage: texture-model.py [model directory]\n\t This example will load [model directory].obj and any of albedo, normal, ao, metallic and roughness textures present.")
             exit()
 
         #Derive the object path set the model, material, and shader
@@ -159,7 +159,7 @@ This function takes the object model directory as the input and loads the object
         if os.path.exists(roughness_name):
             material.roughness_img = o3d.io.read_image(roughness_name)
         
-        # Draw an object cube using the available texture
+        # Draw an object named cube using the available model and texture
         o3d.visualization.draw([{"name": "cube", "geometry": model, "material": material}])
 
     if __name__ == "__main__":
