@@ -161,6 +161,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             // Coordinates in camera and global
                             float x_c = 0, y_c = 0, z_c = 0;
                             float x_g = 0, y_g = 0, z_g = 0;
+                            float x_o = 0, y_o = 0, z_o = 0;
 
                             // Coordinates in voxel blocks and voxels
                             int key[3] = {0};
@@ -172,6 +173,20 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             float tsdf_prev = 1.0f;
                             bool active = true;
 
+                            // Camera origin
+                            transform_indexer.RigidTransform(0, 0, 0, &x_o,
+                                                             &y_o, &z_o);
+
+                            // Direction
+                            transform_indexer.Unproject(static_cast<float>(x),
+                                                        static_cast<float>(y),
+                                                        1.0f, &x_c, &y_c, &z_c);
+                            transform_indexer.RigidTransform(x_c, y_c, z_c,
+                                                             &x_g, &y_g, &z_g);
+                            float x_d = (x_g - x_o);
+                            float y_d = (y_g - y_o);
+                            float z_d = (z_g - z_o);
+
                             for (int step = 0; step < max_steps; ++step) {
                                 // Release a warp if all of the threads are
                                 // inactive.
@@ -181,12 +196,9 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                     break;
                                 }
 
-                                transform_indexer.Unproject(
-                                        static_cast<float>(x),
-                                        static_cast<float>(y), t, &x_c, &y_c,
-                                        &z_c);
-                                transform_indexer.RigidTransform(
-                                        x_c, y_c, z_c, &x_g, &y_g, &z_g);
+                                x_g = x_o + t * x_d;
+                                y_g = y_o + t * y_d;
+                                z_g = z_o + t * z_d;
 
                                 x_b = static_cast<int>(floor(x_g / block_size));
                                 y_b = static_cast<int>(floor(y_g / block_size));
@@ -231,12 +243,10 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                     float t_intersect =
                                             (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
-                                    transform_indexer.Unproject(
-                                            static_cast<float>(x),
-                                            static_cast<float>(y), t_intersect,
-                                            &x_c, &y_c, &z_c);
-                                    transform_indexer.RigidTransform(
-                                            x_c, y_c, z_c, &x_g, &y_g, &z_g);
+                                    x_g = x_o + t_intersect * x_d;
+                                    y_g = y_o + t_intersect * y_d;
+                                    z_g = z_o + t_intersect * z_d;
+
                                     float* vertex =
                                             vertex_map_indexer
                                                     .GetDataPtrFromCoord<float>(
