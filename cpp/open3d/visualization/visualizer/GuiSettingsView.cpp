@@ -204,6 +204,10 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetCustomLighting(lighting);
     });
 
+    sun_follows_camera_ = std::make_shared<gui::Checkbox>(" ");
+    sun_follows_camera_->SetOnChecked(
+            [this](bool checked) { model_.SetSunFullowsCamera(checked); });
+
     sun_color_ = std::make_shared<gui::ColorEdit>();
     sun_color_->SetOnValueChanged([this](const gui::Color &new_color) {
         auto lighting = model_.GetLighting();  // copy
@@ -217,6 +221,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     sun_layout->AddChild(sun_intensity_);
     sun_layout->AddChild(std::make_shared<gui::Label>("Direction"));
     sun_layout->AddChild(sun_dir_);
+    sun_layout->AddChild(sun_follows_camera_);
+    sun_layout->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
     sun_layout->AddChild(std::make_shared<gui::Label>("Color"));
     sun_layout->AddChild(sun_color_);
 

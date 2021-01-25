@@ -102,6 +102,9 @@ public:
     bool GetShowAxes() const;
     void SetShowAxes(bool show);
 
+    bool GetSunFollowsCamera() const;
+    void SetSunFullowsCamera(bool follow);
+
     const Eigen::Vector3f& GetBackgroundColor() const;
     void SetBackgroundColor(const Eigen::Vector3f& color);
 
@@ -146,6 +149,7 @@ private:
     Eigen::Vector3f bg_color_ = {1.0f, 1.0f, 1.0f};
     bool show_skybox_ = false;
     bool show_axes_ = false;
+    bool sun_follows_cam_ = false;
     LightingProfile lighting_;
     MaterialType current_type_ = LIT;
     Materials current_materials_;
