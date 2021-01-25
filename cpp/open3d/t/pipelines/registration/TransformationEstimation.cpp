@@ -138,18 +138,18 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    // Get aligned source and target points and target normals, according to
+    // Get indexed source and target points and target normals, according to
     // correspondences.
-    core::Tensor source_aligned =
+    core::Tensor source_indexed =
             source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_aligned =
+    core::Tensor target_indexed =
             target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_norm_aligned =
+    core::Tensor target_norm_indexed =
             target.GetPointNormals().IndexGet({corres.second}).To(dtype);
 
-    // Get pose {6} from correspondences aligned source and target point cloud.
+    // Get pose {6} from correspondences indexed source and target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
-            source_aligned, target_aligned, target_norm_aligned);
+            source_indexed, target_indexed, target_norm_indexed);
 
     // Get transformation {4,4} from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
