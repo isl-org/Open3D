@@ -47,36 +47,6 @@ namespace geometry {
 /// dtype and device.
 class Image : public Geometry {
 public:
-    /// \enum ColorToIntensityConversionType
-    ///
-    /// \brief Specifies whether R, G, B channels have the same weight when
-    /// converting to intensity. Only used for Image with 3 channels.
-    ///
-    /// When `Weighted` is used R, G, B channels are weighted according to the
-    /// Digital ITU BT.601 standard: I = 0.299 * R + 0.587 * G + 0.114 * B.
-    enum class ColorConversionType {
-        /// R, G, B channels have equal weights.
-        RGBToGrayEqual,
-        /// Weighted R, G, B channels: I = 0.299 * R + 0.587 * G + 0.114 * B.
-        RGBToGrayWeighted,
-    };
-
-    /// \enum FilterType
-    ///
-    /// \brief Specifies the Image filter type.
-    enum class FilterType {
-        /// Gaussian filter of size 3 x 3.
-        Gaussian3,
-        /// Gaussian filter of size 5 x 5.
-        Gaussian5,
-        /// Gaussian filter of size 7 x 7.
-        Gaussian7,
-        /// Sobel filter along X-axis.
-        Sobel3Dx,
-        /// Sobel filter along Y-axis.
-        Sobel3Dy
-    };
-
     /// \brief Constructor for image.
     ///
     /// Row-major storage is used, similar to OpenCV. Use (row, col, channel)
@@ -104,7 +74,7 @@ public:
     ///
     /// \param tensor: Tensor of the image. The tensor must be contiguous. The
     /// tensor must be 2D (rows, cols) or 3D (rows, cols, channels).
-    explicit Image(const core::Tensor &tensor);
+    Image(const core::Tensor &tensor);
 
     virtual ~Image() override {}
 

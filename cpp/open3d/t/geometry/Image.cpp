@@ -112,11 +112,21 @@ Image Image::To(core::Dtype dtype,
         auto device = data_.GetDevice();
         if (device.GetType() != core::Device::DeviceType::CPU) {
             core::Tensor data_CPU = data_.To(core::Device("CPU:0"));
-            core::Tensor dst_data_CPU = core::Tensor::Empty(
-                    std::vector<int64_t>{GetRows(), GetCols(), GetChannels()},
-                    dtype, core::Device("CPU:0"));
+            core::Tensor dst_data_CPU =
+                    (dtype == GetDtype()
+                             ? data_CPU
+                             : core::Tensor::Empty(
+                                       std::vector<int64_t>{GetRows(),
+                                                            GetCols(),
+                                                            GetChannels()},
+                                       dtype, core::Device("CPU:0")));
             IPP_CALL(ipp::To, data_CPU, dst_data_CPU, scale, offset);
-            dst_im.data_ = dst_data_CPU.To(device);
+            if (!copy && dtype == GetDtype()) {
+                const_cast<core::Tensor &>(data_).CopyFrom(dst_data_CPU);
+                dst_im.data_ = data_;
+            } else {
+                dst_im.data_ = dst_data_CPU.To(device);
+            }
         } else {
             if (!copy && dtype == GetDtype()) {
                 dst_im.data_ = data_;
