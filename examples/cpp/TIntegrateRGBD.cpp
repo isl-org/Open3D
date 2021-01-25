@@ -149,14 +149,14 @@ int main(int argc, char** argv) {
                              depth_scale, max_depth);
 
         core::Tensor vertex_map, color_map;
-        std::tie(vertex_map, color_map) =
-                voxel_grid.RayCast(intrinsic_t, extrinsic_t.Inverse(),
-                                   depth.GetCols(), depth.GetRows());
+        std::tie(vertex_map, color_map) = voxel_grid.RayCast(
+                intrinsic_t, extrinsic_t.Inverse(), depth.GetCols(),
+                depth.GetRows(), 50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
         if (i % 100 == 0) {
-            t::geometry::Image color_im(color_map);
+            t::geometry::Image vertex_im(vertex_map);
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::Image>(
-                            color_im.ToLegacyImage())});
+                            vertex_im.ToLegacyImage())});
         }
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
