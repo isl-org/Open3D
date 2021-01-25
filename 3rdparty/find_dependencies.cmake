@@ -499,16 +499,14 @@ endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
 # jsoncpp: always compile from source to avoid ABI issues.
-build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
-    SOURCES
-        json_reader.cpp
-        json_value.cpp
-        json_writer.cpp
-    INCLUDE_DIRS
-        include/
+include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
+import_3rdparty_library(3rdparty_jsoncpp
+    INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
+    LIB_DIR      ${JSONCPP_LIB_DIR}
+    LIBRARIES    ${JSONCPP_LIBRARIES}
 )
-target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
 set(JSONCPP_TARGET "3rdparty_jsoncpp")
+add_dependencies(3rdparty_jsoncpp ext_jsoncpp)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JSONCPP_TARGET}")
 
 # liblzf
