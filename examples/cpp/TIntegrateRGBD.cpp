@@ -153,10 +153,10 @@ int main(int argc, char** argv) {
                 voxel_grid.RayCast(intrinsic_t, extrinsic_t.Inverse(),
                                    depth.GetCols(), depth.GetRows());
         if (i % 100 == 0) {
-            t::geometry::Image vertex_im(vertex_map);
+            t::geometry::Image color_im(color_map);
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::Image>(
-                            vertex_im.ToLegacyImage())});
+                            color_im.ToLegacyImage())});
         }
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());

@@ -145,6 +145,7 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
 
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
     NDArrayIndexer vertex_map_indexer(vertex_map, 2);
+    NDArrayIndexer color_map_indexer(color_map, 2);
 
     TransformIndexer transform_indexer(intrinsics, extrinsics, 1);
 
@@ -234,6 +235,15 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                     vertex[0] = x_g;
                                     vertex[1] = y_g;
                                     vertex[2] = z_g;
+
+                                    float* color =
+                                            color_map_indexer
+                                                    .GetDataPtrFromCoord<float>(
+                                                            x, y);
+                                    color[0] = voxel_ptr->GetR() / 255.0f;
+                                    color[1] = voxel_ptr->GetG() / 255.0f;
+                                    color[2] = voxel_ptr->GetB() / 255.0f;
+
                                     break;
                                 }
 
