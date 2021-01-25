@@ -36,7 +36,7 @@
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
-#include "open3d/t/geometry/kernel/TSDFVoxelGridShared.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGridImpl.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
