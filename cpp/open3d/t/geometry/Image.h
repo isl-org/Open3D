@@ -181,7 +181,10 @@ public:
     /// should be positive for unsigned dtypes.
     /// \param offset Then add this factor to all image pixel values.
     /// \return Reference to self
-    Image &LinearTransform(double scale = 1.0, double offset = 0.0);
+    Image &LinearTransform(double scale = 1.0, double offset = 0.0) {
+        To(GetDtype(), false, scale, offset);
+        return *this;
+    }
 
     /// Return a new image after performing morphological dilation. Supported
     /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An

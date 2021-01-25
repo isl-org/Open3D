@@ -70,7 +70,7 @@ void Dilate(const core::Tensor &src_im,
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
             static_cast<const uint8_t *>(mask.GetDataPtr()), mask_size,   \
             anchor, NPP_BORDER_REPLICATE
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::Dtype::Bool || dtype == core::Dtype::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_8u_C1R(NPP_ARGS);

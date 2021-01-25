@@ -31,7 +31,7 @@
 // Required by IPPICV headers, defined here to keep other compile commands clean
 #define ICV_BASE
 #define IW_BUILD
-#include <iw++/iw_image_filter.hpp>
+#include <iw++/iw_core.hpp>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
@@ -60,6 +60,11 @@ inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
         return ippUndef;
     }
 }
+
+void To(const core::Tensor &src_im,
+        core::Tensor &dst_im,
+        double scale,
+        double offset);
 
 void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,

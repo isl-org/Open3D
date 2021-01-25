@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/kernel/IPPImage.h"
 
 #include <iw++/iw_image_filter.hpp>
+#include <iw++/iw_image_op.hpp>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
@@ -39,8 +40,37 @@ namespace t {
 namespace geometry {
 namespace ipp {
 
+void To(const core::Tensor &src_im,
+        core::Tensor &dst_im,
+        double scale,
+        double offset) {
+    // Supported device and datatype checking happens in calling code and will
+    // result in an exception if there are errors.
+
+    auto src_dtype = src_im.GetDtype();
+    auto dst_dtype = dst_im.GetDtype();
+    // Create IPP wrappers for all Open3D tensors
+    const ::ipp::IwiImage ipp_src_im(
+            ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
+            ToIppDataType(src_dtype), src_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
+            src_im.GetStride(0) * src_dtype.ByteSize());
+    ::ipp::IwiImage ipp_dst_im(
+            ::ipp::IwiSize(dst_im.GetShape(1), dst_im.GetShape(0)),
+            ToIppDataType(dst_dtype), dst_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, dst_im.GetDataPtr(),
+            dst_im.GetStride(0) * dst_dtype.ByteSize());
+
+    try {
+        ::ipp::iwiScale(ipp_src_im, ipp_dst_im, scale, offset);
+    } catch (const ::ipp::IwException &e) {
+        // See comments in icv/include/ippicv_types.h for m_status meaning
+        utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
+    }
+}
+
 void Dilate(const core::Tensor &src_im,
-            core::Tensor &dstim,
+            core::Tensor &dst_im,
             int half_kernel_size) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
@@ -59,10 +89,10 @@ void Dilate(const core::Tensor &src_im,
             0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
             src_im.GetStride(0) * dtype.ByteSize());
     ::ipp::IwiImage ipp_dst_im(
-            ::ipp::IwiSize(dstim.GetShape(1), dstim.GetShape(0)),
-            ToIppDataType(dtype), dstim.GetShape(2) /* channels */,
-            0 /* border buffer size */, dstim.GetDataPtr(),
-            dstim.GetStride(0) * dtype.ByteSize());
+            ::ipp::IwiSize(dst_im.GetShape(1), dst_im.GetShape(0)),
+            ToIppDataType(dtype), dst_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, dst_im.GetDataPtr(),
+            dst_im.GetStride(0) * dtype.ByteSize());
     ::ipp::IwiImage ipp_mask_im(
             ::ipp::IwiSize(mask.GetShape(1), mask.GetShape(0)),
             ToIppDataType(mask.GetDtype()), mask.GetShape(2) /* channels */,

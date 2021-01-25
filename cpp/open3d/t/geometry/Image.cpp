@@ -43,8 +43,6 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-
 Image::Image(int64_t rows,
              int64_t cols,
              int64_t channels,
@@ -80,9 +78,17 @@ Image::Image(const core::Tensor &tensor)
 }
 
 Image Image::To(core::Dtype dtype,
-                bool copy /* = false */,
+                bool copy /*= false*/,
                 utility::optional<double> scale_ /* = utility::nullopt */,
                 double offset /* = 0.0 */) const {
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    // IPP supports all pairs of conversions for these data types
+    static const std::vector<core::Dtype> ipp_supported{
+            {core::Dtype::Bool},    {core::Dtype::UInt8},
+            {core::Dtype::UInt16},  {core::Dtype::Int32},
+            {core::Dtype::Float32}, {core::Dtype::Float64}};
+
     double scale = 1.0;
     if (!scale_.has_value() &&
         (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64)) {
@@ -94,27 +100,46 @@ Image Image::To(core::Dtype dtype,
     } else {
         scale = scale_.value_or(1.0);
     }
-    auto new_image = Image(data_.To(dtype, copy));
-    return new_image.LinearTransform(scale, offset);
-}
 
-Image &Image::LinearTransform(double scale /* = 1.0 */,
-                              double offset /* = 0.0 */) {
-    if (scale < 0 && (GetDtype() == core::Dtype::UInt8 ||
-                      GetDtype() == core::Dtype::UInt16)) {
-        utility::LogError("Negative scale not supported for unsigned Dtype!");
+    Image dst_im;
+    if (HAVE_IPPICV &&
+        std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
+                0 &&
+        std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
+        // FIXME: Tensor based Op for saturate_cast / LinearTransform
+        // NPP does not expose a useful API, so as a workaround, move data to
+        // CPU and use IPP.
+        auto device = data_.GetDevice();
+        if (device.GetType() != core::Device::DeviceType::CPU) {
+            core::Tensor data_CPU = data_.To(core::Device("CPU:0"));
+            core::Tensor dst_data_CPU = core::Tensor::Empty(
+                    std::vector<int64_t>{GetRows(), GetCols(), GetChannels()},
+                    dtype, core::Device("CPU:0"));
+            IPP_CALL(ipp::To, data_CPU, dst_data_CPU, scale, offset);
+            dst_im.data_ = dst_data_CPU.To(device);
+        } else {
+            if (!copy && dtype == GetDtype()) {
+                dst_im.data_ = data_;
+            } else {
+                dst_im.data_ = core::Tensor::Empty(
+                        std::vector<int64_t>{GetRows(), GetCols(),
+                                             GetChannels()},
+                        dtype, GetDevice());
+            }
+            IPP_CALL(ipp::To, data_, dst_im.data_, scale, offset);
+        }
+    } else {
+        utility::LogError(
+                "Conversion from {} to {} on device {} is not implemented!",
+                GetDtype().ToString(), dtype.ToString(),
+                GetDevice().ToString());
     }
-
-    if (scale != 1.0) {
-        data_ *= scale;
-    }
-    if (offset != 0.0) {
-        data_ += offset;
-    }
-    return *this;
+    return dst_im;
 }
 
 Image Image::Dilate(int half_kernel_size) const {
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
     // Check NPP datatype support for each function in documentation:
     // https://docs.nvidia.com/cuda/npp/group__nppi.html
     static const supported_t npp_supported{
@@ -136,21 +161,23 @@ Image Image::Dilate(int half_kernel_size) const {
             {core::Dtype::Float32, 3}, {core::Dtype::Bool, 4},
             {core::Dtype::UInt8, 4},   {core::Dtype::Float32, 4}};
 
-    Image dstim;
-    dstim.data_ = core::Tensor::EmptyLike(data_);
+    Image dst_im;
+    dst_im.data_ = core::Tensor::EmptyLike(data_);
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::Dilate, data_, dstim.data_, half_kernel_size);
+        CUDA_CALL(npp::Dilate, data_, dst_im.data_, half_kernel_size);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::Dilate, data_, dstim.data_, half_kernel_size);
+        IPP_CALL(ipp::Dilate, data_, dst_im.data_, half_kernel_size);
     } else {
-        utility::LogError("Not implemented!");
+        utility::LogError(
+                "Dilate with data type {} on device {} is not implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
     }
-    return dstim;
+    return dst_im;
 }
 
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
