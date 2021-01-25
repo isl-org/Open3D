@@ -50,9 +50,9 @@ ExternalProject_Add(ext_ippicv
 ExternalProject_Get_Property(ext_ippicv INSTALL_DIR)
 set(IPPICV_INCLUDE_DIR "${INSTALL_DIR}/include/icv/" "${INSTALL_DIR}/include/")
 if (WIN32)
-    set(IPPICV_LIBRARIES ippicvmt ippiw)
+    set(IPPICV_LIBRARIES ippiw ippicvmt)
 else ()
-    set(IPPICV_LIBRARIES ippicv ippiw)
+    set(IPPICV_LIBRARIES ippiw ippicv)
 endif ()
 set(IPPICV_LIB_DIR "${INSTALL_DIR}/lib")
 set(IPPICV_VERSION_STRING "2020.0.0 Gold")  # From icv/ippversion.h

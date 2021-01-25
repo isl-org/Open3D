@@ -16,7 +16,7 @@ if (BUILD_CUDA_MODULE)
     list(APPEND T_GEOMETRY_SRC
         kernel/PointCloudCUDA.cu
         kernel/TSDFVoxelGridCUDA.cu
-        kernel/nppImage.cpp
+        kernel/NPPImage.cpp
         )
 endif()
 

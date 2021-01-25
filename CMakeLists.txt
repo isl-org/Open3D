@@ -61,6 +61,11 @@ option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON 
 # downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
+if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
+        IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
+        NOT THIRD_PARTY_DOWNLOAD_DIR)
+    set(THIRD_PARTY_DOWNLOAD_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+endif()
 if(THIRD_PARTY_DOWNLOAD_DIR)
     message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
 else()
