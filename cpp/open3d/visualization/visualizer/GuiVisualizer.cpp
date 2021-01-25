@@ -357,6 +357,8 @@ struct GuiVisualizer::Impl {
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
+    bool sun_follows_camera_ = false;
+
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
         settings_.lit_material_.shader = "defaultLit";
@@ -491,11 +493,29 @@ private:
             this->SetIBL(renderer, "");
         }
 
+        if (sun_follows_camera_ != settings_.model_.GetSunFollowsCamera()) {
+            sun_follows_camera_ = settings_.model_.GetSunFollowsCamera();
+            if (sun_follows_camera_) {
+                scene_wgt_->SetOnCameraChanged([this](rendering::Camera *cam) {
+                    auto render_scene = scene_wgt_->GetScene()->GetScene();
+                    render_scene->SetSunLightDirection(cam->GetForwardVector());
+                });
+                render_scene->SetSunLightDirection(
+                        scene->GetCamera()->GetForwardVector());
+            } else {
+                scene_wgt_->SetOnCameraChanged(
+                        std::function<void(rendering::Camera *)>());
+            }
+        }
+
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
         render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
-        render_scene->SetSunLight(lighting.sun_dir, lighting.sun_color,
-                                  float(lighting.sun_intensity));
+        render_scene->SetSunLightColor(lighting.sun_color);
+        render_scene->SetSunLightIntensity(float(lighting.sun_intensity));
+        if (!sun_follows_camera_) {
+            render_scene->SetSunLightDirection(lighting.sun_dir);
+        }
         render_scene->EnableSunLight(lighting.sun_enabled);
     }
 
