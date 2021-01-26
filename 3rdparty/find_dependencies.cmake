@@ -499,16 +499,14 @@ endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
 # jsoncpp: always compile from source to avoid ABI issues.
-build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
-    SOURCES
-        json_reader.cpp
-        json_value.cpp
-        json_writer.cpp
-    INCLUDE_DIRS
-        include/
+include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
+import_3rdparty_library(3rdparty_jsoncpp
+    INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
+    LIB_DIR      ${JSONCPP_LIB_DIR}
+    LIBRARIES    ${JSONCPP_LIBRARIES}
 )
-target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
 set(JSONCPP_TARGET "3rdparty_jsoncpp")
+add_dependencies(3rdparty_jsoncpp ext_jsoncpp)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JSONCPP_TARGET}")
 
 # liblzf
@@ -552,19 +550,10 @@ if (BUILD_LIBREALSENSE)
     set(LIBREALSENSE_TARGET "3rdparty_librealsense")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
 
-    if (UNIX AND NOT APPLE)
-        # Ubuntu dependency: libusb-1.0.0-dev
-        find_library(LIBUSB_LIB usb-1.0)
-        find_path(LIBUSB_INC libusb.h HINTS PATH_SUFFIXES libusb-1.0)
-        if (NOT LIBUSB_LIB)
-            message(FATAL_ERROR "libusb-1.0 library not found, please install libusb-1.0.0-dev.")
-        endif()
-        if (NOT LIBUSB_INC)
-            message(FATAL_ERROR "libusb-1.0 header not found, please install libusb-1.0.0-dev.")
-        endif()
-        message(STATUS "LIBUSB_LIB: ${LIBUSB_LIB}")
-        message(STATUS "LIBUSB_INC: ${LIBUSB_INC}")
-        target_link_libraries(3rdparty_librealsense INTERFACE ${LIBUSB_LIB})
+    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+        find_library(UDEV_LIBRARY udev REQUIRED
+            DOC "Library provided by the deb package libudev-dev")
+        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
     endif()
 endif()
 
@@ -583,19 +572,29 @@ if(USE_SYSTEM_PNG)
     endif()
 endif()
 if(NOT USE_SYSTEM_PNG)
-    message(STATUS "Building third-party library zlib from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-    import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
-    add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
-    message(STATUS "Building third-party library libpng from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-    import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
-    add_dependencies(3rdparty_png ${PNG_LIBRARIES})
-    target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
-    set(PNG_TARGET "3rdparty_png")
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    import_3rdparty_library(3rdparty_zlib
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+    )
     set(ZLIB_TARGET "3rdparty_zlib")
+    add_dependencies(3rdparty_zlib ext_zlib)
+
+    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
+    import_3rdparty_library(3rdparty_libpng
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+    )
+    set(LIBPNG_TARGET "3rdparty_libpng")
+    add_dependencies(3rdparty_libpng ext_libpng)
+    add_dependencies(ext_libpng ext_zlib)
+
+    # Putting zlib after libpng somehow works for Ubuntu.
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 
 # rply
 build_3rdparty_library(3rdparty_rply DIRECTORY rply SOURCES rply/rply.c INCLUDE_DIRS rply/)

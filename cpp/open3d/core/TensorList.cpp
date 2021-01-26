@@ -72,7 +72,7 @@ TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
     }
 }
 
-TensorList TensorList::Copy() const {
+TensorList TensorList::Clone() const {
     TensorList copied(*this);
     copied.CopyFrom(*this);
     return copied;
@@ -81,15 +81,9 @@ TensorList TensorList::Copy() const {
 void TensorList::CopyFrom(const TensorList& other) {
     *this = other;
     // Copy the full other.internal_tensor_, not just other.AsTensor().
-    internal_tensor_ = other.internal_tensor_.Copy();
+    internal_tensor_ = other.internal_tensor_.Clone();
     // After copy, the resulting tensorlist is always resizable.
     is_resizable_ = true;
-}
-
-void TensorList::ShallowCopyFrom(const TensorList& other) {
-    // Copy assignment operator is performing shallow copy.
-    // After copy, this.is_resizable_ == other.is_resizable_.
-    *this = other;
 }
 
 Tensor TensorList::AsTensor() const {
@@ -155,7 +149,7 @@ void TensorList::Extend(const TensorList& other) {
 
 TensorList TensorList::Concatenate(const TensorList& a, const TensorList& b) {
     // A full copy of a is required.
-    TensorList result = a.Copy();
+    TensorList result = a.Clone();
     result.Extend(b);
     return result;
 }

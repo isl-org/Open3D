@@ -55,7 +55,7 @@ public:
            Dtype dtype,
            const Device& device = Device("CPU:0"))
         : shape_(shape),
-          strides_(DefaultStrides(shape)),
+          strides_(shape_util::DefaultStrides(shape)),
           dtype_(dtype),
           blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
                                        device)) {
@@ -463,24 +463,31 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
-    /// Copy Tensor to a specified device.
-    /// The resulting Tensor will be compacted and contiguous.
-    Tensor Copy(const Device& device) const;
-
     /// Copy Tensor to the same device.
-    Tensor Copy() const { return Copy(GetDevice()); };
+    Tensor Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-    /// Copy Tensor values to current tensor for source tensor
+    /// Copy Tensor values to current tensor from the source tensor.
     void CopyFrom(const Tensor& other);
-
-    /// Shallow copy a tensor, returning a tensor sharing the same memory.
-    void ShallowCopyFrom(const Tensor& other);
 
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
     /// is avoided when the original tensor already have the targeted dtype.
     Tensor To(Dtype dtype, bool copy = false) const;
+
+    /// Returns a tensor with the specified \p device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor is already on the targeted device.
+    Tensor To(const Device& device, bool copy = false) const;
+
+    /// Returns a tensor with the specified \p device and \p dtype.
+    /// \param device The targeted device to convert to.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor is already on the targeted device
+    /// and have the targeted dtype.
+    Tensor To(const Device& device, Dtype dtype, bool copy = false) const;
 
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
@@ -497,7 +504,7 @@ public:
     /// \param dim The dimension to slice.
     /// \param start The start index (inclusive).
     /// \param stop The end index (exclusive).
-    /// \param step Pick one eleemnt for every \p step elements.
+    /// \param step Pick one element for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
@@ -1038,7 +1045,7 @@ public:
     /// Returns True if the underlying memory buffer is contiguous. A contiguous
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
-        return DefaultStrides(shape_) == strides_;
+        return shape_util::DefaultStrides(shape_) == strides_;
     };
 
     /// Returns a contiguous Tensor containing the same data in the same device.
@@ -1113,28 +1120,17 @@ public:
         }
     }
 
-    static SizeVector DefaultStrides(const SizeVector& shape);
-
-    /// 1. Separate `oldshape` into chunks of dimensions, where the
-    /// dimensions
-    ///    are ``contiguous'' in each chunk, i.e.,
-    ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
-    /// 2. `newshape` must be able to be separated into same number of
-    /// chunks as
-    ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching ``numel'', i.e., number of subspaces, as the
-    ///    corresponding chunk of `oldshape`.
-    /// Ref: aten/src/ATen/TensorUtils.cpp
-    static std::pair<bool, SizeVector> ComputeNewStrides(
-            const SizeVector& old_shape,
-            const SizeVector& old_strides,
-            const SizeVector& new_shape);
-
     /// Convert the Tensor to DLManagedTensor.
     DLManagedTensor* ToDLPack() const;
 
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
+
+    /// Save tensor to numpy's npy format.
+    void Save(const std::string& file_name) const;
+
+    /// Load tensor from numpy's npy format.
+    static Tensor Load(const std::string& file_name);
 
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape,

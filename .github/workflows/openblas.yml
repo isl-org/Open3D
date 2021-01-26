@@ -76,10 +76,11 @@ jobs:
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
             ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/
+            pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
             ccache -s
 
-  arm64:
+  # Build 3rd-party libraries and upload ccache to GCloud.
+  arm64-3rd-party:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -121,48 +122,96 @@ jobs:
           dockerRunArgs: |
             --volume "${HOME}/.ccache:/root/.ccache"
 
-          # Install dependencies
-          install: |
-            apt-get update -q -y
-            apt-get install -y apt-utils build-essential git wget
-            apt-get install -y python3 python3-dev python3-pip python3-virtualenv
-            apt-get install -y xorg-dev libglu1-mesa-dev ccache
-            apt-get install -y libblas-dev liblapack-dev liblapacke-dev libssl-dev
-            apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
-            apt-get install -y clang-7
-            update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
-            update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
-            update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
-            update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
-            /usr/sbin/update-ccache-symlinks
-            echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
-            virtualenv --python=$(which python) ${HOME}/venv
-            source ${HOME}/venv/bin/activate
-            which python
-            python --version
-            pip install pytest=="6.0.1" -U
-            pip install wheel=="0.35.1" -U
-            # Get pre-compiled CMake
-            wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
-            tar -xvf cmake-3.18-aarch64.tar.gz
-            cp -ar cmake-3.18-aarch64 ${HOME}
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
-            which cmake
-            cmake --version
-
           # Build and run Open3D tests
           run: |
+            source util/ci_utils.sh
+            install_arm64_dependencies
+            source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
             PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
-            source ${HOME}/venv/bin/activate
             mkdir build
             cd build
             cmake \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
               -DBUILD_GUI=ON \
+              -DBUILD_LIBREALSENSE=ON \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DBUILD_TENSORFLOW_OPS=OFF \
+              -DBUILD_PYTORCH_OPS=OFF \
+              -DBUILD_UNIT_TESTS=ON \
+              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+              -DPYTHON_EXECUTABLE=$(which python) \
+              ..
+            make camera -j$(nproc) # open3d::camera is small and it triggers 3rd-party builds
+            ccache -s
+
+      - name: Upload cache to GCS
+        run: |
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
+
+  arm64:
+    runs-on: ubuntu-20.04
+    needs: [arm64-3rd-party]
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+
+      - name: Download cache from GCS
+        run: |
+          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
+          mv ~/ccache-arm64 ~/.ccache
+          ls ~/.ccache
+
+      - name: Build on ARM Container
+        uses: uraimo/run-on-arch-action@v2.0.2
+        with:
+          # Ubuntu 20.04 has sufficiently new CMake
+          arch: aarch64
+          distro: ubuntu20.04
+
+          # Speeds up builds
+          githubToken: ${{ github.token }}
+
+          # https://github.com/uraimo/run-on-arch-action/issues/4
+          setup: |
+            mkdir -p ~/.ccache
+
+          # Mount cached directories in the container for faster builds
+          dockerRunArgs: |
+            --volume "${HOME}/.ccache:/root/.ccache"
+
+          # Build and run Open3D tests
+          run: |
+            source util/ci_utils.sh
+            install_arm64_dependencies
+            source ${HOME}/venv/bin/activate
+            PATH=/usr/lib/ccache:$PATH
+            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+            ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
+            ccache -s
+            mkdir build
+            cd build
+            cmake \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_SHARED_LIBS=ON \
+              -DBUILD_GUI=ON \
+              -DBUILD_LIBREALSENSE=ON \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_TENSORFLOW_OPS=OFF \
@@ -179,6 +228,5 @@ jobs:
             ccache -s
 
       - name: Upload cache to GCS
-        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true

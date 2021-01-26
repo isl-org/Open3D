@@ -29,6 +29,9 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/utility/Optional.h"
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
@@ -65,7 +68,7 @@ static TensorKey ToTensorKey(const py::slice& key) {
 static TensorKey ToTensorKey(const py::list& key) {
     Tensor key_tensor = PyTupleToTensor(key);
     if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64, /*copy=*/false);
+        key_tensor = key_tensor.To(Dtype::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
@@ -73,7 +76,7 @@ static TensorKey ToTensorKey(const py::list& key) {
 static TensorKey ToTensorKey(const py::tuple& key) {
     Tensor key_tensor = PyTupleToTensor(key);
     if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64, /*copy=*/false);
+        key_tensor = key_tensor.To(Dtype::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
@@ -88,8 +91,7 @@ static TensorKey ToTensorKey(const py::array& key) {
 
 static TensorKey ToTensorKey(const Tensor& key_tensor) {
     if (key_tensor.GetDtype() != Dtype::Bool) {
-        return TensorKey::IndexTensor(
-                key_tensor.To(Dtype::Int64, /*copy=*/false));
+        return TensorKey::IndexTensor(key_tensor.To(Dtype::Int64));
     } else {
         return TensorKey::IndexTensor(key_tensor);
     }

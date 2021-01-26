@@ -28,6 +28,9 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 #include "pybind/core/core.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -39,11 +42,11 @@ static Tensor CastOptionalDtypeDevice(const Tensor& t,
                                       utility::optional<Dtype> dtype,
                                       utility::optional<Device> device) {
     Tensor t_cast = t;
-    if (dtype.has_value() && dtype.value() != t_cast.GetDtype()) {
-        t_cast = t_cast.To(dtype.value(), /*copy=*/false);
+    if (dtype.has_value()) {
+        t_cast = t_cast.To(dtype.value());
     }
-    if (device.has_value() && device.value() != t_cast.GetDevice()) {
-        t_cast = t_cast.Copy(device.value());
+    if (device.has_value()) {
+        t_cast = t_cast.To(device.value());
     }
     return t_cast;
 }
@@ -133,7 +136,7 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     if (inplace) {
         return t_inplace;
     } else {
-        return t_inplace.Copy();
+        return t_inplace.Clone();
     }
 }
 
@@ -168,7 +171,7 @@ Tensor DoubleToTensor(double scalar_value,
     }
     return Tensor(std::vector<double>{scalar_value}, {}, Dtype::Float64,
                   device_value)
-            .To(dtype_value, /*copy=*/false);
+            .To(dtype_value);
 }
 
 Tensor IntToTensor(int64_t scalar_value,
@@ -184,7 +187,7 @@ Tensor IntToTensor(int64_t scalar_value,
     }
     return Tensor(std::vector<int64_t>{scalar_value}, {}, Dtype::Int64,
                   device_value)
-            .To(dtype_value, /*copy=*/false);
+            .To(dtype_value);
 }
 
 Tensor PyHandleToTensor(const py::handle& handle,
@@ -217,7 +220,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
         try {
             Tensor* tensor = handle.cast<Tensor*>();
             if (force_copy) {
-                return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
+                return CastOptionalDtypeDevice(tensor->Clone(), dtype, device);
             } else {
                 return CastOptionalDtypeDevice(*tensor, dtype, device);
             }

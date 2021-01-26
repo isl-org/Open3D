@@ -56,9 +56,22 @@ void pybind_pointcloud(py::module& m) {
             "point",
             py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
 
+    // Device transfers.
+    pointcloud.def("to", &PointCloud::To,
+                   "Transfer the point cloud to a specified device.",
+                   "device"_a, "copy"_a = false);
+    pointcloud.def("clone", &PointCloud::Clone,
+                   "Returns copy of the point cloud on the same device.");
+    pointcloud.def("cpu", &PointCloud::CPU,
+                   "Transfer the point cloud to CPU. If the point cloud is "
+                   "already on CPU, no copy will be performed.");
+    pointcloud.def(
+            "cuda", &PointCloud::CUDA,
+            "Transfer the point cloud to a CUDA device. If the point cloud is "
+            "already on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
+
     // Pointcloud specific functions.
-    // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to
-    //       o3d.core.Tensor (pure Python wrapper).
     pointcloud.def("get_min_bound", &PointCloud::GetMinBound,
                    "Returns the min bound for point coordinates.");
     pointcloud.def("get_max_bound", &PointCloud::GetMaxBound,

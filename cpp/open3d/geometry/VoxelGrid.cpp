@@ -233,11 +233,12 @@ void VoxelGrid::CreateFromOctree(const Octree &octree) {
     auto f_collect_nodes =
             [&map_node_to_node_info](
                     const std::shared_ptr<OctreeNode> &node,
-                    const std::shared_ptr<OctreeNodeInfo> &node_info) -> void {
+                    const std::shared_ptr<OctreeNodeInfo> &node_info) -> bool {
         if (auto color_leaf_node =
                     std::dynamic_pointer_cast<OctreeColorLeafNode>(node)) {
             map_node_to_node_info[color_leaf_node] = node_info;
         }
+        return false;
     };
     octree.Traverse(f_collect_nodes);
 

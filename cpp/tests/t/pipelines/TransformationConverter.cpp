@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
@@ -60,7 +60,7 @@ TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Tensor transformation(transformation_vec, {4, 4}, dtype, device);
 
     core::Tensor transformation_ =
-            t::pipelines::RtToTransformation(rotation, translation);
+            t::pipelines::kernel::RtToTransformation(rotation, translation);
 
     EXPECT_EQ(transformation.ToFlatVector<float>(),
               transformation_.ToFlatVector<float>());
@@ -77,7 +77,8 @@ TEST_P(TransformationConverterPermuteDevices, PoseToTransformation) {
                                           0, 0, 1, 0, 0, 0, 0, 1};
     core::Tensor transformation(transformation_vec, {4, 4}, dtype, device);
 
-    core::Tensor transformation_ = t::pipelines::PoseToTransformation(pose);
+    core::Tensor transformation_ =
+            t::pipelines::kernel::PoseToTransformation(pose);
 
     EXPECT_EQ(transformation.ToFlatVector<float>(),
               transformation_.ToFlatVector<float>());

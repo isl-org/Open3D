@@ -103,14 +103,14 @@ int main(int argc, char** argv) {
     int block_count =
             utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
 
-    double voxel_size = utility::GetProgramOptionAsDouble(
-            argc, argv, "--voxel_size", 3.0 / 512);
-    double depth_scale = utility::GetProgramOptionAsDouble(
-            argc, argv, "--depth_scale", 1000.0);
-    double max_depth =
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.0);
-    double sdf_trunc =
-            utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc", 0.04);
+    float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--voxel_size", 3.f / 512.f));
+    float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--depth_scale", 1000.f));
+    float max_depth = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--sdf_trunc", 0.04f));
 
     // Device
     std::string device_code = "CPU:0";
@@ -122,8 +122,7 @@ int main(int argc, char** argv) {
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
                                            {"color", core::Dtype::UInt16}},
-                                          static_cast<float>(voxel_size),
-                                          static_cast<float>(sdf_trunc), 16,
+                                          voxel_size, sdf_trunc, 16,
                                           block_count, device);
 
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
@@ -141,7 +140,7 @@ int main(int argc, char** argv) {
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
         Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
         utility::Timer timer;

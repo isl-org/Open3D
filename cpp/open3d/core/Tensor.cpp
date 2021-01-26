@@ -33,6 +33,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/NumpyIO.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -388,7 +389,7 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
 /// Assign (copy) values from another Tensor, shape, dtype, device may change.
 void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
-    strides_ = DefaultStrides(shape_);
+    strides_ = shape_util::DefaultStrides(shape_);
     dtype_ = other.dtype_;
     blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
                                    other.GetDevice());
@@ -446,7 +447,7 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
     bool can_restride;
     SizeVector new_strides;
     std::tie(can_restride, new_strides) =
-            ComputeNewStrides(shape_, strides_, inferred_dst_shape);
+            shape_util::Restride(shape_, strides_, inferred_dst_shape);
     if (can_restride) {
         return AsStrided(inferred_dst_shape, new_strides);
     } else {
@@ -460,7 +461,7 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     bool can_restride;
     SizeVector new_strides;
     std::tie(can_restride, new_strides) =
-            ComputeNewStrides(shape_, strides_, inferred_dst_shape);
+            shape_util::Restride(shape_, strides_, inferred_dst_shape);
     if (can_restride) {
         return AsStrided(inferred_dst_shape, new_strides);
     } else {
@@ -472,18 +473,11 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::Copy(const Device& device) const {
-    Tensor dst_tensor(shape_, dtype_, device);
-    kernel::Copy(*this, dst_tensor);
-    return dst_tensor;
-}
-
 Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
-
-    // We only support scalar type conversion
+    // We only support scalar type conversion.
     if (dtype_.IsObject() || dtype.IsObject()) {
         utility::LogError("Cannot cast type from {} to {}.", dtype_.ToString(),
                           dtype.ToString());
@@ -493,107 +487,36 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     return dst_tensor;
 }
 
-void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
-
-void Tensor::ShallowCopyFrom(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = other.strides_;
-    dtype_ = other.dtype_;
-    blob_ = other.blob_;
-    data_ptr_ = other.data_ptr_;
+Tensor Tensor::To(const Device& device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+    Tensor dst_tensor(shape_, dtype_, device);
+    kernel::Copy(*this, dst_tensor);
+    return dst_tensor;
 }
+
+Tensor Tensor::To(const Device& device, Dtype dtype, bool copy) const {
+    Tensor dst_tensor = To(dtype, copy);
+    dst_tensor = dst_tensor.To(device, copy);
+    return dst_tensor;
+}
+
+void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
-        // Returns a shallow copy of the current Tensor
-        return Tensor(shape_, strides_, data_ptr_, dtype_, blob_);
+        return *this;
     } else {
-        // Compact the tensor to contiguous on the same device
-        return Copy(GetDevice());
+        return To(GetDevice(), /*copy=*/true);
     }
-}
-
-SizeVector Tensor::DefaultStrides(const SizeVector& shape) {
-    SizeVector strides(shape.size());
-    int64_t stride_size = 1;
-    for (int64_t i = shape.size(); i > 0; --i) {
-        strides[i - 1] = stride_size;
-        // Handles 0-sized dimensions
-        stride_size *= std::max<int64_t>(shape[i - 1], 1);
-    }
-    return strides;
-}
-
-std::pair<bool, SizeVector> Tensor::ComputeNewStrides(
-        const SizeVector& old_shape,
-        const SizeVector& old_strides,
-        const SizeVector& new_shape) {
-    if (old_shape.empty()) {
-        return std::make_pair(true, SizeVector(new_shape.size(), 1));
-    }
-
-    // NOTE: Stride is arbitrary in the numel() == 0 case. To match NumPy
-    // behavior we copy the strides if the size matches, otherwise we use the
-    // stride as if it were computed via resize. This could perhaps be combined
-    // with the below code, but the complexity didn't seem worth it.
-    int64_t numel = old_shape.NumElements();
-    if (numel == 0 && old_shape == new_shape) {
-        return std::make_pair(true, old_strides);
-    }
-
-    SizeVector new_strides(new_shape.size());
-    if (numel == 0) {
-        for (int64_t view_d = new_shape.size() - 1; view_d >= 0; view_d--) {
-            if (view_d == (int64_t)(new_shape.size() - 1)) {
-                new_strides[view_d] = 1;
-            } else {
-                new_strides[view_d] =
-                        std::max<int64_t>(new_shape[view_d + 1], 1) *
-                        new_strides[view_d + 1];
-            }
-        }
-        return std::make_pair(true, new_strides);
-    }
-
-    int64_t view_d = new_shape.size() - 1;
-    // Stride for each subspace in the chunk
-    int64_t chunk_base_stride = old_strides.back();
-    // Numel in current chunk
-    int64_t tensor_numel = 1;
-    int64_t view_numel = 1;
-    for (int64_t tensor_d = old_shape.size() - 1; tensor_d >= 0; tensor_d--) {
-        tensor_numel *= old_shape[tensor_d];
-        // If end of tensor size chunk, check view
-        if ((tensor_d == 0) ||
-            (old_shape[tensor_d - 1] != 1 &&
-             old_strides[tensor_d - 1] != tensor_numel * chunk_base_stride)) {
-            while (view_d >= 0 &&
-                   (view_numel < tensor_numel || new_shape[view_d] == 1)) {
-                new_strides[view_d] = view_numel * chunk_base_stride;
-                view_numel *= new_shape[view_d];
-                view_d--;
-            }
-            if (view_numel != tensor_numel) {
-                return std::make_pair(false, SizeVector());
-            }
-            if (tensor_d > 0) {
-                chunk_base_stride = old_strides[tensor_d - 1];
-                tensor_numel = 1;
-                view_numel = 1;
-            }
-        }
-    }
-    if (view_d != -1) {
-        return std::make_pair(false, SizeVector());
-    }
-    return std::make_pair(true, new_strides);
 }
 
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
     if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
-        Tensor host_contiguous_tensor = Copy(Device("CPU:0"));
+        Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
         if (shape_.NumElements() == 0) {
@@ -799,7 +722,7 @@ double Tensor::Det() const {
     // TODO: Create a proper op for Determinant.
     this->AssertShape({3, 3});
     this->AssertDtype(core::Dtype::Float32);
-    core::Tensor D_ = this->Copy();
+    core::Tensor D_ = this->Clone();
     D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
                D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
                D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
@@ -1137,7 +1060,7 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
     Tensor result = kernel::NonZero(*this);
     std::vector<Tensor> results;
     for (int64_t dim = 0; dim < NumDims(); dim++) {
-        results.push_back(result[dim].Copy(GetDevice()));
+        results.push_back(result[dim].Clone());
     }
     return results;
 }
@@ -1251,7 +1174,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 
     SizeVector strides;
     if (src->dl_tensor.strides == nullptr) {
-        strides = Tensor::DefaultStrides(shape);
+        strides = shape_util::DefaultStrides(shape);
     } else {
         strides = SizeVector(src->dl_tensor.strides,
                              src->dl_tensor.strides + src->dl_tensor.ndim);
@@ -1265,6 +1188,14 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                   reinterpret_cast<char*>(blob->GetDataPtr()) +
                           src->dl_tensor.byte_offset,
                   dtype, blob);
+}
+
+void Tensor::Save(const std::string& file_name) const {
+    NumpyArray(*this).Save(file_name);
+}
+
+Tensor Tensor::Load(const std::string& file_name) {
+    return NumpyArray::Load(file_name).ToTensor();
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
