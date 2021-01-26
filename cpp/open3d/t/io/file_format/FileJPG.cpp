@@ -79,15 +79,18 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     }
     jpeg_start_decompress(&cinfo);
     image.Clear();
-    image.Reset(cinfo.output_height, cinfo.output_width, num_of_channels, core::Dtype::UInt8, image.GetDevice());
-    
+    image.Reset(cinfo.output_height, cinfo.output_width, num_of_channels,
+                core::Dtype::UInt8, image.GetDevice());
+
     int row_stride = cinfo.output_width * cinfo.output_components;
-    buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
-    uint8_t *pdata = static_cast<uint8_t*>(image.GetDataPtr());
+    buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
+                                        row_stride, 1);
+    uint8_t *pdata = static_cast<uint8_t *>(image.GetDataPtr());
 
     while (cinfo.output_scanline < cinfo.output_height) {
         jpeg_read_scanlines(&cinfo, buffer, 1);
-        core::MemoryManager::MemcpyFromHost(pdata, image.GetDevice(), buffer[0], row_stride * 1);
+        core::MemoryManager::MemcpyFromHost(pdata, image.GetDevice(), buffer[0],
+                                            row_stride * 1);
         pdata += row_stride;
     }
     jpeg_finish_decompress(&cinfo);
@@ -140,10 +143,11 @@ bool WriteImageToJPG(const std::string &filename,
     jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);
     int row_stride = image.GetCols() * image.GetChannels();
-    const uint8_t *pdata = static_cast<const uint8_t*>(image.GetDataPtr());
+    const uint8_t *pdata = static_cast<const uint8_t *>(image.GetDataPtr());
     std::vector<uint8_t> buffer(row_stride);
     while (cinfo.next_scanline < cinfo.image_height) {
-        core::MemoryManager::MemcpyToHost(buffer.data(), pdata, image.GetDevice(), row_stride * 1);
+        core::MemoryManager::MemcpyToHost(buffer.data(), pdata,
+                                          image.GetDevice(), row_stride * 1);
         row_pointer[0] = buffer.data();
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
         pdata += row_stride;

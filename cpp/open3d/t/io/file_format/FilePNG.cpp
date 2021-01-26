@@ -75,9 +75,13 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
     }
     if (pngimage.format & PNG_FORMAT_FLAG_LINEAR)
-        image.Reset(pngimage.height, pngimage.width, PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format), core::Dtype::UInt16, image.GetDevice());
+        image.Reset(pngimage.height, pngimage.width,
+                    PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                    core::Dtype::UInt16, image.GetDevice());
     else
-        image.Reset(pngimage.height, pngimage.width, PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format), core::Dtype::UInt8, image.GetDevice());
+        image.Reset(pngimage.height, pngimage.width,
+                    PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                    core::Dtype::UInt8, image.GetDevice());
 
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
         0) {

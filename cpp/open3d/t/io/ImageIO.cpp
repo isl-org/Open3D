@@ -28,12 +28,12 @@
 
 #include <unordered_map>
 
+#include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/io/ImageIO.h"
 
 namespace open3d {
-namespace t{
+namespace t {
 
 namespace {
 using namespace io;

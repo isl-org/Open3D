@@ -69,7 +69,7 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
-Image& Image::Reset(int64_t rows,
+Image &Image::Reset(int64_t rows,
                     int64_t cols,
                     int64_t channels,
                     core::Dtype dtype,
@@ -87,7 +87,6 @@ Image& Image::Reset(int64_t rows,
     data_ = core::Tensor({rows, cols, channels}, dtype, device);
     return *this;
 }
-
 
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
                              const core::Device &device) {
