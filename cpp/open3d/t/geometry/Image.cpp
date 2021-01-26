@@ -38,6 +38,7 @@
 #include "open3d/t/geometry/kernel/IPPImage.h"
 #include "open3d/t/geometry/kernel/NPPImage.h"
 #include "open3d/utility/Console.h"
+#include "open3d/Macro.h"
 
 namespace open3d {
 namespace t {
@@ -89,7 +90,7 @@ Image Image::To(core::Dtype dtype,
             {core::Dtype::UInt16},  {core::Dtype::Int32},
             {core::Dtype::Float32}, {core::Dtype::Float64}};
 
-    double scale = 1.0;
+    [[maybe_unused]] double scale = 1.0;
     if (!scale_.has_value() &&
         (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64)) {
         if (GetDtype() == core::Dtype::UInt8) {
@@ -106,7 +107,7 @@ Image Image::To(core::Dtype dtype,
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
         std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
-        // FIXME: Tensor based Op for saturate_cast / LinearTransform
+        // TODO: Tensor based Op for saturate_cast / LinearTransform
         // NPP does not expose a useful API, so as a workaround, move data to
         // CPU and use IPP.
         auto device = data_.GetDevice();
