@@ -100,7 +100,7 @@ ExternalProject_Add_Step(ext_webrtc build_obj
 )
 
 # TODO: check if the trailing "/" is is needed.
-set(WEBRTC_INCLUDE_DIR
+set(WEBRTC_INCLUDE_DIRS
     ${WEBRTC_ROOT}/src/
     ${WEBRTC_ROOT}/src/third_party/abseil-cpp/
     ${WEBRTC_ROOT}/src/third_party/jsoncpp/source/include/

@@ -1,9 +1,10 @@
 add_custom_target(copy_html_dir
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/html
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/html ${CMAKE_BINARY_DIR}/html
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/html ${CMAKE_BINARY_DIR}/html
 )
 
 file(GLOB WEBRTC_STREAMER_SRC *.cpp)
+list(FILTER WEBRTC_STREAMER_SRC EXCLUDE REGEX .*WebRTCStreamer.cpp)
 file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
     live/groupsock/*.c*
     live/liveMedia/*.c*
@@ -14,19 +15,15 @@ file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
     civetweb/CivetServer.cpp
 )
 
-add_executable(webrtc-streamer
+add_library(webrtc-streamer OBJECT
     ${WEBRTC_STREAMER_SRC}
     ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: live(&555helper), civietweb
 )
-add_dependencies(webrtc-streamer
-    ext_webrtc_all
-    copy_html_dir
-)
-target_link_directories(webrtc-streamer PRIVATE
-    ${WEBRTC_LIB_DIR}
-)
+# target_link_directories(webrtc-streamer PRIVATE
+#     ${WEBRTC_LIB_DIR}
+# )
 target_link_libraries(webrtc-streamer PRIVATE
-    ${WEBRTC_LIBRARIES}
+    # ${WEBRTC_LIBRARIES}
     Threads::Threads
     dl
     X11                                # optional: X11 (desktop capture)
@@ -38,7 +35,7 @@ target_link_libraries(webrtc-streamer PRIVATE
     Xtst                               # optional: X11 (desktop capture)
 )
 target_include_directories(webrtc-streamer SYSTEM PRIVATE
-    ${WEBRTC_INCLUDE_DIRS}
+    # ${WEBRTC_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     live/groupsock/include             # optional: live
     live/liveMedia/include             # optional: live
@@ -59,3 +56,8 @@ target_compile_definitions(webrtc-streamer PRIVATE
 target_compile_options(webrtc-streamer PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
 )
+
+open3d_show_and_abort_on_warning(webrtc-streamer)
+open3d_set_global_properties(webrtc-streamer)
+open3d_set_open3d_lib_properties(webrtc-streamer)
+open3d_link_3rdparty_libraries(webrtc-streamer)
