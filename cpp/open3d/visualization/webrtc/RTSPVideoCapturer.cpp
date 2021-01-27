@@ -9,7 +9,7 @@
 
 #ifdef HAVE_LIVE555
 
-#include "RTSPVideoCapturer.h"
+#include "open3d/visualization/webrtc/RTSPVideoCapturer.h"
 
 #include <rtc_base/logging.h>
 

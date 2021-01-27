@@ -7,7 +7,7 @@
 **
 ** -------------------------------------------------------------------------*/
 
-#include "HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
 
 #include <cstring>
 #include <iostream>

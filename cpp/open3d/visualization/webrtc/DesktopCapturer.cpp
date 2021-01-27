@@ -9,7 +9,7 @@
 
 #ifdef USE_X11
 
-#include "DesktopCapturer.h"
+#include "open3d/visualization/webrtc/DesktopCapturer.h"
 
 #include <rtc_base/logging.h>
 

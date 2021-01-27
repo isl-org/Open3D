@@ -12,7 +12,7 @@
 #include <live555helper/rtspconnectionclient.h>
 #include <rtc_base/ref_counted_object.h>
 
-#include "LiveAudioSource.h"
+#include "open3d/visualization/webrtc/LiveAudioSource.h"
 
 class RTSPAudioSource : public LiveAudioSource<RTSPConnection> {
 public:

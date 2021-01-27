@@ -11,7 +11,7 @@
 
 #include <live555helper/mkvclient.h>
 
-#include "LiveVideoSource.h"
+#include "open3d/visualization/webrtc/LiveVideoSource.h"
 
 class FileVideoCapturer : public LiveVideoSource<MKVClient> {
 public:

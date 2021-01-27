@@ -11,7 +11,7 @@
 
 #include <live555helper/rtspconnectionclient.h>
 
-#include "LiveVideoSource.h"
+#include "open3d/visualization/webrtc/LiveVideoSource.h"
 
 class RTSPVideoCapturer : public LiveVideoSource<RTSPConnection> {
 public:

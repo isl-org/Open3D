@@ -11,7 +11,7 @@
 
 #include <live555helper/sdpclient.h>
 
-#include "LiveVideoSource.h"
+#include "open3d/visualization/webrtc/LiveVideoSource.h"
 
 class RTPVideoCapturer : public LiveVideoSource<SDPClient> {
 public:

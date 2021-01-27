@@ -29,7 +29,7 @@
 #include <thread>
 #include <vector>
 
-#include "VideoDecoder.h"
+#include "open3d/visualization/webrtc/VideoDecoder.h"
 
 template <typename T>
 class LiveVideoSource : public rtc::VideoSourceInterface<webrtc::VideoFrame>,

@@ -17,8 +17,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "HttpServerRequestHandler.h"
-#include "PeerConnectionManager.h"
+#include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc/PeerConnectionManager.h"
 
 PeerConnectionManager* peer_connection_manager = nullptr;
 

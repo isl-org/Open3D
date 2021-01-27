@@ -7,7 +7,7 @@
 **
 ** -------------------------------------------------------------------------*/
 
-#include "PeerConnectionManager.h"
+#include "open3d/visualization/webrtc/PeerConnectionManager.h"
 
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
@@ -24,10 +24,10 @@
 #include <iostream>
 #include <utility>
 
-#include "CapturerFactory.h"
-#include "V4l2AlsaMap.h"
-#include "VideoFilter.h"
-#include "VideoScaler.h"
+#include "open3d/visualization/webrtc/CapturerFactory.h"
+#include "open3d/visualization/webrtc/V4l2AlsaMap.h"
+#include "open3d/visualization/webrtc/VideoFilter.h"
+#include "open3d/visualization/webrtc/VideoScaler.h"
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";

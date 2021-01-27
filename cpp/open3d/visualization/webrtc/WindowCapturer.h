@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "DesktopCapturer.h"
+#include "open3d/visualization/webrtc/DesktopCapturer.h"
 
 class WindowCapturer : public DesktopCapturer {
 public:

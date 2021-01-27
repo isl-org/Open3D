@@ -9,7 +9,7 @@
 
 #ifdef HAVE_LIVE555
 
-#include "FileVideoCapturer.h"
+#include "open3d/visualization/webrtc/FileVideoCapturer.h"
 
 #include <rtc_base/logging.h>
 

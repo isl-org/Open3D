@@ -22,14 +22,14 @@
 
 #include <regex>
 
-#include "VcmCapturer.h"
+#include "open3d/visualization/webrtc/VcmCapturer.h"
 
 #ifdef HAVE_LIVE555
-#include "FileAudioCapturer.h"
-#include "FileVideoCapturer.h"
-#include "RTPVideoCapturer.h"
-#include "RTSPAudioCapturer.h"
-#include "RTSPVideoCapturer.h"
+#include "open3d/visualization/webrtc/FileAudioCapturer.h"
+#include "open3d/visualization/webrtc/FileVideoCapturer.h"
+#include "open3d/visualization/webrtc/RTPVideoCapturer.h"
+#include "open3d/visualization/webrtc/RTSPAudioCapturer.h"
+#include "open3d/visualization/webrtc/RTSPVideoCapturer.h"
 #endif
 
 #ifdef USE_X11

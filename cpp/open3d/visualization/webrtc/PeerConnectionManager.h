@@ -20,7 +20,7 @@
 #include <string>
 #include <thread>
 
-#include "HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
 
 class PeerConnectionManager {
     class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
