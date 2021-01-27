@@ -67,6 +67,7 @@ protected:
     bool m_isrunning;
     rtc::VideoBroadcaster broadcaster_;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

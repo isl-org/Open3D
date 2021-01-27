@@ -253,6 +253,7 @@ public:
         return audioSource;
     }
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

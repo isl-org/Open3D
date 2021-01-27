@@ -52,6 +52,7 @@ public:
         return capturer.release();
     }
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

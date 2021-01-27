@@ -234,6 +234,7 @@ private:
     int64_t m_previmagets;
     int64_t m_prevts;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

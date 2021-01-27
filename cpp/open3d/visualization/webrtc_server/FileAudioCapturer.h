@@ -37,6 +37,7 @@ protected:
             const std::map<std::string, std::string>& opts);
     virtual ~FileAudioSource();
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

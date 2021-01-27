@@ -128,6 +128,7 @@ HttpServerRequestHandler::HttpServerRequestHandler(
         this->addHandler(it.first, new RequestHandler(it.second));
     }
 }
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

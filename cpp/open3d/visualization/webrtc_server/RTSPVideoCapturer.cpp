@@ -30,6 +30,7 @@ void RTSPVideoCapturer::onError(RTSPConnection& connection, const char* error) {
                       << m_liveclient.getUrl() << " error:" << error;
     connection.start(1);
 }
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

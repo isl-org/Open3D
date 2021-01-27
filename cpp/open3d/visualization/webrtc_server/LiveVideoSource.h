@@ -262,6 +262,7 @@ private:
     rtc::VideoBroadcaster m_broadcaster;
     VideoDecoder m_decoder;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

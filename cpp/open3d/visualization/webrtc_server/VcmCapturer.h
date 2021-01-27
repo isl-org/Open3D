@@ -137,6 +137,7 @@ private:
     rtc::scoped_refptr<webrtc::VideoCaptureModule> m_vcm;
     rtc::VideoBroadcaster m_broadcaster;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

@@ -385,6 +385,7 @@ protected:
     std::map<std::string, HttpServerRequestHandler::httpFunction> m_func;
     std::string m_webrtcPortRange;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

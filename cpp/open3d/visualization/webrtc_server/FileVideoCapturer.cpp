@@ -24,6 +24,7 @@ FileVideoCapturer::FileVideoCapturer(
 }
 
 FileVideoCapturer::~FileVideoCapturer() {}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

@@ -24,6 +24,7 @@ RTSPAudioSource::RTSPAudioSource(
     : LiveAudioSource(audioDecoderFactory, uri, opts, false) {}
 
 RTSPAudioSource::~RTSPAudioSource() {}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

@@ -94,6 +94,7 @@ void DesktopCapturer::Stop() {
     m_isrunning = false;
     m_capturethread.join();
 }
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

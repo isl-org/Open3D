@@ -183,6 +183,7 @@ private:
     int m_roi_width;
     int m_roi_height;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

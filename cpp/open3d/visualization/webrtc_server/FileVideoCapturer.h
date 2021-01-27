@@ -29,6 +29,7 @@ public:
         return new FileVideoCapturer(url, opts);
     }
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

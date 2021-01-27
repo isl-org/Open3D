@@ -28,6 +28,7 @@ RTPVideoCapturer::~RTPVideoCapturer() {}
 void RTPVideoCapturer::onError(SDPClient& connection, const char* error) {
     RTC_LOG(LS_ERROR) << "RTPVideoCapturer:onError error:" << error;
 }
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

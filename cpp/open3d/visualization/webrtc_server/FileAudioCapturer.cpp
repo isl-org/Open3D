@@ -26,6 +26,7 @@ FileAudioSource::FileAudioSource(
 }
 
 FileAudioSource::~FileAudioSource() {}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

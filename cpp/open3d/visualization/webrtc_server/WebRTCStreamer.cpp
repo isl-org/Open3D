@@ -102,6 +102,7 @@ void WebRTCStreamer::Run() {
     rtc::CleanupSSL();
     std::cout << "Exit" << std::endl;
 }
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

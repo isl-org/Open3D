@@ -51,6 +51,7 @@ private:
     }
     std::unique_ptr<T> m_source;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

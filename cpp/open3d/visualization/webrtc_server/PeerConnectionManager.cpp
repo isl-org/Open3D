@@ -1215,6 +1215,7 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
         m_iceCandidateList.append(jmessage);
     }
 }
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

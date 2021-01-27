@@ -38,6 +38,7 @@ public:
     }
     virtual void onError(RTSPConnection& connection, const char* erro) override;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

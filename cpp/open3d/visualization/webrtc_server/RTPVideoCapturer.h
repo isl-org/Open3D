@@ -32,6 +32,7 @@ public:
     // overide SDPClient::Callback
     virtual void onError(SDPClient& connection, const char* error) override;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

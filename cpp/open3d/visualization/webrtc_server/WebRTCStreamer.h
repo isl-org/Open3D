@@ -20,6 +20,7 @@ private:
     std::string http_address_;
     std::string web_root_;
 };
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d
