@@ -110,18 +110,18 @@ set(WEBRTC_INCLUDE_DIRS
 set(WEBRTC_LIB_DIR ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/obj)
 set(WEBRTC_LIBRARIES
     webrtc
-    ext_webrtc_extra
+    webrtc_extra
 )
 
 # libwebrtc_extra.a
-add_library(ext_webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
+add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
 set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES GENERATED TRUE)
-add_dependencies(ext_webrtc_extra ext_webrtc)
-set_target_properties(ext_webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(ext_webrtc_extra PROPERTIES
+add_dependencies(webrtc_extra ext_webrtc)
+set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(webrtc_extra PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${WEBRTC_LIB_DIR}
 )
 
 # Dummy target that depends on all WebRTC targets.
 add_custom_target(ext_webrtc_all)
-add_dependencies(ext_webrtc_all ext_webrtc ext_webrtc_extra)
+add_dependencies(ext_webrtc_all ext_webrtc webrtc_extra)
