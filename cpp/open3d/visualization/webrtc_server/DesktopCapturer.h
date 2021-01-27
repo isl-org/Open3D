@@ -19,6 +19,10 @@
 
 #include <thread>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 class DesktopCapturer : public rtc::VideoSourceInterface<webrtc::VideoFrame>,
                         public webrtc::DesktopCapturer::Callback {
 public:
@@ -63,3 +67,6 @@ protected:
     bool m_isrunning;
     rtc::VideoBroadcaster broadcaster_;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

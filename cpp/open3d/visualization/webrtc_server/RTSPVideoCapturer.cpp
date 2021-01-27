@@ -9,9 +9,13 @@
 
 #ifdef HAVE_LIVE555
 
-#include "open3d/visualization/webrtc/RTSPVideoCapturer.h"
+#include "open3d/visualization/webrtc_server/RTSPVideoCapturer.h"
 
 #include <rtc_base/logging.h>
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 RTSPVideoCapturer::RTSPVideoCapturer(
         const std::string& uri, const std::map<std::string, std::string>& opts)
@@ -26,5 +30,7 @@ void RTSPVideoCapturer::onError(RTSPConnection& connection, const char* error) {
                       << m_liveclient.getUrl() << " error:" << error;
     connection.start(1);
 }
-
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d
 #endif

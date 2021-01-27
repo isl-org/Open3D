@@ -16,6 +16,10 @@
 #include <list>
 #include <map>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 /* ---------------------------------------------------------------------------
 **  http callback
 ** -------------------------------------------------------------------------*/
@@ -28,3 +32,6 @@ public:
     HttpServerRequestHandler(std::map<std::string, httpFunction>& func,
                              const std::vector<std::string>& options);
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

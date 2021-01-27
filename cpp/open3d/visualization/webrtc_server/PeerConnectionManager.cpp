@@ -7,7 +7,7 @@
 **
 ** -------------------------------------------------------------------------*/
 
-#include "open3d/visualization/webrtc/PeerConnectionManager.h"
+#include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
@@ -24,10 +24,14 @@
 #include <iostream>
 #include <utility>
 
-#include "open3d/visualization/webrtc/CapturerFactory.h"
-#include "open3d/visualization/webrtc/V4l2AlsaMap.h"
-#include "open3d/visualization/webrtc/VideoFilter.h"
-#include "open3d/visualization/webrtc/VideoScaler.h"
+#include "open3d/visualization/webrtc_server/CapturerFactory.h"
+#include "open3d/visualization/webrtc_server/V4l2AlsaMap.h"
+#include "open3d/visualization/webrtc_server/VideoFilter.h"
+#include "open3d/visualization/webrtc_server/VideoScaler.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";
@@ -1211,3 +1215,6 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
         m_iceCandidateList.append(jmessage);
     }
 }
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

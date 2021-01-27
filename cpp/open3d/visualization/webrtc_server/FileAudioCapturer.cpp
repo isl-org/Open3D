@@ -9,9 +9,13 @@
 
 #ifdef HAVE_LIVE555
 
-#include "open3d/visualization/webrtc/FileAudioCapturer.h"
+#include "open3d/visualization/webrtc_server/FileAudioCapturer.h"
 
 #include <rtc_base/logging.h>
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 FileAudioSource::FileAudioSource(
         rtc::scoped_refptr<webrtc::AudioDecoderFactory> audioDecoderFactory,
@@ -22,4 +26,7 @@ FileAudioSource::FileAudioSource(
 }
 
 FileAudioSource::~FileAudioSource() {}
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d
 #endif

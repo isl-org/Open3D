@@ -9,9 +9,13 @@
 
 #ifdef USE_X11
 
-#include "open3d/visualization/webrtc/DesktopCapturer.h"
+#include "open3d/visualization/webrtc_server/DesktopCapturer.h"
 
 #include <rtc_base/logging.h>
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 void DesktopCapturer::OnCaptureResult(
         webrtc::DesktopCapturer::Result result,
@@ -90,5 +94,7 @@ void DesktopCapturer::Stop() {
     m_isrunning = false;
     m_capturethread.join();
 }
-
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d
 #endif

@@ -7,10 +7,14 @@
 **
 ** -------------------------------------------------------------------------*/
 
-#include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 
 #include <cstring>
 #include <iostream>
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 int log_message(const struct mg_connection *conn, const char *message) {
     fprintf(stderr, "%s\n", message);
@@ -124,3 +128,6 @@ HttpServerRequestHandler::HttpServerRequestHandler(
         this->addHandler(it.first, new RequestHandler(it.second));
     }
 }
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

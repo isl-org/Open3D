@@ -264,7 +264,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
         -Wl,-z,relro,-z,now         # Data relocation protection
-        -pie                        # Position independent execution
+        # -pie                        # Position independent execution
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
         list(APPEND HARDENING_CFLAGS -O2)

@@ -9,9 +9,13 @@
 
 #ifdef HAVE_LIVE555
 
-#include "open3d/visualization/webrtc/RTPVideoCapturer.h"
+#include "open3d/visualization/webrtc_server/RTPVideoCapturer.h"
 
 #include <rtc_base/logging.h>
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 RTPVideoCapturer::RTPVideoCapturer(
         const std::string& uri, const std::map<std::string, std::string>& opts)
@@ -24,5 +28,7 @@ RTPVideoCapturer::~RTPVideoCapturer() {}
 void RTPVideoCapturer::onError(SDPClient& connection, const char* error) {
     RTC_LOG(LS_ERROR) << "RTPVideoCapturer:onError error:" << error;
 }
-
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d
 #endif

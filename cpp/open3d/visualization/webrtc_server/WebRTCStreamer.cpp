@@ -7,7 +7,7 @@
 **
 ** -------------------------------------------------------------------------*/
 
-#include "open3d/visualization/webrtc/WebRTCStreamer.h"
+#include "open3d/visualization/webrtc_server/WebRTCStreamer.h"
 
 #include <p2p/base/basic_packet_socket_factory.h>
 #include <p2p/base/stun_server.h>
@@ -19,8 +19,12 @@
 #include <fstream>
 #include <iostream>
 
-#include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
-#include "open3d/visualization/webrtc/PeerConnectionManager.h"
+#include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 // TODO: move this into the class.
 static PeerConnectionManager* peer_connection_manager = nullptr;
@@ -98,3 +102,6 @@ void WebRTCStreamer::Run() {
     rtc::CleanupSSL();
     std::cout << "Exit" << std::endl;
 }
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

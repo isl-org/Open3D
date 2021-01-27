@@ -12,6 +12,10 @@
 #ifndef WIN32
 #include <dirent.h>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 /* ---------------------------------------------------------------------------
 **  get a "deviceid" from uevent sys file
 ** -------------------------------------------------------------------------*/
@@ -126,3 +130,6 @@ std::map<std::string, std::string> getV4l2AlsaMap() {
     return std::map<std::string, std::string>();
 };
 #endif
+}
+}
+}

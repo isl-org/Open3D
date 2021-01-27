@@ -20,6 +20,10 @@
 #include <queue>
 #include <thread>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 template <typename T>
 class LiveAudioSource : public webrtc::Notifier<webrtc::AudioSourceInterface>,
                         public T::Callback {
@@ -230,3 +234,6 @@ private:
     int64_t m_previmagets;
     int64_t m_prevts;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

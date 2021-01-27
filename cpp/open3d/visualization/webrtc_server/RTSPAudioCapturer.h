@@ -12,7 +12,11 @@
 #include <live555helper/rtspconnectionclient.h>
 #include <rtc_base/ref_counted_object.h>
 
-#include "open3d/visualization/webrtc/LiveAudioSource.h"
+#include "open3d/visualization/webrtc_server/LiveAudioSource.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 class RTSPAudioSource : public LiveAudioSource<RTSPConnection> {
 public:
@@ -33,3 +37,6 @@ protected:
             const std::map<std::string, std::string>& opts);
     virtual ~RTSPAudioSource();
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

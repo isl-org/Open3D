@@ -12,6 +12,10 @@
 #include <media/base/video_broadcaster.h>
 #include <modules/video_capture/video_capture_factory.h>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 class VcmCapturer : public rtc::VideoSinkInterface<webrtc::VideoFrame>,
                     public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
@@ -133,3 +137,6 @@ private:
     rtc::scoped_refptr<webrtc::VideoCaptureModule> m_vcm;
     rtc::VideoBroadcaster m_broadcaster;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

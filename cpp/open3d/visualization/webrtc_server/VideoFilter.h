@@ -11,6 +11,10 @@
 
 #include <pc/video_track_source.h>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 template <class T>
 class VideoFilter : public webrtc::VideoTrackSource {
 public:
@@ -47,3 +51,6 @@ private:
     }
     std::unique_ptr<T> m_source;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

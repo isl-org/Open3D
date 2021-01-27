@@ -1,7 +1,7 @@
-#include "open3d/visualization/webrtc/WebRTCStreamer.h"
+#include "open3d/visualization/webrtc_server/WebRTCStreamer.h"
 
 int main() {
-    WebRTCStreamer wss;
+    open3d::visualization::webrtc_server::WebRTCStreamer wss;
     wss.Run();
 }
 

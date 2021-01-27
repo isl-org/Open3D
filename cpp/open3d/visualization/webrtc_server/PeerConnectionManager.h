@@ -20,7 +20,11 @@
 #include <string>
 #include <thread>
 
-#include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 class PeerConnectionManager {
     class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
@@ -381,3 +385,6 @@ protected:
     std::map<std::string, HttpServerRequestHandler::httpFunction> m_func;
     std::string m_webrtcPortRange;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

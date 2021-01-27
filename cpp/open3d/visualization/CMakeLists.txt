@@ -78,5 +78,5 @@ if (BUILD_GUI)
 endif()
 
 if (BUILD_WEBRTC)
-    add_subdirectory(webrtc)
+    add_subdirectory(webrtc_server)
 endif()

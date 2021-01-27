@@ -12,6 +12,10 @@
 #include <api/media_stream_interface.h>
 #include <media/base/video_broadcaster.h>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 class VideoScaler : public rtc::VideoSinkInterface<webrtc::VideoFrame>,
                     public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
@@ -179,3 +183,6 @@ private:
     int m_roi_width;
     int m_roi_height;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

@@ -9,9 +9,13 @@
 
 #ifdef HAVE_LIVE555
 
-#include "open3d/visualization/webrtc/FileVideoCapturer.h"
+#include "open3d/visualization/webrtc_server/FileVideoCapturer.h"
 
 #include <rtc_base/logging.h>
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 FileVideoCapturer::FileVideoCapturer(
         const std::string& uri, const std::map<std::string, std::string>& opts)
@@ -20,5 +24,7 @@ FileVideoCapturer::FileVideoCapturer(
 }
 
 FileVideoCapturer::~FileVideoCapturer() {}
-
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d
 #endif

@@ -11,7 +11,11 @@
 
 #include <live555helper/sdpclient.h>
 
-#include "open3d/visualization/webrtc/LiveVideoSource.h"
+#include "open3d/visualization/webrtc_server/LiveVideoSource.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 class RTPVideoCapturer : public LiveVideoSource<SDPClient> {
 public:
@@ -28,3 +32,6 @@ public:
     // overide SDPClient::Callback
     virtual void onError(SDPClient& connection, const char* error) override;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

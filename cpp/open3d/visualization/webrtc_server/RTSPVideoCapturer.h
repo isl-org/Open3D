@@ -11,7 +11,11 @@
 
 #include <live555helper/rtspconnectionclient.h>
 
-#include "open3d/visualization/webrtc/LiveVideoSource.h"
+#include "open3d/visualization/webrtc_server/LiveVideoSource.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 class RTSPVideoCapturer : public LiveVideoSource<RTSPConnection> {
 public:
@@ -34,3 +38,6 @@ public:
     }
     virtual void onError(RTSPConnection& connection, const char* erro) override;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

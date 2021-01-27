@@ -24,20 +24,24 @@
 
 #include <regex>
 
-#include "open3d/visualization/webrtc/VcmCapturer.h"
+#include "open3d/visualization/webrtc_server/VcmCapturer.h"
 
 #ifdef HAVE_LIVE555
-#include "open3d/visualization/webrtc/FileAudioCapturer.h"
-#include "open3d/visualization/webrtc/FileVideoCapturer.h"
-#include "open3d/visualization/webrtc/RTPVideoCapturer.h"
-#include "open3d/visualization/webrtc/RTSPAudioCapturer.h"
-#include "open3d/visualization/webrtc/RTSPVideoCapturer.h"
+#include "open3d/visualization/webrtc_server/FileAudioCapturer.h"
+#include "open3d/visualization/webrtc_server/FileVideoCapturer.h"
+#include "open3d/visualization/webrtc_server/RTPVideoCapturer.h"
+#include "open3d/visualization/webrtc_server/RTSPAudioCapturer.h"
+#include "open3d/visualization/webrtc_server/RTSPVideoCapturer.h"
 #endif
 
 #ifdef USE_X11
-#include "open3d/visualization/webrtc/ScreenCapturer.h"
-#include "open3d/visualization/webrtc/WindowCapturer.h"
+#include "open3d/visualization/webrtc_server/ScreenCapturer.h"
+#include "open3d/visualization/webrtc_server/WindowCapturer.h"
 #endif
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 template <class T>
 class TrackSource : public webrtc::VideoTrackSource {
@@ -249,3 +253,6 @@ public:
         return audioSource;
     }
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

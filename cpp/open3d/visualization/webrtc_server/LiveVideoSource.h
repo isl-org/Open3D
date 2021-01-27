@@ -29,7 +29,11 @@
 #include <thread>
 #include <vector>
 
-#include "open3d/visualization/webrtc/VideoDecoder.h"
+#include "open3d/visualization/webrtc_server/VideoDecoder.h"
+
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
 
 template <typename T>
 class LiveVideoSource : public rtc::VideoSourceInterface<webrtc::VideoFrame>,
@@ -258,3 +262,6 @@ private:
     rtc::VideoBroadcaster m_broadcaster;
     VideoDecoder m_decoder;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

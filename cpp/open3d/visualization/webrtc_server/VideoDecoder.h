@@ -16,6 +16,10 @@
 #include <cstring>
 #include <vector>
 
+namespace open3d {
+namespace visualization {
+namespace webrtc_server {
+
 class VideoDecoder : public webrtc::DecodedImageCallback {
 private:
     class Frame {
@@ -218,3 +222,6 @@ public:
     int64_t m_previmagets;
     int64_t m_prevts;
 };
+}  // namespace webrtc_server
+}  // namespace visualization
+}  // namespace open3d

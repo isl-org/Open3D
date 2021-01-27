@@ -14,11 +14,11 @@ file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
     civetweb/CivetServer.cpp
 )
 
-add_library(webrtc-streamer OBJECT
+add_library(webrtc_server OBJECT
     ${WEBRTC_STREAMER_SRC}
     ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: live(&555helper), civietweb
 )
-target_include_directories(webrtc-streamer SYSTEM PRIVATE
+target_include_directories(webrtc_server SYSTEM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     live/groupsock/include             # optional: live
     live/liveMedia/include             # optional: live
@@ -26,7 +26,7 @@ target_include_directories(webrtc-streamer SYSTEM PRIVATE
     live/BasicUsageEnvironment/include # optional: live
     civetweb                           # optional: civetweb
 )
-target_compile_definitions(webrtc-streamer PRIVATE
+target_compile_definitions(webrtc_server PRIVATE
     WEBRTC_POSIX
     USE_X11                            # optional: X11 (desktop capture)
     OPENSSL_API_1_1                    # optional: civetweb
@@ -36,11 +36,11 @@ target_compile_definitions(webrtc-streamer PRIVATE
     _FILE_OFFSET_BITS=64               # optional: civetweb
     _LARGEFILE_SOURCE=1                # optional: civetweb
 )
-target_compile_options(webrtc-streamer PRIVATE
+target_compile_options(webrtc_server PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
 )
 
-open3d_show_and_abort_on_warning(webrtc-streamer)
-open3d_set_global_properties(webrtc-streamer)
-open3d_set_open3d_lib_properties(webrtc-streamer)
-open3d_link_3rdparty_libraries(webrtc-streamer)
+open3d_show_and_abort_on_warning(webrtc_server)
+open3d_set_global_properties(webrtc_server)
+open3d_set_open3d_lib_properties(webrtc_server)
+open3d_link_3rdparty_libraries(webrtc_server)
