@@ -255,12 +255,12 @@ if (MSVC)
         CACHE STRING "Linker flags for security hardening")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(HARDENING_CFLAGS
-        -fsanitize=safe-stack           # Stack execution protection
+        # -fsanitize=safe-stack           # Stack execution protection
         -fstack-protector               # Stack-based buffer overrun detection
         -fpie -fPIC                     # Position independent execution
         -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security      # Format string vulnerability
-        -fsanitize=cfi                  # Control flow integrity
+        # -fsanitize=cfi                  # Control flow integrity
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
         -Wl,-z,relro,-z,now         # Data relocation protection
