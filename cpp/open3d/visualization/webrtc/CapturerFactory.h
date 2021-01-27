@@ -33,8 +33,8 @@
 #endif
 
 #ifdef USE_X11
-#include "ScreenCapturer.h"
-#include "WindowCapturer.h"
+#include "open3d/visualization/webrtc/ScreenCapturer.h"
+#include "open3d/visualization/webrtc/WindowCapturer.h"
 #endif
 
 #include <pc/video_track_source.h>
