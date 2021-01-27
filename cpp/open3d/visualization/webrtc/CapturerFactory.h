@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <pc/video_track_source.h>
+
 #include <regex>
 
 #include "open3d/visualization/webrtc/VcmCapturer.h"
@@ -36,8 +38,6 @@
 #include "open3d/visualization/webrtc/ScreenCapturer.h"
 #include "open3d/visualization/webrtc/WindowCapturer.h"
 #endif
-
-#include <pc/video_track_source.h>
 
 template <class T>
 class TrackSource : public webrtc::VideoTrackSource {
