@@ -55,7 +55,7 @@
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
-#include "open3d/visualization/webrtc_server/WebRTCStreamer.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 namespace {
 

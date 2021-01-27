@@ -7,7 +7,7 @@
 **
 ** -------------------------------------------------------------------------*/
 
-#include "open3d/visualization/webrtc_server/WebRTCStreamer.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 #include <p2p/base/basic_packet_socket_factory.h>
 #include <p2p/base/stun_server.h>

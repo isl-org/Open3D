@@ -1,4 +1,4 @@
-#include "open3d/visualization/webrtc_server/WebRTCStreamer.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 int main() {
     open3d::visualization::webrtc_server::WebRTCServer wss;
