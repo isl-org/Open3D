@@ -26,18 +26,23 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-// TODO: move this into the class.
-static PeerConnectionManager* peer_connection_manager = nullptr;
+struct WebRTCServer::Impl {
+    std::string http_address_;
+    std::string web_root_;
+    std::function<void(int, double, double)> mouse_button_callback_;
+    // TODO: make this and Impl unique_ptr?
+    std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
+    void Run();
+};
 
-void SignalHandler(int n) {
-    printf("SIGINT\n");
-    // delete need thread still running
-    delete peer_connection_manager;
-    peer_connection_manager = nullptr;
-    rtc::Thread::Current()->Quit();
+WebRTCServer::WebRTCServer(const std::string& http_address,
+                           const std::string& web_root)
+    : impl_(new WebRTCServer::Impl()) {
+    impl_->http_address_ = http_address;
+    impl_->web_root_ = web_root;
 }
 
-void WebRTCServer::Run() {
+void WebRTCServer::Impl::Run() {
     std::cout << "WebRTCServer::Run()" << std::endl;
 
     const std::string web_root = web_root_;
@@ -61,13 +66,23 @@ void WebRTCServer::Run() {
     config["urls"]["Bunny"]["video"] =
             "file:///home/yixing/repo/webrtc-streamer/html/"
             "Big_Buck_Bunny_360_10s_1MB.webm";
-    peer_connection_manager =
-            new PeerConnectionManager(ice_servers, config["urls"], ".*", "");
-    if (peer_connection_manager->InitializePeerConnection()) {
+    peer_connection_manager_ = std::make_shared<PeerConnectionManager>(
+            ice_servers, config["urls"], ".*", "");
+    if (peer_connection_manager_->InitializePeerConnection()) {
         std::cout << "InitializePeerConnection() succeeded." << std::endl;
     } else {
         throw std::runtime_error("InitializePeerConnection() failed.");
     }
+
+    // TODO: fix me.
+    // https://stackoverflow.com/a/20291676/1255535.
+    // https://stackoverflow.com/q/7852101/1255535.
+    // auto signal_handler = [this](int n) {
+    //     printf("SIGINT\n");
+    //     // delete need thread still running
+    //     peer_connection_manager_ = nullptr;
+    //     rtc::Thread::Current()->Quit();
+    // };
 
     // CivetWeb http server.
     std::vector<std::string> options;
@@ -89,12 +104,12 @@ void WebRTCServer::Run() {
         // PeerConnectionManager provides a set of callback functions for
         // HttpServerRequestHandler.
         std::map<std::string, HttpServerRequestHandler::httpFunction> func =
-                peer_connection_manager->getHttpApi();
+                peer_connection_manager_->getHttpApi();
 
         // Main loop.
         std::cout << "HTTP Listen at " << http_address << std::endl;
         HttpServerRequestHandler civet_server(func, options);
-        signal(SIGINT, SignalHandler);
+        // signal(SIGINT, &signal_handler);  // TODO: fix me
         thread->Run();
     } catch (const CivetException& ex) {
         std::cout << "Cannot Initialize start HTTP server exception:"
@@ -104,6 +119,8 @@ void WebRTCServer::Run() {
     rtc::CleanupSSL();
     std::cout << "Exit" << std::endl;
 }
+
+void WebRTCServer::Run() { impl_->Run(); }
 
 }  // namespace webrtc_server
 }  // namespace visualization

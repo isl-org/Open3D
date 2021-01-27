@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace open3d {
@@ -12,19 +13,15 @@ public:
     WebRTCServer(const std::string& http_address = "localhost:8888",
                  const std::string& web_root =
                          "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
-                         "webrtc_server/html")
-        : http_address_(http_address), web_root_(web_root) {}
+                         "webrtc_server/html");
 
     void Run();
 
-    void SetMouseButtonCallback(std::function<void(int, double, double)> f) {
-        mouse_button_callback_ = f;
-    }
+    void SetMouseButtonCallback(std::function<void(int, double, double)> f) {}
 
 private:
-    std::string http_address_;
-    std::string web_root_;
-    std::function<void(int, double, double)> mouse_button_callback_;
+    struct Impl;
+    std::shared_ptr<Impl> impl_;
 };
 
 }  // namespace webrtc_server

@@ -472,6 +472,8 @@ void Window::CreateRenderer() {
 
     // Callbacks for WebRTCServer.
     // down: action 1; up: action 0.
+    // TODO: interesting read https://stackoverflow.com/a/20291676/1255535.
+    // Delete this line.
     std::function<void(int, double, double)> mouse_button_callback =
             [this](int action, double x, double y) {
                 auto type = (action == 1 ? MouseEvent::BUTTON_DOWN
