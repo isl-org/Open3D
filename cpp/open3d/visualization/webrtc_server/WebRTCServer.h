@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 namespace open3d {
@@ -16,9 +17,14 @@ public:
 
     void Run();
 
+    void SetMouseButtonCallback(std::function<void(int, double, double)> f) {
+        mouse_button_callback_ = f;
+    }
+
 private:
     std::string http_address_;
     std::string web_root_;
+    std::function<void(int, double, double)> mouse_button_callback_;
 };
 
 }  // namespace webrtc_server

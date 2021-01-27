@@ -470,11 +470,31 @@ void Window::CreateRenderer() {
 
     RestoreDrawContext(old_context);
 
+    // Callbacks for WebRTCServer.
+    // down: action 1; up: action 0.
+    std::function<void(int, double, double)> mouse_button_callback =
+            [this](int action, double x, double y) {
+                auto type = (action == 1 ? MouseEvent::BUTTON_DOWN
+                                         : MouseEvent::BUTTON_UP);
+                double mx = x;
+                double my = y;
+                int button = 0;
+                int mods = 0;
+                float scaling = this->GetScaling();
+                int ix = int(std::ceil(mx * scaling));
+                int iy = int(std::ceil(my * scaling));
+                MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+                me.button.button = MouseButton(MouseButtonFromGLFW(button));
+                this->OnMouseEvent(me);
+                UpdateAfterEvent(this);
+            };
+
     // Start WebRTCServer in a different thread.
     // TODO: give WebRTCServer the access to control GUI callbacks.
     // TODO: properly kill this thread
     // TODO: WebRTCServer manages its own thread?
     auto server = std::make_shared<webrtc_server::WebRTCServer>();
+    server->SetMouseButtonCallback(mouse_button_callback);
     auto start_webrtc_thread = [server]() { server->Run(); };
     impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
     impl_->webrtc_server_ = server;

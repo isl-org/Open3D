@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
                 "directory");
     }
 
-    SingleObject();
+    // SingleObject();
     MultiObjects();
     Actions();
     Selections();
