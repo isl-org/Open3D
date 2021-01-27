@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
@@ -71,6 +72,7 @@ public:
     };
 
     struct UIState {
+        gui::SceneWidget::Controls mouse_mode = gui::SceneWidget::Controls::ROTATE_CAMERA;
         Shader scene_shader = Shader::STANDARD;
         bool show_settings = false;
         bool show_skybox = false;
@@ -138,6 +140,7 @@ public:
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);
+    void SetMouseMode(gui::SceneWidget::Controls mode);
 
     std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets() const;
 

@@ -229,6 +229,13 @@ void pybind_o3dvisualizer(py::module& m) {
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
             .def_property(
+                    "mouse_mode",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().mouse_mode;
+                    },
+                    &O3DVisualizer::SetMouseMode,
+                    "Gets/sets the control mode being used for the mouse")
+            .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {
                         return dv.GetUIState().scene_shader;
