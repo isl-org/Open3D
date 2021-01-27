@@ -1,5 +1,9 @@
 include(ExternalProject)
 
+# TODO:
+# - Add mechanism to download depot tool and webrtc
+# - Remove hard-coded depot tool path
+
 # Creates args.gn for WebRTC build.
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     # Exports: WEBRTC_ARGS
