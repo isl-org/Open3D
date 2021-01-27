@@ -58,6 +58,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:tpipelines>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
+    $<TARGET_OBJECTS:webrtc-streamer>
     ${GUI_OBJECTS}
 )
 open3d_show_and_abort_on_warning(${PROJECT_NAME})

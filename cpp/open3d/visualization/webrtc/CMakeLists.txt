@@ -18,7 +18,7 @@ add_library(webrtc-streamer OBJECT
     ${WEBRTC_STREAMER_SRC}
     ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: live(&555helper), civietweb
 )
-target_link_libraries(webrtc-streamer PRIVATE
+target_link_libraries(webrtc-streamer INTERFACE
     Threads::Threads
     dl
     X11                                # optional: X11 (desktop capture)
