@@ -29,7 +29,7 @@ endif()
 
 set_local_or_remote_url(
     IPPICV_URL
-    LOCAL_URL "${THIRD_PARTY_DOWNLOAD_DIR}/${OPENCV_ICV_NAME}"
+    LOCAL_URL "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/${OPENCV_ICV_NAME}"
     REMOTE_URLS "https://raw.githubusercontent.com/opencv/opencv_3rdparty/${IPPICV_COMMIT}/ippicv/${OPENCV_ICV_NAME}"
     )
 

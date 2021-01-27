@@ -122,9 +122,44 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
     EXPECT_ANY_THROW(t::geometry::Image im_nc(t_3d_sliced); (void)im_nc;);
 }
 
+TEST_P(ImagePermuteDevicePairs, CopyDevice) {
+    core::Device dst_device;
+    core::Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
+    core::Tensor data =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, src_device);
+    t::geometry::Image im(data);
+
+    // Copy is created on the dst_device.
+    t::geometry::Image im_copy = im.To(dst_device, /*copy=*/true);
+
+    EXPECT_EQ(im_copy.GetDevice(), dst_device);
+    EXPECT_EQ(im_copy.GetDtype(), im.GetDtype());
+}
+
+TEST_P(ImagePermuteDevices, Copy) {
+    core::Device device = GetParam();
+
+    core::Tensor data =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+
+    // Copy is on the same device as source.
+    t::geometry::Image im_copy = im.Clone();
+
+    // Copy does not share the same memory with source (deep copy).
+    EXPECT_FALSE(im_copy.AsTensor().IsSame(im.AsTensor()));
+
+    // Copy has the same attributes and values as source.
+    EXPECT_TRUE(im_copy.AsTensor().AllClose(im.AsTensor()));
+}
+
 // Test automatic scale determination for conversion from UInt8 / UInt16 ->
-// Float32/64 and LinearTransform()
-TEST_P(ImagePermuteDevices, To_LinearTransform) {
+// Float32/64 and LinearTransform().
+// Currently needs IPP.
+TEST_P(ImagePermuteDevices,
+       OPEN3D_CONCATENATE(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
     using ::testing::ElementsAreArray;
     using ::testing::FloatEq;
     core::Device device = GetParam();
@@ -180,12 +215,15 @@ TEST_P(ImagePermuteDevices, Dilate) {
     const int half_kernel_size = 1;
     core::Device device = GetParam();
 
-    t::geometry::Image input(core::Tensor{
-            input_data, {rows, cols, channels}, core::Dtype::Float32, device});
+    core::Tensor t_input{
+            input_data, {rows, cols, channels}, core::Dtype::Float32, device};
+    t::geometry::Image input(t_input);
     t::geometry::Image output;
 
     // UInt8
-    t::geometry::Image input_uint8_t = input.To(core::Dtype::UInt8);
+    core::Tensor t_input_uint8_t =
+            t_input.To(core::Dtype::UInt8);  // normal static_cast is OK
+    t::geometry::Image input_uint8_t(t_input_uint8_t);
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
         ASSERT_THROW(input_uint8_t.Dilate(half_kernel_size),
@@ -200,7 +238,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     }
 
     // UInt16
-    t::geometry::Image input_uint16_t = input.To(core::Dtype::UInt16);
+    core::Tensor t_input_uint16_t =
+            t_input.To(core::Dtype::UInt16);  // normal static_cast is OK
+    t::geometry::Image input_uint16_t(t_input_uint16_t);
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
         ASSERT_THROW(input_uint16_t.Dilate(half_kernel_size),

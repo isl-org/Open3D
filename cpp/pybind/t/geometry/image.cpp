@@ -129,10 +129,29 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "linear_transform",
                                     map_shared_argument_docstrings);
 
-    // Conversion.
-    image.def("to", &Image::To, "Returns an Image with the specified Dtype.",
-              "dtype"_a, "scale"_a = py::none(), "offset"_a = 0.0,
+    // Device transfers.
+    image.def("to",
+              py::overload_cast<const core::Device &, bool>(&Image::To,
+                                                            py::const_),
+              "Transfer the Image to a specified device.", "device"_a,
               "copy"_a = false);
+    image.def("clone", &Image::Clone,
+              "Returns a copy of the Image on the same device.");
+    image.def("cpu", &Image::CPU,
+              "Transfer the Image to CPU. If the Image is "
+              "already on CPU, no copy will be performed.");
+    image.def(
+            "cuda", &Image::CUDA,
+            "Transfer the Image to a CUDA device. If the Image is "
+            "already on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
+
+    // Conversion.
+    image.def("to",
+              py::overload_cast<core::Dtype, bool, utility::optional<double>,
+                                double>(&Image::To, py::const_),
+              "Returns an Image with the specified Dtype.", "dtype"_a,
+              "scale"_a = py::none(), "offset"_a = 0.0, "copy"_a = false);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},

@@ -48,7 +48,10 @@ else()
 endif()
 
 if (WITH_IPPICV)
-    target_compile_definitions(tests PRIVATE WITH_IPPICV)
+    target_compile_definitions(tests PRIVATE WITH_IPPICV
+        IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(tests PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
 endif()
 
 find_package(Threads)

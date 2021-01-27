@@ -61,7 +61,7 @@ void pybind_pointcloud(py::module& m) {
                    "Transfer the point cloud to a specified device.",
                    "device"_a, "copy"_a = false);
     pointcloud.def("clone", &PointCloud::Clone,
-                   "Returns copy of the point cloud on the same device.");
+                   "Returns a copy of the point cloud on the same device.");
     pointcloud.def("cpu", &PointCloud::CPU,
                    "Transfer the point cloud to CPU. If the point cloud is "
                    "already on CPU, no copy will be performed.");

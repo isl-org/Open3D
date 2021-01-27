@@ -133,6 +133,31 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    /// Transfer the image to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new image is always created; if false, the
+    /// copy is avoided when the original image is already on the targeted
+    /// device.
+    Image To(const core::Device &device, bool copy = false) const {
+        return Image(data_.To(device, copy));
+    }
+
+    /// Returns copy of the image on the same device.
+    Image Clone() const { return To(GetDevice(), /*copy=*/true); }
+
+    /// Transfer the image to CPU.
+    ///
+    /// If the image is already on CPU, no copy will be performed.
+    Image CPU() const { return To(core::Device("CPU:0")); };
+
+    /// Transfer the image to a CUDA device.
+    ///
+    /// If the image is already on the specified CUDA device, no copy will
+    /// be performed.
+    Image CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
+    };
+
     /// Returns an Image with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
@@ -150,7 +175,7 @@ public:
     /// \param scale First multiply image pixel values with this factor. This
     /// should be positive for unsigned dtypes.
     /// \param offset Then add this factor to all image pixel values.
-    /// \return Reference to self
+    /// \return Reference to self.
     Image &LinearTransform(double scale = 1.0, double offset = 0.0) {
         To(GetDtype(), false, scale, offset);
         return *this;
