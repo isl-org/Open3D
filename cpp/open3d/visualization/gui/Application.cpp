@@ -536,7 +536,7 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
         // Start WebRTCServer in a different thread.
         // TODO: give WebRTCServer the access to control GUI callbacks.
-        // TODO: how to kill this thread?
+        // TODO: properly kill this thread
         auto server = impl_->webrtc_server_;
         auto start_webrtc_thread = [server]() { server->Run(); };
         impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
