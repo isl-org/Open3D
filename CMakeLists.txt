@@ -27,6 +27,7 @@ option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+option(BUILD_WEBRTC               "Build WebRTC jupyter visualizer"          ON )
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
