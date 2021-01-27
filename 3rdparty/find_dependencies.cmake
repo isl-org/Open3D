@@ -1169,4 +1169,16 @@ if (BUILD_WEBRTC)
     set(WEBRTC_TARGET "3rdparty_webrtc")
     add_dependencies(3rdparty_webrtc ext_webrtc_all)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
+
+    target_link_libraries(3rdparty_webrtc INTERFACE
+        Threads::Threads
+        dl
+        X11                                # optional: X11 (desktop capture)
+        Xext                               # optional: X11 (desktop capture)
+        Xdamage                            # optional: X11 (desktop capture)
+        Xfixes                             # optional: X11 (desktop capture)
+        Xcomposite                         # optional: X11 (desktop capture)
+        Xrandr                             # optional: X11 (desktop capture)
+        Xtst                               # optional: X11 (desktop capture)
+    )
 endif()

@@ -18,17 +18,6 @@ add_library(webrtc-streamer OBJECT
     ${WEBRTC_STREAMER_SRC}
     ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: live(&555helper), civietweb
 )
-target_link_libraries(webrtc-streamer INTERFACE
-    Threads::Threads
-    dl
-    X11                                # optional: X11 (desktop capture)
-    Xext                               # optional: X11 (desktop capture)
-    Xdamage                            # optional: X11 (desktop capture)
-    Xfixes                             # optional: X11 (desktop capture)
-    Xcomposite                         # optional: X11 (desktop capture)
-    Xrandr                             # optional: X11 (desktop capture)
-    Xtst                               # optional: X11 (desktop capture)
-)
 target_include_directories(webrtc-streamer SYSTEM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     live/groupsock/include             # optional: live
