@@ -76,3 +76,7 @@ open3d_link_3rdparty_libraries(visualization)
 if (BUILD_GUI)
     set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 endif()
+
+if (BUILD_WEBRTC)
+    add_subdirectory(webrtc)
+endif()
