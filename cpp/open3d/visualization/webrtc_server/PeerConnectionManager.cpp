@@ -339,6 +339,7 @@ PeerConnectionManager::~PeerConnectionManager() {}
 const Json::Value PeerConnectionManager::getMediaList() {
     Json::Value value(Json::arrayValue);
 
+    // Cameras, microphones.
     // const std::list<std::string> videoCaptureDevice =
     //         CapturerFactory::GetVideoCaptureDeviceList(m_publishFilter);
     // for (auto videoDevice : videoCaptureDevice) {
@@ -353,25 +354,33 @@ const Json::Value PeerConnectionManager::getMediaList() {
     //     value.append(media);
     // }
 
-    // const std::list<std::string> videoList =
-    //         CapturerFactory::GetVideoSourceList(m_publishFilter);
-    // for (auto videoSource : videoList) {
-    //     Json::Value media;
-    //     media["video"] = videoSource;
+    // Windows, desktops.
+    const std::list<std::string> videoList =
+            CapturerFactory::GetVideoSourceList(m_publishFilter);
+    for (auto videoSource : videoList) {
+        Json::Value media;
+        // TODO: fix the hard-coded window name, or, don't use the window name.
+        media["video"] = videoSource;
+        if (videoSource == "window://Open3D") {
+            value.append(media);
+            std::cout << "Added media: "
+                      << Json::writeString(Json::StreamWriterBuilder(), media)
+                      << std::endl;
+        }
+    }
+
+    // Local video/audio files.
+    // for (auto it = m_config.begin(); it != m_config.end(); it++) {
+    //     std::string name = it.key().asString();
+    //     Json::Value media(*it);
+    //     if (media.isMember("video")) {
+    //         media["video"] = name;
+    //     }
+    //     if (media.isMember("audio")) {
+    //         media["audio"] = name;
+    //     }
     //     value.append(media);
     // }
-
-    for (auto it = m_config.begin(); it != m_config.end(); it++) {
-        std::string name = it.key().asString();
-        Json::Value media(*it);
-        if (media.isMember("video")) {
-            media["video"] = name;
-        }
-        if (media.isMember("audio")) {
-            media["audio"] = name;
-        }
-        value.append(media);
-    }
 
     return value;
 }
