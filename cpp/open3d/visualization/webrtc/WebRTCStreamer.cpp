@@ -7,6 +7,8 @@
 **
 ** -------------------------------------------------------------------------*/
 
+#include "open3d/visualization/webrtc/WebRTCStreamer.h"
+
 #include <p2p/base/basic_packet_socket_factory.h>
 #include <p2p/base/stun_server.h>
 #include <p2p/base/turn_server.h>
@@ -20,7 +22,8 @@
 #include "open3d/visualization/webrtc/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc/PeerConnectionManager.h"
 
-PeerConnectionManager* peer_connection_manager = nullptr;
+// TODO: move this into the class.
+static PeerConnectionManager* peer_connection_manager = nullptr;
 
 void SignalHandler(int n) {
     printf("SIGINT\n");
@@ -30,14 +33,10 @@ void SignalHandler(int n) {
     rtc::Thread::Current()->Quit();
 }
 
-int main(int argc, char* argv[]) {
-    // Configs.
-    const std::string web_root = "./html";
+void WebRTCStreamer::Run() {
+    const std::string web_root = web_root_;
+    const std::string http_address = http_address_;
     const std::vector<std::string> stun_urls{"stun:stun.l.google.com:19302"};
-    std::string http_address("localhost:8888");
-    if (argc > 1) {
-        http_address = std::string(argv[1]);
-    }
 
     // Logging settings.
     // src/rtc_base/logging.h: LS_VERBOSE, LS_ERROR
@@ -98,5 +97,4 @@ int main(int argc, char* argv[]) {
 
     rtc::CleanupSSL();
     std::cout << "Exit" << std::endl;
-    return 0;
 }

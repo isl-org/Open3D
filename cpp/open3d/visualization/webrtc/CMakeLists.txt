@@ -4,7 +4,6 @@ add_custom_target(copy_html_dir
 )
 
 file(GLOB WEBRTC_STREAMER_SRC *.cpp)
-list(FILTER WEBRTC_STREAMER_SRC EXCLUDE REGEX .*WebRTCStreamer.cpp)
 file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
     live/groupsock/*.c*
     live/liveMedia/*.c*
