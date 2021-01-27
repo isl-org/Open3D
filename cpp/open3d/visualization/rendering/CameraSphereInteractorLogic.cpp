@@ -26,16 +26,13 @@
 
 #include "open3d/visualization/rendering/CameraSphereInteractorLogic.h"
 
-#include <iostream> // debugging; remove
-
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
 CameraSphereInteractorLogic::CameraSphereInteractorLogic(Camera* c,
                                                          double min_far_plane)
-    : CameraInteractorLogic(c, min_far_plane) {
-}
+    : CameraInteractorLogic(c, min_far_plane) {}
 
 void CameraSphereInteractorLogic::Rotate(int dx, int dy) {
     float phi = phi_at_mousedown_ - float(M_PI) * dx / float(view_width_);
@@ -49,16 +46,13 @@ void CameraSphereInteractorLogic::Rotate(int dx, int dy) {
     Eigen::Vector3f eye(center_of_rotation_.x() + dist * cos_phi * cos_theta,
                         center_of_rotation_.y() + dist * sin_phi * cos_theta,
                         center_of_rotation_.z() + dist * sin_theta);
-    Eigen::Vector3f up(-cos_phi * sin_theta,
-                       -sin_phi * sin_theta,
-                       cos_theta);
+    Eigen::Vector3f up(-cos_phi * sin_theta, -sin_phi * sin_theta, cos_theta);
     Eigen::Vector3f forward = (center_of_rotation_ - eye).normalized();
     Eigen::Vector3f left = up.cross(forward);
     Camera::Transform::MatrixType mm;
-    mm << -left.x(), up.x(), -forward.x(), eye.x(),
-          -left.y(), up.y(), -forward.y(), eye.y(),
-          -left.z(), up.z(), -forward.z(), eye.z(),
-          0.0f, 0.0f, 0.0f, 1.0f;
+    mm << -left.x(), up.x(), -forward.x(), eye.x(), -left.y(), up.y(),
+            -forward.y(), eye.y(), -left.z(), up.z(), -forward.z(), eye.z(),
+            0.0f, 0.0f, 0.0f, 1.0f;
     Camera::Transform m = Camera::Transform(mm);
     SetMatrix(m);
     camera_->SetModelMatrix(m);

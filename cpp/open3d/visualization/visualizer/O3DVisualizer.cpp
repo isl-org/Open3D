@@ -435,9 +435,7 @@ struct O3DVisualizer::Impl {
         auto MakeMouseButton = [this](const char *name,
                                       SceneWidget::Controls type) {
             auto button = new SmallToggleButton(name);
-            button->SetOnClicked([this, type]() {
-                this->SetMouseMode(type);
-            });
+            button->SetOnClicked([this, type]() { this->SetMouseMode(type); });
             this->settings.mouse_buttons[type] = button;
             return button;
         };

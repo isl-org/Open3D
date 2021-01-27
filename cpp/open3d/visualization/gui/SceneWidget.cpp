@@ -458,8 +458,9 @@ class RotateCameraSphereInteractor : public RotationInteractor {
 
 public:
     explicit RotateCameraSphereInteractor(rendering::Camera* camera)
-        : camera_controls_(std::make_unique<rendering::CameraSphereInteractorLogic>(
-                  camera, MIN_FAR_PLANE)) {
+        : camera_controls_(
+                  std::make_unique<rendering::CameraSphereInteractorLogic>(
+                          camera, MIN_FAR_PLANE)) {
         SetInteractor(camera_controls_.get());
     }
 
@@ -515,7 +516,8 @@ class Interactors {
 public:
     Interactors(rendering::Open3DScene* scene, rendering::Camera* camera)
         : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
-          rotate_sphere_(std::make_unique<RotateCameraSphereInteractor>(camera)),
+          rotate_sphere_(
+                  std::make_unique<RotateCameraSphereInteractor>(camera)),
           fly_(std::make_unique<FlyInteractor>(camera)),
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
           ibl_(std::make_unique<RotateIBLInteractor>(scene->GetScene(),

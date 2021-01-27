@@ -72,7 +72,8 @@ public:
     };
 
     struct UIState {
-        gui::SceneWidget::Controls mouse_mode = gui::SceneWidget::Controls::ROTATE_CAMERA;
+        gui::SceneWidget::Controls mouse_mode =
+                gui::SceneWidget::Controls::ROTATE_CAMERA;
         Shader scene_shader = Shader::STANDARD;
         bool show_settings = false;
         bool show_skybox = false;
