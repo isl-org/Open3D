@@ -6,12 +6,12 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-class WebRTCStreamer {
+class WebRTCServer {
 public:
-    WebRTCStreamer(const std::string& http_address = "localhost:8888",
-                   const std::string& web_root =
-                           "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
-                           "webrtc/html")
+    WebRTCServer(const std::string& http_address = "localhost:8888",
+                 const std::string& web_root =
+                         "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
+                         "webrtc/html")
         : http_address_(http_address), web_root_(web_root) {}
 
     void Run();

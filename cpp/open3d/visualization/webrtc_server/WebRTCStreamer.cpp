@@ -37,7 +37,9 @@ void SignalHandler(int n) {
     rtc::Thread::Current()->Quit();
 }
 
-void WebRTCStreamer::Run() {
+void WebRTCServer::Run() {
+    std::cout << "WebRTCServer::Run()" << std::endl;
+
     const std::string web_root = web_root_;
     const std::string http_address = http_address_;
     const std::vector<std::string> stun_urls{"stun:stun.l.google.com:19302"};
