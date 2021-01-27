@@ -55,7 +55,6 @@
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
-#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 namespace {
 
@@ -211,8 +210,6 @@ struct Application::Impl {
     std::shared_ptr<Menu> menubar_;
     std::unordered_set<std::shared_ptr<Window>> windows_;
     std::unordered_set<std::shared_ptr<Window>> windows_to_be_destroyed_;
-    std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
-    std::thread webrtc_thread_;
 
     std::list<Task> running_tasks_;  // always accessed from main thread
     // ----
@@ -336,8 +333,6 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.tab_active_color = impl_->theme_.button_active_color;
     impl_->theme_.dialog_border_width = 1;
     impl_->theme_.dialog_border_radius = 10;
-
-    impl_->webrtc_server_ = std::make_shared<webrtc_server::WebRTCServer>();
 }
 
 Application::~Application() {}
@@ -533,13 +528,6 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
             ShowNativeAlert(err.str().c_str());
             return false;
         }
-
-        // Start WebRTCServer in a different thread.
-        // TODO: give WebRTCServer the access to control GUI callbacks.
-        // TODO: properly kill this thread
-        auto server = impl_->webrtc_server_;
-        auto start_webrtc_thread = [server]() { server->Run(); };
-        impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
 
         impl_->PrepareForRunning();
         impl_->is_running_ = true;

@@ -34,6 +34,7 @@
 #include <cmath>
 #include <memory>
 #include <queue>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -52,6 +53,7 @@
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 // ----------------------------------------------------------------------------
 namespace open3d {
@@ -194,6 +196,9 @@ struct Window::Impl {
     bool needs_redraw_ = true;  // set by PostRedraw to defer if already drawing
     bool is_resizing_ = false;
     bool is_drawing_ = false;
+
+    std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
+    std::thread webrtc_thread_;
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -464,6 +469,14 @@ void Window::CreateRenderer() {
     }
 
     RestoreDrawContext(old_context);
+
+    // Start WebRTCServer in a different thread.
+    // TODO: give WebRTCServer the access to control GUI callbacks.
+    // TODO: properly kill this thread
+    auto server = std::make_shared<webrtc_server::WebRTCServer>();
+    auto start_webrtc_thread = [server]() { server->Run(); };
+    impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
+    impl_->webrtc_server_ = server;
 }
 
 Window::~Window() {
