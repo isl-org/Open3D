@@ -294,7 +294,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(HARDENING_LDFLAGS
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
-        -pie                 # Position independent
+        # -pie                 # Position independent
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
         list(APPEND HARDENING_CFLAGS -O2)
