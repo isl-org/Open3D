@@ -473,10 +473,14 @@ void Window::CreateRenderer() {
     // Start WebRTCServer in a different thread.
     // TODO: give WebRTCServer the access to control GUI callbacks.
     // TODO: properly kill this thread
+    // TODO: WebRTCServer manages its own thread?
     auto server = std::make_shared<webrtc_server::WebRTCServer>();
     auto start_webrtc_thread = [server]() { server->Run(); };
     impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
     impl_->webrtc_server_ = server;
+
+    // glfwSetMouseButtonCallback(impl_->window_, MouseButtonCallback);
+    // typedef void (* GLFWwindowposfun)(GLFWwindow*, int, int);
 }
 
 Window::~Window() {
@@ -1347,6 +1351,7 @@ void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
 }
 
 void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
+    utility::LogInfo("Window::MouseMoveCallback: {}, {}", x, y);
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
@@ -1370,6 +1375,9 @@ void Window::MouseButtonCallback(GLFWwindow* window,
                                  int button,
                                  int action,
                                  int mods) {
+    utility::LogInfo("Window::MouseButtonCallback: {}, {}, {}", button, action,
+                     mods);
+
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
