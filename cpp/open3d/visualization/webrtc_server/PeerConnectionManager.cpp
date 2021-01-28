@@ -987,8 +987,9 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
                   << maxPort;
 
     RTC_LOG(INFO) << __FUNCTION__ << "CreatePeerConnection peerid:" << peerid;
-    PeerConnectionObserver *obs = new PeerConnectionObserver(
-            this, peerid, config, std::move(port_allocator));
+    PeerConnectionObserver *obs =
+            new PeerConnectionObserver(this->m_webrtc_server, this, peerid,
+                                       config, std::move(port_allocator));
     if (!obs) {
         RTC_LOG(LERROR) << __FUNCTION__ << "CreatePeerConnection failed";
     }
