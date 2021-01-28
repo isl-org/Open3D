@@ -31,7 +31,7 @@
 #include <open3d/visualization/visualizer/O3DVisualizer.h>
 #include <pybind/visualization/visualization.h>
 
-#include <iostream> // debugging; remove
+#include <iostream>  // debugging; remove
 
 namespace open3d {
 namespace visualization {
