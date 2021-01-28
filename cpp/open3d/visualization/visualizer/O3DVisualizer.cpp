@@ -33,7 +33,9 @@
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -775,6 +777,9 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(
                             geom);
             auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
+            auto voxel_grid =
+                    std::dynamic_pointer_cast<geometry::VoxelGrid>(geom);
+            auto octree = std::dynamic_pointer_cast<geometry::Octree>(geom);
 
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
@@ -802,6 +807,12 @@ struct O3DVisualizer::Impl {
             } else if (t_mesh) {
                 has_normals = !t_mesh->HasVertexNormals();
                 has_colors = true;  // always want base_color as white
+            } else if (voxel_grid) {
+                has_normals = false;
+                has_colors = voxel_grid->HasColors();
+            } else if (octree) {
+                has_normals = false;
+                has_colors = true;
             }
 
             mat.base_color = CalcDefaultUnlitColor();
