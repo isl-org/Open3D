@@ -14,10 +14,12 @@ public:
                  const std::string& web_root =
                          "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
                          "webrtc_server/html");
-
     void Run();
 
-    void SetMouseButtonCallback(std::function<void(int, double, double)> f) {}
+    void OnDataChannelMessage(const std::string& message);
+
+    void SetMouseButtonCallback(std::function<void(int, double, double)> f);
+    void SetMouseMoveCallback(std::function<void(double, double)> f);
 
 private:
     struct Impl;

@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "open3d/utility/Console.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
@@ -30,10 +31,29 @@ struct WebRTCServer::Impl {
     std::string http_address_;
     std::string web_root_;
     std::function<void(int, double, double)> mouse_button_callback_;
+    std::function<void(double, double)> mouse_move_callback_;
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
+    void OnDataChannelMessage(const std::string& message);
     void Run();
 };
+
+void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
+    utility::LogInfo("WebRTCServer::Impl::OnDataChannelMessage: {}", message);
+}
+
+void WebRTCServer::SetMouseButtonCallback(
+        std::function<void(int, double, double)> f) {
+    impl_->mouse_button_callback_ = f;
+}
+
+void WebRTCServer::SetMouseMoveCallback(std::function<void(double, double)> f) {
+    impl_->mouse_move_callback_ = f;
+}
+
+void WebRTCServer::OnDataChannelMessage(const std::string& message) {
+    impl_->OnDataChannelMessage(message);
+}
 
 WebRTCServer::WebRTCServer(const std::string& http_address,
                            const std::string& web_root)
