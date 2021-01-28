@@ -108,6 +108,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     lighting_profile_->AddItem(CUSTOM_LIGHTING);
     lighting_profile_->SetOnValueChanged([this](const char *, int index) {
         if (index < int(GuiSettingsModel::lighting_profiles_.size())) {
+            sun_follows_camera_->SetChecked(false);
+            model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
                     GuiSettingsModel::lighting_profiles_[index]);
         }
