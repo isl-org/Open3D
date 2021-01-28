@@ -503,10 +503,12 @@ private:
                 render_scene->SetSunLightDirection(
                         scene->GetCamera()->GetForwardVector());
                 settings_.wgt_mouse_sun->SetEnabled(false);
+                scene_wgt_->SetSunInteractorEnabled(false);
             } else {
                 scene_wgt_->SetOnCameraChanged(
                         std::function<void(rendering::Camera *)>());
                 settings_.wgt_mouse_sun->SetEnabled(true);
+                scene_wgt_->SetSunInteractorEnabled(true);
             }
         }
 
