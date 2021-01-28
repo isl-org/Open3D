@@ -109,6 +109,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     lighting_profile_->SetOnValueChanged([this](const char *, int index) {
         if (index < int(GuiSettingsModel::lighting_profiles_.size())) {
             sun_follows_camera_->SetChecked(false);
+            sun_dir_->SetEnabled(true);
             model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
                     GuiSettingsModel::lighting_profiles_[index]);
