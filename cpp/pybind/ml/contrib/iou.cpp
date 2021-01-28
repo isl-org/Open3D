@@ -105,9 +105,8 @@ py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
             core::Dtype::Float32, cuda_device);
 
     IoUBevCUDAKernel(boxes_a_tensor.GetDataPtr<const float>(),
-                     boxes_b_tensor.GetDataPtr<const float>()),
-                     iou_tensor.GetDataPtr<float>(), num_a,
-                     num_b);
+                     boxes_b_tensor.GetDataPtr<const float>(),
+                     iou_tensor.GetDataPtr<float>(), num_a, num_b);
     return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
 }
 
