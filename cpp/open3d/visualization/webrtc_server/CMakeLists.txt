@@ -37,6 +37,8 @@ target_compile_definitions(webrtc_server PRIVATE
     _LARGEFILE_SOURCE=1                # optional: civetweb
 )
 target_compile_options(webrtc_server PRIVATE
+    # Required for WebRTC. Otherwise, will cause error
+    # undefined reference to `typeinfo for webrtc::VideoTrackSource'
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
 )
 
