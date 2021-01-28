@@ -21,6 +21,7 @@
 #include <thread>
 
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 namespace open3d {
 namespace visualization {
@@ -315,7 +316,8 @@ class PeerConnectionManager {
     };
 
 public:
-    PeerConnectionManager(const std::list<std::string>& iceServerList,
+    PeerConnectionManager(WebRTCServer* webrtc_server,
+                          const std::list<std::string>& iceServerList,
                           const Json::Value& config,
                           const std::string& publishFilter,
                           const std::string& webrtcUdpPortRange);
@@ -368,6 +370,7 @@ protected:
     const std::string sanitizeLabel(const std::string& label);
 
 protected:
+    WebRTCServer* m_webrtc_server = nullptr;
     typedef std::pair<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>,
                       rtc::scoped_refptr<webrtc::AudioSourceInterface>>
             AudioVideoPair;

@@ -28,6 +28,7 @@ namespace visualization {
 namespace webrtc_server {
 
 struct WebRTCServer::Impl {
+    WebRTCServer* webrtc_server_;  // Parent.
     std::string http_address_;
     std::string web_root_;
     std::function<void(int, double, double)> mouse_button_callback_;
@@ -58,6 +59,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
 WebRTCServer::WebRTCServer(const std::string& http_address,
                            const std::string& web_root)
     : impl_(new WebRTCServer::Impl()) {
+    impl_->webrtc_server_ = this;
     impl_->http_address_ = http_address;
     impl_->web_root_ = web_root;
 }
@@ -87,7 +89,7 @@ void WebRTCServer::Impl::Run() {
             "file:///home/yixing/repo/webrtc-streamer/html/"
             "Big_Buck_Bunny_360_10s_1MB.webm";
     peer_connection_manager_ = std::make_shared<PeerConnectionManager>(
-            ice_servers, config["urls"], ".*", "");
+            this->webrtc_server_, ice_servers, config["urls"], ".*", "");
     if (peer_connection_manager_->InitializePeerConnection()) {
         std::cout << "InitializePeerConnection() succeeded." << std::endl;
     } else {

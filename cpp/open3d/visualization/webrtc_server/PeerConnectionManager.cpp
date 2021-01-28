@@ -183,11 +183,13 @@ CreatePeerConnectionFactoryDependencies(
 **  Constructor
 ** -------------------------------------------------------------------------*/
 PeerConnectionManager::PeerConnectionManager(
+        WebRTCServer *webrtc_server,
         const std::list<std::string> &iceServerList,
         const Json::Value &config,
         const std::string &publishFilter,
         const std::string &webrtcUdpPortRange)
-    : m_audioDecoderfactory(webrtc::CreateBuiltinAudioDecoderFactory()),
+    : m_webrtc_server(webrtc_server),
+      m_audioDecoderfactory(webrtc::CreateBuiltinAudioDecoderFactory()),
       m_task_queue_factory(webrtc::CreateDefaultTaskQueueFactory()),
       m_audioDeviceModule(new webrtc::FakeAudioDeviceModule()),
       m_peer_connection_factory(webrtc::CreateModularPeerConnectionFactory(
