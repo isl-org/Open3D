@@ -105,6 +105,7 @@ target_link_libraries(open3d_torch_ops PRIVATE
     torch_cpu
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
+    ${CMAKE_PROJECT_NAME}
 )
 if( BUILD_CUDA_MODULE )
     target_link_libraries(open3d_torch_ops PRIVATE
