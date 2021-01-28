@@ -100,7 +100,8 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
-    if (image.GetDtype() != core::Dtype::UInt8 && image.GetDtype() != core::Dtype::UInt16) {
+    if (image.GetDtype() != core::Dtype::UInt8 &&
+        image.GetDtype() != core::Dtype::UInt16) {
         utility::LogWarning("Write PNG failed: unsupported image data.");
         return false;
     }

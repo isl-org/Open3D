@@ -102,8 +102,7 @@ bool WriteImage(const std::string &filename,
         return false;
     }
     if (image.GetDevice() != core::Device("CPU:0")) {
-        utility::LogWarning(
-                "Write geometry::Image failed, data not on CPU.");
+        utility::LogWarning("Write geometry::Image failed, data not on CPU.");
         return false;
     }
     return map_itr->second(filename, image, quality);
