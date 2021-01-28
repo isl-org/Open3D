@@ -25,10 +25,27 @@
 # ----------------------------------------------------------------------------
 """This test simulates a network training by running some ops in graph mode for
 tensorflow to catch a bug observed when linking the open3d main lib.
+
 The error is not deterministic. The most frequent message is:
+
 2020-11-21 23:07:56.653976: E tensorflow/stream_executor/cuda/cuda_event.cc:29] Error polling for event status: failed to query event: CUDA_ERROR_LAUNCH_FAILED: unspecified launch failure
 2020-11-21 23:07:56.654028: F tensorflow/core/common_runtime/gpu/gpu_event_mgr.cc:220] Unexpected Event status: 1
+
 followed by segfault.
+
+We found that the bug can be reproduced with 125458ad when linking the main lib
+and using cmake 3.13.2. The child commit 14c4815d does not show the problem when
+linking the main lib. For cmake 3.18.2 and cmake 3.19 we cannot reproduce the
+bug with 125458ad . Further the diff between both commits does not show changes
+related to the problem. Since we know that the problem can be resolved by using
+cmake >= 3.18.2, we think that the way cmake generates the link command may 
+cause the problem.
+
+Some more info about the systems on which the problem was discovered:
+    Python 3.7.4
+    Tensorflow 2.3.0
+    CUDA 10.1 and 10.2
+    CMake 3.13.2 and 3.12.4
 """
 
 import open3d as o3d
