@@ -19,7 +19,7 @@ public:
     void OnDataChannelMessage(const std::string& message);
 
     void SetMouseButtonCallback(std::function<void(int, double, double)> f);
-    void SetMouseMoveCallback(std::function<void(double, double)> f);
+    void SetMouseMoveCallback(std::function<void(int, double, double)> f);
 
 private:
     struct Impl;

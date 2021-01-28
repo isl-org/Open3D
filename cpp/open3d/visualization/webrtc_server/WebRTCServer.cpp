@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
@@ -32,15 +33,41 @@ struct WebRTCServer::Impl {
     std::string http_address_;
     std::string web_root_;
     std::function<void(int, double, double)> mouse_button_callback_;
-    std::function<void(double, double)> mouse_move_callback_;
+    std::function<void(int, double, double)> mouse_move_callback_;
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
     void Run();
+    int mouse_button_status_ = 0;
 };
 
 void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
+    // TODO: consider using Json message.
     utility::LogInfo("WebRTCServer::Impl::OnDataChannelMessage: {}", message);
+    std::vector<std::string> tokens;
+    utility::SplitString(tokens, message);
+    if (tokens.size() > 0) {
+        std::string type = tokens[0];
+        if (type == "mousemove") {
+            double x = static_cast<double>(std::stoi(tokens[1]));
+            double y = static_cast<double>(std::stoi(tokens[2]));
+            mouse_move_callback_(mouse_button_status_, x, y);
+        } else if (type == "mousedown") {
+            mouse_button_status_ = 1;
+            int action = 1;
+            double x = static_cast<double>(std::stoi(tokens[1]));
+            double y = static_cast<double>(std::stoi(tokens[2]));
+            mouse_button_callback_(action, x, y);
+        } else if (type == "mouseup") {
+            mouse_button_status_ = 0;
+            int action = 0;
+            double x = static_cast<double>(std::stoi(tokens[1]));
+            double y = static_cast<double>(std::stoi(tokens[2]));
+            mouse_button_callback_(action, x, y);
+        } else {
+            utility::LogError("Unknown message type {}", type);
+        }
+    }
 }
 
 void WebRTCServer::SetMouseButtonCallback(
@@ -48,7 +75,8 @@ void WebRTCServer::SetMouseButtonCallback(
     impl_->mouse_button_callback_ = f;
 }
 
-void WebRTCServer::SetMouseMoveCallback(std::function<void(double, double)> f) {
+void WebRTCServer::SetMouseMoveCallback(
+        std::function<void(int, double, double)> f) {
     impl_->mouse_move_callback_ = f;
 }
 

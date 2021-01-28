@@ -491,12 +491,31 @@ void Window::CreateRenderer() {
                 UpdateAfterEvent(this);
             };
 
+    std::function<void(int, double, double)> mouse_move_callback =
+            [this](int mouse_status, double x, double y) {
+                (void)this;
+                float scaling = this->GetScaling();
+                int ix = int(std::ceil(x * scaling));
+                int iy = int(std::ceil(y * scaling));
+
+                auto type = (mouse_status == 0 ? MouseEvent::MOVE
+                                               : MouseEvent::DRAG);
+                int mods = 0;
+                int buttons = mouse_status;
+                MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+                me.button.button = MouseButton(buttons);
+
+                this->OnMouseEvent(me);
+                UpdateAfterEvent(this);
+            };
+
     // Start WebRTCServer in a different thread.
     // TODO: give WebRTCServer the access to control GUI callbacks.
     // TODO: properly kill this thread
     // TODO: WebRTCServer manages its own thread?
     auto server = std::make_shared<webrtc_server::WebRTCServer>();
     server->SetMouseButtonCallback(mouse_button_callback);
+    server->SetMouseMoveCallback(mouse_move_callback);
     auto start_webrtc_thread = [server]() { server->Run(); };
     impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
     impl_->webrtc_server_ = server;
@@ -1388,6 +1407,8 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
     MouseEvent me = {type, ix, iy, w->impl_->mouse_mods_};
     me.button.button = MouseButton(buttons);
+    utility::LogInfo("Window::MouseMoveCallback: {}, {}, buttons:{}", x, y,
+                     buttons);
 
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);
