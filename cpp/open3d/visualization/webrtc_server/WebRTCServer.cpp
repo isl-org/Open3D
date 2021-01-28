@@ -42,7 +42,7 @@ struct WebRTCServer::Impl {
 };
 
 void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
-    // TODO: consider using Json message.
+    // TODO: use Json message.
     utility::LogInfo("WebRTCServer::Impl::OnDataChannelMessage: {}", message);
     std::vector<std::string> tokens;
     utility::SplitString(tokens, message);
@@ -64,8 +64,6 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             double x = static_cast<double>(std::stoi(tokens[1]));
             double y = static_cast<double>(std::stoi(tokens[2]));
             mouse_button_callback_(action, x, y);
-        } else {
-            utility::LogError("Unknown message type {}", type);
         }
     }
 }
