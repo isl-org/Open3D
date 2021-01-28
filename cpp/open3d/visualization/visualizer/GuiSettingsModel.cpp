@@ -217,7 +217,7 @@ void GuiSettingsModel::SetShowAxes(bool show) {
 
 bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
 
-void GuiSettingsModel::SetSunFullowsCamera(bool follow) {
+void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
     sun_follows_cam_ = follow;
     NotifyChanged();
 }

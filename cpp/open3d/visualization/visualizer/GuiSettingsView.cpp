@@ -205,8 +205,10 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     });
 
     sun_follows_camera_ = std::make_shared<gui::Checkbox>(" ");
-    sun_follows_camera_->SetOnChecked(
-            [this](bool checked) { model_.SetSunFullowsCamera(checked); });
+    sun_follows_camera_->SetOnChecked([this](bool checked) {
+        sun_dir_->SetEnabled(!checked);
+        model_.SetSunFollowsCamera(checked);
+    });
 
     sun_color_ = std::make_shared<gui::ColorEdit>();
     sun_color_->SetOnValueChanged([this](const gui::Color &new_color) {

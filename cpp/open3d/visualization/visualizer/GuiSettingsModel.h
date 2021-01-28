@@ -103,7 +103,7 @@ public:
     void SetShowAxes(bool show);
 
     bool GetSunFollowsCamera() const;
-    void SetSunFullowsCamera(bool follow);
+    void SetSunFollowsCamera(bool follow);
 
     const Eigen::Vector3f& GetBackgroundColor() const;
     void SetBackgroundColor(const Eigen::Vector3f& color);
