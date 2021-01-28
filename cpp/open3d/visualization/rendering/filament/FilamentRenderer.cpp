@@ -194,6 +194,11 @@ void FilamentRenderer::BeginFrame() {
     for (auto& br : buffer_renderers_) {
         if (br->pending_) {
             br->Render();
+            // Force the engine to render, otherwise it sometimes doesn't
+            // render for a while, especially on Linux. This means the read
+            // pixels callback does not get called until sometime later,
+            // possibly several draws later.
+            engine_.flushAndWait();
         }
     }
 
