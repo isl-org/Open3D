@@ -401,7 +401,7 @@ void pybind_gui_classes(py::module &m) {
                  "and must return True if a redraw is needed (that is, if "
                  "any widget has changed in any fashion) or False if nothing "
                  "has changed")
-            .def("set_on_close", &PyWindow::SetOnClose, 
+            .def("set_on_close", &PyWindow::SetOnClose,
                  "Sets a callback that will be called when the window is "
                  "closed. The callback is given no arguments and should return "
                  "True to continue closing the window or False to cancel the "
