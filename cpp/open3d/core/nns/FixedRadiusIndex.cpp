@@ -163,7 +163,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         temp_ptr = temp_tensor.GetDataPtr();
 
         FixedRadiusSearchCUDA(
-                temp_ptr, temp_size, eighbors_row_splits.GetDataPtr<int64_t>(),
+                temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
                 GetDatasetSize(), dataset_points_.GetDataPtr<const scalar_t>(),
                 num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
