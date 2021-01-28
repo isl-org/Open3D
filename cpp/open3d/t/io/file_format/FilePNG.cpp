@@ -100,6 +100,10 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
+    if (image.GetDtype() != core::Dtype::UInt8 && image.GetDtype() != core::Dtype::UInt16) {
+        utility::LogWarning("Write PNG failed: unsupported image data.");
+        return false;
+    }
     if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
         quality = 6;
     if (quality < 0 || quality > 9) {
