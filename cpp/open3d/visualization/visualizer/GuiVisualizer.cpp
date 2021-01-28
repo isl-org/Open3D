@@ -502,9 +502,11 @@ private:
                 });
                 render_scene->SetSunLightDirection(
                         scene->GetCamera()->GetForwardVector());
+                settings_.wgt_mouse_sun->SetEnabled(false);
             } else {
                 scene_wgt_->SetOnCameraChanged(
                         std::function<void(rendering::Camera *)>());
+                settings_.wgt_mouse_sun->SetEnabled(true);
             }
         }
 
