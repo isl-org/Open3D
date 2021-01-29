@@ -27,6 +27,8 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
+#include <string>
 
 namespace open3d {
 namespace visualization {
@@ -70,6 +72,53 @@ struct MouseEvent {
             bool isTrackpad;
         } wheel;
     };
+    std::string ToString() const {
+        std::stringstream ss;
+        ss << "MouseEvent{";
+        ss << "type: ";
+        if (type == Type::MOVE) {
+            ss << "Type::MOVE";
+        } else if (type == Type::BUTTON_DOWN) {
+            ss << "Type::BUTTON_DOWN";
+        } else if (type == Type::DRAG) {
+            ss << "Type::DRAG";
+        } else if (type == Type::BUTTON_UP) {
+            ss << "Type::BUTTON_UP";
+        } else if (type == Type::WHEEL) {
+            ss << "Type::WHEEL";
+        } else {
+            ss << "ERROR";
+        }
+        ss << ", x: " << x;
+        ss << ", y: " << y;
+        ss << ", modifiers: " << modifiers;
+        if (type == Type::MOVE || type == Type::DRAG) {
+            ss << ", move.buttons: " << move.buttons;
+        } else if (type == Type::BUTTON_DOWN || type == Type::BUTTON_UP) {
+            ss << ", button.button: ";
+            if (button.button == MouseButton::NONE) {
+                ss << "MouseButton::NONE";
+            } else if (button.button == MouseButton::LEFT) {
+                ss << "MouseButton::LEFT";
+            } else if (button.button == MouseButton::MIDDLE) {
+                ss << "MouseButton::MIDDLE";
+            } else if (button.button == MouseButton::RIGHT) {
+                ss << "MouseButton::RIGHT";
+            } else if (button.button == MouseButton::BUTTON4) {
+                ss << "MouseButton::BUTTON4";
+            } else if (button.button == MouseButton::BUTTON5) {
+                ss << "MouseButton::BUTTON5";
+            } else {
+                ss << "ERROR";
+            }
+        } else if (type == Type::WHEEL) {
+            ss << ", wheel.dx" << wheel.dx;
+            ss << ", wheel.dy" << wheel.dy;
+            ss << ", wheel.isTrackpad" << wheel.isTrackpad;
+        }
+        ss << "}";
+        return ss.str();
+    }
 };
 
 struct TickEvent {};
