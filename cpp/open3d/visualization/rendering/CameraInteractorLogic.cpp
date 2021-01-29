@@ -61,7 +61,7 @@ void CameraInteractorLogic::RotateFly(int dx, int dy) {
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractorLogic::Dolly(int dy, DragType type) {
+void CameraInteractorLogic::Dolly(float dy, DragType type) {
     // Parent's matrix_ may not have been set yet
     if (type != DragType::MOUSE) {
         SetMouseDownInfo(camera_->GetModelMatrix(), center_of_rotation_);
