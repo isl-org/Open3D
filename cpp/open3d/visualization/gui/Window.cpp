@@ -489,12 +489,7 @@ void Window::CreateRenderer() {
                 MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
                 me.button.button = MouseButton(MouseButtonFromGLFW(button));
 
-                utility::LogInfo(
-                        "MouseButton WebRTC: type {}, ix {}, iy {}, mods {}, "
-                        "button {}",
-                        type, ix, iy, KeymodsFromGLFW(mods),
-                        MouseButton(MouseButtonFromGLFW(button)));
-
+                utility::LogInfo("MouseButton WebRTC: {}", me.ToString());
                 this->OnMouseEvent(me);
                 UpdateAfterEvent(this);
             };
@@ -1400,7 +1395,7 @@ void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
 }
 
 void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
-    utility::LogInfo("Window::MouseMoveCallback: {}, {}", x, y);
+    // utility::LogInfo("Window::MouseMoveCallback: {}, {}", x, y);
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
@@ -1415,8 +1410,8 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
     MouseEvent me = {type, ix, iy, w->impl_->mouse_mods_};
     me.button.button = MouseButton(buttons);
-    utility::LogInfo("Window::MouseMoveCallback: {}, {}, buttons:{}", x, y,
-                     buttons);
+    // utility::LogInfo("Window::MouseMoveCallback: {}, {}, buttons:{}", x, y,
+    //                  buttons);
 
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);
@@ -1443,11 +1438,7 @@ void Window::MouseButtonCallback(GLFWwindow* window,
     MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
     me.button.button = MouseButton(MouseButtonFromGLFW(button));
 
-    utility::LogInfo(
-            "MouseButton GLFW: type {}, ix {}, iy {}, mods {}, button {}", type,
-            ix, iy, KeymodsFromGLFW(mods),
-            MouseButton(MouseButtonFromGLFW(button)));
-
+    utility::LogInfo("MouseButton GLFW: {}", me.ToString());
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);
 }
