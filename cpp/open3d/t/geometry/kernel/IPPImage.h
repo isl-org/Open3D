@@ -46,8 +46,6 @@ inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
         return ipp8u;
     } else if (dtype == core::Dtype::UInt16) {
         return ipp16u;
-    } else if (dtype == core::Dtype::UInt16) {
-        return ipp16u;
     } else if (dtype == core::Dtype::Int32) {
         return ipp32s;
     } else if (dtype == core::Dtype::Int64) {

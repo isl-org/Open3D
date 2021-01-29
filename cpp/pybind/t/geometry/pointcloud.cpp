@@ -48,13 +48,12 @@ void pybind_pointcloud(py::module& m) {
                                                    core::Tensor>&>(),
                  "map_keys_to_tensors"_a);
 
-    // Point's attributes: points, colors, normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     pointcloud.def_property_readonly(
-            "point",
-            py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
+            "point", py::overload_cast<>(&PointCloud::GetPointAttr, py::const_),
+            "Point's attributes: points, colors, normals, etc.");
 
     // Device transfers.
     pointcloud.def("to", &PointCloud::To,
