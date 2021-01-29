@@ -30,6 +30,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
+#include "open3d/io/ImageIO.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -189,6 +190,28 @@ TEST_P(ImagePermuteDevices,
     EXPECT_EQ(output.GetDtype(), core::Dtype::UInt16);
     EXPECT_THAT(output.AsTensor().ToFlatVector<uint16_t>(),
                 ElementsAreArray(input_data));
+}
+
+TEST_P(ImagePermuteDevices, BilateralFilter) {
+    core::Device device = GetParam();
+
+    t::geometry::Image color = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/color/00000.jpg"),
+            device);
+    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/depth/00000.png"),
+            device);
+
+    auto color_filtered = color.BilateralFilter(3);
+    auto depth_filtered = depth.BilateralFilter(1, 1.0, 4.0);
+
+    depth.AsTensor().Save("original.npy");
+    depth_filtered.AsTensor().Save("filtered.npy");
+
+    io::WriteImage("color_filtered.png", color_filtered.ToLegacyImage());
+    io::WriteImage("depth_filtered.png", depth_filtered.ToLegacyImage());
 }
 
 TEST_P(ImagePermuteDevices, Dilate) {

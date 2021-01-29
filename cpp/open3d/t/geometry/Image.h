@@ -188,6 +188,11 @@ public:
     /// used.
     Image Dilate(int half_kernel_size = 1) const;
 
+    /// Return a new image after bilateral filtering.
+    Image BilateralFilter(int half_kernel_size = 1,
+                          float value_sigma = 400.0f,
+                          float dist_sigma = 100.0f) const;
+
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);

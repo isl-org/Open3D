@@ -38,6 +38,12 @@ void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);
 
+void BilateralFilter(const open3d::core::Tensor &srcim,
+                     open3d::core::Tensor &dstim,
+                     int half_kernel_size,
+                     float value_sigma,
+                     float dist_sigma);
+
 }  // namespace npp
 }  // namespace geometry
 }  // namespace t

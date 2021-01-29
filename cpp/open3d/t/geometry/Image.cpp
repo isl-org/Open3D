@@ -190,6 +190,50 @@ Image Image::Dilate(int half_kernel_size) const {
     return dst_im;
 }
 
+/// Return a new image after bilateral filtering.
+Image Image::BilateralFilter(int half_kernel_size,
+                             float value_sigma,
+                             float dist_sigma) const {
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+    };
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},
+            {core::Dtype::Float32, 1},
+            {core::Dtype::UInt8, 3},
+            {core::Dtype::Float32, 3},
+    };
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::EmptyLike(data_);
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::BilateralFilter, data_, dst_im.data_, half_kernel_size,
+                  value_sigma, dist_sigma);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::BilateralFilter, data_, dst_im.data_, half_kernel_size,
+                 value_sigma, dist_sigma);
+    } else {
+        utility::LogError(
+                "BilateralFilter with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
                              const core::Device &device) {
     static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {
