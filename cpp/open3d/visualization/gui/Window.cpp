@@ -1105,10 +1105,10 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             ImGuiIO& io = ImGui::GetIO();
             float dx = 0.0, dy = 0.0;
             if (e.wheel.dx != 0) {
-                dx = float(e.wheel.dx / std::abs(e.wheel.dx));  // get sign
+                dx = e.wheel.dx / std::abs(e.wheel.dx);  // get sign
             }
             if (e.wheel.dy != 0) {
-                dy = float(e.wheel.dy / std::abs(e.wheel.dy));  // get sign
+                dy = e.wheel.dy / std::abs(e.wheel.dy);  // get sign
             }
             // Note: ImGUI's documentation says that 1 unit of wheel movement
             //       is about 5 lines of text scrolling.
@@ -1340,9 +1340,14 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
+    // Note that although pixels are integers, the trackpad value needs to
+    // be a float, since macOS trackpads produce fractional values when
+    // scrolling slowly. These fractional values need to be passed all the way
+    // down to the MatrixInteractorLogic::Dolly() in order for dollying to
+    // feel buttery smooth with the trackpad.
     MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouse_mods_};
-    me.wheel.dx = int(std::round(dx));
-    me.wheel.dy = int(std::round(dy));
+    me.wheel.dx = dx;
+    me.wheel.dy = dy;
 
     // GLFW doesn't give us any information about whether this scroll event
     // came from a mousewheel or a trackpad two-finger scroll.
