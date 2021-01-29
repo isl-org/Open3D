@@ -158,6 +158,7 @@ struct Window::Impl {
     std::string title_;  // there is no glfwGetWindowTitle()...
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
+    std::function<bool(void)> on_close_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
@@ -627,7 +628,16 @@ void Window::Show(bool vis /*= true*/) {
     }
 }
 
-void Window::Close() { Application::GetInstance().RemoveWindow(this); }
+void Window::Close() {
+    if (impl_->on_close_) {
+        bool shouldContinue = impl_->on_close_();
+        if (!shouldContinue) {
+            glfwSetWindowShouldClose(impl_->window_, 0);
+            return;
+        }
+    }
+    Application::GetInstance().RemoveWindow(this);
+}
 
 void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
 
@@ -662,6 +672,10 @@ void Window::SetOnMenuItemActivated(Menu::ItemId item_id,
 
 void Window::SetOnTickEvent(std::function<bool()> callback) {
     impl_->on_tick_event_ = callback;
+}
+
+void Window::SetOnClose(std::function<bool()> callback) {
+    impl_->on_close_ = callback;
 }
 
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
@@ -1485,7 +1499,7 @@ void Window::DragDropCallback(GLFWwindow* window,
 
 void Window::CloseCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    Application::GetInstance().RemoveWindow(w);
+    w->Close();
 }
 
 void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }
