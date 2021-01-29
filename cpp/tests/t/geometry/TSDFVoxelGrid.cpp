@@ -93,6 +93,25 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
                         device);
 
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
+
+        if (i == trajectory->parameters_.size() - 1) {
+            core::Tensor vertex_map, color_map;
+            std::tie(vertex_map, color_map) = voxel_grid.RayCast(
+                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                    50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+
+            // There are CPU/CUDA numerical differences around edges, so we have
+            // to be device-specific.
+            std::string device_code =
+                    device.GetType() == core::Device::DeviceType::CPU ? "cpu"
+                                                                      : "cuda";
+            core::Tensor vertex_map_gt = core::Tensor::Load(
+                    fmt::format("{}/RGBD/raycast_vertex_{}.npy",
+                                std::string(TEST_DATA_DIR), device_code));
+
+            EXPECT_TRUE(vertex_map.To(core::Device("CPU:0"))
+                                .AllClose(vertex_map_gt));
+        }
     }
 
     auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
