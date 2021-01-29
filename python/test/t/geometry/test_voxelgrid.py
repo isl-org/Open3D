@@ -104,9 +104,9 @@ def test_integration(device):
                                     o3d.core.Dtype.Float32, device)
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
         if i == len(camera_poses) - 1:
-            vertexmap, _ = volume.raycast(intrinsic, extrinsic,
-                                                 depth.columns, depth.rows, 50,
-                                                 0.1, 3.0, min(i * 1.0, 3.0))
+            vertexmap, _ = volume.raycast(intrinsic, extrinsic, depth.columns,
+                                          depth.rows, 50, 0.1, 3.0,
+                                          min(i * 1.0, 3.0))
             vertexmap_gt = np.load(
                 test_data_path +
                 "RGBD/raycast_vertex_{}.npy".format('cpu' if device.get_type(
