@@ -85,7 +85,7 @@ void CameraSphereInteractorLogic::StartMouseDrag() {
         } else {
             theta_at_mousedown_ = -M_PI - theta_at_mousedown_;
         }
-        phi_at_mousedown_ += M_PI;
+        phi_at_mousedown_ += float(M_PI);
     }
 }
 
