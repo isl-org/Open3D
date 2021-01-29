@@ -124,7 +124,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                  core::Tensor& vertex_map,
                  core::Tensor& color_map,
                  const core::Tensor& intrinsics,
-                 const core::Tensor& extrinsics,
+                 const core::Tensor& pose,
                  int64_t block_resolution,
                  float voxel_size,
                  float sdf_trunc,
@@ -140,7 +140,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
     NDArrayIndexer vertex_map_indexer(vertex_map, 2);
     NDArrayIndexer color_map_indexer(color_map, 2);
 
-    TransformIndexer transform_indexer(intrinsics, extrinsics, 1);
+    TransformIndexer transform_indexer(intrinsics, pose, 1);
 
     int64_t rows = vertex_map_indexer.GetShape(0);
     int64_t cols = vertex_map_indexer.GetShape(1);

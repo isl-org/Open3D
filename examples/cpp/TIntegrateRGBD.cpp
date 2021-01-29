@@ -43,6 +43,7 @@ void PrintHelp() {
     utility::LogInfo("     --max_depth [=3.0]");
     utility::LogInfo("     --sdf_trunc [=0.04]");
     utility::LogInfo("     --device [CPU:0]");
+    utility::LogInfo("     --raycast");
     utility::LogInfo("     --mesh");
     utility::LogInfo("     --pointcloud");
     // clang-format on
@@ -112,6 +113,8 @@ int main(int argc, char** argv) {
     float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc", 0.04f));
 
+    bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
+
     // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -148,11 +151,12 @@ int main(int argc, char** argv) {
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
 
-        core::Tensor vertex_map, color_map;
-        std::tie(vertex_map, color_map) = voxel_grid.RayCast(
-                intrinsic_t, extrinsic_t.Inverse(), depth.GetCols(),
-                depth.GetRows(), 50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
-        if (i % 100 == 0) {
+        if (enable_raycast && i % 100 == 0) {
+            core::Tensor vertex_map, color_map;
+            std::tie(vertex_map, color_map) = voxel_grid.RayCast(
+                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                    50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+
             t::geometry::Image vertex_im(vertex_map);
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::Image>(

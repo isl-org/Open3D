@@ -84,7 +84,11 @@ public:
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
-    /// Use volumetric ray casting to obtain vertex and color maps.
+    /// Use volumetric ray casting to obtain vertex and color maps, mainly for
+    /// dense visual odometry.
+    /// Note: vertex map is interpolated along the ray,
+    /// but color map is not trilinearly interpolated due to performance
+    /// requirements. Colormap is only used for a reference now.
     std::tuple<core::Tensor, core::Tensor> RayCast(
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics,
