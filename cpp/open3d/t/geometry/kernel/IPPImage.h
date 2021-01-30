@@ -74,6 +74,10 @@ void BilateralFilter(const open3d::core::Tensor &srcim,
                      float value_sigma,
                      float dist_sigma);
 
+void GaussianFilter(const open3d::core::Tensor &srcim,
+                    open3d::core::Tensor &dstim,
+                    int kernel_size);
+
 }  // namespace ipp
 }  // namespace geometry
 }  // namespace t

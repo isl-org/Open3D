@@ -214,6 +214,28 @@ TEST_P(ImagePermuteDevices, BilateralFilter) {
     io::WriteImage("depth_filtered.png", depth_filtered.ToLegacyImage());
 }
 
+TEST_P(ImagePermuteDevices, GaussianFilter) {
+    core::Device device = GetParam();
+
+    t::geometry::Image color = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/color/00000.jpg"),
+            device);
+    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/depth/00000.png"),
+            device);
+
+    auto color_filtered = color.GaussianFilter(7);
+    auto depth_filtered = depth.GaussianFilter(7);
+
+    depth.AsTensor().Save("original.npy");
+    depth_filtered.AsTensor().Save("filtered.npy");
+
+    io::WriteImage("color_gauss_filtered.png", color_filtered.ToLegacyImage());
+    io::WriteImage("depth_gauss_filtered.png", depth_filtered.ToLegacyImage());
+}
+
 TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 

@@ -193,6 +193,12 @@ public:
                           float value_sigma = 400.0f,
                           float dist_sigma = 100.0f) const;
 
+    /// Return a new image after Gaussian filtering.
+    /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
+    /// Odd numbers >= 3 are supported for CPU, and only up to 15 are supported
+    /// for GPU.
+    Image GaussianFilter(int kernel_size = 3) const;
+
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);

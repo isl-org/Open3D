@@ -190,7 +190,6 @@ Image Image::Dilate(int half_kernel_size) const {
     return dst_im;
 }
 
-/// Return a new image after bilateral filtering.
 Image Image::BilateralFilter(int half_kernel_size,
                              float value_sigma,
                              float dist_sigma) const {
@@ -228,6 +227,52 @@ Image Image::BilateralFilter(int half_kernel_size,
     } else {
         utility::LogError(
                 "BilateralFilter with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
+Image Image::GaussianFilter(int kernel_size) const {
+    if (kernel_size < 3 || kernel_size % 2 == 0) {
+        utility::LogError("Kernel size must be an odd number >= 3.");
+    }
+
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
+            {core::Dtype::Float32, 4},
+    };
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
+            {core::Dtype::Float32, 4},
+    };
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::EmptyLike(data_);
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::GaussianFilter, data_, dst_im.data_, kernel_size);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::GaussianFilter, data_, dst_im.data_, kernel_size);
+    } else {
+        utility::LogError(
+                "GaussianFilter with data type {} on device {} is not "
                 "implemented!",
                 GetDtype().ToString(), GetDevice().ToString());
     }
