@@ -61,6 +61,12 @@ def draw(
     if rpc_interface:
         w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)
 
+        def stop_rpc():
+            w.stop_rpc_interface()
+            return True
+
+        w.set_on_close(stop_rpc)
+
     if on_init is not None:
         on_init(w)
     if on_animation_frame is not None:
@@ -70,6 +76,3 @@ def draw(
 
     gui.Application.instance.add_window(w)
     gui.Application.instance.run()
-
-    if rpc_interface:
-        w.stop_rpc_interface()

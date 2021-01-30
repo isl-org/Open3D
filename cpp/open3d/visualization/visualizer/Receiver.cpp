@@ -46,10 +46,6 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
         const messages::Request& req,
         const messages::SetMeshData& msg,
         const MsgpackObject& obj) {
-    if (!scene_) {
-        LogError("scene is null");
-    }
-
     std::string errstr(":");
     if (!msg.data.CheckMessage(errstr)) {
         auto status_err = messages::Status::ErrorProcessingMessage();
@@ -199,7 +195,7 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
             }
         }
 
-        SetGeometry(mesh, msg.path, msg.time, msg.layer);
+        HandleGeometry(mesh, msg.path, msg.time, msg.layer);
 
     } else {
         // create a PointCloud
@@ -305,21 +301,19 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
                 }
             }
         }
-        SetGeometry(pcd, msg.path, msg.time, msg.layer);
+        HandleGeometry(pcd, msg.path, msg.time, msg.layer);
     }
 
     return CreateStatusOKMsg();
 }
 
-void Receiver::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
-                           const std::string& path,
-                           int time,
-                           const std::string& layer) {
-    std::shared_ptr<rendering::Open3DScene> scene = scene_;
+void Receiver::HandleGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string& path,
+                              int time,
+                              const std::string& layer) {
     gui::Application::GetInstance().PostToMainThread(
-            window_, [geom, path, time, layer, scene]() {
-                (void)time;  // unused at the moment
-                scene->AddGeometry(path, geom.get(), rendering::Material());
+            window_, [this, geom, path, time, layer]() {
+                on_geometry_(geom, path, time, layer);
             });
 }
 
