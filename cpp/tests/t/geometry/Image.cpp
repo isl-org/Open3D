@@ -236,6 +236,31 @@ TEST_P(ImagePermuteDevices, GaussianFilter) {
     io::WriteImage("depth_gauss_filtered.png", depth_filtered.ToLegacyImage());
 }
 
+TEST_P(ImagePermuteDevices, SobelFilter) {
+    core::Device device = GetParam();
+
+    t::geometry::Image gray = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/lena_gray.jpg"),
+            device);
+    t::geometry::Image depth =
+            t::geometry::Image::FromLegacyImage(
+                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                             "/RGBD/depth/00000.png"),
+                    device)
+                    .To(core::Dtype::Float32);
+
+    auto gray_filtered = gray.SobelFilter(3);
+    auto depth_filtered = depth.SobelFilter(5);
+
+    gray_filtered.first.AsTensor()
+            .To(core::Dtype::Float32)
+            .Save("gray_dx" + device.ToString() + ".npy");
+    gray_filtered.second.AsTensor().Save("gray_dy.npy");
+    depth_filtered.first.AsTensor().Save("depth_dx.npy");
+    depth_filtered.second.AsTensor().Save("depth_dy.npy");
+}
+
 TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 

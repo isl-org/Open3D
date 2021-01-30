@@ -170,6 +170,49 @@ void GaussianFilter(const core::Tensor &src_im,
     }
 }
 
+void SobelFilter(const core::Tensor &src_im,
+                 core::Tensor &dst_im_dx,
+                 core::Tensor &dst_im_dy,
+                 int kernel_size) {
+    const static std::unordered_map<int, IppiMaskSize> kKernelSizeMap = {
+            {3, ::ipp::ippMskSize3x3},
+            {5, ::ipp::ippMskSize5x5},
+    };
+    auto it = kKernelSizeMap.find(kernel_size);
+    if (it == kKernelSizeMap.end()) {
+        utility::LogError("Unsupported size {} for IPP SobelFilter",
+                          kernel_size);
+    }
+
+    // Create IPP wrappers for all Open3D tensors
+    const ::ipp::IwiImage ipp_src_im(
+            ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
+            ToIppDataType(src_im.GetDtype()), src_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
+            src_im.GetStride(0) * src_im.GetDtype().ByteSize());
+    ::ipp::IwiImage ipp_dst_im_dx(
+            ::ipp::IwiSize(dst_im_dx.GetShape(1), dst_im_dx.GetShape(0)),
+            ToIppDataType(dst_im_dx.GetDtype()),
+            dst_im_dx.GetShape(2) /* channels */, 0 /* border buffer size */,
+            dst_im_dx.GetDataPtr(),
+            dst_im_dx.GetStride(0) * dst_im_dx.GetDtype().ByteSize());
+    ::ipp::IwiImage ipp_dst_im_dy(
+            ::ipp::IwiSize(dst_im_dy.GetShape(1), dst_im_dy.GetShape(0)),
+            ToIppDataType(dst_im_dy.GetDtype()),
+            dst_im_dy.GetShape(2) /* channels */, 0 /* border buffer size */,
+            dst_im_dy.GetDataPtr(),
+            dst_im_dy.GetStride(0) * dst_im_dy.GetDtype().ByteSize());
+
+    try {
+        ::ipp::iwiFilterSobel(ipp_src_im, ipp_dst_im_dx,
+                              IwiDerivativeType::iwiDerivVerFirst, it->second);
+        ::ipp::iwiFilterSobel(ipp_src_im, ipp_dst_im_dy,
+                              IwiDerivativeType::iwiDerivHorFirst, it->second);
+    } catch (const ::ipp::IwException &e) {
+        // See comments in icv/include/ippicv_types.h for m_status meaning
+        utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
+    }
+}
 }  // namespace ipp
 }  // namespace geometry
 }  // namespace t

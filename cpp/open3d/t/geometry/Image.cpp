@@ -279,6 +279,58 @@ Image Image::GaussianFilter(int kernel_size) const {
     return dst_im;
 }
 
+std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
+    if (!(kernel_size == 3 || kernel_size == 5)) {
+        utility::LogError("Kernel size must be 3 or 5.");
+    }
+
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // 16 signed is also supported by the engines, but is non-standard thus not
+    // supported by us. To filter 16 bit unsigned depth images, we recommend
+    // first converting to Float32.
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},
+            {core::Dtype::Float32, 1},
+    };
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},
+            {core::Dtype::Float32, 1},
+    };
+
+    // Routines: 8u16s, 32f
+    Image dst_im_dx, dst_im_dy;
+    core::Dtype dtype = GetDtype();
+    if (dtype == core::Dtype::Float32) {
+        dst_im_dx = core::Tensor::EmptyLike(data_);
+        dst_im_dy = core::Tensor::EmptyLike(data_);
+    } else if (dtype == core::Dtype::UInt8) {
+        dst_im_dx = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+                                        data_.GetDevice());
+        dst_im_dy = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+                                        data_.GetDevice());
+    }
+
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::SobelFilter, data_, dst_im_dx.data_, dst_im_dy.data_,
+                  kernel_size);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::SobelFilter, data_, dst_im_dx.data_, dst_im_dy.data_,
+                 kernel_size);
+    } else {
+        utility::LogError(
+                "SobelFilter with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return std::make_pair(dst_im_dx, dst_im_dy);
+}
+
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
                              const core::Device &device) {
     static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {

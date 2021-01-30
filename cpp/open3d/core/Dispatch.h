@@ -54,6 +54,9 @@
         } else if (DTYPE == open3d::core::Dtype::Float64) { \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Int16) {   \
+            using scalar_t = int16_t;                       \
+            return __VA_ARGS__();                           \
         } else if (DTYPE == open3d::core::Dtype::Int32) {   \
             using scalar_t = int32_t;                       \
             return __VA_ARGS__();                           \

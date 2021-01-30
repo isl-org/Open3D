@@ -219,6 +219,62 @@ void GaussianFilter(const core::Tensor &src_im,
 #undef NPP_ARGS
 }
 
+void SobelFilter(const core::Tensor &src_im,
+                 core::Tensor &dst_im_dx,
+                 core::Tensor &dst_im_dy,
+                 int kernel_size) {
+    // Supported device and datatype checking happens in calling code and will
+    // result in an exception if there are errors.
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiPoint src_offset = {0, 0};
+
+    // create struct with ROI size
+    NppiSize size_ROI = {static_cast<int>(dst_im_dx.GetShape(1)),
+                         static_cast<int>(dst_im_dx.GetShape(0))};
+    auto dtype = src_im.GetDtype();
+    const static std::unordered_map<int, NppiMaskSize> kKernelSizeMap = {
+            {3, NPP_MASK_SIZE_3_X_3},
+            {5, NPP_MASK_SIZE_5_X_5},
+    };
+    auto it = kKernelSizeMap.find(kernel_size);
+    if (it == kKernelSizeMap.end()) {
+        utility::LogError("Unsupported size {} for NPP SobelFilter",
+                          kernel_size);
+    }
+
+    // Counterintuitive conventions: dy: Horizontal,  dx: Vertical.
+    // Probable reason: dy detects horizontal edges, dx detects vertical edges.
+#define NPP_ARGS_DX                                                       \
+    static_cast<const npp_src_dtype *>(src_im.GetDataPtr()),              \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dst_dtype *>(dst_im_dx.GetDataPtr()),         \
+            dst_im_dx.GetStride(0) * dst_im_dx.GetDtype().ByteSize(),     \
+            size_ROI, it->second, NPP_BORDER_REPLICATE
+#define NPP_ARGS_DY                                                       \
+    static_cast<const npp_src_dtype *>(src_im.GetDataPtr()),              \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dst_dtype *>(dst_im_dy.GetDataPtr()),         \
+            dst_im_dy.GetStride(0) * dst_im_dy.GetDtype().ByteSize(),     \
+            size_ROI, it->second, NPP_BORDER_REPLICATE
+    if (dtype == core::Dtype::UInt8) {
+        using npp_src_dtype = Npp8u;
+        using npp_dst_dtype = Npp16s;
+        nppiFilterSobelVertBorder_8u16s_C1R(NPP_ARGS_DX);
+        nppiFilterSobelHorizBorder_8u16s_C1R(NPP_ARGS_DY);
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_src_dtype = Npp32f;
+        using npp_dst_dtype = Npp32f;
+        nppiFilterSobelVertMaskBorder_32f_C1R(NPP_ARGS_DX);
+        nppiFilterSobelHorizMaskBorder_32f_C1R(NPP_ARGS_DY);
+    } else {
+        utility::LogError("npp::SobelFilter(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS_DX
+#undef NPP_ARGS_DY
+}
+
 }  // namespace npp
 }  // namespace geometry
 }  // namespace t

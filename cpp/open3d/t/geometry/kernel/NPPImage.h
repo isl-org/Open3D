@@ -47,6 +47,11 @@ void BilateralFilter(const open3d::core::Tensor &srcim,
 void GaussianFilter(const open3d::core::Tensor &srcim,
                     open3d::core::Tensor &dstim,
                     int kernel_size);
+
+void SobelFilter(const open3d::core::Tensor &srcim,
+                 open3d::core::Tensor &dstim_dx,
+                 open3d::core::Tensor &dstim_dy,
+                 int kernel_size);
 }  // namespace npp
 }  // namespace geometry
 }  // namespace t
