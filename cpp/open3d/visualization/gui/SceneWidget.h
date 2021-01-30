@@ -149,6 +149,8 @@ public:
             : name(n), geometry(g), tgeometry(t) {}
     };
 
+    void SetSunInteractorEnabled(bool enable);
+
     void SetPickableGeometry(const std::vector<PickableGeometry>& geometry);
     void SetPickablePointSize(int px);
     void SetOnPointsPicked(

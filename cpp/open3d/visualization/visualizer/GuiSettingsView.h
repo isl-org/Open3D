@@ -74,6 +74,7 @@ private:
     std::shared_ptr<gui::Slider> ibl_intensity_;
     std::shared_ptr<gui::Slider> sun_intensity_;
     std::shared_ptr<gui::VectorEdit> sun_dir_;
+    std::shared_ptr<gui::Checkbox> sun_follows_camera_;
     std::shared_ptr<gui::ColorEdit> sun_color_;
 
     std::shared_ptr<gui::Combobox> material_type_;
