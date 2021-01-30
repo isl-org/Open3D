@@ -239,10 +239,14 @@ TEST_P(ImagePermuteDevices, GaussianFilter) {
 TEST_P(ImagePermuteDevices, SobelFilter) {
     core::Device device = GetParam();
 
-    t::geometry::Image gray = t::geometry::Image::FromLegacyImage(
+    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
             *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/lena_gray.jpg"),
+                                     "/lena_color.jpg"),
             device);
+    t::geometry::Image gray = rgb.RGBToGray();
+    io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
+    io::WriteImage("lena_converted.png", gray.ToLegacyImage());
+
     t::geometry::Image depth =
             t::geometry::Image::FromLegacyImage(
                     *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +

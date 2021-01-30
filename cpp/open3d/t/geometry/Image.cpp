@@ -147,6 +147,42 @@ Image Image::To(core::Dtype dtype,
     return dst_im;
 }
 
+Image Image::RGBToGray() const {
+    if (GetChannels() != 3) {
+        utility::LogError("Input image channels must be 3 for RGBToGray");
+    }
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},
+            {core::Dtype::Float32, 3},
+    };
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},
+            {core::Dtype::Float32, 3},
+    };
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1}, GetDtype(),
+                                       GetDevice());
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
+    } else {
+        utility::LogError(
+                "RGBToGray with data type {} on device {} is not implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
 Image Image::Dilate(int half_kernel_size) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
@@ -286,9 +322,9 @@ std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
 
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
-    // 16 signed is also supported by the engines, but is non-standard thus not
-    // supported by us. To filter 16 bit unsigned depth images, we recommend
-    // first converting to Float32.
+    // 16 signed is also supported by the engines, but is non-standard thus
+    // not supported by us. To filter 16 bit unsigned depth images, we
+    // recommend first converting to Float32.
     static const supported_t npp_supported{
             {core::Dtype::UInt8, 1},
             {core::Dtype::Float32, 1},

@@ -66,6 +66,8 @@ void To(const core::Tensor &src_im,
         double scale,
         double offset);
 
+void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im);
+
 void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);

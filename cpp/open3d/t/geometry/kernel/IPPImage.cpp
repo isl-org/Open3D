@@ -26,6 +26,7 @@
 
 #include "open3d/t/geometry/kernel/IPPImage.h"
 
+#include <iw++/iw_image_color.hpp>
 #include <iw++/iw_image_filter.hpp>
 #include <iw++/iw_image_op.hpp>
 
@@ -63,6 +64,29 @@ void To(const core::Tensor &src_im,
 
     try {
         ::ipp::iwiScale(ipp_src_im, ipp_dst_im, scale, offset);
+    } catch (const ::ipp::IwException &e) {
+        // See comments in icv/include/ippicv_types.h for m_status meaning
+        utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
+    }
+}
+
+void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
+    auto dtype = src_im.GetDtype();
+    // Create IPP wrappers for all Open3D tensors
+    const ::ipp::IwiImage ipp_src_im(
+            ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
+            ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
+            src_im.GetStride(0) * dtype.ByteSize());
+    ::ipp::IwiImage ipp_dst_im(
+            ::ipp::IwiSize(dst_im.GetShape(1), dst_im.GetShape(0)),
+            ToIppDataType(dtype), dst_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, dst_im.GetDataPtr(),
+            dst_im.GetStride(0) * dtype.ByteSize());
+
+    try {
+        ::ipp::iwiColorConvert(ipp_src_im, ::ipp::iwiColorRGB, ipp_dst_im,
+                               ::ipp::iwiColorGray);
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);

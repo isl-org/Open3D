@@ -40,6 +40,33 @@ namespace t {
 namespace geometry {
 namespace npp {
 
+void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
+    // create struct with ROI size
+    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                           \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),   \
+            src_im.GetStride(0) * dtype.ByteSize(),        \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()), \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI
+    if (dtype == core::Dtype::UInt8) {
+        using npp_dtype = Npp8u;
+        nppiRGBToGray_8u_C3C1R(NPP_ARGS);
+    } else if (dtype == core::Dtype::UInt16) {
+        using npp_dtype = Npp16u;
+        nppiRGBToGray_16u_C3C1R(NPP_ARGS);
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_dtype = Npp32f;
+        nppiRGBToGray_32f_C3C1R(NPP_ARGS);
+    } else {
+        utility::LogError("npp::GaussianFilter(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS
+}
+
 void Dilate(const core::Tensor &src_im,
             core::Tensor &dst_im,
             int half_kernel_size) {
