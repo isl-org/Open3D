@@ -322,37 +322,41 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         }
 
         auto tpcd_i = CreateTPCDFromFile(fnames[i]);
-        auto pose_i = core::eigen_converter::EigenMatrixToTensor(
-                              pose_graph.nodes_[i].pose_)
-                              .To(core::Dtype::Float32);
-        tpcd_i = tpcd_i.Transform(pose_i);
-
         auto tpcd_j = CreateTPCDFromFile(fnames[j]);
-        auto pose_j = core::eigen_converter::EigenMatrixToTensor(
-                              pose_graph.nodes_[j].pose_)
-                              .To(core::Dtype::Float32);
-        tpcd_j = tpcd_j.Transform(pose_j);
+
+        auto Ti = core::eigen_converter::EigenMatrixToTensor(
+                          pose_graph.nodes_[i].pose_)
+                          .To(core::Dtype::Float32);
+        auto Tj = core::eigen_converter::EigenMatrixToTensor(
+                          pose_graph.nodes_[j].pose_)
+                          .To(core::Dtype::Float32);
 
         auto corres_ij = core::Tensor::Load(corres_fname).To(device);
 
-        auto points_i =
-                tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
-        auto normals_i = tpcd_i.GetPointNormals()
+        auto ps = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
+        auto qs = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
+
+        auto normal_ps = tpcd_i.GetPointNormals()
                                  .IndexGet({corres_ij.T()[0]})
                                  .To(device);
-        auto points_j =
-                tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
 
-        kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, points_i, points_j,
-                                         normals_i, i, j);
+        auto Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
+        auto ti = Ti.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+
+        auto Rj = Tj.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
+        auto tj = Tj.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+
+        auto Ti_ps = (Ri.Matmul(ps.T())).Add_(ti).T().Contiguous();
+        auto Tj_qs = (Rj.Matmul(qs.T())).Add_(tj).T().Contiguous();
+        auto Ri_normal_ps = (Ri.Matmul(normal_ps.T())).T().Contiguous();
+
+        kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, Ti_ps, Tj_qs,
+                                         Ri_normal_ps, i, j);
 
         // For debug
         if (option.grid_debug_) {
-            VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij,
-                               Eigen::Matrix4d::Identity());
-
-            t::geometry::PointCloud tpcd_i_corres(points_i);
-            t::geometry::PointCloud tpcd_j_corres(points_j);
+            t::geometry::PointCloud tpcd_i_corres(Ti_ps);
+            t::geometry::PointCloud tpcd_j_corres(Tj_qs);
             auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
                     tpcd_i_corres.ToLegacyPointCloud());
             pcd_i_corres->PaintUniformColor({1, 0, 0});
@@ -360,8 +364,6 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
                     tpcd_j_corres.ToLegacyPointCloud());
             pcd_j_corres->PaintUniformColor({0, 1, 0});
 
-            // TODO: use parameterization to update normals and points per
-            // grid
             visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
         }
     }

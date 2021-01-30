@@ -39,15 +39,15 @@ void FillInRigidAlignmentTermCPU
         (core::Tensor &AtA,
          core::Tensor &Atb,
          core::Tensor &residual,
-         const core::Tensor &points_i,
-         const core::Tensor &points_j,
-         const core::Tensor &normals_i,
+         const core::Tensor &Ti_ps,
+         const core::Tensor &Tj_qs,
+         const core::Tensor &Ri_normal_ps,
          int i,
          int j) {
 
     core::Device device = AtA.GetDevice();
-    int64_t n = points_i.GetLength();
-    if (points_j.GetLength() != n || normals_i.GetLength() != n) {
+    int64_t n = Ti_ps.GetLength();
+    if (Tj_qs.GetLength() != n || Ri_normal_ps.GetLength() != n) {
         utility::LogError(
                 "Unable to setup linear system: input length mismatch.");
     }
@@ -62,12 +62,10 @@ void FillInRigidAlignmentTermCPU
     float *Atb_local_ptr = static_cast<float *>(Atb_local.GetDataPtr());
     float *residual_ptr = static_cast<float *>(residual.GetDataPtr());
 
-    const float *points_i_ptr =
-            static_cast<const float *>(points_i.GetDataPtr());
-    const float *points_j_ptr =
-            static_cast<const float *>(points_j.GetDataPtr());
-    const float *normals_i_ptr =
-            static_cast<const float *>(normals_i.GetDataPtr());
+    const float *Ti_ps_ptr = static_cast<const float *>(Ti_ps.GetDataPtr());
+    const float *Tj_qs_ptr = static_cast<const float *>(Tj_qs.GetDataPtr());
+    const float *Ri_normal_ps_ptr =
+            static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
@@ -75,21 +73,24 @@ void FillInRigidAlignmentTermCPU
     core::kernel::CPULauncher launcher;
 #endif
     launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-        const float *point_i = points_i_ptr + 3 * workload_idx;
-        const float *point_j = points_j_ptr + 3 * workload_idx;
-        const float *normal_i = normals_i_ptr + 3 * workload_idx;
+        const float *p_prime = Ti_ps_ptr + 3 * workload_idx;
+        const float *q_prime = Tj_qs_ptr + 3 * workload_idx;
+        const float *normal_p_prime = Ri_normal_ps_ptr + 3 * workload_idx;
 
-        float r = (point_i[0] - point_j[0]) * normal_i[0] +
-                  (point_i[1] - point_j[1]) * normal_i[1] +
-                  (point_i[2] - point_j[2]) * normal_i[2];
+        float r = (p_prime[0] - q_prime[0]) * normal_p_prime[0] +
+                  (p_prime[1] - q_prime[1]) * normal_p_prime[1] +
+                  (p_prime[2] - q_prime[2]) * normal_p_prime[2];
 
         float J_ij[12];
-        J_ij[0] = -point_j[2] * normal_i[1] + point_j[1] * normal_i[2];
-        J_ij[1] = point_j[2] * normal_i[0] - point_j[0] * normal_i[2];
-        J_ij[2] = -point_j[1] * normal_i[0] + point_j[0] * normal_i[1];
-        J_ij[3] = normal_i[0];
-        J_ij[4] = normal_i[1];
-        J_ij[5] = normal_i[2];
+        J_ij[0] = -q_prime[2] * normal_p_prime[1] +
+                  q_prime[1] * normal_p_prime[2];
+        J_ij[1] =
+                q_prime[2] * normal_p_prime[0] - q_prime[0] * normal_p_prime[2];
+        J_ij[2] = -q_prime[1] * normal_p_prime[0] +
+                  q_prime[0] * normal_p_prime[1];
+        J_ij[3] = normal_p_prime[0];
+        J_ij[4] = normal_p_prime[1];
+        J_ij[5] = normal_p_prime[2];
         for (int k = 0; k < 6; ++k) {
             J_ij[k + 6] = -J_ij[k];
         }

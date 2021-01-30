@@ -34,44 +34,44 @@ namespace kernel {
 void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               core::Tensor &Atb,
                               core::Tensor &residual,
-                              const core::Tensor &points_i,
-                              const core::Tensor &points_j,
-                              const core::Tensor &normals_i,
+                              const core::Tensor &Ti_ps,
+                              const core::Tensor &Tj_qs,
+                              const core::Tensor &Ri_normal_ps,
                               int i,
                               int j) {
     AtA.AssertDtype(core::Dtype::Float32);
     Atb.AssertDtype(core::Dtype::Float32);
     residual.AssertDtype(core::Dtype::Float32);
-    points_i.AssertDtype(core::Dtype::Float32);
-    points_j.AssertDtype(core::Dtype::Float32);
-    normals_i.AssertDtype(core::Dtype::Float32);
+    Ti_ps.AssertDtype(core::Dtype::Float32);
+    Tj_qs.AssertDtype(core::Dtype::Float32);
+    Ri_normal_ps.AssertDtype(core::Dtype::Float32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
         utility::LogError("AtA should have the same device as Atb.");
     }
-    if (points_i.GetDevice() != device) {
+    if (Ti_ps.GetDevice() != device) {
         utility::LogError(
                 "Points i should have the same device as the linear system.");
     }
-    if (points_j.GetDevice() != device) {
+    if (Tj_qs.GetDevice() != device) {
         utility::LogError(
                 "Points j should have the same device as the linear system.");
     }
-    if (normals_i.GetDevice() != device) {
+    if (Ri_normal_ps.GetDevice() != device) {
         utility::LogError(
                 "Normals i should have the same device as the linear system.");
     }
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        FillInRigidAlignmentTermCPU(AtA, Atb, residual, points_i, points_j,
-                                    normals_i, i, j);
+        FillInRigidAlignmentTermCPU(AtA, Atb, residual, Ti_ps, Tj_qs,
+                                    Ri_normal_ps, i, j);
 
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        FillInRigidAlignmentTermCUDA(AtA, Atb, residual, points_i, points_j,
-                                     normals_i, i, j);
+        FillInRigidAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs,
+                                     Ri_normal_ps, i, j);
 
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
