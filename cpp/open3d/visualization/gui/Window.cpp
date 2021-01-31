@@ -1060,6 +1060,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 }
 
 Window::DrawResult Window::OnDraw() {
+    utility::LogInfo("Window::OnDraw()");
     impl_->is_drawing_ = true;
     bool needed_layout = impl_->needs_layout_;
 
