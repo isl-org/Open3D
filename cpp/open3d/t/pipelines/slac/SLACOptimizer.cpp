@@ -252,12 +252,14 @@ void InitializeControlGrid(ControlGrid& ctr_grid,
 
 void FillInSLACAlignmentTerm(core::Tensor& AtA,
                              core::Tensor& Atb,
+                             core::Tensor& residual,
                              ControlGrid& ctr_grid,
                              const std::vector<std::string>& fnames,
                              const PoseGraph& pose_graph,
                              const SLACOptimizerOption& option) {
     core::Device device(option.device_);
 
+    int n_frags = pose_graph.nodes_.size();
     // Enumerate pose graph edges
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
@@ -270,29 +272,97 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
             utility::LogError("Correspondence not processed");
         }
 
+        // Load poses
+        auto Ti_e = pose_graph.nodes_[i].pose_;
+        auto Tj_e = pose_graph.nodes_[j].pose_;
+        auto Tij_e = (Tj_e.inverse() * Ti_e).eval();
+        auto Ti = core::eigen_converter::EigenMatrixToTensor(Ti_e).To(
+                device, core::Dtype::Float32);
+        auto Tj = core::eigen_converter::EigenMatrixToTensor(Tj_e).To(
+                device, core::Dtype::Float32);
+
+        auto Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
+        auto ti = Ti.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+
+        auto Rj = Tj.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
+        auto tj = Tj.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+
+        // Load point clouds
         auto tpcd_i = CreateTPCDFromFile(fnames[i], device);
-        auto tpcd_param_i = ctr_grid.Parameterize(tpcd_i);
-
         auto tpcd_j = CreateTPCDFromFile(fnames[j], device);
-        auto tpcd_param_j = ctr_grid.Parameterize(tpcd_j);
 
-        auto pose_i = pose_graph.nodes_[i].pose_;
-        auto pose_j = pose_graph.nodes_[j].pose_;
-        auto pose_ij = (pose_j.inverse() * pose_i).eval();
+        // Load correspondences and select points and normals
+        utility::LogInfo("Load correspondences");
+        core::Tensor corres_ij = core::Tensor::Load(corres_fname).To(device);
+        auto ps = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
+        auto qs = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
+        auto normal_ps = tpcd_i.GetPointNormals()
+                                 .IndexGet({corres_ij.T()[0]})
+                                 .To(device);
+        auto normal_qs = tpcd_j.GetPointNormals()
+                                 .IndexGet({corres_ij.T()[1]})
+                                 .To(device);
 
-        core::Tensor corres = core::Tensor::Load(corres_fname);
+        // Parameterize points in the control grid
+        utility::LogInfo("Parameterize");
+        auto tpcd_param_i = ctr_grid.Parameterize(t::geometry::PointCloud(
+                {{"points", ps}, {"normals", normal_ps}}));
+        auto tpcd_param_j = ctr_grid.Parameterize(t::geometry::PointCloud(
+                {{"points", qs}, {"normals", normal_qs}}));
+
+        // Parameterize: setup point cloud -> cgrid correspondences
+        utility::LogInfo("Obtain nn info");
+        auto cgrid_index_ps =
+                tpcd_param_i.GetPointAttr(ControlGrid::kAttrNbGridIdx)
+                        .To(device);
+        auto cgrid_ratio_ps =
+                tpcd_param_i.GetPointAttr(ControlGrid::kAttrNbGridPointInterp)
+                        .To(device);
+
+        auto cgrid_index_qs =
+                tpcd_param_j.GetPointAttr(ControlGrid::kAttrNbGridIdx)
+                        .To(device);
+        auto cgrid_ratio_qs =
+                tpcd_param_j.GetPointAttr(ControlGrid::kAttrNbGridPointInterp)
+                        .To(device);
+
+        // Warp with control grids
+        utility::LogInfo("Warp");
+        auto tpcd_nonrigid_i = ctr_grid.Warp(tpcd_param_i);
+        auto tpcd_nonrigid_j = ctr_grid.Warp(tpcd_param_j);
+
+        utility::LogInfo("Warped attributes");
+        auto Cps = tpcd_nonrigid_i.GetPoints();
+        auto Cqs = tpcd_nonrigid_j.GetPoints();
+        auto Cnormal_ps = tpcd_nonrigid_i.GetPointNormals();
+
+        // Transform for required entries
+        utility::LogInfo("Preprocess");
+        auto Ti_Cps = (Ri.Matmul(Cps.T())).Add_(ti).T().Contiguous();
+        auto Tj_Cqs = (Rj.Matmul(Cqs.T())).Add_(tj).T().Contiguous();
+        auto Ri_Cnormal_ps = (Ri.Matmul(Cnormal_ps.T())).T().Contiguous();
+        auto RjT_Ri_Cnormal_ps =
+                (Rj.T().Matmul(Ri_Cnormal_ps.T())).T().Contiguous();
+
+        utility::LogInfo("Fill in");
+        kernel::FillInSLACAlignmentTerm(
+                AtA, Atb, residual, Ti_Cps, Tj_Cqs, Cnormal_ps, Ri_Cnormal_ps,
+                RjT_Ri_Cnormal_ps, cgrid_index_ps, cgrid_index_qs,
+                cgrid_ratio_ps, cgrid_ratio_qs, i, j, n_frags);
 
         if (option.grid_debug_) {
             VisualizeWarp(tpcd_param_i, ctr_grid);
             VisualizeWarp(tpcd_param_j, ctr_grid);
 
-            VisualizePCDCorres(tpcd_i, tpcd_j, corres, pose_ij);
+            VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij, Tij_e);
             VisualizePCDGridCorres(tpcd_i, tpcd_param_i, ctr_grid);
             VisualizePCDGridCorres(tpcd_j, tpcd_param_j, ctr_grid);
         }
 
         // TODO: use parameterization to update normals and points per grid
     }
+    AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));
+    Atb.Save(fmt::format("{}/residual.npy", option.GetSubfolderName()));
 }
 
 void FillInSLACRegularizerTerm(core::Tensor& AtA,
@@ -439,6 +509,8 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     ControlGrid ctr_grid(3.0 / 8, 1000, device);
     InitializeControlGrid(ctr_grid, fnames_down, option);
 
+    ctr_grid.GenerateIndexLookupTable();
+
     // Fill-in
     // fragments x 6 (se3) + control_grids x 3 (R^3)
     int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
@@ -460,7 +532,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                 1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
 
         utility::LogInfo("Iteration {}", itr);
-        FillInSLACAlignmentTerm(AtA, Atb, ctr_grid, fnames_down,
+        FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, fnames_down,
                                 pose_graph_update, option);
         FillInSLACRegularizerTerm(AtA, Atb, ctr_grid, option);
 

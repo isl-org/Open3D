@@ -40,6 +40,22 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               int i,
                               int j);
 
+void FillInSLACAlignmentTerm(core::Tensor &AtA,
+                             core::Tensor &Atb,
+                             core::Tensor &residual,
+                             const core::Tensor &Ti_qs,
+                             const core::Tensor &Tj_qs,
+                             const core::Tensor &normal_ps,
+                             const core::Tensor &Ri_normal_ps,
+                             const core::Tensor &RjT_Ri_normal_ps,
+                             const core::Tensor &cgrid_idx_ps,
+                             const core::Tensor &cgrid_idx_qs,
+                             const core::Tensor &cgrid_ratio_qs,
+                             const core::Tensor &cgrid_ratio_ps,
+                             int i,
+                             int j,
+                             int n);
+
 void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
                                  core::Tensor &Atb,
                                  core::Tensor &residual,
@@ -48,6 +64,23 @@ void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
                                  const core::Tensor &Ri_normal_ps,
                                  int i,
                                  int j);
+
+void FillInSLACAlignmentTermCPU(core::Tensor &AtA,
+                                core::Tensor &Atb,
+                                core::Tensor &residual,
+                                const core::Tensor &Ti_qs,
+                                const core::Tensor &Tj_qs,
+                                const core::Tensor &normal_ps,
+                                const core::Tensor &Ri_normal_ps,
+                                const core::Tensor &RjT_Ri_normal_ps,
+                                const core::Tensor &cgrid_idx_ps,
+                                const core::Tensor &cgrid_idx_qs,
+                                const core::Tensor &cgrid_ratio_qs,
+                                const core::Tensor &cgrid_ratio_ps,
+                                int i,
+                                int j,
+                                int n);
+
 #ifdef BUILD_CUDA_MODULE
 void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
                                   core::Tensor &Atb,
@@ -57,6 +90,23 @@ void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
                                   const core::Tensor &Ri_normal_ps,
                                   int i,
                                   int j);
+
+void FillInSLACAlignmentTermCUDA(core::Tensor &AtA,
+                                 core::Tensor &Atb,
+                                 core::Tensor &residual,
+                                 const core::Tensor &Ti_qs,
+                                 const core::Tensor &Tj_qs,
+                                 const core::Tensor &normal_ps,
+                                 const core::Tensor &Ri_normal_ps,
+                                 const core::Tensor &RjT_Ri_normal_ps,
+                                 const core::Tensor &cgrid_idx_ps,
+                                 const core::Tensor &cgrid_idx_qs,
+                                 const core::Tensor &cgrid_ratio_qs,
+                                 const core::Tensor &cgrid_ratio_ps,
+                                 int i,
+                                 int j,
+                                 int n);
+
 #endif
 
 }  // namespace kernel

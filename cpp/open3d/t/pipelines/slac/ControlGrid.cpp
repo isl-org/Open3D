@@ -75,7 +75,26 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
 
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Insert(keys_nb, vals_nb, addrs_nb, masks_nb);
-    utility::LogInfo("Hashmap size: {}", ctr_hashmap_->Size());
+    utility::LogInfo("n * 8 = {}, Hashmap size: {}, capacity: {}, bucket: {}",
+                     n * 8, ctr_hashmap_->Size(), ctr_hashmap_->GetCapacity(),
+                     ctr_hashmap_->GetBucketCount());
+}
+
+core::Tensor ControlGrid::GenerateIndexLookupTable() {
+    ctr_hashmap_->Rehash(ctr_hashmap_->Size());
+
+    core::Tensor active_indices;
+    ctr_hashmap_->GetActiveIndices(active_indices);
+
+    utility::LogInfo("{}", active_indices.ToString());
+    core::Tensor max_elem = active_indices.Max({0});
+    utility::LogInfo("Lookup table: {} -> {}", max_elem.Item<int>(),
+                     ctr_hashmap_->Size());
+
+    utility::LogInfo(" Hashmap size: {}, capacity: {}, bucket: {}",
+                     ctr_hashmap_->Size(), ctr_hashmap_->GetCapacity(),
+                     ctr_hashmap_->GetBucketCount());
+    return max_elem;
 }
 
 geometry::PointCloud ControlGrid::Parameterize(

@@ -61,6 +61,11 @@ public:
     /// Allocate control grids in the shared camera space.
     void Touch(const geometry::PointCloud& pcd);
 
+    /// Freeze hashmap and generate a index lookup table.
+    /// Maps from scattered indices to contiguous indices for constructing a
+    /// compact matrix.
+    core::Tensor GenerateIndexLookupTable();
+
     /// Parameterize an input point cloud with the control grids via indexing
     /// and interpolation.
     /// \return A PointCloud with parameterization attributes:

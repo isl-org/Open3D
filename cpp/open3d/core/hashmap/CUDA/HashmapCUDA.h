@@ -149,7 +149,9 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     Free();
     CUDACachedMemoryManager::ReleaseCache();
 
-    Allocate(buckets, int64_t(std::ceil(buckets * avg_capacity_per_bucket)));
+    Allocate(buckets,
+             std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
+                      active_keys.GetLength()));
 
     if (iterator_count > 0) {
         Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);

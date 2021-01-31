@@ -152,6 +152,151 @@ void FillInRigidAlignmentTermCPU
     // Atb_sub = Atb.IndexGet({indices});
     // utility::LogInfo("Atb_sub after = {}", Atb_sub.ToString());
 }
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+void FillInSLACAlignmentTermCUDA
+#else
+void FillInSLACAlignmentTermCPU
+#endif
+        (core::Tensor &AtA,
+         core::Tensor &Atb,
+         core::Tensor &residual,
+         const core::Tensor &Ti_Cps,
+         const core::Tensor &Tj_Cqs,
+         const core::Tensor &Cnormal_ps,
+         const core::Tensor &Ri_Cnormal_ps,
+         const core::Tensor &RjT_Ri_Cnormal_ps,
+         const core::Tensor &cgrid_idx_ps,
+         const core::Tensor &cgrid_idx_qs,
+         const core::Tensor &cgrid_ratio_qs,
+         const core::Tensor &cgrid_ratio_ps,
+         int i,
+         int j,
+         int n_frags) {
+    int64_t n = Ti_Cps.GetLength();
+    if (Tj_Cqs.GetLength() != n || Cnormal_ps.GetLength() != n ||
+        Ri_Cnormal_ps.GetLength() != n || RjT_Ri_Cnormal_ps.GetLength() != n ||
+        cgrid_idx_ps.GetLength() != n || cgrid_ratio_ps.GetLength() != n ||
+        cgrid_idx_qs.GetLength() != n || cgrid_ratio_qs.GetLength() != n) {
+        utility::LogError(
+                "Unable to setup linear system: input length mismatch.");
+    }
+
+    int n_vars = Atb.GetLength();
+    float *AtA_ptr = static_cast<float *>(AtA.GetDataPtr());
+    float *Atb_ptr = static_cast<float *>(Atb.GetDataPtr());
+    float *residual_ptr = static_cast<float *>(residual.GetDataPtr());
+
+    // Geometric properties
+    const float *Ti_Cps_ptr = static_cast<const float *>(Ti_Cps.GetDataPtr());
+    const float *Tj_Cqs_ptr = static_cast<const float *>(Tj_Cqs.GetDataPtr());
+    const float *Cnormal_ps_ptr =
+            static_cast<const float *>(Cnormal_ps.GetDataPtr());
+    const float *Ri_Cnormal_ps_ptr =
+            static_cast<const float *>(Ri_Cnormal_ps.GetDataPtr());
+    const float *RjT_Ri_Cnormal_ps_ptr =
+            static_cast<const float *>(RjT_Ri_Cnormal_ps.GetDataPtr());
+
+    // Association properties
+    const int *cgrid_idx_ps_ptr =
+            static_cast<const int *>(cgrid_idx_ps.GetDataPtr());
+    const int *cgrid_idx_qs_ptr =
+            static_cast<const int *>(cgrid_idx_qs.GetDataPtr());
+    const float *cgrid_ratio_ps_ptr =
+            static_cast<const float *>(cgrid_ratio_ps.GetDataPtr());
+    const float *cgrid_ratio_qs_ptr =
+            static_cast<const float *>(cgrid_ratio_qs.GetDataPtr());
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    core::kernel::CUDALauncher launcher;
+#else
+    core::kernel::CPULauncher launcher;
+#endif
+    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        const float *Ti_Cp = Ti_Cps_ptr + 3 * workload_idx;
+        const float *Tj_Cq = Tj_Cqs_ptr + 3 * workload_idx;
+        const float *Cnormal_p = Cnormal_ps_ptr + 3 * workload_idx;
+        const float *Ri_Cnormal_p = Ri_Cnormal_ps_ptr + 3 * workload_idx;
+        const float *RjTRi_Cnormal_p = RjT_Ri_Cnormal_ps_ptr + 3 * workload_idx;
+
+        const int *cgrid_idx_p = cgrid_idx_ps_ptr + 8 * workload_idx;
+        const int *cgrid_idx_q = cgrid_idx_qs_ptr + 8 * workload_idx;
+        const float *cgrid_ratio_p = cgrid_ratio_ps_ptr + 8 * workload_idx;
+        const float *cgrid_ratio_q = cgrid_ratio_qs_ptr + 8 * workload_idx;
+
+        float r = (Ti_Cp[0] - Tj_Cq[0]) * Ri_Cnormal_p[0] +
+                  (Ti_Cp[1] - Tj_Cq[1]) * Ri_Cnormal_p[1] +
+                  (Ti_Cp[2] - Tj_Cq[2]) * Ri_Cnormal_p[2];
+
+        // Now we fill in a 60 x 60 sub-matrix: 2 x (6 + 8 x 3)
+        float J[60];
+        int idx[60];
+
+        // Jacobian w.r.t. Ti: 0-6
+        J[0] = -Tj_Cq[2] * Ri_Cnormal_p[1] + Tj_Cq[1] * Ri_Cnormal_p[2];
+        J[1] = Tj_Cq[2] * Ri_Cnormal_p[0] - Tj_Cq[0] * Ri_Cnormal_p[2];
+        J[2] = -Tj_Cq[1] * Ri_Cnormal_p[0] + Tj_Cq[0] * Ri_Cnormal_p[1];
+        J[3] = Ri_Cnormal_p[0];
+        J[4] = Ri_Cnormal_p[1];
+        J[5] = Ri_Cnormal_p[2];
+
+        // Jacobian w.r.t. Tj: 6-12
+        for (int k = 0; k < 6; ++k) {
+            J[k + 6] = -J[k];
+
+            idx[k + 0] = 6 * i + k;
+            idx[k + 6] = 6 * j + k;
+        }
+
+        // Jacobian w.r.t. C over p: 12-36
+        for (int k = 0; k < 8; ++k) {
+            J[12 + k * 3 + 0] = cgrid_ratio_p[k] * Cnormal_p[0];
+            J[12 + k * 3 + 1] = cgrid_ratio_p[k] * Cnormal_p[1];
+            J[12 + k * 3 + 2] = cgrid_ratio_p[k] * Cnormal_p[2];
+
+            idx[12 + k * 3 + 0] = 6 * n_frags + cgrid_idx_p[k] * 3 + 0;
+            idx[12 + k * 3 + 1] = 6 * n_frags + cgrid_idx_p[k] * 3 + 1;
+            idx[12 + k * 3 + 2] = 6 * n_frags + cgrid_idx_p[k] * 3 + 2;
+        }
+
+        // Jacobian w.r.t. C over q: 36-60
+        for (int k = 0; k < 8; ++k) {
+            J[36 + k * 3 + 0] = -cgrid_ratio_q[k] * RjTRi_Cnormal_p[0];
+            J[36 + k * 3 + 1] = -cgrid_ratio_q[k] * RjTRi_Cnormal_p[1];
+            J[36 + k * 3 + 2] = -cgrid_ratio_q[k] * RjTRi_Cnormal_p[2];
+
+            idx[36 + k * 3 + 0] = 6 * n_frags + cgrid_idx_q[k] * 3 + 0;
+            idx[36 + k * 3 + 1] = 6 * n_frags + cgrid_idx_q[k] * 3 + 1;
+            idx[36 + k * 3 + 2] = 6 * n_frags + cgrid_idx_q[k] * 3 + 2;
+        }
+
+        // Not optimized; Switch to reduction if necessary.
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+        for (int ki = 0; ki < 60; ++ki) {
+            for (int kj = 0; kj < 60; ++kj) {
+                float AtA_ij = J[ki] * J[kj];
+                int ij = idx[ki] * n_vars + idx[kj];
+                atomicAdd(AtA_ptr + ij, AtA_ij);
+            }
+            float Atb_i = J[ki] * r;
+            atomicAdd(Atb_ptr + idx[ki], Atb_i);
+        }
+        atomicAdd(residual_ptr, r * r);
+#else
+#pragma omp critical
+        {
+            for (int ki = 0; ki < 12; ++ki) {
+                for (int kj = 0; kj < 12; ++kj) {
+                    AtA_ptr[idx[ki] * n_vars + idx[kj]]
+                      += J[ki] * J[kj];
+                 }
+                 Atb_ptr[ki] += J[ki] * r;
+            }
+            *residual_ptr += r * r;
+        }
+#endif
+    });
+}
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
