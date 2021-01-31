@@ -23,44 +23,24 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <cstring>
-#include <string>
+#pragma once
 
 #ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Tensor.h"
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+namespace open3d {
+namespace t {
+namespace geometry {
+namespace npp {
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
+void Dilate(const open3d::core::Tensor &srcim,
+            open3d::core::Tensor &dstim,
+            int half_kernel_size);
 
-int main(int argc, char** argv) {
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::core::CUDAState> cuda_state =
-                open3d::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+}  // namespace npp
+}  // namespace geometry
+}  // namespace t
+}  // namespace open3d
+
+#endif  // BUILD_CUDA_MODULE

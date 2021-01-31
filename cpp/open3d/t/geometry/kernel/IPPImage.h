@@ -23,44 +23,57 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#ifdef WITH_IPPICV
+#define IPP_CALL(ipp_function, ...) ipp_function(__VA_ARGS__);
 
-#include <cstring>
-#include <string>
+// Required by IPPICV headers, defined here to keep other compile commands clean
+#define ICV_BASE
+#define IW_BUILD
+#include <iw++/iw_core.hpp>
 
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Tensor.h"
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+namespace open3d {
+namespace t {
+namespace geometry {
+namespace ipp {
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
+inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
+    if (dtype == core::Dtype::UInt8 || dtype == core::Dtype::Bool) {
+        return ipp8u;
+    } else if (dtype == core::Dtype::UInt16) {
+        return ipp16u;
+    } else if (dtype == core::Dtype::Int32) {
+        return ipp32s;
+    } else if (dtype == core::Dtype::Int64) {
+        return ipp64s;
+    } else if (dtype == core::Dtype::Float32) {
+        return ipp32f;
+    } else if (dtype == core::Dtype::Float64) {
+        return ipp64f;
+    } else {
+        return ippUndef;
     }
-    return shall_disable_p2p;
 }
-#endif
 
-int main(int argc, char** argv) {
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::core::CUDAState> cuda_state =
-                open3d::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+void To(const core::Tensor &src_im,
+        core::Tensor &dst_im,
+        double scale,
+        double offset);
+
+void Dilate(const open3d::core::Tensor &srcim,
+            open3d::core::Tensor &dstim,
+            int half_kernel_size);
+
+}  // namespace ipp
+}  // namespace geometry
+}  // namespace t
+}  // namespace open3d
+
+#else
+#define IPP_CALL(ipp_function, ...) \
+    utility::LogError("Not built with IPP-IW, cannot call " #ipp_function);
+#endif  // WITH_IPPICV

@@ -26,11 +26,14 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/kernel/UnaryEW.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Geometry.h"
 
@@ -130,16 +133,71 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    /// Transfer the image to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new image is always created; if false, the
+    /// copy is avoided when the original image is already on the targeted
+    /// device.
+    Image To(const core::Device &device, bool copy = false) const {
+        return Image(data_.To(device, copy));
+    }
+
+    /// Returns copy of the image on the same device.
+    Image Clone() const { return To(GetDevice(), /*copy=*/true); }
+
+    /// Transfer the image to CPU.
+    ///
+    /// If the image is already on CPU, no copy will be performed.
+    Image CPU() const { return To(core::Device("CPU:0")); };
+
+    /// Transfer the image to a CUDA device.
+    ///
+    /// If the image is already on the specified CUDA device, no copy will
+    /// be performed.
+    Image CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
+    };
+
+    /// Returns an Image with the specified \p dtype.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor already has the targeted dtype.
+    /// \param scale Optional scale value. This is 1./255 for UInt8 ->
+    /// Float{32,64}, 1./65535 for UInt16 -> Float{32,64} and 1 otherwise
+    /// \param offset Optional shift value. Default 0.
+    Image To(core::Dtype dtype,
+             bool copy = false,
+             utility::optional<double> scale = utility::nullopt,
+             double offset = 0.0) const;
+
+    /// Function to linearly transform pixel intensities in place.
+    /// image = scale * image + offset.
+    /// \param scale First multiply image pixel values with this factor. This
+    /// should be positive for unsigned dtypes.
+    /// \param offset Then add this factor to all image pixel values.
+    /// \return Reference to self.
+    Image &LinearTransform(double scale = 1.0, double offset = 0.0) {
+        To(GetDtype(), false, scale, offset);
+        return *this;
+    }
+
+    /// Return a new image after performing morphological dilation. Supported
+    /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
+    /// 8-connected neighborhood is used to create the dilation mask.
+    /// \param half_kernel_size A dilation mask of size 2*half_kernel_size+1 is
+    /// used.
+    Image Dilate(int half_kernel_size = 1) const;
+
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
-    };
+    }
 
     /// Compute max 2D coordinates for the data ({rows, cols}).
     core::Tensor GetMaxBound() const {
         return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
                             core::Dtype::Int64);
-    };
+    }
 
     /// Create from a legacy Open3D Image.
     static Image FromLegacyImage(
@@ -152,9 +210,17 @@ public:
     /// Text description
     std::string ToString() const;
 
+    /// Do we use IPP ICV for accelerating image processing operations?
+#ifdef WITH_IPPICV
+    static constexpr bool HAVE_IPPICV = true;
+#else
+    static constexpr bool HAVE_IPPICV = false;
+#endif
+
 protected:
-    /// Internal data of the Image, represented as a 3D tensor of shape {rols,
-    /// cols, channels}. Image properties can be obtained from the tensor.
+    /// Internal data of the Image, represented as a contiguous 3D tensor of
+    /// shape {rols, cols, channels}. Image properties can be obtained from the
+    /// tensor.
     core::Tensor data_;
 };
 
