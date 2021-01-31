@@ -25,8 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -122,25 +124,16 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
                                                     "Camera object");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    fov_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Camera field of view types.";
-            }),
-            py::none(), py::none(), "");
+    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
+                                        "Enum class for Camera field of view "
+                                        "types.");
     fov_type.value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
             .export_values();
 
-    py::enum_<Camera::Projection> proj_type(cam, "Projection",
-                                            py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    proj_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Camera field of view types.";
-            }),
-            py::none(), py::none(), "");
+    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
+                                            "Enum class for Camera projection "
+                                            "types.");
     proj_type.value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
             .export_values();
@@ -158,6 +151,13 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the camera projection via a viewing frustum. "
                  "set_projection(projection_type, left, right, bottom, top, "
                  "near, far)")
+            .def("set_projection",
+                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
+                                   double, double)) &
+                         Camera::SetProjection,
+                 "Sets the camera projection via intrinsics matrix. "
+                 "set_projection(intrinsics, near_place, far_plane, "
+                 "image_width, image_height)")
             .def("look_at", &Camera::LookAt,
                  "Sets the position and orientation of the camera: "
                  "look_at(center, eye, up)");
@@ -223,7 +223,13 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("base_clearcoat_roughness",
                            &Material::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &Material::base_anisotropy)
+            .def_readwrite("thickness", &Material::thickness)
+            .def_readwrite("transmission", &Material::transmission)
+            .def_readwrite("absorption_color", &Material::absorption_color)
+            .def_readwrite("absorption_distance",
+                           &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
+            .def_readwrite("line_width", &Material::line_width)
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -239,7 +245,61 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("gradient", &Material::gradient)
             .def_readwrite("scalar_min", &Material::scalar_min)
             .def_readwrite("scalar_max", &Material::scalar_max)
+            .def_readwrite("sRGB_color", &Material::sRGB_color)
             .def_readwrite("shader", &Material::shader);
+
+    // ---- TriangleMeshModel ----
+    py::class_<TriangleMeshModel> tri_model(
+            m, "TriangleMeshModel",
+            "A list of geometry.TriangleMesh and Material that can describe a "
+            "complex model with multiple meshes, such as might be stored in an "
+            "FBX, OBJ, or GLTF file");
+    py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
+                                                           "MeshInfo", "");
+    tri_model_info
+            .def(py::init([](std::shared_ptr<geometry::TriangleMesh> mesh,
+                             const std::string &name,
+                             unsigned int material_idx) {
+                return TriangleMeshModel::MeshInfo{mesh, name, material_idx};
+            }))
+            .def_readwrite("mesh", &TriangleMeshModel::MeshInfo::mesh)
+            .def_readwrite("mesh_name", &TriangleMeshModel::MeshInfo::mesh_name)
+            .def_readwrite("material_idx",
+                           &TriangleMeshModel::MeshInfo::material_idx);
+    tri_model.def(py::init<>())
+            .def_readwrite("meshes", &TriangleMeshModel::meshes_)
+            .def_readwrite("materials", &TriangleMeshModel::materials_);
+
+    // ---- ColorGradingParams ---
+    py::class_<ColorGradingParams> color_grading(
+            m, "ColorGrading", "Parameters to control color grading options");
+    color_grading
+            .def(py::init([](ColorGradingParams::Quality q,
+                             ColorGradingParams::ToneMapping algorithm) {
+                return ColorGradingParams(q, algorithm);
+            }))
+            .def_property("quality", &ColorGradingParams::GetQuality,
+                          &ColorGradingParams::SetQuality,
+                          "Quality of color grading operations. High quality "
+                          "is more accurate but slower")
+            .def_property("tone_mapping", &ColorGradingParams::GetToneMapping,
+                          &ColorGradingParams::SetToneMapping,
+                          "The tone mapping algorithm to apply. Must be one of "
+                          "Linear, AcesLegacy, Aces, Filmic, Uchimura, "
+                          "Rienhard, Display Range(for debug)")
+            .def_property("temperature", &ColorGradingParams::GetTemperature,
+                          &ColorGradingParams::SetTemperature,
+                          "White balance color temperature")
+            .def_property(
+                    "tint", &ColorGradingParams::GetTint,
+                    &ColorGradingParams::SetTint,
+                    "Tint on the green/magenta axis. Ranges from -1.0 to 1.0.");
+
+    // ---- View ----
+    py::class_<View, UnownedPointer<View>> view(m, "View",
+                                                "Low-level view class");
+    view.def("set_color_grading", &View::SetColorGrading,
+             "Sets the parameters to be used for the color grading algorithms");
 
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
@@ -271,8 +331,7 @@ void pybind_rendering_classes(py::module &m) {
                  "the scene.")
             .def("update_geometry", &Scene::UpdateGeometry,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
-                 "The "
-                 "flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
+                 "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
@@ -283,10 +342,37 @@ void pybind_rendering_classes(py::module &m) {
             .def("set_indirect_light_intensity",
                  &Scene::SetIndirectLightIntensity,
                  "Sets the brightness of the indirect light")
-            .def("enable_directional_light", &Scene::EnableDirectionalLight)
-            .def("set_directional_light", &Scene::SetDirectionalLight,
-                 "Sets the parameters of the directional light: direction, "
+            .def("enable_sun_light", &Scene::EnableSunLight)
+            .def("set_sun_light", &Scene::SetSunLight,
+                 "Sets the parameters of the sun light: direction, "
                  "color, intensity")
+            .def("add_point_light", &Scene::AddPointLight,
+                 "Adds a point light to the scene: add_point_light(name, "
+                 "color, position, intensity, falloff, cast_shadows)")
+            .def("add_spot_light", &Scene::AddSpotLight,
+                 "Adds a spot light to the scene: add_point_light(name, "
+                 "color, position, direction, intensity, falloff, "
+                 "inner_cone_angle, outer_cone_angle, cast_shadows)")
+            .def("add_directional_light", &Scene::AddDirectionalLight,
+                 "Adds a directional light to the scene: add_point_light(name, "
+                 "color, intensity, cast_shadows)")
+            .def("remove_light", &Scene::RemoveLight,
+                 "Removes the named light from the scene: remove_light(name)")
+            .def("update_light_color", &Scene::UpdateLightColor,
+                 "Changes a point, spot, or directional light's color")
+            .def("update_light_position", &Scene::UpdateLightPosition,
+                 "Changes a point or spot light's position")
+            .def("update_light_direction", &Scene::UpdateLightDirection,
+                 "Changes a spot or directional light's direction")
+            .def("update_light_intensity", &Scene::UpdateLightIntensity,
+                 "Changes a point, spot or directional light's intensity")
+            .def("update_light_falloff", &Scene::UpdateLightFalloff,
+                 "Changes a point or spot light's falloff")
+            .def("update_light_cone_angles", &Scene::UpdateLightConeAngles,
+                 "Changes a spot light's inner and outer cone angles")
+            .def("enable_light_shadow", &Scene::EnableLightShadow,
+                 "Changes whether a point, spot, or directional light can "
+                 "cast shadows:  enable_light_shadow(name, can_cast_shadows)")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
@@ -300,17 +386,45 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Open3DScene ----
     py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
+    py::enum_<Open3DScene::LightingProfile> lighting(
+            o3dscene, "LightingProfile", py::arithmetic(),
+            "Enum for conveniently setting lighting");
+    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
+            .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
+            .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
+            .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
+            .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
+            .export_values();
+
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
-            .def("set_background_color", &Open3DScene::SetBackgroundColor,
-                 "Sets the background color of the scene, [r, g, b, a].")
+            .def("set_lighting", &Open3DScene::SetLighting,
+                 "Sets a simple lighting model. set_lighting(profile, "
+                 "sun_dir). The default value is "
+                 "set_lighting(Open3DScene.LightingProfile.MED_SHADOWS, "
+                 "(0.577, -0.577, -0.577))")
+            .def(
+                    "set_background_color",
+                    [](Open3DScene &scene, const Eigen::Vector4f &color) {
+                        utility::LogWarning(
+                                "visualization.rendering.Open3DScene.set_"
+                                "background_color()\nhas been deprecated. "
+                                "Please use set_background() instead.");
+                        scene.SetBackground(color, nullptr);
+                    },
+                    "This function has been deprecated. Please use "
+                    "set_background() instead.")
+            .def("set_background", &Open3DScene::SetBackground, "color"_a,
+                 "image"_a = nullptr,
+                 "set_background([r, g, b, a], image=None). Sets the "
+                 "background color and (optionally) image of the scene. ")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   std::shared_ptr<const geometry::Geometry3D>,
+                                   const geometry::Geometry3D *,
                                    const Material &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
@@ -322,6 +436,8 @@ void pybind_rendering_classes(py::module &m) {
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("add_model", &Open3DScene::AddModel,
+                 "Adds TriangleMeshModel to the scene.")
             .def("has_geometry", &Open3DScene::HasGeometry,
                  "has_geometry(name): returns True if the geometry has been "
                  "added to the scene, False otherwise")
@@ -349,6 +465,9 @@ void pybind_rendering_classes(py::module &m) {
             .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
+            .def_property_readonly(
+                    "get_view", &Open3DScene::GetView,
+                    "The low level view associated with the scene")
             .def_property("downsample_threshold",
                           &Open3DScene::GetDownsampleThreshold,
                           &Open3DScene::SetDownsampleThreshold,

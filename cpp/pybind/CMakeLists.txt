@@ -30,6 +30,15 @@ execute_process(
 )
 message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
+if (${PYTHON_VERSION_MAJOR} EQUAL 2)
+    message(FATAL_ERROR "Python 2 is no longer supported. Please check your \
+            your Python version with `python --version`. To use Python 3, do \
+            one of the following: \
+            (1) activate a Python 3 virtual environment; \
+            (2) specify the Python path explicitly with -DPYTHON_EXECUTABLE=/path/to/python3; \
+            (3) add Python 3 to the PATH environment variable.")
+endif()
+
 set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
@@ -39,6 +48,8 @@ if (NOT BUILD_GUI)
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/o3dvisualizer.cpp")
 endif()
 
 if (NOT BUILD_AZURE_KINECT)
@@ -80,6 +91,9 @@ open3d_set_global_properties(${PACKAGE_NAME})
 if (BUILD_AZURE_KINECT)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
 endif()
+if (BUILD_LIBREALSENSE)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_LIBREALSENSE)
+endif()
 if (BUILD_GUI)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
 endif()
@@ -91,10 +105,6 @@ target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (WIN32)
     target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
 endif()
-
-if (${PYTHON_VERSION_MAJOR} EQUAL 2)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
-endif ()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
@@ -252,7 +262,7 @@ add_custom_target(install-python-package
 #     1) `make install-pip-package` works in conda environment for local build
 #     2) `make conda-package` is mainly for internal use to distribute conda
 add_custom_target(conda-package
-    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
@@ -263,7 +273,7 @@ add_custom_target(conda-package
 # the previous one will be deleted.
 add_custom_target(pip-conda-package
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
-    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
     COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}

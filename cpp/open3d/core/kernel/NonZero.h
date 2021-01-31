@@ -27,7 +27,6 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {

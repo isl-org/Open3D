@@ -69,6 +69,62 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
+Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
+                             const core::Device &device) {
+    static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {
+            {1, core::Dtype::UInt8},
+            {2, core::Dtype::UInt16},
+            {4, core::Dtype::Float32},
+    };
+
+    if (image_legacy.IsEmpty()) {
+        return Image(0, 0, 1, core::Dtype::Float32, device);
+    }
+
+    auto iter = kBytesToDtypeMap.find(image_legacy.bytes_per_channel_);
+    if (iter == kBytesToDtypeMap.end()) {
+        utility::LogError("[Image] unsupported image bytes_per_channel ({})",
+                          image_legacy.bytes_per_channel_);
+    }
+
+    core::Dtype dtype = iter->second;
+
+    Image image(image_legacy.height_, image_legacy.width_,
+                image_legacy.num_of_channels_, dtype, device);
+
+    size_t num_bytes = image_legacy.height_ * image_legacy.BytesPerLine();
+    core::MemoryManager::MemcpyFromHost(image.data_.GetDataPtr(), device,
+                                        image_legacy.data_.data(), num_bytes);
+    return image;
+}
+
+open3d::geometry::Image Image::ToLegacyImage() const {
+    auto dtype = GetDtype();
+    if (!(dtype == core::Dtype::UInt8 || dtype == core::Dtype::UInt16 ||
+          dtype == core::Dtype::Float32))
+        utility::LogError("Legacy image does not support data type {}.",
+                          dtype.ToString());
+    if (!data_.IsContiguous()) {
+        utility::LogError("Image tensor must be contiguous.");
+    }
+    open3d::geometry::Image image_legacy;
+    image_legacy.Prepare(static_cast<int>(GetCols()),
+                         static_cast<int>(GetRows()),
+                         static_cast<int>(GetChannels()),
+                         static_cast<int>(dtype.ByteSize()));
+    size_t num_bytes = image_legacy.height_ * image_legacy.BytesPerLine();
+    core::MemoryManager::MemcpyToHost(image_legacy.data_.data(),
+                                      data_.GetDataPtr(), data_.GetDevice(),
+                                      num_bytes);
+    return image_legacy;
+}
+
+std::string Image::ToString() const {
+    return fmt::format("Image[size={{{},{}}}, channels={}, {}, {}]", GetRows(),
+                       GetCols(), GetChannels(), GetDtype().ToString(),
+                       GetDevice().ToString());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

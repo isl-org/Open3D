@@ -32,8 +32,6 @@
 
 #include "open3d/core/hashmap/Hashmap.h"
 
-#include <unordered_map>
-
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/utility/Console.h"
@@ -42,35 +40,52 @@
 namespace open3d {
 namespace core {
 
-Hashmap::Hashmap(size_t init_capacity,
-                 Dtype dtype_key,
-                 Dtype dtype_val,
+Hashmap::Hashmap(int64_t init_capacity,
+                 const Dtype& dtype_key,
+                 const Dtype& dtype_value,
+                 const SizeVector& element_shape_key,
+                 const SizeVector& element_shape_value,
                  const Device& device)
-    : dtype_key_(dtype_key), dtype_val_(dtype_val) {
+    : dtype_key_(dtype_key),
+      dtype_value_(dtype_value),
+      element_shape_key_(element_shape_key),
+      element_shape_value_(element_shape_value) {
+    if (dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined ||
+        dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
+        utility::LogError(
+                "[Hashmap] DtypeCore::Undefined is not supported for input "
+                "key/value.");
+    }
+    if (element_shape_key_.NumElements() == 0 ||
+        element_shape_value_.NumElements() == 0) {
+        utility::LogError(
+                "[Hashmap] element shape 0 is not supported for input "
+                "key/value.");
+    }
+
     device_hashmap_ = CreateDefaultDeviceHashmap(
-            std::max(init_capacity / kDefaultElemsPerBucket, size_t(1)),
-            init_capacity, dtype_key.ByteSize(), dtype_val.ByteSize(), device);
+            std::max(init_capacity / kDefaultElemsPerBucket, int64_t(1)),
+            init_capacity,
+            dtype_key.ByteSize() * element_shape_key_.NumElements(),
+            dtype_value.ByteSize() * element_shape_value_.NumElements(),
+            device);
 }
 
-void Hashmap::Rehash(size_t buckets) {
+void Hashmap::Rehash(int64_t buckets) {
     return device_hashmap_->Rehash(buckets);
-}
-
-void Hashmap::Insert(const void* input_keys,
-                     const void* input_values,
-                     iterator_t* output_iterators,
-                     bool* output_masks,
-                     size_t count) {
-    return device_hashmap_->Insert(input_keys, input_values, output_iterators,
-                                   output_masks, count);
 }
 
 void Hashmap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
-                     Tensor& output_iterators,
+                     Tensor& output_addrs,
                      Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
-    AssertValueDtype(input_values.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
+
+    SizeVector input_value_elem_shape(input_values.GetShape());
+    input_value_elem_shape.erase(input_value_elem_shape.begin());
+    AssertValueDtype(input_values.GetDtype(), input_value_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -82,8 +97,8 @@ void Hashmap::Insert(const Tensor& input_keys,
                 GetDevice().ToString(), input_keys.GetDevice().ToString());
     }
 
-    SizeVector val_shape = input_values.GetShape();
-    if (val_shape.size() == 0 || val_shape[0] != shape[0]) {
+    SizeVector value_shape = input_values.GetShape();
+    if (value_shape.size() == 0 || value_shape[0] != shape[0]) {
         utility::LogError("[Hashmap]: Invalid value tensor shape");
     }
     if (input_values.GetDevice() != GetDevice()) {
@@ -93,28 +108,21 @@ void Hashmap::Insert(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
-
-    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
-    Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
-           static_cast<iterator_t*>(output_iterators.GetDataPtr()),
-           static_cast<bool*>(output_masks.GetDataPtr()), count);
-}
-
-void Hashmap::Activate(const void* input_keys,
-                       iterator_t* output_iterators,
-                       bool* output_masks,
-                       size_t count) {
-    return device_hashmap_->Activate(input_keys, output_iterators, output_masks,
-                                     count);
+    device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
+                            static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                            static_cast<bool*>(output_masks.GetDataPtr()),
+                            count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
-                       Tensor& output_iterators,
+                       Tensor& output_addrs,
                        Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -127,28 +135,22 @@ void Hashmap::Activate(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
-    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
-    return Activate(input_keys.GetDataPtr(),
-                    static_cast<iterator_t*>(output_iterators.GetDataPtr()),
-                    static_cast<bool*>(output_masks.GetDataPtr()), count);
-}
-
-void Hashmap::Find(const void* input_keys,
-                   iterator_t* output_iterators,
-                   bool* output_masks,
-                   size_t count) {
-    return device_hashmap_->Find(input_keys, output_iterators, output_masks,
-                                 count);
+    device_hashmap_->Activate(input_keys.GetDataPtr(),
+                              static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                              static_cast<bool*>(output_masks.GetDataPtr()),
+                              count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
-                   Tensor& output_iterators,
+                   Tensor& output_addrs,
                    Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -161,22 +163,19 @@ void Hashmap::Find(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
-    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
 
-    return Find(input_keys.GetDataPtr(),
-                static_cast<iterator_t*>(output_iterators.GetDataPtr()),
-                static_cast<bool*>(output_masks.GetDataPtr()), count);
-}
-
-void Hashmap::Erase(const void* input_keys, bool* output_masks, size_t count) {
-    return device_hashmap_->Erase(input_keys, output_masks, count);
+    device_hashmap_->Find(input_keys.GetDataPtr(),
+                          static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                          static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -191,53 +190,122 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     int64_t count = shape[0];
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
-    return Erase(input_keys.GetDataPtr(),
-                 static_cast<bool*>(output_masks.GetDataPtr()), count);
+    device_hashmap_->Erase(input_keys.GetDataPtr(),
+                           static_cast<bool*>(output_masks.GetDataPtr()),
+                           count);
 }
 
-size_t Hashmap::GetIterators(iterator_t* output_iterators) {
-    return device_hashmap_->GetIterators(output_iterators);
+void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
+    int64_t count = device_hashmap_->Size();
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
+
+    device_hashmap_->GetActiveIndices(
+            static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
 
-void Hashmap::UnpackIterators(const iterator_t* input_iterators,
-                              const bool* input_masks,
-                              void* output_keys,
-                              void* output_values,
-                              size_t count) {
-    return device_hashmap_->UnpackIterators(input_iterators, input_masks,
-                                            output_keys, output_values, count);
+Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
+
+Hashmap Hashmap::To(const Device& device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+
+    Hashmap new_hashmap(GetCapacity(), dtype_key_, dtype_value_,
+                        element_shape_key_, element_shape_value_, device);
+
+    Tensor keys = GetKeyTensor().To(device, /*copy=*/true);
+    Tensor values = GetValueTensor().To(device, /*copy=*/true);
+
+    core::Tensor active_addrs;
+    GetActiveIndices(active_addrs);
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+
+    core::Tensor addrs, masks;
+    new_hashmap.Insert(keys.IndexGet({active_indices}),
+                       values.IndexGet({active_indices}), addrs, masks);
+
+    return new_hashmap;
 }
 
-void Hashmap::AssignIterators(iterator_t* input_iterators,
-                              const bool* input_masks,
-                              const void* input_values,
-                              size_t count) {
-    return device_hashmap_->AssignIterators(input_iterators, input_masks,
-                                            input_values, count);
+Hashmap Hashmap::CPU() const { return To(Device("CPU:0"), /*copy=*/false); }
+
+Hashmap Hashmap::CUDA(int device_id) const {
+    return To(Device(Device::DeviceType::CUDA, device_id), /*copy=*/false);
 }
 
-size_t Hashmap::Size() const { return device_hashmap_->Size(); }
+int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
 
-std::vector<size_t> Hashmap::BucketSizes() const {
+int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }
+int64_t Hashmap::GetBucketCount() const {
+    return device_hashmap_->GetBucketCount();
+}
+Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
+int64_t Hashmap::GetKeyBytesize() const {
+    return device_hashmap_->GetKeyBytesize();
+}
+int64_t Hashmap::GetValueBytesize() const {
+    return device_hashmap_->GetValueBytesize();
+}
+
+Tensor& Hashmap::GetKeyBuffer() const {
+    return device_hashmap_->GetKeyBuffer();
+}
+Tensor& Hashmap::GetValueBuffer() const {
+    return device_hashmap_->GetValueBuffer();
+}
+
+Tensor Hashmap::GetKeyTensor() const {
+    int64_t capacity = GetCapacity();
+    SizeVector key_shape = element_shape_key_;
+    key_shape.insert(key_shape.begin(), capacity);
+    return Tensor(key_shape, shape_util::DefaultStrides(key_shape),
+                  GetKeyBuffer().GetDataPtr(), dtype_key_,
+                  GetKeyBuffer().GetBlob());
+}
+
+Tensor Hashmap::GetValueTensor() const {
+    int64_t capacity = GetCapacity();
+    SizeVector value_shape = element_shape_value_;
+    value_shape.insert(value_shape.begin(), capacity);
+    return Tensor(value_shape, shape_util::DefaultStrides(value_shape),
+                  GetValueBuffer().GetDataPtr(), dtype_value_,
+                  GetValueBuffer().GetBlob());
+}
+
+/// Return number of elems per bucket.
+/// High performance not required, so directly returns a vector.
+std::vector<int64_t> Hashmap::BucketSizes() const {
     return device_hashmap_->BucketSizes();
-}
+};
 
+/// Return size / bucket_count.
 float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
 
-void Hashmap::AssertKeyDtype(const Dtype& dtype_key) const {
-    if (dtype_key != dtype_key_) {
+void Hashmap::AssertKeyDtype(const Dtype& dtype_key,
+                             const SizeVector& element_shape_key) const {
+    int64_t elem_byte_size =
+            dtype_key.ByteSize() * element_shape_key.NumElements();
+    int64_t stored_elem_byte_size =
+            dtype_key_.ByteSize() * element_shape_key_.NumElements();
+    if (elem_byte_size != stored_elem_byte_size) {
         utility::LogError(
-                "[Hashmap] Inconsistent key dtype, expected {}, but got {}",
-                dtype_key_.ToString(), dtype_key.ToString());
+                "[Hashmap] Inconsistent element-wise key byte size, expected "
+                "{}, but got {}",
+                stored_elem_byte_size, elem_byte_size);
     }
 }
 
-void Hashmap::AssertValueDtype(const Dtype& dtype_val) const {
-    if (dtype_val != dtype_val_) {
+void Hashmap::AssertValueDtype(const Dtype& dtype_value,
+                               const SizeVector& element_shape_value) const {
+    int64_t elem_byte_size =
+            dtype_value.ByteSize() * element_shape_value.NumElements();
+    int64_t stored_elem_byte_size =
+            dtype_value_.ByteSize() * element_shape_value_.NumElements();
+    if (elem_byte_size != stored_elem_byte_size) {
         utility::LogError(
-                "[Hashmap] Inconsistent value dtype, expected {}, but got "
-                "{}",
-                dtype_val_.ToString(), dtype_val.ToString());
+                "[Hashmap] Inconsistent element-wise value byte size, expected "
+                "{}, but got {}",
+                stored_elem_byte_size, elem_byte_size);
     }
 }
 

@@ -4,6 +4,11 @@
 
 # examples/python/reconstruction_system/initialize_config.py
 
+import os
+import sys
+sys.path.append("../utility")
+from file import check_folder_structure, extract_rgbd_frames
+
 
 def set_default_value(config, key, value):
     if key not in config:
@@ -20,6 +25,7 @@ def initialize_config(config):
     set_default_value(config, "max_depth", 3.0)
     set_default_value(config, "voxel_size", 0.05)
     set_default_value(config, "max_depth_diff", 0.07)
+    set_default_value(config, "depth_scale", 1000)
     set_default_value(config, "preference_loop_closure_odometry", 0.1)
     set_default_value(config, "preference_loop_closure_registration", 5.0)
     set_default_value(config, "tsdf_cubic_size", 3.0)
@@ -45,3 +51,9 @@ def initialize_config(config):
                       "scene/refined_registration_optimized.json")
     set_default_value(config, "template_global_mesh", "scene/integrated.ply")
     set_default_value(config, "template_global_traj", "scene/trajectory.log")
+
+    if os.path.isfile(
+            config["path_dataset"]) and config["path_dataset"].endswith(".bag"):
+        print("Extracting frames from RGBD video file")
+        config["path_dataset"], config["path_intrinsic"], config[
+            "depth_scale"] = extract_rgbd_frames(config["path_dataset"])

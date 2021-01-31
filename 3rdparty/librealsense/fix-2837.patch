@@ -1,0 +1,216 @@
+diff --git a/src/media/ros/ros_file_format.h b/src/media/ros/ros_file_format.h
+index 36852c858..55c697a15 100644
+--- a/src/media/ros/ros_file_format.h
++++ b/src/media/ros/ros_file_format.h
+@@ -25,11 +25,18 @@
+ #include "option.h"
+ #include "l500/l500-depth.h"
+ #include "rosbag/structures.h"
+-#include <regex>
+ #include "stream.h"
+ #include "types.h"
+ #include <vector>
+ 
++#ifdef __GLIBCXX__
++#define OPEN3D_FIX_2837 // https://github.com/intel-isl/Open3D/issues/2837
++#endif
++#ifdef OPEN3D_FIX_2837
++#include <regex.h>
++#endif
++#include <regex>
++
+ enum ros_file_versions
+ {
+     ROS_FILE_VERSION_2 = 2u,
+@@ -438,17 +445,50 @@ namespace librealsense
+             for (auto&& regexp : regexps)
+             {
+                 LOG_DEBUG("RegexTopicQuery with expression: " << regexp);
++#ifdef OPEN3D_FIX_2837
++                _exps.push_back(regex_t{});
++                int reti = regcomp(&_exps.back(), regexp.c_str(), REG_EXTENDED | REG_NOSUB);
++                if(reti) {
++                    char msgbuf[100];
++                    regerror(reti, &_exps.back(), msgbuf, sizeof(msgbuf));
++                    throw std::runtime_error(msgbuf);
++                }
++#else
+                 _exps.emplace_back(regexp);
++#endif
+             }
+         }
+ 
+         bool operator()(rosbag::ConnectionInfo const* info) const
+         {
+-            return std::any_of(std::begin(_exps), std::end(_exps), [info](const std::regex& exp) { return std::regex_search(info->topic, exp); });
++            return std::any_of(std::begin(_exps), std::end(_exps),
++#ifdef OPEN3D_FIX_2837
++            [info](const regex_t & exp) {
++                int reti = regexec(&exp, info->topic.c_str(), 0, nullptr, 0);
++                LOG_DEBUG("RegexTopicQuery in string: " << info->topic.c_str() << '\t' << reti);
++                return reti == 0;
++            }
++#else
++            [info](const std::regex& exp) {
++                return std::regex_search(info->topic, exp);
++            }
++#endif
++                    );
+         }
+ 
++/* #ifdef OPEN3D_FIX_2837 */
++/*         ~MultipleRegexTopicQuery() { */
++/*             for(auto & regex : _exps) */
++/*                 regfree(&regex); //<-- Causes double free error */
++/*         } */
++/* #endif */
++
+     private:
++#ifdef OPEN3D_FIX_2837
++        std::vector<regex_t> _exps;
++#else
+         std::vector<std::regex> _exps;
++#endif
+     };
+ 
+     class RegexTopicQuery : public MultipleRegexTopicQuery
+@@ -467,24 +507,24 @@ namespace librealsense
+         {
+            return  to_string() << "/device_" << stream_id.device_index
+                                << "/sensor_" << stream_id.sensor_index
+-                               << "/" << get_string(stream_id.stream_type) << "_" << stream_id.stream_index;                               
++                               << "/" << get_string(stream_id.stream_type) << "_" << stream_id.stream_index;
+         }
+ 
+-    private:
+-        std::regex _exp;
++    /* private: */
++    /*     std::regex _exp; //<-- unused */
+     };
+ 
+     class SensorInfoQuery : public RegexTopicQuery
+     {
+     public:
+-        SensorInfoQuery(uint32_t device_index) : RegexTopicQuery(to_string() << "/device_" << device_index << R"RRR(/sensor_(\d)+/info)RRR") {}
++        SensorInfoQuery(uint32_t device_index) : RegexTopicQuery(to_string() << "/device_" << device_index << R"RRR(/sensor_([[:digit:]])+/info)RRR") {}
+     };
+ 
+     class FrameQuery : public RegexTopicQuery
+     {
+     public:
+         //TODO: Improve readability and robustness of expressions
+-        FrameQuery() : RegexTopicQuery(to_string() << R"RRR(/device_\d+/sensor_\d+/.*_\d+)RRR" << "/(" << data_msg_types() << ")/data") {}
++        FrameQuery() : RegexTopicQuery(to_string() << R"RRR(/device_[[:digit:]]+/sensor_[[:digit:]]+/.*_[[:digit:]]+)RRR" << "/(" << data_msg_types() << ")/data") {}
+     };
+ 
+     class StreamQuery : public RegexTopicQuery
+@@ -509,15 +549,15 @@ namespace librealsense
+     class OptionsQuery : public RegexTopicQuery
+     {
+     public:
+-        OptionsQuery() : 
+-            RegexTopicQuery(to_string() << R"RRR(/device_\d+/sensor_\d+/option/.*/value)RRR") {}
++        OptionsQuery() :
++            RegexTopicQuery(to_string() << R"RRR(/device_[[:digit:]]+/sensor_[[:digit:]]+/option/.*/value)RRR") {}
+     };
+ 
+     class NotificationsQuery : public RegexTopicQuery
+     {
+     public:
+         NotificationsQuery() :
+-            RegexTopicQuery(to_string() << R"RRR(/device_\d+/sensor_\d+/notification/.*)RRR") {}
++            RegexTopicQuery(to_string() << R"RRR(/device_[[:digit:]]+/sensor_[[:digit:]]+/notification/.*)RRR") {}
+     };
+     /**
+     * Incremental number of the RealSense file format version
+@@ -555,7 +595,7 @@ namespace librealsense
+     {
+         if (t == get_static_file_info_timestamp())
+             return rs2rosinternal::TIME_MIN;
+-        
++
+         auto secs = std::chrono::duration_cast<std::chrono::duration<double>>(t);
+         return rs2rosinternal::Time(secs.count());
+     }
+@@ -576,7 +616,7 @@ namespace librealsense
+         constexpr const char* EXTENDED_STATUS = "{ 0xff6e50db, 0x3c5f, 0x43e7,{ 0xb4, 0x82, 0xb8, 0xc3, 0xa6, 0x8e, 0x78, 0xcd } }";
+         constexpr const char* SERIAL_NUMBER = "{ 0x7d3e44e7, 0x8970, 0x4a32,{ 0x8e, 0xee, 0xe8, 0xd1, 0xd1, 0x32, 0xa3, 0x22 } }";
+         constexpr const char* TIMESTAMP_SORT_TYPE = "{ 0xb409b217, 0xe5cd, 0x4a04,{ 0x9e, 0x85, 0x1a, 0x7d, 0x59, 0xd7, 0xe5, 0x61 } }";
+-        
++
+         constexpr const char* DEPTH = "DEPTH";
+         constexpr const char* COLOR = "COLOR";
+         constexpr const char* INFRARED = "INFRARED";
+@@ -630,7 +670,7 @@ namespace librealsense
+             switch (source)
+             {
+             case 0 /*camera*/: //[[fallthrough]]
+-            case 1 /*microcontroller*/ : 
++            case 1 /*microcontroller*/ :
+                 return RS2_TIMESTAMP_DOMAIN_HARDWARE_CLOCK;
+             case 2: return RS2_TIMESTAMP_DOMAIN_SYSTEM_TIME;
+            }
+@@ -671,7 +711,7 @@ namespace librealsense
+         {
+             return file_version();
+         }
+-     
++
+         inline std::string stream_type_to_string(const stream_descriptor& source)
+         {
+             //Other than 6DOF, streams are in the form of "<stream_type><stream_index>" where "stream_index" is empty for index 0/1 and the actual number for 2 and above
+@@ -751,7 +791,7 @@ namespace librealsense
+             auto index_str = source.substr(type_str.length());
+             if (index_str.empty())
+             {
+-                    
++
+                 retval.index = 0;
+             }
+             else
+@@ -771,9 +811,9 @@ namespace librealsense
+             //    /camera/rs_6DoF<id>/0
+             //   /imu/ACCELEROMETER/imu_raw/0
+             //   /imu/GYROMETER/imu_raw/0
+-            FrameQuery() : MultipleRegexTopicQuery({ 
+-                to_string() << R"RRR(/(camera|imu)/.*/(image|imu)_raw/\d+)RRR" ,
+-                to_string() << R"RRR(/camera/rs_6DoF\d+/\d+)RRR" }) {}
++            FrameQuery() : MultipleRegexTopicQuery({
++                to_string() << R"RRR(/(camera|imu)/.*/(image|imu)_raw/[[:digit:]]+)RRR" ,
++                to_string() << R"RRR(/camera/rs_6DoF[[:digit:]]+/[[:digit:]]+)RRR" }) {}
+         };
+ 
+         inline bool is_camera(rs2_stream s)
+@@ -790,8 +830,8 @@ namespace librealsense
+         {
+         public:
+             StreamQuery(const device_serializer::stream_identifier& stream_id) :
+-                RegexTopicQuery(to_string() 
+-                    << (is_camera(stream_id.stream_type) ? "/camera/" : "/imu/") 
++                RegexTopicQuery(to_string()
++                    << (is_camera(stream_id.stream_type) ? "/camera/" : "/imu/")
+                     << stream_type_to_string({ stream_id.stream_type, (int)stream_id.stream_index})
+                     << ((stream_id.stream_type == RS2_STREAM_POSE) ? "/" : (is_camera(stream_id.stream_type)) ? "/image_raw/" : "/imu_raw/")
+                     << stream_id.sensor_index)
+diff --git a/src/media/ros/ros_reader.cpp b/src/media/ros/ros_reader.cpp
+index e973ab410..27924b9b5 100644
+--- a/src/media/ros/ros_reader.cpp
++++ b/src/media/ros/ros_reader.cpp
+@@ -8,7 +8,7 @@
+ #include "l500/l500-depth.h"
+ #include "proc/disparity-transform.h"
+ #include "proc/decimation-filter.h"
+-#include "proc/threshold.h" 
++#include "proc/threshold.h"
+ #include "proc/spatial-filter.h"
+ #include "proc/temporal-filter.h"
+ #include "proc/hole-filling-filter.h"
+@@ -1301,7 +1301,7 @@ namespace librealsense
+         }
+         stream_profiles streams;
+         //The below regex matches both stream info messages and also video \ imu stream info (both have the same prefix)
+-        rosbag::View stream_infos_view(m_file, RegexTopicQuery("/device_" + std::to_string(device_index) + "/sensor_" + std::to_string(sensor_index) + R"RRR(/(\w)+_(\d)+/info)RRR"));
++        rosbag::View stream_infos_view(m_file, RegexTopicQuery("/device_" + std::to_string(device_index) + "/sensor_" + std::to_string(sensor_index) + R"RRR(/([_[:alnum:]])+_([[:digit:]])+/info)RRR"));
+         for (auto infos_view : stream_infos_view)
+         {
+             if (infos_view.isType<realsense_msgs::StreamInfo>() == false)

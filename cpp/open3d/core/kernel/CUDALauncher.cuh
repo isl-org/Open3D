@@ -131,6 +131,22 @@ public:
                 <<<grid_size, default_block_size, 0>>>(n, f);
         OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
     }
+
+    /// General kernels with non-conventional indexers
+    /// Do not assert host_device compatible, because there can be some GPU-only
+    /// operations (e.g., atomicAdd, __shfl_sync).
+    template <typename func_t>
+    static void LaunchGeneralKernel(int64_t n, func_t element_kernel) {
+        if (n == 0) {
+            return;
+        }
+        int64_t items_per_block = default_block_size * default_thread_size;
+        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+
+        ElementWiseKernel<default_block_size, default_thread_size>
+                <<<grid_size, default_block_size, 0>>>(n, element_kernel);
+        OPEN3D_GET_LAST_CUDA_ERROR("LaunchGeneralKernel failed.");
+    }
 };
 }  // namespace kernel
 }  // namespace core

@@ -86,11 +86,17 @@ struct ColoredVertex {
                                  : pow((color + 0.055f) / 1.055f, 2.4f);
     }
 
-    void SetVertexColor(const Eigen::Vector3d& c) {
+    void SetVertexColor(const Eigen::Vector3d& c, bool adjust_for_srgb) {
         auto float_color = c.cast<float>();
-        color.x = sRGBToLinear(float_color(0));
-        color.y = sRGBToLinear(float_color(1));
-        color.z = sRGBToLinear(float_color(2));
+        if (adjust_for_srgb) {
+            color.x = sRGBToLinear(float_color(0));
+            color.y = sRGBToLinear(float_color(1));
+            color.z = sRGBToLinear(float_color(2));
+        } else {
+            color.x = float_color(0);
+            color.y = float_color(1);
+            color.z = float_color(2);
+        }
     }
 };
 }  // namespace
@@ -238,7 +244,8 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
         ColoredVertex& element = vertices[i];
         element.SetVertexPosition(geometry_.points_[i]);
         if (geometry_.HasColors()) {
-            element.SetVertexColor(geometry_.colors_[i]);
+            element.SetVertexColor(geometry_.colors_[i],
+                                   adjust_colors_for_srgb_tonemapping_);
         } else {
             element.color = kDefault.color;
         }

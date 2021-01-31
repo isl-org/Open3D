@@ -34,6 +34,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/utility/Console.h"
 
@@ -93,8 +94,7 @@ namespace geometry {
 class PointCloud : public Geometry {
 public:
     /// Construct an empty pointcloud.
-    PointCloud(core::Dtype dtype = core::Dtype::Float32,
-               const core::Device &device = core::Device("CPU:0"));
+    PointCloud(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a pointcloud from points.
     ///
@@ -119,11 +119,6 @@ public:
 
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
-
-    /// Setter for point_attr_ TensorMap. Used in Pybind.
-    void SetPointAttrPybind(const TensorMap &point_attr) {
-        point_attr_ = point_attr;
-    };
 
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
@@ -220,6 +215,29 @@ public:
     bool HasPointNormals() const { return HasPointAttr("normals"); }
 
 public:
+    /// Transfer the point cloud to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new point cloud is always created; if false, the
+    /// copy is avoided when the original point cloud is already on the targeted
+    /// device.
+    PointCloud To(const core::Device &device, bool copy = false) const;
+
+    /// Returns copy of the point cloud on the same device.
+    PointCloud Clone() const;
+
+    /// Transfer the point cloud to CPU.
+    ///
+    /// If the point cloud is already on CPU, no copy will be performed.
+    PointCloud CPU() const { return To(core::Device("CPU:0")); };
+
+    /// Transfer the point cloud to a CUDA device.
+    ///
+    /// If the point cloud is already on the specified CUDA device, no copy will
+    /// be performed.
+    PointCloud CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
+    };
+
     /// Clear all data in the pointcloud.
     PointCloud &Clear() override {
         point_attr_.clear();
@@ -238,23 +256,75 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Transforms the points and normals (if exist).
+    /// \brief Transforms the points and normals (if exist)
+    /// of the PointCloud.
+    /// Extracts R, t from Transformation
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation wihtout scaling)
+    /// PS. It Assumes s = 1 and O = [0,0,0]
+    /// and applies the transformation as P = R(P) + t
+    /// \param transformation Transformation [Tensor of dim {4,4}].
+    /// Should be on the same device as the PointCloud
+    /// \return Transformed pointcloud
     PointCloud &Transform(const core::Tensor &transformation);
 
-    /// Translates points.
+    /// \brief Translates the points of the PointCloud.
+    /// \param translation translation tensor of dimention {3}
+    /// Should be on the same device as the PointCloud
+    /// \param relative if true (default): translates relative to Center
+    /// \return Translated pointcloud
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
-    /// Scale points.
+    /// \brief Scales the points of the PointCloud.
+    /// \param scale Scale [double] of dimention
+    /// \param center Center [Tensor of dim {3}] about which the PointCloud is
+    /// to be scaled. Should be on the same device as the PointCloud
+    /// \return Scaled pointcloud
     PointCloud &Scale(double scale, const core::Tensor &center);
 
-    /// Rotate points and normals (if exist).
+    /// \brief Rotates the points and normals (if exists).
+    /// \param R Rotation [Tensor of dim {3,3}].
+    /// Should be on the same device as the PointCloud
+    /// \param center Center [Tensor of dim {3}] about which the PointCloud is
+    /// to be scaled. Should be on the same device as the PointCloud
+    /// \return Rotated pointcloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
+    /// \brief Factory function to create a pointcloud from a depth image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
+    /// / fy\n
+    ///
+    /// \param depth The input depth image should be a uint16_t image.
+    /// \param intrinsic Intrinsic parameters of the camera.
+    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
+    /// \param depth_trunc Truncated at \p depth_trunc distance.
+    /// \param stride Sampling factor to support coarse point cloud extraction.
+    ///
+    /// \return An empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
+    static PointCloud CreateFromDepthImage(
+            const Image &depth,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f,
+            int stride = 1);
+
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static geometry::PointCloud FromLegacyPointCloud(
+    static PointCloud FromLegacyPointCloud(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0"));

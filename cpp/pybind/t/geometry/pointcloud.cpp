@@ -42,9 +42,7 @@ void pybind_pointcloud(py::module& m) {
                        "A pointcloud contains a set of 3D points.");
 
     // Constructors.
-    pointcloud
-            .def(py::init<core::Dtype, const core::Device&>(), "dtype"_a,
-                 "device"_a)
+    pointcloud.def(py::init<const core::Device&>(), "device"_a)
             .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),
@@ -58,9 +56,22 @@ void pybind_pointcloud(py::module& m) {
             "point",
             py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
 
+    // Device transfers.
+    pointcloud.def("to", &PointCloud::To,
+                   "Transfer the point cloud to a specified device.",
+                   "device"_a, "copy"_a = false);
+    pointcloud.def("clone", &PointCloud::Clone,
+                   "Returns copy of the point cloud on the same device.");
+    pointcloud.def("cpu", &PointCloud::CPU,
+                   "Transfer the point cloud to CPU. If the point cloud is "
+                   "already on CPU, no copy will be performed.");
+    pointcloud.def(
+            "cuda", &PointCloud::CUDA,
+            "Transfer the point cloud to a CUDA device. If the point cloud is "
+            "already on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
+
     // Pointcloud specific functions.
-    // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to
-    //       o3d.core.Tensor (pure Python wrapper).
     pointcloud.def("get_min_bound", &PointCloud::GetMinBound,
                    "Returns the min bound for point coordinates.");
     pointcloud.def("get_max_bound", &PointCloud::GetMaxBound,
@@ -75,6 +86,12 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
+    pointcloud.def_static(
+            "create_from_depth_image", &PointCloud::CreateFromDepthImage,
+            "depth"_a, "intrinsics"_a,
+            "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                               core::Device("CPU:0")),
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1);
     pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,

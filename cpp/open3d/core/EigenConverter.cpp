@@ -26,34 +26,57 @@
 
 #include "open3d/core/EigenConverter.h"
 
+#include <type_traits>
+
 #include "open3d/core/kernel/CPULauncher.h"
 
 namespace open3d {
 namespace core {
 namespace eigen_converter {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
-    // TODO: Tensor::To(dtype, device).
-    if (tensor.GetShape() != SizeVector{3}) {
-        utility::LogError("Tensor shape must be {3}, but got {}.",
-                          tensor.GetShape().ToString());
+template <typename T>
+static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
+        const core::Tensor &tensor) {
+    static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
+                  "Only supports double and int (Vector3d and Vector3i).");
+    core::Dtype dtype;
+    if (std::is_same<T, double>::value) {
+        dtype = core::Dtype::Float64;
+    } else if (std::is_same<T, int>::value) {
+        dtype = core::Dtype::Int32;
     }
-    core::Tensor dtensor =
-            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
-    return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
-                           dtensor[2].Item<double>());
+    if (dtype.ByteSize() * 3 != sizeof(Eigen::Matrix<T, 3, 1>)) {
+        utility::LogError("Internal error: dtype size mismatch {} != {}.",
+                          dtype.ByteSize() * 3, sizeof(Eigen::Matrix<T, 3, 1>));
+    }
+    tensor.AssertShapeCompatible({utility::nullopt, 3});
+
+    // Eigen::Vector3x is not a "fixed-size vectorizable Eigen type" thus it is
+    // safe to write directly into std vector memory, see:
+    // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
+    std::vector<Eigen::Matrix<T, 3, 1>> eigen_vector(tensor.GetLength());
+    core::Tensor t = tensor.Contiguous().To(dtype);
+    MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
+                                t.GetDevice(),
+                                t.GetDtype().ByteSize() * t.NumElements());
+    return eigen_vector;
 }
 
-core::Tensor EigenVector3dVectorToTensor(
-        const std::vector<Eigen::Vector3d> &values,
+template <typename T>
+static core::Tensor EigenVector3xVectorToTensor(
+        const std::vector<Eigen::Matrix<T, 3, 1>> &values,
         core::Dtype dtype,
         const core::Device &device) {
+    // Unlike TensorToEigenVector3xVector, more types can be supported here. To
+    // keep consistency, we only allow double and int.
+    static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
+                  "Only supports double and int (Vector3d and Vector3i).");
     // Init CPU Tensor.
     int64_t num_values = static_cast<int64_t>(values.size());
     core::Tensor tensor_cpu =
             core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
 
-    // Fill Tensor.
+    // Fill Tensor. This takes care of dtype conversion at the same time.
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
                           core::DtypePolicy::ALL_SAME);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -68,11 +91,31 @@ core::Tensor EigenVector3dVectorToTensor(
     });
 
     // Copy Tensor to device if necessary.
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        return tensor_cpu;
-    } else {
-        return tensor_cpu.Copy(device);
-    }
+    return tensor_cpu.To(device);
+}
+
+std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
+        const core::Tensor &tensor) {
+    return TensorToEigenVector3xVector<double>(tensor);
+}
+
+std::vector<Eigen::Vector3i> TensorToEigenVector3iVector(
+        const core::Tensor &tensor) {
+    return TensorToEigenVector3xVector<int>(tensor);
+}
+
+core::Tensor EigenVector3dVectorToTensor(
+        const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    return EigenVector3xVectorToTensor(values, dtype, device);
+}
+
+core::Tensor EigenVector3iVectorToTensor(
+        const std::vector<Eigen::Vector3i> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    return EigenVector3xVectorToTensor(values, dtype, device);
 }
 
 }  // namespace eigen_converter

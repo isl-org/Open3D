@@ -82,8 +82,8 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     }
 
     // A and B are modified in-place
-    Tensor A_copy = A.T().Copy(device);
-    Tensor B_copy = B.T().Copy(device);
+    Tensor A_copy = A.T().To(device, /*copy=*/true);
+    Tensor B_copy = B.T().To(device, /*copy=*/true);
 
     void *A_data = A_copy.GetDataPtr();
     void *B_data = B_copy.GetDataPtr();

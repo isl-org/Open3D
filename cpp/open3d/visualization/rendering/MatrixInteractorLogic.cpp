@@ -37,6 +37,10 @@ void MatrixInteractorLogic::SetViewSize(int width, int height) {
     view_height_ = height;
 }
 
+int MatrixInteractorLogic::GetViewWidth() const { return view_width_; }
+
+int MatrixInteractorLogic::GetViewHeight() const { return view_height_; }
+
 const geometry::AxisAlignedBoundingBox& MatrixInteractorLogic::GetBoundingBox()
         const {
     return model_bounds_;
@@ -173,7 +177,7 @@ float MatrixInteractorLogic::CalcRotateZRadians(int dx, int dy) {
     return float(4.0 * M_PI * dy / view_height_);
 }
 
-void MatrixInteractorLogic::Dolly(int dy, DragType drag_type) {
+void MatrixInteractorLogic::Dolly(float dy, DragType drag_type) {
     float dist = CalcDollyDist(dy, drag_type);
     if (drag_type == DragType::MOUSE) {
         Dolly(dist, matrix_at_mouse_down_);  // copies the matrix
@@ -198,7 +202,7 @@ void MatrixInteractorLogic::Dolly(float z_dist, Camera::Transform matrix) {
     matrix_ = matrix;
 }
 
-float MatrixInteractorLogic::CalcDollyDist(int dy, DragType drag_type) {
+float MatrixInteractorLogic::CalcDollyDist(float dy, DragType drag_type) {
     float dist = 0.0f;  // initialize to make GCC happy
     switch (drag_type) {
         case DragType::MOUSE:

@@ -26,76 +26,75 @@
 
 #pragma once
 
+#include <tbb/concurrent_unordered_map.h>
+
 #include <unordered_map>
 
+#include "open3d/core/hashmap/CPU/HashmapBufferCPU.hpp"
 #include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {
 template <typename Hash, typename KeyEq>
 class CPUHashmap : public DeviceHashmap<Hash, KeyEq> {
 public:
-    ~CPUHashmap();
-
-    CPUHashmap(size_t init_buckets,
-               size_t init_capacity,
-               size_t dsize_key,
-               size_t dsize_value,
+    CPUHashmap(int64_t init_buckets,
+               int64_t init_capacity,
+               int64_t dsize_key,
+               int64_t dsize_value,
                const Device& device);
 
-    void Rehash(size_t buckets) override;
+    ~CPUHashmap();
+
+    void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
                 const void* input_values,
-                iterator_t* output_iterators,
+                addr_t* output_addrs,
                 bool* output_masks,
-                size_t count) override;
+                int64_t count) override;
 
     void Activate(const void* input_keys,
-                  iterator_t* output_iterators,
+                  addr_t* output_addrs,
                   bool* output_masks,
-                  size_t count) override;
+                  int64_t count) override;
 
     void Find(const void* input_keys,
-              iterator_t* output_iterators,
+              addr_t* output_addrs,
               bool* output_masks,
-              size_t count) override;
+              int64_t count) override;
 
     void Erase(const void* input_keys,
                bool* output_masks,
-               size_t count) override;
+               int64_t count) override;
 
-    size_t GetIterators(iterator_t* output_iterators) override;
+    int64_t GetActiveIndices(addr_t* output_indices) override;
 
-    void UnpackIterators(const iterator_t* input_iterators,
-                         const bool* input_masks,
-                         void* output_keys,
-                         void* output_values,
-                         size_t count) override;
+    int64_t Size() const override;
 
-    void AssignIterators(iterator_t* input_iterators,
-                         const bool* input_masks,
-                         const void* input_values,
-                         size_t count) override;
-
-    std::vector<size_t> BucketSizes() const override;
+    std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    size_t Size() const override;
+protected:
+    std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
+            impl_;
 
-private:
-    std::shared_ptr<std::unordered_map<void*, void*, Hash, KeyEq>> impl_;
+    std::shared_ptr<CPUHashmapBufferContext> buffer_ctx_;
 
-    // Valid kv_pairs.
-    std::vector<iterator_t> kv_pairs_;
+    void InsertImpl(const void* input_keys,
+                    const void* input_values,
+                    addr_t* output_addrs,
+                    bool* output_masks,
+                    int64_t count);
+
+    void Allocate(int64_t capacity, int64_t buckets);
 };
 
 template <typename Hash, typename KeyEq>
-CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
-                                    size_t init_capacity,
-                                    size_t dsize_key,
-                                    size_t dsize_value,
+CPUHashmap<Hash, KeyEq>::CPUHashmap(int64_t init_buckets,
+                                    int64_t init_capacity,
+                                    int64_t dsize_key,
+                                    int64_t dsize_value,
                                     const Device& device)
     : DeviceHashmap<Hash, KeyEq>(
               init_buckets,
@@ -104,229 +103,142 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
               dsize_key,
               dsize_value,
               device) {
-    impl_ = std::make_shared<std::unordered_map<void*, void*, Hash, KeyEq>>(
-            init_buckets, Hash(dsize_key), KeyEq(dsize_key));
+    Allocate(init_capacity, init_buckets);
 }
 
 template <typename Hash, typename KeyEq>
-CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
-    for (auto kv_pair : kv_pairs_) {
-        MemoryManager::Free(kv_pair.first, this->device_);
-        MemoryManager::Free(kv_pair.second, this->device_);
-    }
-    impl_->clear();
-}
+CPUHashmap<Hash, KeyEq>::~CPUHashmap() {}
 
 template <typename Hash, typename KeyEq>
-size_t CPUHashmap<Hash, KeyEq>::Size() const {
+int64_t CPUHashmap<Hash, KeyEq>::Size() const {
     return impl_->size();
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                                      const void* input_values,
-                                     iterator_t* output_iterators,
+                                     addr_t* output_addrs,
                                      bool* output_masks,
-                                     size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        const uint8_t* src_key =
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
-        const uint8_t* src_value = static_cast<const uint8_t*>(input_values) +
-                                   this->dsize_value_ * i;
-
-        // Manually copy before insert.
-        uint8_t* dst_key = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_key_, this->device_));
-        uint8_t* dst_value = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_value_, this->device_));
-
-        MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
-                              this->dsize_key_);
-        MemoryManager::Memcpy(dst_value, this->device_, src_value,
-                              this->device_, this->dsize_value_);
-
-        // Try insertion.
-        auto res = impl_->insert({dst_key, dst_value});
-
-        // Handle memory.
-        if (res.second) {
-            output_iterators[i] = iterator_t(dst_key, dst_value);
-            output_masks[i] = true;
-        } else {
-            MemoryManager::Free(dst_key, this->device_);
-            MemoryManager::Free(dst_value, this->device_);
-            output_iterators[i] = iterator_t();
-            output_masks[i] = false;
-        }
+                                     int64_t count) {
+    int64_t new_size = Size() + count;
+    if (new_size > this->capacity_) {
+        float avg_capacity_per_bucket =
+                float(this->capacity_) / float(this->bucket_count_);
+        int64_t expected_buckets = std::max(
+                this->bucket_count_ * 2,
+                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+        Rehash(expected_buckets);
     }
-    this->capacity_ = impl_->size();
-    this->bucket_count_ = impl_->bucket_count();
+    InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
-                                       iterator_t* output_iterators,
+                                       addr_t* output_addrs,
                                        bool* output_masks,
-                                       size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        const uint8_t* src_key =
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
-
-        // Manually copy before insert
-        uint8_t* dst_key = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_key_, this->device_));
-        uint8_t* dummy_value = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_value_, this->device_));
-        memset(dummy_value, 0, this->dsize_value_);
-
-        MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
-                              this->dsize_key_);
-
-        // Try insertion.
-        auto res = impl_->insert({dst_key, dummy_value});
-
-        // Handle memory.
-        if (res.second) {
-            output_iterators[i] = iterator_t(dst_key, dummy_value);
-            output_masks[i] = true;
-        } else {
-            MemoryManager::Free(dst_key, this->device_);
-            MemoryManager::Free(dummy_value, this->device_);
-            output_iterators[i] = iterator_t();
-            output_masks[i] = false;
-        }
+                                       int64_t count) {
+    int64_t new_size = Size() + count;
+    if (new_size > this->capacity_) {
+        float avg_capacity_per_bucket =
+                float(this->capacity_) / float(this->bucket_count_);
+        int64_t expected_buckets = std::max(
+                this->bucket_count_ * 2,
+                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+        Rehash(expected_buckets);
     }
-    this->capacity_ = impl_->size();
-    this->bucket_count_ = impl_->bucket_count();
+    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
-                                   iterator_t* output_iterators,
+                                   addr_t* output_addrs,
                                    bool* output_masks,
-                                   size_t count) {
-    for (size_t i = 0; i < count; ++i) {
+                                   int64_t count) {
+#pragma omp parallel for
+    for (int64_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
         auto iter = impl_->find(key);
-        if (iter == impl_->end()) {
-            output_iterators[i] = iterator_t();
-            output_masks[i] = false;
-        } else {
-            output_iterators[i] = iterator_t(iter->first, iter->second);
-            output_masks[i] = true;
-        }
+        bool flag = (iter != impl_->end());
+        output_masks[i] = flag;
+        output_addrs[i] = flag ? iter->second : 0;
     }
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
                                     bool* output_masks,
-                                    size_t count) {
-    for (size_t i = 0; i < count; ++i) {
+                                    int64_t count) {
+    for (int64_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
-        size_t erased = impl_->erase(key);
-        output_masks[i] = erased > 0;
+        auto iter = impl_->find(key);
+        bool flag = (iter != impl_->end());
+        output_masks[i] = flag;
+        if (flag) {
+            buffer_ctx_->DeviceFree(iter->second);
+            impl_->unsafe_erase(iter);
+        }
     }
+    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
-size_t CPUHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
-    size_t count = impl_->size();
-
-    size_t i = 0;
+int64_t CPUHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_indices) {
+    int64_t count = impl_->size();
+    int64_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
-        output_iterators[i] = iterator_t(iter->first, iter->second);
+        output_indices[i] = static_cast<int64_t>(iter->second);
     }
 
     return count;
 }
 
-void UnpackIteratorsStep(const iterator_t* input_iterators,
-                         const bool* input_masks,
-                         void* output_keys,
-                         void* output_values,
-                         const Device& device,
-                         size_t dsize_key,
-                         size_t dsize_value,
-                         size_t tid) {
-    // Valid queries.
-    if (input_masks == nullptr || input_masks[tid]) {
-        if (output_keys != nullptr) {
-            uint8_t* dst_key_ptr =
-                    static_cast<uint8_t*>(output_keys) + dsize_key * tid;
-            uint8_t* src_key_ptr =
-                    static_cast<uint8_t*>(input_iterators[tid].first);
-            MemoryManager::Memcpy(dst_key_ptr, device, src_key_ptr, device,
-                                  dsize_key);
-        }
-
-        if (output_values != nullptr) {
-            uint8_t* dst_value_ptr =
-                    static_cast<uint8_t*>(output_values) + dsize_value * tid;
-            uint8_t* src_value_ptr =
-                    static_cast<uint8_t*>(input_iterators[tid].second);
-            MemoryManager::Memcpy(dst_value_ptr, device, src_value_ptr, device,
-                                  dsize_value);
-        }
-    }
-}
-
 template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::UnpackIterators(const iterator_t* input_iterators,
-                                              const bool* input_masks,
-                                              void* output_keys,
-                                              void* output_values,
-                                              size_t iterator_count) {
-    for (size_t i = 0; i < iterator_count; ++i) {
-        UnpackIteratorsStep(input_iterators, input_masks, output_keys,
-                            output_values, this->device_, this->dsize_key_,
-                            this->dsize_value_, i);
-    }
-}
+void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
+    int64_t iterator_count = Size();
 
-void AssignIteratorsStep(iterator_t* input_iterators,
-                         const bool* input_masks,
-                         const void* input_values,
-                         const Device& device,
-                         size_t dsize_value,
-                         size_t tid) {
-    // Valid queries.
-    if (input_masks == nullptr || input_masks[tid]) {
-        const uint8_t* src_value_ptr =
-                static_cast<const uint8_t*>(input_values) + dsize_value * tid;
-        uint8_t* dst_value_ptr =
-                static_cast<uint8_t*>(input_iterators[tid].second);
-        MemoryManager::Memcpy(dst_value_ptr, device, src_value_ptr, device,
-                              dsize_value);
-    }
-}
+    Tensor active_keys;
+    Tensor active_values;
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
-                                              const bool* input_masks,
-                                              const void* input_values,
-                                              size_t iterator_count) {
-    for (size_t i = 0; i < iterator_count; ++i) {
-        AssignIteratorsStep(input_iterators, input_masks, input_values,
-                            this->device_, this->dsize_value_, i);
-    }
-}
+    if (iterator_count > 0) {
+        Tensor active_addrs({iterator_count}, Dtype::Int32, this->device_);
+        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
+        Tensor active_indices = active_addrs.To(Dtype::Int64);
+        active_keys = this->GetKeyBuffer().IndexGet({active_indices});
+        active_values = this->GetValueBuffer().IndexGet({active_indices});
+    }
+
+    float avg_capacity_per_bucket =
+            float(this->capacity_) / float(this->bucket_count_);
+
+    int64_t new_capacity =
+            int64_t(std::ceil(buckets * avg_capacity_per_bucket));
+    Allocate(new_capacity, buckets);
+
+    if (iterator_count > 0) {
+        Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
+        Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
+
+        InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
+                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                   static_cast<bool*>(output_masks.GetDataPtr()),
+                   iterator_count);
+    }
+
     impl_->rehash(buckets);
+    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
-std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
-    size_t bucket_count = impl_->bucket_count();
-    std::vector<size_t> ret;
-    for (size_t i = 0; i < bucket_count; ++i) {
-        ret.push_back(impl_->bucket_size(i));
+std::vector<int64_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
+    int64_t bucket_count = impl_->unsafe_bucket_count();
+    std::vector<int64_t> ret;
+    for (int64_t i = 0; i < bucket_count; ++i) {
+        ret.push_back(impl_->unsafe_bucket_size(i));
     }
     return ret;
 }
@@ -334,6 +246,69 @@ std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
 template <typename Hash, typename KeyEq>
 float CPUHashmap<Hash, KeyEq>::LoadFactor() const {
     return impl_->load_factor();
+}
+
+template <typename Hash, typename KeyEq>
+void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
+                                         const void* input_values,
+                                         addr_t* output_addrs,
+                                         bool* output_masks,
+                                         int64_t count) {
+#pragma omp parallel for
+    for (int64_t i = 0; i < count; ++i) {
+        const uint8_t* src_key =
+                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
+
+        addr_t dst_kv_addr = buffer_ctx_->DeviceAllocate();
+        auto dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
+
+        uint8_t* dst_key = static_cast<uint8_t*>(dst_kv_iter.first);
+        uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
+        std::memcpy(dst_key, src_key, this->dsize_key_);
+
+        if (input_values != nullptr) {
+            const uint8_t* src_value =
+                    static_cast<const uint8_t*>(input_values) +
+                    this->dsize_value_ * i;
+            std::memcpy(dst_value, src_value, this->dsize_value_);
+        } else {
+            std::memset(dst_value, 0, this->dsize_value_);
+        }
+
+        // Try insertion.
+        auto res = impl_->insert({dst_key, dst_kv_addr});
+
+        output_addrs[i] = dst_kv_addr;
+        output_masks[i] = res.second;
+    }
+
+#pragma omp parallel for
+    for (int64_t i = 0; i < count; ++i) {
+        if (!output_masks[i]) {
+            buffer_ctx_->DeviceFree(output_addrs[i]);
+        }
+    }
+
+    this->bucket_count_ = impl_->unsafe_bucket_count();
+}
+
+template <typename Hash, typename KeyEq>
+void CPUHashmap<Hash, KeyEq>::Allocate(int64_t capacity, int64_t buckets) {
+    this->capacity_ = capacity;
+
+    this->buffer_ =
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+                                            this->dsize_value_, this->device_);
+
+    buffer_ctx_ = std::make_shared<CPUHashmapBufferContext>(
+            this->capacity_, this->dsize_key_, this->dsize_value_,
+            this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffer(),
+            this->buffer_->GetHeap());
+    buffer_ctx_->Reset();
+
+    impl_ = std::make_shared<
+            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
+            buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
 }
 
 }  // namespace core

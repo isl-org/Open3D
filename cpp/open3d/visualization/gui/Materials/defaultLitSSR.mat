@@ -1,0 +1,61 @@
+material {
+    name : defaultLitSSR,
+    shadingModel : lit,
+    refractionMode : screenspace,
+    refractionType : solid,
+
+    parameters : [
+        { type : float4,    name : baseColor },
+        { type : float,     name : baseMetallic },
+        { type : float,     name : baseRoughness },
+        { type : float,     name : reflectance },
+        { type : float,     name : clearCoat },
+        { type : float,     name : clearCoatRoughness },
+        { type : float,     name : anisotropy },
+        { type : float,     name : thickness },
+        { type : float,     name : transmission },
+        { type : float3,    name : absorption },
+        { type : float,     name : pointSize },
+        { type : sampler2d, name : albedo },
+        { type : sampler2d, name : ao_rough_metalMap },
+        { type : sampler2d, name : normalMap },
+        { type : sampler2d, name : reflectanceMap }
+    ],
+    requires : [
+        color, uv0
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        // Modifications to normal must be done before prepareMaterial call
+        material.normal = texture(materialParams_normalMap, getUV0()).xyz * 2.0 - 1.0;
+        material.normal.y *= -1.0; // NOTE: including this line because Filament samples do
+
+        prepareMaterial(material);
+
+        float4 tex_color = texture(materialParams_albedo, getUV0());
+        material.baseColor.rgb = getColor().rgb * materialParams.baseColor.rgb * tex_color.rgb;
+        float combined_alpha = tex_color.a * materialParams.baseColor.a;
+        // Pre-multiply alpha
+        material.baseColor.rgb *= combined_alpha;
+        material.baseColor.a = combined_alpha;
+        float3 ao_rough_metal = texture(materialParams_ao_rough_metalMap, getUV0()).rgb;
+        material.metallic = materialParams.baseMetallic * ao_rough_metal.b;
+        material.roughness = materialParams.baseRoughness * ao_rough_metal.g;
+        material.ambientOcclusion = ao_rough_metal.r;
+        material.reflectance = materialParams.reflectance * texture(materialParams_reflectanceMap, getUV0()).r;
+        material.clearCoat = materialParams.clearCoat;
+        material.clearCoatRoughness = materialParams.clearCoatRoughness;
+        material.anisotropy = materialParams.anisotropy;
+        material.transmission = materialParams.transmission;
+        material.thickness = materialParams.thickness;
+        material.absorption = materialParams.absorption;
+    }
+}

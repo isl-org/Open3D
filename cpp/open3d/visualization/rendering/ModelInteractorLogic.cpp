@@ -94,7 +94,7 @@ void ModelInteractorLogic::RotateZ(int dx, int dy) {
     UpdateBoundingBox(Camera::Transform(rot_matrix));
 }
 
-void ModelInteractorLogic::Dolly(int dy, DragType drag_type) {
+void ModelInteractorLogic::Dolly(float dy, DragType drag_type) {
     float z_dist = CalcDollyDist(dy, drag_type);
     Eigen::Vector3f world_move = -z_dist * camera_->GetForwardVector();
 

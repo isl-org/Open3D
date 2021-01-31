@@ -106,9 +106,7 @@ namespace geometry {
 class TriangleMesh : public Geometry {
 public:
     /// Construct an empty trianglemesh.
-    TriangleMesh(core::Dtype vertex_dtype = core::Dtype::Float32,
-                 core::Dtype triangle_dtype = core::Dtype::Int64,
-                 const core::Device &device = core::Device("CPU:0"));
+    TriangleMesh(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a trianglemesh from vertices and triangles.
     ///
@@ -129,6 +127,32 @@ public:
     virtual ~TriangleMesh() override {}
 
 public:
+    /// Transfer the triangle mesh to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new triangle mesh is always created; if false,
+    /// the copy is avoided when the original triangle mesh is already on the
+    /// targeted device.
+    TriangleMesh To(const core::Device &device, bool copy = false) const;
+
+    /// Returns copy of the triangle mesh on the same device.
+    TriangleMesh Clone() const { return To(GetDevice()); }
+
+    /// Transfer the triangle mesh to CPU.
+    ///
+    /// If the triangle mesh is already on CPU, no copy will be performed.
+    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
+
+    /// Transfer the triangle mesh to a CUDA device.
+    ///
+    /// If the triangle mesh is already on the specified CUDA device, no copy
+    /// will be performed.
+    TriangleMesh CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
+    };
+
+    /// Getter for vertex_attr_ TensorMap. Used in Pybind.
+    const TensorMap &GetVertexAttr() const { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -148,6 +172,9 @@ public:
     /// Get the value of the "normals" attribute in vertex_attr_.
     /// Convenience function.
     core::Tensor &GetVertexNormals() { return GetVertexAttr("normals"); }
+
+    /// Getter for triangle_attr_ TensorMap. Used in Pybind.
+    const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.
@@ -375,17 +402,20 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    static geometry::TriangleMesh FromLegacyTrangleMesh(
-            const geometry::TriangleMesh &mesh_legacy,
-            core::Dtype dtype = core::Dtype::Float32,
-            const core::Device &device = core::Device("CPU:0")) {
-        utility::LogError("Unimplemented");
-    }
+    /// \param mesh_legacy Legacy Open3D TriangleMesh.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static geometry::TriangleMesh FromLegacyTriangleMesh(
+            const open3d::geometry::TriangleMesh &mesh_legacy,
+            core::Dtype float_dtype = core::Dtype::Float32,
+            core::Dtype int_dtype = core::Dtype::Int64,
+            const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.
-    geometry::TriangleMesh ToLegacyTriangleMesh() const {
-        utility::LogError("Unimplemented");
-    }
+    open3d::geometry::TriangleMesh ToLegacyTriangleMesh() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

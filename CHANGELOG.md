@@ -1,5 +1,11 @@
 ## Master
 
+* RealSense SDK v2 integrated for reading RS bag files (PR #2646)
+* Tensor based RGBDImage class, Python bindings for Image and RGBDImage
+* RealSense sensor configuration, live capture and recording (with example and tutorial) (PR #2748)
+
+## 0.11
+
 * Fixes bug for preloading libc++ and libc++abi in Python
 * Added GUI widgets and model-viewing app
 * Fixes travis for race-condition on macOS
@@ -21,6 +27,7 @@
 * Fast compression mode for PNG writing. (Issue #846)
 * Ubuntu 20.04 (Focal) support.
 * Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
+* Updated Open3D.h.in to add certain missing header files
 * Add Open3D-ML to Open3D wheel
 * Fix a bug in PointCloud file format, use `float` instead of `float_t`
 

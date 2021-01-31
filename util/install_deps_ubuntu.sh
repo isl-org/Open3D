@@ -6,8 +6,8 @@
 
 set -ev
 
-SUDO=${SUDO:=sudo}      # SUDO=command in docker (running as root, sudo not available)
-if [ "$1" == "assume-yes" ] ; then
+SUDO=${SUDO:=sudo} # SUDO=command in docker (running as root, sudo not available)
+if [ "$1" == "assume-yes" ]; then
     APT_CONFIRM="--assume-yes"
 else
     APT_CONFIRM=""
@@ -28,9 +28,13 @@ dependencies=(
     libtbb-dev
     # Headless rendering deps
     libosmesa6-dev
+    # RealSense deps
+    libudev-dev
+    autoconf
+    libtool
 )
 
 $SUDO apt-get update
-for package in "${dependencies[@]}" ; do
+for package in "${dependencies[@]}"; do
     $SUDO apt-get install "$APT_CONFIRM" "$package"
 done

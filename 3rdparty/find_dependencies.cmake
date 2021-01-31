@@ -283,6 +283,9 @@ function(set_local_or_remote_url URL)
     endif()
 endfunction()
 
+include(ProcessorCount)
+ProcessorCount(NPROC)
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
@@ -496,16 +499,14 @@ endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
 # jsoncpp: always compile from source to avoid ABI issues.
-build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
-    SOURCES
-        json_reader.cpp
-        json_value.cpp
-        json_writer.cpp
-    INCLUDE_DIRS
-        include/
+include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
+import_3rdparty_library(3rdparty_jsoncpp
+    INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
+    LIB_DIR      ${JSONCPP_LIB_DIR}
+    LIBRARIES    ${JSONCPP_LIBRARIES}
 )
-target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
 set(JSONCPP_TARGET "3rdparty_jsoncpp")
+add_dependencies(3rdparty_jsoncpp ext_jsoncpp)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JSONCPP_TARGET}")
 
 # liblzf
@@ -537,15 +538,24 @@ build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller IN
 set(TRITRIINTERSECT_TARGET "3rdparty_tritriintersect")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
-# RealSense
+# librealsense SDK
 if (BUILD_LIBREALSENSE)
-    message(STATUS "Building third-party library librealsense from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/librealsense)
-    import_3rdparty_library(3rdparty_realsense INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
-    add_dependencies(3rdparty_realsense ${REALSENSE_LIBRARY})
-    set(LIBREALSENSE_TARGET "3rdparty_realsense")
+    include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+    import_3rdparty_library(3rdparty_librealsense
+        INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
+        LIBRARIES    ${LIBREALSENSE_LIBRARIES}
+        LIB_DIR      ${LIBREALSENSE_LIB_DIR}
+    )
+    add_dependencies(3rdparty_librealsense ext_librealsense)
+    set(LIBREALSENSE_TARGET "3rdparty_librealsense")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
-endif ()
+
+    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+        find_library(UDEV_LIBRARY udev REQUIRED
+            DOC "Library provided by the deb package libudev-dev")
+        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+    endif()
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -562,19 +572,29 @@ if(USE_SYSTEM_PNG)
     endif()
 endif()
 if(NOT USE_SYSTEM_PNG)
-    message(STATUS "Building third-party library zlib from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-    import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
-    add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
-    message(STATUS "Building third-party library libpng from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-    import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
-    add_dependencies(3rdparty_png ${PNG_LIBRARIES})
-    target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
-    set(PNG_TARGET "3rdparty_png")
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    import_3rdparty_library(3rdparty_zlib
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+    )
     set(ZLIB_TARGET "3rdparty_zlib")
+    add_dependencies(3rdparty_zlib ext_zlib)
+
+    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
+    import_3rdparty_library(3rdparty_libpng
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+    )
+    set(LIBPNG_TARGET "3rdparty_libpng")
+    add_dependencies(3rdparty_libpng ext_libpng)
+    add_dependencies(ext_libpng ext_zlib)
+
+    # Putting zlib after libpng somehow works for Ubuntu.
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 
 # rply
 build_3rdparty_library(3rdparty_rply DIRECTORY rply SOURCES rply/rply.c INCLUDE_DIRS rply/)
@@ -1096,4 +1116,3 @@ if (WITH_FAISS)
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
-

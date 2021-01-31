@@ -111,8 +111,8 @@ public:
 
     bool IsVisible() const;
     void Show(bool vis = true);
-    /// Closes the window and destroys it.
-    /// (Same as calling Application::RemoveWindow())
+    /// Closes the window and destroys it (unless the close callback cancels
+    /// the close)
     void Close();
 
     /// Instructs the window to relayout before the next draw.
@@ -137,7 +137,15 @@ public:
     void SetOnMenuItemActivated(Menu::ItemId item_id,
                                 std::function<void()> callback);
 
+    /// Sets a callback that will be called on every UI tick (about 10 msec).
+    /// Callback should return true if a redraw is required (i.e. the UI or
+    /// a 3D scene has changed), false otherwise.
     void SetOnTickEvent(std::function<bool()> callback);
+
+    /// Sets a callback that will be called immediately before the window
+    /// is closed. Callback should return true if the window should continue
+    /// closing or false to cancel the close.
+    void SetOnClose(std::function<bool()> callback);
 
     /// Shows the dialog. If a dialog is currently being shown it will be
     /// closed.
@@ -173,6 +181,7 @@ protected:
     const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
 
 private:
+    void CreateRenderer();
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);

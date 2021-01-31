@@ -6,12 +6,15 @@
 
 import json
 import argparse
-import time, datetime
+import time
+import datetime
 import sys
+from os.path import isfile
+from initialize_config import initialize_config
+import open3d as o3d
 sys.path.append("../utility")
 from file import check_folder_structure
 sys.path.append(".")
-from initialize_config import initialize_config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")

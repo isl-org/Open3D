@@ -357,6 +357,8 @@ struct GuiVisualizer::Impl {
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
+    bool sun_follows_camera_ = false;
+
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
         settings_.lit_material_.shader = "defaultLit";
@@ -409,7 +411,7 @@ struct GuiVisualizer::Impl {
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
-        scene_wgt_->GetScene()->SetBackgroundColor(
+        scene_wgt_->GetScene()->SetBackground(
                 {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
@@ -491,12 +493,34 @@ private:
             this->SetIBL(renderer, "");
         }
 
+        if (sun_follows_camera_ != settings_.model_.GetSunFollowsCamera()) {
+            sun_follows_camera_ = settings_.model_.GetSunFollowsCamera();
+            if (sun_follows_camera_) {
+                scene_wgt_->SetOnCameraChanged([this](rendering::Camera *cam) {
+                    auto render_scene = scene_wgt_->GetScene()->GetScene();
+                    render_scene->SetSunLightDirection(cam->GetForwardVector());
+                });
+                render_scene->SetSunLightDirection(
+                        scene->GetCamera()->GetForwardVector());
+                settings_.wgt_mouse_sun->SetEnabled(false);
+                scene_wgt_->SetSunInteractorEnabled(false);
+            } else {
+                scene_wgt_->SetOnCameraChanged(
+                        std::function<void(rendering::Camera *)>());
+                settings_.wgt_mouse_sun->SetEnabled(true);
+                scene_wgt_->SetSunInteractorEnabled(true);
+            }
+        }
+
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
         render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
-        render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
-                                          float(lighting.sun_intensity));
-        render_scene->EnableDirectionalLight(lighting.sun_enabled);
+        render_scene->SetSunLightColor(lighting.sun_color);
+        render_scene->SetSunLightIntensity(float(lighting.sun_intensity));
+        if (!sun_follows_camera_) {
+            render_scene->SetSunLightDirection(lighting.sun_dir);
+        }
+        render_scene->EnableSunLight(lighting.sun_enabled);
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,
@@ -791,7 +815,7 @@ void GuiVisualizer::SetGeometry(
                 loaded_material.shader = "defaultLit";
             }
 
-            scene3d->AddGeometry(MODEL_NAME, pcd, loaded_material);
+            scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
 
             impl_->settings_.model_.SetDisplayingPointClouds(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {

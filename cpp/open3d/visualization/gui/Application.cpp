@@ -40,6 +40,7 @@
 #include <thread>
 #include <unordered_set>
 
+#include "open3d/geometry/Image.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Button.h"
@@ -549,10 +550,9 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
             impl_->is_running_ = false;
             impl_->CleanupAfterRunning();
-        } else {
-            // reset, otherwise we will be done next time, too.
-            impl_->should_quit_ = false;
         }
+        // reset, otherwise we will be done next time, too.
+        impl_->should_quit_ = false;
     }
 
     return (status == RunStatus::CONTINUE);

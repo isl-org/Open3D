@@ -1,4 +1,6 @@
 set(KERNEL_SRC
+    kernel/Arange.cpp
+    kernel/ArangeCPU.cpp
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
     kernel/NonZero.cpp
@@ -13,6 +15,7 @@ set(KERNEL_SRC
 )
 
 set(KERNEL_CUDA_SRC
+    kernel/ArangeCUDA.cu
     kernel/IndexGetSetCUDA.cu
     kernel/NonZeroCUDA.cu
     kernel/UnaryEWCUDA.cu
@@ -51,6 +54,7 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
+    NumpyIO.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp

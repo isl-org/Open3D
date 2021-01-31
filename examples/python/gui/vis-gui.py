@@ -460,7 +460,7 @@ class AppWindow:
             self.settings.bg_color.red, self.settings.bg_color.green,
             self.settings.bg_color.blue, self.settings.bg_color.alpha
         ]
-        self._scene.scene.set_background_color(bg_color)
+        self._scene.scene.set_background(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
@@ -476,9 +476,9 @@ class AppWindow:
             self.settings.sun_color.red, self.settings.sun_color.green,
             self.settings.sun_color.blue
         ]
-        self._scene.scene.scene.set_directional_light(
-            self.settings.sun_dir, sun_color, self.settings.sun_intensity)
-        self._scene.scene.scene.enable_directional_light(self.settings.use_sun)
+        self._scene.scene.scene.set_sun_light(self.settings.sun_dir, sun_color,
+                                              self.settings.sun_intensity)
+        self._scene.scene.scene.enable_sun_light(self.settings.use_sun)
 
         if self.settings.apply_material:
             self._scene.scene.update_material(self.settings.material)

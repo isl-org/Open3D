@@ -49,6 +49,11 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
 #ifdef BUILD_CUDA_MODULE
+    if (dataset_points.GetDevice().GetType() != Device::DeviceType::CUDA) {
+        utility::LogError(
+                "[FixedRadiusIndex::SetTensorData] dataset_points should be "
+                "GPU Tensor.");
+    }
     if (radius <= 0) {
         utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] radius should be positive.");
@@ -114,6 +119,15 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points, double radius) const {
 #ifdef BUILD_CUDA_MODULE
+    // Check dtype.
+    query_points.AssertDtype(GetDtype());
+
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
+    // Check device.
+    query_points.AssertDevice(GetDevice());
+
     if (radius <= 0) {
         utility::LogError(
                 "[FixedRadiusIndex::SearchRadius] radius should be positive.");

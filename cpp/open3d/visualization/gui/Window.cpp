@@ -158,6 +158,7 @@ struct Window::Impl {
     std::string title_;  // there is no glfwGetWindowTitle()...
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
+    std::function<bool(void)> on_close_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
@@ -255,8 +256,9 @@ Window::Window(const std::string& title,
     glfwSetDropCallback(impl_->window_, DragDropCallback);
     glfwSetWindowCloseCallback(impl_->window_, CloseCallback);
 
-    // On single-threaded platforms, Filament's OpenGL context must be current,
-    // not GLFW's context, so create the renderer after the window.
+    auto& theme = impl_->theme_;  // shorter alias
+    impl_->imgui_.context = ImGui::CreateContext();
+    auto oldContext = MakeDrawContextCurrent();
 
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
@@ -274,22 +276,6 @@ Window::Window(const std::string& title,
             int(std::round(impl_->theme_.default_margin * scaling));
     impl_->theme_.default_layout_spacing =
             int(std::round(impl_->theme_.default_layout_spacing * scaling));
-
-    auto& engine = visualization::rendering::EngineInstance::GetInstance();
-    auto& resource_manager =
-            visualization::rendering::EngineInstance::GetResourceManager();
-
-    impl_->renderer_ =
-            std::make_unique<visualization::rendering::FilamentRenderer>(
-                    engine, GetNativeDrawable(), resource_manager);
-    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
-
-    auto& theme = impl_->theme_;  // shorter alias
-    impl_->imgui_.context = ImGui::CreateContext();
-    auto oldContext = MakeDrawContextCurrent();
-
-    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
-            impl_->renderer_.get(), GetSize());
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -321,9 +307,86 @@ Window::Window(const std::string& title,
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tab_hover_color);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tab_active_color);
 
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+#ifdef WIN32
+    io.ImeWindowHandle = GetNativeDrawable();
+#endif
+    // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
+    // io.KeyMap to map from our code to ImGui's code.
+    io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
+    io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT;
+    io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT;
+    io.KeyMap[ImGuiKey_UpArrow] = KEY_UP;
+    io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN;
+    io.KeyMap[ImGuiKey_PageUp] = KEY_PAGEUP;
+    io.KeyMap[ImGuiKey_PageDown] = KEY_PAGEDOWN;
+    io.KeyMap[ImGuiKey_Home] = KEY_HOME;
+    io.KeyMap[ImGuiKey_End] = KEY_END;
+    io.KeyMap[ImGuiKey_Insert] = KEY_INSERT;
+    io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
+    io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
+    io.KeyMap[ImGuiKey_Space] = ' ';
+    io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
+    io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
+    io.KeyMap[ImGuiKey_A] = 'a';
+    io.KeyMap[ImGuiKey_C] = 'c';
+    io.KeyMap[ImGuiKey_V] = 'v';
+    io.KeyMap[ImGuiKey_X] = 'x';
+    io.KeyMap[ImGuiKey_Y] = 'y';
+    io.KeyMap[ImGuiKey_Z] = 'z';
+    /*    io.SetClipboardTextFn = [this](void*, const char* text) {
+            glfwSetClipboardString(this->impl_->window, text);
+        };
+        io.GetClipboardTextFn = [this](void*) -> const char* {
+            return glfwGetClipboardString(this->impl_->window);
+        }; */
+    io.ClipboardUserData = nullptr;
+
+    // Restore the context, in case we are creating a window during a draw.
+    // (This is quite likely, since ImGUI only handles things like button
+    // presses during draw. A file open dialog is likely to create a window
+    // after pressing "Open".)
+    RestoreDrawContext(oldContext);
+
+#ifndef WIN32
+    CreateRenderer();
+#else
+    // Don't create the renderer yet. If the program exits before the first
+    // draw callback from the operating system (Windows in particular),
+    // Filament's rendering may not have had time to start yet, so destroying
+    // the renderer will wait forever for the render thread to execute.
+    // This can be reproduced with the following Python script
+    //   import open3d as o3d
+    //   o3d.visualization.Application.instance.initialize()
+    //   w = o3d.visualization.Application.instance
+    //          .create_window("Crash", 640, 480)
+    //   <anything that throws an exception>
+#endif  // !WIN32
+}
+
+void Window::CreateRenderer() {
+    // This is a delayed part of the constructor. See comment at end of ctor.
+    auto old_context = MakeDrawContextCurrent();
+
+    // On single-threaded platforms, Filament's OpenGL context must be current,
+    // not GLFW's context, so create the renderer after the window.
+    auto& engine = visualization::rendering::EngineInstance::GetInstance();
+    auto& resource_manager =
+            visualization::rendering::EngineInstance::GetResourceManager();
+
+    impl_->renderer_ =
+            std::make_unique<visualization::rendering::FilamentRenderer>(
+                    engine, GetNativeDrawable(), resource_manager);
+    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
+
+    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
+            impl_->renderer_.get(), GetSize());
+
     // If the given font path is invalid, ImGui will silently fall back to
     // proggy, which is a tiny "pixel art" texture that is compiled into the
     // library.
+    auto& theme = GetTheme();
     if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
         int en_fonts = 0;
@@ -400,47 +463,7 @@ Window::Window(const std::string& title,
         ImGui::SetCurrentFont(impl_->imgui_.system_font);
     }
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.IniFilename = nullptr;
-#ifdef WIN32
-    io.ImeWindowHandle = GetNativeDrawable();
-#endif
-    // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
-    // io.KeyMap to map from our code to ImGui's code.
-    io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
-    io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT;
-    io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT;
-    io.KeyMap[ImGuiKey_UpArrow] = KEY_UP;
-    io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN;
-    io.KeyMap[ImGuiKey_PageUp] = KEY_PAGEUP;
-    io.KeyMap[ImGuiKey_PageDown] = KEY_PAGEDOWN;
-    io.KeyMap[ImGuiKey_Home] = KEY_HOME;
-    io.KeyMap[ImGuiKey_End] = KEY_END;
-    io.KeyMap[ImGuiKey_Insert] = KEY_INSERT;
-    io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
-    io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
-    io.KeyMap[ImGuiKey_Space] = ' ';
-    io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
-    io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
-    io.KeyMap[ImGuiKey_A] = 'a';
-    io.KeyMap[ImGuiKey_C] = 'c';
-    io.KeyMap[ImGuiKey_V] = 'v';
-    io.KeyMap[ImGuiKey_X] = 'x';
-    io.KeyMap[ImGuiKey_Y] = 'y';
-    io.KeyMap[ImGuiKey_Z] = 'z';
-    /*    io.SetClipboardTextFn = [this](void*, const char* text) {
-            glfwSetClipboardString(this->impl_->window, text);
-        };
-        io.GetClipboardTextFn = [this](void*) -> const char* {
-            return glfwGetClipboardString(this->impl_->window);
-        }; */
-    io.ClipboardUserData = nullptr;
-
-    // Restore the context, in case we are creating a window during a draw.
-    // (This is quite likely, since ImGUI only handles things like button
-    // presses during draw. A file open dialog is likely to create a window
-    // after pressing "Open".)
-    RestoreDrawContext(oldContext);
+    RestoreDrawContext(old_context);
 }
 
 Window::~Window() {
@@ -605,7 +628,16 @@ void Window::Show(bool vis /*= true*/) {
     }
 }
 
-void Window::Close() { Application::GetInstance().RemoveWindow(this); }
+void Window::Close() {
+    if (impl_->on_close_) {
+        bool shouldContinue = impl_->on_close_();
+        if (!shouldContinue) {
+            glfwSetWindowShouldClose(impl_->window_, 0);
+            return;
+        }
+    }
+    Application::GetInstance().RemoveWindow(this);
+}
 
 void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
 
@@ -640,6 +672,10 @@ void Window::SetOnMenuItemActivated(Menu::ItemId item_id,
 
 void Window::SetOnTickEvent(std::function<bool()> callback) {
     impl_->on_tick_event_ = callback;
+}
+
+void Window::SetOnClose(std::function<bool()> callback) {
+    impl_->on_close_ = callback;
 }
 
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
@@ -690,6 +726,15 @@ void Window::CloseDialog() {
     impl_->active_dialog_.reset();
 
     ForceRedrawSceneWidget();
+
+    // Closing a dialog does not change the layout of widgets so the following
+    // is not necessary. However, on Apple, ForceRedrawSceneWidget isn't
+    // sufficent to force a SceneWidget to redraw and therefore flickering of
+    // the now closed dialog may occur. SetNeedsLayout ensures that
+    // SceneWidget::Layout gets called which will guarantee proper redraw of the
+    // SceneWidget.
+    SetNeedsLayout();
+
     // The dialog might not be closing from within a draw call, such as when
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will
@@ -1096,10 +1141,10 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             ImGuiIO& io = ImGui::GetIO();
             float dx = 0.0, dy = 0.0;
             if (e.wheel.dx != 0) {
-                dx = float(e.wheel.dx / std::abs(e.wheel.dx));  // get sign
+                dx = e.wheel.dx / std::abs(e.wheel.dx);  // get sign
             }
             if (e.wheel.dy != 0) {
-                dy = float(e.wheel.dy / std::abs(e.wheel.dy));  // get sign
+                dy = e.wheel.dy / std::abs(e.wheel.dy);  // get sign
             }
             // Note: ImGUI's documentation says that 1 unit of wheel movement
             //       is about 5 lines of text scrolling.
@@ -1251,6 +1296,13 @@ void Window::OnDragDropped(const char* path) {}
 // ----------------------------------------------------------------------------
 void Window::DrawCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    if (!w->impl_->renderer_) {
+        // Lazily create the renderer, in case we quit before we get here
+        // and crash (macOS) or hang (Windows).
+        w->CreateRenderer();
+    }
+
     if (w->OnDraw() == Window::REDRAW) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
@@ -1331,9 +1383,14 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
+    // Note that although pixels are integers, the trackpad value needs to
+    // be a float, since macOS trackpads produce fractional values when
+    // scrolling slowly. These fractional values need to be passed all the way
+    // down to the MatrixInteractorLogic::Dolly() in order for dollying to
+    // feel buttery smooth with the trackpad.
     MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouse_mods_};
-    me.wheel.dx = int(std::round(dx));
-    me.wheel.dy = int(std::round(dy));
+    me.wheel.dx = dx;
+    me.wheel.dy = dy;
 
     // GLFW doesn't give us any information about whether this scroll event
     // came from a mousewheel or a trackpad two-finger scroll.
@@ -1442,7 +1499,7 @@ void Window::DragDropCallback(GLFWwindow* window,
 
 void Window::CloseCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    Application::GetInstance().RemoveWindow(w);
+    w->Close();
 }
 
 void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }

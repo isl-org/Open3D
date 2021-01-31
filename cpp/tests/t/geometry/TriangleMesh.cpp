@@ -60,11 +60,8 @@ TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     EXPECT_FALSE(mesh.HasTriangles());
     EXPECT_FALSE(mesh.HasTriangleNormals());
 
-    // Default dtypes.
-    EXPECT_EQ(mesh.GetVertices().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(mesh.GetVertices().GetDtype(), core::Dtype::Float32);
-    EXPECT_EQ(mesh.GetTriangles().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(mesh.GetTriangles().GetDtype(), core::Dtype::Int64);
+    // Default device.
+    EXPECT_EQ(mesh.GetDevice(), core::Device("CPU:0"));
 }
 
 TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
@@ -147,8 +144,7 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
     // Setters are already tested in Getters' unit tests. Here we test that
     // mismatched device should throw an exception. This test is only effective
     // is device is a CUDA device.
-    t::geometry::TriangleMesh mesh(core::Dtype::Float32, core::Dtype::Float64,
-                                   device);
+    t::geometry::TriangleMesh mesh(device);
     core::Device cpu_device = core::Device("CPU:0");
     if (cpu_device != device) {
         core::Tensor cpu_vertices =
@@ -169,8 +165,7 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
 TEST_P(TriangleMeshPermuteDevices, Has) {
     core::Device device = GetParam();
 
-    t::geometry::TriangleMesh mesh(core::Dtype::Float32, core::Dtype::Float64,
-                                   device);
+    t::geometry::TriangleMesh mesh(device);
     EXPECT_FALSE(mesh.HasVertices());
     EXPECT_FALSE(mesh.HasVertexColors());
     EXPECT_FALSE(mesh.HasVertexNormals());
@@ -199,6 +194,84 @@ TEST_P(TriangleMeshPermuteDevices, Has) {
     mesh.SetTriangleNormals(
             core::Tensor::Ones({10, 3}, core::Dtype::Float32, device));
     EXPECT_TRUE(mesh.HasTriangleNormals());
+}
+
+TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
+    core::Device device = GetParam();
+    geometry::TriangleMesh legacy_mesh;
+    legacy_mesh.vertices_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0)};
+    legacy_mesh.vertex_colors_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(1, 1, 1), Eigen::Vector3d(1, 1, 1)};
+    legacy_mesh.vertex_normals_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(2, 2, 2), Eigen::Vector3d(2, 2, 2)};
+    legacy_mesh.triangles_ = std::vector<Eigen::Vector3i>{
+            Eigen::Vector3i(3, 3, 3), Eigen::Vector3i(3, 3, 3)};
+    legacy_mesh.triangle_normals_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(4, 4, 4), Eigen::Vector3d(4, 4, 4)};
+
+    core::Dtype float_dtype = core::Dtype::Float32;
+    core::Dtype int_dtype = core::Dtype::Int64;
+    t::geometry::TriangleMesh mesh =
+            t::geometry::TriangleMesh::FromLegacyTriangleMesh(
+                    legacy_mesh, float_dtype, int_dtype, device);
+
+    EXPECT_TRUE(mesh.HasVertices());
+    EXPECT_TRUE(mesh.HasVertexColors());
+    EXPECT_TRUE(mesh.HasVertexNormals());
+    EXPECT_TRUE(mesh.HasTriangles());
+    EXPECT_TRUE(mesh.HasTriangleNormals());
+    EXPECT_FALSE(mesh.HasTriangleColors());
+
+    EXPECT_NO_THROW(mesh.GetVertices().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertices().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertexColors().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertexNormals().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetTriangles().AssertDtype(int_dtype));
+    EXPECT_NO_THROW(mesh.GetTriangleNormals().AssertDtype(float_dtype));
+
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 0));
+    EXPECT_TRUE(mesh.GetVertexColors().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 1));
+    EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 2));
+    EXPECT_TRUE(mesh.GetTriangles().AllClose(
+            core::Tensor::Ones({2, 3}, int_dtype, device) * 3));
+    EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 4));
+}
+
+TEST_P(TriangleMeshPermuteDevices, ToLegacyTriangleMesh) {
+    core::Device device = GetParam();
+
+    core::Dtype float_dtype = core::Dtype::Float32;
+    core::Dtype int_dtype = core::Dtype::Int64;
+
+    t::geometry::TriangleMesh mesh(device);
+    mesh.SetVertices(core::Tensor::Ones({2, 3}, float_dtype, device) * 0);
+    mesh.SetVertexColors(core::Tensor::Ones({2, 3}, float_dtype, device) * 1);
+    mesh.SetVertexNormals(core::Tensor::Ones({2, 3}, float_dtype, device) * 2);
+    mesh.SetTriangles(core::Tensor::Ones({2, 3}, int_dtype, device) * 3);
+    mesh.SetTriangleNormals(core::Tensor::Ones({2, 3}, float_dtype, device) *
+                            4);
+
+    geometry::TriangleMesh legacy_mesh = mesh.ToLegacyTriangleMesh();
+    EXPECT_EQ(legacy_mesh.vertices_,
+              std::vector<Eigen::Vector3d>(
+                      {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0)}));
+    EXPECT_EQ(legacy_mesh.vertex_colors_,
+              std::vector<Eigen::Vector3d>(
+                      {Eigen::Vector3d(1, 1, 1), Eigen::Vector3d(1, 1, 1)}));
+    EXPECT_EQ(legacy_mesh.vertex_normals_,
+              std::vector<Eigen::Vector3d>(
+                      {Eigen::Vector3d(2, 2, 2), Eigen::Vector3d(2, 2, 2)}));
+    EXPECT_EQ(legacy_mesh.triangles_,
+              std::vector<Eigen::Vector3i>(
+                      {Eigen::Vector3i(3, 3, 3), Eigen::Vector3i(3, 3, 3)}));
+    EXPECT_EQ(legacy_mesh.triangle_normals_,
+              std::vector<Eigen::Vector3d>(
+                      {Eigen::Vector3d(4, 4, 4), Eigen::Vector3d(4, 4, 4)}));
 }
 
 }  // namespace tests
