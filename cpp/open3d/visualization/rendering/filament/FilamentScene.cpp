@@ -115,6 +115,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"unlitPolygonOffset",
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+        {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
         {"unlitLine", ResourceManager::kDefaultLineShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;

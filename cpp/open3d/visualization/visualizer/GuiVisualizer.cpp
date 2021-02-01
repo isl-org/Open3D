@@ -829,6 +829,35 @@ void GuiVisualizer::SetGeometry(
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
 
+    // TEMP: Setup infinite ground plane
+    geometry::TriangleMesh quad;
+    quad.vertices_ = {{-1.0, -1.0, 1.0},
+                      {1.0, -1.0, 1.0},
+                      {1.0, 1.0, 1.0},
+                      {-1.0, 1.0, 1.0}};
+    quad.triangle_uvs_ = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0},
+                          {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
+    quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
+    rendering::Material m;
+    m.shader = "infiniteGroundPlane";
+    m.base_color = {1.0f, 1.f, 0.f, 1.f};
+    scene3d->AddGeometry("__ground_plane__", &quad, m);
+    scene3d->GetScene()->SetGeometryCulling("__ground_plane__", false);
+    scene3d->GetScene()->SetGeometryPriority("__ground_plane__", 1);
+    auto cam = scene3d->GetCamera();
+    Eigen::Matrix4f world_from_clip = cam->GetModelMatrix() * cam->GetProjectionMatrix().matrix().inverse();
+    Eigen::Matrix4f world_from_clip_cull = cam->GetModelMatrix() * cam->GetCullingProjectionMatrix().matrix().inverse();
+    Eigen::Vector4f t1(-1.f, -1.f, 0.9f, 1.f);
+    Eigen::Vector4f t2(-1.f, -1.f, 0.f, 1.f);
+    Eigen::Vector4f far_pt = world_from_clip * t1;
+    Eigen::Vector4f near_pt = world_from_clip * t2;
+    // far_pt *= (1.0f/far_pt.w());
+    // near_pt *= (1.0f/near_pt.w());
+    std::cout << world_from_clip << std::endl;
+    std::cout << world_from_clip_cull << std::endl;
+    std::cout << far_pt << std::endl;
+    std::cout << near_pt << std::endl;
+    
     // Make sure scene is redrawn
     impl_->scene_wgt_->ForceRedraw();
 }

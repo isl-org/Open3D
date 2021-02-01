@@ -1,18 +1,37 @@
 material {
     name : infiniteGroundPlane,
     shadingModel : unlit,
-//    vertexDomain : device,
+    vertexDomain : device,
     depthWrite : false,
-
+    doubleSided: true,
+    blending : transparent,
+    
     parameters : [
         { type : float3,    name : baseColor },
         { type : sampler2d, name : albedo },
         { type : float,     name : aspectRatio }
     ],
+    requires: [
+        uv0
+    ],
+    variables : [
+        far_world, near_world
+    ]
 }
 
 vertex {
     void materialVertex(inout MaterialVertexInputs material) {
+         float4 p = getPosition();
+         material.far_world = getWorldFromClipMatrix() * float4(p.x, p.y, 0.9, 1.0);
+         //material.far_world = material.worldPosition;
+         material.near_world = getWorldFromClipMatrix() * float4(p.x, p.y, 0.0, 1.0);
+         //material.near_world.xyz * (1.0 / material.near_world.w);
+         //material.far_world = mulMat4x4Float3(getWorldFromClipMatrix(), float3(p.x, p.y, 1.0));
+         //material.near_world = mulMat4x4Float3(getWorldFromClipMatrix(), float3(p.x, p.y, 0.0));
+         //material.far_world.xyz += getWorldOffset();
+         //material.near_world.xyz += getWorldOffset();
+         //material.far_world.xyz *= (1.0 / material.far_world.w);
+         //material.near_world.xyz *= (1.0 / material.near_world.w);
     }
 }
 
@@ -20,6 +39,18 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
-        material.baseColor = float4(0.0, 1.0, 0.0, 1.0f);
+        // Compute intersection with ground plane
+        float t = -variable_near_world.y / (variable_far_world.y - variable_near_world.y);
+
+        // Compute world pos of the point on the plane
+        float3 wp = variable_near_world.xyz + t * (variable_far_world.xyz - variable_near_world.xyz);
+        //float c = (int(round(wp.x*10.0)) + int(round(wp.z*10.0))) % 2;
+        float c = (int(round(getUV0().x*10.0)) + int(round(getUV0().y*10.0))) % 2;
+        c = c*0.6 + 0.2;
+        //material.baseColor = float4(float(t > 0.0), float(t < 0.0), float(t==0.0), 1.0) * float(t > 0);
+        //material.baseColor = float4(float(t > 0.0), float(t < 0.0), float(t==0.0), 1.0);
+        material.baseColor = float4(isnan(t), isinf(t), float(t < 0), 1.0);
+        //material.baseColor = float4(isnan(t), isinf(t), float(t==0.0), 1.0) * float(t > 0);
+        //material.baseColor = float4(c, c, c, 1.0) * float(t>0);
     }
 }
