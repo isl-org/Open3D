@@ -367,7 +367,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                interactor_->Dolly(2 * e.wheel.dy,
+                interactor_->Dolly(2.0f * e.wheel.dy,
                                    e.wheel.isTrackpad
                                            ? rendering::MatrixInteractorLogic::
                                                      DragType::TWO_FINGER
@@ -538,6 +538,10 @@ public:
 
     void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
 
+    void SetSunInteractorEnabled(bool enable) {
+        sun_interactor_enabled_ = enable;
+    }
+
     void SetPickableGeometry(
             const std::vector<SceneWidget::PickableGeometry>& geometry) {
         pick_->SetPickableGeometry(geometry);
@@ -596,7 +600,7 @@ public:
     }
 
     void Mouse(const MouseEvent& e) {
-        if (current_ == rotate_.get()) {
+        if (current_ == rotate_.get() && sun_interactor_enabled_) {
             if (e.type == MouseEvent::Type::BUTTON_DOWN &&
                 (e.button.button == MouseButton::MIDDLE ||
                  e.modifiers == int(KeyModifier::ALT))) {
@@ -631,6 +635,8 @@ public:
     }
 
 private:
+    bool sun_interactor_enabled_ = true;
+
     std::unique_ptr<RotateCameraInteractor> rotate_;
     std::unique_ptr<FlyInteractor> fly_;
     std::unique_ptr<RotateSunInteractor> sun_;
@@ -724,6 +730,10 @@ void SceneWidget::SetOnSunDirectionChanged(
 
 void SceneWidget::ShowSkybox(bool is_on) {
     impl_->controls_->ShowSkybox(is_on);
+}
+
+void SceneWidget::SetSunInteractorEnabled(bool enable) {
+    impl_->controls_->SetSunInteractorEnabled(enable);
 }
 
 void SceneWidget::SetPickableGeometry(

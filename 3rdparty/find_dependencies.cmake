@@ -1116,3 +1116,44 @@ if (WITH_FAISS)
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
+
+# NPP
+if (BUILD_CUDA_MODULE)
+    # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
+    foreach(NPPLIB nppc nppi npp nppicc nppif nppig nppim nppial)
+        list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
+    endforeach()
+    add_library(3rdparty_CUDA_NPP INTERFACE)
+    target_link_libraries(3rdparty_CUDA_NPP INTERFACE ${CUDA_NPP_LIBRARIES})
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS 3rdparty_CUDA_NPP EXPORT ${PROJECT_NAME}Targets)
+    endif()
+    set(CUDA_NPP_TARGET 3rdparty_CUDA_NPP)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${CUDA_NPP_TARGET})
+endif ()
+
+# IPP
+if (WITH_IPPICV)
+    # Ref: https://stackoverflow.com/a/45125525
+    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
+        set(WITH_IPPICV OFF)
+        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    else ()
+        include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
+        if (WITH_IPPICV)
+            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
+            import_3rdparty_library(3rdparty_ippicv
+                INCLUDE_DIRS "${IPPICV_INCLUDE_DIR}"
+                LIBRARIES     ${IPPICV_LIBRARIES}
+                LIB_DIR      "${IPPICV_LIB_DIR}"
+                )
+            add_dependencies(3rdparty_ippicv ext_ippicv)
+            target_compile_definitions(3rdparty_ippicv INTERFACE
+                ${IPPICV_DEFINITIONS})
+            set(IPPICV_TARGET "3rdparty_ippicv")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IPPICV_TARGET}")
+        endif()
+    endif()
+endif ()
