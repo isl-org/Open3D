@@ -83,6 +83,7 @@ public:
 
     enum Controls {
         ROTATE_CAMERA,
+        ROTATE_CAMERA_SPHERE,
         FLY,
         ROTATE_SUN,
         ROTATE_IBL,

@@ -964,6 +964,8 @@ void pybind_gui_classes(py::module &m) {
             }),
             py::none(), py::none(), "");
     scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
+            .value("ROTATE_CAMERA_SPHERE",
+                   SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
             .value("FLY", SceneWidget::Controls::FLY)
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)

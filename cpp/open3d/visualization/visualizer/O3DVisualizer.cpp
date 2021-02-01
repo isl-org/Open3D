@@ -1147,11 +1147,15 @@ struct O3DVisualizer::Impl {
         }
 
         scene_->SetViewControls(mode);
+        ui_state_.mouse_mode = mode;
         settings.view_mouse_mode = mode;
         for (const auto &t_b : settings.mouse_buttons) {
             t_b.second->SetOn(false);
         }
-        settings.mouse_buttons[mode]->SetOn(true);
+        auto it = settings.mouse_buttons.find(mode);
+        if (it != settings.mouse_buttons.end()) {
+            it->second->SetOn(true);
+        }
     }
 
     void SetPicking() {
@@ -1788,6 +1792,10 @@ void O3DVisualizer::SetPointSize(int point_size) {
 
 void O3DVisualizer::SetLineWidth(int line_width) {
     impl_->SetLineWidth(line_width);
+}
+
+void O3DVisualizer::SetMouseMode(SceneWidget::Controls mode) {
+    impl_->SetMouseMode(mode);
 }
 
 void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {

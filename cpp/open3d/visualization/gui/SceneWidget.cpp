@@ -41,6 +41,7 @@
 #include "open3d/visualization/gui/PickPointsInteractor.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/CameraInteractorLogic.h"
+#include "open3d/visualization/rendering/CameraSphereInteractorLogic.h"
 #include "open3d/visualization/rendering/IBLRotationInteractorLogic.h"
 #include "open3d/visualization/rendering/LightDirectionInteractorLogic.h"
 #include "open3d/visualization/rendering/ModelInteractorLogic.h"
@@ -452,6 +453,21 @@ private:
     std::unique_ptr<rendering::CameraInteractorLogic> camera_controls_;
 };
 
+class RotateCameraSphereInteractor : public RotationInteractor {
+    using Super = RotationInteractor;
+
+public:
+    explicit RotateCameraSphereInteractor(rendering::Camera* camera)
+        : camera_controls_(
+                  std::make_unique<rendering::CameraSphereInteractorLogic>(
+                          camera, MIN_FAR_PLANE)) {
+        SetInteractor(camera_controls_.get());
+    }
+
+private:
+    std::unique_ptr<rendering::CameraInteractorLogic> camera_controls_;
+};
+
 class PickInteractor : public RotateCameraInteractor {
     using Super = RotateCameraInteractor;
 
@@ -500,6 +516,8 @@ class Interactors {
 public:
     Interactors(rendering::Open3DScene* scene, rendering::Camera* camera)
         : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
+          rotate_sphere_(
+                  std::make_unique<RotateCameraSphereInteractor>(camera)),
           fly_(std::make_unique<FlyInteractor>(camera)),
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
           ibl_(std::make_unique<RotateIBLInteractor>(scene->GetScene(),
@@ -511,6 +529,8 @@ public:
 
     void SetViewSize(const Size& size) {
         rotate_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+        rotate_sphere_->GetMatrixInteractor().SetViewSize(size.width,
+                                                          size.height);
         fly_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         sun_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         ibl_->GetMatrixInteractor().SetViewSize(size.width, size.height);
@@ -520,6 +540,7 @@ public:
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
         rotate_->GetMatrixInteractor().SetBoundingBox(bounds);
+        rotate_sphere_->GetMatrixInteractor().SetBoundingBox(bounds);
         fly_->GetMatrixInteractor().SetBoundingBox(bounds);
         sun_->GetMatrixInteractor().SetBoundingBox(bounds);
         ibl_->GetMatrixInteractor().SetBoundingBox(bounds);
@@ -529,6 +550,7 @@ public:
 
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         rotate_->SetCenterOfRotation(center);
+        rotate_sphere_->SetCenterOfRotation(center);
     }
 
     void SetOnSunLightChanged(
@@ -561,7 +583,9 @@ public:
     void SetPickNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
     SceneWidget::Controls GetControls() const {
-        if (current_ == fly_.get()) {
+        if (current_ == rotate_sphere_.get()) {
+            return SceneWidget::Controls::ROTATE_CAMERA_SPHERE;
+        } else if (current_ == fly_.get()) {
             return SceneWidget::Controls::FLY;
         } else if (current_ == sun_.get()) {
             return SceneWidget::Controls::ROTATE_SUN;
@@ -580,6 +604,9 @@ public:
         switch (mode) {
             case SceneWidget::Controls::ROTATE_CAMERA:
                 current_ = rotate_.get();
+                break;
+            case SceneWidget::Controls::ROTATE_CAMERA_SPHERE:
+                current_ = rotate_sphere_.get();
                 break;
             case SceneWidget::Controls::FLY:
                 current_ = fly_.get();
@@ -638,6 +665,7 @@ private:
     bool sun_interactor_enabled_ = true;
 
     std::unique_ptr<RotateCameraInteractor> rotate_;
+    std::unique_ptr<RotateCameraSphereInteractor> rotate_sphere_;
     std::unique_ptr<FlyInteractor> fly_;
     std::unique_ptr<RotateSunInteractor> sun_;
     std::unique_ptr<RotateIBLInteractor> ibl_;
