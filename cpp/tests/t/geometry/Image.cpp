@@ -30,6 +30,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
+#include "open3d/io/ImageIO.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -191,6 +192,82 @@ TEST_P(ImagePermuteDevices,
                 ElementsAreArray(input_data));
 }
 
+<<<<<<< HEAD
+=======
+TEST_P(ImagePermuteDevices, BilateralFilter) {
+    core::Device device = GetParam();
+
+    t::geometry::Image color = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/color/00000.jpg"),
+            device);
+    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/depth/00000.png"),
+            device);
+
+    auto color_filtered = color.BilateralFilter(3);
+    auto depth_filtered = depth.BilateralFilter(1, 1.0, 4.0);
+
+    depth.AsTensor().Save("original.npy");
+    depth_filtered.AsTensor().Save("filtered.npy");
+
+    io::WriteImage("color_filtered.png", color_filtered.ToLegacyImage());
+    io::WriteImage("depth_filtered.png", depth_filtered.ToLegacyImage());
+}
+
+TEST_P(ImagePermuteDevices, GaussianFilter) {
+    core::Device device = GetParam();
+
+    t::geometry::Image color = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/color/00000.jpg"),
+            device);
+    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/depth/00000.png"),
+            device);
+
+    auto color_filtered = color.GaussianFilter(7);
+    auto depth_filtered = depth.GaussianFilter(7);
+
+    depth.AsTensor().Save("original.npy");
+    depth_filtered.AsTensor().Save("filtered.npy");
+
+    io::WriteImage("color_gauss_filtered.png", color_filtered.ToLegacyImage());
+    io::WriteImage("depth_gauss_filtered.png", depth_filtered.ToLegacyImage());
+}
+
+TEST_P(ImagePermuteDevices, SobelFilter) {
+    core::Device device = GetParam();
+
+    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/lena_color.jpg"),
+            device);
+    t::geometry::Image gray = rgb.RGBToGray();
+    io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
+    io::WriteImage("lena_converted.png", gray.ToLegacyImage());
+
+    t::geometry::Image depth =
+            t::geometry::Image::FromLegacyImage(
+                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                             "/RGBD/depth/00000.png"),
+                    device)
+                    .To(core::Dtype::Float32);
+
+    auto gray_filtered = gray.SobelFilter(3);
+    auto depth_filtered = depth.SobelFilter(5);
+
+    gray_filtered.first.AsTensor()
+            .To(core::Dtype::Float32)
+            .Save("gray_dx" + device.ToString() + ".npy");
+    gray_filtered.second.AsTensor().Save("gray_dy.npy");
+    depth_filtered.first.AsTensor().Save("depth_dx.npy");
+    depth_filtered.second.AsTensor().Save("depth_dy.npy");
+}
+
+>>>>>>> c8fb3a5942f8c33de11fa4a323707d5ce79e980c
 TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 

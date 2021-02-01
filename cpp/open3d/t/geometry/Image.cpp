@@ -147,6 +147,42 @@ Image Image::To(core::Dtype dtype,
     return dst_im;
 }
 
+Image Image::RGBToGray() const {
+    if (GetChannels() != 3) {
+        utility::LogError("Input image channels must be 3 for RGBToGray");
+    }
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},
+            {core::Dtype::Float32, 3},
+    };
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},
+            {core::Dtype::Float32, 3},
+    };
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1}, GetDtype(),
+                                       GetDevice());
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
+    } else {
+        utility::LogError(
+                "RGBToGray with data type {} on device {} is not implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
 Image Image::Dilate(int half_kernel_size) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
@@ -188,6 +224,147 @@ Image Image::Dilate(int half_kernel_size) const {
                 GetDtype().ToString(), GetDevice().ToString());
     }
     return dst_im;
+}
+
+Image Image::BilateralFilter(int half_kernel_size,
+                             float value_sigma,
+                             float dist_sigma) const {
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+    };
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},
+            {core::Dtype::Float32, 1},
+            {core::Dtype::UInt8, 3},
+            {core::Dtype::Float32, 3},
+    };
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::EmptyLike(data_);
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::BilateralFilter, data_, dst_im.data_, half_kernel_size,
+                  value_sigma, dist_sigma);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::BilateralFilter, data_, dst_im.data_, half_kernel_size,
+                 value_sigma, dist_sigma);
+    } else {
+        utility::LogError(
+                "BilateralFilter with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
+Image Image::GaussianFilter(int kernel_size) const {
+    if (kernel_size < 3 || kernel_size % 2 == 0) {
+        utility::LogError("Kernel size must be an odd number >= 3.");
+    }
+
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
+            {core::Dtype::Float32, 4},
+    };
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
+            {core::Dtype::Float32, 4},
+    };
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::EmptyLike(data_);
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::GaussianFilter, data_, dst_im.data_, kernel_size);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::GaussianFilter, data_, dst_im.data_, kernel_size);
+    } else {
+        utility::LogError(
+                "GaussianFilter with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
+std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
+    if (!(kernel_size == 3 || kernel_size == 5)) {
+        utility::LogError("Kernel size must be 3 or 5.");
+    }
+
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // 16 signed is also supported by the engines, but is non-standard thus
+    // not supported by us. To filter 16 bit unsigned depth images, we
+    // recommend first converting to Float32.
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},
+            {core::Dtype::Float32, 1},
+    };
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},
+            {core::Dtype::Float32, 1},
+    };
+
+    // Routines: 8u16s, 32f
+    Image dst_im_dx, dst_im_dy;
+    core::Dtype dtype = GetDtype();
+    if (dtype == core::Dtype::Float32) {
+        dst_im_dx = core::Tensor::EmptyLike(data_);
+        dst_im_dy = core::Tensor::EmptyLike(data_);
+    } else if (dtype == core::Dtype::UInt8) {
+        dst_im_dx = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+                                        data_.GetDevice());
+        dst_im_dy = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+                                        data_.GetDevice());
+    }
+
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::SobelFilter, data_, dst_im_dx.data_, dst_im_dy.data_,
+                  kernel_size);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::SobelFilter, data_, dst_im_dx.data_, dst_im_dy.data_,
+                 kernel_size);
+    } else {
+        utility::LogError(
+                "SobelFilter with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return std::make_pair(dst_im_dx, dst_im_dy);
 }
 
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,

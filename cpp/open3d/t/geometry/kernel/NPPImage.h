@@ -34,13 +34,26 @@ namespace t {
 namespace geometry {
 namespace npp {
 
+void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im);
+
 void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);
 
+void BilateralFilter(const open3d::core::Tensor &srcim,
+                     float value_sigma,
+                     float dist_sigma);
+
+void GaussianFilter(const open3d::core::Tensor &srcim,
+                    open3d::core::Tensor &dstim,
+                    int kernel_size);
+
+void SobelFilter(const open3d::core::Tensor &srcim,
+                 open3d::core::Tensor &dstim_dx,
+                 open3d::core::Tensor &dstim_dy,
+                 int kernel_size);
 }  // namespace npp
 }  // namespace geometry
-}  // namespace t
 }  // namespace open3d
 
 #endif  // BUILD_CUDA_MODULE

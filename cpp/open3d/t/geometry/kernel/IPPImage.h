@@ -46,6 +46,8 @@ inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
         return ipp8u;
     } else if (dtype == core::Dtype::UInt16) {
         return ipp16u;
+    } else if (dtype == core::Dtype::Int16) {
+        return ipp16s;
     } else if (dtype == core::Dtype::Int32) {
         return ipp32s;
     } else if (dtype == core::Dtype::Int64) {
@@ -64,10 +66,26 @@ void To(const core::Tensor &src_im,
         double scale,
         double offset);
 
+void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im);
+
 void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int half_kernel_size);
 
+void BilateralFilter(const open3d::core::Tensor &srcim,
+                     open3d::core::Tensor &dstim,
+                     int half_kernel_size,
+                     float value_sigma,
+                     float dist_sigma);
+
+void GaussianFilter(const open3d::core::Tensor &srcim,
+                    open3d::core::Tensor &dstim,
+                    int kernel_size);
+
+void SobelFilter(const open3d::core::Tensor &srcim,
+                 open3d::core::Tensor &dstim_dx,
+                 open3d::core::Tensor &dstim_dy,
+                 int kernel_size);
 }  // namespace ipp
 }  // namespace geometry
 }  // namespace t

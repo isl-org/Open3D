@@ -181,6 +181,9 @@ public:
         return *this;
     }
 
+    /// Converts a 3-channel RGB image to a new 1-channel Grayscale image.
+    Image RGBToGray() const;
+
     /// Return a new image after performing morphological dilation. Supported
     /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
     /// 8-connected neighborhood is used to create the dilation mask.
@@ -188,15 +191,21 @@ public:
     /// used.
     Image Dilate(int half_kernel_size = 1) const;
 
+    /// Return a new image after bilateral filtering.
+    /// Possible kernel_size: odd numbers >= 3 are supported for CPU, and only
+    /// up to 15 are supported for GPU.
+    Image GaussianFilter(int kernel_size = 3) const;
+
+    /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
+    /// Possible kernel_size: 3 and 5.
+    std::pair<Image, Image> SobelFilter(int kernel_size = 3) const;
+
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
-        return core::Tensor::Zeros({2}, core::Dtype::Int64);
     }
 
-    /// Compute max 2D coordinates for the data ({rows, cols}).
     core::Tensor GetMaxBound() const {
         return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
-                            core::Dtype::Int64);
     }
 
     /// Create from a legacy Open3D Image.
