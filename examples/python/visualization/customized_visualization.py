@@ -126,7 +126,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
         return False
 
     vis = custom_draw_geometry_with_camera_trajectory.vis
-    vis.create_window()
+    width, height = 956, 1040
+    vis.create_window(width=width, height=height)
     vis.add_geometry(pcd)
     vis.get_render_option().load_from_json("../../test_data/renderoption.json")
     vis.register_animation_callback(move_forward)
