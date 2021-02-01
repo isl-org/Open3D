@@ -66,10 +66,10 @@ private:
     gui::Window* window_;
     OnGeometryFunc on_geometry_;
 
-    void HandleGeometry(std::shared_ptr<geometry::Geometry3D> geom,
-                        const std::string& path,
-                        int time,
-                        const std::string& layer);
+    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer);
 };
 
 }  // namespace visualization

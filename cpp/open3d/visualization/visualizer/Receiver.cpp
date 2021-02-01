@@ -195,7 +195,7 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
             }
         }
 
-        HandleGeometry(mesh, msg.path, msg.time, msg.layer);
+        SetGeometry(mesh, msg.path, msg.time, msg.layer);
 
     } else {
         // create a PointCloud
@@ -301,16 +301,16 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
                 }
             }
         }
-        HandleGeometry(pcd, msg.path, msg.time, msg.layer);
+        SetGeometry(pcd, msg.path, msg.time, msg.layer);
     }
 
     return CreateStatusOKMsg();
 }
 
-void Receiver::HandleGeometry(std::shared_ptr<geometry::Geometry3D> geom,
-                              const std::string& path,
-                              int time,
-                              const std::string& layer) {
+void Receiver::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                           const std::string& path,
+                           int time,
+                           const std::string& layer) {
     gui::Application::GetInstance().PostToMainThread(
             window_, [this, geom, path, time, layer]() {
                 on_geometry_(geom, path, time, layer);
