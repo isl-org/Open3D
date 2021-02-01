@@ -144,6 +144,43 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
     }
 }
 
+void FillInSLACRegularizerTerm(core::Tensor &AtA,
+                               core::Tensor &Atb,
+                               core::Tensor &residual,
+                               const core::Tensor &grid_idx,
+                               const core::Tensor &grid_nbs_idx,
+                               const core::Tensor &grid_nbs_mask,
+                               const core::Tensor &positions_init,
+                               const core::Tensor &positions_curr,
+                               int n) {
+    AtA.AssertDtype(core::Dtype::Float32);
+    Atb.AssertDtype(core::Dtype::Float32);
+    residual.AssertDtype(core::Dtype::Float32);
+
+    core::Device device = AtA.GetDevice();
+    if (Atb.GetDevice() != device) {
+        utility::LogError("AtA should have the same device as Atb.");
+    }
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        FillInSLACRegularizerTermCPU(AtA, Atb, residual, grid_idx, grid_nbs_idx,
+                                     grid_nbs_mask, positions_init,
+                                     positions_curr, n);
+
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        FillInSLACRegularizerTermCUDA(AtA, Atb, residual, grid_idx,
+                                      grid_nbs_idx, grid_nbs_mask,
+                                      positions_init, positions_curr, n);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

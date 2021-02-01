@@ -80,21 +80,39 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
                      ctr_hashmap_->GetBucketCount());
 }
 
-core::Tensor ControlGrid::GenerateIndexLookupTable() {
-    ctr_hashmap_->Rehash(ctr_hashmap_->Size());
+void ControlGrid::Compactify() { ctr_hashmap_->Rehash(ctr_hashmap_->Size()); }
 
-    core::Tensor active_indices;
-    ctr_hashmap_->GetActiveIndices(active_indices);
+std::tuple<core::Tensor, core::Tensor, core::Tensor>
+ControlGrid::GetNeighborGridMap() {
+    core::Tensor active_addrs;
+    ctr_hashmap_->GetActiveIndices(active_addrs);
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    core::Tensor active_keys =
+            ctr_hashmap_->GetKeyTensor().IndexGet({active_indices});
 
-    utility::LogInfo("{}", active_indices.ToString());
-    core::Tensor max_elem = active_indices.Max({0});
-    utility::LogInfo("Lookup table: {} -> {}", max_elem.Item<int>(),
-                     ctr_hashmap_->Size());
+    int64_t n = active_indices.GetLength();
+    core::Tensor keys_nb({6, n, 3}, core::Dtype::Int32, device_);
 
-    utility::LogInfo(" Hashmap size: {}, capacity: {}, bucket: {}",
-                     ctr_hashmap_->Size(), ctr_hashmap_->GetCapacity(),
-                     ctr_hashmap_->GetBucketCount());
-    return max_elem;
+    core::Tensor dx = core::Tensor(std::vector<int>{1, 0, 0}, {1, 3},
+                                   core::Dtype::Int32, device_);
+    core::Tensor dy = core::Tensor(std::vector<int>{0, 1, 0}, {1, 3},
+                                   core::Dtype::Int32, device_);
+    core::Tensor dz = core::Tensor(std::vector<int>{0, 0, 1}, {1, 3},
+                                   core::Dtype::Int32, device_);
+    keys_nb[0] = active_keys - dx;
+    keys_nb[1] = active_keys + dx;
+    keys_nb[2] = active_keys - dy;
+    keys_nb[3] = active_keys + dy;
+    keys_nb[4] = active_keys - dz;
+    keys_nb[5] = active_keys + dz;
+
+    // Obtain nearest neighbors
+    keys_nb = keys_nb.View({6 * n, 3});
+
+    core::Tensor addrs_nb, masks_nb;
+    ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
+    return std::make_tuple(active_addrs, addrs_nb.View({6, n}).T().Contiguous(),
+                           masks_nb.View({6, n}).T().Contiguous());
 }
 
 geometry::PointCloud ControlGrid::Parameterize(

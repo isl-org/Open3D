@@ -61,10 +61,12 @@ public:
     /// Allocate control grids in the shared camera space.
     void Touch(const geometry::PointCloud& pcd);
 
-    /// Freeze hashmap and generate a index lookup table.
-    /// Maps from scattered indices to contiguous indices for constructing a
-    /// compact matrix.
-    core::Tensor GenerateIndexLookupTable();
+    /// Force rehashing, so that all entries are remapped to [0, size) and form
+    /// a contiguous index map.
+    void Compactify();
+
+    /// Return a 6-way neighbor grid map.
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
 
     /// Parameterize an input point cloud with the control grids via indexing
     /// and interpolation.
@@ -75,7 +77,11 @@ public:
     geometry::PointCloud Parameterize(const geometry::PointCloud& pcd);
 
     /// Get control grid positions directly by buffer tensor indices.
-    core::Tensor GetPositions() { return ctr_hashmap_->GetValueTensor(); }
+    core::Tensor GetInitPositions() {
+        return ctr_hashmap_->GetKeyTensor().To(core::Dtype::Float32) *
+               grid_size_;
+    }
+    core::Tensor GetCurrPositions() { return ctr_hashmap_->GetValueTensor(); }
 
     /// Warp a point cloud using control grid.
     geometry::PointCloud Warp(const geometry::PointCloud& pcd);

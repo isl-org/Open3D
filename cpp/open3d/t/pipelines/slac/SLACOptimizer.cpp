@@ -105,7 +105,7 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
             tpcd.ToLegacyPointCloud());
 
-    t::geometry::PointCloud tpcd_grid(ctr_grid.GetPositions());
+    t::geometry::PointCloud tpcd_grid(ctr_grid.GetCurrPositions());
     auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_grid.ToLegacyPointCloud());
 
@@ -367,9 +367,21 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
 
 void FillInSLACRegularizerTerm(core::Tensor& AtA,
                                core::Tensor& Atb,
+                               core::Tensor& residual,
                                ControlGrid& ctr_grid,
+                               int n_frags,
                                const SLACOptimizerOption& option) {
-    utility::LogError("Unimplemented.");
+    core::Tensor active_addrs, nb_addrs, nb_masks;
+    std::tie(active_addrs, nb_addrs, nb_masks) = ctr_grid.GetNeighborGridMap();
+
+    core::Tensor positions_init = ctr_grid.GetInitPositions();
+    core::Tensor positions_curr = ctr_grid.GetCurrPositions();
+    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
+                                      nb_addrs, nb_masks, positions_init,
+                                      positions_curr, n_frags);
+    AtA.Save(fmt::format("{}/hessian_regularized.npy",
+                         option.GetSubfolderName()));
+    utility::LogError("Unimplemented");
 }
 
 void FillInRigidAlignmentTerm(core::Tensor& AtA,
@@ -509,7 +521,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     ControlGrid ctr_grid(3.0 / 8, 1000, device);
     InitializeControlGrid(ctr_grid, fnames_down, option);
 
-    ctr_grid.GenerateIndexLookupTable();
+    ctr_grid.Compactify();
 
     // Fill-in
     // fragments x 6 (se3) + control_grids x 3 (R^3)
@@ -534,7 +546,8 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         utility::LogInfo("Iteration {}", itr);
         FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, fnames_down,
                                 pose_graph_update, option);
-        FillInSLACRegularizerTerm(AtA, Atb, ctr_grid, option);
+        FillInSLACRegularizerTerm(AtA, Atb, residual, ctr_grid,
+                                  pose_graph_update.nodes_.size(), option);
 
         core::Tensor delta = Solve(AtA, Atb, option);
 

@@ -56,6 +56,16 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
                              int j,
                              int n);
 
+void FillInSLACRegularizerTerm(core::Tensor &AtA,
+                               core::Tensor &Atb,
+                               core::Tensor &residual,
+                               const core::Tensor &grid_idx,
+                               const core::Tensor &grid_nbs_idx,
+                               const core::Tensor &grid_nbs_mask,
+                               const core::Tensor &positions_init,
+                               const core::Tensor &positions_curr,
+                               int n);
+
 void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
                                  core::Tensor &Atb,
                                  core::Tensor &residual,
@@ -80,6 +90,16 @@ void FillInSLACAlignmentTermCPU(core::Tensor &AtA,
                                 int i,
                                 int j,
                                 int n);
+
+void FillInSLACRegularizerTermCPU(core::Tensor &AtA,
+                                  core::Tensor &Atb,
+                                  core::Tensor &residual,
+                                  const core::Tensor &grid_idx,
+                                  const core::Tensor &grid_nbs_idx,
+                                  const core::Tensor &grid_nbs_mask,
+                                  const core::Tensor &positions_init,
+                                  const core::Tensor &positions_curr,
+                                  int n);
 
 #ifdef BUILD_CUDA_MODULE
 void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
@@ -106,6 +126,16 @@ void FillInSLACAlignmentTermCUDA(core::Tensor &AtA,
                                  int i,
                                  int j,
                                  int n);
+
+void FillInSLACRegularizerTermCUDA(core::Tensor &AtA,
+                                   core::Tensor &Atb,
+                                   core::Tensor &residual,
+                                   const core::Tensor &grid_idx,
+                                   const core::Tensor &grid_nbs_idx,
+                                   const core::Tensor &grid_nbs_mask,
+                                   const core::Tensor &positions_init,
+                                   const core::Tensor &positions_curr,
+                                   int n);
 
 #endif
 

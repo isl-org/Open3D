@@ -27,6 +27,12 @@
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
 
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#include "open3d/t/pipelines/kernel/SVD3x3CUDA.cuh"
+#else
+#include "open3d/t/pipelines/kernel/SVD3x3CPU.h"
+#endif
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -146,11 +152,7 @@ void FillInRigidAlignmentTermCPU
     AtA.IndexSet({indices_i, indices_j}, AtA_sub + AtA_local.View({12 * 12}));
 
     core::Tensor Atb_sub = Atb.IndexGet({indices});
-    // utility::LogInfo("Atb_sub before = {}", Atb_sub.ToString());
-    // utility::LogInfo("Atb_local = {}", Atb_local.ToString());
     Atb.IndexSet({indices}, Atb_sub + Atb_local.View({12, 1}));
-    // Atb_sub = Atb.IndexGet({indices});
-    // utility::LogInfo("Atb_sub after = {}", Atb_sub.ToString());
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -295,6 +297,314 @@ void FillInSLACAlignmentTermCPU
             *residual_ptr += r * r;
         }
 #endif
+    });
+}
+
+inline void matmul3x3_3x1(float m00,
+                          float m01,
+                          float m02,
+                          float m10,
+                          float m11,
+                          float m12,
+                          float m20,
+                          float m21,
+                          float m22,
+                          float v0,
+                          float v1,
+                          float v2,
+                          float &o0,
+                          float &o1,
+                          float &o2) {
+    o0 = m00 * v0 + m01 + v1 + m02 * v2;
+    o1 = m10 * v0 + m11 + v1 + m12 * v2;
+    o2 = m20 * v0 + m21 + v1 + m22 * v2;
+}
+
+inline void matmul3x3_3x3(float a00,
+                          float a01,
+                          float a02,
+                          float a10,
+                          float a11,
+                          float a12,
+                          float a20,
+                          float a21,
+                          float a22,
+                          float b00,
+                          float b01,
+                          float b02,
+                          float b10,
+                          float b11,
+                          float b12,
+                          float b20,
+                          float b21,
+                          float b22,
+                          float &c00,
+                          float &c01,
+                          float &c02,
+                          float &c10,
+                          float &c11,
+                          float &c12,
+                          float &c20,
+                          float &c21,
+                          float &c22) {
+    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20,
+                  c00, c10, c20);
+    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21,
+                  c01, c11, c21);
+    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b02, b12, b22,
+                  c02, c12, c22);
+}
+
+inline float det3x3(float m00,
+                    float m01,
+                    float m02,
+                    float m10,
+                    float m11,
+                    float m12,
+                    float m20,
+                    float m21,
+                    float m22) {
+    return m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 - m21) +
+           m20 * (m01 * m12 - m02 * m11);
+}
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+void FillInSLACRegularizerTermCUDA
+#else
+void FillInSLACRegularizerTermCPU
+#endif
+        (core::Tensor &AtA,
+         core::Tensor &Atb,
+         core::Tensor &residual,
+         const core::Tensor &grid_idx,
+         const core::Tensor &grid_nbs_idx,
+         const core::Tensor &grid_nbs_mask,
+         const core::Tensor &positions_init,
+         const core::Tensor &positions_curr,
+         int n_frags) {
+
+    int64_t n = grid_idx.GetLength();
+    int64_t n_vars = Atb.GetLength();
+
+    float *AtA_ptr = static_cast<float *>(AtA.GetDataPtr());
+    float *Atb_ptr = static_cast<float *>(Atb.GetDataPtr());
+    float *residual_ptr = static_cast<float *>(residual.GetDataPtr());
+
+    const int *grid_idx_ptr = static_cast<const int *>(grid_idx.GetDataPtr());
+    const int *grid_nbs_idx_ptr =
+            static_cast<const int *>(grid_nbs_idx.GetDataPtr());
+    const bool *grid_nbs_mask_ptr =
+            static_cast<const bool *>(grid_nbs_mask.GetDataPtr());
+
+    const float *positions_init_ptr =
+            static_cast<const float *>(positions_init.GetDataPtr());
+    const float *positions_curr_ptr =
+            static_cast<const float *>(positions_curr.GetDataPtr());
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    core::kernel::CUDALauncher launcher;
+#else
+    core::kernel::CPULauncher launcher;
+#endif
+    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        // Enumerate 6 neighbors
+        int idx_i = grid_idx_ptr[workload_idx];
+
+        const int *idx_nbs = grid_nbs_idx_ptr + 6 * workload_idx;
+        const bool *mask_nbs = grid_nbs_mask_ptr + 6 * workload_idx;
+
+        // Build a 3x3 linear system to compute the local R
+        float cov[3][3];
+        float U[3][3], V[3][3], S[3][3];
+        for (int k = 0; k < 6; ++k) {
+            bool mask_k = mask_nbs[k];
+            if (!mask_k) continue;
+
+            int idx_k = idx_nbs[k];
+
+            // Now build linear systems
+            float diff_ik_init[3] = {positions_init_ptr[idx_i * 3 + 0] -
+                                             positions_init_ptr[idx_k * 3 + 0],
+                                     positions_init_ptr[idx_i * 3 + 1] -
+                                             positions_init_ptr[idx_k * 3 + 1],
+                                     positions_init_ptr[idx_i * 3 + 2] -
+                                             positions_init_ptr[idx_k * 3 + 2]};
+            float diff_ik_curr[3] = {positions_curr_ptr[idx_i * 3 + 0] -
+                                             positions_curr_ptr[idx_k * 3 + 0],
+                                     positions_curr_ptr[idx_i * 3 + 1] -
+                                             positions_curr_ptr[idx_k * 3 + 1],
+                                     positions_curr_ptr[idx_i * 3 + 2] -
+                                             positions_curr_ptr[idx_k * 3 + 2]};
+
+            // Build linear system by computing XY^T when formulating Y = RX
+            // Y: curr
+            // X: init
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    cov[i][j] += diff_ik_init[i] * diff_ik_curr[j];
+                }
+            }
+        }
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+        // clang-format off
+        svdcuda(cov[0][0], cov[0][1], cov[0][2],
+            cov[1][0], cov[1][1], cov[1][2],
+            cov[2][0], cov[2][1], cov[2][2],
+            U[0][0], U[0][1], U[0][2],
+            U[1][0], U[1][1], U[1][2],
+            U[2][0], U[2][1], U[2][2],
+            S[0][0], S[1][1], S[2][2],
+            V[0][0], V[0][1], V[0][2],
+            V[1][0], V[1][1], V[1][2],
+            V[2][0], V[2][1], V[2][2]);
+        // clang-format on
+#else
+        // clang-format off
+        svdcpu(cov[0][0], cov[0][1], cov[0][2],
+               cov[1][0], cov[1][1], cov[1][2],
+               cov[2][0], cov[2][1], cov[2][2],
+               U[0][0], U[0][1], U[0][2],
+               U[1][0], U[1][1], U[1][2],
+               U[2][0], U[2][1], U[2][2],
+               S[0][0], S[0][1], S[0][2],
+               S[1][0], S[1][1], S[1][2],
+               S[2][0], S[2][1], S[2][2],
+               V[0][0], V[0][1], V[0][2],
+               V[1][0], V[1][1], V[1][2],
+               V[2][0], V[2][1], V[2][2]);
+        // clang-format on
+#endif
+
+        // TODO: det3x3 and matmul3x3
+        float R[3][3];
+
+        // clang-format off
+        matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
+                      V[1][0], V[1][1], V[1][2],
+                      V[2][0], V[2][1], V[2][2],
+                      U[0][0], U[1][0], U[2][0],
+                      U[0][1], U[1][1], U[2][1],
+                      U[0][2], U[1][2], U[2][2],
+                      R[0][0], R[0][1], R[0][2],
+                      R[1][0], R[1][1], R[1][2],
+                      R[2][0], R[2][1], R[2][2]);
+
+        float d = det3x3(R[0][0], R[0][1], R[0][2],
+                         R[1][0], R[1][1], R[1][2],
+                         R[2][0], R[2][1], R[2][2]);
+        // clang-format on
+
+        if (d < 0) {
+            // clang-format off
+            matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
+                          V[1][0], V[1][1], V[1][2],
+                          V[2][0], V[2][1], V[2][2],
+                          U[0][0], U[1][0], U[2][0],
+                          U[0][1], U[1][1], U[2][1],
+                          -U[0][2], -U[1][2], -U[2][2],
+                          R[0][0], R[0][1], R[0][2],
+                          R[1][0], R[1][1], R[1][2],
+                          R[2][0], R[2][1], R[2][2]);
+            // clang-format on
+        }
+
+        // Now we have R, we build Hessian and residuals
+        for (int k = 0; k < 6; ++k) {
+            bool mask_k = mask_nbs[k];
+
+            if (mask_k) {
+                int idx_k = idx_nbs[k];
+
+                float diff_ik_init[3] = {
+                        positions_init_ptr[idx_i * 3 + 0] -
+                                positions_init_ptr[idx_k * 3 + 0],
+                        positions_init_ptr[idx_i * 3 + 1] -
+                                positions_init_ptr[idx_k * 3 + 1],
+                        positions_init_ptr[idx_i * 3 + 2] -
+                                positions_init_ptr[idx_k * 3 + 2]};
+                float diff_ik_curr[3] = {
+                        positions_curr_ptr[idx_i * 3 + 0] -
+                                positions_curr_ptr[idx_k * 3 + 0],
+                        positions_curr_ptr[idx_i * 3 + 1] -
+                                positions_curr_ptr[idx_k * 3 + 1],
+                        positions_curr_ptr[idx_i * 3 + 2] -
+                                positions_curr_ptr[idx_k * 3 + 2]};
+                float R_diff_ik_curr[3];
+
+                // clang-format off
+                matmul3x3_3x1(R[0][0], R[0][1], R[0][2],
+                              R[1][0], R[1][1], R[1][2],
+                              R[2][0], R[2][1], R[2][2],
+                              diff_ik_init[0],
+                              diff_ik_init[1],
+                              diff_ik_init[2],
+                              R_diff_ik_curr[0],
+                              R_diff_ik_curr[1],
+                              R_diff_ik_curr[2]);
+                // clang-format on
+
+                float local_r[3];
+                local_r[0] = diff_ik_curr[0] - R_diff_ik_curr[0];
+                local_r[1] = diff_ik_curr[1] - R_diff_ik_curr[1];
+                local_r[2] = diff_ik_curr[2] - R_diff_ik_curr[2];
+
+                int offset_idx_i = 3 * idx_i + 6 * n_frags;
+                int offset_idx_k = 3 * idx_k + 6 * n_frags;
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+                // Update residual
+                atomicAdd(residual_ptr, local_r[0] * local_r[0] +
+                                                local_r[1] * local_r[1] +
+                                                local_r[2] * local_r[2]);
+
+                for (int axis = 0; axis < 3; ++axis) {
+                    // Update AtA: 2x2
+                    atomicAdd(&AtA_ptr[(offset_idx_i + axis) * n_vars +
+                                       offset_idx_i + axis],
+                              1);
+                    atomicAdd(&AtA_ptr[(offset_idx_k + axis) * n_vars +
+                                       offset_idx_k + axis],
+                              1);
+                    atomicAdd(&AtA_ptr[(offset_idx_i + axis) * n_vars +
+                                       offset_idx_k + axis],
+                              -1);
+                    atomicAdd(&AtA_ptr[(offset_idx_k + axis) * n_vars +
+                                       offset_idx_i + axis],
+                              -1);
+
+                    // Update Atb: 2x1
+                    atomicAdd(&Atb_ptr[offset_idx_i + axis], +local_r[axis]);
+                    atomicAdd(&Atb_ptr[offset_idx_k + axis], -local_r[axis]);
+                }
+#else
+#pragma omp critical
+                {
+                    // Update residual
+                    *residual_ptr += local_r[0] * local_r[0] +
+                                     local_r[1] * local_r[1] +
+                                     local_r[2] * local_r[2];
+
+                    for (int axis = 0; axis < 3; ++axis) {
+                        // Update AtA: 2x2
+                        AtA_ptr[(offset_idx_i + axis) * n_vars + offset_idx_i +
+                                axis] += 1;
+                        AtA_ptr[(offset_idx_k + axis) * n_vars + offset_idx_k +
+                                axis] += 1;
+
+                        AtA_ptr[(offset_idx_i + axis) * n_vars + offset_idx_k +
+                                axis] -= 1;
+                        AtA_ptr[(offset_idx_k + axis) * n_vars + offset_idx_i +
+                                axis] -= 1;
+
+                        // Update Atb: 2x1
+                        Atb_ptr[offset_idx_i + axis] += local_r[axis];
+                        Atb_ptr[offset_idx_k + axis] -= local_r[axis];
+                    }
+                }
+#endif
+            }
+        }
     });
 }
 }  // namespace kernel
