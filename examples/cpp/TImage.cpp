@@ -27,6 +27,7 @@
 // Only for testing purpose. To be deleted before merging with master.
 
 #include <cstdio>
+
 #include "open3d/Open3D.h"
 
 using namespace open3d;

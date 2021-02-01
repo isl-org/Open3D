@@ -183,6 +183,51 @@ Image Image::RGBToGray() const {
     return dst_im;
 }
 
+Image Image::Filter(Image::FilterType type) const {
+    t::geometry::Image output;
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const supported_t npp_supported{
+            {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
+            {core::Dtype::UInt16, 1},  {core::Dtype::Int32, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::Bool, 3},
+            {core::Dtype::UInt8, 3},   {core::Dtype::UInt16, 3},
+            {core::Dtype::Int32, 3},   {core::Dtype::Float32, 3},
+            {core::Dtype::Bool, 4},    {core::Dtype::UInt8, 4},
+            {core::Dtype::UInt16, 4},  {core::Dtype::Int32, 4},
+            {core::Dtype::Float32, 4},
+    };
+
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const supported_t ipp_supported{
+            {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
+            {core::Dtype::UInt16, 1},  {core::Dtype::Float32, 1},
+            {core::Dtype::Bool, 3},    {core::Dtype::UInt8, 3},
+            {core::Dtype::Float32, 3}, {core::Dtype::Bool, 4},
+            {core::Dtype::UInt8, 4},   {core::Dtype::Float32, 4}};
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::EmptyLike(data_);
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::Filter, data_, dst_im.data_, type);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        // IPP_CALL(ipp::Gaussian, data_, dst_im.data_, half_kernel_size);
+    } else {
+        utility::LogError(
+                "Dilate with data type {} on device {} is not implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
 Image Image::Dilate(int half_kernel_size) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
@@ -341,9 +386,9 @@ std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
         dst_im_dx = core::Tensor::EmptyLike(data_);
         dst_im_dy = core::Tensor::EmptyLike(data_);
     } else if (dtype == core::Dtype::UInt8) {
-        dst_im_dx = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+        dst_im_dx = core::Tensor::Empty(data_.GetShape(), core::Dtype::UInt16,
                                         data_.GetDevice());
-        dst_im_dy = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+        dst_im_dy = core::Tensor::Empty(data_.GetShape(), core::Dtype::UInt16,
                                         data_.GetDevice());
     }
 
@@ -365,6 +410,8 @@ std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
                 GetDtype().ToString(), GetDevice().ToString());
     }
     return std::make_pair(dst_im_dx, dst_im_dy);
+}
+
 Image &Image::Reset(int64_t rows,
                     int64_t cols,
                     int64_t channels,

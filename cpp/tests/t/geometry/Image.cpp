@@ -204,8 +204,9 @@ TEST_P(ImagePermuteDevices, BilateralFilter) {
                                      "/RGBD/depth/00000.png"),
             device);
 
-    auto color_filtered = color.BilateralFilter(3);
-    auto depth_filtered = depth.BilateralFilter(1, 1.0, 4.0);
+    auto color_filtered = color.To(core::Dtype::Float32).BilateralFilter(3);
+    auto depth_filtered =
+            depth.To(core::Dtype::Float32).BilateralFilter(1, 1.0, 4.0);
 
     depth.AsTensor().Save("original.npy");
     depth_filtered.AsTensor().Save("filtered.npy");
@@ -254,8 +255,8 @@ TEST_P(ImagePermuteDevices, SobelFilter) {
                     device)
                     .To(core::Dtype::Float32);
 
-    auto gray_filtered = gray.SobelFilter(3);
-    auto depth_filtered = depth.SobelFilter(5);
+    auto gray_filtered = gray.To(core::Dtype::Float32).SobelFilter(3);
+    auto depth_filtered = depth.To(core::Dtype::Float32).SobelFilter(5);
 
     gray_filtered.first.AsTensor()
             .To(core::Dtype::Float32)

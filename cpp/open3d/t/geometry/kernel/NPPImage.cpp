@@ -131,6 +131,211 @@ void Dilate(const core::Tensor &src_im,
 #undef NPP_ARGS
 }
 
+void Filter(const core::Tensor &src_im,
+            open3d::core::Tensor &dst_im,
+            t::geometry::Image::FilterType filter_type) {
+    switch (filter_type) {
+        case Image::FilterType::Gaussian1x3:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_1_X_3);
+            break;
+        case Image::FilterType::Gaussian1x5:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_1_X_5);
+            break;
+        case Image::FilterType::Gaussian3x1:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_3_X_1);
+            break;
+        case Image::FilterType::Gaussian5x1:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_5_X_1);
+            break;
+        case Image::FilterType::Gaussian3x3:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_3_X_3);
+            break;
+        case Image::FilterType::Gaussian5x5:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_5_X_5);
+            break;
+        case Image::FilterType::Gaussian7x7:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_7_X_7);
+            break;
+        case Image::FilterType::Gaussian9x9:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_9_X_9);
+            break;
+        case Image::FilterType::Gaussian11x11:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_11_X_11);
+            break;
+        case Image::FilterType::Gaussian13x13:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_13_X_13);
+            break;
+        case Image::FilterType::Gaussian15x15:
+            Gaussian(src_im, dst_im, NPP_MASK_SIZE_15_X_15);
+            break;
+        case Image::FilterType::SobelHorizontal:
+            SobelHorizontal(src_im, dst_im);
+            break;
+        case Image::FilterType::SobelVertical:
+            SobelVertical(src_im, dst_im);
+            break;
+
+        default:
+            utility::LogError("npp::Filter(): Unspported filter type {}",
+                              filter_type);
+            break;
+    }
+}
+
+void Gaussian(const open3d::core::Tensor &src_im,
+              open3d::core::Tensor &dst_im,
+              NppiMaskSize mask_size) {
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiPoint src_offset = {0, 0};
+
+    // create struct with ROI size
+    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                                          \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, mask_size,  \
+            NPP_BORDER_REPLICATE
+    if (dtype == core::Dtype::Bool || dtype == core::Dtype::UInt8) {
+        using npp_dtype = Npp8u;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterGaussBorder_8u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterGaussBorder_8u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterGaussBorder_8u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::UInt16) {
+        using npp_dtype = Npp16u;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterGaussBorder_16u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterGaussBorder_16u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterGaussBorder_16u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_dtype = Npp32f;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterGaussBorder_32f_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterGaussBorder_32f_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterGaussBorder_32f_C4R(NPP_ARGS);
+        }
+    } else {
+        utility::LogError("npp::Gaussian(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS
+}
+
+void SobelHorizontal(const open3d::core::Tensor &src_im,
+                     open3d::core::Tensor &dst_im) {
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiPoint src_offset = {0, 0};
+
+    // create struct with ROI size
+    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                                          \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
+            NPP_BORDER_REPLICATE
+    if (dtype == core::Dtype::Bool || dtype == core::Dtype::UInt8) {
+        using npp_dtype = Npp8u;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterSobelHorizBorder_8u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterSobelHorizBorder_8u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterSobelHorizBorder_8u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::UInt16) {
+        using npp_dtype = Npp16s;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterSobelHorizBorder_16s_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterSobelHorizBorder_16s_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterSobelHorizBorder_16s_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_dtype = Npp32f;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterSobelHorizBorder_32f_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterSobelHorizBorder_32f_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterSobelHorizBorder_32f_C4R(NPP_ARGS);
+        }
+    } else {
+        utility::LogError("npp::Sobel(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS
+}
+
+void SobelVertical(const open3d::core::Tensor &src_im,
+                   open3d::core::Tensor &dst_im) {
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiPoint src_offset = {0, 0};
+
+    // create struct with ROI size
+    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                                          \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
+            NPP_BORDER_REPLICATE
+    if (dtype == core::Dtype::Bool || dtype == core::Dtype::UInt8) {
+        using npp_dtype = Npp8u;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterSobelVertBorder_8u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterSobelVertBorder_8u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterSobelVertBorder_8u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::UInt16) {
+        using npp_dtype = Npp16s;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterSobelVertBorder_16s_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterSobelVertBorder_16s_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterSobelVertBorder_16s_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_dtype = Npp32f;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterSobelVertBorder_32f_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterSobelVertBorder_32f_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterSobelVertBorder_32f_C4R(NPP_ARGS);
+        }
+    } else {
+        utility::LogError("npp::Sobel(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS
+}
+
 void BilateralFilter(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int half_kernel_size,

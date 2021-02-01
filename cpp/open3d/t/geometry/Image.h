@@ -78,6 +78,28 @@ public:
 
     virtual ~Image() override {}
 
+    /// \enum FilterType
+    ///
+    /// \brief Specifies the Image filter type.
+    enum class FilterType {
+        /// Gaussian filter.
+        Gaussian1x3,
+        Gaussian1x5,
+        Gaussian3x1,
+        Gaussian5x1,
+        Gaussian3x3,
+        Gaussian5x5,
+        Gaussian7x7,
+        Gaussian9x9,
+        Gaussian11x11,
+        Gaussian13x13,
+        Gaussian15x15,
+        /// Horizotal Sobel filter.
+        SobelHorizontal,
+        /// Vertical Sobel filter.
+        SobelVertical,
+    };
+
 public:
     /// Clear image contents by resetting the rows and cols to 0, while
     /// keeping channels, dtype and device unchanged.
@@ -191,6 +213,10 @@ public:
     /// Converts a 3-channel RGB image to a new 1-channel Grayscale image.
     Image RGBToGray() const;
 
+    /// Function to filter image with pre-defined filtering type.
+    /// \param filter_type pre-defined filtering type (Gaussian, Sobel).
+    Image Filter(Image::FilterType filter_type) const;
+
     /// Return a new image after performing morphological dilation. Supported
     /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
     /// 8-connected neighborhood is used to create the dilation mask.
@@ -199,6 +225,12 @@ public:
     Image Dilate(int half_kernel_size = 1) const;
 
     /// Return a new image after bilateral filtering.
+    Image BilateralFilter(int half_kernel_size = 1,
+                          float value_sigma = 400.0f,
+                          float dist_sigma = 100.0f) const;
+
+    /// Return a new image after Gaussian filtering.
+    /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
     /// Possible kernel_size: odd numbers >= 3 are supported for CPU, and only
     /// up to 15 are supported for GPU.
     Image GaussianFilter(int kernel_size = 3) const;
@@ -209,10 +241,13 @@ public:
 
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
+        return core::Tensor::Zeros({2}, core::Dtype::Int64);
     }
 
+    /// Compute max 2D coordinates for the data ({rows, cols}).
     core::Tensor GetMaxBound() const {
         return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
+                            core::Dtype::Int64);
     }
 
     /// Create from a legacy Open3D Image.
