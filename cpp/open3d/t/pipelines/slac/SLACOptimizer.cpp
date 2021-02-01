@@ -265,7 +265,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
 
-        utility::LogInfo("edge {} -> {}", i, j);
+        // utility::LogInfo("edge {} -> {}", i, j);
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
@@ -292,7 +292,6 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         auto tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
         // Load correspondences and select points and normals
-        utility::LogInfo("Load correspondences");
         core::Tensor corres_ij = core::Tensor::Load(corres_fname).To(device);
         auto ps = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
         auto qs = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
@@ -304,14 +303,12 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
                                  .To(device);
 
         // Parameterize points in the control grid
-        utility::LogInfo("Parameterize");
         auto tpcd_param_i = ctr_grid.Parameterize(t::geometry::PointCloud(
                 {{"points", ps}, {"normals", normal_ps}}));
         auto tpcd_param_j = ctr_grid.Parameterize(t::geometry::PointCloud(
                 {{"points", qs}, {"normals", normal_qs}}));
 
         // Parameterize: setup point cloud -> cgrid correspondences
-        utility::LogInfo("Obtain nn info");
         auto cgrid_index_ps =
                 tpcd_param_i.GetPointAttr(ControlGrid::kAttrNbGridIdx)
                         .To(device);
@@ -327,24 +324,20 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
                         .To(device);
 
         // Warp with control grids
-        utility::LogInfo("Warp");
         auto tpcd_nonrigid_i = ctr_grid.Warp(tpcd_param_i);
         auto tpcd_nonrigid_j = ctr_grid.Warp(tpcd_param_j);
 
-        utility::LogInfo("Warped attributes");
         auto Cps = tpcd_nonrigid_i.GetPoints();
         auto Cqs = tpcd_nonrigid_j.GetPoints();
         auto Cnormal_ps = tpcd_nonrigid_i.GetPointNormals();
 
         // Transform for required entries
-        utility::LogInfo("Preprocess");
         auto Ti_Cps = (Ri.Matmul(Cps.T())).Add_(ti).T().Contiguous();
         auto Tj_Cqs = (Rj.Matmul(Cqs.T())).Add_(tj).T().Contiguous();
         auto Ri_Cnormal_ps = (Ri.Matmul(Cnormal_ps.T())).T().Contiguous();
         auto RjT_Ri_Cnormal_ps =
                 (Rj.T().Matmul(Ri_Cnormal_ps.T())).T().Contiguous();
 
-        utility::LogInfo("Fill in");
         kernel::FillInSLACAlignmentTerm(
                 AtA, Atb, residual, Ti_Cps, Tj_Cqs, Cnormal_ps, Ri_Cnormal_ps,
                 RjT_Ri_Cnormal_ps, cgrid_index_ps, cgrid_index_qs,
@@ -381,7 +374,6 @@ void FillInSLACRegularizerTerm(core::Tensor& AtA,
                                       positions_curr, n_frags);
     AtA.Save(fmt::format("{}/hessian_regularized.npy",
                          option.GetSubfolderName()));
-    utility::LogError("Unimplemented");
 }
 
 void FillInRigidAlignmentTerm(core::Tensor& AtA,
@@ -498,9 +490,14 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
 }
 
 void UpdateControlGrid(ControlGrid& ctr_grid,
-                       core::Tensor& result,
+                       core::Tensor& delta,
                        const SLACOptimizerOption& option) {
-    utility::LogError("Unimplemented.");
+    core::Tensor delta_cgrids = delta.View({-1, 3});
+    if (delta_cgrids.GetLength() != int64_t(ctr_grid.Size())) {
+        utility::LogError("Dimension Mismatch");
+    }
+
+    ctr_grid.GetCurrPositions().Slice(0, 0, ctr_grid.Size()) += delta_cgrids;
 }
 
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
@@ -548,13 +545,17 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                                 pose_graph_update, option);
         FillInSLACRegularizerTerm(AtA, Atb, residual, ctr_grid,
                                   pose_graph_update.nodes_.size(), option);
+        utility::LogInfo("Residual = {}", residual[0].Item<float>());
 
         core::Tensor delta = Solve(AtA, Atb, option);
 
-        UpdatePoses(pose_graph_update, delta, option);
-        UpdateControlGrid(ctr_grid, delta, option);
+        core::Tensor delta_poses =
+                delta.Slice(0, 0, 6 * pose_graph_update.nodes_.size());
+        core::Tensor delta_cgrids = delta.Slice(
+                0, 6 * pose_graph_update.nodes_.size(), delta.GetLength());
 
-        utility::LogError("Unimplemented!");
+        UpdatePoses(pose_graph_update, delta_poses, option);
+        UpdateControlGrid(ctr_grid, delta_cgrids, option);
     }
     return std::make_pair(pose_graph_update, ctr_grid);
 }

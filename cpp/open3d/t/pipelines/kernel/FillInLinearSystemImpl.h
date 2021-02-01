@@ -510,6 +510,12 @@ void FillInSLACRegularizerTermCPU
         }
 
         // Now we have R, we build Hessian and residuals
+        // But first, we need to anchor a point
+        if (workload_idx == 0) {
+            R[0][0] = R[1][1] = R[2][2] = 1;
+            R[0][1] = R[0][2] = R[1][0] = R[1][2] = R[2][0] = R[2][1] = 0;
+        }
+
         for (int k = 0; k < 6; ++k) {
             bool mask_k = mask_nbs[k];
 
