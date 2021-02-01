@@ -989,6 +989,10 @@ void pybind_gui_classes(py::module &m) {
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, "
                  "center_of_rotation)")
+            .def("look_at", &PySceneWidget::LookAt,
+                 "look_at(center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("set_on_mouse", &PySceneWidget::SetOnMouse,
                  "Sets a callback for mouse events. This callback is passed "
                  "a MouseEvent object. The callback must return "

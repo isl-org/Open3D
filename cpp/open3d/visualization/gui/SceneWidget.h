@@ -94,6 +94,9 @@ public:
     void SetupCamera(float verticalFoV,
                      const geometry::AxisAlignedBoundingBox& geometry_bounds,
                      const Eigen::Vector3f& center_of_rotation);
+    void LookAt(const Eigen::Vector3f& center,
+                const Eigen::Vector3f& eye,
+                const Eigen::Vector3f& up);
     void SetOnCameraChanged(
             std::function<void(visualization::rendering::Camera*)>
                     on_cam_changed);
