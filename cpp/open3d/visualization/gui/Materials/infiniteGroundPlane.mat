@@ -39,17 +39,17 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
-        float3 near = variable_near_world.xyz;
-        float3 far = getWorldPosition().xyz;
+        float3 near = variable_near_world.xyz + getWorldOffset();
+        float3 far = getWorldPosition().xyz + getWorldOffset();
         //float3 near = variable_near_world.xyz / variable_near_world.w;
         //float3 far = variable_far_world.xyz / variable_far_world.w;
 
         // Compute intersection with ground plane
-        float t = (3.0 - near.y) / (far.y - near.y);
+        float t = -near.y / (far.y - near.y);
 
         // Compute world pos of the point on the plane in order to compute grid pattern
         float3 world_pos = near + t * (far - near);
-        float2 plane_coord = world_pos.xz;
+        float2 plane_coord = world_pos.xz * 0.1;
         float2 grid_derivative = fwidth(plane_coord);
         float2 grid = abs(fract(plane_coord - 0.5) - 0.5) / grid_derivative;
         float line = min(grid.x, grid.y);
@@ -59,7 +59,7 @@ fragment {
         //material.baseColor = float4(float(t > 0.0), float(t < 0.0), float(t==0.0), 1.0) * float(t > 0);
         //material.baseColor = float4(float(t > 0.0), float(t < 0.0), float(t==0.0), 1.0);
         //material.baseColor = float4(float(far.y == near.y), isinf(near.y), float(t>0), 1.0);
-        material.baseColor = float4(0.2, 0.2, 0.2, 1.0 - min(line,1.0)) * float(t<0);
+        material.baseColor = float4(0.2, 0.2, 0.2, 1.0 - min(line,1.0)) * float(t>0);
         //material.baseColor = float4(isnan(t), isinf(t), float(t==0.0), 1.0) * float(t > 0);
         //material.baseColor = float4(c, c, c, 1.0) * float(t>0);
     }
