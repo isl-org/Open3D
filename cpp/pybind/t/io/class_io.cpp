@@ -28,6 +28,7 @@
 #include <unordered_map>
 
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
@@ -117,6 +118,30 @@ void pybind_class_io(py::module &m_io) {
             "filename"_a, "pointcloud"_a, "write_ascii"_a = true,
             "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "read_image",
+            [](const std::string &filename) {
+                py::gil_scoped_release release;
+                geometry::Image image;
+                ReadImage(filename, image);
+                return image;
+            },
+            "Function to read image from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_image",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_image",
+            [](const std::string &filename, const geometry::Image &image,
+               int quality) {
+                py::gil_scoped_release release;
+                return WriteImage(filename, image, quality);
+            },
+            "Function to write Image to file", "filename"_a, "image"_a,
+            "quality"_a = kOpen3DImageIODefaultQuality);
+    docstring::FunctionDocInject(m_io, "write_image",
                                  map_shared_argument_docstrings);
 }
 

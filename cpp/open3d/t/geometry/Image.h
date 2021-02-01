@@ -91,6 +91,13 @@ public:
         return GetRows() * GetCols() * GetChannels() == 0;
     }
 
+    /// Reinitialize image with new parameters.
+    Image &Reset(int64_t rows = 0,
+                 int64_t cols = 0,
+                 int64_t channels = 1,
+                 core::Dtype dtype = core::Dtype::Float32,
+                 const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Get the number of rows of the image.
     int64_t GetRows() const { return data_.GetShape()[0]; }

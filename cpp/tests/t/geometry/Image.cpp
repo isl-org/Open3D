@@ -192,8 +192,6 @@ TEST_P(ImagePermuteDevices,
                 ElementsAreArray(input_data));
 }
 
-<<<<<<< HEAD
-=======
 TEST_P(ImagePermuteDevices, BilateralFilter) {
     core::Device device = GetParam();
 
@@ -267,7 +265,6 @@ TEST_P(ImagePermuteDevices, SobelFilter) {
     depth_filtered.second.AsTensor().Save("depth_dy.npy");
 }
 
->>>>>>> c8fb3a5942f8c33de11fa4a323707d5ce79e980c
 TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 
