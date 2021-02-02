@@ -929,22 +929,23 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     io.DeltaTime = float(dt_sec);
 
     // Set mouse information
-    io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-    if (IsActiveWindow()) {
-        double mx, my;
-        glfwGetCursorPos(impl_->window_, &mx, &my);
-        auto scaling = GetScaling();
-        io.MousePos = ImVec2(float(mx) * scaling, float(my) * scaling);
-    }
-    io.MouseDown[0] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_LEFT) ==
-             GLFW_PRESS);
-    io.MouseDown[1] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_RIGHT) ==
-             GLFW_PRESS);
-    io.MouseDown[2] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_MIDDLE) ==
-             GLFW_PRESS);
+    // TODO: re-enable this based on condition.
+    // io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    // if (IsActiveWindow()) {
+    //     double mx, my;
+    //     glfwGetCursorPos(impl_->window_, &mx, &my);
+    //     auto scaling = GetScaling();
+    //     io.MousePos = ImVec2(float(mx) * scaling, float(my) * scaling);
+    // }
+    // io.MouseDown[0] =
+    //         (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_LEFT) ==
+    //          GLFW_PRESS);
+    // io.MouseDown[1] =
+    //         (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_RIGHT) ==
+    //          GLFW_PRESS);
+    // io.MouseDown[2] =
+    //         (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_MIDDLE) ==
+    //          GLFW_PRESS);
     utility::LogInfo("io.MouseDown[0, 1, 2]: {}, {}, {}", io.MouseDown[0],
                      io.MouseDown[1], io.MouseDown[2]);
 
@@ -1222,6 +1223,16 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             break;
         }
     }
+
+    // TODO: standardize this.
+    ImGuiIO& io = ImGui::GetIO();
+    io.MousePos = ImVec2(e.x, e.y);
+    io.MouseDown[0] = e.type == MouseEvent::Type::BUTTON_DOWN &&
+                      e.button.button == MouseButton::LEFT;
+    io.MouseDown[1] = e.type == MouseEvent::Type::BUTTON_DOWN &&
+                      e.button.button == MouseButton::RIGHT;
+    io.MouseDown[2] = e.type == MouseEvent::Type::BUTTON_DOWN &&
+                      e.button.button == MouseButton::MIDDLE;
 
     if (impl_->mouse_grabber_widget_) {
         impl_->mouse_grabber_widget_->Mouse(e);
