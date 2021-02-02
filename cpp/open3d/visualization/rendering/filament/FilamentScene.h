@@ -213,8 +213,8 @@ public:
     void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) override;
-    void EnableGroundPlane(bool enable);
-    void SetGroundPlaneColor(const Eigen::Vector4f& color);
+    void EnableGroundPlane(bool enable) override;
+    void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
