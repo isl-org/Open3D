@@ -353,7 +353,9 @@ void Application::Initialize(int argc, const char *argv[]) {
     Initialize(FindResourcePath(argc, argv).c_str());
 }
 
-void Application::Initialize(const char *resource_path) {
+void Application::Initialize(const char *resource_path_) {
+    // TODO: remove hard-coded path.
+    std::string resource_path = "/home/yixing/repo/Open3D/build/bin/resources";
     // Prepare for running so that we can create windows. Note that although
     // Application may be initialized, GLFW/Filament may not be, if we finished
     // Run() and are calling again.

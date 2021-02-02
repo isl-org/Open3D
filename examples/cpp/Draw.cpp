@@ -30,7 +30,8 @@
 
 using namespace open3d;
 
-const std::string TEST_DIR = "../../../examples/test_data";
+// TODO: remove hard-coded path.
+const std::string TEST_DIR = "/home/yixing/repo/Open3D/examples/test_data";
 
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
