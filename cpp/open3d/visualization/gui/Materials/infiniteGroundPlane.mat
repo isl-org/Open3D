@@ -9,9 +9,6 @@ material {
     parameters : [
         { type : float3,    name : baseColor }
     ],
-    requires: [
-        uv0
-    ],
     variables : [
         near_world
     ]
@@ -45,7 +42,9 @@ fragment {
 
         // compute final color
         float alpha = 1.0 - min(line, 1.0);
+        // The choice of 0.02 below was empirical. It looked good. May need to revisit.
+        float distance_fade = 1.0 - smoothstep(0.0, 0.02, t);
         float3 premult_rgb = materialParams.baseColor.rgb * alpha;
-        material.baseColor = float4(premult_rgb, alpha) * float(t>0.0);
+        material.baseColor = float4(premult_rgb, alpha) * float(t>0.0) * distance_fade;
     }
 }
