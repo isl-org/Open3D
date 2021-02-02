@@ -46,6 +46,6 @@ fragment {
         // compute final color
         float alpha = 1.0 - min(line, 1.0);
         float3 premult_rgb = materialParams.baseColor.rgb * alpha;
-        material.baseColor = float4(premult_rgb, alpha) * float(t>0);
+        material.baseColor = float4(premult_rgb, alpha) * float(t>0.0);
     }
 }
