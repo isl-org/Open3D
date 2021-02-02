@@ -151,31 +151,28 @@ TEST_P(LinalgPermuteDevices, Thiu) {
 
     // Get upper triangle matrix from main diagonal (= 0).
     core::Tensor Uf0 = A_4x5f.Thiu();
-    EXPECT_TRUE(Uf0.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 3, 4, 5},
-                                       {0, 7, 8, 9, 10},
-                                       {0, 0, 13, 14, 15},
-                                       {0, 0, 0, 19, 20}},
-                                       device)));
+    EXPECT_TRUE(Uf0.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                        {0, 7, 8, 9, 10},
+                                                        {0, 0, 13, 14, 15},
+                                                        {0, 0, 0, 19, 20}},
+                                                       device)));
 
     // Get upper triangle matrix from diagonal (= 1).
     core::Tensor Uf1 = A_4x5f.Thiu(1);
-    EXPECT_TRUE(Uf1.AllClose(core::Tensor::Init<float>(
-                                       {{0, 2, 3, 4, 5},
-                                       {0, 0, 8, 9, 10},
-                                       {0, 0, 0, 14, 15},
-                                       {0, 0, 0, 0, 20}},
-                                       device)));
+    EXPECT_TRUE(Uf1.AllClose(core::Tensor::Init<float>({{0, 2, 3, 4, 5},
+                                                        {0, 0, 8, 9, 10},
+                                                        {0, 0, 0, 14, 15},
+                                                        {0, 0, 0, 0, 20}},
+                                                       device)));
 
     // Get upper triangle matrix from diagonal (= -1).
     core::Tensor Uf1_ = A_4x5f.Thiu(-1);
-    EXPECT_TRUE(Uf1_.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 3, 4, 5},
-                                       {6, 7, 8, 9, 10},
-                                       {0, 12, 13, 14, 15},
-                                       {0, 0, 18, 19, 20}},
-                                       device)));
-    
+    EXPECT_TRUE(Uf1_.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                         {6, 7, 8, 9, 10},
+                                                         {0, 12, 13, 14, 15},
+                                                         {0, 0, 18, 19, 20}},
+                                                        device)));
+
     // Boundary test.
     EXPECT_ANY_THROW(A_4x5f.Thiu(-4));
     EXPECT_ANY_THROW(A_4x5f.Thiu(5));
@@ -199,38 +196,34 @@ TEST_P(LinalgPermuteDevices, Thil) {
 
     // Get lower triangle matrix from main diagonal (= 0).
     core::Tensor Lf0 = A_4x5f.Thil();
-    EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>(
-                                       {{1, 0, 0, 0, 0},
-                                       {6, 7, 0, 0, 0},
-                                       {11, 12, 13, 0, 0},
-                                       {16, 17, 18, 19, 0}},
-                                       device)));
+    EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>({{1, 0, 0, 0, 0},
+                                                        {6, 7, 0, 0, 0},
+                                                        {11, 12, 13, 0, 0},
+                                                        {16, 17, 18, 19, 0}},
+                                                       device)));
 
     // Get lower triangle matrix from diagonal (= 1).
     core::Tensor Lf1 = A_4x5f.Thil(1);
-    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 0, 0, 0},
-                                       {6, 7, 8, 0, 0},
-                                       {11, 12, 13, 14, 0},
-                                       {16, 17, 18, 19, 20}},
-                                       device)));
+    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>({{1, 2, 0, 0, 0},
+                                                        {6, 7, 8, 0, 0},
+                                                        {11, 12, 13, 14, 0},
+                                                        {16, 17, 18, 19, 20}},
+                                                       device)));
 
     // Get lower triangle matrix from diagonal (= -1).
     core::Tensor Lf1_ = A_4x5f.Thil(-1);
-    EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>(
-                                       {{0, 0, 0, 0, 0},
-                                       {6, 0, 0, 0, 0},
-                                       {11, 12, 0, 0, 0},
-                                       {16, 17, 18, 0, 0}},
-                                       device)));
+    EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>({{0, 0, 0, 0, 0},
+                                                         {6, 0, 0, 0, 0},
+                                                         {11, 12, 0, 0, 0},
+                                                         {16, 17, 18, 0, 0}},
+                                                        device)));
 
     core::Tensor Lf4 = A_4x5f.Thil(4);
-    EXPECT_TRUE(Lf4.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 3, 4, 5},
-                                       {6, 7, 8, 9, 10},
-                                       {11, 12, 13, 14, 15},
-                                       {16, 17, 18, 19, 20}},
-                                       device)));
+    EXPECT_TRUE(Lf4.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                        {6, 7, 8, 9, 10},
+                                                        {11, 12, 13, 14, 15},
+                                                        {16, 17, 18, 19, 20}},
+                                                       device)));
 
     // Boundary test.
     EXPECT_ANY_THROW(A_4x5f.Thil(-5));
@@ -256,48 +249,42 @@ TEST_P(LinalgPermuteDevices, Thiul) {
     // Get lower triangle matrix from main diagonal (= 0).
     core::Tensor Uf0, Lf0;
     std::tie(Uf0, Lf0) = A_4x5f.Thiul();
-    EXPECT_TRUE(Uf0.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 3, 4, 5},
-                                       {0, 7, 8, 9, 10},
-                                       {0, 0, 13, 14, 15},
-                                       {0, 0, 0, 19, 20}},
-                                       device)));
-    EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>(
-                                       {{1, 0, 0, 0, 0},
-                                       {6, 7, 0, 0, 0},
-                                       {11, 12, 13, 0, 0},
-                                       {16, 17, 18, 19, 0}},
-                                       device)));
+    EXPECT_TRUE(Uf0.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                        {0, 7, 8, 9, 10},
+                                                        {0, 0, 13, 14, 15},
+                                                        {0, 0, 0, 19, 20}},
+                                                       device)));
+    EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>({{1, 0, 0, 0, 0},
+                                                        {6, 7, 0, 0, 0},
+                                                        {11, 12, 13, 0, 0},
+                                                        {16, 17, 18, 19, 0}},
+                                                       device)));
 
     core::Tensor Uf1, Lf1;
     std::tie(Uf1, Lf1) = A_4x5f.Thiul(1);
-    EXPECT_TRUE(Uf1.AllClose(core::Tensor::Init<float>(
-                                       {{0, 2, 3, 4, 5},
-                                       {0, 0, 8, 9, 10},
-                                       {0, 0, 0, 14, 15},
-                                       {0, 0, 0, 0, 20}},
-                                       device)));
-    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 0, 0, 0},
-                                       {6, 7, 8, 0, 0},
-                                       {11, 12, 13, 14, 0},
-                                       {16, 17, 18, 19, 20}},
-                                       device)));
+    EXPECT_TRUE(Uf1.AllClose(core::Tensor::Init<float>({{0, 2, 3, 4, 5},
+                                                        {0, 0, 8, 9, 10},
+                                                        {0, 0, 0, 14, 15},
+                                                        {0, 0, 0, 0, 20}},
+                                                       device)));
+    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>({{1, 2, 0, 0, 0},
+                                                        {6, 7, 8, 0, 0},
+                                                        {11, 12, 13, 14, 0},
+                                                        {16, 17, 18, 19, 20}},
+                                                       device)));
 
     core::Tensor Uf1_, Lf1_;
     std::tie(Uf1_, Lf1_) = A_4x5f.Thiul(-1);
-    EXPECT_TRUE(Uf1_.AllClose(core::Tensor::Init<float>(
-                                       {{1, 2, 3, 4, 5},
-                                       {6, 7, 8, 9, 10},
-                                       {0, 12, 13, 14, 15},
-                                       {0, 0, 18, 19, 20}},
-                                       device)));
-    EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>(
-                                       {{0, 0, 0, 0, 0},
-                                       {6, 0, 0, 0, 0},
-                                       {11, 12, 0, 0, 0},
-                                       {16, 17, 18, 0, 0}},
-                                       device)));
+    EXPECT_TRUE(Uf1_.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                         {6, 7, 8, 9, 10},
+                                                         {0, 12, 13, 14, 15},
+                                                         {0, 0, 18, 19, 20}},
+                                                        device)));
+    EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>({{0, 0, 0, 0, 0},
+                                                         {6, 0, 0, 0, 0},
+                                                         {11, 12, 0, 0, 0},
+                                                         {16, 17, 18, 0, 0}},
+                                                        device)));
 
     // Boundary test.
     EXPECT_ANY_THROW(A_4x5f.Thiul(-4));
