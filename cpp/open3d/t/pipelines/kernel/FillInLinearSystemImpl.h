@@ -287,8 +287,8 @@ void FillInSLACAlignmentTermCPU
 #else
 #pragma omp critical
         {
-            for (int ki = 0; ki < 12; ++ki) {
-                for (int kj = 0; kj < 12; ++kj) {
+            for (int ki = 0; ki < 60; ++ki) {
+                for (int kj = 0; kj < 60; ++kj) {
                     AtA_ptr[idx[ki] * n_vars + idx[kj]]
                       += J[ki] * J[kj];
                  }
@@ -381,6 +381,7 @@ void FillInSLACRegularizerTermCPU
          const core::Tensor &grid_nbs_mask,
          const core::Tensor &positions_init,
          const core::Tensor &positions_curr,
+         float weight,
          int n_frags) {
 
     int64_t n = grid_idx.GetLength();
@@ -414,7 +415,7 @@ void FillInSLACRegularizerTermCPU
         const bool *mask_nbs = grid_nbs_mask_ptr + 6 * workload_idx;
 
         // Build a 3x3 linear system to compute the local R
-        float cov[3][3];
+        float cov[3][3] = {0};
         float U[3][3], V[3][3], S[3][3];
         for (int k = 0; k < 6; ++k) {
             bool mask_k = mask_nbs[k];
@@ -435,6 +436,9 @@ void FillInSLACRegularizerTermCPU
                                              positions_curr_ptr[idx_k * 3 + 1],
                                      positions_curr_ptr[idx_i * 3 + 2] -
                                              positions_curr_ptr[idx_k * 3 + 2]};
+            // printf("Diff init: %f %f %f -> Diff curr: %f %f %f\n",
+            //        diff_ik_init[0], diff_ik_init[1], diff_ik_init[2],
+            //        diff_ik_curr[0], diff_ik_curr[1], diff_ik_curr[2]);
 
             // Build linear system by computing XY^T when formulating Y = RX
             // Y: curr
@@ -445,19 +449,23 @@ void FillInSLACRegularizerTermCPU
                 }
             }
         }
+        // printf("Cov: \n");
+        // printf("%f %f %f\n", cov[0][0], cov[0][1], cov[0][2]);
+        // printf("%f %f %f\n", cov[1][0], cov[1][1], cov[1][2]);
+        // printf("%f %f %f\n", cov[2][0], cov[2][1], cov[2][2]);
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
         // clang-format off
         svdcuda(cov[0][0], cov[0][1], cov[0][2],
-            cov[1][0], cov[1][1], cov[1][2],
-            cov[2][0], cov[2][1], cov[2][2],
-            U[0][0], U[0][1], U[0][2],
-            U[1][0], U[1][1], U[1][2],
-            U[2][0], U[2][1], U[2][2],
-            S[0][0], S[1][1], S[2][2],
-            V[0][0], V[0][1], V[0][2],
-            V[1][0], V[1][1], V[1][2],
-            V[2][0], V[2][1], V[2][2]);
+                cov[1][0], cov[1][1], cov[1][2],
+                cov[2][0], cov[2][1], cov[2][2],
+                U[0][0], U[0][1], U[0][2],
+                U[1][0], U[1][1], U[1][2],
+                U[2][0], U[2][1], U[2][2],
+                S[0][0], S[1][1], S[2][2],
+                V[0][0], V[0][1], V[0][2],
+                V[1][0], V[1][1], V[1][2],
+                V[2][0], V[2][1], V[2][2]);
         // clang-format on
 #else
         // clang-format off
@@ -493,6 +501,7 @@ void FillInSLACRegularizerTermCPU
         float d = det3x3(R[0][0], R[0][1], R[0][2],
                          R[1][0], R[1][1], R[1][2],
                          R[2][0], R[2][1], R[2][2]);
+        // printf("%f\n", d);
         // clang-format on
 
         if (d < 0) {
@@ -560,52 +569,54 @@ void FillInSLACRegularizerTermCPU
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
                 // Update residual
-                atomicAdd(residual_ptr, local_r[0] * local_r[0] +
-                                                local_r[1] * local_r[1] +
-                                                local_r[2] * local_r[2]);
+                atomicAdd(residual_ptr, weight * (local_r[0] * local_r[0] +
+                                                  local_r[1] * local_r[1] +
+                                                  local_r[2] * local_r[2]));
 
                 for (int axis = 0; axis < 3; ++axis) {
                     // Update AtA: 2x2
                     atomicAdd(&AtA_ptr[(offset_idx_i + axis) * n_vars +
                                        offset_idx_i + axis],
-                              1);
+                              weight);
                     atomicAdd(&AtA_ptr[(offset_idx_k + axis) * n_vars +
                                        offset_idx_k + axis],
-                              1);
+                              weight);
                     atomicAdd(&AtA_ptr[(offset_idx_i + axis) * n_vars +
                                        offset_idx_k + axis],
-                              -1);
+                              -weight);
                     atomicAdd(&AtA_ptr[(offset_idx_k + axis) * n_vars +
                                        offset_idx_i + axis],
-                              -1);
+                              -weight);
 
                     // Update Atb: 2x1
-                    atomicAdd(&Atb_ptr[offset_idx_i + axis], +local_r[axis]);
-                    atomicAdd(&Atb_ptr[offset_idx_k + axis], -local_r[axis]);
+                    atomicAdd(&Atb_ptr[offset_idx_i + axis],
+                              +weight * local_r[axis]);
+                    atomicAdd(&Atb_ptr[offset_idx_k + axis],
+                              -weight * local_r[axis]);
                 }
 #else
 #pragma omp critical
                 {
                     // Update residual
-                    *residual_ptr += local_r[0] * local_r[0] +
-                                     local_r[1] * local_r[1] +
-                                     local_r[2] * local_r[2];
+                  *residual_ptr += weight * (local_r[0] * local_r[0] +
+                                             local_r[1] * local_r[1] +
+                                             local_r[2] * local_r[2]);
 
                     for (int axis = 0; axis < 3; ++axis) {
                         // Update AtA: 2x2
                         AtA_ptr[(offset_idx_i + axis) * n_vars + offset_idx_i +
-                                axis] += 1;
+                                axis] += weight;
                         AtA_ptr[(offset_idx_k + axis) * n_vars + offset_idx_k +
-                                axis] += 1;
+                                axis] += weight;
 
                         AtA_ptr[(offset_idx_i + axis) * n_vars + offset_idx_k +
-                                axis] -= 1;
+                                axis] -= weight;
                         AtA_ptr[(offset_idx_k + axis) * n_vars + offset_idx_i +
-                                axis] -= 1;
+                                axis] -= weight;
 
                         // Update Atb: 2x1
-                        Atb_ptr[offset_idx_i + axis] += local_r[axis];
-                        Atb_ptr[offset_idx_k + axis] -= local_r[axis];
+                        Atb_ptr[offset_idx_i + axis] += weight * local_r[axis];
+                        Atb_ptr[offset_idx_k + axis] -= weight * local_r[axis];
                     }
                 }
 #endif

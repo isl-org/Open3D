@@ -152,6 +152,7 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
                                const core::Tensor &grid_nbs_mask,
                                const core::Tensor &positions_init,
                                const core::Tensor &positions_curr,
+                               float weight,
                                int n) {
     AtA.AssertDtype(core::Dtype::Float32);
     Atb.AssertDtype(core::Dtype::Float32);
@@ -166,13 +167,13 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
     if (device_type == core::Device::DeviceType::CPU) {
         FillInSLACRegularizerTermCPU(AtA, Atb, residual, grid_idx, grid_nbs_idx,
                                      grid_nbs_mask, positions_init,
-                                     positions_curr, n);
+                                     positions_curr, weight, n);
 
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        FillInSLACRegularizerTermCUDA(AtA, Atb, residual, grid_idx,
-                                      grid_nbs_idx, grid_nbs_mask,
-                                      positions_init, positions_curr, n);
+        FillInSLACRegularizerTermCUDA(
+                AtA, Atb, residual, grid_idx, grid_nbs_idx, grid_nbs_mask,
+                positions_init, positions_curr, weight, n);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

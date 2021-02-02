@@ -41,6 +41,7 @@ using PoseGraph = open3d::pipelines::registration::PoseGraph;
 struct SLACOptimizerOption {
     int max_iterations_ = 10;
     float voxel_size_ = 0.05;
+    float regularizor_coeff_ = 10000.0;
     bool correspondence_debug_ = false;
     bool grid_debug_ = false;
     std::string device_ = "CPU:0";

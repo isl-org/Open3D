@@ -369,9 +369,9 @@ void FillInSLACRegularizerTerm(core::Tensor& AtA,
 
     core::Tensor positions_init = ctr_grid.GetInitPositions();
     core::Tensor positions_curr = ctr_grid.GetCurrPositions();
-    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
-                                      nb_addrs, nb_masks, positions_init,
-                                      positions_curr, n_frags);
+    kernel::FillInSLACRegularizerTerm(
+            AtA, Atb, residual, active_addrs, nb_addrs, nb_masks,
+            positions_init, positions_curr, option.regularizor_coeff_, n_frags);
     AtA.Save(fmt::format("{}/hessian_regularized.npy",
                          option.GetSubfolderName()));
 }
@@ -541,10 +541,11 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                 1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
 
         utility::LogInfo("Iteration {}", itr);
-        FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, fnames_down,
-                                pose_graph_update, option);
         FillInSLACRegularizerTerm(AtA, Atb, residual, ctr_grid,
                                   pose_graph_update.nodes_.size(), option);
+        //         utility::LogError("Debugging");
+        FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, fnames_down,
+                                pose_graph_update, option);
         utility::LogInfo("Residual = {}", residual[0].Item<float>());
 
         core::Tensor delta = Solve(AtA, Atb, option);
