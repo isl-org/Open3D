@@ -64,6 +64,7 @@ public:
     void ShowAxes(bool enable);
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
+    void ShowGroundPlane(bool enable);
 
     enum class LightingProfile {
         HARD_SHADOWS,
