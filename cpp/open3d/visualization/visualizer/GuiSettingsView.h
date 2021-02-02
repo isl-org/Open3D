@@ -64,6 +64,7 @@ private:
 
     std::shared_ptr<gui::Combobox> lighting_profile_;
     std::shared_ptr<gui::Checkbox> show_axes_;
+    std::shared_ptr<gui::Checkbox> show_ground_;
     std::shared_ptr<gui::ColorEdit> bg_color_;
     std::shared_ptr<gui::Checkbox> show_skybox_;
 

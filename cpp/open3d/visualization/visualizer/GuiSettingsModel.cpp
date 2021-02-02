@@ -215,6 +215,12 @@ void GuiSettingsModel::SetShowAxes(bool show) {
     NotifyChanged();
 }
 
+bool GuiSettingsModel::GetShowGround() const { return show_ground_; }
+void GuiSettingsModel::SetShowGround(bool show) {
+    show_ground_ = show;
+    NotifyChanged();
+}
+
 const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const {
     return bg_color_;
 }
