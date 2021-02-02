@@ -1579,7 +1579,7 @@ void FilamentScene::CreateGroundPlaneGeometry() {
     m.base_color = kDefaultGroundPlaneColor;
     AddGeometry(kGroundPlaneName, quad, m);
     GeometryShadows(kGroundPlaneName, false, false);
-    SetGeometryPriority(kGroundPlaneName, 0);
+    SetGeometryPriority(kGroundPlaneName, 1);
     SetGeometryCulling(kGroundPlaneName, false);
 }
 
