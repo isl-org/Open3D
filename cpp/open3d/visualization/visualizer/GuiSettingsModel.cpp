@@ -216,7 +216,10 @@ void GuiSettingsModel::SetShowAxes(bool show) {
 }
 
 bool GuiSettingsModel::GetShowGround() const { return show_ground_; }
-void GuiSettingsModel::SetShowGround(bool show) { show_ground_ = show; }
+void GuiSettingsModel::SetShowGround(bool show) {
+    show_ground_ = show;
+    NotifyChanged();
+}
 
 bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
 void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
