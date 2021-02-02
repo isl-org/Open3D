@@ -945,6 +945,8 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     io.MouseDown[2] =
             (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_MIDDLE) ==
              GLFW_PRESS);
+    utility::LogInfo("io.MouseDown[0, 1, 2]: {}, {}, {}", io.MouseDown[0],
+                     io.MouseDown[1], io.MouseDown[2]);
 
     // Set key information
     io.KeyShift = (impl_->mouse_mods_ & int(KeyModifier::SHIFT));
