@@ -309,6 +309,7 @@ private:
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi);
     void UpdateLineShader(GeometryMaterialInstance& geom_mi);
     void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>

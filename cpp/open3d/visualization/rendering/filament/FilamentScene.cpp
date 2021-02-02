@@ -93,7 +93,7 @@ void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
 
 const std::string kBackgroundName = "__background";
 const std::string kGroundPlaneName = "__ground_plane";
-const Eigen::Vector4f kDefaultGroundPlaneColor(0.2f, 0.2f, 0.2f, 1.f);
+const Eigen::Vector4f kDefaultGroundPlaneColor(0.5f, 0.5f, 0.5f, 1.f);
 
 namespace defaults_mapping {
 
@@ -846,6 +846,12 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .Finish();
+}
+
 void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
@@ -1012,6 +1018,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateSolidColorShader(geom.mat);
     } else if (props.shader == "unlitBackground") {
         UpdateBackgroundShader(geom.mat);
+    } else if (props.shader == "infiniteGroundPlane") {
+        UpdateGroundPlaneShader(geom.mat);
     } else if (props.shader == "unlitLine") {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
@@ -1062,6 +1070,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateSolidColorShader(geom->mat);
         } else if (material.shader == "unlitBackground") {
             UpdateBackgroundShader(geom->mat);
+        } else if (material.shader == "infiniteGroundPlane") {
+            UpdateGroundPlaneShader(geom->mat);
         } else if (material.shader == "unlitLine") {
             UpdateLineShader(geom->mat);
         } else if (material.shader == "unlitPolygonOffset") {
