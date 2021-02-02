@@ -92,6 +92,8 @@ void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
 }
 
 const std::string kBackgroundName = "__background";
+const std::string kGroundPlaneName = "__ground_plane";
+const Eigen::Vector4f kDefaultGroundPlaneColor(0.2f, 0.2f, 0.2f, 1.f);
 
 namespace defaults_mapping {
 
@@ -1528,6 +1530,41 @@ void FilamentScene::SetBackground(
         m.aspect_ratio = 0.0;
     }
     OverrideMaterial(kBackgroundName, m);
+}
+
+void FilamentScene::CreateGroundPlaneGeometry() {
+    geometry::TriangleMesh quad;
+    // Please see note above about drawing a full screen quad with
+    // Filament. However, the ground plane shader expects the full screen quad
+    // to be rendered at the far plan hence the z must be set to 1.0
+    quad.vertices_ = {{-1.0, -1.0, 1.0},
+                      {1.0, -1.0, 1.0},
+                      {1.0, 1.0, 1.0},
+                      {-1.0, 1.0, 1.0}};
+    quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
+    rendering::Material m;
+    m.shader = "infiniteGroundPlane";
+    m.base_color = kDefaultGroundPlaneColor;
+    AddGeometry(kGroundPlaneName, quad, m);
+    GeometryShadows(kGroundPlaneName, false, false);
+    SetGeometryPriority(kGroundPlaneName, 0);
+    SetGeometryCulling(kGroundPlaneName, false);
+}
+
+void FilamentScene::EnableGroundPlane(bool enable) {
+    if (!HasGeometry(kGroundPlaneName)) {
+        CreateGroundPlaneGeometry();
+    }
+    ShowGeometry(kGroundPlaneName, enable);
+}
+
+
+void FilamentScene::SetGroundPlaneColor(const Eigen::Vector4f& color) {
+    if (!HasGeometry(kGroundPlaneName)) {
+        CreateGroundPlaneGeometry();
+    }
+
+    // NOTE: Not implemented yet. Not sure if we want/need this.
 }
 
 struct RenderRequest {
