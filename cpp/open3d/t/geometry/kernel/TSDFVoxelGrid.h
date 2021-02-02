@@ -63,7 +63,8 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
                           core::Tensor& normals,
                           core::Tensor& colors,
                           int64_t block_resolution,
-                          float voxel_size);
+                          float voxel_size,
+                          float weight_threshold);
 
 void ExtractSurfaceMesh(const core::Tensor& block_indices,
                         const core::Tensor& inv_block_indices,
@@ -76,7 +77,8 @@ void ExtractSurfaceMesh(const core::Tensor& block_indices,
                         core::Tensor& vertex_normals,
                         core::Tensor& vertex_colors,
                         int64_t block_resolution,
-                        float voxel_size);
+                        float voxel_size,
+                        float weight_threshold);
 
 void TouchCPU(const core::Tensor& points,
               core::Tensor& voxel_block_coords,
@@ -106,7 +108,8 @@ void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              core::Tensor& normals,
                              core::Tensor& colors,
                              int64_t block_resolution,
-                             float voxel_size);
+                             float voxel_size,
+                             float weight_threshold);
 
 void ExtractSurfaceMeshCPU(const core::Tensor& block_indices,
                            const core::Tensor& inv_block_indices,
@@ -119,7 +122,8 @@ void ExtractSurfaceMeshCPU(const core::Tensor& block_indices,
                            core::Tensor& vertex_normals,
                            core::Tensor& vertex_colors,
                            int64_t block_resolution,
-                           float voxel_size);
+                           float voxel_size,
+                           float weight_threshold);
 
 #ifdef BUILD_CUDA_MODULE
 void TouchCUDA(const core::Tensor& points,
@@ -150,7 +154,8 @@ void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
                               core::Tensor& normals,
                               core::Tensor& colors,
                               int64_t block_resolution,
-                              float voxel_size);
+                              float voxel_size,
+                              float weight_threshold);
 
 void ExtractSurfaceMeshCUDA(const core::Tensor& block_indices,
                             const core::Tensor& inv_block_indices,
@@ -163,7 +168,8 @@ void ExtractSurfaceMeshCUDA(const core::Tensor& block_indices,
                             core::Tensor& vertex_normals,
                             core::Tensor& vertex_colors,
                             int64_t block_resolution,
-                            float voxel_size);
+                            float voxel_size,
+                            float weight_threshold);
 
 #endif
 }  // namespace tsdf

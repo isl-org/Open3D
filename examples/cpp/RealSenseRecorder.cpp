@@ -73,10 +73,6 @@ int main(int argc, char **argv) {
         config_file = utility::GetProgramOptionAsString(argc, argv, "-c");
     } else if (utility::ProgramOptionExists(argc, argv, "--config")) {
         config_file = utility::GetProgramOptionAsString(argc, argv, "--config");
-    } else {
-        utility::LogError("config json file required.");
-        PrintUsage();
-        return 1;
     }
     if (utility::ProgramOptionExists(argc, argv, "--align")) {
         align_streams = true;
@@ -87,7 +83,9 @@ int main(int argc, char **argv) {
 
     // Read in camera configuration.
     tio::RealSenseSensorConfig rs_cfg;
-    open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
+    if (!config_file.empty()) {
+        open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
+    }
 
     // Initialize camera.
     tio::RealSenseSensor rs;

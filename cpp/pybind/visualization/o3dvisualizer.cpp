@@ -186,6 +186,10 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
+            .def("setup_camera", &O3DVisualizer::SetupCamera,
+                 "setup_camera(field_of_view, center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("reset_camera_to_default",
                  &O3DVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
@@ -228,6 +232,13 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
+            .def_property(
+                    "mouse_mode",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().mouse_mode;
+                    },
+                    &O3DVisualizer::SetMouseMode,
+                    "Gets/sets the control mode being used for the mouse")
             .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {

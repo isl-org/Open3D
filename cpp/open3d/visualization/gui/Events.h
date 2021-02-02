@@ -65,8 +65,8 @@ struct MouseEvent {
             MouseButton button;
         } button;
         struct {
-            int dx;
-            int dy;
+            float dx;  // macOS gives fractional values, and is required
+            float dy;  //   for the buttery-smooth trackpad scrolling on macOS
             bool isTrackpad;
         } wheel;
     };
