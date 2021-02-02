@@ -259,7 +259,8 @@ Camera::Transform FilamentCamera::GetProjectionMatrix() const {
 }
 
 Camera::Transform FilamentCamera::GetCullingProjectionMatrix() const {
-    auto ftransform = camera_->getCullingProjectionMatrix();  // mat4 (not mat4f)
+    auto ftransform =
+            camera_->getCullingProjectionMatrix();  // mat4 (not mat4f)
     return FilamentToCameraTransform(ftransform);
 }
 

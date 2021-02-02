@@ -1568,7 +1568,6 @@ void FilamentScene::EnableGroundPlane(bool enable) {
     ShowGeometry(kGroundPlaneName, enable);
 }
 
-
 void FilamentScene::SetGroundPlaneColor(const Eigen::Vector4f& color) {
     if (!HasGeometry(kGroundPlaneName)) {
         CreateGroundPlaneGeometry();
