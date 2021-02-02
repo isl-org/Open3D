@@ -140,7 +140,7 @@ void Actions() {
 
     visualization::Draw({visualization::DrawObject(SOURCE_NAME, cloud),
                          visualization::DrawObject(TRUTH_NAME, bunny, false)},
-                        "Open3D: Draw Example: Actions", 1024, 768,
+                        "Open3D", 1024, 768,
                         {{"Create Mesh", make_mesh},
                          {"Toggle truth/result", toggle_result}});
 }
@@ -268,7 +268,7 @@ void Selections() {
 
     visualization::Draw({visualization::DrawObject(source_name, source),
                          visualization::DrawObject(target_name, target)},
-                        "Open3D: Draw example: Selection", 1024, 768,
+                        "Open3D", 1024, 768,
                         {{"ICP Registration (one set)", DoICPOneSet},
                          {"ICP Registration (two sets)", DoICPTwoSets}});
 }
@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
     }
 
     // SingleObject();
-    MultiObjects();
-    // Actions();
+    // MultiObjects();
+    Actions();
     // Selections();
 }
