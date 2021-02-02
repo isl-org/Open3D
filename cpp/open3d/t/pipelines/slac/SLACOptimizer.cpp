@@ -371,7 +371,8 @@ void FillInSLACRegularizerTerm(core::Tensor& AtA,
     core::Tensor positions_curr = ctr_grid.GetCurrPositions();
     kernel::FillInSLACRegularizerTerm(
             AtA, Atb, residual, active_addrs, nb_addrs, nb_masks,
-            positions_init, positions_curr, option.regularizor_coeff_, n_frags);
+            positions_init, positions_curr, n_frags * option.regularizor_coeff_,
+            n_frags);
     AtA.Save(fmt::format("{}/hessian_regularized.npy",
                          option.GetSubfolderName()));
 }
@@ -457,6 +458,7 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
                  core::Tensor& delta,
                  const SLACOptimizerOption& option) {
     core::Tensor delta_poses = delta.View({-1, 6}).To(core::Device("CPU:0"));
+    // utility::LogInfo("delta_poses = {}", delta_poses.ToString());
 
     if (delta_poses.GetLength() != int64_t(fragment_pose_graph.nodes_.size())) {
         utility::LogError("Dimension Mismatch");
@@ -493,6 +495,7 @@ void UpdateControlGrid(ControlGrid& ctr_grid,
                        core::Tensor& delta,
                        const SLACOptimizerOption& option) {
     core::Tensor delta_cgrids = delta.View({-1, 3});
+    utility::LogInfo("delta_cgrids = {}", delta_cgrids.ToString());
     if (delta_cgrids.GetLength() != int64_t(ctr_grid.Size())) {
         utility::LogError("Dimension Mismatch");
     }
@@ -543,7 +546,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         utility::LogInfo("Iteration {}", itr);
         FillInSLACRegularizerTerm(AtA, Atb, residual, ctr_grid,
                                   pose_graph_update.nodes_.size(), option);
-        //         utility::LogError("Debugging");
+
         FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, fnames_down,
                                 pose_graph_update, option);
         utility::LogInfo("Residual = {}", residual[0].Item<float>());
@@ -557,6 +560,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
 
         UpdatePoses(pose_graph_update, delta_poses, option);
         UpdateControlGrid(ctr_grid, delta_cgrids, option);
+        // utility::LogError("Debugging");
     }
     return std::make_pair(pose_graph_update, ctr_grid);
 }

@@ -36,12 +36,11 @@ namespace pipelines {
 namespace slac {
 
 using PoseGraph = open3d::pipelines::registration::PoseGraph;
-/// Simultaneous Localization and Calibration: Self-Calibration of Consumer
-/// Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
+
 struct SLACOptimizerOption {
     int max_iterations_ = 10;
     float voxel_size_ = 0.05;
-    float regularizor_coeff_ = 10000.0;
+    float regularizor_coeff_ = 1.0;
     bool correspondence_debug_ = false;
     bool grid_debug_ = false;
     std::string device_ = "CPU:0";
@@ -55,6 +54,8 @@ struct SLACOptimizerOption {
     }
 };
 
+/// Simultaneous Localization and Calibration: Self-Calibration of Consumer
+/// Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
 /// Estimate a shared control grid for all fragments for scene reconstruction,
 /// implemented in https://github.com/qianyizh/ElasticReconstruction.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(

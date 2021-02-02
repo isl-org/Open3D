@@ -229,6 +229,7 @@ void FillInSLACAlignmentTermCPU
         float r = (Ti_Cp[0] - Tj_Cq[0]) * Ri_Cnormal_p[0] +
                   (Ti_Cp[1] - Tj_Cq[1]) * Ri_Cnormal_p[1] +
                   (Ti_Cp[2] - Tj_Cq[2]) * Ri_Cnormal_p[2];
+        // printf("Data [%ld]: %f\n", workload_idx, r);
 
         // Now we fill in a 60 x 60 sub-matrix: 2 x (6 + 8 x 3)
         float J[60];
@@ -315,9 +316,9 @@ inline void matmul3x3_3x1(float m00,
                           float &o0,
                           float &o1,
                           float &o2) {
-    o0 = m00 * v0 + m01 + v1 + m02 * v2;
-    o1 = m10 * v0 + m11 + v1 + m12 * v2;
-    o2 = m20 * v0 + m21 + v1 + m22 * v2;
+    o0 = m00 * v0 + m01 * v1 + m02 * v2;
+    o1 = m10 * v0 + m11 * v1 + m12 * v2;
+    o2 = m20 * v0 + m21 * v1 + m22 * v2;
 }
 
 inline void matmul3x3_3x3(float a00,
@@ -349,10 +350,16 @@ inline void matmul3x3_3x3(float a00,
                           float &c22) {
     matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20,
                   c00, c10, c20);
+    // printf("matmul 0: %f %f %f %f %f %f %f %f %f x %f %f %f => %f %f %f\n",
+    // a00,
+    //        a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20, c00, c10,
+    //        c20);
     matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21,
                   c01, c11, c21);
+    // printf("matmul 1: %f %f %f\n", c01, c11, c21);
     matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b02, b12, b22,
                   c02, c12, c22);
+    // printf("matmul 2: %f %f %f\n", c02, c12, c22);
 }
 
 inline float det3x3(float m00,
@@ -417,6 +424,8 @@ void FillInSLACRegularizerTermCPU
         // Build a 3x3 linear system to compute the local R
         float cov[3][3] = {0};
         float U[3][3], V[3][3], S[3][3];
+
+        int cnt = 0;
         for (int k = 0; k < 6; ++k) {
             bool mask_k = mask_nbs[k];
             if (!mask_k) continue;
@@ -448,11 +457,14 @@ void FillInSLACRegularizerTermCPU
                     cov[i][j] += diff_ik_init[i] * diff_ik_curr[j];
                 }
             }
+            ++cnt;
         }
         // printf("Cov: \n");
         // printf("%f %f %f\n", cov[0][0], cov[0][1], cov[0][2]);
         // printf("%f %f %f\n", cov[1][0], cov[1][1], cov[1][2]);
         // printf("%f %f %f\n", cov[2][0], cov[2][1], cov[2][2]);
+
+        if (cnt < 4) return;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
         // clang-format off
@@ -497,11 +509,17 @@ void FillInSLACRegularizerTermCPU
                       R[0][0], R[0][1], R[0][2],
                       R[1][0], R[1][1], R[1][2],
                       R[2][0], R[2][1], R[2][2]);
+        // printf("V:\n %f %f %f\n %f %f %f\n %f %f %f\n", V[0][0], V[0][1],
+        //        V[0][2], V[1][0], V[1][1], V[1][2], V[2][0], V[2][1], V[2][2]);
+        // printf("U:\n %f %f %f\n %f %f %f\n %f %f %f\n", U[0][0], U[0][1],
+        //        U[0][2], U[1][0], U[1][1], U[1][2], U[2][0], U[2][1], U[2][2]);
+        // printf("R:\n %f %f %f\n %f %f %f\n %f %f %f\n", R[0][0], R[0][1],
+        //        R[0][2], R[1][0], R[1][1], R[1][2], R[2][0], R[2][1], R[2][2]);
 
         float d = det3x3(R[0][0], R[0][1], R[0][2],
                          R[1][0], R[1][1], R[1][2],
                          R[2][0], R[2][1], R[2][2]);
-        // printf("%f\n", d);
+        // printf("det = %f\n", d);
         // clang-format on
 
         if (d < 0) {
@@ -524,7 +542,6 @@ void FillInSLACRegularizerTermCPU
             R[0][0] = R[1][1] = R[2][2] = 1;
             R[0][1] = R[0][2] = R[1][0] = R[1][2] = R[2][0] = R[2][1] = 0;
         }
-
         for (int k = 0; k < 6; ++k) {
             bool mask_k = mask_nbs[k];
 
@@ -559,10 +576,18 @@ void FillInSLACRegularizerTermCPU
                               R_diff_ik_curr[2]);
                 // clang-format on
 
+                // printf("Diff init: %f %f %f -> Diff curr: %f %f %f\n",
+                //        diff_ik_init[0], diff_ik_init[1], diff_ik_init[2],
+                //        diff_ik_curr[0], diff_ik_curr[1], diff_ik_curr[2]);
+                // printf("R_diff_ik_init: %f %f %f\n", R_diff_ik_curr[0],
+                //        R_diff_ik_curr[1], R_diff_ik_curr[2]);
+
                 float local_r[3];
                 local_r[0] = diff_ik_curr[0] - R_diff_ik_curr[0];
                 local_r[1] = diff_ik_curr[1] - R_diff_ik_curr[1];
                 local_r[2] = diff_ik_curr[2] - R_diff_ik_curr[2];
+                // printf("Regularizor [%ld]: %f %f %f\n", workload_idx,
+                //        local_r[0], local_r[1], local_r[2]);
 
                 int offset_idx_i = 3 * idx_i + 6 * n_frags;
                 int offset_idx_k = 3 * idx_k + 6 * n_frags;
