@@ -94,6 +94,9 @@ public:
     void SetupCamera(float verticalFoV,
                      const geometry::AxisAlignedBoundingBox& geometry_bounds,
                      const Eigen::Vector3f& center_of_rotation);
+    void LookAt(const Eigen::Vector3f& center,
+                const Eigen::Vector3f& eye,
+                const Eigen::Vector3f& up);
     void SetOnCameraChanged(
             std::function<void(visualization::rendering::Camera*)>
                     on_cam_changed);
@@ -148,6 +151,8 @@ public:
                          const t::geometry::Geometry* t)
             : name(n), geometry(g), tgeometry(t) {}
     };
+
+    void SetSunInteractorEnabled(bool enable);
 
     void SetPickableGeometry(const std::vector<PickableGeometry>& geometry);
     void SetPickablePointSize(int px);

@@ -373,7 +373,8 @@ void ExtractSurfacePointsCPU
          core::Tensor& normals,
          core::Tensor& colors,
          int64_t resolution,
-         float voxel_size) {
+         float voxel_size,
+         float weight_threshold) {
     // Parameters
     int64_t resolution3 = resolution * resolution * resolution;
 
@@ -439,7 +440,7 @@ void ExtractSurfacePointsCPU
                                                          xv, yv, zv, block_idx);
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
-                    if (weight_o <= kWeightThreshold) return;
+                    if (weight_o <= weight_threshold) return;
 
                     // Enumerate x-y-z directions
                     for (int i = 0; i < 3; ++i) {
@@ -453,7 +454,7 @@ void ExtractSurfacePointsCPU
                         float tsdf_i = ptr->GetTSDF();
                         float weight_i = ptr->GetWeight();
 
-                        if (weight_i > kWeightThreshold &&
+                        if (weight_i > weight_threshold &&
                             tsdf_i * tsdf_o < 0) {
                             OPEN3D_ATOMIC_ADD(count_ptr, 1);
                         }
@@ -544,7 +545,7 @@ void ExtractSurfacePointsCPU
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
 
-                    if (weight_o <= kWeightThreshold) return;
+                    if (weight_o <= weight_threshold) return;
 
                     int64_t x = xb * resolution + xv;
                     int64_t y = yb * resolution + yv;
@@ -567,7 +568,7 @@ void ExtractSurfacePointsCPU
                         float tsdf_i = ptr->GetTSDF();
                         float weight_i = ptr->GetWeight();
 
-                        if (weight_i > kWeightThreshold &&
+                        if (weight_i > weight_threshold &&
                             tsdf_i * tsdf_o < 0) {
                             float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
@@ -646,7 +647,8 @@ void ExtractSurfaceMeshCPU
          core::Tensor& normals,
          core::Tensor& colors,
          int64_t resolution,
-         float voxel_size) {
+         float voxel_size,
+         float weight_threshold) {
 
     int64_t resolution3 = resolution * resolution * resolution;
 
@@ -734,7 +736,7 @@ void ExtractSurfaceMeshCPU
 
                         float tsdf_i = voxel_ptr_i->GetTSDF();
                         float weight_i = voxel_ptr_i->GetWeight();
-                        if (weight_i <= kWeightThreshold) return;
+                        if (weight_i <= weight_threshold) return;
 
                         table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
                     }

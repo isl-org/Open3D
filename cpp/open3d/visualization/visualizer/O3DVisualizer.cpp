@@ -961,9 +961,7 @@ struct O3DVisualizer::Impl {
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
                      const Eigen::Vector3f &up) {
-        auto scene = scene_->GetScene();
-        scene_->SetupCamera(fov, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
-        scene->GetCamera()->LookAt(center, eye, up);
+        scene_->LookAt(center, eye, up);
         scene_->ForceRedraw();
     }
 
@@ -1845,7 +1843,9 @@ void O3DVisualizer::SetAnimating(bool is_animating) {
 void O3DVisualizer::SetupCamera(float fov,
                                 const Eigen::Vector3f &center,
                                 const Eigen::Vector3f &eye,
-                                const Eigen::Vector3f &up) {}
+                                const Eigen::Vector3f &up) {
+    return impl_->SetupCamera(fov, center, eye, up);
+}
 
 void O3DVisualizer::ResetCameraToDefault() {
     return impl_->ResetCameraToDefault();

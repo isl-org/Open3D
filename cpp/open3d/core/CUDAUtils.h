@@ -49,6 +49,8 @@
 #define OPEN3D_GET_LAST_CUDA_ERROR(message) \
     __OPEN3D_GET_LAST_CUDA_ERROR(message, __FILE__, __LINE__)
 
+#define CUDA_CALL(cuda_function, ...) cuda_function(__VA_ARGS__);
+
 #else  // #ifdef BUILD_CUDA_MODULE
 
 #define OPEN3D_HOST_DEVICE
@@ -56,6 +58,8 @@
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
 #define OPEN3D_CUDA_CHECK(err)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message)
+#define CUDA_CALL(cuda_function, ...) \
+    utility::LogError("Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 

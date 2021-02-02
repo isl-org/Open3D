@@ -21,6 +21,7 @@ option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON 
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
+option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
@@ -55,15 +56,24 @@ option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
 
-# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
-# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
-# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
+# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
+# downloading it from the internet. The files inside OPEN3D_THIRD_PARTY_DOWNLOAD_DIR
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
-if(THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+
+set(THIRD_PARTY_FROM "cmake options")
+if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
+        IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
+        NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
+    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+    set(THIRD_PARTY_FROM "the environment")
+endif()
+if(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
+    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is set to "
+    "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
 else()
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
+    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
 endif()
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
@@ -625,6 +635,7 @@ set(deps
     GLFW
     GOOGLETEST
     IMGUI
+    IPPICV
     JPEG
     JSONCPP
     LIBLZF
