@@ -36,6 +36,8 @@ set(LINALG_SRC
     linalg/InverseCPU.cpp
     linalg/SVD.cpp
     linalg/SVDCPU.cpp
+    linalg/TriangularMat.cpp
+    linalg/TriangularMatCPU.cpp
 )
 
 set(LINALG_CUDA_SRC
@@ -46,6 +48,7 @@ set(LINALG_CUDA_SRC
     linalg/SolveCUDA.cpp
     linalg/InverseCUDA.cpp
     linalg/SVDCUDA.cpp
+    linalg/TriangularMatCUDA.cu
 )
 
 set(CORE_SRC

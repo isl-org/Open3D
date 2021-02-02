@@ -1084,6 +1084,12 @@ public:
     /// interchanged with row IPIV(i)).
     std::tuple<Tensor, Tensor> LU() const;
 
+    Tensor Thiu(const int diagonal = 0) const;
+
+    Tensor Thil(const int diagonal = 0) const;
+
+    std::tuple<Tensor, Tensor> Thiul(const int diagonal = 0) const;
+
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
     Tensor Inverse() const;

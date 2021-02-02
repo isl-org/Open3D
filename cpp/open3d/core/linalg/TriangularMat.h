@@ -24,26 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LUImpl.h"
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
+#pragma once
+
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace core {
 
-void LUCPU(void* A_data,
-           void* ipiv_data,
-           int64_t n,
-           Dtype dtype,
-           const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        OPEN3D_LAPACK_CHECK(
-                getrf_cpu<scalar_t>(
-                        LAPACK_ROW_MAJOR, n, n, static_cast<scalar_t*>(A_data),
-                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
-                "getrf failed in LUCPU");
-    });
-}
+void Thiu(const Tensor& A, Tensor& output, const int diagonal = 0);
+
+void Thil(const Tensor& A, Tensor& output, const int diagonal = 0);
+
+void Thiul(const Tensor& A,
+           Tensor& upper,
+           Tensor& lower,
+           const int diagonal = 0);
 
 }  // namespace core
 }  // namespace open3d

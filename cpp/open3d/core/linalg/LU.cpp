@@ -26,7 +26,7 @@
 
 #include "open3d/core/linalg/LU.h"
 
-#include "open3d/core/linalg/LUImp.h"
+#include "open3d/core/linalg/LUImpl.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 
 namespace open3d {

@@ -47,6 +47,7 @@
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
+#include "open3d/core/linalg/TriangularMat.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -1344,6 +1345,24 @@ std::tuple<Tensor, Tensor> Tensor::LU() const {
     Tensor output, ipiv;
     core::LU(*this, output, ipiv);
     return std::make_tuple(output, ipiv);
+}
+
+Tensor Tensor::Thiu(const int diagonal) const {
+    Tensor output;
+    core::Thiu(*this, output, diagonal);
+    return output;
+}
+
+Tensor Tensor::Thil(const int diagonal) const {
+    Tensor output;
+    core::Thil(*this, output, diagonal);
+    return output;
+}
+
+std::tuple<Tensor, Tensor> Tensor::Thiul(const int diagonal) const {
+    Tensor upper, lower;
+    core::Thiul(*this, upper, lower, diagonal);
+    return std::make_tuple(upper, lower);
 }
 
 Tensor Tensor::Inverse() const {
