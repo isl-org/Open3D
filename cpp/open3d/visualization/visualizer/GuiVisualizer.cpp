@@ -887,8 +887,18 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
 #ifdef BUILD_RPC_INTERFACE
-    impl_->receiver_ = std::make_shared<Receiver>(
-            this, impl_->scene_wgt_->GetScene(), address, timeout);
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        // Rather than duplicating the logic to figure out the correct material,
+        // just add with the default material and pretend the user changed the
+        // current material and update everyone's material.
+        impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
+                                                   rendering::Material());
+        impl_->UpdateFromModel(GetRenderer(), true);
+    };
+    impl_->receiver_ =
+            std::make_shared<Receiver>(address, timeout, this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();

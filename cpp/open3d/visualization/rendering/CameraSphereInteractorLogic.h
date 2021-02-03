@@ -1,10 +1,9 @@
-
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,50 +26,28 @@
 
 #pragma once
 
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/visualization/rendering/CameraInteractorLogic.h"
 
 namespace open3d {
-
-namespace geometry {
-class Geometry3D;
-}  // namespace geometry
-
 namespace visualization {
+namespace rendering {
 
-namespace gui {
-class Window;
-}  // namespace gui
+class CameraSphereInteractorLogic : public CameraInteractorLogic {
+    using Super = CameraInteractorLogic;
 
-/// Receiver implementation which interfaces with the Open3DScene and a Window.
-class Receiver : public io::rpc::ReceiverBase {
 public:
-    using OnGeometryFunc = std::function<void(
-            std::shared_ptr<geometry::Geometry3D>,  // geometry
-            const std::string&,                     // path
-            int,                                    // time
-            const std::string&)>;                   // layer
-    Receiver(const std::string& address,
-             int timeout,
-             gui::Window* window,
-             OnGeometryFunc on_geometry)
-        : ReceiverBase(address, timeout),
-          window_(window),
-          on_geometry_(on_geometry) {}
+    CameraSphereInteractorLogic(Camera* c, double min_far_plane);
 
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const io::rpc::messages::Request& req,
-            const io::rpc::messages::SetMeshData& msg,
-            const MsgpackObject& obj) override;
+    void Rotate(int dx, int dy) override;
+
+    void StartMouseDrag() override;
 
 private:
-    gui::Window* window_;
-    OnGeometryFunc on_geometry_;
-
-    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
-                     const std::string& path,
-                     int time,
-                     const std::string& layer);
+    float r_at_mousedown_;
+    float theta_at_mousedown_;
+    float phi_at_mousedown_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

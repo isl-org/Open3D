@@ -1,10 +1,9 @@
-
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,50 +26,25 @@
 
 #pragma once
 
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace t {
+namespace pipelines {
+namespace kernel {
 
-namespace geometry {
-class Geometry3D;
-}  // namespace geometry
+/// \brief Computes pose for point to plane registration method.
+/// \param source_points_indexed source points indexed according to
+/// correspondences. \param target_points_indexed target points indexed
+/// according to correspondences. \param target_normals_indexed target normals
+/// indexed according to correspondences. \return Pose [X Y Z alpha beta
+/// gamma], a shape {6} tensor of dtype float32.
+core::Tensor ComputePosePointToPlane(
+        const core::Tensor &source_points_indexed,
+        const core::Tensor &target_points_indexed,
+        const core::Tensor &target_normals_indexed);
 
-namespace visualization {
-
-namespace gui {
-class Window;
-}  // namespace gui
-
-/// Receiver implementation which interfaces with the Open3DScene and a Window.
-class Receiver : public io::rpc::ReceiverBase {
-public:
-    using OnGeometryFunc = std::function<void(
-            std::shared_ptr<geometry::Geometry3D>,  // geometry
-            const std::string&,                     // path
-            int,                                    // time
-            const std::string&)>;                   // layer
-    Receiver(const std::string& address,
-             int timeout,
-             gui::Window* window,
-             OnGeometryFunc on_geometry)
-        : ReceiverBase(address, timeout),
-          window_(window),
-          on_geometry_(on_geometry) {}
-
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const io::rpc::messages::Request& req,
-            const io::rpc::messages::SetMeshData& msg,
-            const MsgpackObject& obj) override;
-
-private:
-    gui::Window* window_;
-    OnGeometryFunc on_geometry_;
-
-    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
-                     const std::string& path,
-                     int time,
-                     const std::string& layer);
-};
-
-}  // namespace visualization
+}  // namespace kernel
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d
