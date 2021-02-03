@@ -26,6 +26,7 @@
 
 #include <open3d/geometry/Geometry3D.h>
 #include <open3d/t/geometry/Geometry.h>
+#include <open3d/visualization/gui/Dialog.h>
 #include <open3d/visualization/gui/Window.h>
 #include <open3d/visualization/rendering/Open3DScene.h>
 #include <open3d/visualization/visualizer/O3DVisualizer.h>
@@ -119,6 +120,51 @@ void pybind_o3dvisualizer(py::module& m) {
     o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
                "width"_a = 1024, "height"_a = 768,
                "Creates a O3DVisualizer object")
+            // selected functions inherited from Window
+            .def_property("os_frame", &O3DVisualizer::GetOSFrame,
+                          &O3DVisualizer::SetOSFrame,
+                          "Window rect in OS coords, not device pixels")
+            .def_property("title", &O3DVisualizer::GetTitle,
+                          &O3DVisualizer::SetTitle,
+                          "Returns the title of the window")
+            .def("size_to_fit", &O3DVisualizer::SizeToFit,
+                 "Sets the width and height of window to its preferred size")
+            .def_property("size", &O3DVisualizer::GetSize,
+                          &O3DVisualizer::SetSize,
+                          "The size of the window in device pixels, including "
+                          "menubar (except on macOS)")
+            .def_property_readonly(
+                    "content_rect", &O3DVisualizer::GetContentRect,
+                    "Returns the frame in device pixels, relative "
+                    " to the window, which is available for widgets "
+                    "(read-only)")
+            .def_property_readonly(
+                    "scaling", &O3DVisualizer::GetScaling,
+                    "Returns the scaling factor between OS pixels "
+                    "and device pixels (read-only)")
+            .def_property_readonly("is_visible", &O3DVisualizer::IsVisible,
+                                   "True if window is visible (read-only)")
+            .def("show", &O3DVisualizer::Show, "Shows or hides the window")
+            .def("close", &O3DVisualizer::Close,
+                 "Closes the window and destroys it, unless an on_close "
+                 "callback cancels the close.")
+            .def(
+                    "show_dialog",
+                    [](O3DVisualizer& w, UnownedPointer<gui::Dialog> dlg) {
+                        w.ShowDialog(TakeOwnership<gui::Dialog>(dlg));
+                    },
+                    "Displays the dialog")
+            .def("close_dialog", &O3DVisualizer::CloseDialog,
+                 "Closes the current dialog")
+            .def("show_message_box", &O3DVisualizer::ShowMessageBox,
+                 "Displays a simple dialog with a title and message and okay "
+                 "button")
+            .def("set_on_close", &O3DVisualizer::SetOnClose,
+                 "Sets a callback that will be called when the window is "
+                 "closed. The callback is given no arguments and should return "
+                 "True to continue closing the window or False to cancel the "
+                 "close")
+            // from O3DVisualizer
             .def("add_action", &O3DVisualizer::AddAction,
                  "Adds a button to the custom actions section of the UI "
                  "and a corresponding menu item in the \"Actions\" menu. "
@@ -186,6 +232,10 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
+            .def("setup_camera", &O3DVisualizer::SetupCamera,
+                 "setup_camera(field_of_view, center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("reset_camera_to_default",
                  &O3DVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
@@ -228,6 +278,13 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
+            .def_property(
+                    "mouse_mode",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().mouse_mode;
+                    },
+                    &O3DVisualizer::SetMouseMode,
+                    "Gets/sets the control mode being used for the mouse")
             .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {

@@ -33,7 +33,9 @@
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -775,6 +777,9 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(
                             geom);
             auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
+            auto voxel_grid =
+                    std::dynamic_pointer_cast<geometry::VoxelGrid>(geom);
+            auto octree = std::dynamic_pointer_cast<geometry::Octree>(geom);
 
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
@@ -802,6 +807,12 @@ struct O3DVisualizer::Impl {
             } else if (t_mesh) {
                 has_normals = !t_mesh->HasVertexNormals();
                 has_colors = true;  // always want base_color as white
+            } else if (voxel_grid) {
+                has_normals = false;
+                has_colors = voxel_grid->HasColors();
+            } else if (octree) {
+                has_normals = false;
+                has_colors = true;
             }
 
             mat.base_color = CalcDefaultUnlitColor();
@@ -950,9 +961,7 @@ struct O3DVisualizer::Impl {
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
                      const Eigen::Vector3f &up) {
-        auto scene = scene_->GetScene();
-        scene_->SetupCamera(fov, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
-        scene->GetCamera()->LookAt(center, eye, up);
+        scene_->LookAt(center, eye, up);
         scene_->ForceRedraw();
     }
 
@@ -1138,11 +1147,15 @@ struct O3DVisualizer::Impl {
         }
 
         scene_->SetViewControls(mode);
+        ui_state_.mouse_mode = mode;
         settings.view_mouse_mode = mode;
         for (const auto &t_b : settings.mouse_buttons) {
             t_b.second->SetOn(false);
         }
-        settings.mouse_buttons[mode]->SetOn(true);
+        auto it = settings.mouse_buttons.find(mode);
+        if (it != settings.mouse_buttons.end()) {
+            it->second->SetOn(true);
+        }
     }
 
     void SetPicking() {
@@ -1676,8 +1689,17 @@ Open3DScene *O3DVisualizer::GetScene() const {
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
 #ifdef BUILD_RPC_INTERFACE
-    impl_->receiver_ = std::make_shared<Receiver>(
-            this, impl_->scene_->GetScene(), address, timeout);
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        impl_->AddGeometry(path, geom, nullptr, nullptr, layer, time, true);
+        if (impl_->objects_.size() == 1) {
+            impl_->ResetCameraToDefault();
+        }
+    };
+
+    impl_->receiver_ =
+            std::make_shared<Receiver>(address, timeout, this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
@@ -1781,6 +1803,10 @@ void O3DVisualizer::SetLineWidth(int line_width) {
     impl_->SetLineWidth(line_width);
 }
 
+void O3DVisualizer::SetMouseMode(SceneWidget::Controls mode) {
+    impl_->SetMouseMode(mode);
+}
+
 void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {
     impl_->EnableGroup(group, enable);
 }
@@ -1834,7 +1860,9 @@ void O3DVisualizer::SetAnimating(bool is_animating) {
 void O3DVisualizer::SetupCamera(float fov,
                                 const Eigen::Vector3f &center,
                                 const Eigen::Vector3f &eye,
-                                const Eigen::Vector3f &up) {}
+                                const Eigen::Vector3f &up) {
+    return impl_->SetupCamera(fov, center, eye, up);
+}
 
 void O3DVisualizer::ResetCameraToDefault() {
     return impl_->ResetCameraToDefault();

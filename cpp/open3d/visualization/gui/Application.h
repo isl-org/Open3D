@@ -118,7 +118,9 @@ public:
 
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
-    /// Must be called on the same thread that calls Run()
+    /// Must be called on the same thread that calls Run(). This is normally
+    /// called from Window::Close() and should not need to be called in user
+    /// code.
     void RemoveWindow(Window *window);
 
     /// Creates a message box window the next time the event loop processes.

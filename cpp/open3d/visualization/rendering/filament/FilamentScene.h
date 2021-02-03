@@ -195,6 +195,9 @@ public:
                      float intensity) override;
     void EnableSunLight(bool enable) override;
     void EnableSunLightShadows(bool enable) override;
+    void SetSunLightColor(const Eigen::Vector3f& color) override;
+    Eigen::Vector3f GetSunLightColor() override;
+    void SetSunLightIntensity(float intensity) override;
     float GetSunLightIntensity() override;
     void SetSunLightDirection(const Eigen::Vector3f& direction) override;
     Eigen::Vector3f GetSunLightDirection() override;

@@ -1430,11 +1430,33 @@ void FilamentScene::EnableSunLightShadows(bool enable) {
     return light_mgr.setShadowCaster(inst, enable);
 }
 
+void FilamentScene::SetSunLightIntensity(float intensity) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setIntensity(inst, intensity);
+}
+
 float FilamentScene::GetSunLightIntensity() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
     return light_mgr.getIntensity(inst);
+}
+
+void FilamentScene::SetSunLightColor(const Eigen::Vector3f& color) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setColor(inst, {color.x(), color.y(), color.z()});
+}
+
+Eigen::Vector3f FilamentScene::GetSunLightColor() {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    auto dir = light_mgr.getColor(inst);
+    return {dir[0], dir[1], dir[2]};
 }
 
 void FilamentScene::SetSunLightDirection(const Eigen::Vector3f& direction) {

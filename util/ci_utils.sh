@@ -63,6 +63,7 @@ install_cuda_toolkit() {
         "cuda-cufft-dev-${CUDA_VERSION[0]}" \
         "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
         "cuda-nvtx-${CUDA_VERSION[0]}" \
+        "cuda-npp-dev-${CUDA_VERSION[0]}" \
         libcublas-dev
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
         echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"

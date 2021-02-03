@@ -207,9 +207,15 @@ Camera::FovType FilamentCamera::GetFieldOfViewType() const {
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,
                             const Eigen::Vector3f& eye,
                             const Eigen::Vector3f& up) {
-    camera_->lookAt({eye.x(), eye.y(), eye.z()},
-                    {center.x(), center.y(), center.z()},
-                    {up.x(), up.y(), up.z()});
+    // We set the camera's model matrix instead of using lookAt, which sets
+    // the view matrix, because we cannot set the view matrix directly, which
+    // the rotation interactors need to do.
+    using namespace filament::math;
+    auto m = mat4f::lookAt(float3(eye.x(), eye.y(), eye.z()),
+                           float3(center.x(), center.y(), center.z()),
+                           float3(up.x(), up.y(), up.z()));
+
+    camera_->setModelMatrix(m);
 }
 
 Eigen::Vector3f FilamentCamera::GetPosition() const {
