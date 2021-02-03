@@ -63,6 +63,19 @@ jobs:
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+      - name: Free up disk space
+        run: |
+        # See https://github.com/actions/virtual-environments/issues/709#issuecomment-612569242
+        df -h
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+        sudo apt-get clean
+        df -h
+        sudo rm -rf /usr/local/share/boost
+        df -h
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        df -h
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH
