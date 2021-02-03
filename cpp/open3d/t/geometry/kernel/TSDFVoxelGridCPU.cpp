@@ -229,7 +229,7 @@ void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 float tsdf = voxel_ptr->GetTSDF();
                                 float w = voxel_ptr->GetWeight();
 
-                                if (tsdf_prev > 0 && w > weight_threshold &&
+                                if (tsdf_prev > 0 && w >= weight_threshold &&
                                     tsdf <= 0) {
                                     float t_intersect =
                                             (t * tsdf_prev - t_prev * tsdf) /

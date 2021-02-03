@@ -76,7 +76,7 @@ public:
     float LoadFactor() const override;
 
     std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
-    GetContext() {
+    GetContext() const {
         return impl_;
     }
 

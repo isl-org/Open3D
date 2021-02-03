@@ -141,7 +141,7 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() {
+    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() const {
         return device_hashmap_;
     }
 

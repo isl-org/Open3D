@@ -107,11 +107,12 @@ def test_integration(device):
             vertexmap, _ = volume.raycast(intrinsic, extrinsic, depth.columns,
                                           depth.rows, 50, 0.1, 3.0,
                                           min(i * 1.0, 3.0))
-            vertexmap_gt = np.load(
-                test_data_path +
-                "RGBD/raycast_vertex_{}.npy".format('cpu' if device.get_type(
-                ) == o3d.core.Device.DeviceType.CPU else 'cuda'))
-            assert np.allclose(vertexmap.cpu().numpy(), vertexmap_gt)
+            vertexmap_gt = np.load(test_data_path +
+                                   "RGBD/raycast_vtx_{:03d}.npy".format(i))
+            discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
+                                 1e-5).sum()
+            # Be tolerant to numerical differences
+            assert discrepancy_count / vertexmap_gt.size < 1e-3
 
     pcd = volume.extract_surface_points().to_legacy_pointcloud()
     pcd_gt = o3d.io.read_point_cloud(test_data_path +
