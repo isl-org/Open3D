@@ -334,6 +334,7 @@ struct O3DVisualizer::Impl {
         CollapsableVert *scene_panel;
         Checkbox *show_skybox;
         Checkbox *show_axes;
+        Checkbox *show_ground;
         ColorEdit *bg_color;
         Slider *point_size;
         Combobox *shader;
@@ -515,11 +516,16 @@ struct O3DVisualizer::Impl {
         settings.show_axes->SetOnChecked(
                 [this](bool is_checked) { this->ShowAxes(is_checked); });
 
+        settings.show_ground = new Checkbox("Show Ground");
+        settings.show_ground->SetOnChecked(
+                [this](bool is_checked) { this->ShowGround(is_checked); });
+
         h = new Horiz(v_spacing);
         h->AddChild(GiveOwnership(settings.show_axes));
         h->AddFixed(em);
         h->AddChild(GiveOwnership(settings.show_skybox));
         settings.scene_panel->AddChild(GiveOwnership(h));
+        settings.scene_panel->AddChild(GiveOwnership(settings.show_ground));
 
         settings.bg_color = new ColorEdit();
         settings.bg_color->SetValue(ui_state_.bg_color.x(),
@@ -1019,6 +1025,13 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
+    void ShowGround(bool show) {
+        ui_state_.show_ground = show;
+        settings.show_ground->SetChecked(show);  // in case called manually
+        scene_->GetScene()->ShowGroundPlane(show);
+        scene_->ForceRedraw();
+    }
+
     void SetPointSize(int px) {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
@@ -1262,6 +1275,7 @@ struct O3DVisualizer::Impl {
         SetBackground(ui_state_.bg_color, nullptr);
         ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
+        ShowGround(ui_state_.show_ground);
 
         if (point_size_changed) {
             SetPointSize(ui_state_.point_size);
