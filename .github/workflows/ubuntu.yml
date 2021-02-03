@@ -67,8 +67,6 @@ jobs:
       - name: Free up disk space
         run: |
         df -h
-        sudo rm -rf $AGENT_TOOLSDIRECTORY
-        df -h
         sudo apt-get clean
         df -h
         sudo rm -rf /usr/local/share/boost
