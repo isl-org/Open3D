@@ -121,15 +121,15 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 2, 3}));
 
     // 2-D tensor initialization with list without template.
-    t = core::Tensor::Init({{1, 2, 3}, {4, 5, 6}}, core::Dtype::Int32,
-    device); EXPECT_EQ(t.GetShape(), core::SizeVector({2, 3}));
+    t = core::Tensor::Init({{1, 2, 3}, {4, 5, 6}}, core::Dtype::Int32, device);
+    EXPECT_EQ(t.GetShape(), core::SizeVector({2, 3}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Int32);
     EXPECT_EQ(t.ToFlatVector<int>(), std::vector<int>({1, 2, 3, 4, 5, 6}));
 
-    t = core::Tensor::Init<uint8_t>({{1},{2},{3},{4}}, core::Dtype::UInt8);
+    t = core::Tensor::Init<uint8_t>({{1}, {2}, {3}, {4}}, core::Dtype::UInt8);
     EXPECT_EQ(t.GetShape(), core::SizeVector({4, 1}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
-    EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({1,2,3,4}));
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({1, 2, 3, 4}));
 
     // 3-D tensor initialization with list without template.
     t = core::Tensor::Init({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
@@ -145,23 +145,25 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({1}));
 
     // Test boolean datatype.
-    t = core::Tensor::Init({{true, false}, {false, true}}, core::Dtype::Bool, device);
+    t = core::Tensor::Init({{true, false}, {false, true}}, core::Dtype::Bool,
+                           device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Bool);
     EXPECT_EQ(t.ToFlatVector<bool>(),
               std::vector<bool>({true, false, false, true}));
 
     // Test uint8 datatype.
-    t = core::Tensor::Init(
-            {{{0, 0}, {0, 0}}, {{255, 255}, {255, 255}}}, core::Dtype::UInt8, device);
+    t = core::Tensor::Init({{{0, 0}, {0, 0}}, {{255, 255}, {255, 255}}},
+                           core::Dtype::UInt8, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 2, 2}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(t.ToFlatVector<uint8_t>(),
               std::vector<uint8_t>({0, 0, 0, 0, 255, 255, 255, 255}));
 
     // Check tensor element size mismatch.
-    EXPECT_THROW(core::Tensor::Init({{1, 2, 3}, {4, 5}}, core::Dtype::Int32, device),
-                 std::runtime_error);
+    EXPECT_THROW(
+            core::Tensor::Init({{1, 2, 3}, {4, 5}}, core::Dtype::Int32, device),
+            std::runtime_error);
 
     // Test shapes with 0-element.
     t = core::Tensor::Init({}, core::Dtype::Float64, device);
@@ -184,8 +186,9 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_EQ(t.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), std::vector<uint8_t>({}));
 
-    EXPECT_THROW(core::Tensor::Init({{{}}, {{}, {}}}, core::Dtype::UInt16, device),
-                 std::exception);
+    EXPECT_THROW(
+            core::Tensor::Init({{{}}, {{}, {}}}, core::Dtype::UInt16, device),
+            std::exception);
 
     EXPECT_THROW(core::Tensor::Init({{}, {{}}}, core::Dtype::UInt16, device),
                  std::exception);
@@ -352,8 +355,8 @@ TEST_P(TensorPermuteDevices, To) {
     core::SizeVector shape{2, 3};
 
     std::vector<int> dst_vals{0, 1, 2, 3, 4, 5};
-    core::Tensor src_t = core::Tensor::Init(
-            {{0.1, 1.2, 2.3}, {3.4, 4.5, 5.6}}, core::Dtype::Float32, device);
+    core::Tensor src_t = core::Tensor::Init({{0.1, 1.2, 2.3}, {3.4, 4.5, 5.6}},
+                                            core::Dtype::Float32, device);
 
     core::Tensor dst_t = src_t.To(core::Dtype::Int32);
 
@@ -443,8 +446,7 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     core::Tensor t_0 = t[0];
     EXPECT_EQ(t_0.GetShape(), core::SizeVector({3, 4}));
@@ -494,8 +496,7 @@ TEST_P(TensorPermuteDevices, Item) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     core::Tensor t_0 = t[0];
     EXPECT_THROW(t_0.Item<float>(), std::runtime_error);
@@ -531,8 +532,7 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     // Assigning to rvalue
     float new_val_0 = 100.f;
@@ -623,8 +623,7 @@ TEST_P(TensorPermuteDevicePairs, CopyContiguous) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            src_device);
+            core::Dtype::Float32, src_device);
     EXPECT_TRUE(t.IsContiguous());
 
     core::Tensor t_0 = t[0];
@@ -652,8 +651,7 @@ TEST_P(TensorPermuteDevices, Slice) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     const void *blob_head = t.GetBlob()->GetDataPtr();
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 3, 4}));
@@ -712,8 +710,7 @@ TEST_P(TensorPermuteDevices, GetItem) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     // t_1 = t[1, :3, 0:-1:2], effectively not sliced
     core::Tensor t_1 =
@@ -728,15 +725,14 @@ TEST_P(TensorPermuteDevices, GetItem) {
 
 TEST_P(TensorPermuteDevices, GetItemAdvancedIndexing) {
     core::Device device = GetParam();
-    core::Tensor t = core::Tensor::Init(
-            {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
-             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
-             core::Dtype::Float32,
-            device);
+    core::Tensor t =
+            core::Tensor::Init({0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                                12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
+                               core::Dtype::Float32, device);
 
     // t_1 = t[[0, 1, 1, 2, 3, 5, 8, 13, 21]]
-    core::Tensor index_tensor =
-            core::Tensor::Init({0, 1, 1, 2, 3, 5, 8, 13, 21}, core::Dtype::Int64, device);
+    core::Tensor index_tensor = core::Tensor::Init(
+            {0, 1, 1, 2, 3, 5, 8, 13, 21}, core::Dtype::Int64, device);
     core::Tensor t_1 = t.GetItem(core::TensorKey::IndexTensor(index_tensor));
     EXPECT_EQ(t_1.GetShape(), core::SizeVector({9}));
     EXPECT_EQ(t_1.ToFlatVector<float>(),
@@ -749,8 +745,7 @@ TEST_P(TensorPermuteDevices, GetItemAdvancedIndexingMixed) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     // t_1 = t[1, 0:2, [1, 2]]
     core::Tensor index_tensor(std::vector<int64_t>{1, 2}, {2},
@@ -767,11 +762,10 @@ TEST_P(TensorPermuteDevices, GetItemAdvancedIndexingMixed) {
 TEST_P(TensorPermuteDevices, SetItemAdvancedIndexing) {
     core::Device device = GetParam();
 
-    core::Tensor t = core::Tensor::Init(
-            {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
-             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
-             core::Dtype::Float32,
-            device);
+    core::Tensor t =
+            core::Tensor::Init({0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                                12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
+                               core::Dtype::Float32, device);
 
     // t[[1, 3]] = np.array([100, 300])
     core::Tensor index_tensor(std::vector<int64_t>{1, 3}, {2},
@@ -791,8 +785,7 @@ TEST_P(TensorPermuteDevices, SetItemAdvancedIndexingMixed) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     // t[1, 0:2, [1, 2]] = np.array([[100, 200], [300, 400]])
     core::Tensor index_tensor(std::vector<int64_t>{1, 2}, {2},
@@ -815,8 +808,7 @@ TEST_P(TensorPermuteDevices, SliceAssign) {
     core::Tensor dst = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     // Assigning a contiguous core::Tensor to lvalue
     // src_0 == [[120, 140], [200, 220]]
@@ -872,8 +864,7 @@ TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            src_device);
+            core::Dtype::Float32, src_device);
 
     // t[0:2:1, 0:3:2, 0:4:2]
     core::Tensor t_1 = t.Slice(0, 0, 2, 1).Slice(1, 0, 3, 2).Slice(2, 0, 4, 2);
@@ -910,8 +901,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGet) {
     core::Tensor src_t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            src_device);
+            core::Dtype::Float32, src_device);
 
     // t[:, [1, 2], [1, 2]]
     std::vector<core::Tensor> indices = {
@@ -935,8 +925,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetNegative) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            src_device);
+            core::Dtype::Float32, src_device);
 
     // t[:, [1, -1], [1, -2]]
     std::vector<core::Tensor> indices = {
@@ -1051,8 +1040,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetSeparateBySlice) {
     core::Tensor src_t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            src_device);
+            core::Dtype::Float32, src_device);
 
     // t[[0, 1], :, [0, 1]]
     std::vector<core::Tensor> indices = {
@@ -1076,8 +1064,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetSliceEnd) {
     core::Tensor src_t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            src_device);
+            core::Dtype::Float32, src_device);
 
     std::vector<core::Tensor> indices = {
             core::Tensor(std::vector<int64_t>{0, 1}, {2}, core::Dtype::Int64,
@@ -1148,8 +1135,7 @@ TEST_P(TensorPermuteDevices, Permute) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     core::Tensor t_1 = t.Permute({2, 1, 0});
     EXPECT_EQ(t_1.GetBlob(), t.GetBlob());
@@ -1177,8 +1163,7 @@ TEST_P(TensorPermuteDevices, Transpose) {
     core::Tensor t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
 
     core::Tensor t_t = t.Transpose(1, 2);
     EXPECT_EQ(t_t.GetBlob(), t.GetBlob());
@@ -1280,9 +1265,10 @@ TEST_P(TensorPermuteDevices, AdvancedIndexing_IsIndexSplittedBySlice) {
 
 TEST_P(TensorPermuteDevices, Add) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},core::Dtype::Float32, device);
-    core::Tensor b =
-            core::Tensor::Init({{10, 11, 12}, {13, 14, 15}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{10, 11, 12}, {13, 14, 15}},
+                                        core::Dtype::Float32, device);
     core::Tensor c = a + b;
     EXPECT_EQ(c.ToFlatVector<float>(),
               std::vector<float>({10, 12, 14, 16, 18, 20}));
@@ -1290,9 +1276,10 @@ TEST_P(TensorPermuteDevices, Add) {
 
 TEST_P(TensorPermuteDevices, Add_) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}}, core::Dtype::Float32, device);
-    core::Tensor b =
-            core::Tensor::Init({{10, 11, 12}, {13, 14, 15}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{10, 11, 12}, {13, 14, 15}},
+                                        core::Dtype::Float32, device);
     a += b;
     EXPECT_EQ(a.ToFlatVector<float>(),
               std::vector<float>({10, 12, 14, 16, 18, 20}));
@@ -1304,13 +1291,13 @@ TEST_P(TensorPermuteDevices, Add_BroadcastException) {
     // A += B should throw exception.
     // B += A is fine.
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init(
-            {{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
+                               core::Dtype::Float32, device);
     core::Tensor b = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
     EXPECT_THROW(a += b, std::runtime_error);
     b += a;
     EXPECT_EQ(b.ToFlatVector<float>(),
@@ -1321,9 +1308,10 @@ TEST_P(TensorPermuteDevices, Add_BroadcastException) {
 
 TEST_P(TensorPermuteDevices, Sub) {
     core::Device device = GetParam();
-    core::Tensor a =
-            core::Tensor::Init({{10, 12, 14}, {16, 18, 20}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{10, 12, 14}, {16, 18, 20}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},
+                                        core::Dtype::Float32, device);
     core::Tensor c = a - b;
     EXPECT_EQ(c.ToFlatVector<float>(),
               std::vector<float>({10, 11, 12, 13, 14, 15}));
@@ -1331,9 +1319,10 @@ TEST_P(TensorPermuteDevices, Sub) {
 
 TEST_P(TensorPermuteDevices, Sub_) {
     core::Device device = GetParam();
-    core::Tensor a =
-            core::Tensor::Init({{10, 12, 14}, {16, 18, 20}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{10, 12, 14}, {16, 18, 20}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},
+                                        core::Dtype::Float32, device);
     a -= b;
     EXPECT_EQ(a.ToFlatVector<float>(),
               std::vector<float>({10, 11, 12, 13, 14, 15}));
@@ -1341,9 +1330,10 @@ TEST_P(TensorPermuteDevices, Sub_) {
 
 TEST_P(TensorPermuteDevices, Mul) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}}, core::Dtype::Float32, device);
-    core::Tensor b =
-            core::Tensor::Init({{6, 7, 8}, {9, 10, 11}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{6, 7, 8}, {9, 10, 11}},
+                                        core::Dtype::Float32, device);
     core::Tensor c = a * b;
     EXPECT_EQ(c.ToFlatVector<float>(),
               std::vector<float>({0, 7, 16, 27, 40, 55}));
@@ -1351,9 +1341,10 @@ TEST_P(TensorPermuteDevices, Mul) {
 
 TEST_P(TensorPermuteDevices, Mul_) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}}, core::Dtype::Float32, device);
-    core::Tensor b =
-            core::Tensor::Init({{6, 7, 8}, {9, 10, 11}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 1, 2}, {3, 4, 5}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{6, 7, 8}, {9, 10, 11}},
+                                        core::Dtype::Float32, device);
     a *= b;
     EXPECT_EQ(a.ToFlatVector<float>(),
               std::vector<float>({0, 7, 16, 27, 40, 55}));
@@ -1361,20 +1352,20 @@ TEST_P(TensorPermuteDevices, Mul_) {
 
 TEST_P(TensorPermuteDevices, Div) {
     core::Device device = GetParam();
-    core::Tensor a =
-            core::Tensor::Init({{0, 7, 16}, {27, 40, 55}}, core::Dtype::Float32, device);
-    core::Tensor b =
-            core::Tensor::Init({{6, 7, 8}, {9, 10, 11}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 7, 16}, {27, 40, 55}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{6, 7, 8}, {9, 10, 11}},
+                                        core::Dtype::Float32, device);
     core::Tensor c = a / b;
     EXPECT_EQ(c.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
 }
 
 TEST_P(TensorPermuteDevices, Div_) {
     core::Device device = GetParam();
-    core::Tensor a =
-            core::Tensor::Init({{0, 7, 16}, {27, 40, 55}}, core::Dtype::Float32, device);
-    core::Tensor b =
-            core::Tensor::Init({{6, 7, 8}, {9, 10, 11}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 7, 16}, {27, 40, 55}},
+                                        core::Dtype::Float32, device);
+    core::Tensor b = core::Tensor::Init({{6, 7, 8}, {9, 10, 11}},
+                                        core::Dtype::Float32, device);
     a /= b;
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
 }
@@ -1382,13 +1373,12 @@ TEST_P(TensorPermuteDevices, Div_) {
 TEST_P(TensorPermuteDevices, ReduceSumKeepDim) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init({{{22.f, 23.f, 20.f, 9.f},
-                                                   {6.f, 14.f, 18.f, 13.f},
-                                                   {15.f, 3.f, 17.f, 0.f}},
-                                                  {{7.f, 21.f, 11.f, 1.f},
-                                                   {4.f, 2.f, 10.f, 19.f},
-                                                   {5.f, 8.f, 16.f, 12.f}}},
-                                                   core::Dtype::Float32,
-                                                 device);
+                                            {6.f, 14.f, 18.f, 13.f},
+                                            {15.f, 3.f, 17.f, 0.f}},
+                                           {{7.f, 21.f, 11.f, 1.f},
+                                            {4.f, 2.f, 10.f, 19.f},
+                                            {5.f, 8.f, 16.f, 12.f}}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.Sum({}, true);
@@ -1455,13 +1445,12 @@ TEST_P(TensorPermuteDevices, ReduceSumKeepDim) {
 TEST_P(TensorPermuteDevices, ReduceSumNotKeepDim) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init({{{22.f, 23.f, 20.f, 9.f},
-                                                   {6.f, 14.f, 18.f, 13.f},
-                                                   {15.f, 3.f, 17.f, 0.f}},
-                                                  {{7.f, 21.f, 11.f, 1.f},
-                                                   {4.f, 2.f, 10.f, 19.f},
-                                                   {5.f, 8.f, 16.f, 12.f}}},
-                                                   core::Dtype::Float32,
-                                                 device);
+                                            {6.f, 14.f, 18.f, 13.f},
+                                            {15.f, 3.f, 17.f, 0.f}},
+                                           {{7.f, 21.f, 11.f, 1.f},
+                                            {4.f, 2.f, 10.f, 19.f},
+                                            {5.f, 8.f, 16.f, 12.f}}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.Sum({}, false);
@@ -1741,13 +1730,12 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
 TEST_P(TensorPermuteDevices, ReduceProd) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init({{{22.f, 23.f, 20.f, 9.f},
-                                                   {6.f, 14.f, 18.f, 13.f},
-                                                   {15.f, 3.f, 17.f, 0.f}},
-                                                  {{7.f, 21.f, 11.f, 1.f},
-                                                   {4.f, 2.f, 10.f, 19.f},
-                                                   {5.f, 8.f, 16.f, 12.f}}},
-                                                   core::Dtype::Float32,
-                                                 device);
+                                            {6.f, 14.f, 18.f, 13.f},
+                                            {15.f, 3.f, 17.f, 0.f}},
+                                           {{7.f, 21.f, 11.f, 1.f},
+                                            {4.f, 2.f, 10.f, 19.f},
+                                            {5.f, 8.f, 16.f, 12.f}}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.Prod({}, false);
@@ -1799,13 +1787,12 @@ TEST_P(TensorPermuteDevices, ReduceProd) {
 TEST_P(TensorPermuteDevices, ReduceMin) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init({{{22.f, 23.f, 20.f, 9.f},
-                                                   {6.f, 14.f, 18.f, 13.f},
-                                                   {15.f, 3.f, 17.f, 0.f}},
-                                                  {{7.f, 21.f, 11.f, 1.f},
-                                                   {4.f, 2.f, 10.f, 19.f},
-                                                   {5.f, 8.f, 16.f, 12.f}}},
-                                                   core::Dtype::Float32,
-                                                 device);
+                                            {6.f, 14.f, 18.f, 13.f},
+                                            {15.f, 3.f, 17.f, 0.f}},
+                                           {{7.f, 21.f, 11.f, 1.f},
+                                            {4.f, 2.f, 10.f, 19.f},
+                                            {5.f, 8.f, 16.f, 12.f}}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.Min({}, false);
@@ -1853,13 +1840,12 @@ TEST_P(TensorPermuteDevices, ReduceMin) {
 TEST_P(TensorPermuteDevices, ReduceMax) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init({{{22.f, 23.f, 20.f, 9.f},
-                                                   {6.f, 14.f, 18.f, 13.f},
-                                                   {15.f, 3.f, 17.f, 0.f}},
-                                                  {{7.f, 21.f, 11.f, 1.f},
-                                                   {4.f, 2.f, 10.f, 19.f},
-                                                   {5.f, 8.f, 16.f, 12.f}}},
-                                                   core::Dtype::Float32,
-                                                 device);
+                                            {6.f, 14.f, 18.f, 13.f},
+                                            {15.f, 3.f, 17.f, 0.f}},
+                                           {{7.f, 21.f, 11.f, 1.f},
+                                            {4.f, 2.f, 10.f, 19.f},
+                                            {5.f, 8.f, 16.f, 12.f}}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.Max({}, false);
@@ -1909,7 +1895,8 @@ TEST_P(TensorPermuteDevices, ReduceMax) {
 TEST_P(TensorPermuteDevices, ReduceMaxFloatLimit) {
     // std::numeric_limits<scalar_t> should use lowest() instead of min().
     core::Device device = GetParam();
-    core::Tensor src = core::Tensor::Init({-2.f, -1.f}, core::Dtype::Float32, device);
+    core::Tensor src =
+            core::Tensor::Init({-2.f, -1.f}, core::Dtype::Float32, device);
 
     core::Tensor dst = src.Max({0});
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({-1.f}));
@@ -1923,8 +1910,7 @@ TEST_P(TensorPermuteDevices, ReduceArgMin) {
     core::Tensor src = core::Tensor::Init(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.ArgMin({0, 1, 2});
@@ -1952,8 +1938,7 @@ TEST_P(TensorPermuteDevices, ReduceArgMax) {
     core::Tensor src = core::Tensor::Init(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
     core::Tensor dst;
 
     dst = src.ArgMax({0, 1, 2});
@@ -1978,8 +1963,8 @@ TEST_P(TensorPermuteDevices, ReduceArgMax) {
 
 TEST_P(TensorPermuteDevices, Sqrt) {
     core::Device device = GetParam();
-    core::Tensor src =
-            core::Tensor::Init({{0, 1, 4}, {9, 16, 25}}, core::Dtype::Float32, device);
+    core::Tensor src = core::Tensor::Init({{0, 1, 4}, {9, 16, 25}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst = src.Sqrt();
     EXPECT_EQ(dst.ToFlatVector<float>(),
               std::vector<float>({0, 1, 2, 3, 4, 5}));
@@ -1989,7 +1974,8 @@ TEST_P(TensorPermuteDevices, Sqrt) {
     EXPECT_THROW(src.Sqrt(), std::runtime_error);
 
     // Negative number's sqrt shall be NaN.
-    src = core::Tensor::Init({{0, 1, 4}, {9, -16, -25}}, core::Dtype::Float32, device);
+    src = core::Tensor::Init({{0, 1, 4}, {9, -16, -25}}, core::Dtype::Float32,
+                             device);
     dst = src.Sqrt();
     std::vector<float> dst_vals = dst.ToFlatVector<float>();
     EXPECT_EQ(dst_vals[0], 0);
@@ -2000,7 +1986,8 @@ TEST_P(TensorPermuteDevices, Sqrt) {
     EXPECT_TRUE(std::isnan(dst_vals[5]));
 
     // Inplace version.
-    src = core::Tensor::Init({{0, 1, 4}, {9, 16, 25}}, core::Dtype::Float32, device);
+    src = core::Tensor::Init({{0, 1, 4}, {9, 16, 25}}, core::Dtype::Float32,
+                             device);
     src.Sqrt_();
     EXPECT_EQ(src.ToFlatVector<float>(),
               std::vector<float>({0, 1, 2, 3, 4, 5}));
@@ -2054,8 +2041,8 @@ TEST_P(TensorPermuteDevices, Neg) {
     core::Device device = GetParam();
 
     std::vector<float> dst_vals{2, 1, 0, -1, -2, -3};
-    core::Tensor src =
-            core::Tensor::Init({{-2, -1, 0}, {1, 2, 3}}, core::Dtype::Float32, device);
+    core::Tensor src = core::Tensor::Init({{-2, -1, 0}, {1, 2, 3}},
+                                          core::Dtype::Float32, device);
     core::Tensor dst = src.Neg();
     EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
 
@@ -2229,8 +2216,10 @@ TEST_P(TensorPermuteDevices, LogicalAnd) {
 
 TEST_P(TensorPermuteDevices, LogicalAndFloat) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{-1, 0}, {1, 0}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{1, 0}, {0, 0}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{-1, 0}, {1, 0}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{1, 0}, {0, 0}}, core::Dtype::Float32, device);
     core::Tensor c = a.LogicalAnd(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({true, false, false, false}));
@@ -2261,8 +2250,10 @@ TEST_P(TensorPermuteDevices, LogicalOr) {
 
 TEST_P(TensorPermuteDevices, LogicalOrFloat) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{-1, 0}, {1, 0}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{1, -1}, {0, 0}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{-1, 0}, {1, 0}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{1, -1}, {0, 0}}, core::Dtype::Float32, device);
     core::Tensor c = a.LogicalOr(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({true, true, true, false}));
@@ -2290,8 +2281,10 @@ TEST_P(TensorPermuteDevices, LogicalXor) {
 
 TEST_P(TensorPermuteDevices, LogicalXorFloat) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{-1, 0}, {1, 0}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{1, -1}, {0, 0}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{-1, 0}, {1, 0}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{1, -1}, {0, 0}}, core::Dtype::Float32, device);
     core::Tensor c = a.LogicalXor(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({false, true, true, false}));
@@ -2303,8 +2296,10 @@ TEST_P(TensorPermuteDevices, LogicalXorFloat) {
 
 TEST_P(TensorPermuteDevices, Gt) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
     core::Tensor c = a.Gt(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({false, true, false, false}));
@@ -2319,8 +2314,10 @@ TEST_P(TensorPermuteDevices, Gt) {
 
 TEST_P(TensorPermuteDevices, Lt) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
     core::Tensor c = a.Lt(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({false, false, true, true}));
@@ -2335,8 +2332,10 @@ TEST_P(TensorPermuteDevices, Lt) {
 
 TEST_P(TensorPermuteDevices, Ge) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
     core::Tensor c = a.Ge(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({true, true, false, false}));
@@ -2351,8 +2350,10 @@ TEST_P(TensorPermuteDevices, Ge) {
 
 TEST_P(TensorPermuteDevices, Le) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
     core::Tensor c = a.Le(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({true, false, true, true}));
@@ -2367,8 +2368,10 @@ TEST_P(TensorPermuteDevices, Le) {
 
 TEST_P(TensorPermuteDevices, Eq) {
     core::Device device = GetParam();
-    core::Tensor a = core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
     core::Tensor c = a.Eq(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({true, false, false, false}));
@@ -2384,8 +2387,10 @@ TEST_P(TensorPermuteDevices, Eq) {
 TEST_P(TensorPermuteDevices, Ne) {
     core::Device device = GetParam();
 
-    core::Tensor a = core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
-    core::Tensor b = core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({{0, 1}, {-1, 1}}, core::Dtype::Float32, device);
+    core::Tensor b =
+            core::Tensor::Init({{0, 0}, {0, 2}}, core::Dtype::Float32, device);
     core::Tensor c = a.Ne(b);
     EXPECT_EQ(c.ToFlatVector<bool>(),
               std::vector<bool>({false, true, true, true}));
@@ -2402,7 +2407,8 @@ TEST_P(TensorPermuteDevices, BooleanIndex) {
     core::Device device = GetParam();
 
     // a[a < 0] = 0
-    core::Tensor a = core::Tensor::Init({1, -1, -2, 3}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::Init({1, -1, -2, 3}, core::Dtype::Float32, device);
     core::Tensor b = core::Tensor::Init({0}, core::Dtype::Float32, device);
     a.SetItem(core::TensorKey::IndexTensor(a.Le(b)), b);
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 0, 0, 3}));
@@ -2410,9 +2416,10 @@ TEST_P(TensorPermuteDevices, BooleanIndex) {
     // x = np.array([[0, 1], [1, 1], [2, 2]])
     // row_sum = np.array([1, 2, 4])
     // y = x[row_sum <= 2, :]
-    core::Tensor x =
-            core::Tensor::Init({{0, 1}, {1, 1}, {2, 2}}, core::Dtype::Float32, device);
-    core::Tensor row_sum = core::Tensor::Init({1, 2, 4}, core::Dtype::Float32, device);
+    core::Tensor x = core::Tensor::Init({{0, 1}, {1, 1}, {2, 2}},
+                                        core::Dtype::Float32, device);
+    core::Tensor row_sum =
+            core::Tensor::Init({1, 2, 4}, core::Dtype::Float32, device);
     core::Tensor two = core::Tensor::Init({2}, core::Dtype::Float32, device);
     core::Tensor y = x.GetItem(
             {core::TensorKey::IndexTensor(row_sum.Le(two)),
@@ -2425,8 +2432,8 @@ TEST_P(TensorPermuteDevices, BooleanIndex) {
 TEST_P(TensorPermuteDevices, NonZeroNumpy) {
     core::Device device = GetParam();
 
-    core::Tensor a =
-            core::Tensor::Init({{0, 1}, {1, 0}, {1, 0}}, core::Dtype::Float32, device);
+    core::Tensor a = core::Tensor::Init({{0, 1}, {1, 0}, {1, 0}},
+                                        core::Dtype::Float32, device);
     std::vector<core::Tensor> results = a.NonZeroNumpy();
     EXPECT_EQ(results[0].ToFlatVector<int64_t>(),
               std::vector<int64_t>({0, 1, 2}));
@@ -2696,8 +2703,7 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
     core::Tensor src_t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
     const void *blob_head = src_t.GetBlob()->GetDataPtr();
 
     // src_t = src_t[1, 0:3:2, 0:4:2], a mix of [] and slice
@@ -2788,8 +2794,7 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     t = core::Tensor::Init(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-             core::Dtype::Float32,
-            device);
+            core::Dtype::Float32, device);
     // t[0:2:1, 0:3:2, 0:4:2]
     t = t.Slice(0, 0, 2, 1).Slice(1, 0, 3, 2).Slice(2, 0, 4, 2);
     t.Save(file_name);
@@ -2827,7 +2832,6 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
     // Clean up.
     utility::filesystem::RemoveFile(file_name);
 }
-
 
 }  // namespace tests
 }  // namespace open3d

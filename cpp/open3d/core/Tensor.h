@@ -47,9 +47,7 @@ namespace core {
 /// A Tensor is a "view" of a data Blob with shape, stride, data_ptr.
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
-
 public:
- 
     Tensor(){};
 
     /// Constructor for creating a contiguous Tensor
@@ -222,19 +220,6 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    /// Create a identity matrix of size n x n.
-    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
-
-    /// Create a square matrix with specified diagonal elements in input.
-    static Tensor Diag(const Tensor& input);
-
-    /// Create a 1D tensor with evenly spaced values in the given interval.
-    static Tensor Arange(Scalar start,
-                         Scalar stop,
-                         Scalar step = 1,
-                         Dtype dtype = Dtype::Int64,
-                         const Device& device = core::Device("CPU:0"));
-
     template <typename T>
     static const std::vector<T> ConvertVectorType(
             const std::vector<Scalar>& scalar_vec) {
@@ -249,8 +234,8 @@ public:
     /// core::Tensor::Init(1, core::Dtype::Float32);
     template <typename T = Scalar>
     static Tensor Init(const T val,
-                        Dtype dtype,
-                        const Device& device = Device("CPU:0")) {
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0")) {
         std::vector<Scalar> in_list{val};
         SizeVector shape;
         Tensor new_tensor;
@@ -269,11 +254,11 @@ public:
     /// core::Tensor::Init({1,2,3}, core::Dtype::Float32);
     template <typename T = Scalar>
     static Tensor Init(const std::initializer_list<T> in_list,
-                        Dtype dtype,
-                        const Device& device = Device("CPU:0")) {
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0")) {
         std::vector<Scalar> ele_list_flat;
         ele_list_flat.insert(ele_list_flat.end(), in_list.begin(),
-                                     in_list.end());
+                             in_list.end());
 
         SizeVector shape{static_cast<int64_t>(in_list.size())};
         Tensor new_tensor;
@@ -325,7 +310,8 @@ public:
 
     /// Create a 3-D tensor with nested initializer list.
     /// For example,
-    /// core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}}, core::Dtype::Float32);
+    /// core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}},
+    /// core::Dtype::Float32);
     template <typename T = Scalar>
     static Tensor Init(
             const std::initializer_list<
@@ -384,6 +370,19 @@ public:
 
         return new_tensor;
     };
+
+    /// Create a identity matrix of size n x n.
+    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
+
+    /// Create a square matrix with specified diagonal elements in input.
+    static Tensor Diag(const Tensor& input);
+
+    /// Create a 1D tensor with evenly spaced values in the given interval.
+    static Tensor Arange(Scalar start,
+                         Scalar stop,
+                         Scalar step = 1,
+                         Dtype dtype = Dtype::Int64,
+                         const Device& device = core::Device("CPU:0"));
 
     /// Pythonic __getitem__ for tensor.
     ///
