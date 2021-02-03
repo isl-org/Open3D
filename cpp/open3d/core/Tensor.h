@@ -47,7 +47,9 @@ namespace core {
 /// A Tensor is a "view" of a data Blob with shape, stride, data_ptr.
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
+
 public:
+ 
     Tensor(){};
 
     /// Constructor for creating a contiguous Tensor
@@ -220,65 +222,83 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    /// Create a 0-D tensor (scalar) with given value.
-    static Tensor Init(const Scalar val,
-                       Dtype dtype,
-                       const Device& device = Device("CPU:0"));
+    /// Create a identity matrix of size n x n.
+    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
 
-    /// Create a 1-D tensor with initializer list.
-    static Tensor Init(const std::initializer_list<Scalar> in_list,
-                       Dtype dtype,
-                       const Device& device = Device("CPU:0"));
+    /// Create a square matrix with specified diagonal elements in input.
+    static Tensor Diag(const Tensor& input);
 
-    /// Create a 2-D tensor with initializer list.
-    static Tensor Init(
-            const std::initializer_list<std::initializer_list<Scalar>> in_list,
-            Dtype dtype,
-            const Device& device = Device("CPU:0"));
+    /// Create a 1D tensor with evenly spaced values in the given interval.
+    static Tensor Arange(Scalar start,
+                         Scalar stop,
+                         Scalar step = 1,
+                         Dtype dtype = Dtype::Int64,
+                         const Device& device = core::Device("CPU:0"));
 
-    /// Create a 3-D tensor with initializer list.
-    static Tensor
-    Init(const std::initializer_list<
-                 std::initializer_list<std::initializer_list<Scalar>>> in_list,
-         Dtype dtype,
-         const Device& device = Device("CPU:0"));
+    template <typename T>
+    static const std::vector<T> ConvertVectorType(
+            const std::vector<Scalar>& scalar_vec) {
+        std::vector<T> conv_vec(scalar_vec.size());
+        std::transform(scalar_vec.begin(), scalar_vec.end(), conv_vec.begin(),
+                       [](Scalar x) { return x.To<T>(); });
+        return conv_vec;
+    }
 
     /// Create a 0-D tensor (scalar) with given value.
     /// For example,
-    /// core::Tensor::Init<float>(1);
-    template <typename T>
-    static Tensor Init(const T val, const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list{val};
+    /// core::Tensor::Init(1, core::Dtype::Float32);
+    template <typename T = Scalar>
+    static Tensor Init(const T val,
+                        Dtype dtype,
+                        const Device& device = Device("CPU:0")) {
+        std::vector<Scalar> in_list{val};
         SizeVector shape;
-        return Tensor(ele_list, shape, type, device);
+        Tensor new_tensor;
+
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
+            const std::vector<scalar_t> ele_list =
+                    ConvertVectorType<scalar_t>(in_list);
+            new_tensor = Tensor(ele_list, shape, dtype, device);
+        });
+
+        return new_tensor;
     };
 
     /// Create a 1-D tensor with initializer list.
     /// For example,
-    /// core::Tensor::Init<float>({1,2,3});
-    template <typename T>
+    /// core::Tensor::Init({1,2,3}, core::Dtype::Float32);
+    template <typename T = Scalar>
     static Tensor Init(const std::initializer_list<T> in_list,
-                       const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
+                        Dtype dtype,
+                        const Device& device = Device("CPU:0")) {
+        std::vector<Scalar> ele_list_flat;
+        ele_list_flat.insert(ele_list_flat.end(), in_list.begin(),
+                                     in_list.end());
 
         SizeVector shape{static_cast<int64_t>(in_list.size())};
-        return Tensor(ele_list, shape, type, device);
+        Tensor new_tensor;
+
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
+            const std::vector<scalar_t> ele_list =
+                    ConvertVectorType<scalar_t>(ele_list_flat);
+            new_tensor = Tensor(ele_list, shape, dtype, device);
+        });
+
+        return new_tensor;
     };
 
     /// Create a 2-D tensor with nested initializer list.
     /// For example,
-    /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
-    template <typename T>
+    /// core::Tensor::Init({{1,2,3},{4,5,6}}, core::Dtype::Float32);
+    template <typename T = Scalar>
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
+            Dtype dtype,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
+        std::vector<Scalar> ele_list_flat;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
         int64_t dim1_size = -1;
+
         for (const auto& ele0 : in_list) {
             if (dim1_size == -1) {
                 dim1_size = static_cast<int64_t>(ele0.size());
@@ -289,23 +309,30 @@ public:
                             "(nested lists with unequal sizes or shapes).");
                 }
             }
-            ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
+            ele_list_flat.insert(ele_list_flat.end(), ele0.begin(), ele0.end());
         }
 
+        Tensor new_tensor;
         SizeVector shape{dim0_size, dim1_size};
-        return Tensor(ele_list, shape, type, device);
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
+            const std::vector<scalar_t> ele_list =
+                    ConvertVectorType<scalar_t>(ele_list_flat);
+            new_tensor = Tensor(ele_list, shape, dtype, device);
+        });
+
+        return new_tensor;
     };
 
     /// Create a 3-D tensor with nested initializer list.
     /// For example,
-    /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
-    template <typename T>
+    /// core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}}, core::Dtype::Float32);
+    template <typename T = Scalar>
     static Tensor Init(
             const std::initializer_list<
                     std::initializer_list<std::initializer_list<T>>> in_list,
+            Dtype dtype,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
+        std::vector<Scalar> ele_list_flat;
         int64_t dim0_size = static_cast<int64_t>(in_list.size());
         int64_t dim1_size = -1;
         int64_t dim2_size = -1;
@@ -333,7 +360,8 @@ public:
                     }
                 }
 
-                ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
+                ele_list_flat.insert(ele_list_flat.end(), ele0.begin(),
+                                     ele0.end());
             }
         }
 
@@ -347,21 +375,15 @@ public:
             shape = {dim0_size, dim1_size, dim2_size};
         }
 
-        return Tensor(ele_list, shape, type, device);
+        Tensor new_tensor;
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
+            const std::vector<scalar_t> ele_list =
+                    ConvertVectorType<scalar_t>(ele_list_flat);
+            new_tensor = Tensor(ele_list, shape, dtype, device);
+        });
+
+        return new_tensor;
     };
-
-    /// Create a identity matrix of size n x n.
-    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
-
-    /// Create a square matrix with specified diagonal elements in input.
-    static Tensor Diag(const Tensor& input);
-
-    /// Create a 1D tensor with evenly spaced values in the given interval.
-    static Tensor Arange(Scalar start,
-                         Scalar stop,
-                         Scalar step = 1,
-                         Dtype dtype = Dtype::Int64,
-                         const Device& device = core::Device("CPU:0"));
 
     /// Pythonic __getitem__ for tensor.
     ///
