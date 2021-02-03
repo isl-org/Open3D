@@ -1301,13 +1301,13 @@ Tensor Tensor::Solve(const Tensor& rhs) const {
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
-};
+}
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
-};
+}
 
 Tensor Tensor::Inverse() const {
     Tensor output;
