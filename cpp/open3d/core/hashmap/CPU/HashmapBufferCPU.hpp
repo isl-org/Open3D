@@ -52,7 +52,7 @@ public:
           dsize_value_(dsize_value),
           keys_(keys.GetDataPtr<uint8_t>()),
           values_(values.GetDataPtr<uint8_t>()),
-          heap_(heap.GetDataPtr<addr_t>()) {
+          heap_(static_cast<addr_t *>(heap.GetDataPtr()))  {
         std::memset(values_, 0, capacity_ * dsize_value_);
     }
 

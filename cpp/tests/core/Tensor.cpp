@@ -454,28 +454,29 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
     EXPECT_EQ(t_1.GetShape(), core::SizeVector({3, 4}));
     EXPECT_EQ(t_1.GetStrides(), core::SizeVector({4, 1}));
     EXPECT_EQ(t_1.GetDataPtr(),
-              t.GetDataPtr<char>() + 1 * 3 * 4 * sizeof(float));
+              static_cast<char *>(t.GetDataPtr()) + 1 * 3 * 4 * sizeof(float));
     EXPECT_EQ(t_1.GetBlob(), t.GetBlob());
 
     t_1 = t[-1];  // t[-1] == t[1]
     EXPECT_EQ(t_1.GetShape(), core::SizeVector({3, 4}));
     EXPECT_EQ(t_1.GetStrides(), core::SizeVector({4, 1}));
     EXPECT_EQ(t_1.GetDataPtr(),
-              t.GetDataPtr<char>() + 1 * 3 * 4 * sizeof(float));
+              static_cast<char *>(t.GetDataPtr()) + 1 * 3 * 4 * sizeof(float));
     EXPECT_EQ(t_1.GetBlob(), t.GetBlob());
 
     core::Tensor t_1_2 = t[1][2];
     EXPECT_EQ(t_1_2.GetShape(), core::SizeVector({4}));
     EXPECT_EQ(t_1_2.GetStrides(), core::SizeVector({1}));
-    EXPECT_EQ(t_1_2.GetDataPtr(),
-              t.GetDataPtr<char>() + (1 * 3 * 4 + 2 * 4) * sizeof(float));
+    EXPECT_EQ(t_1_2.GetDataPtr(), static_cast<char *>(t.GetDataPtr()) +
+                                          (1 * 3 * 4 + 2 * 4) * sizeof(float));
     EXPECT_EQ(t_1_2.GetBlob(), t.GetBlob());
 
     core::Tensor t_1_2_3 = t[1][2][3];
     EXPECT_EQ(t_1_2_3.GetShape(), core::SizeVector({}));
     EXPECT_EQ(t_1_2_3.GetStrides(), core::SizeVector({}));
     EXPECT_EQ(t_1_2_3.GetDataPtr(),
-              t.GetDataPtr<char>() + (1 * 3 * 4 + 2 * 4 + 3) * sizeof(float));
+              static_cast<char *>(t.GetDataPtr()) +
+                      (1 * 3 * 4 + 2 * 4 + 3) * sizeof(float));
     EXPECT_EQ(t_1_2_3.GetBlob(), t.GetBlob());
 }
 
@@ -623,7 +624,7 @@ TEST_P(TensorPermuteDevicePairs, CopyContiguous) {
     EXPECT_EQ(t_1.GetShape(), core::SizeVector({3, 4}));
     EXPECT_EQ(t_1.GetStrides(), core::SizeVector({4, 1}));
     EXPECT_EQ(t_1.GetDataPtr(),
-              t.GetDataPtr<char>() + 1 * 3 * 4 * sizeof(float));
+              static_cast<char *>(t.GetDataPtr()) + 1 * 3 * 4 * sizeof(float));
     EXPECT_NE(t_1.GetDataPtr(), t_1.GetBlob()->GetDataPtr());
     EXPECT_TRUE(t_1.IsContiguous());
 

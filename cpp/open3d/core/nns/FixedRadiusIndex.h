@@ -120,7 +120,7 @@ public:
     }
 
     const int32_t* IndicesPtr() const {
-        return neighbors_index.GetDataPtr<const int32_t>();
+        return neighbors_index.GetDataPtr<int32_t>();
     }
 
     const T* DistancesPtr() const { return neighbors_distance.GetDataPtr<T>(); }

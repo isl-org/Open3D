@@ -331,7 +331,7 @@ static e_ply_type GetPlyType(const core::Dtype &dtype) {
 
 template <typename T>
 static const T *GetValue(core::Tensor t_attr, int pos) {
-    return t_attr.GetDataPtr<const T>();
+    return t_attr.GetDataPtr<T>();
 }
 
 bool WritePointCloudToPLY(const std::string &filename,

@@ -148,14 +148,14 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                 dataset_points_.GetDevice());
         FixedRadiusSearchCUDA(
                 temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
-                GetDatasetSize(), dataset_points_.GetDataPtr<const scalar_t>(),
+                GetDatasetSize(), dataset_points_.GetDataPtr<scalar_t>(),
                 num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)hash_table_cell_splits_.GetDataPtr<const int32_t>(),
-                (uint32_t *)hash_table_index_.GetDataPtr<const int32_t>(),
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<int32_t>(),
                 output_allocator);
 
         Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
@@ -164,14 +164,14 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 
         FixedRadiusSearchCUDA(
                 temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
-                GetDatasetSize(), dataset_points_.GetDataPtr<const scalar_t>(),
+                GetDatasetSize(), dataset_points_.GetDataPtr<scalar_t>(),
                 num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)hash_table_cell_splits_.GetDataPtr<const int32_t>(),
-                (uint32_t *)hash_table_index_.GetDataPtr<const int32_t>(),
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<int32_t>(),
                 output_allocator);
 
         neighbors_index = output_allocator.NeighborsIndex().To(Dtype::Int64);

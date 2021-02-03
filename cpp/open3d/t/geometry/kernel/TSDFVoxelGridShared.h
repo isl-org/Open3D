@@ -388,7 +388,8 @@ void ExtractSurfacePointsCPU
     NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr = indices.GetDataPtr<const int64_t>();
+    const int64_t* indices_ptr =
+            static_cast<const int64_t*>(indices.GetDataPtr());
 
     int64_t n_blocks = indices.GetLength();
     int64_t n = n_blocks * resolution3;
@@ -685,8 +686,8 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr = indices.GetDataPtr<const int64_t>();
-    const int64_t* inv_indices_ptr = inv_indices.GetDataPtr<const int64_t>();
+    const int64_t* indices_ptr = indices.GetDataPtr<int64_t>();
+    const int64_t* inv_indices_ptr = inv_indices.GetDataPtr<int64_t>();
 
     int64_t n = n_blocks * resolution3;
 
