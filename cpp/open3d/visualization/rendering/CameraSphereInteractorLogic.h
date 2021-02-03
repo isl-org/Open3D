@@ -24,43 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#pragma once
 
-#include <cstring>
-#include <string>
+#include "open3d/visualization/rendering/CameraInteractorLogic.h"
 
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+namespace open3d {
+namespace visualization {
+namespace rendering {
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+class CameraSphereInteractorLogic : public CameraInteractorLogic {
+    using Super = CameraInteractorLogic;
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
+public:
+    CameraSphereInteractorLogic(Camera* c, double min_far_plane);
 
-int main(int argc, char** argv) {
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::core::CUDAState> cuda_state =
-                open3d::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+    void Rotate(int dx, int dy) override;
+
+    void StartMouseDrag() override;
+
+private:
+    float r_at_mousedown_;
+    float theta_at_mousedown_;
+    float phi_at_mousedown_;
+};
+
+}  // namespace rendering
+}  // namespace visualization
+}  // namespace open3d

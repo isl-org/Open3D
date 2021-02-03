@@ -64,9 +64,11 @@ void pybind_tsdf_voxelgrid(py::module& m) {
                     &TSDFVoxelGrid::Integrate));
 
     tsdf_voxelgrid.def("extract_surface_points",
-                       &TSDFVoxelGrid::ExtractSurfacePoints);
+                       &TSDFVoxelGrid::ExtractSurfacePoints,
+                       "weight_threshold"_a = 3.0f);
     tsdf_voxelgrid.def("extract_surface_mesh",
-                       &TSDFVoxelGrid::ExtractSurfaceMesh);
+                       &TSDFVoxelGrid::ExtractSurfaceMesh,
+                       "weight_threshold"_a = 3.0f);
 
     tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
     tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);
