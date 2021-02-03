@@ -66,12 +66,6 @@ FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
     renderer_ = engine_.createRenderer();
 }
 
-FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine,
-                                               FilamentRenderer& parent)
-    : parent_(&parent), engine_(engine) {
-    renderer_ = engine_.createRenderer();
-}
-
 FilamentRenderToBuffer::~FilamentRenderToBuffer() {
     engine_.destroy(swapchain_);
     engine_.destroy(renderer_);
@@ -81,11 +75,6 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
         buffer_ = nullptr;
 
         buffer_size_ = 0;
-    }
-
-    if (parent_) {
-        parent_->OnBufferRenderDestroyed(this);
-        parent_ = nullptr;
     }
 }
 

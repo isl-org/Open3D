@@ -51,7 +51,6 @@ public:
     // FilamentRenderToBuffer, unless you are NOT using
     // open3d::visualization::gui or another FilamentRenderer instance.
     explicit FilamentRenderToBuffer(filament::Engine& engine);
-    FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
 
     void Configure(const View* view,
@@ -72,7 +71,6 @@ public:
 private:
     friend class FilamentRenderer;
 
-    FilamentRenderer* parent_ = nullptr;
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;

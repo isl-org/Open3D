@@ -51,6 +51,15 @@ public:
 
     virtual ~RenderToBuffer() = default;
 
+    // Sets a callback that will be called after rendering is finished
+    // and after the BufferReadyCallback from Configure() is finished.
+    // This callback can be used to deallocate the object. In particular,
+    //   SetCleanupCallback([](RenderToBuffer *self) { delete self; });
+    // is valid.
+    void SetCleanupCallback(std::function<void(RenderToBuffer*)> cb) {
+        cleanup_callback_ = cb;
+    }
+
     // BufferReadyCallback does not need to free Buffer::bytes.
     // It should also not cache the pointer.
     virtual void Configure(const View* view,
@@ -63,6 +72,9 @@ public:
     virtual View& GetView() = 0;
 
     virtual void Render() = 0;
+
+protected:
+    std::function<void(RenderToBuffer*)> cleanup_callback_;
 };
 
 }  // namespace rendering

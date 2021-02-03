@@ -474,11 +474,11 @@ private:
                                 int y) {
         const int radius_px = 2;  // should be even;  total size is 2*r+1
         float far_z = 0.999999f;  // 1.0 - epsilon
-        float win_z = GetWinZFromPixel(depth_img, x, y);
+        float win_z = *depth_img->PointerAt<float>(x, y);
         if (win_z >= far_z) {
             for (int v = y - radius_px; v < y + radius_px; ++v) {
                 for (int u = x - radius_px; u < x + radius_px; ++u) {
-                    float z = GetWinZFromPixel(depth_img, u, v);
+                    float z = *depth_img->PointerAt<float>(x, y);
                     win_z = std::min(win_z, z);
                 }
             }
@@ -491,15 +491,6 @@ private:
             SetCenterOfRotation(point);
             interactor_->Rotate(0, 0);  // update now
         }
-    }
-
-    float GetWinZFromPixel(std::shared_ptr<geometry::Image> depth_img,
-                           int x,
-                           int y) {
-        auto* rgba = depth_img->PointerAt<uint8_t>(x, y, 0);
-        uint32_t depth32 = ((rgba[0] << 16) | (rgba[1] << 8) | rgba[2]);
-        float win_z = float(depth32) / 16777215.0f;
-        return win_z;
     }
 };
 

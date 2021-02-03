@@ -73,6 +73,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
+    std::shared_ptr<geometry::Image> RenderToDepthImage() {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    }
+
 private:
     int width_;
     int height_;
@@ -119,7 +123,12 @@ void pybind_rendering_classes(py::module &m) {
                     "be accessed after that point.")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
-                 "returned");
+                 "returned")
+            .def("render_to_depth_image",
+                 &PyOffscreenRenderer::RenderToDepthImage,
+                 "Renders scene depth buffer to a float image, blocking until "
+                 "the image is returned. Pixels range from 0 (near plane) to "
+                 "1 (far plane)");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",

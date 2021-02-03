@@ -191,15 +191,20 @@ void FilamentRenderer::EnableCaching(bool enable) {
 
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
-    for (auto& br : buffer_renderers_) {
-        if (br->pending_) {
-            br->Render();
-            // Force the engine to render, otherwise it sometimes doesn't
-            // render for a while, especially on Linux. This means the read
-            // pixels callback does not get called until sometime later,
-            // possibly several draws later.
-            engine_.flushAndWait();
+    if (!buffer_renderers_.empty()) {
+        for (auto& br : buffer_renderers_) {
+            if (br->pending_) {
+                br->Render();
+            }
         }
+
+        // Force the engine to render, otherwise it sometimes doesn't
+        // render for a while, especially on Linux. This means the read
+        // pixels callback does not get called until sometime later,
+        // possibly several draws later.
+        engine_.flushAndWait();
+
+        buffer_renderers_.clear();  // Cleanup
     }
 
     if (render_caching_enabled_) {
@@ -326,8 +331,8 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 }
 
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
-    auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_, *this);
-    buffer_renderers_.insert(renderer.get());
+    auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
+    buffer_renderers_.insert(renderer);
     return std::move(renderer);
 }
 
@@ -350,9 +355,10 @@ TextureHandle FilamentRenderer::AddTexture(
     return resource_mgr_.CreateTexture(image, srgb);
 }
 
-void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
-    buffer_renderers_.erase(render);
-}
+// void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer*
+// render) {
+//    buffer_renderers_.erase(render);
+//}
 
 }  // namespace rendering
 }  // namespace visualization
