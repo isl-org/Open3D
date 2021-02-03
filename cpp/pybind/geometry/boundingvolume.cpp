@@ -58,7 +58,7 @@ void pybind_boundingvolume(py::module &m) {
                      auto e = box.extent_;
                      s << "OrientedBoundingBox: center: (" << c.x() << ", "
                        << c.y() << ", " << c.z() << "), extent: " << e.x()
-                       << ", " << e.y() << e.z() << ")";
+                       << ", " << e.y() << ", " << e.z() << ")";
                      return s.str();
                  })
             .def("get_point_indices_within_bounding_box",
