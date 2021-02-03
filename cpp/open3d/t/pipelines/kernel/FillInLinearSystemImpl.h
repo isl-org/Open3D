@@ -423,7 +423,7 @@ void FillInSLACRegularizerTermCPU
 
         // Build a 3x3 linear system to compute the local R
         float cov[3][3] = {0};
-        float U[3][3], V[3][3], S[3][3];
+        float U[3][3], V[3][3], S[3];
 
         int cnt = 0;
         for (int k = 0; k < 6; ++k) {
@@ -466,35 +466,17 @@ void FillInSLACRegularizerTermCPU
 
         if (cnt < 4) return;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
         // clang-format off
-        svdcuda(cov[0][0], cov[0][1], cov[0][2],
-                cov[1][0], cov[1][1], cov[1][2],
-                cov[2][0], cov[2][1], cov[2][2],
-                U[0][0], U[0][1], U[0][2],
-                U[1][0], U[1][1], U[1][2],
-                U[2][0], U[2][1], U[2][2],
-                S[0][0], S[1][1], S[2][2],
-                V[0][0], V[0][1], V[0][2],
-                V[1][0], V[1][1], V[1][2],
-                V[2][0], V[2][1], V[2][2]);
-        // clang-format on
-#else
-        // clang-format off
-        svdcpu(cov[0][0], cov[0][1], cov[0][2],
-               cov[1][0], cov[1][1], cov[1][2],
-               cov[2][0], cov[2][1], cov[2][2],
-               U[0][0], U[0][1], U[0][2],
-               U[1][0], U[1][1], U[1][2],
-               U[2][0], U[2][1], U[2][2],
-               S[0][0], S[0][1], S[0][2],
-               S[1][0], S[1][1], S[1][2],
-               S[2][0], S[2][1], S[2][2],
-               V[0][0], V[0][1], V[0][2],
-               V[1][0], V[1][1], V[1][2],
-               V[2][0], V[2][1], V[2][2]);
-        // clang-format on
-#endif
+        svd(cov[0][0], cov[0][1], cov[0][2],
+            cov[1][0], cov[1][1], cov[1][2],
+            cov[2][0], cov[2][1], cov[2][2],
+            U[0][0], U[0][1], U[0][2],
+            U[1][0], U[1][1], U[1][2],
+            U[2][0], U[2][1], U[2][2],
+            S[0], S[1], S[2],
+            V[0][0], V[0][1], V[0][2],
+            V[1][0], V[1][1], V[1][2],
+            V[2][0], V[2][1], V[2][2]);
 
         // TODO: det3x3 and matmul3x3
         float R[3][3];
@@ -587,7 +569,7 @@ void FillInSLACRegularizerTermCPU
                 local_r[1] = diff_ik_curr[1] - R_diff_ik_curr[1];
                 local_r[2] = diff_ik_curr[2] - R_diff_ik_curr[2];
                 // printf("Regularizor [%ld]: %f %f %f\n", workload_idx,
-                //        local_r[0], local_r[1], local_r[2]);
+                // local_r[0], local_r[1], local_r[2]);
 
                 int offset_idx_i = 3 * idx_i + 6 * n_frags;
                 int offset_idx_k = 3 * idx_k + 6 * n_frags;
@@ -623,9 +605,9 @@ void FillInSLACRegularizerTermCPU
 #pragma omp critical
                 {
                     // Update residual
-                  *residual_ptr += weight * (local_r[0] * local_r[0] +
-                                             local_r[1] * local_r[1] +
-                                             local_r[2] * local_r[2]);
+                    *residual_ptr += weight * (local_r[0] * local_r[0] +
+                                               local_r[1] * local_r[1] +
+                                               local_r[2] * local_r[2]);
 
                     for (int axis = 0; axis < 3; ++axis) {
                         // Update AtA: 2x2

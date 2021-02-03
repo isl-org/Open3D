@@ -16,8 +16,7 @@
 **
 **************************************************************************/
 
-#ifndef SVD3_CUDA_H
-#define SVD3_CUDA_H
+#pragma once
 
 #include <cuda.h>
 
@@ -37,36 +36,36 @@ union un {
     unsigned int ui;
 };
 
-__device__ __forceinline__ void svdcuda(float a11,
-                                        float a12,
-                                        float a13,
-                                        float a21,
-                                        float a22,
-                                        float a23,
-                                        float a31,
-                                        float a32,
-                                        float a33,  // input A
-                                        float &u11,
-                                        float &u12,
-                                        float &u13,
-                                        float &u21,
-                                        float &u22,
-                                        float &u23,
-                                        float &u31,
-                                        float &u32,
-                                        float &u33,  // output U
-                                        float &s11,
-                                        float &s22,
-                                        float &s33,  // output S
-                                        float &v11,
-                                        float &v12,
-                                        float &v13,
-                                        float &v21,
-                                        float &v22,
-                                        float &v23,
-                                        float &v31,
-                                        float &v32,
-                                        float &v33  // output V
+__device__ __forceinline__ void svd(float a11,
+                                    float a12,
+                                    float a13,
+                                    float a21,
+                                    float a22,
+                                    float a23,
+                                    float a31,
+                                    float a32,
+                                    float a33,  // input A
+                                    float &u11,
+                                    float &u12,
+                                    float &u13,
+                                    float &u21,
+                                    float &u22,
+                                    float &u23,
+                                    float &u31,
+                                    float &u32,
+                                    float &u33,  // output U
+                                    float &s11,
+                                    float &s22,
+                                    float &s33,  // output S
+                                    float &v11,
+                                    float &v12,
+                                    float &v13,
+                                    float &v21,
+                                    float &v22,
+                                    float &v23,
+                                    float &v31,
+                                    float &v32,
+                                    float &v33  // output V
 ) {
     un Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;
     un Su11, Su21, Su31, Su12, Su22, Su32, Su13, Su23, Su33;
@@ -1099,4 +1098,3 @@ __device__ __forceinline__ void svdcuda(float a11,
     // s23 = Sa23.f; s31 = Sa31.f; s32 = Sa32.f;
     s33 = Sa33.f;
 }
-#endif

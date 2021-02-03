@@ -495,7 +495,7 @@ void UpdateControlGrid(ControlGrid& ctr_grid,
                        core::Tensor& delta,
                        const SLACOptimizerOption& option) {
     core::Tensor delta_cgrids = delta.View({-1, 3});
-    utility::LogInfo("delta_cgrids = {}", delta_cgrids.ToString());
+    utility::LogInfo("delta_cgrids = {}", delta_cgrids[0].ToString());
     if (delta_cgrids.GetLength() != int64_t(ctr_grid.Size())) {
         utility::LogError("Dimension Mismatch");
     }
