@@ -80,7 +80,13 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
                      ctr_hashmap_->GetBucketCount());
 }
 
-void ControlGrid::Compactify() { ctr_hashmap_->Rehash(ctr_hashmap_->Size()); }
+void ControlGrid::Compactify() {
+    ctr_hashmap_->Rehash(ctr_hashmap_->Size());
+    core::Tensor active_addrs;
+    ctr_hashmap_->GetActiveIndices(active_addrs);
+
+    utility::LogInfo("active_addrs = {}", active_addrs.ToString());
+}
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
 ControlGrid::GetNeighborGridMap() {

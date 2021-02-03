@@ -534,7 +534,9 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                                                core::Dtype::Float32, device);
         core::Tensor Atb = core::Tensor::Zeros({num_params, 1},
                                                core::Dtype::Float32, device);
-        core::Tensor residual =
+        core::Tensor residual_data =
+                core::Tensor::Zeros({1}, core::Dtype::Float32, device);
+        core::Tensor residual_reg =
                 core::Tensor::Zeros({1}, core::Dtype::Float32, device);
 
         core::Tensor indices_eye0 =
@@ -544,12 +546,13 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                 1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
 
         utility::LogInfo("Iteration {}", itr);
-        FillInSLACRegularizerTerm(AtA, Atb, residual, ctr_grid,
+        FillInSLACRegularizerTerm(AtA, Atb, residual_reg, ctr_grid,
                                   pose_graph_update.nodes_.size(), option);
 
-        FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, fnames_down,
+        FillInSLACAlignmentTerm(AtA, Atb, residual_reg, ctr_grid, fnames_down,
                                 pose_graph_update, option);
-        utility::LogInfo("Residual = {}", residual[0].Item<float>());
+        utility::LogInfo("Residual Reg = {}", residual_reg[0].Item<float>());
+        utility::LogInfo("Residual Data = {}", residual_data[0].Item<float>());
 
         core::Tensor delta = Solve(AtA, Atb, option);
 

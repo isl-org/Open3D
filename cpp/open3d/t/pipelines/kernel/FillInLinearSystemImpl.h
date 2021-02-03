@@ -293,7 +293,7 @@ void FillInSLACAlignmentTermCPU
                     AtA_ptr[idx[ki] * n_vars + idx[kj]]
                       += J[ki] * J[kj];
                  }
-                 Atb_ptr[ki] += J[ki] * r;
+                 Atb_ptr[idx[ki]] += J[ki] * r;
             }
             *residual_ptr += r * r;
         }
@@ -569,7 +569,7 @@ void FillInSLACRegularizerTermCPU
                 local_r[1] = diff_ik_curr[1] - R_diff_ik_curr[1];
                 local_r[2] = diff_ik_curr[2] - R_diff_ik_curr[2];
                 // printf("Regularizor [%ld]: %f %f %f\n", workload_idx,
-                // local_r[0], local_r[1], local_r[2]);
+                //        local_r[0], local_r[1], local_r[2]);
 
                 int offset_idx_i = 3 * idx_i + 6 * n_frags;
                 int offset_idx_k = 3 * idx_k + 6 * n_frags;
@@ -611,15 +611,15 @@ void FillInSLACRegularizerTermCPU
 
                     for (int axis = 0; axis < 3; ++axis) {
                         // Update AtA: 2x2
-                        AtA_ptr[(offset_idx_i + axis) * n_vars + offset_idx_i +
-                                axis] += weight;
-                        AtA_ptr[(offset_idx_k + axis) * n_vars + offset_idx_k +
-                                axis] += weight;
+                        AtA_ptr[(offset_idx_i + axis) * n_vars +
+                                 offset_idx_i + axis] += weight;
+                        AtA_ptr[(offset_idx_k + axis) * n_vars +
+                                 offset_idx_k + axis] += weight;
 
-                        AtA_ptr[(offset_idx_i + axis) * n_vars + offset_idx_k +
-                                axis] -= weight;
-                        AtA_ptr[(offset_idx_k + axis) * n_vars + offset_idx_i +
-                                axis] -= weight;
+                        AtA_ptr[(offset_idx_i + axis) * n_vars +
+                                 offset_idx_k + axis] -= weight;
+                        AtA_ptr[(offset_idx_k + axis) * n_vars +
+                                 offset_idx_i + axis] -= weight;
 
                         // Update Atb: 2x1
                         Atb_ptr[offset_idx_i + axis] += weight * local_r[axis];
