@@ -183,7 +183,7 @@ Image Image::RGBToGray() const {
     return dst_im;
 }
 
-Image Image::Dilate(int half_kernel_size) const {
+Image Image::Dilate(int kernel_size) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
     // Check NPP datatype support for each function in documentation:
@@ -212,12 +212,12 @@ Image Image::Dilate(int half_kernel_size) const {
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::Dilate, data_, dst_im.data_, half_kernel_size);
+        CUDA_CALL(npp::Dilate, data_, dst_im.data_, kernel_size);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::Dilate, data_, dst_im.data_, half_kernel_size);
+        IPP_CALL(ipp::Dilate, data_, dst_im.data_, kernel_size);
     } else {
         utility::LogError(
                 "Dilate with data type {} on device {} is not implemented!",
@@ -226,7 +226,7 @@ Image Image::Dilate(int half_kernel_size) const {
     return dst_im;
 }
 
-Image Image::BilateralFilter(int half_kernel_size,
+Image Image::BilateralFilter(int kernel_size,
                              float value_sigma,
                              float dist_sigma) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
@@ -252,13 +252,13 @@ Image Image::BilateralFilter(int half_kernel_size,
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::BilateralFilter, data_, dst_im.data_, half_kernel_size,
+        CUDA_CALL(npp::BilateralFilter, data_, dst_im.data_, kernel_size,
                   value_sigma, dist_sigma);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::BilateralFilter, data_, dst_im.data_, half_kernel_size,
+        IPP_CALL(ipp::BilateralFilter, data_, dst_im.data_, kernel_size,
                  value_sigma, dist_sigma);
     } else {
         utility::LogError(

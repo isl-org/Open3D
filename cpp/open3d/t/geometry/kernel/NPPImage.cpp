@@ -67,18 +67,15 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
 #undef NPP_ARGS
 }
 
-void Dilate(const core::Tensor &src_im,
-            core::Tensor &dst_im,
-            int half_kernel_size) {
+void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
 
     // Create mask.
     core::Tensor mask =
-            core::Tensor::Ones(core::SizeVector{2 * half_kernel_size + 1,
-                                                2 * half_kernel_size + 1, 1},
+            core::Tensor::Ones(core::SizeVector{kernel_size, kernel_size, 1},
                                core::Dtype::UInt8, src_im.GetDevice());
-    NppiSize mask_size = {2 * half_kernel_size + 1, 2 * half_kernel_size + 1};
+    NppiSize mask_size = {kernel_size, kernel_size};
 
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
                          static_cast<int>(src_im.GetShape(0))};
@@ -87,7 +84,7 @@ void Dilate(const core::Tensor &src_im,
     // create struct with ROI size
     NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
                          static_cast<int>(dst_im.GetShape(0))};
-    NppiPoint anchor = {half_kernel_size, half_kernel_size};
+    NppiPoint anchor = {kernel_size / 2, kernel_size / 2};
 
     auto dtype = src_im.GetDtype();
 #define NPP_ARGS                                                          \
@@ -133,7 +130,7 @@ void Dilate(const core::Tensor &src_im,
 
 void BilateralFilter(const core::Tensor &src_im,
                      core::Tensor &dst_im,
-                     int half_kernel_size,
+                     int kernel_size,
                      float value_sigma,
                      float dist_sigma) {
     // Supported device and datatype checking happens in calling code and will
@@ -147,12 +144,12 @@ void BilateralFilter(const core::Tensor &src_im,
                          static_cast<int>(dst_im.GetShape(0))};
 
     auto dtype = src_im.GetDtype();
-#define NPP_ARGS                                                          \
-    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
-            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
-            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
-            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
-            half_kernel_size, 1, value_sigma, dist_sigma, NPP_BORDER_REPLICATE
+#define NPP_ARGS                                                               \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                       \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,      \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                     \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size / 2, \
+            1, value_sigma, dist_sigma, NPP_BORDER_REPLICATE
     if (dtype == core::Dtype::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {

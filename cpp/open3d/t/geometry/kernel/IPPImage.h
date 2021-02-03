@@ -70,11 +70,11 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im);
 
 void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
-            int half_kernel_size);
+            int kernel_size);
 
 void BilateralFilter(const open3d::core::Tensor &srcim,
                      open3d::core::Tensor &dstim,
-                     int half_kernel_size,
+                     int kernel_size,
                      float value_sigma,
                      float dist_sigma);
 

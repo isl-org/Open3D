@@ -204,8 +204,8 @@ TEST_P(ImagePermuteDevices, BilateralFilter) {
                                      "/RGBD/depth/00000.png"),
             device);
 
-    auto color_filtered = color.BilateralFilter(3);
-    auto depth_filtered = depth.BilateralFilter(1, 1.0, 4.0);
+    auto color_filtered = color.BilateralFilter(5);
+    auto depth_filtered = depth.BilateralFilter(3, 1.0, 4.0);
 
     depth.AsTensor().Save("original.npy");
     depth_filtered.AsTensor().Save("filtered.npy");
@@ -260,7 +260,9 @@ TEST_P(ImagePermuteDevices, SobelFilter) {
     gray_filtered.first.AsTensor()
             .To(core::Dtype::Float32)
             .Save("gray_dx" + device.ToString() + ".npy");
-    gray_filtered.second.AsTensor().Save("gray_dy.npy");
+    gray_filtered.second.AsTensor()
+            .To(core::Dtype::Float32)
+            .Save("gray_dy" + device.ToString() + ".npy");
     depth_filtered.first.AsTensor().Save("depth_dx.npy");
     depth_filtered.second.AsTensor().Save("depth_dy.npy");
 }
@@ -286,7 +288,7 @@ TEST_P(ImagePermuteDevices, Dilate) {
     const int rows = 4;
     const int cols = 8;
     const int channels = 1;
-    const int half_kernel_size = 1;
+    const int kernel_size = 3;
     core::Device device = GetParam();
 
     core::Tensor t_input{
@@ -300,10 +302,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     t::geometry::Image input_uint8_t(t_input_uint8_t);
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input_uint8_t.Dilate(half_kernel_size),
-                     std::runtime_error);
+        ASSERT_THROW(input_uint8_t.Dilate(kernel_size), std::runtime_error);
     } else {
-        output = input_uint8_t.Dilate(half_kernel_size);
+        output = input_uint8_t.Dilate(kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());
@@ -317,10 +318,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     t::geometry::Image input_uint16_t(t_input_uint16_t);
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input_uint16_t.Dilate(half_kernel_size),
-                     std::runtime_error);
+        ASSERT_THROW(input_uint16_t.Dilate(kernel_size), std::runtime_error);
     } else {
-        output = input_uint16_t.Dilate(half_kernel_size);
+        output = input_uint16_t.Dilate(kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());
@@ -331,9 +331,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     // Float32
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input.Dilate(half_kernel_size), std::runtime_error);
+        ASSERT_THROW(input.Dilate(kernel_size), std::runtime_error);
     } else {
-        output = input.Dilate(half_kernel_size);
+        output = input.Dilate(kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());

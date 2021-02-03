@@ -189,10 +189,10 @@ public:
     /// 8-connected neighborhood is used to create the dilation mask.
     /// \param half_kernel_size A dilation mask of size 2*half_kernel_size+1 is
     /// used.
-    Image Dilate(int half_kernel_size = 1) const;
+    Image Dilate(int kernel_size = 3) const;
 
     /// Return a new image after bilateral filtering.
-    Image BilateralFilter(int half_kernel_size = 1,
+    Image BilateralFilter(int kernel_size = 3,
                           float value_sigma = 400.0f,
                           float dist_sigma = 100.0f) const;
 

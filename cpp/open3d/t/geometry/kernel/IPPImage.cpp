@@ -93,16 +93,13 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     }
 }
 
-void Dilate(const core::Tensor &src_im,
-            core::Tensor &dst_im,
-            int half_kernel_size) {
+void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
 
     // Create mask.
     core::Tensor mask =
-            core::Tensor::Ones(core::SizeVector{2 * half_kernel_size + 1,
-                                                2 * half_kernel_size + 1, 1},
+            core::Tensor::Ones(core::SizeVector{kernel_size, kernel_size, 1},
                                core::Dtype::UInt8, src_im.GetDevice());
 
     auto dtype = src_im.GetDtype();
@@ -135,7 +132,7 @@ void Dilate(const core::Tensor &src_im,
 
 void BilateralFilter(const core::Tensor &src_im,
                      core::Tensor &dst_im,
-                     int half_kernel_size,
+                     int kernel_size,
                      float value_sigma,
                      float dist_sigma) {
     // Supported device and datatype checking happens in calling code and will
@@ -155,7 +152,7 @@ void BilateralFilter(const core::Tensor &src_im,
             dst_im.GetStride(0) * dtype.ByteSize());
 
     try {
-        ::ipp::iwiFilterBilateral(ipp_src_im, ipp_dst_im, half_kernel_size,
+        ::ipp::iwiFilterBilateral(ipp_src_im, ipp_dst_im, kernel_size / 2,
                                   value_sigma, dist_sigma);
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning
