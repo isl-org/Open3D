@@ -401,6 +401,8 @@ void pybind_rendering_classes(py::module &m) {
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
+            .def("show_ground_plane", &Open3DScene::ShowGroundPlane,
+                 "Toggles display of ground plane")
             .def("set_lighting", &Open3DScene::SetLighting,
                  "Sets a simple lighting model. set_lighting(profile, "
                  "sun_dir). The default value is "
