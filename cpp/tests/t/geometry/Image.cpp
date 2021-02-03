@@ -192,7 +192,7 @@ TEST_P(ImagePermuteDevices,
                 ElementsAreArray(input_data));
 }
 
-TEST_P(ImagePermuteDevices, BilateralFilter) {
+TEST_P(ImagePermuteDevices, FilterBilateral) {
     core::Device device = GetParam();
 
     t::geometry::Image color = t::geometry::Image::FromLegacyImage(
@@ -204,8 +204,8 @@ TEST_P(ImagePermuteDevices, BilateralFilter) {
                                      "/RGBD/depth/00000.png"),
             device);
 
-    auto color_filtered = color.BilateralFilter(5);
-    auto depth_filtered = depth.BilateralFilter(3, 1.0, 4.0);
+    auto color_filtered = color.FilterBilateral(5);
+    auto depth_filtered = depth.FilterBilateral(3, 1.0, 4.0);
 
     depth.AsTensor().Save("original.npy");
     depth_filtered.AsTensor().Save("filtered.npy");
@@ -214,7 +214,7 @@ TEST_P(ImagePermuteDevices, BilateralFilter) {
     io::WriteImage("depth_filtered.png", depth_filtered.ToLegacyImage());
 }
 
-TEST_P(ImagePermuteDevices, GaussianFilter) {
+TEST_P(ImagePermuteDevices, FilterGaussian) {
     core::Device device = GetParam();
 
     t::geometry::Image color = t::geometry::Image::FromLegacyImage(
@@ -226,8 +226,8 @@ TEST_P(ImagePermuteDevices, GaussianFilter) {
                                      "/RGBD/depth/00000.png"),
             device);
 
-    auto color_filtered = color.GaussianFilter(7);
-    auto depth_filtered = depth.GaussianFilter(7);
+    auto color_filtered = color.FilterGaussian(7);
+    auto depth_filtered = depth.FilterGaussian(7);
 
     depth.AsTensor().Save("original.npy");
     depth_filtered.AsTensor().Save("filtered.npy");
@@ -236,7 +236,7 @@ TEST_P(ImagePermuteDevices, GaussianFilter) {
     io::WriteImage("depth_gauss_filtered.png", depth_filtered.ToLegacyImage());
 }
 
-TEST_P(ImagePermuteDevices, SobelFilter) {
+TEST_P(ImagePermuteDevices, FilterSobel) {
     core::Device device = GetParam();
 
     t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
@@ -254,8 +254,8 @@ TEST_P(ImagePermuteDevices, SobelFilter) {
                     device)
                     .To(core::Dtype::Float32);
 
-    auto gray_filtered = gray.SobelFilter(3);
-    auto depth_filtered = depth.SobelFilter(5);
+    auto gray_filtered = gray.FilterSobel(3);
+    auto depth_filtered = depth.FilterSobel(5);
 
     gray_filtered.first.AsTensor()
             .To(core::Dtype::Float32)

@@ -40,17 +40,17 @@ void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int kernel_size);
 
-void BilateralFilter(const open3d::core::Tensor &srcim,
+void FilterBilateral(const open3d::core::Tensor &srcim,
                      open3d::core::Tensor &dstim,
                      int kernel_size,
                      float value_sigma,
                      float dist_sigma);
 
-void GaussianFilter(const open3d::core::Tensor &srcim,
+void FilterGaussian(const open3d::core::Tensor &srcim,
                     open3d::core::Tensor &dstim,
                     int kernel_size);
 
-void SobelFilter(const open3d::core::Tensor &srcim,
+void FilterSobel(const open3d::core::Tensor &srcim,
                  open3d::core::Tensor &dstim_dx,
                  open3d::core::Tensor &dstim_dy,
                  int kernel_size);

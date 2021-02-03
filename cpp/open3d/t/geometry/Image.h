@@ -192,7 +192,7 @@ public:
     Image Dilate(int kernel_size = 3) const;
 
     /// Return a new image after bilateral filtering.
-    Image BilateralFilter(int kernel_size = 3,
+    Image FilterBilateral(int kernel_size = 3,
                           float value_sigma = 400.0f,
                           float dist_sigma = 100.0f) const;
 
@@ -200,11 +200,11 @@ public:
     /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
     /// Possible kernel_size: odd numbers >= 3 are supported for CPU, and only
     /// up to 15 are supported for GPU.
-    Image GaussianFilter(int kernel_size = 3) const;
+    Image FilterGaussian(int kernel_size = 3) const;
 
     /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
     /// Possible kernel_size: 3 and 5.
-    std::pair<Image, Image> SobelFilter(int kernel_size = 3) const;
+    std::pair<Image, Image> FilterSobel(int kernel_size = 3) const;
 
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {

@@ -130,7 +130,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     }
 }
 
-void BilateralFilter(const core::Tensor &src_im,
+void FilterBilateral(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int kernel_size,
                      float value_sigma,
@@ -160,7 +160,7 @@ void BilateralFilter(const core::Tensor &src_im,
     }
 }
 
-void GaussianFilter(const core::Tensor &src_im,
+void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
                     int kernel_size) {
     // Use a precomputed sigma to be consistent with npp:
@@ -191,7 +191,7 @@ void GaussianFilter(const core::Tensor &src_im,
     }
 }
 
-void SobelFilter(const core::Tensor &src_im,
+void FilterSobel(const core::Tensor &src_im,
                  core::Tensor &dst_im_dx,
                  core::Tensor &dst_im_dy,
                  int kernel_size) {
@@ -201,7 +201,7 @@ void SobelFilter(const core::Tensor &src_im,
     };
     auto it = kKernelSizeMap.find(kernel_size);
     if (it == kKernelSizeMap.end()) {
-        utility::LogError("Unsupported size {} for IPP SobelFilter",
+        utility::LogError("Unsupported size {} for IPP FilterSobel",
                           kernel_size);
     }
 

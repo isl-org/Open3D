@@ -61,7 +61,7 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
         using npp_dtype = Npp32f;
         nppiRGBToGray_32f_C3C1R(NPP_ARGS);
     } else {
-        utility::LogError("npp::GaussianFilter(): Unspported dtype {}",
+        utility::LogError("npp::FilterGaussian(): Unspported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -128,7 +128,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
 #undef NPP_ARGS
 }
 
-void BilateralFilter(const core::Tensor &src_im,
+void FilterBilateral(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int kernel_size,
                      float value_sigma,
@@ -172,13 +172,13 @@ void BilateralFilter(const core::Tensor &src_im,
             nppiFilterBilateralGaussBorder_32f_C3R(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::BilateralFilter(): Unspported dtype {}",
+        utility::LogError("npp::FilterBilateral(): Unspported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
 }
 
-void GaussianFilter(const core::Tensor &src_im,
+void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
                     int kernel_size) {
     // Supported device and datatype checking happens in calling code and will
@@ -200,7 +200,7 @@ void GaussianFilter(const core::Tensor &src_im,
     };
     auto it = kKernelSizeMap.find(kernel_size);
     if (it == kKernelSizeMap.end()) {
-        utility::LogError("Unsupported size {} for NPP GaussianFilter",
+        utility::LogError("Unsupported size {} for NPP FilterGaussian",
                           kernel_size);
     }
 #define NPP_ARGS                                                          \
@@ -237,13 +237,13 @@ void GaussianFilter(const core::Tensor &src_im,
             nppiFilterGaussBorder_32f_C4R(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::GaussianFilter(): Unspported dtype {}",
+        utility::LogError("npp::FilterGaussian(): Unspported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
 }
 
-void SobelFilter(const core::Tensor &src_im,
+void FilterSobel(const core::Tensor &src_im,
                  core::Tensor &dst_im_dx,
                  core::Tensor &dst_im_dy,
                  int kernel_size) {
@@ -263,7 +263,7 @@ void SobelFilter(const core::Tensor &src_im,
     };
     auto it = kKernelSizeMap.find(kernel_size);
     if (it == kKernelSizeMap.end()) {
-        utility::LogError("Unsupported size {} for NPP SobelFilter",
+        utility::LogError("Unsupported size {} for NPP FilterSobel",
                           kernel_size);
     }
 
@@ -292,7 +292,7 @@ void SobelFilter(const core::Tensor &src_im,
         nppiFilterSobelVertMaskBorder_32f_C1R(NPP_ARGS_DX);
         nppiFilterSobelHorizMaskBorder_32f_C1R(NPP_ARGS_DY);
     } else {
-        utility::LogError("npp::SobelFilter(): Unspported dtype {}",
+        utility::LogError("npp::FilterSobel(): Unspported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS_DX

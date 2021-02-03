@@ -226,7 +226,7 @@ Image Image::Dilate(int kernel_size) const {
     return dst_im;
 }
 
-Image Image::BilateralFilter(int kernel_size,
+Image Image::FilterBilateral(int kernel_size,
                              float value_sigma,
                              float dist_sigma) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
@@ -252,24 +252,24 @@ Image Image::BilateralFilter(int kernel_size,
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::BilateralFilter, data_, dst_im.data_, kernel_size,
+        CUDA_CALL(npp::FilterBilateral, data_, dst_im.data_, kernel_size,
                   value_sigma, dist_sigma);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::BilateralFilter, data_, dst_im.data_, kernel_size,
+        IPP_CALL(ipp::FilterBilateral, data_, dst_im.data_, kernel_size,
                  value_sigma, dist_sigma);
     } else {
         utility::LogError(
-                "BilateralFilter with data type {} on device {} is not "
+                "FilterBilateral with data type {} on device {} is not "
                 "implemented!",
                 GetDtype().ToString(), GetDevice().ToString());
     }
     return dst_im;
 }
 
-Image Image::GaussianFilter(int kernel_size) const {
+Image Image::FilterGaussian(int kernel_size) const {
     if (kernel_size < 3 || kernel_size % 2 == 0) {
         utility::LogError("Kernel size must be an odd number >= 3.");
     }
@@ -300,22 +300,22 @@ Image Image::GaussianFilter(int kernel_size) const {
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::GaussianFilter, data_, dst_im.data_, kernel_size);
+        CUDA_CALL(npp::FilterGaussian, data_, dst_im.data_, kernel_size);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::GaussianFilter, data_, dst_im.data_, kernel_size);
+        IPP_CALL(ipp::FilterGaussian, data_, dst_im.data_, kernel_size);
     } else {
         utility::LogError(
-                "GaussianFilter with data type {} on device {} is not "
+                "FilterGaussian with data type {} on device {} is not "
                 "implemented!",
                 GetDtype().ToString(), GetDevice().ToString());
     }
     return dst_im;
 }
 
-std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
+std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
     if (!(kernel_size == 3 || kernel_size == 5)) {
         utility::LogError("Kernel size must be 3 or 5.");
     }
@@ -350,17 +350,17 @@ std::pair<Image, Image> Image::SobelFilter(int kernel_size) const {
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
-        CUDA_CALL(npp::SobelFilter, data_, dst_im_dx.data_, dst_im_dy.data_,
+        CUDA_CALL(npp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                   kernel_size);
     } else if (HAVE_IPPICV &&
                data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
-        IPP_CALL(ipp::SobelFilter, data_, dst_im_dx.data_, dst_im_dy.data_,
+        IPP_CALL(ipp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                  kernel_size);
     } else {
         utility::LogError(
-                "SobelFilter with data type {} on device {} is not "
+                "FilterSobel with data type {} on device {} is not "
                 "implemented!",
                 GetDtype().ToString(), GetDevice().ToString());
     }
