@@ -1796,6 +1796,8 @@ void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
+void O3DVisualizer::ShowGround(bool show) { impl_->ShowAxes(show); }
+
 void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);
 }
