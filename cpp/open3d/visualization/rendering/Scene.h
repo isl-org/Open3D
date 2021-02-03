@@ -170,6 +170,9 @@ public:
                              float intensity) = 0;
     virtual void EnableSunLight(bool enable) = 0;
     virtual void EnableSunLightShadows(bool enable) = 0;
+    virtual void SetSunLightColor(const Eigen::Vector3f& color) = 0;
+    virtual Eigen::Vector3f GetSunLightColor() = 0;
+    virtual void SetSunLightIntensity(float intensity) = 0;
     virtual float GetSunLightIntensity() = 0;
     virtual void SetSunLightDirection(const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetSunLightDirection() = 0;

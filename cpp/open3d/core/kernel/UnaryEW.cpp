@@ -41,7 +41,7 @@ void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                           src.GetShape(), dst.GetShape());
     }
 
-    // Disbatch to device
+    // Dispatch to device
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
     if (src_device != dst_device) {
