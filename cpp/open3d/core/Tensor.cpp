@@ -1297,13 +1297,13 @@ Tensor Tensor::Solve(const Tensor& rhs) const {
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
-};
+}
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
-};
+}
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::LU(bool permute_l) const {
     core::Tensor A = this->Clone();
