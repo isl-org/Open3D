@@ -10,14 +10,6 @@ def main():
                                          resource_path="",
                                          headless=True)
 
-    yellow = rendering.Material()
-    yellow.base_color = [1.0, 0.75, 0.0, 1.0]
-    yellow.shader = "defaultLit"
-
-    green = rendering.Material()
-    green.base_color = [0.0, 0.5, 0.0, 1.0]
-    green.shader = "defaultLit"
-
     grey = rendering.Material()
     grey.base_color = [0.7, 0.7, 0.7, 1.0]
     grey.shader = "defaultLit"
@@ -25,13 +17,6 @@ def main():
     white = rendering.Material()
     white.base_color = [1.0, 1.0, 1.0, 1.0]
     white.shader = "defaultLit"
-
-    cyl = o3d.geometry.TriangleMesh.create_cylinder(.05, 3)
-    cyl.compute_vertex_normals()
-    cyl.translate([-2, 0, 1.5])
-    sphere = o3d.geometry.TriangleMesh.create_sphere(.2)
-    sphere.compute_vertex_normals()
-    sphere.translate([-2, 0, 3])
 
     box = o3d.geometry.TriangleMesh.create_box(2, 2, 1)
     box.compute_vertex_normals()
@@ -41,8 +26,6 @@ def main():
     solid.compute_vertex_normals()
     solid.translate([0, 0, 1.75])
 
-    render.scene.add_geometry("cyl", cyl, green)
-    render.scene.add_geometry("sphere", sphere, yellow)
     render.scene.add_geometry("box", box, grey)
     render.scene.add_geometry("solid", solid, white)
     render.scene.camera.look_at([0, 0, 0], [0, 10, 0], [0, 0, 1])
