@@ -14,20 +14,11 @@ def main():
     grey.base_color = [0.7, 0.7, 0.7, 1.0]
     grey.shader = "defaultLit"
 
-    white = rendering.Material()
-    white.base_color = [1.0, 1.0, 1.0, 1.0]
-    white.shader = "defaultLit"
-
     box = o3d.geometry.TriangleMesh.create_box(2, 2, 1)
     box.compute_vertex_normals()
     box.translate([-1, -1, 0])
-    solid = o3d.geometry.TriangleMesh.create_icosahedron(0.5)
-    solid.compute_triangle_normals()
-    solid.compute_vertex_normals()
-    solid.translate([0, 0, 1.75])
 
     render.scene.add_geometry("box", box, grey)
-    render.scene.add_geometry("solid", solid, white)
     render.scene.camera.look_at([0, 0, 0], [0, 10, 0], [0, 0, 1])
     render.scene.scene.set_sun_light([0.707, 0.0, -.707], [1.0, 1.0, 1.0],
                                      75000)
@@ -36,10 +27,6 @@ def main():
 
     img = render.render_to_image()
     o3d.io.write_image("test.png", img, 9)
-
-    render.scene.camera.look_at([0, 0, 0], [-10, 0, 0], [0, 0, 1])
-    img = render.render_to_image()
-    o3d.io.write_image("test2.png", img, 9)
 
 
 if __name__ == "__main__":
