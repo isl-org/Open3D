@@ -5,7 +5,10 @@ import open3d.visualization.rendering as rendering
 
 
 def main():
-    render = rendering.OffscreenRenderer(640, 480)
+    render = rendering.OffscreenRenderer(640,
+                                         480,
+                                         resource_path="",
+                                         headless=True)
 
     yellow = rendering.Material()
     yellow.base_color = [1.0, 0.75, 0.0, 1.0]
@@ -49,11 +52,11 @@ def main():
     render.scene.show_axes(True)
 
     img = render.render_to_image()
-    o3d.io.write_image("/tmp/test.png", img, 9)
+    o3d.io.write_image("test.png", img, 9)
 
     render.scene.camera.look_at([0, 0, 0], [-10, 0, 0], [0, 0, 1])
     img = render.render_to_image()
-    o3d.io.write_image("/tmp/test2.png", img, 9)
+    o3d.io.write_image("test2.png", img, 9)
 
 
 if __name__ == "__main__":
