@@ -270,7 +270,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 tsdf_prev = tsdf;
                                 t_prev = t;
                                 float delta = tsdf * sdf_trunc;
-                                t += delta < voxel_size ? voxel_size : delta;    
+                                t += delta < voxel_size ? voxel_size : delta;
                             }
                         });
             });
