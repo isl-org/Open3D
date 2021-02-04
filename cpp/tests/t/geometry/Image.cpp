@@ -195,82 +195,98 @@ TEST_P(ImagePermuteDevices,
 TEST_P(ImagePermuteDevices, FilterBilateral) {
     core::Device device = GetParam();
 
-    t::geometry::Image color = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/RGBD/color/00000.jpg"),
-            device);
-    t::geometry::Image depth =
-            t::geometry::Image::FromLegacyImage(
-                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                             "/RGBD/depth/00000.png"),
-                    device)
-                    .To(core::Dtype::Float32);
+    core::Tensor data =
+            core::Tensor::Zeros({10, 10}, core::Dtype::Float32, device);
+    data.Slice(0, 4, 5).Slice(1, 4, 5) = core::Tensor(
+            std::vector<float>{1.0f}, {}, core::Dtype::Float32, device);
 
-    auto color_filtered = color.FilterBilateral(5);
-    auto depth_filtered = depth.FilterBilateral(3, 1.0, 4.0);
+    t::geometry::Image im(data.View({10, 10, 1}));
+    im = im.FilterBilateral(3, 1, 1);
 
-    depth.AsTensor().Save("original.npy");
-    depth_filtered.AsTensor().Save("filtered.npy");
-
-    io::WriteImage(fmt::format("color_bilateral_{}.png", device.ToString()),
-                   color_filtered.ToLegacyImage());
-    io::WriteImage(fmt::format("depth_bilateral_{}.png", device.ToString()),
-                   depth_filtered.ToLegacyImage());
+    utility::LogInfo("{}", im.AsTensor().View({10, 10}).ToString());
 }
 
 TEST_P(ImagePermuteDevices, FilterGaussian) {
     core::Device device = GetParam();
 
-    t::geometry::Image color = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/RGBD/color/00000.jpg"),
-            device);
-    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/RGBD/depth/00000.png"),
-            device);
+    core::Tensor data =
+            core::Tensor::Zeros({10, 10}, core::Dtype::Float32, device);
+    data.Slice(0, 4, 5).Slice(1, 4, 5) = core::Tensor(
+            std::vector<float>{1.0f}, {}, core::Dtype::Float32, device);
 
-    auto color_filtered = color.FilterGaussian(7);
-    auto depth_filtered = depth.FilterGaussian(7);
+    t::geometry::Image im(data.View({10, 10, 1}));
 
-    depth.AsTensor().Save("original.npy");
-    depth_filtered.AsTensor().Save("filtered.npy");
+    // NVIDIA is not following what it is describing. Use advanced kernels
+    // instead.
+    im = im.FilterGaussian(5);
+    utility::LogInfo("{}", im.AsTensor().View({10, 10}).ToString());
+    utility::LogInfo("{}", im.AsTensor().Sum({0, 1}).ToString());
 
-    io::WriteImage(fmt::format("color_gaussian_{}.png", device.ToString()),
-                   color_filtered.ToLegacyImage());
-    io::WriteImage(fmt::format("depth_gaussian_{}.png", device.ToString()),
-                   depth_filtered.ToLegacyImage());
+    // t::geometry::Image color = t::geometry::Image::FromLegacyImage(
+    //         *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+    //                                  "/RGBD/color/00000.jpg"),
+    //         device);
+    // t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+    //         *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+    //                                  "/RGBD/depth/00000.png"),
+    //         device);
+
+    // auto color_filtered = color.FilterGaussian(7);
+    // auto depth_filtered = depth.FilterGaussian(7);
+
+    // depth.AsTensor().Save("original.npy");
+    // depth_filtered.AsTensor().Save("filtered.npy");
+
+    // io::WriteImage(fmt::format("color_gaussian_{}.png", device.ToString()),
+    //                color_filtered.ToLegacyImage());
+    // io::WriteImage(fmt::format("depth_gaussian_{}.png", device.ToString()),
+    //                depth_filtered.ToLegacyImage());
 }
 
 TEST_P(ImagePermuteDevices, FilterSobel) {
     core::Device device = GetParam();
 
-    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/lena_color.jpg"),
-            device);
-    t::geometry::Image gray = rgb.RGBToGray();
-    io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
-    io::WriteImage("lena_converted.png", gray.ToLegacyImage());
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 0, 0,
+       0, 1, 1, 0, 0,
+       0, 0, 1, 0, 0,
+       0, 0, 1, 0, 0,
+       0, 0, 1, 1, 0};
+    // clang-format on
+    core::Tensor data =
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+    auto grad = im.FilterSobel(3);
 
-    t::geometry::Image depth =
-            t::geometry::Image::FromLegacyImage(
-                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                             "/RGBD/depth/00000.png"),
-                    device)
-                    .To(core::Dtype::Float32);
+    utility::LogInfo("dx = {}", grad.first.AsTensor().View({5, 5}).ToString());
+    utility::LogInfo("dy = {}", grad.second.AsTensor().View({5, 5}).ToString());
+    // t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
+    //         *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+    //                                  "/lena_color.jpg"),
+    //         device);
+    // t::geometry::Image gray = rgb.RGBToGray();
+    // io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
+    // io::WriteImage("lena_converted.png", gray.ToLegacyImage());
 
-    auto gray_filtered = gray.FilterSobel(3);
-    auto depth_filtered = depth.FilterSobel(5);
+    // t::geometry::Image depth =
+    //         t::geometry::Image::FromLegacyImage(
+    //                 *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+    //                                          "/RGBD/depth/00000.png"),
+    //                 device)
+    //                 .To(core::Dtype::Float32);
 
-    gray_filtered.first.AsTensor()
-            .To(core::Dtype::Float32)
-            .Save("gray_dx" + device.ToString() + ".npy");
-    gray_filtered.second.AsTensor()
-            .To(core::Dtype::Float32)
-            .Save("gray_dy" + device.ToString() + ".npy");
-    depth_filtered.first.AsTensor().Save("depth_dx.npy");
-    depth_filtered.second.AsTensor().Save("depth_dy.npy");
+    // auto gray_filtered = gray.FilterSobel(3);
+    // auto depth_filtered = depth.FilterSobel(5);
+
+    // gray_filtered.first.AsTensor()
+    //         .To(core::Dtype::Float32)
+    //         .Save("gray_dx" + device.ToString() + ".npy");
+    // gray_filtered.second.AsTensor()
+    //         .To(core::Dtype::Float32)
+    //         .Save("gray_dy" + device.ToString() + ".npy");
+    // depth_filtered.first.AsTensor().Save("depth_dx.npy");
+    // depth_filtered.second.AsTensor().Save("depth_dy.npy");
 }
 
 TEST_P(ImagePermuteDevices, Resize) {

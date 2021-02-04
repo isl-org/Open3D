@@ -125,16 +125,18 @@ void Resize(const open3d::core::Tensor &src_im,
     // So we will use another special kernel for it.
     if (interp_type == Image::Nearest) {
         int64_t src_stride = src_im.GetStride(0);
+        int64_t src_rows = src_im.GetShape(0);
+        int64_t src_cols = src_im.GetShape(1);
 
         int64_t dst_stride = dst_im.GetStride(0);
         int64_t dst_cols = dst_im.GetShape(1);
 
         int64_t channels = dst_im.GetShape(2);
 
-        float y_ratio = static_cast<float>(src_im.GetShape(0) - 1) /
-                        static_cast<float>(dst_im.GetShape(0) - 1);
-        float x_ratio = static_cast<float>(src_im.GetShape(1) - 1) /
-                        static_cast<float>(dst_im.GetShape(1) - 1);
+        float y_ratio = static_cast<float>(src_im.GetShape(0)) /
+                        static_cast<float>(dst_im.GetShape(0));
+        float x_ratio = static_cast<float>(src_im.GetShape(1)) /
+                        static_cast<float>(dst_im.GetShape(1));
 
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             const scalar_t *src_ptr =
@@ -152,8 +154,12 @@ void Resize(const open3d::core::Tensor &src_im,
 
                         int64_t y_src = static_cast<int64_t>(
                                 std::round(y_dst * y_ratio));
+                        y_src = std::max(std::min(y_src, src_rows - 1), 0l);
+
                         int64_t x_src = static_cast<int64_t>(
                                 std::round(x_dst * x_ratio));
+                        x_src = std::max(std::min(x_src, src_cols - 1), 0l);
+
                         const scalar_t *src_data =
                                 src_ptr + src_stride * y_src + channels * x_src;
 
@@ -253,7 +259,7 @@ void FilterGaussian(const core::Tensor &src_im,
     // Use a precomputed sigma to be consistent with npp:
     // https://docs.nvidia.com/cuda/npp/group__image__filter__gauss__border.html
 
-    double sigma = std::sqrt(0.4 * (kernel_size / 2) * 0.6);
+    double sigma = 0.4 + (kernel_size / 2) * 0.6;
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
@@ -316,6 +322,8 @@ void FilterSobel(const core::Tensor &src_im,
                               IwiDerivativeType::iwiDerivVerFirst, it->second);
         ::ipp::iwiFilterSobel(ipp_src_im, ipp_dst_im_dy,
                               IwiDerivativeType::iwiDerivHorFirst, it->second);
+        // IPP uses a left mins right kernel, so we need to negate it in-place.
+        dst_im_dx.Neg_();
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);

@@ -259,6 +259,16 @@ void FilterGaussian(const core::Tensor &src_im,
     NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
                          static_cast<int>(dst_im.GetShape(0))};
 
+    double sigma = 0.4 + (kernel_size / 2) * 0.6;
+    core::Tensor linspace =
+            core::Tensor::Arange(static_cast<float>(-kernel_size / 2),
+                                 static_cast<float>(kernel_size / 2 + 1), 1.0f,
+                                 core::Dtype::Float32, src_im.GetDevice());
+    core::Tensor logval = (linspace * linspace).Mul(-0.5f / (sigma * sigma));
+    core::Tensor mask = logval.Exp();
+    mask = mask / mask.Sum({0});
+    float *mask_ptr = static_cast<float *>(mask.GetDataPtr());
+
     auto dtype = src_im.GetDtype();
     const static std::unordered_map<int, NppiMaskSize> kKernelSizeMap = {
             {3, NPP_MASK_SIZE_3_X_3},    {5, NPP_MASK_SIZE_5_X_5},
@@ -271,38 +281,38 @@ void FilterGaussian(const core::Tensor &src_im,
         utility::LogError("Unsupported size {} for NPP FilterGaussian",
                           kernel_size);
     }
-#define NPP_ARGS                                                          \
-    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
-            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
-            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
-            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, it->second, \
-            NPP_BORDER_REPLICATE
+#define NPP_ARGS                                                           \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                   \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,  \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                 \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size, \
+            mask_ptr, NPP_BORDER_REPLICATE
     if (dtype == core::Dtype::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterGaussBorder_8u_C1R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_8u_C1R(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterGaussBorder_8u_C3R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_8u_C3R(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiFilterGaussBorder_8u_C4R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_8u_C4R(NPP_ARGS);
         }
     } else if (dtype == core::Dtype::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterGaussBorder_16u_C1R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_16u_C1R(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterGaussBorder_16u_C3R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_16u_C3R(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiFilterGaussBorder_16u_C4R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_16u_C4R(NPP_ARGS);
         }
     } else if (dtype == core::Dtype::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterGaussBorder_32f_C1R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_32f_C1R(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterGaussBorder_32f_C3R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_32f_C3R(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiFilterGaussBorder_32f_C4R(NPP_ARGS);
+            nppiFilterGaussAdvancedBorder_32f_C4R(NPP_ARGS);
         }
     } else {
         utility::LogError("npp::FilterGaussian(): Unspported dtype {}",
