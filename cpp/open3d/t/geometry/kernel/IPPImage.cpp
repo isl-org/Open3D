@@ -34,6 +34,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/Console.h"
 
@@ -111,17 +112,66 @@ void Resize(const open3d::core::Tensor &src_im,
             dst_im.GetStride(0) * dtype.ByteSize());
 
     static const std::unordered_map<int, IppiInterpolationType> type_dict = {
-            {Image::Nearest, ippNearest}, {Image::Linear, ippLinear},
-            {Image::Cubic, ippCubic},     {Image::Lanczos, ippLanczos},
+            {Image::Linear, ippLinear},
+            {Image::Cubic, ippCubic},
+            {Image::Lanczos, ippLanczos},
             {Image::Super, ippSuper},
     };
+
+    // IwiResize is crippled with ippNearest, it will throw error (unsupported
+    // interpolation).
+    // OpenCV also does not support NN interpolation.
+    // https://github.com/opencv/opencv/blob/master/modules/imgproc/src/resize.cpp#L3585
+    // So we will use another special kernel for it.
+    if (interp_type == Image::Nearest) {
+        int64_t src_stride = src_im.GetStride(0);
+
+        int64_t dst_stride = dst_im.GetStride(0);
+        int64_t dst_cols = dst_im.GetShape(1);
+
+        int64_t channels = dst_im.GetShape(2);
+
+        float y_ratio = static_cast<float>(src_im.GetShape(0) - 1) /
+                        static_cast<float>(dst_im.GetShape(0) - 1);
+        float x_ratio = static_cast<float>(src_im.GetShape(1) - 1) /
+                        static_cast<float>(dst_im.GetShape(1) - 1);
+
+        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            const scalar_t *src_ptr =
+                    static_cast<const scalar_t *>(src_im.GetDataPtr());
+            scalar_t *dst_ptr = static_cast<scalar_t *>(dst_im.GetDataPtr());
+            int64_t n = dst_im.GetShape(0) * dst_im.GetShape(1);
+
+            core::kernel::CPULauncher::LaunchGeneralKernel(
+                    n, [&](int64_t workload_idx) {
+                        int64_t y_dst = (workload_idx / dst_cols);
+                        int64_t x_dst = (workload_idx % dst_cols);
+
+                        scalar_t *dst_data =
+                                dst_ptr + dst_stride * y_dst + channels * x_dst;
+
+                        int64_t y_src = static_cast<int64_t>(
+                                std::round(y_dst * y_ratio));
+                        int64_t x_src = static_cast<int64_t>(
+                                std::round(x_dst * x_ratio));
+                        const scalar_t *src_data =
+                                src_ptr + src_stride * y_src + channels * x_src;
+
+                        for (int c = 0; c < channels; ++c) {
+                            dst_data[c] = src_data[c];
+                        }
+                    });
+        });
+
+        return;
+    }
+
     auto it = type_dict.find(interp_type);
     if (it == type_dict.end()) {
         utility::LogError("Unsupported interp type {}", interp_type);
     }
 
     try {
-        utility::LogInfo("{}", it->second);
         ::ipp::iwiResize(ipp_src_im, ipp_dst_im, it->second);
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning

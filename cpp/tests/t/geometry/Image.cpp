@@ -284,9 +284,11 @@ TEST_P(ImagePermuteDevices, Resize) {
                     .To(core::Dtype::Float32);
 
     auto rgb_2x = rgb.Resize(2, t::geometry::Image::Nearest);
-    io::WriteImage("rgb_2x.png", rgb_2x.ToLegacyImage());
+    io::WriteImage("rgb_2x" + device.ToString() + ".png",
+                   rgb_2x.ToLegacyImage());
     auto rgb_half = rgb.Resize(0.5, t::geometry::Image::Nearest);
-    io::WriteImage("rgb_half.png", rgb_half.ToLegacyImage());
+    io::WriteImage("rgb_half" + device.ToString() + ".png",
+                   rgb_half.ToLegacyImage());
     // auto rgb_4x = rgb_2x.Resize(2, t::geometry::Image::Nearest);
     // auto rgb_8x = rgb_4x.Resize(2, t::geometry::Image::Cubic);
     // auto rgb_16x = rgb_8x.Resize(2, t::geometry::Image::Linear);
