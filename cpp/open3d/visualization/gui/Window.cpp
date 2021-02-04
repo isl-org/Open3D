@@ -376,6 +376,7 @@ void Window::CreateRenderer() {
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not GLFW's context, so create the renderer after the window.
+    // visualization::rendering::EngineInstance::EnableHeadless();
     auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_manager =
             visualization::rendering::EngineInstance::GetResourceManager();

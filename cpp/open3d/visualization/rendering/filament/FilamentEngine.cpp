@@ -117,10 +117,17 @@ EngineInstance::EngineInstance() {
     filament::backend::Platform* custom_platform = nullptr;
     if (is_headless_) {
 #ifdef __linux__
+        utility::LogInfo(
+                "EngineInstance::EngineInstance(): is_headless_ == true "
+                "!!!!!!!!!!!!");
         custom_platform = CreateEGLHeadlessPlatform();
 #else
         utility::LogError("EGL Headless is not supported on this platform");
 #endif
+    } else {
+        utility::LogInfo(
+                "EngineInstance::EngineInstance(): is_headless_ == false "
+                "!!!!!!!!!!!!");
     }
 
     engine_ = filament::Engine::create(backend, custom_platform);
