@@ -3,6 +3,7 @@
 * RealSense SDK v2 integrated for reading RS bag files (PR #2646)
 * Tensor based RGBDImage class, Python bindings for Image and RGBDImage
 * RealSense sensor configuration, live capture and recording (with example and tutorial) (PR #2748)
+* Add mouselook for the legacy visualizer (PR #2551)
 
 ## 0.11
 
