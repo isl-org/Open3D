@@ -24,26 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LUImpl.h"
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
+#pragma once
+
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace core {
 
-void LUCPU(void* A_data,
-           void* ipiv_data,
-           int64_t n,
-           Dtype dtype,
-           const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        OPEN3D_LAPACK_CHECK(
-                getrf_cpu<scalar_t>(
-                        LAPACK_COL_MAJOR, n, n, static_cast<scalar_t*>(A_data),
-                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
-                "getrf failed in LUCPU");
-    });
-}
+/// \brief This function returns Det of 2D square matrix.
+/// \param A input 2D sqaure matrix.
+/// \return determinant [double].
+double Det(const Tensor& A);
 
 }  // namespace core
 }  // namespace open3d

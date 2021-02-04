@@ -24,6 +24,7 @@ set(KERNEL_CUDA_SRC
 )
 
 set(LINALG_SRC
+    linalg/Det.cpp
     linalg/Matmul.cpp
     linalg/MatmulCPU.cpp
     linalg/LeastSquares.cpp

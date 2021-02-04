@@ -24,25 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LUImpl.h"
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
+#include "open3d/core/linalg/Det.h"
+
+#include "open3d/core/CoreUtil.h"
+#include "open3d/core/linalg/LU.h"
 
 namespace open3d {
 namespace core {
 
-void LUCPU(void* A_data,
-           void* ipiv_data,
-           int64_t n,
-           Dtype dtype,
-           const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        OPEN3D_LAPACK_CHECK(
-                getrf_cpu<scalar_t>(
-                        LAPACK_COL_MAJOR, n, n, static_cast<scalar_t*>(A_data),
-                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
-                "getrf failed in LUCPU");
+double Det(const Tensor& A) {
+    Tensor ipiv, output;
+    LU_with_ipiv(A, ipiv, output);
+    // Sequential loop to compute determinant from LU output, is more efficient
+    // on CPU.
+    Tensor output_cpu = output.To(core::Device("CPU:0"));
+    Tensor ipiv_cpu = ipiv.To(core::Device("CPU:0"));
+    double det = 1.0;
+    int n = A.GetShape()[0];
+
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(A.GetDtype(), [&]() {
+        scalar_t* output_ptr = static_cast<scalar_t*>(output_cpu.GetDataPtr());
+        int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+
+        for (int i = 0; i < n; i++) {
+            det *= output_ptr[i * n + i];
+            if (ipiv_ptr[i] != i) {
+                det *= -1;
+            }
+        }
     });
+    return det;
 }
 
 }  // namespace core

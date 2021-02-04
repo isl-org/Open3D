@@ -89,17 +89,55 @@ TEST_P(LinalgPermuteDevices, Matmul) {
 }
 
 TEST_P(LinalgPermuteDevices, LU) {
-    const float EPSILON = 1e-6;
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
 
+    // LU test for 3x3 const square 2D tensor of dtype Float32.
+    const core::Tensor A_3x3cf = core::Tensor::Init<float>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+
+    core::Tensor permutationcf0, lowercf0, uppercf0;
+    std::tie(permutationcf0, lowercf0, uppercf0) = A_3x3cf.LU();
+    core::Tensor outputcf0 =
+            permutationcf0.Matmul(lowercf0.Matmul(uppercf0)).Contiguous();
+    EXPECT_TRUE(A_3x3cf.AllClose(outputcf0, FLT_EPSILON, FLT_EPSILON));
+
+    // "permute_l = true": L must be P*L. So, output = L*U.
+    core::Tensor permutationcf1, lowercf1, uppercf1;
+    std::tie(permutationcf1, lowercf1, uppercf1) =
+            A_3x3cf.LU(/*permute_l*/ true);
+    core::Tensor outputcf1 = lowercf1.Matmul(uppercf1).Contiguous();
+    EXPECT_TRUE(A_3x3cf.AllClose(outputcf1, FLT_EPSILON, FLT_EPSILON));
+
+    // LU test for 3x3 const square 2D tensor of dtype Float64.
+    const core::Tensor A_3x3cd = core::Tensor::Init<double>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+    core::Tensor permutationcd0, lowercd0, uppercd0;
+    std::tie(permutationcd0, lowercd0, uppercd0) = A_3x3cd.LU();
+    core::Tensor outputcd0 =
+            permutationcd0.Matmul(lowercd0.Matmul(uppercd0)).Contiguous();
+    EXPECT_TRUE(A_3x3cd.AllClose(outputcd0, DBL_EPSILON, DBL_EPSILON));
+
+    // Singular test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
+
+    // Shape test.
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
+}
+
+TEST_P(LinalgPermuteDevices, LU_with_ipiv) {
+    const float EPSILON = 1e-6;
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
     // LU test for 3x3 square 2D tensor of dtype Float32.
-    core::Tensor A_3x3f = core::Tensor::Init<float>(
+    const core::Tensor A_3x3f = core::Tensor::Init<float>(
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
-    core::Tensor A3f, ipiv3f;
-    std::tie(A3f, ipiv3f) = A_3x3f.LU();
+    core::Tensor ipiv3f, A3f;
+    std::tie(ipiv3f, A3f) = A_3x3f.LU_with_ipiv();
 
     EXPECT_TRUE(
             A3f.AllClose(core::Tensor::Init<float>({{3.0, 3.0, 1.0},
@@ -115,8 +153,8 @@ TEST_P(LinalgPermuteDevices, LU) {
     core::Tensor A_3x3d = core::Tensor::Init<double>(
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
-    core::Tensor A3d, ipiv3d;
-    std::tie(A3d, ipiv3d) = A_3x3d.LU();
+    core::Tensor ipiv3d, A3d;
+    std::tie(ipiv3d, A3d) = A_3x3d.LU_with_ipiv();
 
     EXPECT_TRUE(
             A3d.AllClose(core::Tensor::Init<double>({{3.0, 3.0, 1.0},
@@ -255,9 +293,9 @@ TEST_P(LinalgPermuteDevices, Thiul) {
                                                         {0, 0, 0, 19, 20}},
                                                        device)));
     EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>({{1, 0, 0, 0, 0},
-                                                        {6, 7, 0, 0, 0},
-                                                        {11, 12, 13, 0, 0},
-                                                        {16, 17, 18, 19, 0}},
+                                                        {6, 1, 0, 0, 0},
+                                                        {11, 12, 1, 0, 0},
+                                                        {16, 17, 18, 1, 0}},
                                                        device)));
 
     core::Tensor Uf1, Lf1;
@@ -267,10 +305,10 @@ TEST_P(LinalgPermuteDevices, Thiul) {
                                                         {0, 0, 0, 14, 15},
                                                         {0, 0, 0, 0, 20}},
                                                        device)));
-    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>({{1, 2, 0, 0, 0},
-                                                        {6, 7, 8, 0, 0},
-                                                        {11, 12, 13, 14, 0},
-                                                        {16, 17, 18, 19, 20}},
+    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>({{1, 1, 0, 0, 0},
+                                                        {6, 7, 1, 0, 0},
+                                                        {11, 12, 13, 1, 0},
+                                                        {16, 17, 18, 19, 1}},
                                                        device)));
 
     core::Tensor Uf1_, Lf1_;
@@ -281,9 +319,9 @@ TEST_P(LinalgPermuteDevices, Thiul) {
                                                          {0, 0, 18, 19, 20}},
                                                         device)));
     EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>({{0, 0, 0, 0, 0},
-                                                         {6, 0, 0, 0, 0},
-                                                         {11, 12, 0, 0, 0},
-                                                         {16, 17, 18, 0, 0}},
+                                                         {1, 0, 0, 0, 0},
+                                                         {11, 1, 0, 0, 0},
+                                                         {16, 17, 1, 0, 0}},
                                                         device)));
 
     // Boundary test.

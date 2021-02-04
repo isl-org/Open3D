@@ -400,13 +400,17 @@ void pybind_core_tensor(py::module& m) {
 
     /// Linalg operations.
     tensor.def("det", &Tensor::Det);
+    tensor.def("lu", &Tensor::LU);
+    tensor.def("lu_with_ipiv", &Tensor::LU_with_ipiv);
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
     tensor.def("lstsq", &Tensor::LeastSquares);
     tensor.def("solve", &Tensor::Solve);
-    tensor.def("lu", &Tensor::LU);
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
+    tensor.def("thiu", &Tensor::Thiu);
+    tensor.def("thil", &Tensor::Thil);
+    tensor.def("thiul", &Tensor::Thiul);
 
     // Casting can copying.
     tensor.def(

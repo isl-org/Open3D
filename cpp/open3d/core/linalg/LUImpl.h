@@ -46,6 +46,5 @@ void LUCUDA(void* A_data,
             Dtype dtype,
             const Device& device);
 #endif
-
 }  // namespace core
 }  // namespace open3d

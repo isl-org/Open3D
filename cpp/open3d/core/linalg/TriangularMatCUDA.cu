@@ -92,7 +92,7 @@ void ThiulCUDA(const Tensor &A,
                     } else if (idy - idx > diagonal) {
                         upper_ptr[workload_idx] = A_ptr[idx * cols + idy];
                     } else {
-                        lower_ptr[workload_idx] = A_ptr[idx * cols + idy];
+                        lower_ptr[workload_idx] = 1;
                         upper_ptr[workload_idx] = A_ptr[idx * cols + idy];
                     }
                 });

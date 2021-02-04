@@ -40,6 +40,7 @@
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
 #include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LeastSquares.h"
@@ -722,44 +723,7 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det() const {
-    core::Dtype dtype = this->GetDtype();
-
-    // Check dimensions
-    SizeVector input_shape = this->GetShape();
-    if (input_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D.",
-                          input_shape.size());
-    }
-    if (input_shape[0] != input_shape[1]) {
-        utility::LogError("Tensor A must be square, but got {} x {}.",
-                          input_shape[0], input_shape[1]);
-    }
-    int64_t n = input_shape[0];
-    if (n == 0) {
-        utility::LogError(
-                "Tensor shapes should not contain dimensions with zero.");
-    }
-
-    Tensor output, ipiv;
-    std::tie(output, ipiv) = this->LU();
-    Tensor output_cpu = output.To(core::Device("CPU:0"));
-    Tensor ipiv_cpu = ipiv.To(core::Device("CPU:0"));
-    double det = 1.0;
-
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        scalar_t* output_ptr = static_cast<scalar_t*>(output_cpu.GetDataPtr());
-        int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
-
-        for (int i = 0; i < n; i++) {
-            det *= output_ptr[i * n + i];
-            if (ipiv_ptr[i] != i) {
-                det *= -1;
-            }
-        }
-    });
-    return det;
-}
+double Tensor::Det() const { return core::Det(*this); }
 
 Tensor Tensor::Add(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
@@ -1341,10 +1305,17 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     return output;
 };
 
-std::tuple<Tensor, Tensor> Tensor::LU() const {
-    Tensor output, ipiv;
-    core::LU(*this, output, ipiv);
-    return std::make_tuple(output, ipiv);
+std::tuple<Tensor, Tensor, Tensor> Tensor::LU(bool permute_l) const {
+    core::Tensor A = this->Clone();
+    core::Tensor permutation, lower, upper;
+    core::LU(A, permutation, lower, upper, permute_l);
+    return std::make_tuple(permutation, lower, upper);
+}
+
+std::tuple<Tensor, Tensor> Tensor::LU_with_ipiv() const {
+    core::Tensor ipiv, output;
+    core::LU_with_ipiv(*this, ipiv, output);
+    return std::make_tuple(ipiv, output);
 }
 
 Tensor Tensor::Thiu(const int diagonal) const {

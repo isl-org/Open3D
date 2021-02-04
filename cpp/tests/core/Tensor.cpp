@@ -1206,12 +1206,12 @@ TEST_P(TensorPermuteDevices, Det) {
     EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
 
     // Singular test.
-    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
 
     // Det expects a 2D sqaure matrix [shape test].
-    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
-    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
-    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());
 }
 
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
