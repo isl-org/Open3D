@@ -416,6 +416,11 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
     return std::make_pair(dst_im_dx, dst_im_dy);
 }
 
+Image Image::PyrDown() {
+    Image filtered_gaussian = FilterGaussian(5);
+    return filtered_gaussian.Resize(0.5, Image::Nearest);
+}
+
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
                              const core::Device &device) {
     static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {

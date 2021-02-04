@@ -212,8 +212,10 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
     depth.AsTensor().Save("original.npy");
     depth_filtered.AsTensor().Save("filtered.npy");
 
-    io::WriteImage("color_filtered.png", color_filtered.ToLegacyImage());
-    io::WriteImage("depth_filtered.png", depth_filtered.ToLegacyImage());
+    io::WriteImage(fmt::format("color_bilateral_{}.png", device.ToString()),
+                   color_filtered.ToLegacyImage());
+    io::WriteImage(fmt::format("depth_bilateral_{}.png", device.ToString()),
+                   depth_filtered.ToLegacyImage());
 }
 
 TEST_P(ImagePermuteDevices, FilterGaussian) {
@@ -234,8 +236,10 @@ TEST_P(ImagePermuteDevices, FilterGaussian) {
     depth.AsTensor().Save("original.npy");
     depth_filtered.AsTensor().Save("filtered.npy");
 
-    io::WriteImage("color_gauss_filtered.png", color_filtered.ToLegacyImage());
-    io::WriteImage("depth_gauss_filtered.png", depth_filtered.ToLegacyImage());
+    io::WriteImage(fmt::format("color_gaussian_{}.png", device.ToString()),
+                   color_filtered.ToLegacyImage());
+    io::WriteImage(fmt::format("depth_gaussian_{}.png", device.ToString()),
+                   depth_filtered.ToLegacyImage());
 }
 
 TEST_P(ImagePermuteDevices, FilterSobel) {
@@ -301,6 +305,22 @@ TEST_P(ImagePermuteDevices, Resize) {
     depth = depth.Resize(0.5, t::geometry::Image::Cubic);
     io::WriteImage("depth_" + device.ToString() + ".png",
                    depth.ToLegacyImage());
+}
+
+TEST_P(ImagePermuteDevices, PyrDown) {
+    core::Device device = GetParam();
+
+    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/lena_color.jpg"),
+            device);
+
+    for (int i = 0; i < 3; ++i) {
+        rgb = rgb.PyrDown();
+        io::WriteImage(
+                fmt::format("rgb_pyr_{:03d}_{}.png", i, device.ToString()),
+                rgb.ToLegacyImage());
+    }
 }
 
 TEST_P(ImagePermuteDevices, Dilate) {

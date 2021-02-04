@@ -216,7 +216,8 @@ void FilterBilateral(const core::Tensor &src_im,
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,      \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),                     \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size / 2, \
-            1, value_sigma, dist_sigma, NPP_BORDER_REPLICATE
+            1, value_sigma *value_sigma, dist_sigma *dist_sigma,               \
+            NPP_BORDER_REPLICATE
     if (dtype == core::Dtype::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {

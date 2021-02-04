@@ -239,7 +239,8 @@ void FilterBilateral(const core::Tensor &src_im,
 
     try {
         ::ipp::iwiFilterBilateral(ipp_src_im, ipp_dst_im, kernel_size / 2,
-                                  value_sigma, dist_sigma);
+                                  value_sigma * value_sigma,
+                                  dist_sigma * dist_sigma);
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
@@ -252,7 +253,7 @@ void FilterGaussian(const core::Tensor &src_im,
     // Use a precomputed sigma to be consistent with npp:
     // https://docs.nvidia.com/cuda/npp/group__image__filter__gauss__border.html
 
-    double sigma = 0.4 * (kernel_size / 2) * 0.6;
+    double sigma = std::sqrt(0.4 * (kernel_size / 2) * 0.6);
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();

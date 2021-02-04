@@ -205,8 +205,8 @@ public:
 
     /// Return a new image after bilateral filtering.
     Image FilterBilateral(int kernel_size = 3,
-                          float value_sigma = 400.0f,
-                          float dist_sigma = 100.0f) const;
+                          float value_sigma = 20.0f,
+                          float dist_sigma = 10.0f) const;
 
     /// Return a new image after Gaussian filtering.
     /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
@@ -217,6 +217,10 @@ public:
     /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
     /// Possible kernel_size: 3 and 5.
     std::pair<Image, Image> FilterSobel(int kernel_size = 3) const;
+
+    /// Return a new downsampled image with pyramid downsampling formed by a
+    /// chained 5x5 Gaussian filter and a downsampling operation.
+    Image PyrDown();
 
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
