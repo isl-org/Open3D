@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <script src="libs/adapter.min.js"></script>
+    <script src="webrtcstreamer.js"></script>
+    <script>
+      // videoTag: video_{"video":"window://Open3D"}
+      // webrtcConfig.url:
+      // url.video: window://Open3D
+      // url.audio: undefined
+      // options: rtptransport=tcp&timeout=60
+
+      var webRtcServer = null;
+      window.onload = function () {
+        webRtcServer = new WebRtcStreamer(
+          "video",
+          "http://192.168.86.121:8888/"
+        );
+        webRtcServer.connect("window://Open3D");
+      };
+      window.onbeforeunload = function () {
+        webRtcServer.disconnect();
+      };
+    </script>
+  </head>
+  <body>
+    <video id="video" />
+  </body>
+</html>

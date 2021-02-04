@@ -369,6 +369,10 @@ const Json::Value PeerConnectionManager::getMediaList() {
                       << Json::writeString(Json::StreamWriterBuilder(), media)
                       << std::endl;
         }
+        // value.append(media);
+        // std::cout << "Added media: "
+        //           << Json::writeString(Json::StreamWriterBuilder(), media)
+        //           << std::endl;
     }
 
     // Local video/audio files.

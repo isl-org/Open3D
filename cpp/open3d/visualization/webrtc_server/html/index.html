@@ -187,6 +187,8 @@
         if (videoElt) {
           // connect video element to webrtc stream
           var webRtcServer = new WebRtcStreamer(videoTag, webrtcConfig.url);
+          console.log("videoTag: " + videoTag);
+          console.log("webrtcConfig.url: " + webrtcConfig.url);
 
           var options = argoptions;
           if (layout) {
@@ -194,6 +196,9 @@
           }
 
           webRtcServer.connect(url.video, url.audio, options);
+          console.log("url.video: " + url.video);
+          console.log("url.audio: " + url.audio);
+          console.log("options: " + options);
 
           // highlight the navigation
           var navElt = document.getElementById("nav_" + videoTag);
