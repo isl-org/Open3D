@@ -87,7 +87,7 @@ void pybind_pointcloud(py::module& m) {
                    "Rotate points and normals (if exist).");
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
-            "depth"_a, "intrinsics"_a,
+            py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1);
