@@ -199,10 +199,12 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
             *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
                                      "/RGBD/color/00000.jpg"),
             device);
-    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/RGBD/depth/00000.png"),
-            device);
+    t::geometry::Image depth =
+            t::geometry::Image::FromLegacyImage(
+                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                             "/RGBD/depth/00000.png"),
+                    device)
+                    .To(core::Dtype::Float32);
 
     auto color_filtered = color.FilterBilateral(5);
     auto depth_filtered = depth.FilterBilateral(3, 1.0, 4.0);
