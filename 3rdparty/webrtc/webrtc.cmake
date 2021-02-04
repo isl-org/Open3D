@@ -19,6 +19,11 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     set(WEBRTC_ARGS rtc_build_libevent=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
 
+    find_program(CCACHE_BIN "ccache")
+    if(CCACHE_BIN)
+        set(WEBRTC_ARGS cc_wrapper="ccache"\n${WEBRTC_ARGS})
+    endif()
+
     # Debug/Release
     if(WEBRTC_BUILD STREQUAL "Release")
         set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
