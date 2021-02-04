@@ -278,37 +278,29 @@ TEST_P(ImagePermuteDevices, Resize) {
             device);
     t::geometry::Image gray = rgb.RGBToGray();
 
-    t::geometry::Image depth =
-            t::geometry::Image::FromLegacyImage(
-                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                             "/RGBD/depth/00000.png"),
-                    device)
-                    .To(core::Dtype::Float32);
+    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/depth/00000.png"),
+            device);
 
-    auto rgb_2x = rgb.Resize(2, t::geometry::Image::Nearest);
-    io::WriteImage("rgb_2x" + device.ToString() + ".png",
-                   rgb_2x.ToLegacyImage());
-    auto rgb_half = rgb.Resize(0.5, t::geometry::Image::Nearest);
-    io::WriteImage("rgb_half" + device.ToString() + ".png",
-                   rgb_half.ToLegacyImage());
-    // auto rgb_4x = rgb_2x.Resize(2, t::geometry::Image::Nearest);
-    // auto rgb_8x = rgb_4x.Resize(2, t::geometry::Image::Cubic);
-    // auto rgb_16x = rgb_8x.Resize(2, t::geometry::Image::Linear);
+    rgb = rgb.Resize(2, t::geometry::Image::Nearest);
+    rgb = rgb.Resize(0.5, t::geometry::Image::Lanczos);
+    rgb = rgb.Resize(2, t::geometry::Image::Cubic);
+    rgb = rgb.Resize(0.5, t::geometry::Image::Super);
+    io::WriteImage("rgb_" + device.ToString() + ".png", rgb.ToLegacyImage());
 
-    // auto gray_2x = gray.Resize(2, t::geometry::Image::Super);
-    // auto depth_2x = depth.Resize(2, t::geometry::Image::Super);
+    gray = gray.Resize(2, t::geometry::Image::Lanczos);
+    gray = gray.Resize(0.5, t::geometry::Image::Nearest);
+    gray = gray.Resize(2, t::geometry::Image::Linear);
+    gray = gray.Resize(0.5, t::geometry::Image::Super);
+    io::WriteImage("gray_" + device.ToString() + ".png", gray.ToLegacyImage());
 
-    // auto rgb_half = rgb.Resize(0.5, t::geometry::Image::Nearest);
-    // auto gray_half = gray.Resize(0.5, t::geometry::Image::Lanczos);
-    // auto depth_half = depth.Resize(0.5, t::geometry::Image::Cubic);
-
-    // io::WriteImage("rgb_16x.png", rgb_16x.ToLegacyImage());
-    // io::WriteImage("gray_2x.png", gray_2x.ToLegacyImage());
-    // io::WriteImage("depth_2x.png", depth_2x.ToLegacyImage());
-
-    // io::WriteImage("rgb_half.png", rgb_half.ToLegacyImage());
-    // io::WriteImage("gray_half.png", gray_half.ToLegacyImage());
-    // io::WriteImage("depth_half.png", depth_half.ToLegacyImage());
+    depth = depth.Resize(2, t::geometry::Image::Nearest);
+    depth = depth.Resize(0.5, t::geometry::Image::Linear);
+    depth = depth.Resize(2, t::geometry::Image::Lanczos);
+    depth = depth.Resize(0.5, t::geometry::Image::Cubic);
+    io::WriteImage("depth_" + device.ToString() + ".png",
+                   depth.ToLegacyImage());
 }
 
 TEST_P(ImagePermuteDevices, Dilate) {
