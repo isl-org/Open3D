@@ -67,6 +67,73 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
 #undef NPP_ARGS
 }
 
+void Resize(const open3d::core::Tensor &src_im,
+            open3d::core::Tensor &dst_im,
+            int interp_type) {
+    // Supported device and datatype checking happens in calling code and will
+    // result in an exception if there are errors.
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiRect src_roi = {0, 0, static_cast<int>(src_im.GetShape(1)),
+                        static_cast<int>(src_im.GetShape(0))};
+
+    // create struct with ROI size
+    NppiSize dst_size = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+    NppiRect dst_roi = {0, 0, static_cast<int>(dst_im.GetShape(1)),
+                        static_cast<int>(dst_im.GetShape(0))};
+
+    static const std::unordered_map<int, int> type_dict = {
+            {Image::Nearest, NPPI_INTER_NN},
+            {Image::Linear, NPPI_INTER_LINEAR},
+            {Image::Cubic, NPPI_INTER_CUBIC},
+            {Image::Lanczos, NPPI_INTER_LANCZOS},
+            {Image::Super, NPPI_INTER_SUPER},
+    };
+    auto it = type_dict.find(interp_type);
+
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                                       \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),               \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_roi, \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),             \
+            dst_im.GetStride(0) * dtype.ByteSize(), dst_size, dst_roi, \
+            it->second
+
+    if (dtype == core::Dtype::UInt8) {
+        using npp_dtype = Npp8u;
+        if (src_im.GetShape(2) == 1) {
+            nppiResize_8u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiResize_8u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiResize_8u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::UInt16) {
+        using npp_dtype = Npp16u;
+        if (src_im.GetShape(2) == 1) {
+            nppiResize_16u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiResize_16u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiResize_16u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_dtype = Npp32f;
+        if (src_im.GetShape(2) == 1) {
+            nppiResize_32f_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiResize_32f_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiResize_32f_C4R(NPP_ARGS);
+        }
+    } else {
+        utility::LogError("npp::Resize(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS
+}
+
 void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.

@@ -72,6 +72,10 @@ void Dilate(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int kernel_size);
 
+void Resize(const open3d::core::Tensor &srcim,
+            open3d::core::Tensor &dstim,
+            int interp_type);
+
 void FilterBilateral(const open3d::core::Tensor &srcim,
                      open3d::core::Tensor &dstim,
                      int kernel_size,

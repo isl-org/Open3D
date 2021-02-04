@@ -29,6 +29,7 @@
 #include <iw++/iw_image_color.hpp>
 #include <iw++/iw_image_filter.hpp>
 #include <iw++/iw_image_op.hpp>
+#include <iw++/iw_image_transform.hpp>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
@@ -87,6 +88,41 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     try {
         ::ipp::iwiColorConvert(ipp_src_im, ::ipp::iwiColorRGB, ipp_dst_im,
                                ::ipp::iwiColorGray);
+    } catch (const ::ipp::IwException &e) {
+        // See comments in icv/include/ippicv_types.h for m_status meaning
+        utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
+    }
+}
+
+void Resize(const open3d::core::Tensor &src_im,
+            open3d::core::Tensor &dst_im,
+            int interp_type) {
+    auto dtype = src_im.GetDtype();
+    // Create IPP wrappers for all Open3D tensors
+    const ::ipp::IwiImage ipp_src_im(
+            ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
+            ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
+            src_im.GetStride(0) * dtype.ByteSize());
+    ::ipp::IwiImage ipp_dst_im(
+            ::ipp::IwiSize(dst_im.GetShape(1), dst_im.GetShape(0)),
+            ToIppDataType(dtype), dst_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, dst_im.GetDataPtr(),
+            dst_im.GetStride(0) * dtype.ByteSize());
+
+    static const std::unordered_map<int, IppiInterpolationType> type_dict = {
+            {Image::Nearest, ippNearest}, {Image::Linear, ippLinear},
+            {Image::Cubic, ippCubic},     {Image::Lanczos, ippLanczos},
+            {Image::Super, ippSuper},
+    };
+    auto it = type_dict.find(interp_type);
+    if (it == type_dict.end()) {
+        utility::LogError("Unsupported interp type {}", interp_type);
+    }
+
+    try {
+        utility::LogInfo("{}", it->second);
+        ::ipp::iwiResize(ipp_src_im, ipp_dst_im, it->second);
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);

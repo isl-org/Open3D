@@ -184,6 +184,18 @@ public:
     /// Converts a 3-channel RGB image to a new 1-channel Grayscale image.
     Image RGBToGray() const;
 
+    /// Return a new image after resizing with specified interpolation type.
+    /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
+    enum {
+        Nearest = 0,
+        Linear = 1,
+        Cubic = 2,
+        Lanczos = 3,
+        Super = 4
+    } InterpType;
+
+    Image Resize(float sampling_rate = 0.5f, int interp_type = Nearest) const;
+
     /// Return a new image after performing morphological dilation. Supported
     /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
     /// 8-connected neighborhood is used to create the dilation mask.

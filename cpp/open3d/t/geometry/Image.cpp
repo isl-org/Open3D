@@ -183,6 +183,55 @@ Image Image::RGBToGray() const {
     return dst_im;
 }
 
+Image Image::Resize(float sampling_rate, int interp_type) const {
+    if (sampling_rate == 1.0f) {
+        return *this;
+    }
+
+    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
+
+    static const supported_t npp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
+            {core::Dtype::Float32, 4},
+
+    };
+
+    static const supported_t ipp_supported{
+            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
+            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
+            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
+            {core::Dtype::Float32, 4},
+    };
+
+    Image dst_im;
+    // dst_im.data_ = core::Tensor::EmptyLike(data_);
+    dst_im.data_ = core::Tensor::Empty(
+            {static_cast<int64_t>(GetRows() * sampling_rate),
+             static_cast<int64_t>(GetCols() * sampling_rate), GetChannels()},
+            GetDtype(), GetDevice());
+
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
+        CUDA_CALL(npp::Resize, data_, dst_im.data_, interp_type);
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
+        IPP_CALL(ipp::Resize, data_, dst_im.data_, interp_type);
+    } else {
+        utility::LogError(
+                "Resize with data type {} on device {} is not "
+                "implemented!",
+                GetDtype().ToString(), GetDevice().ToString());
+    }
+    return dst_im;
+}
+
 Image Image::Dilate(int kernel_size) const {
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
 
