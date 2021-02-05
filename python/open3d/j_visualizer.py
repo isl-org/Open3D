@@ -40,20 +40,18 @@ class JVisualizer(widgets.DOMWidget):
     # Attributes: ipython traitlets
     value = Unicode('example@example.com',
                     help="The email value.").tag(sync=True)
-    disabled = Bool(False,
-                    help="Enable or disable user changes.").tag(sync=True)
 
-    # Basic validator for the email value
-    @validate('value')
-    def _valid_value(self, proposal):
-        if proposal['value'].count("@") != 1:
-            raise TraitError(
-                'Invalid email value: it must contain an "@" character')
-        if proposal['value'].count(".") == 0:
-            raise TraitError(
-                'Invalid email value: it must contain at least one "." character'
-            )
-        return proposal['value']
+    # # Basic validator for the email value
+    # @validate('value')
+    # def _valid_value(self, proposal):
+    #     if proposal['value'].count("@") != 1:
+    #         raise TraitError(
+    #             'Invalid email value: it must contain an "@" character')
+    #     if proposal['value'].count(".") == 0:
+    #         raise TraitError(
+    #             'Invalid email value: it must contain at least one "." character'
+    #         )
+    #     return proposal['value']
 
     def show(self):
         display(self)

@@ -417,11 +417,6 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
   render: function () {
     console.log("render");
 
-    this.email_input = document.createElement("input");
-    this.email_input.type = "email";
-    this.email_input.value = this.model.get("value");
-    this.email_input.disabled = this.model.get("disabled");
-
     this.videoElt = document.createElement("video");
     this.videoElt.id = "video";
     this.videoElt.muted = true;
@@ -433,10 +428,6 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
 
     // Python -> JavaScript update
     this.model.on("change:value", this.value_changed, this);
-    this.model.on("change:disabled", this.disabled_changed, this);
-
-    // JavaScript -> Python update
-    this.email_input.onchange = this.input_changed.bind(this);
   },
 
   value_changed: function () {
@@ -447,16 +438,6 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
     );
     this.webRtcServer.connect("window://Open3D");
     this.email_input.value = this.model.get("value") + "_suffix";
-  },
-
-  disabled_changed: function () {
-    this.email_input.disabled = this.model.get("disabled");
-  },
-
-  input_changed: function () {
-    console.log("input_changed");
-    this.model.set("value", this.email_input.value);
-    this.model.save_changes();
   },
 });
 
