@@ -401,17 +401,17 @@ def test_thiu(device, dtype):
     a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                         dtype=dtype,
                         device=device)
-
+    # Test default diagonal value (= 0).
     np.testing.assert_allclose(o3d.core.thiu(a).cpu().numpy(),
                                np.thiu(a.cpu().numpu()),
                                rtol=1e-5,
                                atol=1e-5)
-
+    # Test positive diagonal value (= 1).
     np.testing.assert_allclose(o3d.core.thiu(a, 1).cpu().numpy(),
                                np.thiu(a.cpu().numpu(), 1),
                                rtol=1e-5,
                                atol=1e-5)
-
+    # Test negative diagonal value (= -1).
     np.testing.assert_allclose(o3d.core.thiu(a, -1).cpu().numpy(),
                                np.thiu(a.cpu().numpu(), -1),
                                rtol=1e-5,
@@ -427,17 +427,17 @@ def test_thil(device, dtype):
     a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                         dtype=dtype,
                         device=device)
-
+    # Test default diagonal value (= 0).
     np.testing.assert_allclose(o3d.core.thil(a).cpu().numpy(),
                                np.thil(a.cpu().numpu()),
                                rtol=1e-5,
                                atol=1e-5)
-
+    # Test positive diagonal value (= 1).
     np.testing.assert_allclose(o3d.core.thil(a, 1).cpu().numpy(),
                                np.thil(a.cpu().numpu(), 1),
                                rtol=1e-5,
                                atol=1e-5)
-
+    # Test negative diagonal value (= -1).
     np.testing.assert_allclose(o3d.core.thil(a, -1).cpu().numpy(),
                                np.thil(a.cpu().numpu(), -1),
                                rtol=1e-5,
@@ -453,7 +453,7 @@ def test_thiul(device, dtype):
     a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                         dtype=dtype,
                         device=device)
-
+    # Test default diagounal value (= 0).
     l0, u0 = o3d.core.thiul(a)
     l0_ = o3d.core.Tensor([[1, 0, 0], [3, 1, 0], [2, 4, 1]],
                           dtype=dtype,
@@ -461,7 +461,6 @@ def test_thiul(device, dtype):
     u0_ = o3d.core.Tensor([[2, 3, 1], [0, 3, 1], [0, 0, 1]],
                           dtype=dtype,
                           device=device)
-
     np.testing.assert_allclose(l0.cpu().numpy(),
                                l0_.cpu().numpu(),
                                rtol=1e-5,
@@ -471,6 +470,7 @@ def test_thiul(device, dtype):
                                rtol=1e-5,
                                atol=1e-5)
 
+    # Test positive diagounal value (= 0).
     l1, u1 = o3d.core.thiul(a, 1)
     l1_ = o3d.core.Tensor([[2, 1, 0], [3, 3, 1], [2, 4, 1]],
                           dtype=dtype,
@@ -478,7 +478,6 @@ def test_thiul(device, dtype):
     u1_ = o3d.core.Tensor([[0, 3, 1], [0, 0, 1], [0, 0, 0]],
                           dtype=dtype,
                           device=device)
-
     np.testing.assert_allclose(l1.cpu().numpy(),
                                l1_.cpu().numpu(),
                                rtol=1e-5,
