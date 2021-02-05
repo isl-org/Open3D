@@ -420,7 +420,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
     this.videoElt = document.createElement("video");
     this.videoElt.id = "video";
     this.videoElt.muted = true;
-    this.videoElt.controls = true;
+    this.videoElt.controls = false;
     this.videoElt.playsinline = true;
 
     // The `el` property is the DOM element associated with the view
@@ -437,7 +437,6 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
       "http://192.168.86.121:8888/"
     );
     this.webRtcServer.connect("window://Open3D");
-    // this.email_input.value = this.model.get("value") + "_suffix";
   },
 });
 
