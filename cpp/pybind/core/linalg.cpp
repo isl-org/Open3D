@@ -129,7 +129,7 @@ void pybind_core_linalg(py::module &m) {
                 return U;
             },
             "Function to get upper triangular matrix, above diagonal", "A"_a,
-            "diagonal"_a);
+            "diagonal"_a = 0);
 
     m.def(
             "thil",
@@ -139,7 +139,7 @@ void pybind_core_linalg(py::module &m) {
                 return L;
             },
             "Function to get lower triangular matrix, below diagonal", "A"_a,
-            "diagonal"_a);
+            "diagonal"_a = 0);
 
     m.def(
             "thiul",
@@ -149,7 +149,7 @@ void pybind_core_linalg(py::module &m) {
                 return py::make_tuple(U, L);
             },
             "Function to get both upper and lower triangular matrix", "A"_a,
-            "diagonal"_a);
+            "diagonal"_a = 0);
 }
 
 }  // namespace core
