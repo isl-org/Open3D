@@ -59,9 +59,8 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
         pointcloud.Clear();
         core::Tensor points({num_points, 3}, core::Dtype::Float64);
         core::Tensor intensities({num_points, 1}, core::Dtype::Float64);
-        double *points_ptr = static_cast<double *>(points.GetDataPtr());
-        double *intensities_ptr =
-                static_cast<double *>(intensities.GetDataPtr());
+        double *points_ptr = points.GetDataPtr<double>();
+        double *intensities_ptr = intensities.GetDataPtr<double>();
 
         int i = 0;
         double x, y, z, I;
