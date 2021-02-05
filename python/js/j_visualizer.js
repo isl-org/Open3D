@@ -437,6 +437,26 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
       "http://192.168.86.121:8888/"
     );
     this.webRtcServer.connect("window://Open3D");
+
+    // Register callbacks for videoElt.
+    var videoElt = document.getElementById("video");
+    if (videoElt) {
+      videoElt.addEventListener("mousedown", (event) => {
+        var msg = "mousedown " + event.offsetX + " " + event.offsetY;
+        console.log(msg);
+        this.webRtcServer.dataChannel.send(msg);
+      });
+      videoElt.addEventListener("mouseup", (event) => {
+        var msg = "mouseup " + event.offsetX + " " + event.offsetY;
+        console.log(msg);
+        this.webRtcServer.dataChannel.send(msg);
+      });
+      videoElt.addEventListener("mousemove", (event) => {
+        var msg = "mousemove " + event.offsetX + " " + event.offsetY;
+        console.log(msg);
+        this.webRtcServer.dataChannel.send(msg);
+      });
+    }
   },
 });
 
