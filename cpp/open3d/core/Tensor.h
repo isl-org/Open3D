@@ -1107,7 +1107,6 @@ public:
 
     template <typename T>
     inline T* GetDataPtr() {
-        // https://stackoverflow.com/a/856839/1255535
         return const_cast<T*>(const_cast<const Tensor*>(this)->GetDataPtr<T>());
     }
 
