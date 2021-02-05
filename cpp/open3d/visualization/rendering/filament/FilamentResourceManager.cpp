@@ -401,6 +401,24 @@ TextureHandle FilamentResourceManager::CreateTextureFilled(
     return handle;
 }
 
+bool FilamentResourceManager::UpdateTexture(TextureHandle texture, const std::shared_ptr<geometry::Image> image, bool srgb) {
+    auto ftexture_weak = GetTexture(texture);
+    if (auto ftexture = ftexture_weak.lock()) {
+        if (ftexture->getWidth() == image->width_ && ftexture->getHeight() == image->height_) {
+            auto retained_img_id = RetainImageForLoading(image);
+            auto texture_settings = GetSettingsFromImage(*image, srgb);
+            filament::Texture::PixelBufferDescriptor desc(
+                        image->data_.data(), image->data_.size(),
+                        texture_settings.image_format,
+                        texture_settings.image_type,
+                        FreeRetainedImage, (void*)retained_img_id);
+            ftexture->setImage(engine_, 0, std::move(desc));
+            return true;
+        }
+    }
+    return false;
+}
+
 IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
         const ResourceLoadRequest& request) {
     IndirectLightHandle handle;

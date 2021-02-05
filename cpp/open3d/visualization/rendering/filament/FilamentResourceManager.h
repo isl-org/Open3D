@@ -98,6 +98,11 @@ public:
     TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
                                       size_t dimension);
 
+    // Replaces the contents of the texture with the image. Returns false if
+    // the image is not the same size of the texture.
+    bool UpdateTexture(TextureHandle texture,
+                       const std::shared_ptr<geometry::Image> image, bool srgb);
+
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
     SkyboxHandle CreateColorSkybox(const Eigen::Vector3f& color);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
