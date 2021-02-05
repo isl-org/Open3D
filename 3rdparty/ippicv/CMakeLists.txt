@@ -11,6 +11,7 @@ file(GLOB IPPICV_LIBRARY
     icv/lib/*/${CMAKE_STATIC_LIBRARY_PREFIX}*${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 add_library(ippiw STATIC ${lib_srcs} ${lib_hdrs})
+add_compile_definitions(IW_ENABLE_iwiResize_Nearest=1)
 
 if(UNIX)
     if(${CMAKE_C_COMPILER_ID} MATCHES GNU OR
