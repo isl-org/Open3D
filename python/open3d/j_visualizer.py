@@ -25,26 +25,9 @@
 # ----------------------------------------------------------------------------
 
 import ipywidgets as widgets
-from traitlets import Unicode, Float, List, Instance
+from traitlets import Unicode, Bool, validate, TraitError
 from IPython.display import display
 import open3d as o3
-import numpy as np
-
-
-def geometry_to_json(geometry):
-    """Convert Open3D geometry to Json (Dict)"""
-    json = dict()
-    if isinstance(geometry, o3.geometry.PointCloud):
-        json['type'] = 'PointCloud'
-        # TODO: do not flatten
-        json['points'] = np.asarray(geometry.points,
-                                    dtype=np.float32).reshape(-1).tolist()
-        json['colors'] = np.asarray(geometry.colors,
-                                    dtype=np.float32).reshape(-1).tolist()
-    else:
-        raise NotImplementedError(
-            "Only supporting geometry_to_json for PointCloud")
-    return json
 
 
 @widgets.register
@@ -53,41 +36,24 @@ class JVisualizer(widgets.DOMWidget):
     _view_module = Unicode('open3d').tag(sync=True)
     _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)
-    _model_name = Unicode('JVisualizerModel').tag(sync=True)
-    _model_module = Unicode('open3d').tag(sync=True)
-    _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
-        sync=True)
 
-    # We need to declare class attributes for traitlets to work
-    geometry_jsons = List(Instance(dict)).tag(sync=True)
+    # Attributes: ipython traitlets
+    value = Unicode('example@example.com',
+                    help="The email value.").tag(sync=True)
+    disabled = Bool(False,
+                    help="Enable or disable user changes.").tag(sync=True)
 
-    def __init__(self):
-        super(JVisualizer, self).__init__()
-        self.geometry_jsons = []
-        self.geometries = []
-
-    def __repr__(self):
-        return "JVisualizer with %s geometries" % len(self.geometry_jsons)
-
-    def add_geometry(self, geometry):
-        # TODO: See if we can use self.send(content=content)
-        #       For some reason self.geometry_jsons has to be directly assigned,
-        #       so we keep track of self.geometries and self.geometry_jsons.
-        self.geometries.append(geometry)
-        self.geometry_jsons = [geometry_to_json(g) for g in self.geometries]
-
-    def clear(self):
-        self.geometries = []
-        self.geometry_jsons = []
-
-    # TODO: consider using this mechanism to send geometry data
-    # def send_dog(self):
-    #     print("py: sending gwen")
-    #     content = {
-    #         "type": "dog",
-    #         "name": "gwen"
-    #     }
-    #     self.send(content=content)
+    # Basic validator for the email value
+    @validate('value')
+    def _valid_value(self, proposal):
+        if proposal['value'].count("@") != 1:
+            raise TraitError(
+                'Invalid email value: it must contain an "@" character')
+        if proposal['value'].count(".") == 0:
+            raise TraitError(
+                'Invalid email value: it must contain at least one "." character'
+            )
+        return proposal['value']
 
     def show(self):
         display(self)
