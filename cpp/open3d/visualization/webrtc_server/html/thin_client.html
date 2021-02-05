@@ -16,6 +16,11 @@
           "http://192.168.86.121:8888/"
         );
         webRtcServer.connect("window://Open3D");
+
+        var videoElt = document.getElementById("video");
+        videoElt.muted = true;
+        videoElt.controls = false;
+        videoElt.playsinline = true;
       };
       window.onbeforeunload = function () {
         webRtcServer.disconnect();
