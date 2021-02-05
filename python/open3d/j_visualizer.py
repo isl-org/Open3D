@@ -28,6 +28,7 @@ import ipywidgets as widgets
 from traitlets import Unicode, Bool, validate, TraitError
 from IPython.display import display
 import open3d as o3
+import time
 
 
 @widgets.register
@@ -41,17 +42,13 @@ class JVisualizer(widgets.DOMWidget):
     value = Unicode('example@example.com',
                     help="The email value.").tag(sync=True)
 
-    # # Basic validator for the email value
-    # @validate('value')
-    # def _valid_value(self, proposal):
-    #     if proposal['value'].count("@") != 1:
-    #         raise TraitError(
-    #             'Invalid email value: it must contain an "@" character')
-    #     if proposal['value'].count(".") == 0:
-    #         raise TraitError(
-    #             'Invalid email value: it must contain at least one "." character'
-    #         )
-    #     return proposal['value']
-
     def show(self):
         display(self)
+
+        # TODO: Remove this hack. This is to trigger WebRtcStreamer connection
+        # AFTER the <video> tag has established.
+        time.sleep(2)
+        if self.value == "x@gmail.com":
+            self.value = "y@gmail.com"
+        else:
+            self.value = "x@gmail.com"
