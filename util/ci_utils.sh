@@ -530,3 +530,12 @@ install_arm64_dependencies() {
     which cmake
     cmake --version
 }
+
+maximize_ubuntu_github_actions_build_space() {
+    df -h
+    $SUDO rm -rf /usr/share/dotnet
+    $SUDO rm -rf /usr/local/lib/android
+    $SUDO rm -rf /opt/ghc
+    $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
+    df -h
+}
