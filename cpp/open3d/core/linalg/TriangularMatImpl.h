@@ -32,20 +32,20 @@
 namespace open3d {
 namespace core {
 
-void ThiuCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
+void TriuCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void ThiuCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
+void TriuCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void ThilCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
+void TrilCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void ThilCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
+void TrilCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void ThiulCPU(const Tensor& A,
+void TriulCPU(const Tensor& A,
               Tensor& upper,
               Tensor& lower,
               const int diagonal = 0);
 
-void ThiulCUDA(const Tensor& A,
+void TriulCUDA(const Tensor& A,
                Tensor& upper,
                Tensor& lower,
                const int diagonal = 0);

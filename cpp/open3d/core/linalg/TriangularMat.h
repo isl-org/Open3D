@@ -31,11 +31,11 @@
 namespace open3d {
 namespace core {
 
-void Thiu(const Tensor& A, Tensor& output, const int diagonal = 0);
+void Triu(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void Thil(const Tensor& A, Tensor& output, const int diagonal = 0);
+void Tril(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void Thiul(const Tensor& A,
+void Triul(const Tensor& A,
            Tensor& upper,
            Tensor& lower,
            const int diagonal = 0);

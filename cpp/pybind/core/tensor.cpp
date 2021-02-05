@@ -408,9 +408,9 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("solve", &Tensor::Solve);
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
-    tensor.def("thiu", &Tensor::Thiu);
-    tensor.def("thil", &Tensor::Thil);
-    tensor.def("thiul", &Tensor::Thiul);
+    tensor.def("triu", &Tensor::Triu);
+    tensor.def("tril", &Tensor::Tril);
+    tensor.def("triul", &Tensor::Triul);
 
     // Casting can copying.
     tensor.def(

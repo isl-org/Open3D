@@ -1104,7 +1104,7 @@ public:
     ///
     /// \param diagonal value of col - row, above which the elements are to be
     /// taken for upper triangular matrix.
-    Tensor Thiu(const int diagonal = 0) const;
+    Tensor Triu(const int diagonal = 0) const;
 
     /// \brief Returns the lower triangular matrix of the 2D tensor,
     /// above the given diagonal index. [The value of diagonal = col - row,
@@ -1115,7 +1115,7 @@ public:
     ///
     /// \param diagonal value of col - row, below which the elements are to be
     /// taken for lower triangular matrix.
-    Tensor Thil(const int diagonal = 0) const;
+    Tensor Tril(const int diagonal = 0) const;
 
     /// \brief Returns the tuple of upper and lower triangular matrix
     /// of the 2D tensor, above and below the given diagonal index.
@@ -1128,7 +1128,7 @@ public:
     ///
     /// \param diagonal value of col - row, above and below which the elements
     /// are to be taken for upper (diag. included) and lower triangular matrix.
-    std::tuple<Tensor, Tensor> Thiul(const int diagonal = 0) const;
+    std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.

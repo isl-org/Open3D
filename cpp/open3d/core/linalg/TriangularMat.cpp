@@ -32,7 +32,7 @@
 namespace open3d {
 namespace core {
 
-void Thiu(const Tensor& A, Tensor& output, const int diagonal) {
+void Triu(const Tensor& A, Tensor& output, const int diagonal) {
     core::Device device = A.GetDevice();
 
     // Check dimensions.
@@ -54,16 +54,16 @@ void Thiu(const Tensor& A, Tensor& output, const int diagonal) {
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ThiuCUDA(A, output, diagonal);
+        TriuCUDA(A, output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        ThiuCPU(A, output, diagonal);
+        TriuCPU(A, output, diagonal);
     }
 }
 
-void Thil(const Tensor& A, Tensor& output, const int diagonal) {
+void Tril(const Tensor& A, Tensor& output, const int diagonal) {
     core::Device device = A.GetDevice();
 
     // Check dimensions.
@@ -85,16 +85,16 @@ void Thil(const Tensor& A, Tensor& output, const int diagonal) {
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ThilCUDA(A, output, diagonal);
+        TrilCUDA(A, output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        ThilCPU(A, output, diagonal);
+        TrilCPU(A, output, diagonal);
     }
 }
 
-void Thiul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
+void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
     core::Device device = A.GetDevice();
 
     // Check dimensions.
@@ -119,12 +119,12 @@ void Thiul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
     lower = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ThiulCUDA(A, upper, lower, diagonal);
+        TriulCUDA(A, upper, lower, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        ThiulCPU(A, upper, lower, diagonal);
+        TriulCPU(A, upper, lower, diagonal);
     }
 }
 

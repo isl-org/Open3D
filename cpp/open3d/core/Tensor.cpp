@@ -1315,21 +1315,21 @@ std::tuple<Tensor, Tensor> Tensor::LU_with_ipiv() const {
     return std::make_tuple(ipiv, output);
 }
 
-Tensor Tensor::Thiu(const int diagonal) const {
+Tensor Tensor::Triu(const int diagonal) const {
     Tensor output;
-    core::Thiu(*this, output, diagonal);
+    core::Triu(*this, output, diagonal);
     return output;
 }
 
-Tensor Tensor::Thil(const int diagonal) const {
+Tensor Tensor::Tril(const int diagonal) const {
     Tensor output;
-    core::Thil(*this, output, diagonal);
+    core::Tril(*this, output, diagonal);
     return output;
 }
 
-std::tuple<Tensor, Tensor> Tensor::Thiul(const int diagonal) const {
+std::tuple<Tensor, Tensor> Tensor::Triul(const int diagonal) const {
     Tensor upper, lower;
-    core::Thiul(*this, upper, lower, diagonal);
+    core::Triul(*this, upper, lower, diagonal);
     return std::make_tuple(upper, lower);
 }
 

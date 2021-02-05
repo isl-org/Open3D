@@ -122,30 +122,30 @@ void pybind_core_linalg(py::module &m) {
             "Function to decompose A with A = U S VT.", "A"_a);
 
     m.def(
-            "thiu",
+            "triu",
             [](const Tensor &A, const int diagonal) {
                 Tensor U;
-                Thiu(A, U, diagonal);
+                Triu(A, U, diagonal);
                 return U;
             },
             "Function to get upper triangular matrix, above diagonal", "A"_a,
             "diagonal"_a = 0);
 
     m.def(
-            "thil",
+            "tril",
             [](const Tensor &A, const int diagonal) {
                 Tensor L;
-                Thil(A, L, diagonal);
+                Tril(A, L, diagonal);
                 return L;
             },
             "Function to get lower triangular matrix, below diagonal", "A"_a,
             "diagonal"_a = 0);
 
     m.def(
-            "thiul",
+            "triul",
             [](const Tensor &A, const int diagonal = 0) {
                 Tensor U, L;
-                Thiul(A, U, L, diagonal);
+                Triul(A, U, L, diagonal);
                 return py::make_tuple(U, L);
             },
             "Function to get both upper and lower triangular matrix", "A"_a,

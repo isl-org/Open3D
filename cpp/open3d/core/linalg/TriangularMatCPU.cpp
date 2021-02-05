@@ -32,7 +32,7 @@
 namespace open3d {
 namespace core {
 
-void ThiuCPU(const Tensor &A, Tensor &output, const int diagonal) {
+void TriuCPU(const Tensor &A, Tensor &output, const int diagonal) {
     core::Dtype dtype = A.GetDtype();
 
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -52,7 +52,7 @@ void ThiuCPU(const Tensor &A, Tensor &output, const int diagonal) {
     });
 }
 
-void ThilCPU(const Tensor &A, Tensor &output, const int diagonal) {
+void TrilCPU(const Tensor &A, Tensor &output, const int diagonal) {
     core::Dtype dtype = A.GetDtype();
 
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -72,7 +72,7 @@ void ThilCPU(const Tensor &A, Tensor &output, const int diagonal) {
     });
 }
 
-void ThiulCPU(const Tensor &A,
+void TriulCPU(const Tensor &A,
               Tensor &upper,
               Tensor &lower,
               const int diagonal) {

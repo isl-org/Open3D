@@ -32,7 +32,7 @@
 namespace open3d {
 namespace core {
 
-void ThiuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
+void TriuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
     core::Dtype dtype = A.GetDtype();
 
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -51,7 +51,7 @@ void ThiuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
     });
 }
 
-void ThilCUDA(const Tensor &A, Tensor &output, const int diagonal) {
+void TrilCUDA(const Tensor &A, Tensor &output, const int diagonal) {
     core::Dtype dtype = A.GetDtype();
 
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -70,7 +70,7 @@ void ThilCUDA(const Tensor &A, Tensor &output, const int diagonal) {
     });
 }
 
-void ThiulCUDA(const Tensor &A,
+void TriulCUDA(const Tensor &A,
                Tensor &upper,
                Tensor &lower,
                const int diagonal) {
