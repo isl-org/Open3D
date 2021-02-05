@@ -91,7 +91,8 @@ void MultiObjects() {
 
     visualization::Draw({pc_nocolor, pc_color, sphere_unlit,
                          sphere_colored_unlit, sphere_lit, sphere_colored_lit,
-                         big_bbox, sphere_bbox, lines, lines_colored});
+                         big_bbox, sphere_bbox, lines, lines_colored},
+                        "Open3D", 640, 480);
 }
 
 void Actions() {
