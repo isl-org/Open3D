@@ -64,6 +64,7 @@ public:
     void ShowAxes(bool enable);
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
+    const Eigen::Vector4f GetBackgroundColor() const;
 
     enum class LightingProfile {
         HARD_SHADOWS,
@@ -142,6 +143,7 @@ private:
     SceneHandle scene_;
     ViewHandle view_;
 
+    Eigen::Vector4f background_color;
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
     bool axis_dirty_ = true;

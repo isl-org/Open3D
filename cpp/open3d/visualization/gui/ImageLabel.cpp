@@ -43,6 +43,11 @@ ImageLabel::ImageLabel(const char* image_path) : impl_(new ImageLabel::Impl()) {
     impl_->image_ = std::make_shared<UIImage>(image_path);
 }
 
+ImageLabel::ImageLabel(std::shared_ptr<geometry::Image> image)
+    : impl_(new ImageLabel::Impl()) {
+    impl_->image_ = std::make_shared<UIImage>(image);
+}
+
 ImageLabel::ImageLabel(visualization::rendering::TextureHandle texture_id,
                        float u0 /*= 0.0f*/,
                        float v0 /*= 0.0f*/,

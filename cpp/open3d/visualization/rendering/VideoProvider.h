@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,49 +26,34 @@
 
 #pragma once
 
-#include "open3d/visualization/gui/Widget.h"
-
-#include "open3d/visualization/gui/UIImage.h"
+#include <memory>
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}  // namespace geometry
+
 namespace visualization {
-namespace gui {
+namespace rendering {
 
-class ImageLabel : public Widget {
-    using Super = Widget;
-
+class VideoProvider {
 public:
-    ImageLabel();
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
-    explicit ImageLabel(const char* image_path);
-    /// Uses existing image. Each ImageLabel will use one draw call.
-    explicit ImageLabel(std::shared_ptr<geometry::Image> image);
-    /// Uses an existing texture, using texture coordinates
-    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
-    /// This is useful for using an icon atlas to reduce draw calls.
-    explicit ImageLabel(visualization::rendering::TextureHandle texture_id,
-                        float u0 = 0.0f,
-                        float v0 = 0.0f,
-                        float u1 = 1.0f,
-                        float v1 = 1.0f);
-    ImageLabel(std::shared_ptr<UIImage> image);
-    ~ImageLabel();
+    enum class UpdateResult { NONE, NEEDS_REDRAW };
 
-    std::shared_ptr<UIImage> GetImage() const;
-    void SetImage(std::shared_ptr<UIImage> image);
+    /// Sets the time of the video. Return value informs Open3D if we need
+    /// to redraw.
+    virtual UpdateResult SetTime(double t) = 0;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    /// Returns the frame at the current time
+    virtual std::shared_ptr<geometry::Image> GetFrame() const = 0;
 
-    void Layout(const Theme& theme) override;
+    /// Returns the run time of the video, specified in seconds
+    virtual double GetRunTime() const = 0;
 
-    DrawResult Draw(const DrawContext& context) override;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    virtual ~VideoProvider() {}
 };
 
-}  // namespace gui
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

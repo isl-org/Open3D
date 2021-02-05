@@ -75,12 +75,33 @@ struct UIImage::Impl {
 UIImage::UIImage(const char* image_path) : impl_(new UIImage::Impl()) {
     impl_->image_path_ = image_path;
     impl_->image_data_ = io::CreateImageFromFile(image_path);
-    if (impl_->image_data_ && impl_->image_data_->width_ == 0 &&
-        impl_->image_data_->height_ == 0) {
-        impl_->image_data_.reset();
-    } else {
-        impl_->image_width_ = float(impl_->image_data_->width_);
-        impl_->image_height_ = float(impl_->image_data_->height_);
+    if (impl_->image_data_) {
+        if (impl_->image_data_ && impl_->image_data_->width_ == 0 &&
+            impl_->image_data_->height_ == 0) {
+            impl_->image_data_.reset();
+        } else {
+            impl_->image_width_ = float(impl_->image_data_->width_);
+            impl_->image_height_ = float(impl_->image_data_->height_);
+        }
+    }
+    impl_->u0_ = 0.0f;
+    impl_->v0_ = 0.0f;
+    impl_->u1_ = 1.0f;
+    impl_->v1_ = 1.0f;
+    impl_->renderer_ = nullptr;
+}
+
+UIImage::UIImage(std::shared_ptr<geometry::Image> image)
+    : impl_(new UIImage::Impl()) {
+    impl_->image_data_ = image;
+    if (impl_->image_data_) {
+        if (impl_->image_data_ && impl_->image_data_->width_ == 0 &&
+            impl_->image_data_->height_ == 0) {
+            impl_->image_data_.reset();
+        } else {
+            impl_->image_width_ = float(impl_->image_data_->width_);
+            impl_->image_height_ = float(impl_->image_data_->height_);
+        }
     }
     impl_->u0_ = 0.0f;
     impl_->v0_ = 0.0f;
@@ -119,6 +140,10 @@ UIImage::~UIImage() {
     }
 }
 
+void UIImage::UpdateImage(std::shared_ptr<geometry::Image> image) {
+    impl_->image_data_ = image;
+}
+
 void UIImage::SetScaling(Scaling scaling) { impl_->scaling_ = scaling; }
 
 UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
@@ -134,13 +159,16 @@ Size UIImage::CalcPreferredSize(const Theme& theme) const {
 
 UIImage::DrawParams UIImage::CalcDrawParams(
         visualization::rendering::Renderer& renderer, const Rect& frame) const {
-    if (impl_->image_data_ &&
-        impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
-        impl_->texture_ = renderer.AddTexture(impl_->image_data_);
-        if (impl_->texture_ != visualization::rendering::TextureHandle::kBad) {
-            impl_->renderer_ = &renderer;
+    if (impl_->image_data_) {
+        if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
+            impl_->texture_ = renderer.AddTexture(impl_->image_data_);
+            if (impl_->texture_ != visualization::rendering::TextureHandle::kBad) {
+                impl_->renderer_ = &renderer;
+            } else {
+                impl_->texture_ = visualization::rendering::TextureHandle();
+            }
         } else {
-            impl_->texture_ = visualization::rendering::TextureHandle();
+            renderer.UpdateTexture(impl_->texture_, impl_->image_data_, false);
         }
         impl_->image_data_.reset();
     }

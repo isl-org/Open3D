@@ -29,6 +29,11 @@
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+} // namespace geometry
+
 namespace visualization {
 
 namespace rendering {
@@ -39,9 +44,8 @@ namespace gui {
 
 class UIImage {
 public:
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
     explicit UIImage(const char* image_path);
+    explicit UIImage(std::shared_ptr<geometry::Image> image);
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
@@ -51,6 +55,10 @@ public:
                      float u1 = 1.0f,
                      float v1 = 1.0f);
     ~UIImage();
+
+    /// Updates the contents of the texture. If the image is a different
+    /// size from the original, a new texture will be created.
+    void UpdateImage(std::shared_ptr<geometry::Image> image);
 
     enum class Scaling {
         NONE,   /// No scaling, fixed size

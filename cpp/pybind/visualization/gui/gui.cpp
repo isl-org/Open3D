@@ -52,11 +52,13 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
+#include "open3d/visualization/gui/VideoWidget.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/VideoProvider.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
@@ -84,6 +86,39 @@ public:
 
 private:
     py::gil_scoped_release *unlocker_;
+};
+
+class PyVideoProvider : public rendering::VideoProvider {
+public:
+    PyVideoProvider(std::function<bool(double)> set_time,
+                    std::function<std::shared_ptr<geometry::Image>()> get_frame,
+                    std::function<double()> get_run_time)
+        : set_time_(set_time)
+        , get_frame_(get_frame)
+        , get_run_time_(get_run_time){
+    }
+
+    UpdateResult SetTime(double t) override {
+        if (set_time_(t)) {
+            return UpdateResult::NEEDS_REDRAW;
+        }
+        return UpdateResult::NONE;
+    }
+
+    /// Returns the frame at the current time
+    std::shared_ptr<geometry::Image> GetFrame() const override {
+        return get_frame_();
+    }
+
+    /// Returns the run time of the video, specified in seconds
+    double GetRunTime() const override {
+        return get_run_time_();
+    }
+
+private:
+    std::function<bool(double)> set_time_;
+    std::function<std::shared_ptr<geometry::Image>()> get_frame_;
+    std::function<double()> get_run_time_;
 };
 
 class PyWindow : public Window {
@@ -754,6 +789,11 @@ void pybind_gui_classes(py::module &m) {
             .def(py::init<>(
                          [](const char *path) { return new ImageLabel(path); }),
                  "Creates an ImageLabel from the image at the specified path")
+            .def(py::init<>(
+                     [](std::shared_ptr<geometry::Image> image) {
+                         return new ImageLabel(image);
+                     }),
+                 "Creates an ImageLabel from the provided image")
             .def("__repr__", [](const ImageLabel &il) {
                 std::stringstream s;
                 s << "ImageLabel (" << il.GetFrame().x << ", "
@@ -1258,6 +1298,26 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_value_changed", &VectorEdit::SetOnValueChanged,
                  "Sets f([x, y, z]) which is called whenever the user "
                  "changes the value of a component");
+
+    // ---- VideoWidget ----
+    py::class_<VideoWidget, UnownedPointer<VideoWidget>, Widget> video(
+                m, "VideoWidget", "Displays video");
+    video.def(py::init<>([](std::function<bool(double)> set_time,
+                            std::function<std::shared_ptr<geometry::Image>()> get_frame,
+                            std::function<double()> get_run_time) {
+                             auto video = std::make_shared<PyVideoProvider>(set_time, get_frame, get_run_time);
+                             return new VideoWidget(video);
+                         }),
+              "Creates a VideoWidget: "
+              "VideoWidget(set_time, get_frame, get_run_time). "
+              "set_time: takes time in seconds as a double and returns True if "
+              "the frame has changed, False otherwise. get_frame: takes no "
+              "arguments, returns an open3d.geometry.Image of the current "
+              "frame. get_run_time: takes no arguments, returns the length of "
+              "the video in seconds as a double.")
+         .def_property("is_playing", &VideoWidget::GetIsPlaying,
+                       &VideoWidget::SetIsPlaying,
+                       "Gets/sets if the video is playing or paused");
 
     // ---- Margins ----
     py::class_<Margins, UnownedPointer<Margins>> margins(m, "Margins",

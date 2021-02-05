@@ -88,6 +88,8 @@ public:
                              bool srgb = false) override;
     TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
                              bool srgb = false) override;
+    bool UpdateTexture(TextureHandle texture,
+            const std::shared_ptr<geometry::Image> image, bool srgb) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     IndirectLightHandle AddIndirectLight(

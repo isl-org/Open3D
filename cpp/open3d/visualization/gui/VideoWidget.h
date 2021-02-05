@@ -28,39 +28,27 @@
 
 #include "open3d/visualization/gui/Widget.h"
 
-#include "open3d/visualization/gui/UIImage.h"
-
 namespace open3d {
 namespace visualization {
+
+namespace rendering {
+class VideoProvider;
+}  // namespace rendering
+
 namespace gui {
 
-class ImageLabel : public Widget {
-    using Super = Widget;
-
+class VideoWidget : public Widget {
 public:
-    ImageLabel();
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
-    explicit ImageLabel(const char* image_path);
-    /// Uses existing image. Each ImageLabel will use one draw call.
-    explicit ImageLabel(std::shared_ptr<geometry::Image> image);
-    /// Uses an existing texture, using texture coordinates
-    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
-    /// This is useful for using an icon atlas to reduce draw calls.
-    explicit ImageLabel(visualization::rendering::TextureHandle texture_id,
-                        float u0 = 0.0f,
-                        float v0 = 0.0f,
-                        float u1 = 1.0f,
-                        float v1 = 1.0f);
-    ImageLabel(std::shared_ptr<UIImage> image);
-    ~ImageLabel();
+    VideoWidget(std::shared_ptr<rendering::VideoProvider> video);
+    ~VideoWidget();
 
-    std::shared_ptr<UIImage> GetImage() const;
-    void SetImage(std::shared_ptr<UIImage> image);
+    std::shared_ptr<rendering::VideoProvider> GetVideoProvider();
+    void SetVideoProvider(std::shared_ptr<rendering::VideoProvider> video);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    bool GetIsPlaying() const;
+    void SetIsPlaying(bool playing);
 
-    void Layout(const Theme& theme) override;
+    Widget::DrawResult Tick(const TickEvent& e) override;
 
     DrawResult Draw(const DrawContext& context) override;
 
@@ -69,6 +57,6 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace gui
-}  // namespace visualization
-}  // namespace open3d
+} // namespace gui
+} // namespace visualization
+} // namespace open3d

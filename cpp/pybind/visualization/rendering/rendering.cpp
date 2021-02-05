@@ -459,15 +459,19 @@ void pybind_rendering_classes(py::module &m) {
                     "Sets the view size. This should not be used except for "
                     "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,
-                                   "The low-level rendering scene object")
+                                   "The low-level rendering scene object "
+                                   "(read-only)")
             .def_property_readonly("camera", &Open3DScene::GetCamera,
-                                   "The camera object")
+                                   "The camera object (read-only)")
             .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(
                     "get_view", &Open3DScene::GetView,
                     "The low level view associated with the scene")
+            .def_property_readonly("background_color",
+                                   &Open3DScene::GetBackgroundColor,
+                                   "The background color (read-only)")
             .def_property("downsample_threshold",
                           &Open3DScene::GetDownsampleThreshold,
                           &Open3DScene::SetDownsampleThreshold,

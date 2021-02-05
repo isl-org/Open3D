@@ -164,6 +164,7 @@ struct Window::Impl {
     // the time we monitor key up/down events.
     int mouse_mods_ = 0;  // ORed KeyModifiers
     double last_render_time_ = 0.0;
+    double last_tick_time_ = 0.0;
 
     Theme theme_;  // so that the font size can be different based on scaling
     std::unique_ptr<visualization::rendering::FilamentRenderer> renderer_;
@@ -1274,7 +1275,12 @@ void Window::OnTextInput(const TextInputEvent& e) {
     RestoreDrawContext(old_context);
 }
 
-bool Window::OnTickEvent(const TickEvent& e) {
+bool Window::OnTickEvent(const TickEvent&) {
+    double now = Application::GetInstance().Now();
+    double dt = now - impl_->last_tick_time_;
+    TickEvent e;
+    e.dt = dt;
+
     auto old_context = MakeDrawContextCurrent();
     bool redraw = false;
 
@@ -1288,6 +1294,8 @@ bool Window::OnTickEvent(const TickEvent& e) {
         }
     }
     RestoreDrawContext(old_context);
+
+    impl_->last_tick_time_ = now;
     return redraw;
 }
 

@@ -118,7 +118,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    scene->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
+    SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
@@ -155,6 +155,11 @@ void Open3DScene::SetBackground(const Eigen::Vector4f& color,
                                 std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
     scene->SetBackground(color, image);
+    background_color = color;
+}
+
+const Eigen::Vector4f Open3DScene::GetBackgroundColor() const {
+    return background_color;
 }
 
 void Open3DScene::SetLighting(LightingProfile profile,

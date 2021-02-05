@@ -72,7 +72,9 @@ struct MouseEvent {
     };
 };
 
-struct TickEvent {};
+struct TickEvent {
+    double dt;
+};
 
 enum KeyName {
     KEY_NONE = 0,
