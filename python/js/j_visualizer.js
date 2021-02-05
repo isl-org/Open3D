@@ -431,12 +431,6 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
     // The `el` property is the DOM element associated with the view
     this.el.appendChild(this.videoElt);
 
-    this.webRtcServer = new WebRtcStreamer(
-      "video",
-      "http://192.168.86.121:8888/"
-    );
-    this.webRtcServer.connect("window://Open3D");
-
     // Python -> JavaScript update
     this.model.on("change:value", this.value_changed, this);
     this.model.on("change:disabled", this.disabled_changed, this);
@@ -447,6 +441,11 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
 
   value_changed: function () {
     console.log("value_changed");
+    this.webRtcServer = new WebRtcStreamer(
+      "video",
+      "http://192.168.86.121:8888/"
+    );
+    this.webRtcServer.connect("window://Open3D");
     this.email_input.value = this.model.get("value") + "_suffix";
   },
 
