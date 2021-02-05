@@ -127,11 +127,6 @@ def test_det(device, dtype):
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
 ])
-@pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("dtype", [
-    o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
-    o3d.core.Dtype.Float64
-])
 def test_lu(device, dtype):
     a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                         dtype=dtype,
