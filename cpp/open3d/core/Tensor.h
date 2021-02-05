@@ -220,15 +220,6 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    template <typename T>
-    static const std::vector<T> ConvertVectorType(
-            const std::vector<Scalar>& scalar_vec) {
-        std::vector<T> conv_vec(scalar_vec.size());
-        std::transform(scalar_vec.begin(), scalar_vec.end(), conv_vec.begin(),
-                       [](Scalar x) { return x.To<T>(); });
-        return conv_vec;
-    }
-
     /// Create a 0-D tensor (scalar) with given value.
     /// For example,
     /// core::Tensor::Init(1, core::Dtype::Float32);
@@ -239,11 +230,9 @@ public:
         std::vector<Scalar> in_list{val};
         SizeVector shape;
         Tensor new_tensor;
-
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
-            const std::vector<scalar_t> ele_list =
-                    ConvertVectorType<scalar_t>(in_list);
-            new_tensor = Tensor(ele_list, shape, dtype, device);
+            new_tensor = Tensor(ConvertScalarVector<scalar_t>(in_list), shape,
+                                dtype, device);
         });
 
         return new_tensor;
@@ -251,7 +240,7 @@ public:
 
     /// Create a 1-D tensor with initializer list.
     /// For example,
-    /// core::Tensor::Init({1,2,3}, core::Dtype::Float32);
+    /// core::Tensor::Init({1, 2, 3}, core::Dtype::Float32);
     template <typename T = Scalar>
     static Tensor Init(const std::initializer_list<T> in_list,
                        Dtype dtype,
@@ -262,11 +251,9 @@ public:
 
         SizeVector shape{static_cast<int64_t>(in_list.size())};
         Tensor new_tensor;
-
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
-            const std::vector<scalar_t> ele_list =
-                    ConvertVectorType<scalar_t>(ele_list_flat);
-            new_tensor = Tensor(ele_list, shape, dtype, device);
+            new_tensor = Tensor(ConvertScalarVector<scalar_t>(ele_list_flat),
+                                shape, dtype, device);
         });
 
         return new_tensor;
@@ -274,7 +261,7 @@ public:
 
     /// Create a 2-D tensor with nested initializer list.
     /// For example,
-    /// core::Tensor::Init({{1,2,3},{4,5,6}}, core::Dtype::Float32);
+    /// core::Tensor::Init({{1, 2, 3}, {4, 5, 6}}, core::Dtype::Float32);
     template <typename T = Scalar>
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
@@ -300,9 +287,8 @@ public:
         Tensor new_tensor;
         SizeVector shape{dim0_size, dim1_size};
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
-            const std::vector<scalar_t> ele_list =
-                    ConvertVectorType<scalar_t>(ele_list_flat);
-            new_tensor = Tensor(ele_list, shape, dtype, device);
+            new_tensor = Tensor(ConvertScalarVector<scalar_t>(ele_list_flat),
+                                shape, dtype, device);
         });
 
         return new_tensor;
@@ -310,7 +296,7 @@ public:
 
     /// Create a 3-D tensor with nested initializer list.
     /// For example,
-    /// core::Tensor::Init({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}},
+    /// core::Tensor::Init({{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}},
     /// core::Dtype::Float32);
     template <typename T = Scalar>
     static Tensor Init(
@@ -363,9 +349,8 @@ public:
 
         Tensor new_tensor;
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
-            const std::vector<scalar_t> ele_list =
-                    ConvertVectorType<scalar_t>(ele_list_flat);
-            new_tensor = Tensor(ele_list, shape, dtype, device);
+            new_tensor = Tensor(ConvertScalarVector<scalar_t>(ele_list_flat),
+                                shape, dtype, device);
         });
 
         return new_tensor;
@@ -1206,6 +1191,15 @@ public:
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
+
+    template <typename T>
+    static const std::vector<T> ConvertScalarVector(
+            const std::vector<Scalar>& scalar_vec) {
+        std::vector<T> conv_vec(scalar_vec.size());
+        std::transform(scalar_vec.begin(), scalar_vec.end(), conv_vec.begin(),
+                       [](Scalar x) { return x.To<T>(); });
+        return conv_vec;
+    }
 
 protected:
     /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension

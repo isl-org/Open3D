@@ -106,21 +106,21 @@ TEST_P(TensorPermuteDevices, WithInitList) {
 
     core::Tensor t;
 
-    // 0-D tesnor with given value without template.
+    // 0-D tesnor with given value.
     t = core::Tensor::Init(1, core::Dtype::Float32, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
     EXPECT_EQ(t.GetBlob()->GetDevice(), device);
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1}));
 
-    // 1-D tesnor with given value without template.
+    // 1-D tesnor initialization with list.
     t = core::Tensor::Init({1, 2, 3}, core::Dtype::Float32, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({3}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
     EXPECT_EQ(t.GetBlob()->GetDevice(), device);
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 2, 3}));
 
-    // 2-D tensor initialization with list without template.
+    // 2-D tensor initialization with list.
     t = core::Tensor::Init({{1, 2, 3}, {4, 5, 6}}, core::Dtype::Int32, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({2, 3}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Int32);
