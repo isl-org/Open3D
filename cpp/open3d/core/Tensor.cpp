@@ -903,6 +903,17 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
+Tensor Tensor::Clip(double min_val, double max_val) const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    utility::LogError("Not Implemented!");
+    return dst_tensor;
+}
+
+Tensor Tensor::Clip_(double min_val, double max_val) {
+    utility::LogError("Not Implemented!");
+    return *this;
+}
+
 Tensor Tensor::Floor() const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Floor);
@@ -1290,13 +1301,13 @@ Tensor Tensor::Solve(const Tensor& rhs) const {
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
-};
+}
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
-};
+}
 
 Tensor Tensor::Inverse() const {
     Tensor output;

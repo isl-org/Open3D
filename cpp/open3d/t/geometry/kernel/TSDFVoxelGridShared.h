@@ -373,7 +373,8 @@ void ExtractSurfacePointsCPU
          core::Tensor& normals,
          core::Tensor& colors,
          int64_t resolution,
-         float voxel_size) {
+         float voxel_size,
+         float weight_threshold) {
     // Parameters
     int64_t resolution3 = resolution * resolution * resolution;
 
@@ -397,7 +398,7 @@ void ExtractSurfacePointsCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        block_values.GetDevice());
-    int* count_ptr = static_cast<int*>(count.GetDataPtr());
+    int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);
     std::atomic<int>* count_ptr = &count_atomic;
@@ -439,7 +440,7 @@ void ExtractSurfacePointsCPU
                                                          xv, yv, zv, block_idx);
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
-                    if (weight_o <= kWeightThreshold) return;
+                    if (weight_o <= weight_threshold) return;
 
                     // Enumerate x-y-z directions
                     for (int i = 0; i < 3; ++i) {
@@ -453,7 +454,7 @@ void ExtractSurfacePointsCPU
                         float tsdf_i = ptr->GetTSDF();
                         float weight_i = ptr->GetWeight();
 
-                        if (weight_i > kWeightThreshold &&
+                        if (weight_i > weight_threshold &&
                             tsdf_i * tsdf_o < 0) {
                             OPEN3D_ATOMIC_ADD(count_ptr, 1);
                         }
@@ -479,7 +480,7 @@ void ExtractSurfacePointsCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                          block_values.GetDevice());
-    count_ptr = static_cast<int*>(count.GetDataPtr());
+    count_ptr = count.GetDataPtr<int>();
 #else
     (*count_ptr) = 0;
 #endif
@@ -544,7 +545,7 @@ void ExtractSurfacePointsCPU
                     float tsdf_o = voxel_ptr->GetTSDF();
                     float weight_o = voxel_ptr->GetWeight();
 
-                    if (weight_o <= kWeightThreshold) return;
+                    if (weight_o <= weight_threshold) return;
 
                     int64_t x = xb * resolution + xv;
                     int64_t y = yb * resolution + yv;
@@ -567,7 +568,7 @@ void ExtractSurfacePointsCPU
                         float tsdf_i = ptr->GetTSDF();
                         float weight_i = ptr->GetWeight();
 
-                        if (weight_i > kWeightThreshold &&
+                        if (weight_i > weight_threshold &&
                             tsdf_i * tsdf_o < 0) {
                             float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
@@ -646,7 +647,8 @@ void ExtractSurfaceMeshCPU
          core::Tensor& normals,
          core::Tensor& colors,
          int64_t resolution,
-         float voxel_size) {
+         float voxel_size,
+         float weight_threshold) {
 
     int64_t resolution3 = resolution * resolution * resolution;
 
@@ -684,10 +686,8 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr =
-            static_cast<const int64_t*>(indices.GetDataPtr());
-    const int64_t* inv_indices_ptr =
-            static_cast<const int64_t*>(inv_indices.GetDataPtr());
+    const int64_t* indices_ptr = indices.GetDataPtr<int64_t>();
+    const int64_t* inv_indices_ptr = inv_indices.GetDataPtr<int64_t>();
 
     int64_t n = n_blocks * resolution3;
 
@@ -734,7 +734,7 @@ void ExtractSurfaceMeshCPU
 
                         float tsdf_i = voxel_ptr_i->GetTSDF();
                         float weight_i = voxel_ptr_i->GetWeight();
-                        if (weight_i <= kWeightThreshold) return;
+                        if (weight_i <= weight_threshold) return;
 
                         table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
                     }
@@ -785,7 +785,7 @@ void ExtractSurfaceMeshCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
-    int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
+    int* vtx_count_ptr = vtx_count.GetDataPtr<int>();
 #else
     std::atomic<int> vtx_count_atomic(0);
     std::atomic<int>* vtx_count_ptr = &vtx_count_atomic;
@@ -831,7 +831,7 @@ void ExtractSurfaceMeshCPU
     int total_vtx_count = vtx_count.Item<int>();
     vtx_count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                              block_values.GetDevice());
-    vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
+    vtx_count_ptr = vtx_count.GetDataPtr<int>();
 #else
     int total_vtx_count = (*vtx_count_ptr).load();
     (*vtx_count_ptr) = 0;
@@ -993,7 +993,7 @@ void ExtractSurfaceMeshCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                                 block_values.GetDevice());
-    int* tri_count_ptr = static_cast<int*>(triangle_count.GetDataPtr());
+    int* tri_count_ptr = triangle_count.GetDataPtr<int>();
 #else
     std::atomic<int> tri_count_atomic(0);
     std::atomic<int>* tri_count_ptr = &tri_count_atomic;
