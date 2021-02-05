@@ -363,16 +363,17 @@ const Json::Value PeerConnectionManager::getMediaList() {
         Json::Value media;
         // TODO: fix the hard-coded window name, or, don't use the window name.
         media["video"] = videoSource;
-        if (videoSource == "window://Open3D") {
-            value.append(media);
-            std::cout << "Added media: "
-                      << Json::writeString(Json::StreamWriterBuilder(), media)
-                      << std::endl;
-        }
-        // value.append(media);
-        // std::cout << "Added media: "
-        //           << Json::writeString(Json::StreamWriterBuilder(), media)
-        //           << std::endl;
+        // if (videoSource == "window://Open3D") {
+        //     value.append(media);
+        //     std::cout << "Added media: "
+        //               << Json::writeString(Json::StreamWriterBuilder(),
+        //               media)
+        //               << std::endl;
+        // }
+        value.append(media);
+        std::cout << "Added media: "
+                  << Json::writeString(Json::StreamWriterBuilder(), media)
+                  << std::endl;
     }
 
     // Local video/audio files.
