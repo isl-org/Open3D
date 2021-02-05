@@ -403,17 +403,17 @@ def test_thiu(device, dtype):
                         device=device)
     # Test default diagonal value (= 0).
     np.testing.assert_allclose(o3d.core.triu(a).cpu().numpy(),
-                               np.triu(a.cpu().numpu()),
+                               np.triu(a.cpu().numpy()),
                                rtol=1e-5,
                                atol=1e-5)
     # Test positive diagonal value (= 1).
     np.testing.assert_allclose(o3d.core.triu(a, 1).cpu().numpy(),
-                               np.triu(a.cpu().numpu(), 1),
+                               np.triu(a.cpu().numpy(), 1),
                                rtol=1e-5,
                                atol=1e-5)
     # Test negative diagonal value (= -1).
     np.testing.assert_allclose(o3d.core.triu(a, -1).cpu().numpy(),
-                               np.triu(a.cpu().numpu(), -1),
+                               np.triu(a.cpu().numpy(), -1),
                                rtol=1e-5,
                                atol=1e-5)
 
@@ -429,17 +429,17 @@ def test_thil(device, dtype):
                         device=device)
     # Test default diagonal value (= 0).
     np.testing.assert_allclose(o3d.core.tril(a).cpu().numpy(),
-                               np.tril(a.cpu().numpu()),
+                               np.tril(a.cpu().numpy()),
                                rtol=1e-5,
                                atol=1e-5)
     # Test positive diagonal value (= 1).
     np.testing.assert_allclose(o3d.core.tril(a, 1).cpu().numpy(),
-                               np.tril(a.cpu().numpu(), 1),
+                               np.tril(a.cpu().numpy(), 1),
                                rtol=1e-5,
                                atol=1e-5)
     # Test negative diagonal value (= -1).
     np.testing.assert_allclose(o3d.core.tril(a, -1).cpu().numpy(),
-                               np.tril(a.cpu().numpu(), -1),
+                               np.tril(a.cpu().numpy(), -1),
                                rtol=1e-5,
                                atol=1e-5)
 
@@ -462,11 +462,11 @@ def test_thiul(device, dtype):
                           dtype=dtype,
                           device=device)
     np.testing.assert_allclose(l0.cpu().numpy(),
-                               l0_.cpu().numpu(),
+                               l0_.cpu().numpy(),
                                rtol=1e-5,
                                atol=1e-5)
     np.testing.assert_allclose(u0.cpu().numpy(),
-                               u0_.cpu().numpu(),
+                               u0_.cpu().numpy(),
                                rtol=1e-5,
                                atol=1e-5)
 
@@ -479,10 +479,10 @@ def test_thiul(device, dtype):
                           dtype=dtype,
                           device=device)
     np.testing.assert_allclose(l1.cpu().numpy(),
-                               l1_.cpu().numpu(),
+                               l1_.cpu().numpy(),
                                rtol=1e-5,
                                atol=1e-5)
     np.testing.assert_allclose(u1.cpu().numpy(),
-                               u1_.cpu().numpu(),
+                               u1_.cpu().numpy(),
                                rtol=1e-5,
                                atol=1e-5)
