@@ -1086,7 +1086,7 @@ public:
 
     /// \brief Computes LU factorisation of the nxn sqaure tensor,
     /// using A = P * L * U and returns tuple output tensor of shape {n,n} and
-    /// ipiv of shape {n}.
+    /// ipiv of shape {n}. [ipiv, output = open3d.core.lu_with_ipiv(a)]
     ///
     /// \returns \p [IPIV] 1D int tensor. It contains the pivot indices,
     /// indicating row i of the matrix was interchanged with row IPIV(i)).

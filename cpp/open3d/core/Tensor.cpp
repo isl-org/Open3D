@@ -30,7 +30,6 @@
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Blob.h"
-#include "open3d/core/CoreUtil.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -44,7 +43,6 @@
 #include "open3d/core/linalg/Inverse.h"
 #include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LeastSquares.h"
-#include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
@@ -1306,9 +1304,8 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::LU(bool permute_l) const {
-    core::Tensor A = this->Clone();
     core::Tensor permutation, lower, upper;
-    core::LU(A, permutation, lower, upper, permute_l);
+    core::LU(*this, permutation, lower, upper, permute_l);
     return std::make_tuple(permutation, lower, upper);
 }
 

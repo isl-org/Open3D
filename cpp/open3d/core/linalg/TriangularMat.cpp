@@ -35,7 +35,7 @@ namespace core {
 void Thiu(const Tensor& A, Tensor& output, const int diagonal) {
     core::Device device = A.GetDevice();
 
-    // Check dimensions
+    // Check dimensions.
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
         utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
@@ -66,7 +66,7 @@ void Thiu(const Tensor& A, Tensor& output, const int diagonal) {
 void Thil(const Tensor& A, Tensor& output, const int diagonal) {
     core::Device device = A.GetDevice();
 
-    // Check dimensions
+    // Check dimensions.
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
         utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
@@ -97,7 +97,7 @@ void Thil(const Tensor& A, Tensor& output, const int diagonal) {
 void Thiul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
     core::Device device = A.GetDevice();
 
-    // Check dimensions
+    // Check dimensions.
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
         utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());

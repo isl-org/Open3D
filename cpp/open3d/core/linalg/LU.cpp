@@ -115,6 +115,7 @@ void LU(const Tensor& A,
     // Get output matrix and ipiv.
     core::Tensor ipiv, output;
     LU_with_ipiv(A, ipiv, output);
+    // Decompose output in P, L, U matrix form.
     OutputToPLU(output, permutation, lower, upper, ipiv, permute_l);
 }
 
