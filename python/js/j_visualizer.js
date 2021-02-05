@@ -25,12 +25,6 @@
 // ----------------------------------------------------------------------------
 
 var widgets = require("@jupyter-widgets/base");
-var _ = require("lodash");
-var THREE = require("three");
-var OrbitControls = require("three-orbit-controls")(THREE);
-
-// Webpack automatically resolves path for assets
-import disc_path from "./assets/disc.png";
 
 var JVisualizerModel = widgets.DOMWidgetModel.extend({
   defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
