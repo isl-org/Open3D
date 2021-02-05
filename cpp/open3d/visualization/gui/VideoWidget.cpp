@@ -56,19 +56,19 @@ std::shared_ptr<rendering::VideoProvider> VideoWidget::GetVideoProvider() {
     return impl_->video_;
 }
 
-void VideoWidget::SetVideoProvider(std::shared_ptr<rendering::VideoProvider> video) {
+void VideoWidget::SetVideoProvider(
+        std::shared_ptr<rendering::VideoProvider> video) {
     impl_->video_ = video;
     impl_->current_time_ = 0.0;
     impl_->video_->SetTime(0.0);
-    impl_->current_frame_ = std::make_shared<UIImage>(impl_->video_->GetFrame());
+    impl_->current_frame_ =
+            std::make_shared<UIImage>(impl_->video_->GetFrame());
     impl_->current_frame_->SetScaling(UIImage::Scaling::ASPECT);
 }
 
 bool VideoWidget::GetIsPlaying() const { return impl_->is_playing_; }
 
-void VideoWidget::SetIsPlaying(bool playing) {
-    impl_->is_playing_ = playing;
-}
+void VideoWidget::SetIsPlaying(bool playing) { impl_->is_playing_ = playing; }
 
 Widget::DrawResult VideoWidget::Tick(const TickEvent& e) {
     if (!impl_->is_playing_) {
@@ -76,7 +76,8 @@ Widget::DrawResult VideoWidget::Tick(const TickEvent& e) {
     }
 
     impl_->current_time_ += e.dt;
-    if (impl_->video_->SetTime(impl_->current_time_) == rendering::VideoProvider::UpdateResult::NEEDS_REDRAW) {
+    if (impl_->video_->SetTime(impl_->current_time_) ==
+        rendering::VideoProvider::UpdateResult::NEEDS_REDRAW) {
         impl_->current_frame_->UpdateImage(impl_->video_->GetFrame());
         return Widget::DrawResult::REDRAW;
     } else {
@@ -92,15 +93,14 @@ Widget::DrawResult VideoWidget::Draw(const DrawContext& context) {
     }
 
     ImTextureID image_id =
-                reinterpret_cast<ImTextureID>(params.texture.GetId());
+            reinterpret_cast<ImTextureID>(params.texture.GetId());
     ImGui::SetCursorScreenPos(ImVec2(params.pos_x, params.pos_y));
     ImGui::Image(image_id, ImVec2(params.width, params.height),
-                 ImVec2(params.u0, params.v0),
-                 ImVec2(params.u1, params.v1));
+                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
 
     return Widget::DrawResult::NONE;
 }
 
-} // namespace gui
-} // namespace visualization
-} // namespace open3d
+}  // namespace gui
+}  // namespace visualization
+}  // namespace open3d

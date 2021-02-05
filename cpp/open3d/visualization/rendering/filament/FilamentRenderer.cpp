@@ -287,8 +287,10 @@ TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
     return resource_mgr_.CreateTexture(request.path_.data(), srgb);
 }
 
-bool FilamentRenderer::UpdateTexture(TextureHandle texture,
-                     const std::shared_ptr<geometry::Image> image, bool srgb) {
+bool FilamentRenderer::UpdateTexture(
+        TextureHandle texture,
+        const std::shared_ptr<geometry::Image> image,
+        bool srgb) {
     return resource_mgr_.UpdateTexture(texture, image, srgb);
 }
 

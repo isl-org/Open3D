@@ -57,6 +57,6 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-} // namespace gui
-} // namespace visualization
-} // namespace open3d
+}  // namespace gui
+}  // namespace visualization
+}  // namespace open3d

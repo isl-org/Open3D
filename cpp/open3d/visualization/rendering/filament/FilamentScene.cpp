@@ -1558,9 +1558,8 @@ void FilamentScene::SetBackground(
                 // Try updating the texture. If the sizes are incorrect, this
                 // will fail.
                 if (resource_mgr_.UpdateTexture(
-                                geom_it->second.mat.maps.albedo_map,
-                                new_image,
-                                false /*not sRGB*/)) {
+                            geom_it->second.mat.maps.albedo_map, new_image,
+                            false /*not sRGB*/)) {
                     return;
                 }
             }
@@ -1573,7 +1572,8 @@ void FilamentScene::SetBackground(
     if (geom_it != geometries_.end()) {
         if (geom_it->second.mat.maps.albedo_map) {
             resource_mgr_.Destroy(geom_it->second.mat.maps.albedo_map);
-            geom_it->second.mat.maps.albedo_map = FilamentResourceManager::kDefaultTexture;
+            geom_it->second.mat.maps.albedo_map =
+                    FilamentResourceManager::kDefaultTexture;
         }
     }
     OverrideMaterial(kBackgroundName, m);

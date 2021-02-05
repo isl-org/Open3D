@@ -93,10 +93,9 @@ public:
     PyVideoProvider(std::function<bool(double)> set_time,
                     std::function<std::shared_ptr<geometry::Image>()> get_frame,
                     std::function<double()> get_run_time)
-        : set_time_(set_time)
-        , get_frame_(get_frame)
-        , get_run_time_(get_run_time){
-    }
+        : set_time_(set_time),
+          get_frame_(get_frame),
+          get_run_time_(get_run_time) {}
 
     UpdateResult SetTime(double t) override {
         if (set_time_(t)) {
@@ -111,9 +110,7 @@ public:
     }
 
     /// Returns the run time of the video, specified in seconds
-    double GetRunTime() const override {
-        return get_run_time_();
-    }
+    double GetRunTime() const override { return get_run_time_(); }
 
 private:
     std::function<bool(double)> set_time_;
@@ -789,10 +786,9 @@ void pybind_gui_classes(py::module &m) {
             .def(py::init<>(
                          [](const char *path) { return new ImageLabel(path); }),
                  "Creates an ImageLabel from the image at the specified path")
-            .def(py::init<>(
-                     [](std::shared_ptr<geometry::Image> image) {
-                         return new ImageLabel(image);
-                     }),
+            .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
+                     return new ImageLabel(image);
+                 }),
                  "Creates an ImageLabel from the provided image")
             .def("__repr__", [](const ImageLabel &il) {
                 std::stringstream s;
@@ -1301,13 +1297,15 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- VideoWidget ----
     py::class_<VideoWidget, UnownedPointer<VideoWidget>, Widget> video(
-                m, "VideoWidget", "Displays video");
+            m, "VideoWidget", "Displays video");
     video.def(py::init<>([](std::function<bool(double)> set_time,
-                            std::function<std::shared_ptr<geometry::Image>()> get_frame,
+                            std::function<std::shared_ptr<geometry::Image>()>
+                                    get_frame,
                             std::function<double()> get_run_time) {
-                             auto video = std::make_shared<PyVideoProvider>(set_time, get_frame, get_run_time);
-                             return new VideoWidget(video);
-                         }),
+                  auto video = std::make_shared<PyVideoProvider>(
+                          set_time, get_frame, get_run_time);
+                  return new VideoWidget(video);
+              }),
               "Creates a VideoWidget: "
               "VideoWidget(set_time, get_frame, get_run_time). "
               "set_time: takes time in seconds as a double and returns True if "
@@ -1315,9 +1313,9 @@ void pybind_gui_classes(py::module &m) {
               "arguments, returns an open3d.geometry.Image of the current "
               "frame. get_run_time: takes no arguments, returns the length of "
               "the video in seconds as a double.")
-         .def_property("is_playing", &VideoWidget::GetIsPlaying,
-                       &VideoWidget::SetIsPlaying,
-                       "Gets/sets if the video is playing or paused");
+            .def_property("is_playing", &VideoWidget::GetIsPlaying,
+                          &VideoWidget::SetIsPlaying,
+                          "Gets/sets if the video is playing or paused");
 
     // ---- Margins ----
     py::class_<Margins, UnownedPointer<Margins>> margins(m, "Margins",

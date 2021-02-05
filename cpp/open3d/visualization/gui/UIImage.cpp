@@ -162,7 +162,8 @@ UIImage::DrawParams UIImage::CalcDrawParams(
     if (impl_->image_data_) {
         if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
             impl_->texture_ = renderer.AddTexture(impl_->image_data_);
-            if (impl_->texture_ != visualization::rendering::TextureHandle::kBad) {
+            if (impl_->texture_ !=
+                visualization::rendering::TextureHandle::kBad) {
                 impl_->renderer_ = &renderer;
             } else {
                 impl_->texture_ = visualization::rendering::TextureHandle();
