@@ -454,7 +454,7 @@ def test_thiul(device, dtype):
                         dtype=dtype,
                         device=device)
     # Test default diagounal value (= 0).
-    l0, u0 = o3d.core.triul(a)
+    u0, l0 = o3d.core.triul(a)
     l0_ = o3d.core.Tensor([[1, 0, 0], [3, 1, 0], [2, 4, 1]],
                           dtype=dtype,
                           device=device)
@@ -471,7 +471,7 @@ def test_thiul(device, dtype):
                                atol=1e-5)
 
     # Test positive diagounal value (= 0).
-    l1, u1 = o3d.core.triul(a, 1)
+    u1, l1 = o3d.core.triul(a, 1)
     l1_ = o3d.core.Tensor([[2, 1, 0], [3, 3, 1], [2, 4, 1]],
                           dtype=dtype,
                           device=device)
