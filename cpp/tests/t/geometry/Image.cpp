@@ -261,32 +261,32 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
 
     utility::LogInfo("dx = {}", grad.first.AsTensor().View({5, 5}).ToString());
     utility::LogInfo("dy = {}", grad.second.AsTensor().View({5, 5}).ToString());
-    // t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
-    //         *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-    //                                  "/lena_color.jpg"),
-    //         device);
-    // t::geometry::Image gray = rgb.RGBToGray();
-    // io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
-    // io::WriteImage("lena_converted.png", gray.ToLegacyImage());
+    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/lena_color.jpg"),
+            device);
+    t::geometry::Image gray = rgb.RGBToGray();
+    io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
+    io::WriteImage("lena_converted.png", gray.ToLegacyImage());
 
-    // t::geometry::Image depth =
-    //         t::geometry::Image::FromLegacyImage(
-    //                 *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-    //                                          "/RGBD/depth/00000.png"),
-    //                 device)
-    //                 .To(core::Dtype::Float32);
+    t::geometry::Image depth =
+            t::geometry::Image::FromLegacyImage(
+                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                             "/RGBD/depth/00000.png"),
+                    device)
+                    .To(core::Dtype::Float32);
 
-    // auto gray_filtered = gray.FilterSobel(3);
-    // auto depth_filtered = depth.FilterSobel(5);
+    auto gray_filtered = gray.FilterSobel(3);
+    auto depth_filtered = depth.FilterSobel(5);
 
-    // gray_filtered.first.AsTensor()
-    //         .To(core::Dtype::Float32)
-    //         .Save("gray_dx" + device.ToString() + ".npy");
-    // gray_filtered.second.AsTensor()
-    //         .To(core::Dtype::Float32)
-    //         .Save("gray_dy" + device.ToString() + ".npy");
-    // depth_filtered.first.AsTensor().Save("depth_dx.npy");
-    // depth_filtered.second.AsTensor().Save("depth_dy.npy");
+    gray_filtered.first.AsTensor()
+            .To(core::Dtype::Float32)
+            .Save("gray_dx" + device.ToString() + ".npy");
+    gray_filtered.second.AsTensor()
+            .To(core::Dtype::Float32)
+            .Save("gray_dy" + device.ToString() + ".npy");
+    depth_filtered.first.AsTensor().Save("depth_dx.npy");
+    depth_filtered.second.AsTensor().Save("depth_dy.npy");
 }
 
 TEST_P(ImagePermuteDevices, Resize) {
@@ -330,12 +330,20 @@ TEST_P(ImagePermuteDevices, PyrDown) {
             *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
                                      "/lena_color.jpg"),
             device);
+    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
+            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                     "/RGBD/depth/00000.png"),
+            device);
 
     for (int i = 0; i < 3; ++i) {
         rgb = rgb.PyrDown();
+        depth = depth.PyrDown();
         io::WriteImage(
                 fmt::format("rgb_pyr_{:03d}_{}.png", i, device.ToString()),
                 rgb.ToLegacyImage());
+        io::WriteImage(
+                fmt::format("depth_pyr_{:03d}_{}.png", i, device.ToString()),
+                depth.ToLegacyImage());
     }
 }
 
