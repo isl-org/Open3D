@@ -81,8 +81,8 @@ public:
                                            double radius,
                                            int max_knn) const override;
 
-    const double hash_table_size_factor = 1 / 32;
-    const int64_t max_hash_tabls_size = 10000;
+    const double hash_table_size_factor = 1.0 / 32;
+    const int64_t max_hash_tabls_size = 33554432;
 
 protected:
     std::vector<int64_t> points_row_splits_;
@@ -94,7 +94,8 @@ protected:
 
 enum class SearchOpCode {
     FixedRadius = 0,
-    Hybrid = 1,
+    Sorted = 1,
+    Hybrid = 2,
 };
 
 template <class T>
@@ -105,21 +106,17 @@ public:
     void AllocIndices(int32_t** ptr,
                       size_t num,
                       SearchOpCode search_type = SearchOpCode::FixedRadius) {
-        if (!indices.count(search_type)) {
-            indices[search_type] =
-                    Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
-            *ptr = static_cast<int32_t*>(indices[search_type].GetDataPtr());
-        }
+        indices[search_type] =
+                Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
+        *ptr = static_cast<int32_t*>(indices[search_type].GetDataPtr());
     }
 
     void AllocDistances(T** ptr,
                         size_t num,
                         SearchOpCode search_type = SearchOpCode::FixedRadius) {
-        if (!distances.count(search_type)) {
-            distances[search_type] = Tensor::Empty(
-                    {int64_t(num)}, Dtype::FromType<T>(), device_);
-            *ptr = static_cast<T*>(distances[search_type].GetDataPtr());
-        }
+        distances[search_type] =
+                Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
+        *ptr = static_cast<T*>(distances[search_type].GetDataPtr());
     }
 
     const int32_t* IndicesPtr(
@@ -145,8 +142,8 @@ public:
             SearchOpCode search_type = SearchOpCode::FixedRadius) const {
         if (!indices.count(search_type))
             utility::LogError(
-                    "Indices is not allocated. Please allocate pointer for "
-                    "indices with AllocIndices function.");
+                    "Indices pointer is not allocated. Please allocate pointer "
+                    "for indices with AllocIndices function.");
         return indices.at(search_type);
     }
     const Tensor& NeighborsDistance(

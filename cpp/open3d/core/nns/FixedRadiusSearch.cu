@@ -25,8 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include <math.h>
-#include <thrust/execution_policy.h>
-#include <thrust/sort.h>
 
 #include <cub/cub.cuh>
 
@@ -414,11 +412,6 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
             }
         }
     }
-
-    // Sort by distance in ascending order.
-    thrust::sort_by_key(thrust::seq, distances + indices_offset,
-                        distances + indices_offset + count,
-                        indices + indices_offset);
 }
 
 /// Count the number of neighbors for each query point
@@ -582,7 +575,7 @@ void BuildSpatialHashTableCUDA(void* temp,
                                TIndex* hash_table_index) {
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
-    int texture_alignment = 1;
+    int texture_alignment = 512;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
@@ -684,7 +677,7 @@ void FixedRadiusSearchCUDA(void* temp,
                            int max_knn) {
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
-    int texture_alignment = 1;
+    int texture_alignment = 512;
     const Metric metric = Metric::L2;
     const bool is_hybrid = max_knn > 0;
 
@@ -765,31 +758,18 @@ void FixedRadiusSearchCUDA(void* temp,
         mem_temp.Free(inclusive_scan_temp);
     }
 
-    if (get_temp_size) {
-        // return the memory peak as the required temporary memory size.
-        temp_size = mem_temp.MaxUsed();
-        return;
-    }
-
     // allocate the output array for the neighbor indices
     const size_t num_indices = last_prefix_sum_entry;
-    int32_t* indices_ptr;
+
+    int32_t *indices_ptr, *indices_sorted;
     output_allocator.AllocIndices(&indices_ptr, num_indices);
+    output_allocator.AllocIndices(&indices_sorted, num_indices,
+                                  SearchOpCode::Sorted);
 
-    T* distances_ptr;
+    T *distances_ptr, *distances_sorted;
     output_allocator.AllocDistances(&distances_ptr, num_indices);
-
-    int32_t* indices_ptr_hybrid;
-    T* distances_ptr_hybrid;
-
-    if (is_hybrid) {
-        const size_t num_indices_hybrid = max_knn * num_queries;
-        output_allocator.AllocIndices(&indices_ptr_hybrid, num_indices_hybrid,
-                                      SearchOpCode::Hybrid);
-        output_allocator.AllocDistances(&distances_ptr_hybrid,
-                                        num_indices_hybrid,
-                                        SearchOpCode::Hybrid);
-    }
+    output_allocator.AllocDistances(&distances_sorted, num_indices,
+                                    SearchOpCode::Sorted);
 
     if (!get_temp_size) {
         for (int i = 0; i < batch_size; ++i) {
@@ -806,19 +786,52 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric, true);
-
-            if (max_knn > 0) {
-                MaxKnnThreshold(
-                        stream, indices_ptr, distances_ptr, indices_ptr_hybrid,
-                        distances_ptr_hybrid,
-                        query_neighbors_count.first + queries_row_splits[i],
-                        query_neighbors_row_splits + queries_row_splits[i],
-                        num_queries, max_knn);
-            }
         }
     }
 
+    // Sort
+    if (!get_temp_size) {
+        std::pair<void*, size_t> sort_temp(nullptr, 0);
+        cub::DoubleBuffer<int32_t> sort_key(indices_ptr, indices_sorted);
+        cub::DoubleBuffer<T> sort_value(distances_ptr, distances_sorted);
+
+        cub::DeviceSegmentedRadixSort::SortPairs(
+                sort_temp.first, sort_temp.second, sort_value, sort_key,
+                num_indices, num_queries, query_neighbors_row_splits,
+                query_neighbors_row_splits + 1);
+        sort_temp = mem_temp.Alloc(sort_temp.second);
+
+        cub::DeviceSegmentedRadixSort::SortPairs(
+                sort_temp.first, sort_temp.second, sort_value, sort_key,
+                num_indices, num_queries, query_neighbors_row_splits,
+                query_neighbors_row_splits + 1);
+        mem_temp.Free(sort_temp);
+    }
     mem_temp.Free(query_neighbors_count);
+
+    if (get_temp_size) {
+        // return the memory peak as the required temporary memory size.
+        temp_size = mem_temp.MaxUsed();
+        return;
+    }
+
+    // Thresholding for Hybrid Search
+    if (!get_temp_size && is_hybrid) {
+        const size_t num_indices_hybrid = max_knn * num_queries;
+        int32_t* indices_hybrid;
+        T* distances_hybrid;
+        output_allocator.AllocIndices(&indices_hybrid, num_indices_hybrid,
+                                      SearchOpCode::Hybrid);
+        output_allocator.AllocDistances(&distances_hybrid, num_indices_hybrid,
+                                        SearchOpCode::Hybrid);
+        for (int i = 0; i < batch_size; ++i) {
+            MaxKnnThreshold(stream, indices_sorted, distances_sorted,
+                            indices_hybrid, distances_hybrid,
+                            query_neighbors_count.first + queries_row_splits[i],
+                            query_neighbors_row_splits + queries_row_splits[i],
+                            num_queries, max_knn);
+        }
+    }
 }
 
 void InitializeHeapSize(size_t size) {

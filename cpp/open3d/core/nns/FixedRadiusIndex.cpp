@@ -49,13 +49,6 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
 #ifdef BUILD_CUDA_MODULE
-    // Increase heap size as 1GB.
-    size_t size = 0;
-    GetHeapSize(&size);
-    if (size == 8 * 1024 * 1024) {
-        InitializeHeapSize(1024 * 1024 * 1024);
-    }
-
     if (dataset_points.GetDevice().GetType() != Device::DeviceType::CUDA) {
         utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] dataset_points should be "
@@ -92,7 +85,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         // Determine temp_size.
         BuildSpatialHashTableCUDA(
-                temp_ptr, temp_size, dataset_points_.GetShape()[1],
+                temp_ptr, temp_size, dataset_points_.GetShape()[0],
                 static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), hash_table_splits_.data(),
@@ -107,7 +100,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
         // Actually run the function.
         BuildSpatialHashTableCUDA(
-                temp_ptr, temp_size, dataset_points_.GetShape()[1],
+                temp_ptr, temp_size, dataset_points_.GetShape()[0],
                 static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), hash_table_splits_.data(),
@@ -197,8 +190,10 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                         hash_table_index_.GetDataPtr()),
                 output_allocator);
 
-        neighbors_index = output_allocator.NeighborsIndex().To(Dtype::Int64);
-        neighbors_distance = output_allocator.NeighborsDistance();
+        neighbors_index = output_allocator.NeighborsIndex(SearchOpCode::Sorted)
+                                  .To(Dtype::Int64);
+        neighbors_distance =
+                output_allocator.NeighborsDistance(SearchOpCode::Sorted);
     });
 
     Tensor num_neighbors =
