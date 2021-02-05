@@ -25,6 +25,9 @@
 // ----------------------------------------------------------------------------
 
 var widgets = require("@jupyter-widgets/base");
+var path = require("path");
+import * as webrtcstreamer from "./webrtcstreamer";
+import * as adapter from "./adapter.min";
 
 var JVisualizerModel = widgets.DOMWidgetModel.extend({
   defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
@@ -37,6 +40,8 @@ var JVisualizerModel = widgets.DOMWidgetModel.extend({
 var JVisualizerView = widgets.DOMWidgetView.extend({
   // Render the view.
   render: function () {
+    console.log("render");
+
     this.email_input = document.createElement("input");
     this.email_input.type = "email";
     this.email_input.value = this.model.get("value");
@@ -54,7 +59,8 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   value_changed: function () {
-    this.email_input.value = this.model.get("value");
+    console.log("value_changed");
+    this.email_input.value = this.model.get("value") + "_suffix";
   },
 
   disabled_changed: function () {
@@ -62,6 +68,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   input_changed: function () {
+    console.log("input_changed");
     this.model.set("value", this.email_input.value);
     this.model.save_changes();
   },
