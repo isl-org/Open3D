@@ -407,8 +407,8 @@ bool FilamentResourceManager::UpdateTexture(
         bool srgb) {
     auto ftexture_weak = GetTexture(texture);
     if (auto ftexture = ftexture_weak.lock()) {
-        if (ftexture->getWidth() == image->width_ &&
-            ftexture->getHeight() == image->height_) {
+        if (ftexture->getWidth() == size_t(image->width_) &&
+            ftexture->getHeight() == size_t(image->height_)) {
             auto retained_img_id = RetainImageForLoading(image);
             auto texture_settings = GetSettingsFromImage(*image, srgb);
             filament::Texture::PixelBufferDescriptor desc(
