@@ -636,11 +636,19 @@ const Theme &Application::GetTheme() const { return impl_->theme_; }
 std::shared_ptr<geometry::Image> Application::RenderToImage(
         rendering::Renderer &renderer,
         rendering::View *view,
-        rendering::Scene *scene) {
+        rendering::Scene *scene,
+        int width,
+        int height) {
     std::shared_ptr<geometry::Image> img;
     auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
         img = _img;
     };
+
+    // Despite the fact that Renderer is created with a width/height, it is
+    // the View's viewport that actually controls the size when rendering to
+    // an image. Set the viewport here, rather than in the pybinds so that
+    // C++ callers do not need to know do this themselves.
+    view->SetViewport(0, 0, width, height);
 
     renderer.RenderToImage(view, scene, callback);
     renderer.BeginFrame();
@@ -652,11 +660,19 @@ std::shared_ptr<geometry::Image> Application::RenderToImage(
 std::shared_ptr<geometry::Image> Application::RenderToDepthImage(
         rendering::Renderer &renderer,
         rendering::View *view,
-        rendering::Scene *scene) {
+        rendering::Scene *scene,
+        int width,
+        int height) {
     std::shared_ptr<geometry::Image> img;
     auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
         img = _img;
     };
+
+    // Despite the fact that Renderer is created with a width/height, it is
+    // the View's viewport that actually controls the size when rendering to
+    // an image. Set the viewport here, rather than in the pybinds so that
+    // C++ callers do not need to know do this themselves.
+    view->SetViewport(0, 0, width, height);
 
     renderer.RenderToDepthImage(view, scene, callback);
     renderer.BeginFrame();

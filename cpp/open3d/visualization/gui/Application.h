@@ -180,13 +180,17 @@ public:
     std::shared_ptr<geometry::Image> RenderToImage(
             rendering::Renderer &renderer,
             rendering::View *view,
-            rendering::Scene *scene);
+            rendering::Scene *scene,
+            int width,
+            int height);
 
     // Same as RenderToImage(), but returns the depth values in a float image.
     std::shared_ptr<geometry::Image> RenderToDepthImage(
             rendering::Renderer &renderer,
             rendering::View *view,
-            rendering::Scene *scene);
+            rendering::Scene *scene,
+            int width,
+            int height);
 
     struct UserFontInfo {
         std::string path;

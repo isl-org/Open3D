@@ -163,16 +163,16 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height) {
-    scene->GetView()->SetViewport(0, 0, width, height);
     return Application::GetInstance().RenderToImage(
-            scene->GetRenderer(), scene->GetView(), scene->GetScene());
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
 }
 
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height) {
-    scene->GetView()->SetViewport(0, 0, width, height);
     return Application::GetInstance().RenderToDepthImage(
-            scene->GetRenderer(), scene->GetView(), scene->GetScene());
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
