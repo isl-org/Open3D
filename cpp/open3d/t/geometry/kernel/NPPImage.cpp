@@ -41,7 +41,6 @@ namespace geometry {
 namespace npp {
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
-    // create struct with ROI size
     NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
                          static_cast<int>(dst_im.GetShape(0))};
 
@@ -91,6 +90,9 @@ void Resize(const open3d::core::Tensor &src_im,
             {Image::Super, NPPI_INTER_SUPER},
     };
     auto it = type_dict.find(interp_type);
+    if (it == type_dict.end()) {
+        utility::LogError("Invalid interpolation type {}.", interp_type);
+    }
 
     auto dtype = src_im.GetDtype();
 #define NPP_ARGS                                                       \
@@ -248,7 +250,8 @@ void FilterBilateral(const core::Tensor &src_im,
 
 void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
-                    int kernel_size) {
+                    int kernel_size,
+                    float sigma) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -259,25 +262,25 @@ void FilterGaussian(const core::Tensor &src_im,
     NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
                          static_cast<int>(dst_im.GetShape(0))};
 
-    double sigma = 0.4 + (kernel_size / 2) * 0.6;
-    core::Tensor linspace =
+    // Generate separable kernel weights given the sigma value.
+    core::Tensor dist =
             core::Tensor::Arange(static_cast<float>(-kernel_size / 2),
                                  static_cast<float>(kernel_size / 2 + 1), 1.0f,
                                  core::Dtype::Float32, src_im.GetDevice());
-    core::Tensor logval = (linspace * linspace).Mul(-0.5f / (sigma * sigma));
+    core::Tensor logval = (dist * dist).Mul(-0.5f / (sigma * sigma));
     core::Tensor mask = logval.Exp();
     mask = mask / mask.Sum({0});
     float *mask_ptr = static_cast<float *>(mask.GetDataPtr());
 
     auto dtype = src_im.GetDtype();
-    const static std::unordered_map<int, NppiMaskSize> kKernelSizeMap = {
+    const static std::unordered_map<int, NppiMaskSize> kernel_size_dict = {
             {3, NPP_MASK_SIZE_3_X_3},    {5, NPP_MASK_SIZE_5_X_5},
             {7, NPP_MASK_SIZE_7_X_7},    {9, NPP_MASK_SIZE_9_X_9},
             {11, NPP_MASK_SIZE_11_X_11}, {13, NPP_MASK_SIZE_13_X_13},
             {15, NPP_MASK_SIZE_15_X_15},
     };
-    auto it = kKernelSizeMap.find(kernel_size);
-    if (it == kKernelSizeMap.end()) {
+    auto it = kernel_size_dict.find(kernel_size);
+    if (it == kernel_size_dict.end()) {
         utility::LogError("Unsupported size {} for NPP FilterGaussian",
                           kernel_size);
     }
@@ -335,12 +338,12 @@ void FilterSobel(const core::Tensor &src_im,
     NppiSize size_ROI = {static_cast<int>(dst_im_dx.GetShape(1)),
                          static_cast<int>(dst_im_dx.GetShape(0))};
     auto dtype = src_im.GetDtype();
-    const static std::unordered_map<int, NppiMaskSize> kKernelSizeMap = {
+    const static std::unordered_map<int, NppiMaskSize> kernel_size_dict = {
             {3, NPP_MASK_SIZE_3_X_3},
             {5, NPP_MASK_SIZE_5_X_5},
     };
-    auto it = kKernelSizeMap.find(kernel_size);
-    if (it == kKernelSizeMap.end()) {
+    auto it = kernel_size_dict.find(kernel_size);
+    if (it == kernel_size_dict.end()) {
         utility::LogError("Unsupported size {} for NPP FilterSobel",
                           kernel_size);
     }

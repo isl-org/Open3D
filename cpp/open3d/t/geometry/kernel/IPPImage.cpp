@@ -200,11 +200,11 @@ void FilterBilateral(const core::Tensor &src_im,
 
 void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
-                    int kernel_size) {
+                    int kernel_size,
+                    float sigma) {
     // Use a precomputed sigma to be consistent with npp:
     // https://docs.nvidia.com/cuda/npp/group__image__filter__gauss__border.html
 
-    double sigma = 0.4 + (kernel_size / 2) * 0.6;
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();

@@ -51,7 +51,8 @@ void FilterBilateral(const open3d::core::Tensor &srcim,
 
 void FilterGaussian(const open3d::core::Tensor &srcim,
                     open3d::core::Tensor &dstim,
-                    int kernel_size);
+                    int kernel_size,
+                    float sigma);
 
 void FilterSobel(const open3d::core::Tensor &srcim,
                  open3d::core::Tensor &dstim_dx,

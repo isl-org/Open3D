@@ -186,6 +186,7 @@ public:
 
     /// Return a new image after resizing with specified interpolation type.
     /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
+    /// Aspect ratio is always kept.
     enum {
         Nearest = 0,
         Linear = 1,
@@ -193,7 +194,6 @@ public:
         Lanczos = 3,
         Super = 4
     } InterpType;
-
     Image Resize(float sampling_rate = 0.5f, int interp_type = Nearest) const;
 
     /// Return a new image after performing morphological dilation. Supported
@@ -204,15 +204,20 @@ public:
     Image Dilate(int kernel_size = 3) const;
 
     /// Return a new image after bilateral filtering.
+    /// value_sigma: standard deviation for the image content.
+    /// dist_sigma: standard deviation for the image pixel positions.
+    /// Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:
+    /// CPU uses a round kernel (radius = floor(kernel_size / 2)),
+    /// while CUDA uses a square kernel (width = kernel_size).
+    /// Make sure to tune parameters accordingly.
     Image FilterBilateral(int kernel_size = 3,
                           float value_sigma = 20.0f,
                           float dist_sigma = 10.0f) const;
 
     /// Return a new image after Gaussian filtering.
     /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
-    /// Possible kernel_size: odd numbers >= 3 are supported for CPU, and only
-    /// up to 15 are supported for GPU.
-    Image FilterGaussian(int kernel_size = 3) const;
+    /// Possible kernel_size: odd numbers >= 3 are supported.
+    Image FilterGaussian(int kernel_size = 3, float sigma = 1.0f) const;
 
     /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
     /// Possible kernel_size: 3 and 5.

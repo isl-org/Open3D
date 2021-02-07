@@ -248,45 +248,73 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
 
     // clang-format off
     const std::vector<float> input_data =
-      {0, 0, 0, 0, 0,
+      {0, 0, 0, 0, 1,
        0, 1, 1, 0, 0,
        0, 0, 1, 0, 0,
-       0, 0, 1, 0, 0,
+       1, 0, 1, 0, 0,
        0, 0, 1, 1, 0};
+    const std::vector<float> output_dx_ref =
+      {1, 1, -1, 2, 3,
+       2, 3, -2, -2, 1,
+       0, 3, -1, -4, 0,
+       -2, 2, 1, -4, -1,
+       -1, 3, 3, -4, -3};
+    const std::vector<float> output_dy_ref =
+      {1, 3, 3, 0, -3,
+       0, 1, 2, 0, -3,
+       2, -1, -1, 0, 0,
+       0, 0, 1, 2, 1,
+       -3, -1, 1, 2, 1};
     // clang-format on
-    core::Tensor data =
-            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
-    t::geometry::Image im(data);
-    auto grad = im.FilterSobel(3);
 
-    utility::LogInfo("dx = {}", grad.first.AsTensor().View({5, 5}).ToString());
-    utility::LogInfo("dy = {}", grad.second.AsTensor().View({5, 5}).ToString());
-    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/lena_color.jpg"),
-            device);
-    t::geometry::Image gray = rgb.RGBToGray();
-    io::WriteImage("lena_colored.png", rgb.ToLegacyImage());
-    io::WriteImage("lena_converted.png", gray.ToLegacyImage());
+    {  // Float32 -> Float32
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        t::geometry::Image dx, dy;
+        std::tie(dx, dy) = im.FilterSobel(3);
 
-    t::geometry::Image depth =
-            t::geometry::Image::FromLegacyImage(
-                    *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                             "/RGBD/depth/00000.png"),
-                    device)
-                    .To(core::Dtype::Float32);
+        EXPECT_EQ(dx.GetRows(), 5);
+        EXPECT_EQ(dx.GetCols(), 5);
+        EXPECT_EQ(dx.GetChannels(), 1);
+        EXPECT_EQ(dx.GetDtype(), core::Dtype::Float32);
+        EXPECT_TRUE(dx.AsTensor().AllClose(core::Tensor(
+                output_dx_ref, {5, 5, 1}, core::Dtype::Float32, device)));
 
-    auto gray_filtered = gray.FilterSobel(3);
-    auto depth_filtered = depth.FilterSobel(5);
+        EXPECT_EQ(dy.GetRows(), 5);
+        EXPECT_EQ(dy.GetCols(), 5);
+        EXPECT_EQ(dy.GetChannels(), 1);
+        EXPECT_EQ(dy.GetDtype(), core::Dtype::Float32);
+        EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
+                output_dy_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+    }
 
-    gray_filtered.first.AsTensor()
-            .To(core::Dtype::Float32)
-            .Save("gray_dx" + device.ToString() + ".npy");
-    gray_filtered.second.AsTensor()
-            .To(core::Dtype::Float32)
-            .Save("gray_dy" + device.ToString() + ".npy");
-    depth_filtered.first.AsTensor().Save("depth_dx.npy");
-    depth_filtered.second.AsTensor().Save("depth_dy.npy");
+    {  // UInt8 -> Int16
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device)
+                                    .To(core::Dtype::UInt8);
+        t::geometry::Image im(data);
+        t::geometry::Image dx, dy;
+        std::tie(dx, dy) = im.FilterSobel(3);
+
+        EXPECT_EQ(dx.GetRows(), 5);
+        EXPECT_EQ(dx.GetCols(), 5);
+        EXPECT_EQ(dx.GetChannels(), 1);
+        EXPECT_EQ(dx.GetDtype(), core::Dtype::Int16);
+        EXPECT_TRUE(dx.AsTensor().AllClose(
+                core::Tensor(output_dx_ref, {5, 5, 1}, core::Dtype::Float32,
+                             device)
+                        .To(core::Dtype::Int16)));
+
+        EXPECT_EQ(dy.GetRows(), 5);
+        EXPECT_EQ(dy.GetCols(), 5);
+        EXPECT_EQ(dy.GetChannels(), 1);
+        EXPECT_EQ(dy.GetDtype(), core::Dtype::Int16);
+        EXPECT_TRUE(dy.AsTensor().AllClose(
+                core::Tensor(output_dy_ref, {5, 5, 1}, core::Dtype::Float32,
+                             device)
+                        .To(core::Dtype::Int16)));
+    }
 }
 
 TEST_P(ImagePermuteDevices, Resize) {
