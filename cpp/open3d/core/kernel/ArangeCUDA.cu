@@ -41,7 +41,7 @@ void ArangeCUDA(const Tensor& start,
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t sstart = start.Item<scalar_t>();
         scalar_t sstep = step.Item<scalar_t>();
-        scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
+        scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
         int64_t n = dst.GetLength();
         CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_HOST_DEVICE(
                                                      int64_t workload_idx) {

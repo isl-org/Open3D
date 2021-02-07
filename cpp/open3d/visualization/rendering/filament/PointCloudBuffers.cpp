@@ -430,8 +430,8 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
 filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
     auto min_bounds = geometry_.GetMinBound();
     auto max_bounds = geometry_.GetMaxBound();
-    auto* min_bounds_float = static_cast<float*>(min_bounds.GetDataPtr());
-    auto* max_bounds_float = static_cast<float*>(max_bounds.GetDataPtr());
+    auto* min_bounds_float = min_bounds.GetDataPtr<float>();
+    auto* max_bounds_float = max_bounds.GetDataPtr<float>();
 
     const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
                                      min_bounds_float[2]);
