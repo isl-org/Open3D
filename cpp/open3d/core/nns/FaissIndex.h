@@ -72,13 +72,15 @@ public:
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, const Tensor &radii) const override {
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
+                                                    const Tensor &radii,
+                                                    bool sort) const override {
         utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, double radius) const override {
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
+                                                    double radius,
+                                                    bool sort) const override {
         utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 

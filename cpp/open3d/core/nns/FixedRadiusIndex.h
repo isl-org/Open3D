@@ -68,14 +68,18 @@ public:
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor& query_points, const Tensor& radii) const override {
+            const Tensor& query_points,
+            const Tensor& radii,
+            bool sort = true) const override {
         utility::LogError(
                 "FixedRadiusIndex::SearchRadius with multi-radii not "
                 "implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor& query_points, double radius) const override;
+            const Tensor& query_points,
+            double radius,
+            bool sort = true) const override;
 
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
                                            double radius,
@@ -87,7 +91,6 @@ public:
 protected:
     std::vector<int64_t> points_row_splits_;
     std::vector<uint32_t> hash_table_splits_;
-    std::vector<uint32_t> out_hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
@@ -103,61 +106,31 @@ class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
-    void AllocIndices(int32_t** ptr,
-                      size_t num,
-                      SearchOpCode search_type = SearchOpCode::FixedRadius) {
-        indices[search_type] =
-                Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
-        *ptr = static_cast<int32_t*>(indices[search_type].GetDataPtr());
+    void AllocIndices(int32_t** ptr, size_t num) {
+        indices = Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
+        *ptr = static_cast<int32_t*>(indices.GetDataPtr());
     }
 
-    void AllocDistances(T** ptr,
-                        size_t num,
-                        SearchOpCode search_type = SearchOpCode::FixedRadius) {
-        distances[search_type] =
+    void AllocDistances(T** ptr, size_t num) {
+        distances =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = static_cast<T*>(distances[search_type].GetDataPtr());
+        *ptr = static_cast<T*>(distances.GetDataPtr());
     }
 
-    const int32_t* IndicesPtr(
-            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
-        if (!indices.count(search_type))
-            utility::LogError(
-                    "Indices pointer is not allocated. Please allocate pointer "
-                    "for indices with AllocIndices function.");
-        return static_cast<const int32_t*>(
-                indices.at(search_type).GetDataPtr());
+    const int32_t* IndicesPtr() const {
+        return static_cast<const int32_t*>(indices.GetDataPtr());
     }
 
-    const T* DistancesPtr(
-            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
-        if (!distances.count(search_type))
-            utility::LogError(
-                    "Distances pointer is not allocated. Please allocate "
-                    "pointer for distances with AllocDistances function.");
-        return static_cast<const T*>(distances.at(search_type).GetDataPtr());
+    const T* DistancesPtr() const {
+        return static_cast<const T*>(distances.GetDataPtr());
     }
 
-    const Tensor& NeighborsIndex(
-            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
-        if (!indices.count(search_type))
-            utility::LogError(
-                    "Indices pointer is not allocated. Please allocate pointer "
-                    "for indices with AllocIndices function.");
-        return indices.at(search_type);
-    }
-    const Tensor& NeighborsDistance(
-            SearchOpCode search_type = SearchOpCode::FixedRadius) const {
-        if (!distances.count(search_type))
-            utility::LogError(
-                    "Distances pointer is not allocated. Please allocate "
-                    "pointer for distances with AllocDistances function.");
-        return distances.at(search_type);
-    }
+    const Tensor& NeighborsIndex() const { return indices; }
+    const Tensor& NeighborsDistance() const { return distances; }
 
 private:
-    std::unordered_map<SearchOpCode, Tensor> indices;
-    std::unordered_map<SearchOpCode, Tensor> distances;
+    Tensor indices;
+    Tensor distances;
     Device device_;
 };
 }  // namespace nns

@@ -515,47 +515,25 @@ void WriteNeighborsIndicesAndDistances(
 /// Kernel for MaxKnnThreshold
 template <class T>
 __global__ void MaxKnnThresholdKernel(
-        const int32_t* __restrict__ prev_indices,
-        const T* __restrict__ prev_distances,
-        int32_t* __restrict__ indices,
+        const int64_t* const __restrict__ prev_indices,
+        const T* const __restrict__ prev_distances,
+        int64_t* __restrict__ indices,
         T* __restrict__ distances,
-        const uint32_t* const __restrict__ neighbors_counts,
+        const int64_t* const __restrict__ neighbors_counts,
         const int64_t* const __restrict__ neighbors_row_splits,
-        size_t num_queries,
+        int64_t num_queries,
         int max_knn) {
     int query_idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (query_idx >= num_queries) return;
 
-    size_t indices_offset = neighbors_row_splits[query_idx];
-    uint32_t num_neighbors = neighbors_counts[query_idx];
+    int64_t indices_offset = neighbors_row_splits[query_idx];
+    int64_t num_neighbors = neighbors_counts[query_idx];
 
     for (int j = 0; j < max_knn; j++) {
         indices[max_knn * query_idx + j] =
                 j >= num_neighbors ? -1 : prev_indices[indices_offset + j];
         distances[max_knn * query_idx + j] =
                 j >= num_neighbors ? -1 : prev_distances[indices_offset + j];
-    }
-}
-
-template <class T>
-void MaxKnnThreshold(const cudaStream_t& stream,
-                     const int32_t* prev_indices,
-                     const T* prev_distances,
-                     int32_t* indices,
-                     T* distances,
-                     const uint32_t* const neighbors_counts,
-                     const int64_t* const neighbors_row_splits,
-                     size_t num_queries,
-                     int max_knn) {
-    const int BLOCKSIZE = 64;
-    dim3 block(BLOCKSIZE, 1, 1);
-    dim3 grid(0, 1, 1);
-    grid.x = utility::DivUp(num_queries, block.x);
-
-    if (grid.x) {
-        MaxKnnThresholdKernel<T><<<grid, block, 0, stream>>>(
-                prev_indices, prev_distances, indices, distances,
-                neighbors_counts, neighbors_row_splits, num_queries, max_knn);
     }
 }
 
@@ -657,6 +635,73 @@ void BuildSpatialHashTableCUDA(void* temp,
 }
 
 template <class T>
+void SortPairs(void* temp,
+               size_t& temp_size,
+               int64_t num_indices,
+               int64_t num_segments,
+               const int64_t* query_neighbors_row_splits,
+               int32_t* indices_ptr,
+               T* distances_ptr,
+               int32_t* indices_sorted,
+               T* distances_sorted) {
+    const bool get_temp_size = !temp;
+    int texture_alignment = 512;
+
+    if (get_temp_size) {
+        temp = (char*)1;  // worst case pointer alignment
+        temp_size = std::numeric_limits<int64_t>::max();
+    }
+
+    MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
+
+    std::pair<void*, size_t> sort_temp(nullptr, 0);
+    cub::DoubleBuffer<int32_t> sort_key(indices_ptr, indices_sorted);
+    cub::DoubleBuffer<T> sort_value(distances_ptr, distances_sorted);
+
+    cub::DeviceSegmentedRadixSort::SortPairs(
+            sort_temp.first, sort_temp.second, sort_value, sort_key,
+            num_indices, num_segments, query_neighbors_row_splits,
+            query_neighbors_row_splits + 1);
+    sort_temp = mem_temp.Alloc(sort_temp.second);
+
+    if (!get_temp_size) {
+        cub::DeviceSegmentedRadixSort::SortPairs(
+                sort_temp.first, sort_temp.second, sort_value, sort_key,
+                num_indices, num_segments, query_neighbors_row_splits,
+                query_neighbors_row_splits + 1);
+    }
+    mem_temp.Free(sort_temp);
+
+    if (get_temp_size) {
+        // return the memory peak as the required temporary memory size.
+        temp_size = mem_temp.MaxUsed();
+        return;
+    }
+}
+
+template <class T>
+void MaxKnnThreshold(const int64_t* const prev_indices,
+                     const T* const prev_distances,
+                     int64_t* indices,
+                     T* distances,
+                     const int64_t* const neighbors_counts,
+                     const int64_t* const neighbors_row_splits,
+                     int64_t num_queries,
+                     int max_knn) {
+    const cudaStream_t stream = 0;
+    const int BLOCKSIZE = 64;
+    dim3 block(BLOCKSIZE, 1, 1);
+    dim3 grid(0, 1, 1);
+    grid.x = utility::DivUp(num_queries, block.x);
+
+    if (grid.x) {
+        MaxKnnThresholdKernel<T><<<grid, block, 0, stream>>>(
+                prev_indices, prev_distances, indices, distances,
+                neighbors_counts, neighbors_row_splits, num_queries, max_knn);
+    }
+}
+
+template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
                            int64_t* query_neighbors_row_splits,
@@ -679,7 +724,6 @@ void FixedRadiusSearchCUDA(void* temp,
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
     const Metric metric = Metric::L2;
-    const bool is_hybrid = max_knn > 0;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
@@ -757,19 +801,22 @@ void FixedRadiusSearchCUDA(void* temp,
         }
         mem_temp.Free(inclusive_scan_temp);
     }
+    mem_temp.Free(query_neighbors_count);
+
+    if (get_temp_size) {
+        // return the memory peak as the required temporary memory size.
+        temp_size = mem_temp.MaxUsed();
+        return;
+    }
 
     // allocate the output array for the neighbor indices
     const size_t num_indices = last_prefix_sum_entry;
 
-    int32_t *indices_ptr, *indices_sorted;
-    output_allocator.AllocIndices(&indices_ptr, num_indices);
-    output_allocator.AllocIndices(&indices_sorted, num_indices,
-                                  SearchOpCode::Sorted);
+    int32_t* indices_ptr;
+    T* distances_ptr;
 
-    T *distances_ptr, *distances_sorted;
+    output_allocator.AllocIndices(&indices_ptr, num_indices);
     output_allocator.AllocDistances(&distances_ptr, num_indices);
-    output_allocator.AllocDistances(&distances_sorted, num_indices,
-                                    SearchOpCode::Sorted);
 
     if (!get_temp_size) {
         for (int i = 0; i < batch_size; ++i) {
@@ -788,58 +835,6 @@ void FixedRadiusSearchCUDA(void* temp,
                     num_points, inv_voxel_size, radius, metric, true);
         }
     }
-
-    // Sort
-    if (!get_temp_size) {
-        std::pair<void*, size_t> sort_temp(nullptr, 0);
-        cub::DoubleBuffer<int32_t> sort_key(indices_ptr, indices_sorted);
-        cub::DoubleBuffer<T> sort_value(distances_ptr, distances_sorted);
-
-        cub::DeviceSegmentedRadixSort::SortPairs(
-                sort_temp.first, sort_temp.second, sort_value, sort_key,
-                num_indices, num_queries, query_neighbors_row_splits,
-                query_neighbors_row_splits + 1);
-        sort_temp = mem_temp.Alloc(sort_temp.second);
-
-        cub::DeviceSegmentedRadixSort::SortPairs(
-                sort_temp.first, sort_temp.second, sort_value, sort_key,
-                num_indices, num_queries, query_neighbors_row_splits,
-                query_neighbors_row_splits + 1);
-        mem_temp.Free(sort_temp);
-    }
-    mem_temp.Free(query_neighbors_count);
-
-    if (get_temp_size) {
-        // return the memory peak as the required temporary memory size.
-        temp_size = mem_temp.MaxUsed();
-        return;
-    }
-
-    // Thresholding for Hybrid Search
-    if (!get_temp_size && is_hybrid) {
-        const size_t num_indices_hybrid = max_knn * num_queries;
-        int32_t* indices_hybrid;
-        T* distances_hybrid;
-        output_allocator.AllocIndices(&indices_hybrid, num_indices_hybrid,
-                                      SearchOpCode::Hybrid);
-        output_allocator.AllocDistances(&distances_hybrid, num_indices_hybrid,
-                                        SearchOpCode::Hybrid);
-        for (int i = 0; i < batch_size; ++i) {
-            MaxKnnThreshold(stream, indices_sorted, distances_sorted,
-                            indices_hybrid, distances_hybrid,
-                            query_neighbors_count.first + queries_row_splits[i],
-                            query_neighbors_row_splits + queries_row_splits[i],
-                            num_queries, max_knn);
-        }
-    }
-}
-
-void InitializeHeapSize(size_t size) {
-    cudaError_t err = cudaDeviceSetLimit(cudaLimitMallocHeapSize, size);
-}
-
-void GetHeapSize(size_t* size) {
-    cudaDeviceGetLimit(size, cudaLimitMallocHeapSize);
 }
 
 template void BuildSpatialHashTableCUDA(
@@ -867,6 +862,44 @@ template void BuildSpatialHashTableCUDA(
         const size_t hash_table_cell_splits_size,
         uint32_t* hash_table_cell_splits,
         uint32_t* hash_table_index);
+
+template void SortPairs(void* temp,
+                        size_t& temp_size,
+                        int64_t num_indices,
+                        int64_t num_segments,
+                        const int64_t* query_neighbors_row_splits,
+                        int32_t* indices_ptr,
+                        float* distances_ptr,
+                        int32_t* indices_sorted,
+                        float* distances_sorted);
+
+template void SortPairs(void* temp,
+                        size_t& temp_size,
+                        int64_t num_indices,
+                        int64_t num_segments,
+                        const int64_t* query_neighbors_row_splits,
+                        int32_t* indices_ptr,
+                        double* distances_ptr,
+                        int32_t* indices_sorted,
+                        double* distances_sorted);
+
+template void MaxKnnThreshold(const int64_t* const prev_indices,
+                              const float* prev_distances,
+                              int64_t* indices,
+                              float* distances,
+                              const int64_t* const neighbors_counts,
+                              const int64_t* const neighbors_row_splits,
+                              int64_t num_queries,
+                              int max_knn);
+
+template void MaxKnnThreshold(const int64_t* const prev_indices,
+                              const double* prev_distances,
+                              int64_t* indices,
+                              double* distances,
+                              const int64_t* const neighbors_counts,
+                              const int64_t* const neighbors_row_splits,
+                              int64_t num_queries,
+                              int max_knn);
 
 template void FixedRadiusSearchCUDA(
         void* temp,

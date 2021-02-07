@@ -117,10 +117,11 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
-        const Tensor& query_points, double radius) {
+        const Tensor& query_points, double radius, bool sort) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
-            return fixed_radius_index_->SearchRadius(query_points, radius);
+            return fixed_radius_index_->SearchRadius(query_points, radius,
+                                                     sort);
         } else {
             utility::LogError(
                     "[NearsetNeighborSearch::FixedRadiusSearch] Index is not "

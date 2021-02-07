@@ -207,10 +207,59 @@ void FixedRadiusSearchCUDA(void* temp,
                            NeighborSearchAllocator<T>& output_allocator,
                            int max_knn = 0);
 
-void InitializeHeapSize(size_t size);
+/// Fixed radius search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and an exclusive prefix
+/// sum defines the start and end of list in the array.
+/// In addition the function optionally can return the distances for each
+/// neighbor in the same format as the indices to the neighbors.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+///
+/// \param temp    Pointer to temporary memory. If nullptr then the required
+///        size of temporary memory will be written to \p temp_size and no
+///        work is done.
+///
+/// \param temp_size    The size of the temporary memory in bytes. This is
+///        used as an output if temp is nullptr
+///
+/// \param num_indices    The number of indices to sort.
+///
+/// \param num_segments    The number of segments to sort.
+///
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param indices_ptr    Pointer to unsorted indices.
+///
+/// \param distances_ptr    Pointer to unsorted distances.
+///
+/// \param indices_sorted    Pointer to sorted indices.
+///
+/// \param indices_sorted    Pointer to sorted distances.
+///
+template <class T>
+void SortPairs(void* temp,
+               size_t& temp_size,
+               int64_t num_indices,
+               int64_t num_segments,
+               const int64_t* query_neighbors_row_splits,
+               int32_t* indices_ptr,
+               T* distances_ptr,
+               int32_t* indices_sorted,
+               T* distances_sorted);
 
-void GetHeapSize(size_t* size);
-
+template <class T>
+void MaxKnnThreshold(const int64_t* const prev_indices,
+                     const T* const prev_distances,
+                     int64_t* indices,
+                     T* distances,
+                     const int64_t* const neighbors_counts,
+                     const int64_t* const neighbors_row_splits,
+                     int64_t num_queries,
+                     int max_knn);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

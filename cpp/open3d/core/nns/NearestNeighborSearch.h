@@ -98,7 +98,7 @@ public:
     /// with query_points. The distances are squared L2 distances.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
-            const Tensor &query_points, double radius);
+            const Tensor &query_points, double radius, bool sort = true);
 
     /// Perform multi-radius search. Each query point has an independent radius.
     ///
