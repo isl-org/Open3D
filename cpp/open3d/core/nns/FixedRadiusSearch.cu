@@ -718,8 +718,7 @@ void FixedRadiusSearchCUDA(void* temp,
                            size_t hash_table_cell_splits_size,
                            const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
-                           NeighborSearchAllocator<T>& output_allocator,
-                           int max_knn) {
+                           NeighborSearchAllocator<T>& output_allocator) {
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
@@ -918,8 +917,7 @@ template void FixedRadiusSearchCUDA(
         size_t hash_table_cell_splits_size,
         const uint32_t* const hash_table_cell_splits,
         const uint32_t* const hash_table_index,
-        NeighborSearchAllocator<float>& output_allocator,
-        int max_knn);
+        NeighborSearchAllocator<float>& output_allocator);
 
 template void FixedRadiusSearchCUDA(
         void* temp,
@@ -938,8 +936,7 @@ template void FixedRadiusSearchCUDA(
         size_t hash_table_cell_splits_size,
         const uint32_t* const hash_table_cell_splits,
         const uint32_t* const hash_table_index,
-        NeighborSearchAllocator<double>& output_allocator,
-        int max_knn);
+        NeighborSearchAllocator<double>& output_allocator);
 
 }  // namespace nns
 }  // namespace core

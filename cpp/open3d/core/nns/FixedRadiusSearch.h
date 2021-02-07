@@ -182,11 +182,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         Argument size specifies the size of the array as the number of
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
-///
-/// \param max_knn    The number of neighbors for each query in hybrid search.
-///         If max_knn <=0, the ordinary fixed radius search is executed. If
-///         max_knn > 0, an additional MaxKnnThreshold kernel is executed for
-///         hybrid search.
 template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
@@ -204,14 +199,10 @@ void FixedRadiusSearchCUDA(void* temp,
                            size_t hash_table_cell_splits_size,
                            const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
-                           NeighborSearchAllocator<T>& output_allocator,
-                           int max_knn = 0);
+                           NeighborSearchAllocator<T>& output_allocator);
 
-/// Fixed radius search. This function computes a list of neighbor indices
-/// for each query point. The lists are stored linearly and an exclusive prefix
-/// sum defines the start and end of list in the array.
-/// In addition the function optionally can return the distances for each
-/// neighbor in the same format as the indices to the neighbors.
+/// This function sorts a list of neighbor indices and distances in
+/// descending order of distance.
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
@@ -251,11 +242,38 @@ void SortPairs(void* temp,
                int32_t* indices_sorted,
                T* distances_sorted);
 
+/// This function computes a list of neighbor indices and distances
+/// for each query point for hybrid search. The lists are stored in
+/// ascending order of distance.
+/// If there are not enough neighbors, the lists are padded with -1.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+///
+/// \param indices_sorted    Pointer to sorted indices.
+///
+/// \param indices_sorted    Pointer to sorted distances.
+///
+/// \param indices_ptr    Pointer to output indices.
+///
+/// \param distances_ptr    Pointer to output distances.
+///
+/// \param neighbors_counts    Pointer to neighbor counts.
+///
+/// \param neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param num_queries   The number of query points.
+///
+/// \param max_knn    The maximum number of neighbors to search.
+///
 template <class T>
-void MaxKnnThreshold(const int64_t* const prev_indices,
-                     const T* const prev_distances,
-                     int64_t* indices,
-                     T* distances,
+void MaxKnnThreshold(const int64_t* const indices_sorted,
+                     const T* const distances_sorted,
+                     int64_t* indices_ptr,
+                     T* distances_ptr,
                      const int64_t* const neighbors_counts,
                      const int64_t* const neighbors_row_splits,
                      int64_t num_queries,

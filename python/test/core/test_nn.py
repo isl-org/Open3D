@@ -198,9 +198,6 @@ def test_fixed_radius_search_random():
     indices_cuda, distances_cuda, neighbors_row_splits_cuda = nns_cuda.fixed_radius_search(
         query_points_cuda, radius)
 
-    indices_unsorted, distances_unsorted, _ = nns_cuda.fixed_radius_search(
-        query_points_cuda, radius, sort=False)
-
     np.testing.assert_equal(neighbors_row_splits.numpy(),
                             neighbors_row_splits_cuda.cpu().numpy())
     np.testing.assert_allclose(distances.numpy(),

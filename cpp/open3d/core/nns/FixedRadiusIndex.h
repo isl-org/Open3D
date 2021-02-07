@@ -95,12 +95,6 @@ protected:
     Tensor hash_table_index_;
 };
 
-enum class SearchOpCode {
-    FixedRadius = 0,
-    Sorted = 1,
-    Hybrid = 2,
-};
-
 template <class T>
 class NeighborSearchAllocator {
 public:
