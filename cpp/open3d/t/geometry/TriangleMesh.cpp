@@ -134,6 +134,20 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
     return mesh_legacy;
 }
 
+TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+    TriangleMesh mesh(device);
+    for (const auto &kv : triangle_attr_) {
+        mesh.SetTriangleAttr(kv.first, kv.second.To(device, /*copy=*/true));
+    }
+    for (const auto &kv : vertex_attr_) {
+        mesh.SetVertexAttr(kv.first, kv.second.To(device, /*copy=*/true));
+    }
+    return mesh;
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

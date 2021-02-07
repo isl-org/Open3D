@@ -47,6 +47,13 @@ else()
     target_compile_definitions(tests PRIVATE GPU_CONDITIONAL_TEST_STR=DISABLED_)
 endif()
 
+if (WITH_IPPICV)
+    target_compile_definitions(tests PRIVATE WITH_IPPICV
+        IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(tests PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
+endif()
+
 find_package(Threads)
 
 target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
@@ -66,4 +73,3 @@ if (BUILD_CUDA_MODULE)
     target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
     target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
-

@@ -113,8 +113,7 @@ void Hashmap::Insert(const Tensor& input_keys,
 
     device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
                             static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                            static_cast<bool*>(output_masks.GetDataPtr()),
-                            count);
+                            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
@@ -141,8 +140,7 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     device_hashmap_->Activate(input_keys.GetDataPtr(),
                               static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                              static_cast<bool*>(output_masks.GetDataPtr()),
-                              count);
+                              output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
@@ -169,7 +167,7 @@ void Hashmap::Find(const Tensor& input_keys,
 
     device_hashmap_->Find(input_keys.GetDataPtr(),
                           static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                          static_cast<bool*>(output_masks.GetDataPtr()), count);
+                          output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
@@ -191,11 +189,10 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     device_hashmap_->Erase(input_keys.GetDataPtr(),
-                           static_cast<bool*>(output_masks.GetDataPtr()),
-                           count);
+                           output_masks.GetDataPtr<bool>(), count);
 }
 
-void Hashmap::GetActiveIndices(Tensor& output_addrs) {
+void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
     int64_t count = device_hashmap_->Size();
     output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
 
@@ -203,12 +200,18 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) {
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
 
-Hashmap Hashmap::Copy(const Device& device) {
+Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
+
+Hashmap Hashmap::To(const Device& device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+
     Hashmap new_hashmap(GetCapacity(), dtype_key_, dtype_value_,
                         element_shape_key_, element_shape_value_, device);
 
-    Tensor keys = GetKeyTensor().Copy(device);
-    Tensor values = GetValueTensor().Copy(device);
+    Tensor keys = GetKeyTensor().To(device, /*copy=*/true);
+    Tensor values = GetValueTensor().To(device, /*copy=*/true);
 
     core::Tensor active_addrs;
     GetActiveIndices(active_addrs);
@@ -221,18 +224,10 @@ Hashmap Hashmap::Copy(const Device& device) {
     return new_hashmap;
 }
 
-Hashmap Hashmap::CPU() {
-    if (GetDevice().GetType() == Device::DeviceType::CPU) {
-        return *this;
-    }
-    return Copy(Device("CPU:0"));
-}
+Hashmap Hashmap::CPU() const { return To(Device("CPU:0"), /*copy=*/false); }
 
-Hashmap Hashmap::CUDA(int device_id) {
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
-        return *this;
-    }
-    return Copy(Device(Device::DeviceType::CUDA, device_id));
+Hashmap Hashmap::CUDA(int device_id) const {
+    return To(Device(Device::DeviceType::CUDA, device_id), /*copy=*/false);
 }
 
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
@@ -249,10 +244,14 @@ int64_t Hashmap::GetValueBytesize() const {
     return device_hashmap_->GetValueBytesize();
 }
 
-Tensor& Hashmap::GetKeyBuffer() { return device_hashmap_->GetKeyBuffer(); }
-Tensor& Hashmap::GetValueBuffer() { return device_hashmap_->GetValueBuffer(); }
+Tensor& Hashmap::GetKeyBuffer() const {
+    return device_hashmap_->GetKeyBuffer();
+}
+Tensor& Hashmap::GetValueBuffer() const {
+    return device_hashmap_->GetValueBuffer();
+}
 
-Tensor Hashmap::GetKeyTensor() {
+Tensor Hashmap::GetKeyTensor() const {
     int64_t capacity = GetCapacity();
     SizeVector key_shape = element_shape_key_;
     key_shape.insert(key_shape.begin(), capacity);
@@ -261,7 +260,7 @@ Tensor Hashmap::GetKeyTensor() {
                   GetKeyBuffer().GetBlob());
 }
 
-Tensor Hashmap::GetValueTensor() {
+Tensor Hashmap::GetValueTensor() const {
     int64_t capacity = GetCapacity();
     SizeVector value_shape = element_shape_value_;
     value_shape.insert(value_shape.begin(), capacity);

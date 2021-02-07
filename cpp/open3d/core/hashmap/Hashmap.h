@@ -112,11 +112,12 @@ public:
     /// Parallel collect all iterators in the hash table
     /// Return \addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    void GetActiveIndices(Tensor& output_indices);
+    void GetActiveIndices(Tensor& output_indices) const;
 
-    Hashmap Copy(const Device& device);
-    Hashmap CPU();
-    Hashmap CUDA(int device_id = 0);
+    Hashmap Clone() const;
+    Hashmap To(const Device& device, bool copy = false) const;
+    Hashmap CPU() const;
+    Hashmap CUDA(int device_id = 0) const;
 
     int64_t Size() const;
 
@@ -126,11 +127,11 @@ public:
     int64_t GetKeyBytesize() const;
     int64_t GetValueBytesize() const;
 
-    Tensor& GetKeyBuffer();
-    Tensor& GetValueBuffer();
+    Tensor& GetKeyBuffer() const;
+    Tensor& GetValueBuffer() const;
 
-    Tensor GetKeyTensor();
-    Tensor GetValueTensor();
+    Tensor GetKeyTensor() const;
+    Tensor GetValueTensor() const;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.

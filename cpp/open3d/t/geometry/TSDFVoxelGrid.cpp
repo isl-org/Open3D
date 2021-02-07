@@ -187,7 +187,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             sdf_trunc_, depth_scale, depth_max);
 }
 
-PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
+PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {
     // Extract active voxel blocks from the hashmap.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
@@ -201,7 +201,8 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
             active_addrs.To(core::Dtype::Int64),
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
-            points, normals, colors, block_resolution_, voxel_size_);
+            points, normals, colors, block_resolution_, voxel_size_,
+            weight_threshold);
     auto pcd = PointCloud(points);
     pcd.SetPointNormals(normals);
     if (colors.NumElements() != 0) {
@@ -211,7 +212,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
     return pcd;
 }
 
-TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
+TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh(float weight_threshold) {
     // Query active blocks and their nearest neighbors to handle boundary cases.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
@@ -235,7 +236,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
             vertices, triangles, vertex_normals, vertex_colors,
-            block_resolution_, voxel_size_);
+            block_resolution_, voxel_size_, weight_threshold);
 
     TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexNormals(vertex_normals);
@@ -245,29 +246,17 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
     return mesh;
 }
 
-TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
+TSDFVoxelGrid TSDFVoxelGrid::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+
     TSDFVoxelGrid device_tsdf_voxelgrid(attr_dtype_map_, voxel_size_,
                                         sdf_trunc_, block_resolution_,
                                         block_count_, device);
     auto device_tsdf_hashmap = device_tsdf_voxelgrid.block_hashmap_;
-    *device_tsdf_hashmap = block_hashmap_->Copy(device);
+    *device_tsdf_hashmap = block_hashmap_->To(device);
     return device_tsdf_voxelgrid;
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CPU() {
-    if (GetDevice().GetType() == core::Device::DeviceType::CPU) {
-        return *this;
-    }
-    return Copy(core::Device("CPU:0"));
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CUDA(int device_id) {
-    core::Device device =
-            core::Device(core::Device::DeviceType::CUDA, device_id);
-    if (GetDevice() == device) {
-        return *this;
-    }
-    return Copy(device);
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(

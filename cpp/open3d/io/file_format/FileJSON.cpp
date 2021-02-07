@@ -42,7 +42,7 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
     Json::Value root_object;
     Json::CharReaderBuilder builder;
     builder["collectComments"] = false;
-    JSONCPP_STRING errs;
+    Json::String errs;
     bool is_parse_successful =
             parseFromStream(builder, json_stream, &root_object, &errs);
     if (!is_parse_successful) {

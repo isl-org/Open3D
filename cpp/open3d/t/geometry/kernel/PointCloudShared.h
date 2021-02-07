@@ -69,7 +69,7 @@ void UnprojectCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        depth.GetDevice());
-    int* count_ptr = static_cast<int*>(count.GetDataPtr());
+    int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);
     std::atomic<int>* count_ptr = &count_atomic;
