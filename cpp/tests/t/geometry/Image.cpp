@@ -206,41 +206,54 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
     utility::LogInfo("{}", im.AsTensor().View({10, 10}).ToString());
 }
 
+// IPP and NPP are consistent when kernel_size = 3x3.
+// Note: in 5 x 5 NPP adds a weird offset.
 TEST_P(ImagePermuteDevices, FilterGaussian) {
     core::Device device = GetParam();
 
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 0, 0,
+       0, 1, 0, 0, 1,
+       0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0,
+       0, 0, 0, 1, 0};
+    const std::vector<float> output_ref =
+      {0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
+       0.123841, 0.204180, 0.123841, 0.123841, 0.328021,
+       0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
+       0.0, 0.0, 0.0751136, 0.123841, 0.0751136,
+       0.0, 0.0, 0.198955, 0.328021, 0.198955};
+    // clang-format on
+
     core::Tensor data =
-            core::Tensor::Zeros({10, 10}, core::Dtype::Float32, device);
-    data.Slice(0, 4, 5).Slice(1, 4, 5) = core::Tensor(
-            std::vector<float>{1.0f}, {}, core::Dtype::Float32, device);
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
 
-    t::geometry::Image im(data.View({10, 10, 1}));
+    im = im.FilterGaussian(3);
+    EXPECT_TRUE(im.AsTensor().AllClose(
+            core::Tensor(output_ref, {5, 5, 1}, core::Dtype::Float32, device)));
 
-    // NVIDIA is not following what it is describing. Use advanced kernels
-    // instead.
-    im = im.FilterGaussian(5);
-    utility::LogInfo("{}", im.AsTensor().View({10, 10}).ToString());
-    utility::LogInfo("{}", im.AsTensor().Sum({0, 1}).ToString());
+    {
+        // clang-format off
+      const std::vector<float> input_data =
+        {0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 1, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0};
+        // clang-format on
 
-    // t::geometry::Image color = t::geometry::Image::FromLegacyImage(
-    //         *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-    //                                  "/RGBD/color/00000.jpg"),
-    //         device);
-    // t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
-    //         *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-    //                                  "/RGBD/depth/00000.png"),
-    //         device);
-
-    // auto color_filtered = color.FilterGaussian(7);
-    // auto depth_filtered = depth.FilterGaussian(7);
-
-    // depth.AsTensor().Save("original.npy");
-    // depth_filtered.AsTensor().Save("filtered.npy");
-
-    // io::WriteImage(fmt::format("color_gaussian_{}.png", device.ToString()),
-    //                color_filtered.ToLegacyImage());
-    // io::WriteImage(fmt::format("depth_gaussian_{}.png", device.ToString()),
-    //                depth_filtered.ToLegacyImage());
+        core::Tensor data = core::Tensor(input_data, {9, 9, 1},
+                                         core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        t::geometry::Image im_new = im.FilterGaussian(5, 1);
+        utility::LogInfo("{}", im_new.AsTensor().View({9, 9}).ToString());
+    }
 }
 
 TEST_P(ImagePermuteDevices, FilterSobel) {
@@ -274,17 +287,9 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
         t::geometry::Image dx, dy;
         std::tie(dx, dy) = im.FilterSobel(3);
 
-        EXPECT_EQ(dx.GetRows(), 5);
-        EXPECT_EQ(dx.GetCols(), 5);
-        EXPECT_EQ(dx.GetChannels(), 1);
-        EXPECT_EQ(dx.GetDtype(), core::Dtype::Float32);
         EXPECT_TRUE(dx.AsTensor().AllClose(core::Tensor(
                 output_dx_ref, {5, 5, 1}, core::Dtype::Float32, device)));
 
-        EXPECT_EQ(dy.GetRows(), 5);
-        EXPECT_EQ(dy.GetCols(), 5);
-        EXPECT_EQ(dy.GetChannels(), 1);
-        EXPECT_EQ(dy.GetDtype(), core::Dtype::Float32);
         EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
                 output_dy_ref, {5, 5, 1}, core::Dtype::Float32, device)));
     }
@@ -297,19 +302,10 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
         t::geometry::Image dx, dy;
         std::tie(dx, dy) = im.FilterSobel(3);
 
-        EXPECT_EQ(dx.GetRows(), 5);
-        EXPECT_EQ(dx.GetCols(), 5);
-        EXPECT_EQ(dx.GetChannels(), 1);
-        EXPECT_EQ(dx.GetDtype(), core::Dtype::Int16);
         EXPECT_TRUE(dx.AsTensor().AllClose(
                 core::Tensor(output_dx_ref, {5, 5, 1}, core::Dtype::Float32,
                              device)
                         .To(core::Dtype::Int16)));
-
-        EXPECT_EQ(dy.GetRows(), 5);
-        EXPECT_EQ(dy.GetCols(), 5);
-        EXPECT_EQ(dy.GetChannels(), 1);
-        EXPECT_EQ(dy.GetDtype(), core::Dtype::Int16);
         EXPECT_TRUE(dy.AsTensor().AllClose(
                 core::Tensor(output_dy_ref, {5, 5, 1}, core::Dtype::Float32,
                              device)
@@ -319,60 +315,50 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
 
 TEST_P(ImagePermuteDevices, Resize) {
     core::Device device = GetParam();
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 1, 1, 1, 1,
+       0, 1, 1, 0, 0, 1,
+       1, 0, 0, 1, 0, 1,
+       0, 1, 1, 0, 1, 1,
+       1, 1, 1, 0, 1, 1,
+       1, 1, 1, 1, 1, 1};
+    const std::vector<float> output_ref =
+      {0, 1, 1,
+       1, 0, 0,
+       1, 1, 1};
+    // clang-format on
 
-    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/lena_color.jpg"),
-            device);
-    t::geometry::Image gray = rgb.RGBToGray();
+    core::Tensor data =
+            core::Tensor(input_data, {6, 6, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+    im = im.Resize(0.5, t::geometry::Image::Nearest);
 
-    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/RGBD/depth/00000.png"),
-            device);
-
-    rgb = rgb.Resize(2, t::geometry::Image::Nearest);
-    rgb = rgb.Resize(0.5, t::geometry::Image::Lanczos);
-    rgb = rgb.Resize(2, t::geometry::Image::Cubic);
-    rgb = rgb.Resize(0.5, t::geometry::Image::Super);
-    io::WriteImage("rgb_" + device.ToString() + ".png", rgb.ToLegacyImage());
-
-    gray = gray.Resize(2, t::geometry::Image::Lanczos);
-    gray = gray.Resize(0.5, t::geometry::Image::Nearest);
-    gray = gray.Resize(2, t::geometry::Image::Linear);
-    gray = gray.Resize(0.5, t::geometry::Image::Super);
-    io::WriteImage("gray_" + device.ToString() + ".png", gray.ToLegacyImage());
-
-    depth = depth.Resize(2, t::geometry::Image::Nearest);
-    depth = depth.Resize(0.5, t::geometry::Image::Linear);
-    depth = depth.Resize(2, t::geometry::Image::Lanczos);
-    depth = depth.Resize(0.5, t::geometry::Image::Cubic);
-    io::WriteImage("depth_" + device.ToString() + ".png",
-                   depth.ToLegacyImage());
+    EXPECT_TRUE(im.AsTensor().AllClose(
+            core::Tensor(output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
 }
 
+/// Results are not the same, as 5x5 Gaussian filter is inconsistent between IPP
+/// and NPP on boundaries.
 TEST_P(ImagePermuteDevices, PyrDown) {
     core::Device device = GetParam();
 
-    t::geometry::Image rgb = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/lena_color.jpg"),
-            device);
-    t::geometry::Image depth = t::geometry::Image::FromLegacyImage(
-            *io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                     "/RGBD/depth/00000.png"),
-            device);
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 1, 0, 1,
+       0, 1, 0, 0, 0, 1,
+       0, 0, 0, 1, 0, 1,
+       1, 0, 0, 0, 0, 1,
+       1, 0, 0, 0, 0, 1,
+       1, 1, 1, 1, 1, 1};
+    // clang-format on
 
-    for (int i = 0; i < 3; ++i) {
-        rgb = rgb.PyrDown();
-        depth = depth.PyrDown();
-        io::WriteImage(
-                fmt::format("rgb_pyr_{:03d}_{}.png", i, device.ToString()),
-                rgb.ToLegacyImage());
-        io::WriteImage(
-                fmt::format("depth_pyr_{:03d}_{}.png", i, device.ToString()),
-                depth.ToLegacyImage());
-    }
+    core::Tensor data =
+            core::Tensor(input_data, {6, 6, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+
+    im = im.PyrDown();
+    utility::LogInfo("{}", im.AsTensor().View({3, 3}).ToString());
 }
 
 TEST_P(ImagePermuteDevices, Dilate) {

@@ -270,20 +270,10 @@ void FilterGaussian(const core::Tensor &src_im,
     core::Tensor logval = (dist * dist).Mul(-0.5f / (sigma * sigma));
     core::Tensor mask = logval.Exp();
     mask = mask / mask.Sum({0});
+    utility::LogInfo("mask = {}", mask.ToString());
     float *mask_ptr = static_cast<float *>(mask.GetDataPtr());
 
     auto dtype = src_im.GetDtype();
-    const static std::unordered_map<int, NppiMaskSize> kernel_size_dict = {
-            {3, NPP_MASK_SIZE_3_X_3},    {5, NPP_MASK_SIZE_5_X_5},
-            {7, NPP_MASK_SIZE_7_X_7},    {9, NPP_MASK_SIZE_9_X_9},
-            {11, NPP_MASK_SIZE_11_X_11}, {13, NPP_MASK_SIZE_13_X_13},
-            {15, NPP_MASK_SIZE_15_X_15},
-    };
-    auto it = kernel_size_dict.find(kernel_size);
-    if (it == kernel_size_dict.end()) {
-        utility::LogError("Unsupported size {} for NPP FilterGaussian",
-                          kernel_size);
-    }
 #define NPP_ARGS                                                           \
     static_cast<const npp_dtype *>(src_im.GetDataPtr()),                   \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,  \
