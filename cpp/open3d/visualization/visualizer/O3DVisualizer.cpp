@@ -1028,7 +1028,8 @@ struct O3DVisualizer::Impl {
     void ShowGround(bool show) {
         ui_state_.show_ground = show;
         settings.show_ground->SetChecked(show);  // in case called manually
-        scene_->GetScene()->ShowGroundPlane(show, rendering::Scene::GroundPlane::XZ);
+        scene_->GetScene()->ShowGroundPlane(show,
+                                            rendering::Scene::GroundPlane::XZ);
         scene_->ForceRedraw();
     }
 

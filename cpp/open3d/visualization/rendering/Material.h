@@ -92,7 +92,7 @@ struct Material {
     float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
 
     // Infinite ground plane
-    float ground_plane_axis = 0.f; // 0: XZ; >0: XY; <0: YZ
+    float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
