@@ -133,7 +133,7 @@ inline void OutputToPLU(const Tensor& output,
     permutation = core::Tensor::Eye(n, output.GetDtype(), device)
                           .IndexGet({colPermutation});
     // Calculating P in A = P.L.U. [After Inverse it is no longer Contiguous].
-    permutation = permutation.Inverse().Contiguous();
+    permutation = permutation.T().Contiguous();
     // Permute_l option, to return L as L = P.L.
     if (permute_l) {
         lower = permutation.Matmul(lower);
