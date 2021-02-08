@@ -423,7 +423,8 @@ struct GuiVisualizer::Impl {
 
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
         scene_wgt_->GetScene()->ShowGroundPlane(
-                settings_.model_.GetShowGround());
+                settings_.model_.GetShowGround(),
+                rendering::Scene::GroundPlane::XZ);
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 

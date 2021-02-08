@@ -191,7 +191,9 @@ public:
     virtual void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) = 0;
-    virtual void EnableGroundPlane(bool enable) = 0;
+
+    enum class GroundPlane { XZ, XY, YZ };
+    virtual void EnableGroundPlane(bool enable, GroundPlane plane) = 0;
     virtual void SetGroundPlaneColor(const Eigen::Vector4f& color) = 0;
 
     /// Size of image is the size of the window.

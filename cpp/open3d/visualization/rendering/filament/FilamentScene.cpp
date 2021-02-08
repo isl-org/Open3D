@@ -1584,10 +1584,22 @@ void FilamentScene::CreateGroundPlaneGeometry() {
     SetGeometryCulling(kGroundPlaneName, false);
 }
 
-void FilamentScene::EnableGroundPlane(bool enable) {
+void FilamentScene::EnableGroundPlane(bool enable, GroundPlane plane) {
     if (!HasGeometry(kGroundPlaneName)) {
         CreateGroundPlaneGeometry();
     }
+    if (enable) {
+        rendering::Material m;
+        m.shader = "infiniteGroundPlane";
+        m.base_color = kDefaultGroundPlaneColor;
+        if (plane == GroundPlane::XY) {
+            m.ground_plane_axis = 1.f;
+        } else if (plane == GroundPlane::YZ) {
+            m.ground_plane_axis = -1.f;
+        }
+        OverrideMaterial(kGroundPlaneName, m);
+    }
+
     ShowGeometry(kGroundPlaneName, enable);
 }
 

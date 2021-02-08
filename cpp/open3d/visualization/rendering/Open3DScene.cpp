@@ -157,9 +157,9 @@ void Open3DScene::SetBackground(const Eigen::Vector4f& color,
     scene->SetBackground(color, image);
 }
 
-void Open3DScene::ShowGroundPlane(bool enable) {
+void Open3DScene::ShowGroundPlane(bool enable, Scene::GroundPlane plane) {
     auto scene = renderer_.GetScene(scene_);
-    scene->EnableGroundPlane(enable);
+    scene->EnableGroundPlane(enable, plane);
 }
 
 void Open3DScene::SetLighting(LightingProfile profile,
