@@ -63,6 +63,7 @@ install_cuda_toolkit() {
         "cuda-cufft-dev-${CUDA_VERSION[0]}" \
         "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
         "cuda-nvtx-${CUDA_VERSION[0]}" \
+        "cuda-npp-dev-${CUDA_VERSION[0]}" \
         libcublas-dev
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
         echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
@@ -528,4 +529,13 @@ install_arm64_dependencies() {
     PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
     which cmake
     cmake --version
+}
+
+maximize_ubuntu_github_actions_build_space() {
+    df -h
+    $SUDO rm -rf /usr/share/dotnet
+    $SUDO rm -rf /usr/local/lib/android
+    $SUDO rm -rf /opt/ghc
+    $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
+    df -h
 }
