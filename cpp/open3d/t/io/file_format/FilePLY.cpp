@@ -66,7 +66,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
         return 0;
     }
 
-    T *data_ptr = static_cast<T *>(attr_state->data_.GetDataPtr());
+    T *data_ptr = attr_state->data_.GetDataPtr<T>();
     data_ptr[attr_state->current_size_++] =
             static_cast<T>(ply_get_argument_value(argument));
 
@@ -331,7 +331,7 @@ static e_ply_type GetPlyType(const core::Dtype &dtype) {
 
 template <typename T>
 static const T *GetValue(core::Tensor t_attr, int pos) {
-    return static_cast<const T *>(t_attr.GetDataPtr());
+    return t_attr.GetDataPtr<T>();
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
