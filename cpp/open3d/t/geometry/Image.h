@@ -187,13 +187,13 @@ public:
     /// Return a new image after resizing with specified interpolation type.
     /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
     /// Aspect ratio is always kept.
-    enum {
+    enum InterpType {
         Nearest = 0,
         Linear = 1,
         Cubic = 2,
         Lanczos = 3,
         Super = 4
-    } InterpType;
+    };
     Image Resize(float sampling_rate = 0.5f, int interp_type = Nearest) const;
 
     /// Return a new image after performing morphological dilation. Supported
