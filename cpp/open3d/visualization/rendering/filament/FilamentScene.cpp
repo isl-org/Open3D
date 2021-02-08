@@ -849,6 +849,7 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
 void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("axis", geom_mi.properties.ground_plane_axis)
             .Finish();
 }
 

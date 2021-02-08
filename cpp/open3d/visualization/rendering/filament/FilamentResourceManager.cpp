@@ -879,6 +879,7 @@ void FilamentResourceManager::LoadDefaults() {
     auto inf_mat = LoadMaterialFromFile(inf_path, engine_);
     inf_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                  {0.4f, 0.4f, 0.4f});
+    inf_mat->setDefaultParameter("axis", 0.0f);
     materials_[kInfinitePlaneShader] = BoxResource(inf_mat, engine_);
 
     const auto line_path = resource_root + "/unlitLine.filamat";
