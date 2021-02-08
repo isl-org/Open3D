@@ -29,6 +29,7 @@
 #include <nppdefs.h>
 #include <nppi.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -388,8 +389,15 @@ void FilterSobel(const core::Tensor &src_im,
     }
 #undef NPP_ARGS_DX
 #undef NPP_ARGS_DY
-}
 
+    /// Fix CI for lower cuda versions -- NVIDIA has changed the sign without
+    /// updating the documents.
+    int cuda_version;
+    OPEN3D_CUDA_CHECK(cudaRuntimeGetVersion(&cuda_version));
+    if (cuda_version < 10020) {
+        dst_im_dx.Neg_();
+    }
+}
 }  // namespace npp
 }  // namespace geometry
 }  // namespace t
