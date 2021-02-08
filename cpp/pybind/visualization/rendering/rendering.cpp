@@ -246,6 +246,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("scalar_min", &Material::scalar_min)
             .def_readwrite("scalar_max", &Material::scalar_max)
             .def_readwrite("sRGB_color", &Material::sRGB_color)
+            .def_readwrite("aspect_ratio", &Material::aspect_ratio)
+            .def_readwrite("ground_plane_axis", &Material::ground_plane_axis)
             .def_readwrite("shader", &Material::shader);
 
     // ---- TriangleMeshModel ----
