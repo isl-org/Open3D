@@ -263,16 +263,11 @@ TEST_P(ImagePermuteDevices, Filter) {
 
     // clang-format off
       const std::vector<float> input_data =
-        {0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 1, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0};
-
+        {0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0,
+         0, 0, 1, 0, 0,
+         0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0};
       const std::vector<float> kernel_data =
         {0.00296902, 0.0133062 , 0.02193824, 0.0133062 , 1.00296902,
          0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
@@ -283,12 +278,13 @@ TEST_P(ImagePermuteDevices, Filter) {
     // clang-format on
 
     core::Tensor data =
-            core::Tensor(input_data, {9, 9, 1}, core::Dtype::Float32, device);
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
     core::Tensor kernel =
             core::Tensor(kernel_data, {5, 5}, core::Dtype::Float32, device);
     t::geometry::Image im(data);
     t::geometry::Image im_new = im.Filter(kernel);
-    utility::LogInfo("{}", im_new.AsTensor().View({9, 9}).ToString());
+
+    EXPECT_TRUE(im_new.AsTensor().Reverse().View({5, 5}).AllClose(kernel));
 }
 
 TEST_P(ImagePermuteDevices, FilterSobel) {
@@ -373,8 +369,6 @@ TEST_P(ImagePermuteDevices, Resize) {
             core::Tensor(output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
 }
 
-/// Results are not the same, as 5x5 Gaussian filter is inconsistent between IPP
-/// and NPP on boundaries.
 TEST_P(ImagePermuteDevices, PyrDown) {
     core::Device device = GetParam();
 

@@ -211,13 +211,15 @@ void Filter(const open3d::core::Tensor &src_im,
                          static_cast<int>(dst_im.GetShape(0))};
 
     // Generate separable kernel weights given the sigma value.
-    const float *kernel_ptr = static_cast<const float *>(kernel.GetDataPtr());
     NppiSize kernel_size = {static_cast<int>(kernel.GetShape()[0]),
                             static_cast<int>(kernel.GetShape()[1])};
     NppiPoint anchor = {static_cast<int>(kernel.GetShape()[0] / 2),
                         static_cast<int>(kernel.GetShape()[1] / 2)};
 
     // Filter in npp is Convolution, so we need to reverse all the entries.
+    core::Tensor kernel_flipped = kernel.Reverse();
+    const float *kernel_ptr =
+            static_cast<const float *>(kernel_flipped.GetDataPtr());
 
     auto dtype = src_im.GetDtype();
 #define NPP_ARGS                                                          \
@@ -327,7 +329,8 @@ void FilterGaussian(const core::Tensor &src_im,
 
     // Use the general Filter, as NPP Gaussian/GaussianAdvanced all return
     // inconsistent results.
-    core::Tensor kernel = mask.Matmul(mask.T());
+    // Outer product
+    core::Tensor kernel = mask.Matmul(mask.T()).Contiguous();
     return Filter(src_im, dst_im, kernel);
 }
 

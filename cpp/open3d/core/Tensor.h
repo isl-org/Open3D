@@ -340,6 +340,9 @@ public:
                          Dtype dtype = Dtype::Int64,
                          const Device& device = core::Device("CPU:0"));
 
+    /// Reverse a Tensor
+    Tensor Reverse() const;
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is
