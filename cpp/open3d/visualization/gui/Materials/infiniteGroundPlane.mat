@@ -35,7 +35,7 @@ fragment {
         float t = 0.0;
         // axis = 0 is XZ plane, axis > 0 is XY plane, axis < 0 is YZ plane
         if (materialParams.axis > 0) {
-            t = -near.z / (far.x - near.z);
+            t = -near.z / (far.z - near.z);
         } else if (materialParams.axis < 0) {
             t = -near.x / (far.x - near.x);
         } else {
