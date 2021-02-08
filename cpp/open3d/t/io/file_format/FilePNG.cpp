@@ -31,13 +31,11 @@
 
 namespace open3d {
 namespace t {
+namespace io {
 
-namespace {
-using namespace io;
-
-void SetPNGImageFromImage(const geometry::Image &image,
-                          int quality,
-                          png_image &pngimage) {
+static void SetPNGImageFromImage(const geometry::Image &image,
+                                 int quality,
+                                 png_image &pngimage) {
     pngimage.width = image.GetCols();
     pngimage.height = image.GetRows();
     pngimage.format = pngimage.flags = 0;
@@ -56,10 +54,6 @@ void SetPNGImageFromImage(const geometry::Image &image,
     }
 }
 
-}  // unnamed namespace
-
-namespace io {
-
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     png_image pngimage;
     memset(&pngimage, 0, sizeof(pngimage));
@@ -74,14 +68,15 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
         pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
     }
-    if (pngimage.format & PNG_FORMAT_FLAG_LINEAR)
+    if (pngimage.format & PNG_FORMAT_FLAG_LINEAR) {
         image.Reset(pngimage.height, pngimage.width,
                     PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
                     core::Dtype::UInt16, image.GetDevice());
-    else
+    } else {
         image.Reset(pngimage.height, pngimage.width,
                     PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
                     core::Dtype::UInt8, image.GetDevice());
+    }
 
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
         0) {
@@ -106,7 +101,9 @@ bool WriteImageToPNG(const std::string &filename,
         return false;
     }
     if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
+    {
         quality = 6;
+    }
     if (quality < 0 || quality > 9) {
         utility::LogWarning(
                 "Write PNG failed: quality ({}) must be in the range [0,9]",

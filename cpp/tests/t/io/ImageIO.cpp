@@ -47,91 +47,115 @@ t::geometry::Image CreateTestImage() {
     t.Slice(2, 1, 2).Fill(150);
     t.Slice(2, 2, 3).Fill(200);
 
-    auto test_img = t::geometry::Image(t);
-
-    return test_img;
+    return t::geometry::Image(t);
 }
+
+void WriteTestImage(t::geometry::Image image) {
+    t::io::WriteImage(std::string(TEST_DATA_DIR) + "/test_imageio.png", image);
+    t::io::WriteImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg", image);
+}
+
+int RemoveTestImage(std::string filename) {
+    return std::remove(filename.c_str());
+}
+
 }  // namespace
 
 // Write test image.
 TEST(ImageIO, WriteImage) {
-    auto test_img = CreateTestImage();
+    t::geometry::Image test_img = CreateTestImage();
     EXPECT_TRUE(t::io::WriteImage(
             std::string(TEST_DATA_DIR) + "/test_imageio.png", test_img));
     EXPECT_TRUE(t::io::WriteImage(
             std::string(TEST_DATA_DIR) + "/test_imageio.jpg", test_img));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
 TEST(ImageIO, CreateImageFromFile) {
-    auto img_png = t::io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                              "/test_imageio.png");
-    auto img_jpg = t::io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                              "/test_imageio.jpg");
+    WriteTestImage(CreateTestImage());
+    std::shared_ptr<t::geometry::Image> img_png = t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/test_imageio.png");
+    std::shared_ptr<t::geometry::Image> img_jpg = t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
 
-    EXPECT_EQ(img_png->GetRows(), img_jpg->GetRows());
-    EXPECT_EQ(img_png->GetCols(), img_jpg->GetCols());
-    EXPECT_EQ(img_png->GetChannels(), img_jpg->GetChannels());
-    EXPECT_EQ(img_png->GetDtype(), img_jpg->GetDtype());
+    EXPECT_EQ(img_png->GetRows(), 150);
+    EXPECT_EQ(img_png->GetCols(), 100);
+    EXPECT_EQ(img_png->GetChannels(), 3);
+    EXPECT_EQ(img_png->GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(img_png->GetDevice(), img_jpg->GetDevice());
 
-    auto test_img = CreateTestImage();
+    t::geometry::Image test_img = CreateTestImage();
 
-    EXPECT_EQ(img_png->GetRows(), test_img.GetRows());
-    EXPECT_EQ(img_png->GetCols(), test_img.GetCols());
-    EXPECT_EQ(img_png->GetChannels(), test_img.GetChannels());
-    EXPECT_EQ(img_png->GetDtype(), test_img.GetDtype());
-    EXPECT_EQ(img_png->GetDevice(), test_img.GetDevice());
+    EXPECT_EQ(img_jpg->GetRows(), 150);
+    EXPECT_EQ(img_jpg->GetCols(), 100);
+    EXPECT_EQ(img_jpg->GetChannels(), 3);
+    EXPECT_EQ(img_jpg->GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(img_jpg->GetDevice(), test_img.GetDevice());
 
     EXPECT_FALSE(img_jpg->AsTensor().IsSame(test_img.AsTensor()));
     EXPECT_TRUE(img_jpg->AsTensor().AllClose(test_img.AsTensor()));
     EXPECT_TRUE(img_png->AsTensor().AllClose(test_img.AsTensor()));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
 TEST(ImageIO, ReadImage) {
+    WriteTestImage(CreateTestImage());
     t::geometry::Image img;
     EXPECT_TRUE(t::io::ReadImage(
             std::string(TEST_DATA_DIR) + "/test_imageio.png", img));
-    auto test_img = CreateTestImage();
+    t::geometry::Image test_img = CreateTestImage();
 
-    EXPECT_EQ(img.GetRows(), test_img.GetRows());
-    EXPECT_EQ(img.GetCols(), test_img.GetCols());
-    EXPECT_EQ(img.GetChannels(), test_img.GetChannels());
-    EXPECT_EQ(img.GetDtype(), test_img.GetDtype());
+    EXPECT_EQ(img.GetRows(), 150);
+    EXPECT_EQ(img.GetCols(), 100);
+    EXPECT_EQ(img.GetChannels(), 3);
+    EXPECT_EQ(img.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(img.GetDevice(), test_img.GetDevice());
     EXPECT_TRUE(img.AsTensor().AllClose(test_img.AsTensor()));
 
     EXPECT_TRUE(t::io::ReadImage(
             std::string(TEST_DATA_DIR) + "/test_imageio.jpg", img));
-    EXPECT_EQ(img.GetRows(), test_img.GetRows());
-    EXPECT_EQ(img.GetCols(), test_img.GetCols());
-    EXPECT_EQ(img.GetChannels(), test_img.GetChannels());
-    EXPECT_EQ(img.GetDtype(), test_img.GetDtype());
+    EXPECT_EQ(img.GetRows(), 150);
+    EXPECT_EQ(img.GetCols(), 100);
+    EXPECT_EQ(img.GetChannels(), 3);
+    EXPECT_EQ(img.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(img.GetDevice(), test_img.GetDevice());
     EXPECT_TRUE(img.AsTensor().AllClose(test_img.AsTensor()));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
 TEST(ImageIO, ReadImageFromPNG) {
+    WriteTestImage(CreateTestImage());
     t::geometry::Image img;
     EXPECT_TRUE(t::io::ReadImageFromPNG(
             std::string(TEST_DATA_DIR) + "/test_imageio.png", img));
-    auto test_img = CreateTestImage();
+    t::geometry::Image test_img = CreateTestImage();
 
-    EXPECT_EQ(img.GetRows(), test_img.GetRows());
-    EXPECT_EQ(img.GetCols(), test_img.GetCols());
-    EXPECT_EQ(img.GetChannels(), test_img.GetChannels());
-    EXPECT_EQ(img.GetDtype(), test_img.GetDtype());
+    EXPECT_EQ(img.GetRows(), 150);
+    EXPECT_EQ(img.GetCols(), 100);
+    EXPECT_EQ(img.GetChannels(), 3);
+    EXPECT_EQ(img.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(img.GetDevice(), test_img.GetDevice());
 
     EXPECT_TRUE(img.AsTensor().AllClose(test_img.AsTensor()));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
 TEST(ImageIO, WriteImageToPNG) {
-    auto img = CreateTestImage();
+    WriteTestImage(CreateTestImage());
+    t::geometry::Image img = CreateTestImage();
     EXPECT_TRUE(t::io::WriteImageToPNG(
             std::string(TEST_DATA_DIR) + "/test_imageio.png", img));
 
-    auto read_img = *(t::io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                 "/test_imageio.png"));
+    t::geometry::Image read_img = *(t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/test_imageio.png"));
 
     EXPECT_EQ(img.GetRows(), read_img.GetRows());
     EXPECT_EQ(img.GetCols(), read_img.GetCols());
@@ -140,30 +164,38 @@ TEST(ImageIO, WriteImageToPNG) {
     EXPECT_EQ(img.GetDevice(), read_img.GetDevice());
 
     EXPECT_TRUE(img.AsTensor().AllClose(read_img.AsTensor()));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
 TEST(ImageIO, ReadImageFromJPG) {
+    WriteTestImage(CreateTestImage());
     t::geometry::Image img;
     EXPECT_TRUE(t::io::ReadImageFromJPG(
             std::string(TEST_DATA_DIR) + "/test_imageio.jpg", img));
-    auto test_img = CreateTestImage();
+    t::geometry::Image test_img = CreateTestImage();
 
-    EXPECT_EQ(img.GetRows(), test_img.GetRows());
-    EXPECT_EQ(img.GetCols(), test_img.GetCols());
-    EXPECT_EQ(img.GetChannels(), test_img.GetChannels());
-    EXPECT_EQ(img.GetDtype(), test_img.GetDtype());
+    EXPECT_EQ(img.GetRows(), 150);
+    EXPECT_EQ(img.GetCols(), 100);
+    EXPECT_EQ(img.GetChannels(), 3);
+    EXPECT_EQ(img.GetDtype(), core::Dtype::UInt8);
     EXPECT_EQ(img.GetDevice(), test_img.GetDevice());
 
     EXPECT_TRUE(img.AsTensor().AllClose(test_img.AsTensor()));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
 TEST(ImageIO, WriteImageToJPG) {
-    auto img = CreateTestImage();
+    WriteTestImage(CreateTestImage());
+    t::geometry::Image img = CreateTestImage();
     EXPECT_TRUE(t::io::WriteImageToJPG(
             std::string(TEST_DATA_DIR) + "/test_imageio.jpg", img));
 
-    auto read_img = *(t::io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                 "/test_imageio.png"));
+    t::geometry::Image read_img = *(t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/test_imageio.png"));
 
     EXPECT_EQ(img.GetRows(), read_img.GetRows());
     EXPECT_EQ(img.GetCols(), read_img.GetCols());
@@ -172,8 +204,13 @@ TEST(ImageIO, WriteImageToJPG) {
     EXPECT_EQ(img.GetDevice(), read_img.GetDevice());
 
     EXPECT_TRUE(img.AsTensor().AllClose(read_img.AsTensor()));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio.png");
 }
 
+// JPG supports only UInt8, and PNG supports both UInt8 and UInt16.
+// All other data types are expected to fail.
 TEST(ImageIO, DifferentDtype) {
     EXPECT_TRUE(t::io::WriteImage(
             std::string(TEST_DATA_DIR) + "/test_imageio_dtype.jpg",
@@ -218,6 +255,9 @@ TEST(ImageIO, DifferentDtype) {
     EXPECT_FALSE(t::io::WriteImage(
             std::string(TEST_DATA_DIR) + "/test_imageio_dtype.png",
             t::geometry::Image(100, 200, 3, core::Dtype::Bool)));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio_dtype.jpg");
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio_dtype.png");
 }
 
 TEST(ImageIO, CornerCases) {
@@ -241,6 +281,8 @@ TEST(ImageIO, CornerCases) {
     EXPECT_FALSE(t::io::WriteImage(
             std::string(TEST_DATA_DIR) + "/test_imageio_dtype.pg",
             t::geometry::Image(100, 0, 3, core::Dtype::UInt8)));
+
+    RemoveTestImage(std::string(TEST_DATA_DIR) + "/test_imageio_dtype.jpg");
 }
 
 }  // namespace tests

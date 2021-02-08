@@ -41,15 +41,6 @@ Image::Image(int64_t rows,
              core::Dtype dtype,
              const core::Device &device)
     : Geometry(Geometry::GeometryType::Image, 2) {
-    if (rows < 0) {
-        utility::LogError("rows must be >= 0, but got {}.", rows);
-    }
-    if (cols < 0) {
-        utility::LogError("cols must be >= 0, but got {}.", cols);
-    }
-    if (channels <= 0) {
-        utility::LogError("channels must be > 0, but got {}.", channels);
-    }
     Reset(rows, cols, channels, dtype, device);
 }
 

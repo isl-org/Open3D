@@ -34,9 +34,7 @@
 
 namespace open3d {
 namespace t {
-
-namespace {
-using namespace io;
+namespace io {
 
 static const std::unordered_map<
         std::string,
@@ -55,10 +53,6 @@ static const std::unordered_map<
                 {"jpg", WriteImageToJPG},
                 {"jpeg", WriteImageToJPG},
         };
-
-}  // unnamed namespace
-
-namespace io {
 
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
