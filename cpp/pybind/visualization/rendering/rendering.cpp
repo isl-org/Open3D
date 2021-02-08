@@ -306,6 +306,13 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
                                                    "Low-level rendering scene");
+    py::enum_<Scene::GroundPlane> ground_plane(
+            scene, "GroundPlane", py::arithmetic(),
+            "Plane on which to show ground plane: XZ, XY, or YZ");
+    ground_plane.value("XZ", Scene::GroundPlane::XZ)
+            .value("XY", Scene::GroundPlane::XY)
+            .value("YZ", Scene::GroundPlane::YZ)
+            .export_values();
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
                  "Removes the camera with the given name")
