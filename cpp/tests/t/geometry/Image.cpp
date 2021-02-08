@@ -320,9 +320,9 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
 
         EXPECT_TRUE(dx.AsTensor().AllClose(core::Tensor(
                 output_dx_ref, {5, 5, 1}, core::Dtype::Float32, device)));
-
         EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
                 output_dy_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+        utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
     }
 
     {  // UInt8 -> Int16
@@ -341,6 +341,7 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
                 core::Tensor(output_dy_ref, {5, 5, 1}, core::Dtype::Float32,
                              device)
                         .To(core::Dtype::Int16)));
+        utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
     }
 }
 
