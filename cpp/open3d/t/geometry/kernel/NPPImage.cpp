@@ -197,6 +197,69 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
 #undef NPP_ARGS
 }
 
+void Filter(const open3d::core::Tensor &src_im,
+            open3d::core::Tensor &dst_im,
+            const open3d::core::Tensor &kernel) {
+    // Supported device and datatype checking happens in calling code and will
+    // result in an exception if there are errors.
+    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+    NppiPoint src_offset = {0, 0};
+
+    // create struct with ROI size
+    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+
+    // Generate separable kernel weights given the sigma value.
+    const float *kernel_ptr = static_cast<const float *>(kernel.GetDataPtr());
+    NppiSize kernel_size = {static_cast<int>(kernel.GetShape()[0]),
+                            static_cast<int>(kernel.GetShape()[1])};
+    NppiPoint anchor = {static_cast<int>(kernel.GetShape()[0] / 2),
+                        static_cast<int>(kernel.GetShape()[1] / 2)};
+
+    // Filter in npp is Convolution, so we need to reverse all the entries.
+
+    auto dtype = src_im.GetDtype();
+#define NPP_ARGS                                                          \
+    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
+            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
+            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_ptr, \
+            kernel_size, anchor, NPP_BORDER_REPLICATE
+    if (dtype == core::Dtype::UInt8) {
+        using npp_dtype = Npp8u;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterBorder32f_8u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterBorder32f_8u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterBorder32f_8u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::UInt16) {
+        using npp_dtype = Npp16u;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterBorder32f_16u_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterBorder32f_16u_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterBorder32f_16u_C4R(NPP_ARGS);
+        }
+    } else if (dtype == core::Dtype::Float32) {
+        using npp_dtype = Npp32f;
+        if (src_im.GetShape(2) == 1) {
+            nppiFilterBorder_32f_C1R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 3) {
+            nppiFilterBorder_32f_C3R(NPP_ARGS);
+        } else if (src_im.GetShape(2) == 4) {
+            nppiFilterBorder_32f_C4R(NPP_ARGS);
+        }
+    } else {
+        utility::LogError("npp::Filter(): Unspported dtype {}",
+                          dtype.ToString());
+    }
+#undef NPP_ARGS
+}
+
 void FilterBilateral(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int kernel_size,
@@ -242,7 +305,7 @@ void FilterBilateral(const core::Tensor &src_im,
             nppiFilterBilateralGaussBorder_32f_C3R(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::FilterBilateral(): Unspported dtype {}",
+        utility::LogError("npp::Filter(): Unspported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -252,16 +315,6 @@ void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
                     int kernel_size,
                     float sigma) {
-    // Supported device and datatype checking happens in calling code and will
-    // result in an exception if there are errors.
-    NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
-                         static_cast<int>(src_im.GetShape(0))};
-    NppiPoint src_offset = {0, 0};
-
-    // create struct with ROI size
-    NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
-                         static_cast<int>(dst_im.GetShape(0))};
-
     // Generate separable kernel weights given the sigma value.
     core::Tensor dist =
             core::Tensor::Arange(static_cast<float>(-kernel_size / 2),
@@ -270,48 +323,12 @@ void FilterGaussian(const core::Tensor &src_im,
     core::Tensor logval = (dist * dist).Mul(-0.5f / (sigma * sigma));
     core::Tensor mask = logval.Exp();
     mask = mask / mask.Sum({0});
-    utility::LogInfo("mask = {}", mask.ToString());
-    float *mask_ptr = static_cast<float *>(mask.GetDataPtr());
+    mask = mask.View({kernel_size, 1});
 
-    auto dtype = src_im.GetDtype();
-#define NPP_ARGS                                                           \
-    static_cast<const npp_dtype *>(src_im.GetDataPtr()),                   \
-            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,  \
-            static_cast<npp_dtype *>(dst_im.GetDataPtr()),                 \
-            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size, \
-            mask_ptr, NPP_BORDER_REPLICATE
-    if (dtype == core::Dtype::UInt8) {
-        using npp_dtype = Npp8u;
-        if (src_im.GetShape(2) == 1) {
-            nppiFilterGaussAdvancedBorder_8u_C1R(NPP_ARGS);
-        } else if (src_im.GetShape(2) == 3) {
-            nppiFilterGaussAdvancedBorder_8u_C3R(NPP_ARGS);
-        } else if (src_im.GetShape(2) == 4) {
-            nppiFilterGaussAdvancedBorder_8u_C4R(NPP_ARGS);
-        }
-    } else if (dtype == core::Dtype::UInt16) {
-        using npp_dtype = Npp16u;
-        if (src_im.GetShape(2) == 1) {
-            nppiFilterGaussAdvancedBorder_16u_C1R(NPP_ARGS);
-        } else if (src_im.GetShape(2) == 3) {
-            nppiFilterGaussAdvancedBorder_16u_C3R(NPP_ARGS);
-        } else if (src_im.GetShape(2) == 4) {
-            nppiFilterGaussAdvancedBorder_16u_C4R(NPP_ARGS);
-        }
-    } else if (dtype == core::Dtype::Float32) {
-        using npp_dtype = Npp32f;
-        if (src_im.GetShape(2) == 1) {
-            nppiFilterGaussAdvancedBorder_32f_C1R(NPP_ARGS);
-        } else if (src_im.GetShape(2) == 3) {
-            nppiFilterGaussAdvancedBorder_32f_C3R(NPP_ARGS);
-        } else if (src_im.GetShape(2) == 4) {
-            nppiFilterGaussAdvancedBorder_32f_C4R(NPP_ARGS);
-        }
-    } else {
-        utility::LogError("npp::FilterGaussian(): Unspported dtype {}",
-                          dtype.ToString());
-    }
-#undef NPP_ARGS
+    // Use the general Filter, as NPP Gaussian/GaussianAdvanced all return
+    // inconsistent results.
+    core::Tensor kernel = mask.Matmul(mask.T());
+    return Filter(src_im, dst_im, kernel);
 }
 
 void FilterSobel(const core::Tensor &src_im,

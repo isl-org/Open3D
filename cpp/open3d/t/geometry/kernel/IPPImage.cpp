@@ -167,6 +167,38 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     }
 }
 
+void Filter(const open3d::core::Tensor &src_im,
+            open3d::core::Tensor &dst_im,
+            const open3d::core::Tensor &kernel) {
+    // Supported device and datatype checking happens in calling code and will
+    // result in an exception if there are errors.
+    auto dtype = src_im.GetDtype();
+
+    // Create IPP wrappers for all Open3D tensors
+    const ::ipp::IwiImage ipp_src_im(
+            ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
+            ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, const_cast<void *>(src_im.GetDataPtr()),
+            src_im.GetStride(0) * dtype.ByteSize());
+    ::ipp::IwiImage ipp_dst_im(
+            ::ipp::IwiSize(dst_im.GetShape(1), dst_im.GetShape(0)),
+            ToIppDataType(dtype), dst_im.GetShape(2) /* channels */,
+            0 /* border buffer size */, dst_im.GetDataPtr(),
+            dst_im.GetStride(0) * dtype.ByteSize());
+    ::ipp::IwiImage ipp_kernel(
+            ::ipp::IwiSize(kernel.GetShape(1), kernel.GetShape(0)),
+            ToIppDataType(core::Dtype::Float32), 1 /* channels */,
+            0 /* border buffer size */, const_cast<void *>(kernel.GetDataPtr()),
+            kernel.GetStride(0) * core::Dtype::Float32.ByteSize());
+
+    try {
+        ::ipp::iwiFilter(ipp_src_im, ipp_dst_im, ipp_kernel);
+    } catch (const ::ipp::IwException &e) {
+        // See comments in icv/include/ippicv_types.h for m_status meaning
+        utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
+    }
+};
+
 void FilterBilateral(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int kernel_size,

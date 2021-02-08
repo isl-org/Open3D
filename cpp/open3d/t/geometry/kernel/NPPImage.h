@@ -43,6 +43,10 @@ void Resize(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
             int interp_type);
 
+void Filter(const open3d::core::Tensor &srcim,
+            open3d::core::Tensor &dstim,
+            const open3d::core::Tensor &kernel);
+
 void FilterBilateral(const open3d::core::Tensor &srcim,
                      open3d::core::Tensor &dstim,
                      int kernel_size,

@@ -195,15 +195,38 @@ TEST_P(ImagePermuteDevices,
 TEST_P(ImagePermuteDevices, FilterBilateral) {
     core::Device device = GetParam();
 
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0,
+       0, 0, 1, 0, 0,
+       0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0};
+    const std::vector<float> output_ref_ipp =
+      {0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.199001, 0.0, 0.0,
+       0.0, 0.199001, 0.201605, 0.199001, 0.0,
+       0.0, 0.0, 0.199001, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0};
+    const std::vector<float> output_ref_npp =
+      {0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.110249, 0.110802, 0.110249, 0.0,
+       0.0, 0.110802, 0.112351, 0.110802, 0.0,
+       0.0, 0.110249, 0.110802, 0.110249, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0};
+    // clang-format on
     core::Tensor data =
-            core::Tensor::Zeros({10, 10}, core::Dtype::Float32, device);
-    data.Slice(0, 4, 5).Slice(1, 4, 5) = core::Tensor(
-            std::vector<float>{1.0f}, {}, core::Dtype::Float32, device);
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
 
-    t::geometry::Image im(data.View({10, 10, 1}));
-    im = im.FilterBilateral(3, 1, 1);
-
-    utility::LogInfo("{}", im.AsTensor().View({10, 10}).ToString());
+    t::geometry::Image im(data);
+    im = im.FilterBilateral(3, 10, 10);
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                output_ref_ipp, {5, 5, 1}, core::Dtype::Float32, device)));
+    } else {
+        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                output_ref_npp, {5, 5, 1}, core::Dtype::Float32, device)));
+    }
 }
 
 // IPP and NPP are consistent when kernel_size = 3x3.
@@ -233,9 +256,12 @@ TEST_P(ImagePermuteDevices, FilterGaussian) {
     im = im.FilterGaussian(3);
     EXPECT_TRUE(im.AsTensor().AllClose(
             core::Tensor(output_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+}
 
-    {
-        // clang-format off
+TEST_P(ImagePermuteDevices, Filter) {
+    core::Device device = GetParam();
+
+    // clang-format off
       const std::vector<float> input_data =
         {0, 0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -246,14 +272,23 @@ TEST_P(ImagePermuteDevices, FilterGaussian) {
          0, 0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0, 0, 0, 0, 0, 0, 0};
-        // clang-format on
 
-        core::Tensor data = core::Tensor(input_data, {9, 9, 1},
-                                         core::Dtype::Float32, device);
-        t::geometry::Image im(data);
-        t::geometry::Image im_new = im.FilterGaussian(5, 1);
-        utility::LogInfo("{}", im_new.AsTensor().View({9, 9}).ToString());
-    }
+      const std::vector<float> kernel_data =
+        {0.00296902, 0.0133062 , 0.02193824, 0.0133062 , 1.00296902,
+         0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+         0.02193824, 0.09832021, 0.16210286, 0.09832021, 0.02193824,
+         0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+         0.00296902, 0.0133062 , 0.02193824, 0.0133062 , -1.00296902
+        };
+    // clang-format on
+
+    core::Tensor data =
+            core::Tensor(input_data, {9, 9, 1}, core::Dtype::Float32, device);
+    core::Tensor kernel =
+            core::Tensor(kernel_data, {5, 5}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+    t::geometry::Image im_new = im.Filter(kernel);
+    utility::LogInfo("{}", im_new.AsTensor().View({9, 9}).ToString());
 }
 
 TEST_P(ImagePermuteDevices, FilterSobel) {
@@ -351,6 +386,10 @@ TEST_P(ImagePermuteDevices, PyrDown) {
        1, 0, 0, 0, 0, 1,
        1, 0, 0, 0, 0, 1,
        1, 1, 1, 1, 1, 1};
+    const std::vector<float> output_ref =
+      {0.0596343, 0.244201, 0.483257,
+       0.269109, 0.187536, 0.410317,
+       0.752312, 0.347241, 0.521471};
     // clang-format on
 
     core::Tensor data =
@@ -358,7 +397,8 @@ TEST_P(ImagePermuteDevices, PyrDown) {
     t::geometry::Image im(data);
 
     im = im.PyrDown();
-    utility::LogInfo("{}", im.AsTensor().View({3, 3}).ToString());
+    EXPECT_TRUE(im.AsTensor().AllClose(
+            core::Tensor(output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
 }
 
 TEST_P(ImagePermuteDevices, Dilate) {

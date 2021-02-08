@@ -203,6 +203,9 @@ public:
     /// used.
     Image Dilate(int kernel_size = 3) const;
 
+    /// Return a new image given the filtering kernel.
+    Image Filter(const core::Tensor &kernel) const;
+
     /// Return a new image after bilateral filtering.
     /// value_sigma: standard deviation for the image content.
     /// dist_sigma: standard deviation for the image pixel positions.
