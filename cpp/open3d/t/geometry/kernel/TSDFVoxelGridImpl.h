@@ -205,7 +205,7 @@ void ExtractSurfacePointsCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        block_values.GetDevice());
-    int* count_ptr = static_cast<int*>(count.GetDataPtr());
+    int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);
     std::atomic<int>* count_ptr = &count_atomic;
@@ -287,7 +287,7 @@ void ExtractSurfacePointsCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                          block_values.GetDevice());
-    count_ptr = static_cast<int*>(count.GetDataPtr());
+    count_ptr = count.GetDataPtr<int>();
 #else
     (*count_ptr) = 0;
 #endif
@@ -493,10 +493,8 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr =
-            static_cast<const int64_t*>(indices.GetDataPtr());
-    const int64_t* inv_indices_ptr =
-            static_cast<const int64_t*>(inv_indices.GetDataPtr());
+    const int64_t* indices_ptr = indices.GetDataPtr<int64_t>();
+    const int64_t* inv_indices_ptr = inv_indices.GetDataPtr<int64_t>();
 
     int64_t n = n_blocks * resolution3;
 
@@ -594,7 +592,7 @@ void ExtractSurfaceMeshCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
-    int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
+    int* vtx_count_ptr = vtx_count.GetDataPtr<int>();
 #else
     std::atomic<int> vtx_count_atomic(0);
     std::atomic<int>* vtx_count_ptr = &vtx_count_atomic;
@@ -640,7 +638,7 @@ void ExtractSurfaceMeshCPU
     int total_vtx_count = vtx_count.Item<int>();
     vtx_count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                              block_values.GetDevice());
-    vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
+    vtx_count_ptr = vtx_count.GetDataPtr<int>();
 #else
     int total_vtx_count = (*vtx_count_ptr).load();
     (*vtx_count_ptr) = 0;
@@ -802,7 +800,7 @@ void ExtractSurfaceMeshCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                                 block_values.GetDevice());
-    int* tri_count_ptr = static_cast<int*>(triangle_count.GetDataPtr());
+    int* tri_count_ptr = triangle_count.GetDataPtr<int>();
 #else
     std::atomic<int> tri_count_atomic(0);
     std::atomic<int>* tri_count_ptr = &tri_count_atomic;

@@ -24,33 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Dispatch.h"
+#pragma once
+
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace pipelines {
 namespace kernel {
 
-void ArangeCUDA(const Tensor& start,
-                const Tensor& stop,
-                const Tensor& step,
-                Tensor& dst) {
-    Dtype dtype = start.GetDtype();
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t sstart = start.Item<scalar_t>();
-        scalar_t sstep = step.Item<scalar_t>();
-        scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-        int64_t n = dst.GetLength();
-        CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_HOST_DEVICE(
-                                                     int64_t workload_idx) {
-            dst_ptr[workload_idx] =
-                    sstart + static_cast<scalar_t>(sstep * workload_idx);
-        });
-    });
-}
+/// \brief Computes pose for point to plane registration method.
+/// \param source_points_indexed source points indexed according to
+/// correspondences. \param target_points_indexed target points indexed
+/// according to correspondences. \param target_normals_indexed target normals
+/// indexed according to correspondences. \return Pose [X Y Z alpha beta
+/// gamma], a shape {6} tensor of dtype float32.
+core::Tensor ComputePosePointToPlane(
+        const core::Tensor &source_points_indexed,
+        const core::Tensor &target_points_indexed,
+        const core::Tensor &target_normals_indexed);
 
 }  // namespace kernel
-}  // namespace core
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

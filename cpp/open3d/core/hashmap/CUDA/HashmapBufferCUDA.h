@@ -56,8 +56,8 @@ public:
         capacity_ = capacity;
         dsize_key_ = dsize_key;
         dsize_value_ = dsize_value;
-        keys_ = static_cast<uint8_t *>(keys.GetDataPtr());
-        values_ = static_cast<uint8_t *>(values.GetDataPtr());
+        keys_ = keys.GetDataPtr<uint8_t>();
+        values_ = values.GetDataPtr<uint8_t>();
         heap_ = static_cast<addr_t *>(heap.GetDataPtr());
         OPEN3D_CUDA_CHECK(cudaMemset(values_, 0, capacity_ * dsize_value_));
     }

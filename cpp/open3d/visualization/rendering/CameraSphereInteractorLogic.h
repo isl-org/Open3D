@@ -24,33 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
+#pragma once
+
+#include "open3d/visualization/rendering/CameraInteractorLogic.h"
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace visualization {
+namespace rendering {
 
-void ArangeCUDA(const Tensor& start,
-                const Tensor& stop,
-                const Tensor& step,
-                Tensor& dst) {
-    Dtype dtype = start.GetDtype();
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t sstart = start.Item<scalar_t>();
-        scalar_t sstep = step.Item<scalar_t>();
-        scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-        int64_t n = dst.GetLength();
-        CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_HOST_DEVICE(
-                                                     int64_t workload_idx) {
-            dst_ptr[workload_idx] =
-                    sstart + static_cast<scalar_t>(sstep * workload_idx);
-        });
-    });
-}
+class CameraSphereInteractorLogic : public CameraInteractorLogic {
+    using Super = CameraInteractorLogic;
 
-}  // namespace kernel
-}  // namespace core
+public:
+    CameraSphereInteractorLogic(Camera* c, double min_far_plane);
+
+    void Rotate(int dx, int dy) override;
+
+    void StartMouseDrag() override;
+
+private:
+    float r_at_mousedown_;
+    float theta_at_mousedown_;
+    float phi_at_mousedown_;
+};
+
+}  // namespace rendering
+}  // namespace visualization
 }  // namespace open3d

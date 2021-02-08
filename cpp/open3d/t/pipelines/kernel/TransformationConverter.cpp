@@ -67,9 +67,8 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
-    float *transformation_ptr =
-            static_cast<float *>(transformation.GetDataPtr());
-    const float *pose_ptr = static_cast<const float *>(pose_.GetDataPtr());
+    float *transformation_ptr = transformation.GetDataPtr<float>();
+    const float *pose_ptr = pose_.GetDataPtr<float>();
 
     // Rotation from pose.
     core::Device::DeviceType device_type = device.GetType();
