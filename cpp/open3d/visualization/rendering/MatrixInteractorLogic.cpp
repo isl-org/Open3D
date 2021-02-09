@@ -209,6 +209,7 @@ float MatrixInteractorLogic::CalcDollyDist(float dy,
     float length =
             (center_of_rotation_ - matrix * Eigen::Vector3f(0.0f, 0.0f, 0.0f))
                     .norm();
+    length = std::max(float(0.02 * model_size_), length);
     float dist = 0.0f;  // initialize to make GCC happy
     switch (drag_type) {
         case DragType::MOUSE:
