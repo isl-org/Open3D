@@ -203,10 +203,12 @@ void MatrixInteractorLogic::Dolly(float z_dist, Camera::Transform matrix) {
     matrix_ = matrix;
 }
 
-float MatrixInteractorLogic::CalcDollyDist(float dy, DragType drag_type,
+float MatrixInteractorLogic::CalcDollyDist(float dy,
+                                           DragType drag_type,
                                            const Camera::Transform& matrix) {
-    float length = (center_of_rotation_ -
-                    matrix * Eigen::Vector3f(0.0f, 0.0f, 0.0f)).norm();
+    float length =
+            (center_of_rotation_ - matrix * Eigen::Vector3f(0.0f, 0.0f, 0.0f))
+                    .norm();
     float dist = 0.0f;  // initialize to make GCC happy
     switch (drag_type) {
         case DragType::MOUSE:
