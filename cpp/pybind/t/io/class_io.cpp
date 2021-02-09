@@ -28,6 +28,7 @@
 #include <unordered_map>
 
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
@@ -58,30 +59,30 @@ static const std::unordered_map<std::string, std::string>
                  "format will be used."},
                 {"write_vertex_normals",
                  "Set to ``False`` to not write any vertex normals, even if "
-                 "present on the mesh"},
+                 "present on the mesh."},
                 {"write_vertex_colors",
                  "Set to ``False`` to not write any vertex colors, even if "
-                 "present on the mesh"},
+                 "present on the mesh."},
                 {"write_triangle_uvs",
                  "Set to ``False`` to not write any triangle uvs, even if "
                  "present on the mesh. For ``obj`` format, mtl file is saved "
-                 "only when ``True`` is set"},
+                 "only when ``True`` is set."},
                 // Entities
                 {"config", "AzureKinectSensor's config file."},
-                {"pointcloud", "The ``PointCloud`` object for I/O"},
-                {"mesh", "The ``TriangleMesh`` object for I/O"},
-                {"line_set", "The ``LineSet`` object for I/O"},
-                {"image", "The ``Image`` object for I/O"},
-                {"voxel_grid", "The ``VoxelGrid`` object for I/O"},
+                {"pointcloud", "The ``PointCloud`` object for I/O."},
+                {"mesh", "The ``TriangleMesh`` object for I/O."},
+                {"line_set", "The ``LineSet`` object for I/O."},
+                {"image", "The ``Image`` object for I/O."},
+                {"voxel_grid", "The ``VoxelGrid`` object for I/O."},
                 {"trajectory",
-                 "The ``PinholeCameraTrajectory`` object for I/O"},
-                {"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
+                 "The ``PinholeCameraTrajectory`` object for I/O."},
+                {"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O."},
                 {"parameters",
-                 "The ``PinholeCameraParameters`` object for I/O"},
-                {"pose_graph", "The ``PoseGraph`` object for I/O"},
-                {"feature", "The ``Feature`` object for I/O"},
+                 "The ``PinholeCameraParameters`` object for I/O."},
+                {"pose_graph", "The ``PoseGraph`` object for I/O."},
+                {"feature", "The ``Feature`` object for I/O."},
                 {"print_progress",
-                 "If set to true a progress bar is visualized in the console"},
+                 "If set to true a progress bar is visualized in the console."},
 };
 
 void pybind_class_io(py::module &m_io) {
@@ -97,7 +98,7 @@ void pybind_class_io(py::module &m_io) {
                                 remove_infinite_points, print_progress});
                 return pcd;
             },
-            "Function to read PointCloud with tensor attributes from file",
+            "Function to read PointCloud with tensor attributes from file.",
             "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
             "remove_infinite_points"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
@@ -113,10 +114,34 @@ void pybind_class_io(py::module &m_io) {
                         filename, pointcloud,
                         {write_ascii, compressed, print_progress});
             },
-            "Function to write PointCloud with tensor attributes to file",
+            "Function to write PointCloud with tensor attributes to file.",
             "filename"_a, "pointcloud"_a, "write_ascii"_a = true,
             "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "read_image",
+            [](const std::string &filename) {
+                py::gil_scoped_release release;
+                geometry::Image image;
+                ReadImage(filename, image);
+                return image;
+            },
+            "Function to read image from file.", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_image",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_image",
+            [](const std::string &filename, const geometry::Image &image,
+               int quality) {
+                py::gil_scoped_release release;
+                return WriteImage(filename, image, quality);
+            },
+            "Function to write Image to file.", "filename"_a, "image"_a,
+            "quality"_a = kOpen3DImageIODefaultQuality);
+    docstring::FunctionDocInject(m_io, "write_image",
                                  map_shared_argument_docstrings);
 }
 
