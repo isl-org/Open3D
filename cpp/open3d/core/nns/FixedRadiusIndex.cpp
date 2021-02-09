@@ -189,7 +189,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             int64_t num_indices = indices_unsorted.GetShape()[0];
             int64_t num_segments = neighbors_row_splits.GetShape()[0] - 1;
             Tensor indices_sorted =
-                    Tensor::Empty({num_indices}, Dtype::Int32, device);
+                    Tensor::Empty({num_indices}, Dtype::Int64, device);
             Tensor distances_sorted =
                     Tensor::Empty({num_indices}, dtype, device);
 
@@ -197,9 +197,9 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             SortPairs(temp_ptr, temp_size, num_indices, num_segments,
                       static_cast<const int64_t *>(
                               neighbors_row_splits.GetDataPtr()),
-                      static_cast<int32_t *>(indices_unsorted.GetDataPtr()),
+                      static_cast<int64_t *>(indices_unsorted.GetDataPtr()),
                       static_cast<scalar_t *>(distances_unsorted.GetDataPtr()),
-                      static_cast<int32_t *>(indices_sorted.GetDataPtr()),
+                      static_cast<int64_t *>(indices_sorted.GetDataPtr()),
                       static_cast<scalar_t *>(distances_sorted.GetDataPtr()));
 
             temp_tensor =
@@ -210,15 +210,14 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             SortPairs(temp_ptr, temp_size, num_indices, num_segments,
                       static_cast<const int64_t *>(
                               neighbors_row_splits.GetDataPtr()),
-                      static_cast<int32_t *>(indices_unsorted.GetDataPtr()),
+                      static_cast<int64_t *>(indices_unsorted.GetDataPtr()),
                       static_cast<scalar_t *>(distances_unsorted.GetDataPtr()),
-                      static_cast<int32_t *>(indices_sorted.GetDataPtr()),
+                      static_cast<int64_t *>(indices_sorted.GetDataPtr()),
                       static_cast<scalar_t *>(distances_sorted.GetDataPtr()));
             neighbors_index = indices_sorted;
             neighbors_distance = distances_sorted;
         }
     });
-    neighbors_index = neighbors_index.To(Dtype::Int64);
     return std::make_tuple(neighbors_index, neighbors_distance,
                            neighbors_row_splits);
 #else

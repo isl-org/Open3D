@@ -100,9 +100,9 @@ class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
-        indices = Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
-        *ptr = static_cast<int32_t*>(indices.GetDataPtr());
+    void AllocIndices(int64_t** ptr, size_t num) {
+        indices = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
+        *ptr = static_cast<int64_t*>(indices.GetDataPtr());
     }
 
     void AllocDistances(T** ptr, size_t num) {
@@ -111,8 +111,8 @@ public:
         *ptr = static_cast<T*>(distances.GetDataPtr());
     }
 
-    const int32_t* IndicesPtr() const {
-        return static_cast<const int32_t*>(indices.GetDataPtr());
+    const int64_t* IndicesPtr() const {
+        return static_cast<const int64_t*>(indices.GetDataPtr());
     }
 
     const T* DistancesPtr() const {

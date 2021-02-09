@@ -344,7 +344,7 @@ void CountNeighbors(const cudaStream_t& stream,
 /// Kernel for WriteNeighborsIndicesAndDistances
 template <class T, int METRIC, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
-        int32_t* __restrict__ indices,
+        int64_t* __restrict__ indices,
         T* __restrict__ distances,
         const int64_t* const __restrict__ neighbors_row_splits,
         const uint32_t* const __restrict__ point_index_table,
@@ -460,7 +460,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 template <class T>
 void WriteNeighborsIndicesAndDistances(
         const cudaStream_t& stream,
-        int32_t* indices,
+        int64_t* indices,
         T* distances,
         const int64_t* const neighbors_row_splits,
         const uint32_t* const point_index_table,
@@ -640,9 +640,9 @@ void SortPairs(void* temp,
                int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int32_t* indices_ptr,
+               int64_t* indices_ptr,
                T* distances_ptr,
-               int32_t* indices_sorted,
+               int64_t* indices_sorted,
                T* distances_sorted) {
     const bool get_temp_size = !temp;
     int texture_alignment = 512;
@@ -655,7 +655,7 @@ void SortPairs(void* temp,
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
     std::pair<void*, size_t> sort_temp(nullptr, 0);
-    cub::DoubleBuffer<int32_t> sort_key(indices_ptr, indices_sorted);
+    cub::DoubleBuffer<int64_t> sort_key(indices_ptr, indices_sorted);
     cub::DoubleBuffer<T> sort_value(distances_ptr, distances_sorted);
 
     cub::DeviceSegmentedRadixSort::SortPairs(
@@ -733,7 +733,7 @@ void FixedRadiusSearchCUDA(void* temp,
     if ((0 == num_points || 0 == num_queries) && !get_temp_size) {
         cudaMemsetAsync(query_neighbors_row_splits, 0,
                         sizeof(int64_t) * (num_queries + 1), stream);
-        int32_t* indices_ptr;
+        int64_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
@@ -808,16 +808,15 @@ void FixedRadiusSearchCUDA(void* temp,
         return;
     }
 
-    // allocate the output array for the neighbor indices
-    const size_t num_indices = last_prefix_sum_entry;
-
-    int32_t* indices_ptr;
-    T* distances_ptr;
-
-    output_allocator.AllocIndices(&indices_ptr, num_indices);
-    output_allocator.AllocDistances(&distances_ptr, num_indices);
-
     if (!get_temp_size) {
+        // allocate the output array for the neighbor indices
+        const size_t num_indices = last_prefix_sum_entry;
+
+        int64_t* indices_ptr;
+        T* distances_ptr;
+
+        output_allocator.AllocIndices(&indices_ptr, num_indices);
+        output_allocator.AllocDistances(&distances_ptr, num_indices);
         for (int i = 0; i < batch_size; ++i) {
             const size_t hash_table_size =
                     hash_table_splits[i + 1] - hash_table_splits[i];
@@ -867,9 +866,9 @@ template void SortPairs(void* temp,
                         int64_t num_indices,
                         int64_t num_segments,
                         const int64_t* query_neighbors_row_splits,
-                        int32_t* indices_ptr,
+                        int64_t* indices_ptr,
                         float* distances_ptr,
-                        int32_t* indices_sorted,
+                        int64_t* indices_sorted,
                         float* distances_sorted);
 
 template void SortPairs(void* temp,
@@ -877,9 +876,9 @@ template void SortPairs(void* temp,
                         int64_t num_indices,
                         int64_t num_segments,
                         const int64_t* query_neighbors_row_splits,
-                        int32_t* indices_ptr,
+                        int64_t* indices_ptr,
                         double* distances_ptr,
-                        int32_t* indices_sorted,
+                        int64_t* indices_sorted,
                         double* distances_sorted);
 
 template void MaxKnnThreshold(const int64_t* const prev_indices,

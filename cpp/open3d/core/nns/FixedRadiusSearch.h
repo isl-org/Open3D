@@ -237,9 +237,9 @@ void SortPairs(void* temp,
                int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int32_t* indices_ptr,
+               int64_t* indices_ptr,
                T* distances_ptr,
-               int32_t* indices_sorted,
+               int64_t* indices_sorted,
                T* distances_sorted);
 
 /// This function computes a list of neighbor indices and distances
