@@ -1,5 +1,5 @@
 # Minium test for Open3D with OpenBLAS/LAPACK on both x86_64 and aarch64.
-# This test is intentially kept minimal and self-contained.
+# This test is intentionally kept minimal and self-contained.
 
 name: Ubuntu OpenBLAS CI
 
