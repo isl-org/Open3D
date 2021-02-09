@@ -38,7 +38,7 @@ namespace registration {
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -63,7 +63,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -73,6 +73,8 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+
+    // TODO: Update to new scheme.
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
@@ -100,7 +102,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
 double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -112,7 +114,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     }
 
     if (!target.HasPointNormals()) return 0.0;
-
+    // TODO: Update to new scheme.
     core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
     core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
     core::Tensor target_n_select =
@@ -128,7 +130,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -139,25 +141,29 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    utility::Timer time_IndexInput, time_PoseKernel, time_PoseToTransform;
-    time_IndexInput.Start();
+    utility::Timer /*time_IndexInput,*/ time_PoseKernel, time_PoseToTransform;
 
-    // Get indexed source and target points and target normals, according to
-    // correspondences.
-    core::Tensor source_indexed =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_indexed =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_norm_indexed =
-            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
-    time_IndexInput.Stop();
-    utility::LogInfo("       Indexing input from corres: {}",
-                     time_IndexInput.GetDuration());
+    // time_IndexInput.Start();
+
+    // // Get indexed source and target points and target normals, according to
+    // // correspondences.
+    // core::Tensor source_indexed =
+    //         source.GetPoints().IndexGet({corres.first}).To(dtype);
+    // core::Tensor target_indexed =
+    //         target.GetPoints().IndexGet({corres.second}).To(dtype);
+    // core::Tensor target_norm_indexed =
+    //         target.GetPointNormals().IndexGet({corres.second}).To(dtype);
+    // time_IndexInput.Stop();
+    // utility::LogInfo("       Indexing input from corres: {}",
+    //                  time_IndexInput.GetDuration());
 
     time_PoseKernel.Start();
     // Get pose {6} from correspondences indexed source and target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
-            source_indexed, target_indexed, target_norm_indexed);
+            source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
+            corres);
+    // core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
+    //         source_indexed, target_indexed, target_norm_indexed);
     time_PoseKernel.Stop();
     utility::LogInfo("       Compute Pose Kernel: {}",
                      time_PoseKernel.GetDuration());

@@ -84,7 +84,7 @@ public:
     /// \param corres Correspondence set between source and target point cloud.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
-                               CorrespondenceSet &corres) const = 0;
+                               const CorrespondenceSet &corres) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
@@ -94,7 +94,7 @@ public:
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const = 0;
+            const CorrespondenceSet &corres) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -113,11 +113,11 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       CorrespondenceSet &corres) const override;
+                       const CorrespondenceSet &corres) const override;
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const override;
+            const CorrespondenceSet &corres) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -140,11 +140,11 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       CorrespondenceSet &corres) const override;
+                       const CorrespondenceSet &corres) const override;
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const override;
+            const CorrespondenceSet &corres) const override;
 
 private:
     const TransformationEstimationType type_ =
