@@ -58,16 +58,16 @@ core::Tensor ComputePosePointToPlane(
 
     // Pointer to point cloud data - indexed according to correspondences.
     const float *src_pcd_ptr =
-            static_cast<const float *>(source_points.Contiguous().GetDataPtr());
+            static_cast<const float *>(source_points.GetDataPtr());
     const float *tar_pcd_ptr =
-            static_cast<const float *>(target_points.Contiguous().GetDataPtr());
-    const float *tar_norm_ptr = static_cast<const float *>(
-            target_normals.Contiguous().GetDataPtr());
+            static_cast<const float *>(target_points.GetDataPtr());
+    const float *tar_norm_ptr =
+            static_cast<const float *>(target_normals.GetDataPtr());
 
-    const int64_t *corres_first = static_cast<const int64_t *>(
-            corres.first.Contiguous().GetDataPtr());
-    const int64_t *corres_second = static_cast<const int64_t *>(
-            corres.second.Contiguous().GetDataPtr());
+    const int64_t *corres_first =
+            static_cast<const int64_t *>(corres.first.GetDataPtr());
+    const int64_t *corres_second =
+            static_cast<const int64_t *>(corres.second.GetDataPtr());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
@@ -87,54 +87,6 @@ core::Tensor ComputePosePointToPlane(
     }
     return pose;
 }
-
-/*
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_indexed,
-        const core::Tensor &target_points_indexed,
-        const core::Tensor &target_normals_indexed) {
-    // Get dtype and device.
-    core::Dtype dtype = source_points_indexed.GetDtype();
-    core::Device device = source_points_indexed.GetDevice();
-
-    // Checks.
-    // TODO: These checks are redundant, so provide a environment
-    // variable based method to skip these redundant tests.
-    target_points_indexed.AssertDtype(dtype);
-    target_normals_indexed.AssertDtype(dtype);
-    target_points_indexed.AssertDevice(device);
-    target_normals_indexed.AssertDevice(device);
-
-    // Pose {6,} tensor [ouput].
-    core::Tensor pose = core::Tensor::Empty({6}, dtype, device);
-
-    // Number of correspondences.
-    int n = source_points_indexed.GetShape()[0];
-
-    // Pointer to point cloud data - indexed according to correspondences.
-    const float *src_pcd_ptr = static_cast<const float *>(
-            source_points_indexed.Contiguous().GetDataPtr());
-    const float *tar_pcd_ptr = static_cast<const float *>(
-            target_points_indexed.Contiguous().GetDataPtr());
-    const float *tar_norm_ptr = static_cast<const float *>(
-            target_normals_indexed.Contiguous().GetDataPtr());
-
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(src_pcd_ptr, tar_pcd_ptr, tar_norm_ptr, n,
-                                   pose, dtype, device);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputePosePointToPlaneCUDA(src_pcd_ptr, tar_pcd_ptr, tar_norm_ptr, n,
-                                    pose, dtype, device);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-    } else {
-        utility::LogError("Unimplemented device.");
-    }
-    return pose;
-}*/
 
 }  // namespace kernel
 }  // namespace pipelines

@@ -141,21 +141,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    utility::Timer /*time_IndexInput,*/ time_PoseKernel, time_PoseToTransform;
-
-    // time_IndexInput.Start();
-
-    // // Get indexed source and target points and target normals, according to
-    // // correspondences.
-    // core::Tensor source_indexed =
-    //         source.GetPoints().IndexGet({corres.first}).To(dtype);
-    // core::Tensor target_indexed =
-    //         target.GetPoints().IndexGet({corres.second}).To(dtype);
-    // core::Tensor target_norm_indexed =
-    //         target.GetPointNormals().IndexGet({corres.second}).To(dtype);
-    // time_IndexInput.Stop();
-    // utility::LogInfo("       Indexing input from corres: {}",
-    //                  time_IndexInput.GetDuration());
+    utility::Timer time_PoseKernel, time_PoseToTransform;
 
     time_PoseKernel.Start();
     // Get pose {6} from correspondences indexed source and target point cloud.
