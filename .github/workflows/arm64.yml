@@ -16,7 +16,7 @@ env:
 
 jobs:
   # Build 3rd-party libraries and upload ccache to GCloud.
-  arm64-3rd-party:
+  arm64-step-1:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -25,6 +25,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Check directory
+        run: |
+          sudo apt-get install tree -y
+          tree ${GITHUB_WORKSPACE}
 
       - name: Maximize build space
         run: |
@@ -87,25 +92,39 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=~/open3d_install \
               -DPYTHON_EXECUTABLE=$(which python) \
               ..
-            make camera -j$(nproc) # open3d::camera is small and it triggers 3rd-party builds
             ccache -s
 
       - name: Upload cache to GCS
         run: |
           gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
 
-      - name: Upload
+      - name: Upload Open3D repo directory to GitHub artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d-repo-dir-cache
+          path: .
+          retention-days: 1
 
-  arm64:
+      - name: Check directory
+        run: |
+          sudo apt-get install tree -y
+          tree ${GITHUB_WORKSPACE}
+
+  arm64-step-2:
     runs-on: ubuntu-20.04
-    needs: [arm64-3rd-party]
+    needs: [arm64-step-1]
     strategy:
       fail-fast: false
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
+      - name: Download Open3D repo directory to GitHub artifacts
+        uses: actions/download-artifact@v2
         with:
-          submodules: true
+          name: open3d-repo-dir-cache
+
+      - name: Check directory
+        run: |
+          sudo apt-get install tree -y
+          tree ${GITHUB_WORKSPACE}
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -163,11 +182,6 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=~/open3d_install \
               -DPYTHON_EXECUTABLE=$(which python) \
               ..
-            make -j$(nproc)
-            make tests -j$(nproc)
-            make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s
 
       - name: Upload cache to GCS
