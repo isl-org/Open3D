@@ -15,78 +15,6 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  x86_64:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
-      - name: Checkout source code
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-openblas-x86_64-ccache
-
-      - name: Set up Python version
-        uses: actions/setup-python@v2
-        with:
-            python-version: 3.6
-
-      - name: Install dependencies
-        run: |
-            sudo apt-get --yes install ccache
-            ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
-            sudo apt-get update -q -y
-            sudo apt-get install -y apt-utils build-essential git cmake
-            sudo apt-get install -y python3-dev
-            sudo apt-get install -y xorg-dev libglu1-mesa-dev ccache
-            sudo apt-get install -y libblas-dev liblapack-dev liblapacke-dev
-            python -m pip install -U pytest==6.0.1
-            python -m pip install -U scipy==1.4.1
-            python -m pip install -U wheel==0.35.1
-      - name: Build and test
-        run: |
-            PATH=/usr/lib/ccache:$PATH
-            ccache -s
-            mkdir build
-            cd build
-            cmake \
-              -DUSE_BLAS=ON \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_FILAMENT_FROM_SOURCE=ON \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE="$(which python3)" \
-              ..
-            make -j$(nproc)
-            make tests -j$(nproc)
-            make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
-            ccache -s
-
   # Build 3rd-party libraries and upload ccache to GCloud.
   arm64-3rd-party:
     runs-on: ubuntu-20.04
@@ -165,6 +93,8 @@ jobs:
       - name: Upload cache to GCS
         run: |
           gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
+
+      - name: Upload
 
   arm64:
     runs-on: ubuntu-20.04
