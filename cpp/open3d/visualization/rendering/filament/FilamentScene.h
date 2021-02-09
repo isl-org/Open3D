@@ -213,6 +213,8 @@ public:
     void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) override;
+    void EnableGroundPlane(bool enable, GroundPlane plane) override;
+    void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
@@ -310,11 +312,13 @@ private:
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi);
     void UpdateLineShader(GeometryMaterialInstance& geom_mi);
     void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
+    void CreateGroundPlaneGeometry();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;

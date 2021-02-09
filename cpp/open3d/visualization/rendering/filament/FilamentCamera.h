@@ -87,6 +87,7 @@ public:
     Transform GetModelMatrix() const override;
     Transform GetViewMatrix() const override;
     Transform GetProjectionMatrix() const override;
+    Transform GetCullingProjectionMatrix() const override;
     const ProjectionInfo& GetProjection() const override;
 
     Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const override;
