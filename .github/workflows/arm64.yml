@@ -15,7 +15,11 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  # Build 3rd-party libraries and upload ccache to GCloud.
+  # ARM64 build can be slow, so it is spilt into multiple steps.
+  # - arm64-step-1: compiles all 3rd-party libraries and upload the Open3D repo
+  #   directory (including the build directory) as GitHub artifacts.
+  # - arm64-step-2: downloads the Open3D directory from arm64-step-1, builds the
+  #   rest of the library and runs the unit tests.
   arm64-step-1:
     runs-on: ubuntu-20.04
     strategy:
@@ -25,11 +29,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Check directory
-        run: |
-          sudo apt-get install tree -y
-          tree ${GITHUB_WORKSPACE}
 
       - name: Maximize build space
         run: |
