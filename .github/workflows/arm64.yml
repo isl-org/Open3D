@@ -60,6 +60,7 @@ jobs:
             python -m pip install -U pytest==6.0.1
             python -m pip install -U scipy==1.4.1
             python -m pip install -U wheel==0.35.1
+
       - name: Build and test
         run: |
             PATH=/usr/lib/ccache:$PATH
@@ -166,21 +167,23 @@ jobs:
             make camera -j$(nproc) # open3d::camera is small and it triggers 3rd-party builds
             ccache -s
 
+      - name: Upload ccache to GCS
+        run: |
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
+
+      - name: Change permissions and list workspace directory
+        run: |
+          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}
+          sudo chmod -R 777 ${GITHUB_WORKSPACE}
+          sudo apt-get install tree -y
+          tree ${GITHUB_WORKSPACE}
+
       - name: Upload Open3D directory to GitHub artifacts
         uses: actions/upload-artifact@v2
         with:
           name: open3d-repo-dir-cache
           path: .
           retention-days: 1
-
-      - name: List workspace directory
-        run: |
-          sudo apt-get install tree -y
-          tree ${GITHUB_WORKSPACE}
-
-      - name: Upload ccache to GCS
-        run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
 
   arm64-step-2:
     runs-on: ubuntu-20.04
