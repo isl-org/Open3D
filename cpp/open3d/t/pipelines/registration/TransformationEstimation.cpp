@@ -28,6 +28,7 @@
 
 #include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -138,6 +139,9 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
+    utility::Timer time_IndexInput, time_PoseKernel, time_PoseToTransform;
+    time_IndexInput.Start();
+
     // Get indexed source and target points and target normals, according to
     // correspondences.
     core::Tensor source_indexed =
@@ -146,13 +150,27 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
             target.GetPoints().IndexGet({corres.second}).To(dtype);
     core::Tensor target_norm_indexed =
             target.GetPointNormals().IndexGet({corres.second}).To(dtype);
+    time_IndexInput.Stop();
+    utility::LogInfo("       Indexing input from corres: {}",
+                     time_IndexInput.GetDuration());
 
+    time_PoseKernel.Start();
     // Get pose {6} from correspondences indexed source and target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source_indexed, target_indexed, target_norm_indexed);
+    time_PoseKernel.Stop();
+    utility::LogInfo("       Compute Pose Kernel: {}",
+                     time_PoseKernel.GetDuration());
 
+    time_PoseToTransform.Start();
     // Get transformation {4,4} from pose {6}.
-    return pipelines::kernel::PoseToTransformation(pose);
+    core::Tensor transformation = pipelines::kernel::PoseToTransformation(pose);
+    time_PoseToTransform.Stop();
+
+    utility::LogInfo("       Pose to Transformation: {}",
+                     time_PoseToTransform.GetDuration());
+
+    return transformation;
 }
 
 }  // namespace registration
