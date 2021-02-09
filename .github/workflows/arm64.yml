@@ -43,7 +43,7 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
 
-      - name: Download cache from GCS
+      - name: Download ccache from GCS
         run: |
           gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
           mv ~/ccache-arm64 ~/.ccache
@@ -73,7 +73,6 @@ jobs:
             install_arm64_dependencies
             source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
             mkdir build
@@ -91,23 +90,24 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=~/open3d_install \
               -DPYTHON_EXECUTABLE=$(which python) \
               ..
+            make camera -j$(nproc) # open3d::camera is small and it triggers 3rd-party builds
             ccache -s
 
-      - name: Upload cache to GCS
-        run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
-
-      - name: Upload Open3D repo directory to GitHub artifacts
+      - name: Upload Open3D directory to GitHub artifacts
         uses: actions/upload-artifact@v2
         with:
           name: open3d-repo-dir-cache
           path: .
           retention-days: 1
 
-      - name: Check directory
+      - name: List workspace directory
         run: |
           sudo apt-get install tree -y
           tree ${GITHUB_WORKSPACE}
+
+      - name: Upload ccache to GCS
+        run: |
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
 
   arm64-step-2:
     runs-on: ubuntu-20.04
@@ -115,12 +115,17 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Download Open3D repo directory to GitHub artifacts
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      - name: Download Open3D directory from GitHub artifacts
         uses: actions/download-artifact@v2
         with:
           name: open3d-repo-dir-cache
 
-      - name: Check directory
+      - name: List workspace directory
         run: |
           sudo apt-get install tree -y
           tree ${GITHUB_WORKSPACE}
@@ -133,7 +138,7 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
 
-      - name: Download cache from GCS
+      - name: Download ccache from GCS
         run: |
           gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
           mv ~/ccache-arm64 ~/.ccache
@@ -157,32 +162,22 @@ jobs:
           dockerRunArgs: |
             --volume "${HOME}/.ccache:/root/.ccache"
 
-          # Build and run Open3D tests
+          # Build and run Open3D tests. No need to run CMake config again.
           run: |
             source util/ci_utils.sh
             install_arm64_dependencies
             source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
-            mkdir build
             cd build
-            cmake \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DBUILD_LIBREALSENSE=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE=$(which python) \
-              ..
+            make -j$(nproc)
+            make tests -j$(nproc)
+            make install-pip-package -j$(nproc)
+            ./bin/tests --gtest_filter="-*Reduce*Sum*"
+            pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s
 
-      - name: Upload cache to GCS
+      - name: Upload ccache to GCS
         run: |
           gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
