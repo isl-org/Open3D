@@ -191,11 +191,6 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-
       - name: Download Open3D directory from GitHub artifacts
         uses: actions/download-artifact@v2
         with:
@@ -205,6 +200,11 @@ jobs:
         run: |
           sudo apt-get install tree -y
           tree ${GITHUB_WORKSPACE}
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
