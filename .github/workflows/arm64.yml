@@ -183,11 +183,6 @@ jobs:
           tar -czvf open3d-repo-dir-cache.tar.gz Open3D
           mv open3d-repo-dir-cache.tar.gz ${GITHUB_WORKSPACE}
 
-      - name: List workspace directory
-        run: |
-          sudo apt-get install tree -y
-          tree ${GITHUB_WORKSPACE}
-
       - name: Upload Open3D repo directory
         uses: actions/upload-artifact@v2
         with:
@@ -217,11 +212,6 @@ jobs:
           cd ${GITHUB_WORKSPACE}/..
           rm -rf ${GITHUB_WORKSPACE}
           tar -xvf open3d-repo-dir-cache.tar.gz
-
-      - name: List workspace directory
-        run: |
-          sudo apt-get install tree -y
-          tree ${GITHUB_WORKSPACE}
 
       - name: Maximize build space
         run: |
