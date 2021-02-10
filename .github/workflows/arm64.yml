@@ -1,5 +1,5 @@
 # Minium test for Open3D with OpenBLAS/LAPACK on both x86_64 and aarch64.
-# This test is intentially kept minimal and self-contained.
+# This test is intentionally kept minimal and self-contained.
 
 name: Ubuntu OpenBLAS CI
 
@@ -60,6 +60,7 @@ jobs:
             python -m pip install -U pytest==6.0.1
             python -m pip install -U scipy==1.4.1
             python -m pip install -U wheel==0.35.1
+
       - name: Build and test
         run: |
             PATH=/usr/lib/ccache:$PATH
@@ -87,8 +88,12 @@ jobs:
             pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
             ccache -s
 
-  # Build 3rd-party libraries and upload ccache to GCloud.
-  arm64-3rd-party:
+  # ARM64 build can be slow, so it is spilt into multiple steps.
+  # - arm64-step-1: compiles all 3rd-party libraries and upload the Open3D repo
+  #   directory (including the build directory) as GitHub artifacts.
+  # - arm64-step-2: downloads the Open3D directory from arm64-step-1, builds the
+  #   rest of the library and runs the unit tests.
+  arm64-step-1:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -111,7 +116,7 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
 
-      - name: Download cache from GCS
+      - name: Download ccache from GCS
         run: |
           gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
           mv ~/ccache-arm64 ~/.ccache
@@ -162,20 +167,43 @@ jobs:
             make camera -j$(nproc) # open3d::camera is small and it triggers 3rd-party builds
             ccache -s
 
-      - name: Upload cache to GCS
+      - name: Upload ccache to GCS
         run: |
           gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
 
-  arm64:
+      - name: Change permissions and list workspace directory
+        run: |
+          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/build
+          sudo apt-get install tree -y
+          tree ${GITHUB_WORKSPACE}
+
+      - name: Upload Open3D directory to GitHub artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d-repo-dir-cache
+          path: .
+          retention-days: 1
+
+  arm64-step-2:
     runs-on: ubuntu-20.04
-    needs: [arm64-3rd-party]
+    needs: [arm64-step-1]
     strategy:
       fail-fast: false
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
+      - name: Download Open3D directory from GitHub artifacts
+        uses: actions/download-artifact@v2
         with:
-          submodules: true
+          name: open3d-repo-dir-cache
+
+      - name: List workspace directory
+        run: |
+          sudo apt-get install tree -y
+          tree ${GITHUB_WORKSPACE}
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -185,7 +213,7 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
 
-      - name: Download cache from GCS
+      - name: Download ccache from GCS
         run: |
           gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
           mv ~/ccache-arm64 ~/.ccache
@@ -209,7 +237,7 @@ jobs:
           dockerRunArgs: |
             --volume "${HOME}/.ccache:/root/.ccache"
 
-          # Build and run Open3D tests
+          # Build and run Open3D tests. No need to run CMake config again.
           run: |
             source util/ci_utils.sh
             install_arm64_dependencies
@@ -218,21 +246,7 @@ jobs:
             PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
-            mkdir build
             cd build
-            cmake \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DBUILD_LIBREALSENSE=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE=$(which python) \
-              ..
             make -j$(nproc)
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
@@ -240,6 +254,6 @@ jobs:
             pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s
 
-      - name: Upload cache to GCS
+      - name: Upload ccache to GCS
         run: |
           gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
