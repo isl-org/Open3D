@@ -141,28 +141,12 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    utility::Timer time_PoseKernel, time_PoseToTransform;
-
-    time_PoseKernel.Start();
     // Get pose {6} from correspondences indexed source and target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
             corres);
-    // core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
-    //         source_indexed, target_indexed, target_norm_indexed);
-    time_PoseKernel.Stop();
-    utility::LogInfo("       Compute Pose Kernel: {}",
-                     time_PoseKernel.GetDuration());
-
-    time_PoseToTransform.Start();
     // Get transformation {4,4} from pose {6}.
-    core::Tensor transformation = pipelines::kernel::PoseToTransformation(pose);
-    time_PoseToTransform.Stop();
-
-    utility::LogInfo("       Pose to Transformation: {}",
-                     time_PoseToTransform.GetDuration());
-
-    return transformation;
+    return pipelines::kernel::PoseToTransformation(pose);
 }
 
 }  // namespace registration

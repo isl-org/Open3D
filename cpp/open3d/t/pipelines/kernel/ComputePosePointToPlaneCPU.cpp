@@ -53,21 +53,18 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
                                 core::Tensor &pose,
                                 const core::Dtype dtype,
                                 const core::Device device) {
-    utility::Timer time_reduction, time_kernel;
-    time_kernel.Start();
-
     core::Tensor ATA =
             core::Tensor::Zeros({6, 6}, core::Dtype::Float64, device);
-    core::Tensor ATA_ =
+    core::Tensor ATA_1x21 =
             core::Tensor::Zeros({1, 21}, core::Dtype::Float64, device);
     core::Tensor ATB =
             core::Tensor::Zeros({6, 1}, core::Dtype::Float64, device);
 
     double *ata_ptr = static_cast<double *>(ATA.GetDataPtr());
-    double *ata_ = static_cast<double *>(ATA_.GetDataPtr());
-    double *atb_ = static_cast<double *>(ATB.GetDataPtr());
+    double *ata_1x21 = static_cast<double *>(ATA_1x21.GetDataPtr());
+    double *atb_ptr = static_cast<double *>(ATB.GetDataPtr());
 
-#pragma omp parallel for reduction(+ : atb_[:6], ata_[:21])
+#pragma omp parallel for reduction(+ : atb_ptr[:6], ata_1x21[:21])
     for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
         const int64_t &source_index = 3 * corres_first[workload_idx];
         const int64_t &target_index = 3 * corres_second[workload_idx];
@@ -92,11 +89,11 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
         for (int i = 0, j = 0; j < 6; j++) {
             for (int k = 0; k <= j; k++) {
                 // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
-                ata_[i] += ai[j] * ai[k];
+                ata_1x21[i] += ai[j] * ai[k];
                 i++;
             }
             // ATB {6,1}.
-            atb_[j] +=
+            atb_ptr[j] +=
                     ai[j] * ((tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz);
         }
     }
@@ -104,24 +101,14 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
     // ATA_ {1,21} to ATA {6,6}.
     for (int i = 0, j = 0; j < 6; j++) {
         for (int k = 0; k <= j; k++) {
-            ata_ptr[j * 6 + k] = ata_[i];
-            ata_ptr[k * 6 + j] = ata_[i];
+            ata_ptr[j * 6 + k] = ata_1x21[i];
+            ata_ptr[k * 6 + j] = ata_1x21[i];
             i++;
         }
     }
 
-    time_kernel.Stop();
-    utility::LogInfo("         Kernel + Reduction: {}",
-                     time_reduction.GetDuration());
-
-    utility::Timer Solving_Pose_time_;
-    Solving_Pose_time_.Start();
     // ATA(6,6) . Pose(6,1) = ATB(6,1)
     pose = ATA.Solve(ATB).Reshape({-1}).To(dtype);
-
-    Solving_Pose_time_.Stop();
-    utility::LogInfo("         Solving_Pose. Time: {}",
-                     Solving_Pose_time_.GetDuration());
 }
 
 }  // namespace kernel

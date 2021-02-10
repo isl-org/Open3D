@@ -79,40 +79,30 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
-    time_Search.Start();
-
+    // TODO: Move the following to NNS::HybridSeach with optional paramater.
     core::Tensor indices, distances;
     int num_source_points = source.GetPoints().GetShape()[0];
+
+    // Returns, indices of corresponding source points with distance.
     std::tie(indices, distances) = target_nns.KnnSearch(source.GetPoints(), 1);
+    // Only validate those points within max_correspondence_distance.
     core::Tensor valid =
             distances.Le(max_correspondence_distance).Reshape({-1});
-    std::pair<core::Tensor, core::Tensor> result_nns;
+
+    // correpondence_set : (i, corres[i]).
+    // source[i] and target[corres[i]] is a correspondence.
     result.correspondence_set.first =
             core::Tensor::Arange(0, num_source_points, 1, core::Dtype::Int64,
                                  device)
                     .IndexGet({valid});
+    // Only take valid indices.
     result.correspondence_set.second = indices.IndexGet({valid});
+    // Only take valid distances.
     distances = distances.IndexGet({valid});
 
-    // std::pair<core::Tensor, core::Tensor> result_nns =
-    // target_nns.HybridSearch(
-    //         source.GetPoints(), max_correspondence_distance, 1);
-
-    // result.correspondence_select_bool_ =
-    //         (result_nns.first.Ne(-1)).Reshape({-1});
-    // result.correspondence_set_ =
-    //         result_nns.first.IndexGet({result.correspondence_select_bool_})
-    //                 .Reshape({-1});
-    // core::Tensor dist_select =
-    //         result_nns.second.IndexGet({result.correspondence_select_bool_})
-    //                 .Reshape({-1});
-
-    time_Search.Stop();
-    time_GetCorres.Stop();
-
-    time_GetResults.Start();
-
+    // Number of good correspondences (C).
     int num_correspondences = result.correspondence_set.first.GetShape()[0];
+
     // Reduction sum of "distances" for error.
     double squared_error =
             static_cast<double>(distances.Sum({0}).Item<float>());
@@ -121,16 +111,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     result.inlier_rmse_ =
             std::sqrt(squared_error / static_cast<double>(num_correspondences));
     result.transformation_ = transformation;
-
-    time_GetResults.Stop();
-
-    utility::LogInfo("       GetCorrespondences: {}",
-                     time_GetCorres.GetDuration());
-    utility::LogInfo("         Number of Correspondences: {}",
-                     result.correspondence_set.first.GetShape()[0]);
-
-    utility::LogInfo("       GetResults: {}", time_GetResults.GetDuration());
-    utility::LogInfo("         NNS Search: {}", time_Search.GetDuration());
 
     return result;
 }
@@ -195,34 +175,13 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
             transformation_device);
     CorrespondenceSet corres = result.correspondence_set;
 
-    // CorrespondenceSet corres = std::make_pair(
-    //         result.correspondence_select_bool_, result.correspondence_set_);
-    time_getCorres.Stop();
-
-    // Correspondence Search computed in current iteration is used in next
-    // iteration.
-    double getCorresTimeNew = 0.0;
-    double getCorresTimePrev = time_getCorres.GetDuration();
-
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
 
-        utility::Timer time_registrationICP, time_getCorres,
-                time_computeTransformation;
-
-        utility::LogInfo("     GetRegistrationResultAndCorrespondences: {}",
-                         getCorresTimePrev);
-
-        time_registrationICP.Start();
-
-        time_computeTransformation.Start();
         core::Tensor update = estimation.ComputeTransformation(
                 source_transformed, target, corres);
         transformation_device = update.Matmul(transformation_device);
-        time_computeTransformation.Stop();
-        utility::LogInfo("     ComputeTransform: {}",
-                         time_computeTransformation.GetDuration());
 
         source_transformed.Transform(update);
         double prev_fitness_ = result.fitness_;
@@ -234,11 +193,6 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                 max_correspondence_distance, transformation_device);
 
         corres = result.correspondence_set;
-        // corres = std::make_pair(result.correspondence_select_bool_,
-        //                         result.correspondence_set_);
-        time_getCorres.Stop();
-
-        getCorresTimeNew = time_getCorres.GetDuration();
 
         if (std::abs(prev_fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
@@ -246,11 +200,6 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                     criteria.relative_rmse_) {
             break;
         }
-
-        time_registrationICP.Stop();
-        utility::LogInfo("   Registration Loop: {}",
-                         time_registrationICP.GetDuration());
-        getCorresTimePrev = getCorresTimeNew;
     }
 
     return result;
