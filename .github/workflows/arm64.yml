@@ -206,11 +206,11 @@ jobs:
         with:
           name: open3d-repo-dir-cache
 
-      # GITHUB_WORKSPACE  : /home/runner/work/Open3D/Open3D
-      # 1. downloaded to  : /home/runner/work/Open3D/Open3D/open3d-repo-dir-cache.tar.gz
-      # 2. move to        : /home/runner/work/Open3D/open3d-repo-dir-cache.tar.gz
-      # 3. remove         : /home/runner/work/Open3D/Open3D
-      # 4. inflate to     : /home/runner/work/Open3D/Open3D
+      # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+      # 1. downloaded to: /home/runner/work/Open3D/Open3D/open3d-repo-dir-cache.tar.gz
+      # 2. move to      : /home/runner/work/Open3D/open3d-repo-dir-cache.tar.gz
+      # 3. remove       : /home/runner/work/Open3D/Open3D
+      # 4. inflate to   : /home/runner/work/Open3D/Open3D
       - name: Inflate Open3D repo directory
         run: |
           mv ${GITHUB_WORKSPACE}/open3d-repo-dir-cache.tar.gz ${GITHUB_WORKSPACE}/..
