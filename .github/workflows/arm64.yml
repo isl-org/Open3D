@@ -178,15 +178,11 @@ jobs:
       # 3. upload-artifact dir: /home/runner/work/Open3D/Open3D
       - name: Compress Open3D repo directory
         run: |
-          echo "Listing PWD: $(pwd)"
-          ls -alh
           sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/build
           cd ${GITHUB_WORKSPACE}/..
           tar -czvf open3d-repo-dir-cache.tar.gz Open3D
           mv open3d-repo-dir-cache.tar.gz Open3D
           cd Open3D
-          echo "Listing PWD: $(pwd)"
-          ls -alh
 
       - name: List workspace directory
         run: |
@@ -218,12 +214,8 @@ jobs:
       # 4. inflate to     : /home/runner/work/Open3D/Open3D
       - name: Inflate Open3D repo directory
         run: |
-          echo "Listing PWD: $(pwd)"
-          ls -alh
           mv ${GITHUB_WORKSPACE}/open3d-repo-dir-cache.tar.gz ${GITHUB_WORKSPACE}/..
           cd ${GITHUB_WORKSPACE}/..
-          echo "Listing PWD: $(pwd)"
-          ls -alh
           rm -rf ${GITHUB_WORKSPACE}/Open3D
           tar -xvf open3d-repo-dir-cache.tar.gz
 
