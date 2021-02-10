@@ -173,8 +173,7 @@ jobs:
 
       - name: Change permissions and list workspace directory
         run: |
-          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}
-          sudo chmod -R 777 ${GITHUB_WORKSPACE}
+          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/build
           sudo apt-get install tree -y
           tree ${GITHUB_WORKSPACE}
 
