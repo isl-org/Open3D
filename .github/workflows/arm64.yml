@@ -78,12 +78,14 @@ jobs:
       - name: Compress Open3D repo directory
         run: |
           echo "Listing PWD: $(pwd)"
-          ls
+          ls -alh
           sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/build
           cd ${GITHUB_WORKSPACE}/..
           tar -czvf open3d-repo-dir-cache.tar.gz Open3D
+          mv open3d-repo-dir-cache.tar.gz Open3D
+          cd Open3D
           echo "Listing PWD: $(pwd)"
-          ls
+          ls -alh
 
       - name: List workspace directory
         run: |
@@ -94,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: open3d-repo-dir-cache
-          path: ../open3d-repo-dir-cache.tar.gz
+          path: open3d-repo-dir-cache.tar.gz
           retention-days: 1
 
   arm64-step-2:
@@ -110,14 +112,17 @@ jobs:
 
       - name: Inflate Open3D repo directory
         run: |
+          echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
           echo "Listing PWD: $(pwd)"
-          ls
+          ls -alh
+          echo "Listing GITHUB_WORKSPACE: $(GITHUB_WORKSPACE)"
+          ls ${GITHUB_WORKSPACE} -alh
           cd ${GITHUB_WORKSPACE}/..
           echo "Listing PWD: $(pwd)"
-          ls
+          ls -alh
           tar -xvf open3d-repo-dir-cache.tar.gz
           echo "Listing PWD: $(pwd)"
-          ls
+          ls -alh
 
       - name: List workspace directory
         run: |
