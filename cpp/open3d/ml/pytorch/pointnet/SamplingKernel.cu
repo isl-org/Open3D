@@ -3,8 +3,9 @@
 
 #include <vector>
 
-#include "open3d/ml/contrib/SamplingKernel.h"
-#include "open3d/ml/contrib/cuda_utils.h"
+#include "ATen/cuda/CUDAContext.h"
+#include "open3d/ml/pytorch/pointnet/SamplingKernel.h"
+#include "open3d/ml/pytorch/pointnet/cuda_utils.h"
 
 __global__ void gather_points_kernel(int b,
                                      int c,
@@ -35,12 +36,13 @@ void gather_points_launcher(int b,
                             int npoints,
                             const float *points,
                             const int *idx,
-                            float *out,
-                            cudaStream_t stream) {
+                            float *out) {
     // points: (B, C, N)
     // idx: (B, npoints)
     // output:
     //      out: (B, C, npoints)
+
+    auto stream = at::cuda::getCurrentCUDAStream();
 
     cudaError_t err;
     dim3 blocks(DIVUP(npoints, THREADS_PER_BLOCK), c,
@@ -87,12 +89,13 @@ void gather_points_grad_launcher(int b,
                                  int npoints,
                                  const float *grad_out,
                                  const int *idx,
-                                 float *grad_points,
-                                 cudaStream_t stream) {
+                                 float *grad_points) {
     // grad_out: (B, C, npoints)
     // idx: (B, npoints)
     // output:
     //      grad_points: (B, C, N)
+
+    auto stream = at::cuda::getCurrentCUDAStream();
 
     cudaError_t err;
     dim3 blocks(DIVUP(npoints, THREADS_PER_BLOCK), c,
@@ -241,19 +244,17 @@ __global__ void furthest_point_sampling_kernel(
     }
 }
 
-void furthest_point_sampling_launcher(int b,
-                                      int n,
-                                      int m,
-                                      const float *dataset,
-                                      float *temp,
-                                      int *idxs,
-                                      cudaStream_t stream) {
+void furthest_point_sampling_launcher(
+        int b, int n, int m, const float *dataset, float *temp, int *idxs) {
     // dataset: (B, N, 3)
     // tmp: (B, N)
     // output:
     //      idx: (B, M)
 
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
+
     unsigned int n_threads = opt_n_threads(n);
 
     switch (n_threads) {

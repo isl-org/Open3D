@@ -38,10 +38,10 @@ set(TORCH_OPS_SOURCES
     "misc/VoxelizeOps.cpp"
     "misc/VoxelizeOpKernel.cpp"
     "misc/NmsOps.cpp"
+    "misc/RoIPoolOps.cpp"
     "pointnet/BallQueryOps.cpp"
     "pointnet/GroupPointsOps.cpp"
     "pointnet/InterpolateOps.cpp"
-    "pointnet/RoIPoolOps.cpp"
     "pointnet/SamplingOps.cpp"
     "../contrib/Nms.cpp"
 )
@@ -59,11 +59,11 @@ set(TORCH_OPS_CUDA_SOURCES
     "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
     "../contrib/Nms.cu"
-    "../contrib/BallQueryKernel.cu"
-    "../contrib/GroupPointsKernel.cu"
-    "../contrib/InterpolateKernel.cu"
     "../contrib/RoIPoolKernel.cu"
-    "../contrib/SamplingKernel.cu"
+    "pointnet/BallQueryKernel.cu"
+    "pointnet/GroupPointsKernel.cu"
+    "pointnet/InterpolateKernel.cu"
+    "pointnet/SamplingKernel.cu"
 )
 
 if(BUILD_CUDA_MODULE)

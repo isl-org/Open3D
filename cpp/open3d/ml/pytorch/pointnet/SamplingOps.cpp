@@ -1,11 +1,10 @@
 #include <vector>
 
-#include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/contrib/SamplingKernel.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/ml/pytorch/pointnet/SamplingKernel.h"
 #include "torch/script.h"
 
-at::Tensor gather_points(at::Tensor points, at::Tensor idx) {
+torch::Tensor gather_points(torch::Tensor points, torch::Tensor idx) {
     int batch_size = idx.size(0);
     int idx_size = idx.size(1);
     int group_size = points.size(1);
@@ -13,61 +12,58 @@ at::Tensor gather_points(at::Tensor points, at::Tensor idx) {
 
     auto device = points.device();
     torch::Tensor out =
-            at::zeros({batch_size, group_size, idx_size},
-                      at::dtype(ToTorchDtype<float>()).device(device));
+            torch::zeros({batch_size, group_size, idx_size},
+                         torch::dtype(ToTorchDtype<float>()).device(device));
 
     const float *points_data = points.data<float>();
     const int *idx_data = idx.data<int>();
     float *out_data = out.data<float>();
 
-    cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
     gather_points_launcher(batch_size, group_size, feature_size, idx_size,
-                           points_data, idx_data, out_data, stream);
+                           points_data, idx_data, out_data);
     return out;
 }
 
-at::Tensor gather_points_grad(at::Tensor grad_out,
-                              at::Tensor idx,
-                              const int64_t C,
-                              const int64_t N) {
+torch::Tensor gather_points_grad(torch::Tensor grad_out,
+                                 torch::Tensor idx,
+                                 const int64_t C,
+                                 const int64_t N) {
     int batch_size = idx.size(0);
     int idx_size = idx.size(1);
 
     auto device = grad_out.device();
     torch::Tensor out =
-            at::zeros({batch_size, C, N},
-                      at::dtype(ToTorchDtype<float>()).device(device));
+            torch::zeros({batch_size, C, N},
+                         torch::dtype(ToTorchDtype<float>()).device(device));
 
     const float *grad_out_data = grad_out.data<float>();
     const int *idx_data = idx.data<int>();
     float *out_data = out.data<float>();
 
-    cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
     gather_points_grad_launcher(batch_size, C, N, idx_size, grad_out_data,
-                                idx_data, out_data, stream);
+                                idx_data, out_data);
     return out;
 }
 
-at::Tensor furthest_point_sampling(at::Tensor points,
-                                   const int64_t sample_size) {
+torch::Tensor furthest_point_sampling(torch::Tensor points,
+                                      const int64_t sample_size) {
     int batch_size = points.size(0);
     int pts_size = points.size(1);
 
     auto device = points.device();
     torch::Tensor out =
-            at::zeros({batch_size, sample_size},
-                      at::dtype(ToTorchDtype<int>()).device(device));
+            torch::zeros({batch_size, sample_size},
+                         torch::dtype(ToTorchDtype<int>()).device(device));
     torch::Tensor temp =
-            at::full({batch_size, pts_size}, 1e10,
-                     at::dtype(ToTorchDtype<float>()).device(device));
+            torch::full({batch_size, pts_size}, 1e10,
+                        torch::dtype(ToTorchDtype<float>()).device(device));
 
     const float *points_data = points.data<float>();
     float *temp_data = temp.data<float>();
     int *out_data = out.data<int>();
 
-    cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
     furthest_point_sampling_launcher(batch_size, pts_size, sample_size,
-                                     points_data, temp_data, out_data, stream);
+                                     points_data, temp_data, out_data);
 
     return out;
 }

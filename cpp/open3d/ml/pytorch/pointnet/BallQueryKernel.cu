@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "open3d/ml/contrib/BallQueryKernel.h"
-#include "open3d/ml/contrib/cuda_utils.h"
+#include "ATen/cuda/CUDAContext.h"
+#include "open3d/ml/pytorch/pointnet/BallQueryKernel.h"
+#include "open3d/ml/pytorch/pointnet/cuda_utils.h"
 
 __global__ void ball_query_kernel(int b,
                                   int n,
@@ -57,14 +58,15 @@ void ball_query_launcher(int b,
                          int nsample,
                          const float *new_xyz,
                          const float *xyz,
-                         int *idx,
-                         cudaStream_t stream) {
+                         int *idx) {
     // new_xyz: (B, M, 3)
     // xyz: (B, N, 3)
     // output:
     //      idx: (B, M, nsample)
 
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
 
     dim3 blocks(DIVUP(m, THREADS_PER_BLOCK),
                 b);  // blockIdx.x(col), blockIdx.y(row)

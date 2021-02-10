@@ -7,5 +7,4 @@ void ball_query_launcher(int b,
                          int nsample,
                          const float *xyz,
                          const float *new_xyz,
-                         int *idx,
-                         cudaStream_t stream);
+                         int *idx);

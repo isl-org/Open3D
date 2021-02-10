@@ -4,8 +4,9 @@
 
 #include <vector>
 
-#include "open3d/ml/contrib/InterpolateKernel.h"
-#include "open3d/ml/contrib/cuda_utils.h"
+#include "ATen/cuda/CUDAContext.h"
+#include "open3d/ml/pytorch/pointnet/InterpolateKernel.h"
+#include "open3d/ml/pytorch/pointnet/cuda_utils.h"
 
 __global__ void three_nn_kernel(int b,
                                 int n,
@@ -72,8 +73,7 @@ void three_nn_launcher(int b,
                        const float *unknown,
                        const float *known,
                        float *dist2,
-                       int *idx,
-                       cudaStream_t stream) {
+                       int *idx) {
     // unknown: (B, N, 3)
     // known: (B, M, 3)
     // output:
@@ -81,6 +81,9 @@ void three_nn_launcher(int b,
     //      idx: (B, N, 3)
 
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
+
     dim3 blocks(DIVUP(n, THREADS_PER_BLOCK),
                 b);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);
@@ -131,8 +134,7 @@ void three_interpolate_launcher(int b,
                                 const float *points,
                                 const int *idx,
                                 const float *weight,
-                                float *out,
-                                cudaStream_t stream) {
+                                float *out) {
     // points: (B, C, M)
     // idx: (B, N, 3)
     // weight: (B, N, 3)
@@ -140,6 +142,9 @@ void three_interpolate_launcher(int b,
     //      out: (B, C, N)
 
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
+
     dim3 blocks(DIVUP(n, THREADS_PER_BLOCK), c,
                 b);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);
@@ -190,14 +195,16 @@ void three_interpolate_grad_launcher(int b,
                                      const float *grad_out,
                                      const int *idx,
                                      const float *weight,
-                                     float *grad_points,
-                                     cudaStream_t stream) {
+                                     float *grad_points) {
     // grad_out: (B, C, N)
     // weight: (B, N, 3)
     // output:
     //      grad_points: (B, C, M)
 
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
+
     dim3 blocks(DIVUP(n, THREADS_PER_BLOCK), c,
                 b);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);

@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "open3d/ml/contrib/GroupPointsKernel.h"
-#include "open3d/ml/contrib/cuda_utils.h"
+#include "ATen/cuda/CUDAContext.h"
+#include "open3d/ml/pytorch/pointnet/GroupPointsKernel.h"
+#include "open3d/ml/pytorch/pointnet/cuda_utils.h"
 
 __global__ void group_points_grad_kernel(int b,
                                          int c,
@@ -37,13 +38,15 @@ void group_points_grad_launcher(int b,
                                 int nsample,
                                 const float *grad_out,
                                 const int *idx,
-                                float *grad_points,
-                                cudaStream_t stream) {
+                                float *grad_points) {
     // grad_out: (B, C, npoints, nsample)
     // idx: (B, npoints, nsample)
     // output:
     //      grad_points: (B, C, N)
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
+
     dim3 blocks(DIVUP(npoints * nsample, THREADS_PER_BLOCK), c,
                 b);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);
@@ -93,13 +96,15 @@ void group_points_launcher(int b,
                            int nsample,
                            const float *points,
                            const int *idx,
-                           float *out,
-                           cudaStream_t stream) {
+                           float *out) {
     // points: (B, C, N)
     // idx: (B, npoints, nsample)
     // output:
     //      out: (B, C, npoints, nsample)
     cudaError_t err;
+
+    auto stream = at::cuda::getCurrentCUDAStream();
+
     dim3 blocks(DIVUP(npoints * nsample, THREADS_PER_BLOCK), c,
                 b);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);
