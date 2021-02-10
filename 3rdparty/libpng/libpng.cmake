@@ -17,7 +17,6 @@ ExternalProject_Add(
         -DPNG_TESTS=OFF
         -DPNG_BUILD_ZLIB=ON # Prevent libpng from calling find_pacakge(zlib).
         -DZLIB_INCLUDE_DIR=${ZLIB_INCLUDE_DIRS}
-    BUILD_ALWAYS ON
 )
 
 ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
