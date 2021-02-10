@@ -91,19 +91,16 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
                      .T()
                      .Matmul(source_select - mux)
                      .Div_(static_cast<float>(corres.second.GetShape()[0])));
-    utility::LogInfo(" P2Point ICP 3 ");
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
-    utility::LogInfo(" P2Point ICP 4 ");
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
     if (U.Det() * (VT.T()).Det() < 0) {
         S[-1][-1] = -1;
     }
-    utility::LogInfo(" P2Point ICP 5 ");
+
     core::Tensor R, t;
     R = U.Matmul(S.Matmul(VT));
     t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
-    utility::LogInfo(" P2Point ICP 6 ");
     return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
