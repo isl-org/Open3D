@@ -94,7 +94,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: open3d-repo-dir-cache
-          path: ${GITHUB_WORKSPACE}/open3d-repo-dir-cache.tar.gz
+          path: ../open3d-repo-dir-cache.tar.gz
           retention-days: 1
 
   arm64-step-2:
