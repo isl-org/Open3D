@@ -171,17 +171,33 @@ jobs:
         run: |
           gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
 
-      - name: Change permissions and list workspace directory
+      # GITHUB_WORKSPACE      : /home/runner/work/Open3D/Open3D
+      # 1. cd to              : /home/runner/work/Open3D
+      # 2. compressed to      : /home/runner/work/Open3D/open3d-repo-dir-cache.tar.gz
+      # 2. move to            : /home/runner/work/Open3D/Open3D/open3d-repo-dir-cache.tar.gz
+      # 3. upload-artifact dir: /home/runner/work/Open3D/Open3D
+      - name: Compress Open3D repo directory
         run: |
+          echo "Listing PWD: $(pwd)"
+          ls -alh
           sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/build
+          cd ${GITHUB_WORKSPACE}/..
+          tar -czvf open3d-repo-dir-cache.tar.gz Open3D
+          mv open3d-repo-dir-cache.tar.gz Open3D
+          cd Open3D
+          echo "Listing PWD: $(pwd)"
+          ls -alh
+
+      - name: List workspace directory
+        run: |
           sudo apt-get install tree -y
           tree ${GITHUB_WORKSPACE}
 
-      - name: Upload Open3D directory to GitHub artifacts
+      - name: Upload Open3D repo directory
         uses: actions/upload-artifact@v2
         with:
           name: open3d-repo-dir-cache
-          path: .
+          path: open3d-repo-dir-cache.tar.gz
           retention-days: 1
 
   arm64-step-2:
@@ -190,10 +206,26 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Download Open3D directory from GitHub artifacts
+      - name: Download Open3D repo directory
         uses: actions/download-artifact@v2
         with:
           name: open3d-repo-dir-cache
+
+      # GITHUB_WORKSPACE  : /home/runner/work/Open3D/Open3D
+      # 1. downloaded to  : /home/runner/work/Open3D/Open3D/open3d-repo-dir-cache.tar.gz
+      # 2. move to        : /home/runner/work/Open3D/open3d-repo-dir-cache.tar.gz
+      # 3. remove         : /home/runner/work/Open3D/Open3D
+      # 4. inflate to     : /home/runner/work/Open3D/Open3D
+      - name: Inflate Open3D repo directory
+        run: |
+          echo "Listing PWD: $(pwd)"
+          ls -alh
+          mv ${GITHUB_WORKSPACE}/open3d-repo-dir-cache.tar.gz ${GITHUB_WORKSPACE}/..
+          cd ${GITHUB_WORKSPACE}/..
+          echo "Listing PWD: $(pwd)"
+          ls -alh
+          rm -rf ${GITHUB_WORKSPACE}/Open3D
+          tar -xvf open3d-repo-dir-cache.tar.gz
 
       - name: List workspace directory
         run: |
