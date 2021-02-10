@@ -74,10 +74,19 @@ jobs:
               ..
             ccache -s
 
-      - name: Change permissions and list workspace directory
+      # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+      - name: Compress Open3D repo directory
         run: |
-          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}
-          sudo chmod -R 777 ${GITHUB_WORKSPACE}
+          echo "Listing PWD: $(pwd)"
+          ls
+          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/build
+          cd ${GITHUB_WORKSPACE}/..
+          tar -czvf open3d-repo-dir-cache.tar.gz Open3D
+          echo "Listing PWD: $(pwd)"
+          ls
+
+      - name: List workspace directory
+        run: |
           sudo apt-get install tree -y
           tree ${GITHUB_WORKSPACE}
 
@@ -85,7 +94,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: open3d-repo-dir-cache
-          path: .
+          path: ${GITHUB_WORKSPACE}/open3d-repo-dir-cache.tar.gz
           retention-days: 1
 
   arm64-step-2:
@@ -98,6 +107,17 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: open3d-repo-dir-cache
+
+      - name: Inflate Open3D repo directory
+        run: |
+          echo "Listing PWD: $(pwd)"
+          ls
+          cd ${GITHUB_WORKSPACE}/..
+          echo "Listing PWD: $(pwd)"
+          ls
+          tar -xvf open3d-repo-dir-cache.tar.gz
+          echo "Listing PWD: $(pwd)"
+          ls
 
       - name: List workspace directory
         run: |
