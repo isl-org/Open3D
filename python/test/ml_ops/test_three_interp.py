@@ -32,8 +32,11 @@ import mltest
 # Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
-ml_torch_gpu_only = pytest.mark.parametrize('ml',
-        [v for k, v in mltest._ml_modules.items() if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'])
+ml_torch_gpu_only = pytest.mark.parametrize('ml', [
+    v for k, v in mltest._ml_modules.items()
+    if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'
+])
+
 
 @ml_torch_gpu_only
 def test_three_interp(ml):
@@ -44,6 +47,6 @@ def test_three_interp(ml):
 
     ans = mltest.run_op(ml, ml.device, True, ml.ops.three_interpolate, values0,
                         values1, values2)
-    
+
     expected = np.load('python/test/ml_ops/data/three_interp/out.npy')
     np.testing.assert_equal(ans, expected)

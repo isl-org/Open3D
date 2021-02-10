@@ -32,8 +32,11 @@ import mltest
 # Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
-ml_torch_gpu_only = pytest.mark.parametrize('ml',
-        [v for k, v in mltest._ml_modules.items() if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'])
+ml_torch_gpu_only = pytest.mark.parametrize('ml', [
+    v for k, v in mltest._ml_modules.items()
+    if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'
+])
+
 
 @ml_torch_gpu_only
 def test_three_nn(ml):
@@ -42,8 +45,8 @@ def test_three_nn(ml):
     values1 = np.load('python/test/ml_ops/data/three_nn/values1.npy')
 
     ans0, ans1 = mltest.run_op(ml, ml.device, True, ml.ops.three_nn, values0,
-                        values1)
-    
+                               values1)
+
     expected0 = np.load('python/test/ml_ops/data/three_nn/out0.npy')
     expected1 = np.load('python/test/ml_ops/data/three_nn/out1.npy')
     np.testing.assert_equal(ans0, expected0)

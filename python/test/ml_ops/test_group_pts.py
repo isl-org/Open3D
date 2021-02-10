@@ -32,8 +32,11 @@ import mltest
 # Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
-ml_torch_gpu_only = pytest.mark.parametrize('ml',
-        [v for k, v in mltest._ml_modules.items() if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'])
+ml_torch_gpu_only = pytest.mark.parametrize('ml', [
+    v for k, v in mltest._ml_modules.items()
+    if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'
+])
+
 
 @ml_torch_gpu_only
 def test_group_pts(ml):
@@ -43,6 +46,6 @@ def test_group_pts(ml):
 
     ans = mltest.run_op(ml, ml.device, True, ml.ops.group_points, values0,
                         values1)
-    
+
     expected = np.load('python/test/ml_ops/data/group_pts/out.npy')
     np.testing.assert_equal(ans, expected)

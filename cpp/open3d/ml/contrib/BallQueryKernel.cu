@@ -2,12 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "open3d/ml/contrib/cuda_utils.h"
 #include "open3d/ml/contrib/BallQueryKernel.h"
+#include "open3d/ml/contrib/cuda_utils.h"
 
-
-__global__ void ball_query_kernel(int b, int n, int m, float radius, int nsample, 
-    const float *__restrict__ new_xyz, const float *__restrict__ xyz, int *__restrict__ idx) {
+__global__ void ball_query_kernel(int b,
+                                  int n,
+                                  int m,
+                                  float radius,
+                                  int nsample,
+                                  const float *__restrict__ new_xyz,
+                                  const float *__restrict__ xyz,
+                                  int *__restrict__ idx) {
     // new_xyz: (B, M, 3)
     // xyz: (B, N, 3)
     // output:
@@ -30,9 +35,10 @@ __global__ void ball_query_kernel(int b, int n, int m, float radius, int nsample
         float x = xyz[k * 3 + 0];
         float y = xyz[k * 3 + 1];
         float z = xyz[k * 3 + 2];
-        float d2 = (new_x - x) * (new_x - x) + (new_y - y) * (new_y - y) + (new_z - z) * (new_z - z);
-        if (d2 < radius2){
-            if (cnt == 0){
+        float d2 = (new_x - x) * (new_x - x) + (new_y - y) * (new_y - y) +
+                   (new_z - z) * (new_z - z);
+        if (d2 < radius2) {
+            if (cnt == 0) {
                 for (int l = 0; l < nsample; ++l) {
                     idx[l] = k;
                 }
@@ -44,9 +50,15 @@ __global__ void ball_query_kernel(int b, int n, int m, float radius, int nsample
     }
 }
 
-
-void ball_query_launcher(int b, int n, int m, float radius, int nsample, \
-    const float *new_xyz, const float *xyz, int *idx, cudaStream_t stream) {
+void ball_query_launcher(int b,
+                         int n,
+                         int m,
+                         float radius,
+                         int nsample,
+                         const float *new_xyz,
+                         const float *xyz,
+                         int *idx,
+                         cudaStream_t stream) {
     // new_xyz: (B, M, 3)
     // xyz: (B, N, 3)
     // output:
@@ -54,10 +66,12 @@ void ball_query_launcher(int b, int n, int m, float radius, int nsample, \
 
     cudaError_t err;
 
-    dim3 blocks(DIVUP(m, THREADS_PER_BLOCK), b);  // blockIdx.x(col), blockIdx.y(row)
+    dim3 blocks(DIVUP(m, THREADS_PER_BLOCK),
+                b);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);
 
-    ball_query_kernel<<<blocks, threads, 0, stream>>>(b, n, m, radius, nsample, new_xyz, xyz, idx);
+    ball_query_kernel<<<blocks, threads, 0, stream>>>(b, n, m, radius, nsample,
+                                                      new_xyz, xyz, idx);
     // cudaDeviceSynchronize();  // for using printf in kernel function
     err = cudaGetLastError();
     if (cudaSuccess != err) {

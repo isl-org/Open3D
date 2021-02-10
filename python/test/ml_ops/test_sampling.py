@@ -32,8 +32,11 @@ import mltest
 # Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
-ml_torch_gpu_only = pytest.mark.parametrize('ml',
-        [v for k, v in mltest._ml_modules.items() if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'])
+ml_torch_gpu_only = pytest.mark.parametrize('ml', [
+    v for k, v in mltest._ml_modules.items()
+    if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'
+])
+
 
 @ml_torch_gpu_only
 def test_furthest_point_sampling(ml):
@@ -41,8 +44,8 @@ def test_furthest_point_sampling(ml):
     values = np.load('python/test/ml_ops/data/sampling/values.npy')
     samples = 4096
 
-    ans = mltest.run_op(ml, ml.device, True, ml.ops.furthest_point_sampling, values,
-                        samples)
-    
+    ans = mltest.run_op(ml, ml.device, True, ml.ops.furthest_point_sampling,
+                        values, samples)
+
     expected = np.load('python/test/ml_ops/data/sampling/out.npy')
     np.testing.assert_equal(ans, expected)
