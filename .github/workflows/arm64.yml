@@ -74,7 +74,11 @@ jobs:
               ..
             ccache -s
 
-      # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+      # GITHUB_WORKSPACE      : /home/runner/work/Open3D/Open3D
+      # 1. cd to              : /home/runner/work/Open3D
+      # 2. compressed to      : /home/runner/work/Open3D/open3d-repo-dir-cache.tar.gz
+      # 2. move to            : /home/runner/work/Open3D/Open3D/open3d-repo-dir-cache.tar.gz
+      # 3. upload-artifact dir: /home/runner/work/Open3D/Open3D
       - name: Compress Open3D repo directory
         run: |
           echo "Listing PWD: $(pwd)"
@@ -110,19 +114,21 @@ jobs:
         with:
           name: open3d-repo-dir-cache
 
+      # GITHUB_WORKSPACE  : /home/runner/work/Open3D/Open3D
+      # 1. downloaded to  : /home/runner/work/Open3D/Open3D/open3d-repo-dir-cache.tar.gz
+      # 2. move to        : /home/runner/work/Open3D/open3d-repo-dir-cache.tar.gz
+      # 3. remove         : /home/runner/work/Open3D/Open3D
+      # 4. inflate
       - name: Inflate Open3D repo directory
         run: |
-          echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
           echo "Listing PWD: $(pwd)"
           ls -alh
-          echo "Listing GITHUB_WORKSPACE: $(GITHUB_WORKSPACE)"
-          ls ${GITHUB_WORKSPACE} -alh
+          mv ${GITHUB_WORKSPACE}/open3d-repo-dir-cache.tar.gz ${GITHUB_WORKSPACE}/..
           cd ${GITHUB_WORKSPACE}/..
           echo "Listing PWD: $(pwd)"
           ls -alh
+          rm -rf ${GITHUB_WORKSPACE}/Open3D
           tar -xvf open3d-repo-dir-cache.tar.gz
-          echo "Listing PWD: $(pwd)"
-          ls -alh
 
       - name: List workspace directory
         run: |
