@@ -52,22 +52,21 @@ core::Tensor ComputePosePointToPlane(
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, dtype, device);
-
     // Number of correspondences.
     int n = corres.first.GetShape()[0];
 
     // Pointer to point cloud data - indexed according to correspondences.
     const float *src_pcd_ptr =
-            static_cast<const float *>(source_points.GetDataPtr());
+            static_cast<const float *>(source_points.Contiguous().GetDataPtr());
     const float *tar_pcd_ptr =
-            static_cast<const float *>(target_points.GetDataPtr());
-    const float *tar_norm_ptr =
-            static_cast<const float *>(target_normals.GetDataPtr());
+            static_cast<const float *>(target_points.Contiguous().GetDataPtr());
+    const float *tar_norm_ptr = static_cast<const float *>(
+            target_normals.Contiguous().GetDataPtr());
 
-    const int64_t *corres_first =
-            static_cast<const int64_t *>(corres.first.GetDataPtr());
-    const int64_t *corres_second =
-            static_cast<const int64_t *>(corres.second.GetDataPtr());
+    const int64_t *corres_first = static_cast<const int64_t *>(
+            corres.first.Contiguous().GetDataPtr());
+    const int64_t *corres_second = static_cast<const int64_t *>(
+            corres.second.Contiguous().GetDataPtr());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

@@ -35,15 +35,6 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-// std::vector<double> Sum_(std::vector<double> &x,std::vector<double> &y){
-//   std::vector<double> r(21,0);
-//   int i;
-//   for (i = 0; i < 21; i++)
-//     r[i] = x[i] + y[i];
-
-//   return r;
-// }
-
 void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
                                 const float *tar_pcd_ptr,
                                 const float *tar_norm_ptr,

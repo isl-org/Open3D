@@ -51,8 +51,10 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 
     double error;
     // TODO: Revist to support Float32 and 64 without type conversion.
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first.Reshape({-1})});
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second.Reshape({-1})});
 
     core::Tensor error_t = (source_select - target_select);
     error_t.Mul_(error_t);
@@ -75,27 +77,33 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     }
 
     // TODO: Update to new scheme.
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first.Reshape({-1})});
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second.Reshape({-1})});
 
     // https://ieeexplore.ieee.org/document/88573
     core::Tensor mux = source_select.Mean({0}, true);
     core::Tensor muy = target_select.Mean({0}, true);
+
     core::Tensor Sxy =
             ((target_select - muy)
                      .T()
                      .Matmul(source_select - mux)
                      .Div_(static_cast<float>(corres.second.GetShape()[0])));
+    utility::LogInfo(" P2Point ICP 3 ");
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
+    utility::LogInfo(" P2Point ICP 4 ");
     core::Tensor S = core::Tensor::Eye(3, dtype, device);
     if (U.Det() * (VT.T()).Det() < 0) {
         S[-1][-1] = -1;
     }
+    utility::LogInfo(" P2Point ICP 5 ");
     core::Tensor R, t;
     R = U.Matmul(S.Matmul(VT));
     t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
-
+    utility::LogInfo(" P2Point ICP 6 ");
     return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
@@ -115,10 +123,12 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 
     if (!target.HasPointNormals()) return 0.0;
     // TODO: Update to new scheme.
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({corres.first.Reshape({-1})});
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres.second.Reshape({-1})});
     core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second});
+            target.GetPointNormals().IndexGet({corres.second.Reshape({-1})});
 
     core::Tensor error_t =
             (source_select - target_select).Mul_(target_n_select);
@@ -145,6 +155,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
             corres);
+
     // Get transformation {4,4} from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
 }
