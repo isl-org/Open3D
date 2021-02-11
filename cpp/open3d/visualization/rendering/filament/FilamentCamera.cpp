@@ -264,6 +264,12 @@ Camera::Transform FilamentCamera::GetProjectionMatrix() const {
     return FilamentToCameraTransform(ftransform);
 }
 
+Camera::Transform FilamentCamera::GetCullingProjectionMatrix() const {
+    auto ftransform =
+            camera_->getCullingProjectionMatrix();  // mat4 (not mat4f)
+    return FilamentToCameraTransform(ftransform);
+}
+
 Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
     auto vtransform = camera_->getViewMatrix();
     auto ptransform = camera_->getProjectionMatrix();

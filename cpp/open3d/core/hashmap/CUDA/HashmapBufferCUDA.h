@@ -43,12 +43,7 @@ namespace core {
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
 
-__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < capacity) {
-        heap[i] = i;
-    }
-}
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity);
 
 class CUDAHashmapBufferContext {
 public:
