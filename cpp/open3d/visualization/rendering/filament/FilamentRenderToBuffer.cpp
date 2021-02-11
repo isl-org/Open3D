@@ -144,7 +144,6 @@ void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
     } else {
         buffer_size_ = width * height * n_channels_ * sizeof(std::uint8_t);
     }
-
     if (buffer_) {
         buffer_ = static_cast<std::uint8_t*>(realloc(buffer_, buffer_size_));
     } else {
