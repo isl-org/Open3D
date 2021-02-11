@@ -32,8 +32,8 @@ struct WebRTCServer::Impl {
     WebRTCServer* webrtc_server_;  // Parent.
     std::string http_address_;
     std::string web_root_;
-    std::function<void(int, double, double)> mouse_button_callback_;
-    std::function<void(int, double, double)> mouse_move_callback_;
+    std::function<void(int, double, double)> mouse_button_callback_ = nullptr;
+    std::function<void(int, double, double)> mouse_move_callback_ = nullptr;
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
@@ -51,19 +51,25 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
         if (type == "mousemove") {
             double x = static_cast<double>(std::stoi(tokens[1]));
             double y = static_cast<double>(std::stoi(tokens[2]));
-            mouse_move_callback_(mouse_button_status_, x, y);
+            if (mouse_move_callback_) {
+                mouse_move_callback_(mouse_button_status_, x, y);
+            }
         } else if (type == "mousedown") {
             mouse_button_status_ = 1;
             int action = 1;
             double x = static_cast<double>(std::stoi(tokens[1]));
             double y = static_cast<double>(std::stoi(tokens[2]));
-            mouse_button_callback_(action, x, y);
+            if (mouse_button_callback_) {
+                mouse_button_callback_(action, x, y);
+            }
         } else if (type == "mouseup") {
             mouse_button_status_ = 0;
             int action = 0;
             double x = static_cast<double>(std::stoi(tokens[1]));
             double y = static_cast<double>(std::stoi(tokens[2]));
-            mouse_button_callback_(action, x, y);
+            if (mouse_button_callback_) {
+                mouse_button_callback_(action, x, y);
+            }
         }
     }
 }
