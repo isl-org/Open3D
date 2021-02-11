@@ -118,7 +118,7 @@ jobs:
 
       - name: Download ccache from GCS
         run: |
-          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
+          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64-step-1 ~
           mv ~/ccache-arm64 ~/.ccache
           ls ~/.ccache
 
@@ -169,7 +169,7 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64-step-1/ || true
 
       # GITHUB_WORKSPACE      : /home/runner/work/Open3D/Open3D
       # 1. cd to              : /home/runner/work/Open3D
@@ -228,7 +228,7 @@ jobs:
 
       - name: Download ccache from GCS
         run: |
-          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
+          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64-step-2 ~
           mv ~/ccache-arm64 ~/.ccache
           ls ~/.ccache
 
@@ -269,4 +269,4 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64-step-2/ || true
