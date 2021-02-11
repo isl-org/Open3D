@@ -988,7 +988,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 }
 
 Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
-    utility::LogInfo("SceneWidget::Mouse");
+    // utility::LogInfo("SceneWidget::Mouse");
 
     // Lower render quality while rotating, since we will be redrawing
     // frequently. This will give a snappier feel to mouse movements,
