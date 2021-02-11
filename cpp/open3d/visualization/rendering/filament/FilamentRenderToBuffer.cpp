@@ -67,8 +67,7 @@ FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
 }
 
 FilamentRenderToBuffer::~FilamentRenderToBuffer() {
-    if (view_)
-        delete view_;
+    if (view_) delete view_;
 
     engine_.destroy(swapchain_);
     engine_.destroy(renderer_);
@@ -118,6 +117,7 @@ void FilamentRenderToBuffer::Configure(const View* view,
     pending_ = true;
     callback_ = cb;
 
+    // Create a proper copy of the View with scen attached
     CopySettings(view);
     auto* downcast_scene = dynamic_cast<FilamentScene*>(scene);
     if (downcast_scene) {
@@ -157,6 +157,12 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
     auto* downcast = dynamic_cast<const FilamentView*>(view);
     if (downcast) {
         view_->CopySettingsFrom(*downcast);
+    }
+    if (depth_image_) {
+        // Disable post-processing when rendering to depth image. It's uncessary
+        // overhead and the depth buffer is discarded when post-processing is
+        // enabled so  and the returned image is all 0s.
+        view_->ConfigureForColorPicking();
     }
 }
 
