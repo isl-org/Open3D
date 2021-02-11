@@ -335,6 +335,7 @@ struct O3DVisualizer::Impl {
         Checkbox *show_skybox;
         Checkbox *show_axes;
         Checkbox *show_ground;
+        Combobox *ground_plane;
         ColorEdit *bg_color;
         Slider *point_size;
         Combobox *shader;
@@ -520,12 +521,29 @@ struct O3DVisualizer::Impl {
         settings.show_ground->SetOnChecked(
                 [this](bool is_checked) { this->ShowGround(is_checked); });
 
+        settings.ground_plane = new Combobox();
+        settings.ground_plane->AddItem("XZ");
+        settings.ground_plane->AddItem("XY");
+        settings.ground_plane->AddItem("YZ");
+        settings.ground_plane->SetOnValueChanged([this](const char *item,
+                                                        int idx) {
+            if (idx == 1) {
+                ui_state_.ground_plane = rendering::Scene::GroundPlane::XY;
+            } else if (idx == 2) {
+                ui_state_.ground_plane = rendering::Scene::GroundPlane::YZ;
+            } else {
+                ui_state_.ground_plane = rendering::Scene::GroundPlane::XZ;
+            }
+            this->ShowGround(ui_state_.show_ground);
+        });
+
         h = new Horiz(v_spacing);
         h->AddChild(GiveOwnership(settings.show_axes));
         h->AddFixed(em);
         h->AddChild(GiveOwnership(settings.show_skybox));
         settings.scene_panel->AddChild(GiveOwnership(h));
         settings.scene_panel->AddChild(GiveOwnership(settings.show_ground));
+        settings.scene_panel->AddChild(GiveOwnership(settings.ground_plane));
 
         settings.bg_color = new ColorEdit();
         settings.bg_color->SetValue(ui_state_.bg_color.x(),
@@ -1028,9 +1046,24 @@ struct O3DVisualizer::Impl {
     void ShowGround(bool show) {
         ui_state_.show_ground = show;
         settings.show_ground->SetChecked(show);  // in case called manually
-        scene_->GetScene()->ShowGroundPlane(show,
-                                            rendering::Scene::GroundPlane::XZ);
+        scene_->GetScene()->ShowGroundPlane(show, ui_state_.ground_plane);
         scene_->ForceRedraw();
+    }
+
+    void SetGroundPlane(rendering::Scene::GroundPlane plane) {
+        ui_state_.ground_plane = plane;
+        if (plane == rendering::Scene::GroundPlane::XZ) {
+            settings.ground_plane->SetSelectedIndex(0);
+        } else if (plane == rendering::Scene::GroundPlane::XY) {
+            settings.ground_plane->SetSelectedIndex(1);
+        } else {
+            settings.ground_plane->SetSelectedIndex(2);
+        }
+        // Update ground plane if it is currently showing
+        if (ui_state_.show_ground) {
+            scene_->GetScene()->ShowGroundPlane(ui_state_.show_ground, plane);
+            scene_->ForceRedraw();
+        }
     }
 
     void SetPointSize(int px) {
@@ -1810,7 +1843,11 @@ void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
-void O3DVisualizer::ShowGround(bool show) { impl_->ShowAxes(show); }
+void O3DVisualizer::ShowGround(bool show) { impl_->ShowGround(show); }
+
+void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
+    impl_->SetGroundPlane(plane);
+}
 
 void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);
