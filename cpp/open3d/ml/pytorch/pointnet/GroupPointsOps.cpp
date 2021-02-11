@@ -2,6 +2,7 @@
 #include "open3d/ml/pytorch/pointnet/GroupPointsKernel.h"
 #include "torch/script.h"
 
+#ifdef BUILD_CUDA_MODULE
 torch::Tensor group_points_grad(torch::Tensor grad_out,
                                 torch::Tensor idx,
                                 const int64_t N) {
@@ -54,3 +55,4 @@ static auto registry_grad = torch::RegisterOperators(
         "open3d::group_points_grad(Tensor grad_out, Tensor idx, int N)"
         " -> Tensor out",
         &group_points_grad);
+#endif

@@ -9,6 +9,7 @@
 #include "open3d/ml/pytorch/pointnet/InterpolateKernel.h"
 #include "torch/script.h"
 
+#ifdef BUILD_CUDA_MODULE
 std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
                                                   torch::Tensor data_pts) {
     int batch_size = query_pts.size(0);
@@ -100,3 +101,4 @@ static auto registry_grad = torch::RegisterOperators(
         "Tensor idx, Tensor weights, int N)"
         " -> Tensor out",
         &three_interpolate_grad);
+#endif

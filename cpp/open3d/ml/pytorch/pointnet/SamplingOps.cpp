@@ -4,6 +4,7 @@
 #include "open3d/ml/pytorch/pointnet/SamplingKernel.h"
 #include "torch/script.h"
 
+#ifdef BUILD_CUDA_MODULE
 torch::Tensor gather_points(torch::Tensor points, torch::Tensor idx) {
     int batch_size = idx.size(0);
     int idx_size = idx.size(1);
@@ -82,3 +83,4 @@ static auto registry_grad = torch::RegisterOperators(
         "open3d::gather_points_grad(Tensor grad_out, Tensor idx, int C, int N)"
         " -> Tensor out",
         &gather_points_grad);
+#endif

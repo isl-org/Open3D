@@ -4,6 +4,7 @@
 #include "open3d/ml/pytorch/pointnet/BallQueryKernel.h"
 #include "torch/script.h"
 
+#ifdef BUILD_CUDA_MODULE
 torch::Tensor ball_query(torch::Tensor xyz,
                          torch::Tensor center,
                          double radius,
@@ -31,3 +32,4 @@ static auto registry = torch::RegisterOperators(
         "float radius, int nsample)"
         " -> Tensor out",
         &ball_query);
+#endif
