@@ -24,5 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/CUDALauncher.cuh"
-#include "open3d/t/geometry/kernel/PointCloudImpl.h"
+#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
+
+namespace open3d {
+namespace core {
+
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < capacity) {
+        heap[i] = i;
+    }
+}
+
+}  // namespace core
+}  // namespace open3d

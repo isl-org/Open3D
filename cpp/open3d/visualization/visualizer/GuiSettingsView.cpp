@@ -100,6 +100,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(show_axes_);
 
+    // Show ground plane
+    show_ground_ = std::make_shared<gui::Checkbox>("Show ground");
+    show_ground_->SetOnChecked(
+            [this](bool is_checked) { model_.SetShowGround(is_checked); });
+    view_ctrls->AddFixed(separation_height);
+    view_ctrls->AddChild(show_ground_);
+
     // Lighting profiles
     lighting_profile_ = std::make_shared<gui::Combobox>();
     for (auto &lp : GuiSettingsModel::lighting_profiles_) {

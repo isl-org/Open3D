@@ -43,12 +43,7 @@ namespace core {
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
 
-__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < capacity) {
-        heap[i] = i;
-    }
-}
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity);
 
 class CUDAHashmapBufferContext {
 public:
@@ -61,8 +56,8 @@ public:
         capacity_ = capacity;
         dsize_key_ = dsize_key;
         dsize_value_ = dsize_value;
-        keys_ = static_cast<uint8_t *>(keys.GetDataPtr());
-        values_ = static_cast<uint8_t *>(values.GetDataPtr());
+        keys_ = keys.GetDataPtr<uint8_t>();
+        values_ = values.GetDataPtr<uint8_t>();
         heap_ = static_cast<addr_t *>(heap.GetDataPtr());
         OPEN3D_CUDA_CHECK(cudaMemset(values_, 0, capacity_ * dsize_value_));
     }
