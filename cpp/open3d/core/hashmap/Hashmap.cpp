@@ -113,8 +113,7 @@ void Hashmap::Insert(const Tensor& input_keys,
 
     device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
                             static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                            static_cast<bool*>(output_masks.GetDataPtr()),
-                            count);
+                            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
@@ -141,8 +140,7 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     device_hashmap_->Activate(input_keys.GetDataPtr(),
                               static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                              static_cast<bool*>(output_masks.GetDataPtr()),
-                              count);
+                              output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
@@ -169,7 +167,7 @@ void Hashmap::Find(const Tensor& input_keys,
 
     device_hashmap_->Find(input_keys.GetDataPtr(),
                           static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                          static_cast<bool*>(output_masks.GetDataPtr()), count);
+                          output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
@@ -191,8 +189,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     device_hashmap_->Erase(input_keys.GetDataPtr(),
-                           static_cast<bool*>(output_masks.GetDataPtr()),
-                           count);
+                           output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::GetActiveIndices(Tensor& output_addrs) const {

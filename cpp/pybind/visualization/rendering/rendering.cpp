@@ -73,6 +73,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
+    std::shared_ptr<geometry::Image> RenderToDepthImage() {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    }
+
 private:
     int width_;
     int height_;
@@ -119,7 +123,12 @@ void pybind_rendering_classes(py::module &m) {
                     "be accessed after that point.")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
-                 "returned");
+                 "returned")
+            .def("render_to_depth_image",
+                 &PyOffscreenRenderer::RenderToDepthImage,
+                 "Renders scene depth buffer to a float image, blocking until "
+                 "the image is returned. Pixels range from 0 (near plane) to "
+                 "1 (far plane)");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -246,6 +255,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("scalar_min", &Material::scalar_min)
             .def_readwrite("scalar_max", &Material::scalar_max)
             .def_readwrite("sRGB_color", &Material::sRGB_color)
+            .def_readwrite("aspect_ratio", &Material::aspect_ratio)
+            .def_readwrite("ground_plane_axis", &Material::ground_plane_axis)
             .def_readwrite("shader", &Material::shader);
 
     // ---- TriangleMeshModel ----
@@ -304,6 +315,13 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
                                                    "Low-level rendering scene");
+    py::enum_<Scene::GroundPlane> ground_plane(
+            scene, "GroundPlane", py::arithmetic(),
+            "Plane on which to show ground plane: XZ, XY, or YZ");
+    ground_plane.value("XZ", Scene::GroundPlane::XZ)
+            .value("XY", Scene::GroundPlane::XY)
+            .value("YZ", Scene::GroundPlane::YZ)
+            .export_values();
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
                  "Removes the camera with the given name")
@@ -401,6 +419,8 @@ void pybind_rendering_classes(py::module &m) {
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
+            .def("show_ground_plane", &Open3DScene::ShowGroundPlane,
+                 "Toggles display of ground plane")
             .def("set_lighting", &Open3DScene::SetLighting,
                  "Sets a simple lighting model. set_lighting(profile, "
                  "sun_dir). The default value is "

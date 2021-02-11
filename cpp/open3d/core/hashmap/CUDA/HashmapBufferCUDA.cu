@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
 
 namespace open3d {
-namespace geometry {
-class Image;
+namespace core {
+
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < capacity) {
+        heap[i] = i;
+    }
 }
 
-namespace visualization {
-namespace rendering {
-class Open3DScene;
-}
-
-namespace gui {
-
-void InitializeForPython(std::string resource_path = "");
-std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height);
-std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height);
-
-void pybind_gui(py::module &m);
-
-void pybind_gui_events(py::module &m);
-void pybind_gui_classes(py::module &m);
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace core
 }  // namespace open3d

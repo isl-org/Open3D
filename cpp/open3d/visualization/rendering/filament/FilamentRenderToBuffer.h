@@ -51,13 +51,13 @@ public:
     // FilamentRenderToBuffer, unless you are NOT using
     // open3d::visualization::gui or another FilamentRenderer instance.
     explicit FilamentRenderToBuffer(filament::Engine& engine);
-    FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
 
     void Configure(const View* view,
                    Scene* scene,
                    int width,
                    int height,
+                   int n_channels,
                    BufferReadyCallback cb) override;
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     View& GetView() override;
@@ -71,7 +71,6 @@ public:
 private:
     friend class FilamentRenderer;
 
-    FilamentRenderer* parent_ = nullptr;
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;
@@ -79,6 +78,7 @@ private:
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;
+    std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
 
