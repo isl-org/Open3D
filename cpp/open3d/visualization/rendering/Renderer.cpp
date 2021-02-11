@@ -90,7 +90,7 @@ void Renderer::RenderToImage(
     auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
     render->Configure(
-            view, scene, vp[2], vp[3], 3,
+            view, scene, vp[2], vp[3], 3, false,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
@@ -124,7 +124,7 @@ void Renderer::RenderToDepthImage(
 
     auto render = CreateBufferRenderer();
     render->Configure(
-            view_copy, scene_copy, vp[2], vp[3], 4,
+            view_copy, scene_copy, vp[2], vp[3], 1, true,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb,
@@ -137,17 +137,7 @@ void Renderer::RenderToDepthImage(
                 image->data_.resize(image->width_ * image->height_ *
                                     image->num_of_channels_ *
                                     image->bytes_per_channel_);
-                for (int y = 0; y < image->height_; ++y) {
-                    for (int x = 0; x < image->width_; ++x) {
-                        auto* rgba = buffer.bytes +
-                                     (y * buffer.width + x) * buffer.n_channels;
-                        auto* depth = image->PointerAt<float>(x, y);
-                        uint32_t depth32 =
-                                ((rgba[0] << 16) | (rgba[1] << 8) | rgba[2]);
-                        *depth = float(depth32) / 16777215.0f;
-                    }
-                }
-
+                memcpy(image->data_.data(), buffer.bytes, buffer.size);
                 cb(image);
                 delete scene_copy;
                 render = nullptr;

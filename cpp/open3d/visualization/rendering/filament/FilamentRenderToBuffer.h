@@ -58,6 +58,7 @@ public:
                    int width,
                    int height,
                    int n_channels,
+                   bool depth_image,
                    BufferReadyCallback cb) override;
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     View& GetView() override;
@@ -81,6 +82,7 @@ private:
     std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
+    bool depth_image_ = false;
 
     BufferReadyCallback callback_;
     bool frame_done_ = true;

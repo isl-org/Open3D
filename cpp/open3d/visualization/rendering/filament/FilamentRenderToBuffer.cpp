@@ -83,6 +83,7 @@ void FilamentRenderToBuffer::Configure(const View* view,
                                        int width,
                                        int height,
                                        int n_channels,
+                                       bool depth_image,
                                        BufferReadyCallback cb) {
     if (!scene) {
         utility::LogDebug(
@@ -98,14 +99,19 @@ void FilamentRenderToBuffer::Configure(const View* view,
         return;
     }
 
-    if (n_channels != 3 && n_channels != 4) {
+    if (!depth_image && (n_channels != 3 && n_channels != 4)) {
         utility::LogWarning(
                 "Render to buffer must have either 3 or 4 channels");
         cb({0, 0, 0, nullptr, 0});
         return;
     }
 
-    n_channels_ = n_channels;
+    if (depth_image) {
+        n_channels_ = 1;
+    } else {
+        n_channels_ = n_channels;
+    }
+    depth_image_ = depth_image;
     pending_ = true;
     callback_ = cb;
 
@@ -126,7 +132,12 @@ void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
     width_ = width;
     height_ = height;
 
-    buffer_size_ = width * height * n_channels_ * sizeof(std::uint8_t);
+    if (depth_image_) {
+        buffer_size_ = width * height * sizeof(std::float_t);
+    } else {
+        buffer_size_ = width * height * n_channels_ * sizeof(std::uint8_t);
+    }
+
     if (buffer_) {
         buffer_ = static_cast<std::uint8_t*>(realloc(buffer_, buffer_size_));
     } else {
@@ -173,13 +184,16 @@ void FilamentRenderToBuffer::Render() {
         using namespace filament;
         using namespace backend;
 
+        auto format = (n_channels_ == 3 ? PixelDataFormat::RGB
+                                        : PixelDataFormat::RGBA);
+        auto type = PixelDataType::UBYTE;
+        if (depth_image_) {
+            format = PixelDataFormat::DEPTH_COMPONENT;
+            type = PixelDataType::FLOAT;
+        }
         auto user_param = new PBDParams(this, callback_);
-        PixelBufferDescriptor pd(buffer_, buffer_size_,
-                                 (n_channels_ == 3 ? PixelDataFormat::RGB
-                                                   : PixelDataFormat::RGBA),
-                                 PixelDataType::UBYTE, ReadPixelsCallback,
-                                 user_param);
-
+        PixelBufferDescriptor pd(buffer_, buffer_size_, format, type,
+                                 ReadPixelsCallback, user_param);
         auto vp = view_->GetNativeView()->getViewport();
 
         renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,

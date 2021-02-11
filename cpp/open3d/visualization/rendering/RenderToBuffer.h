@@ -67,6 +67,7 @@ public:
                            int width,
                            int height,
                            int n_channels,
+                           bool depth_image,
                            BufferReadyCallback cb) = 0;
     virtual void SetDimensions(std::uint32_t width, std::uint32_t height) = 0;
     virtual View& GetView() = 0;
