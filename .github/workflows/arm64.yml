@@ -119,7 +119,7 @@ jobs:
       - name: Download ccache from GCS
         run: |
           gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64-step-1 ~
-          mv ~/ccache-arm64 ~/.ccache
+          mv ~/ccache-arm64-step-1 ~/.ccache
           ls ~/.ccache
 
       - name: Build on ARM Container
@@ -229,7 +229,7 @@ jobs:
       - name: Download ccache from GCS
         run: |
           gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64-step-2 ~
-          mv ~/ccache-arm64 ~/.ccache
+          mv ~/ccache-arm64-step-2 ~/.ccache
           ls ~/.ccache
 
       - name: Build on ARM Container
