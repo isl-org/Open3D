@@ -67,6 +67,9 @@ FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
 }
 
 FilamentRenderToBuffer::~FilamentRenderToBuffer() {
+    if (view_)
+        delete view_;
+
     engine_.destroy(swapchain_);
     engine_.destroy(renderer_);
 
@@ -116,6 +119,10 @@ void FilamentRenderToBuffer::Configure(const View* view,
     callback_ = cb;
 
     CopySettings(view);
+    auto* downcast_scene = dynamic_cast<FilamentScene*>(scene);
+    if (downcast_scene) {
+        view_->SetScene(*downcast_scene);
+    }
     SetDimensions(width, height);
 }
 
@@ -146,15 +153,10 @@ void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
 }
 
 void FilamentRenderToBuffer::CopySettings(const View* view) {
+    view_ = new FilamentView(engine_, EngineInstance::GetResourceManager());
     auto* downcast = dynamic_cast<const FilamentView*>(view);
-    // NOTE: This class used to copy parameters from the view into a view
-    // managed by this class. However, the copied view caused anomalies when
-    // rendering an image for export. As a workaround, we keep a pointer to the
-    // original view here instead.
-    view_ = const_cast<FilamentView*>(downcast);
     if (downcast) {
-        auto vp = view_->GetNativeView()->getViewport();
-        SetDimensions(vp.width, vp.height);
+        view_->CopySettingsFrom(*downcast);
     }
 }
 
