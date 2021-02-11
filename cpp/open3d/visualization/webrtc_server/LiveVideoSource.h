@@ -95,6 +95,8 @@ public:
                 std::vector<std::vector<uint8_t>> initFrames =
                         m_decoder.getInitFrames(codec, sdp);
                 for (auto frame : initFrames) {
+                    // VideoFile VP9 play back does not have initFrames.
+                    RTC_LOG(INFO) << "onNewSession: Got a new frame";
                     onData(id, frame.data(), frame.size(), presentationTime);
                 }
             }

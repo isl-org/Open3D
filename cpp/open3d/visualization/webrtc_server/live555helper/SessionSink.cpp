@@ -9,6 +9,8 @@
 
 #include "SessionSink.h"
 
+#include <iostream>
+
 SessionSink::SessionSink(UsageEnvironment& env, SessionCallback* callback)
     : MediaSink(env),
       m_buffer(NULL),
@@ -39,6 +41,7 @@ void SessionSink::afterGettingFrame(unsigned frameSize,
                 << " allocate bigger one\n";
         allocate(m_bufferSize * 2);
     } else if (m_callback) {
+        std::cout << "SessionSink::afterGettingFrame" << std::endl;
         if (!m_callback->onData(this->name(), m_buffer,
                                 frameSize + m_markerSize, presentationTime)) {
             envir() << "NOTIFY failed\n";
