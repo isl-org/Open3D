@@ -23,8 +23,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.cuh"
+#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
 #include "open3d/core/hashmap/CUDA/InternalNodeManager.h"
 #include "open3d/core/hashmap/CUDA/Macros.h"
 #include "open3d/core/hashmap/CUDA/Traits.h"

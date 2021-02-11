@@ -49,6 +49,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/CUDA/Macros.h"
+#include "open3d/core/hashmap/HashmapBuffer.h"
 
 namespace open3d {
 namespace core {
@@ -292,20 +293,5 @@ public:
     InternalNodeManagerContext gpu_context_;
     Device device_;
 };
-
-__global__ void CountSlabsPerSuperblockKernel(
-        InternalNodeManagerContext context, uint32_t* slabs_per_superblock) {
-    uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
-
-    int num_bitmaps = kBlocksPerSuperBlock * 32;
-    if (tid >= num_bitmaps) {
-        return;
-    }
-
-    for (uint32_t i = 0; i < kSuperBlocks; i++) {
-        uint32_t read_bitmap = *(context.get_ptr_for_bitmap(i, tid));
-        atomicAdd(&slabs_per_superblock[i], __popc(read_bitmap));
-    }
-}
 }  // namespace core
 }  // namespace open3d
