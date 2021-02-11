@@ -48,9 +48,9 @@ namespace {
 Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
     Camera::Transform::MatrixType m;
     m << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
-         float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
-         float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
-         float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
+            float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
+            float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
+            float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
 
     return Camera::Transform(m);
 }
