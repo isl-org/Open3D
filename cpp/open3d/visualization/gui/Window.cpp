@@ -353,20 +353,7 @@ Window::Window(const std::string& title,
     // after pressing "Open".)
     RestoreDrawContext(oldContext);
 
-#ifndef WIN32
     CreateRenderer();
-#else
-    // Don't create the renderer yet. If the program exits before the first
-    // draw callback from the operating system (Windows in particular),
-    // Filament's rendering may not have had time to start yet, so destroying
-    // the renderer will wait forever for the render thread to execute.
-    // This can be reproduced with the following Python script
-    //   import open3d as o3d
-    //   o3d.visualization.Application.instance.initialize()
-    //   w = o3d.visualization.Application.instance
-    //          .create_window("Crash", 640, 480)
-    //   <anything that throws an exception>
-#endif  // !WIN32
 }
 
 void Window::CreateRenderer() {

@@ -299,6 +299,13 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::ShowAxes, "Gets/sets if axes are visible")
             .def_property(
+                    "show_ground",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().show_ground;
+                    },
+                    &O3DVisualizer::ShowGround,
+                    "Gets/sets if ground plane is visible")
+            .def_property(
                     "point_size",
                     [](const O3DVisualizer& dv) {
                         return dv.GetUIState().point_size;

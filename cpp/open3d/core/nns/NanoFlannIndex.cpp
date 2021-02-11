@@ -58,8 +58,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        const scalar_t *data_ptr =
-                static_cast<const scalar_t *>(dataset_points.GetDataPtr());
+        const scalar_t *data_ptr = dataset_points.GetDataPtr<scalar_t>();
         holder_.reset(new NanoFlannIndexHolder<L2, scalar_t>(
                 dataset_size, dimension, data_ptr));
     });

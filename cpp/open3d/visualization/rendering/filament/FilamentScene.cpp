@@ -92,6 +92,8 @@ void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
 }
 
 const std::string kBackgroundName = "__background";
+const std::string kGroundPlaneName = "__ground_plane";
+const Eigen::Vector4f kDefaultGroundPlaneColor(0.5f, 0.5f, 0.5f, 1.f);
 
 namespace defaults_mapping {
 
@@ -116,6 +118,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"unlitPolygonOffset",
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+        {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
         {"unlitLine", ResourceManager::kDefaultLineShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
@@ -916,6 +919,13 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("axis", geom_mi.properties.ground_plane_axis)
+            .Finish();
+}
+
 void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
@@ -1084,6 +1094,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateSolidColorShader(geom.mat);
     } else if (props.shader == "unlitBackground") {
         UpdateBackgroundShader(geom.mat);
+    } else if (props.shader == "infiniteGroundPlane") {
+        UpdateGroundPlaneShader(geom.mat);
     } else if (props.shader == "unlitLine") {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
@@ -1134,6 +1146,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateSolidColorShader(geom->mat);
         } else if (material.shader == "unlitBackground") {
             UpdateBackgroundShader(geom->mat);
+        } else if (material.shader == "infiniteGroundPlane") {
+            UpdateGroundPlaneShader(geom->mat);
         } else if (material.shader == "unlitLine") {
             UpdateLineShader(geom->mat);
         } else if (material.shader == "unlitPolygonOffset") {
@@ -1629,6 +1643,52 @@ void FilamentScene::SetBackground(
         m.aspect_ratio = 0.0;
     }
     OverrideMaterial(kBackgroundName, m);
+}
+
+void FilamentScene::CreateGroundPlaneGeometry() {
+    geometry::TriangleMesh quad;
+    // Please see note above about drawing a full screen quad with
+    // Filament. However, the ground plane shader expects the full screen quad
+    // to be rendered at the far plan hence the z must be set to 1.0
+    quad.vertices_ = {{-1.0, -1.0, 1.0},
+                      {1.0, -1.0, 1.0},
+                      {1.0, 1.0, 1.0},
+                      {-1.0, 1.0, 1.0}};
+    quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
+    rendering::Material m;
+    m.shader = "infiniteGroundPlane";
+    m.base_color = kDefaultGroundPlaneColor;
+    AddGeometry(kGroundPlaneName, quad, m);
+    GeometryShadows(kGroundPlaneName, false, false);
+    SetGeometryPriority(kGroundPlaneName, 1);
+    SetGeometryCulling(kGroundPlaneName, false);
+}
+
+void FilamentScene::EnableGroundPlane(bool enable, GroundPlane plane) {
+    if (!HasGeometry(kGroundPlaneName)) {
+        CreateGroundPlaneGeometry();
+    }
+    if (enable) {
+        rendering::Material m;
+        m.shader = "infiniteGroundPlane";
+        m.base_color = kDefaultGroundPlaneColor;
+        if (plane == GroundPlane::XY) {
+            m.ground_plane_axis = 1.f;
+        } else if (plane == GroundPlane::YZ) {
+            m.ground_plane_axis = -1.f;
+        }
+        OverrideMaterial(kGroundPlaneName, m);
+    }
+
+    ShowGeometry(kGroundPlaneName, enable);
+}
+
+void FilamentScene::SetGroundPlaneColor(const Eigen::Vector4f& color) {
+    if (!HasGeometry(kGroundPlaneName)) {
+        CreateGroundPlaneGeometry();
+    }
+
+    // NOTE: Not implemented yet. Not sure if we want/need this.
 }
 
 struct RenderRequest {

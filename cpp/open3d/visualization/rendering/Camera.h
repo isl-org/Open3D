@@ -106,6 +106,7 @@ public:
     virtual Transform GetModelMatrix() const = 0;
     virtual Transform GetViewMatrix() const = 0;
     virtual ProjectionMatrix GetProjectionMatrix() const = 0;
+    virtual Transform GetCullingProjectionMatrix() const = 0;
 
     virtual Eigen::Vector3f Unproject(float x,
                                       float y,

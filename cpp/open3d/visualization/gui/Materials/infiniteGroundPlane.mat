@@ -1,0 +1,64 @@
+material {
+    name : infiniteGroundPlane,
+    shadingModel : unlit,
+    vertexDomain : device,
+    depthWrite : false,
+    doubleSided: true,
+    blending : transparent,
+    
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : axis }
+    ],
+    variables : [
+        near_world
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+         float4 p = getPosition();
+         material.near_world = getWorldFromClipMatrix() * float4(p.x, p.y, 0.0, 1.0);
+         material.near_world.xyz *= (1.0 / material.near_world.w);
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        // Compensate for camera offset
+        float3 near = variable_near_world.xyz + getWorldOffset();
+        float3 far = getWorldPosition().xyz + getWorldOffset();
+
+        // Compute intersection with ground plane
+        float t = 0.0;
+        // axis = 0 is XZ plane, axis > 0 is XY plane, axis < 0 is YZ plane
+        if (materialParams.axis > 0.0) {
+            t = -near.z / (far.z - near.z);
+        } else if (materialParams.axis < 0.0) {
+            t = -near.x / (far.x - near.x);
+        } else {
+            t = -near.y / (far.y - near.y);
+        }
+
+        // Compute world pos of the point on the plane in order to compute grid pattern
+        float3 world_pos = near + t * (far - near);
+        float2 plane_coord = world_pos.xz * 0.1;
+        if (materialParams.axis > 0.0) {
+           plane_coord = world_pos.xy * 0.1;
+        } else if (materialParams.axis < 0.0) {
+           plane_coord = world_pos.yz * 0.1;
+        }
+        float2 grid_derivative = fwidth(plane_coord);
+        float2 grid = abs(fract(plane_coord - 0.5) - 0.5) / grid_derivative;
+        float line = min(grid.x, grid.y);
+
+        // compute final color
+        float alpha = 1.0 - min(line, 1.0);
+        // The choice of 0.02 below was empirical. It looked good. May need to revisit.
+        float distance_fade = 1.0 - smoothstep(0.0, 0.02, t);
+        float3 premult_rgb = materialParams.baseColor.rgb * alpha;
+        material.baseColor = float4(premult_rgb, alpha) * float(t>0.0) * distance_fade;
+    }
+}

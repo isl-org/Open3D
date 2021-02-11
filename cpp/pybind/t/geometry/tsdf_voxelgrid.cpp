@@ -63,6 +63,10 @@ void pybind_tsdf_voxelgrid(py::module& m) {
                               const core::Tensor&, float, float>(
                     &TSDFVoxelGrid::Integrate));
 
+    tsdf_voxelgrid.def("raycast", &TSDFVoxelGrid::RayCast, "intrinsics"_a,
+                       "extrinsics"_a, "width"_a, "height"_a,
+                       "max_steps"_a = 50, "depth_min"_a = 0.1f,
+                       "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f);
     tsdf_voxelgrid.def("extract_surface_points",
                        &TSDFVoxelGrid::ExtractSurfacePoints,
                        "weight_threshold"_a = 3.0f);
