@@ -112,6 +112,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader},
+        {"depthValue", ResourceManager::kDefaultDepthValueShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
         {"unlitPolygonOffset",
@@ -172,6 +173,67 @@ FilamentScene::FilamentScene(filament::Engine& engine,
 }
 
 FilamentScene::~FilamentScene() {}
+
+Scene* FilamentScene::Copy() {
+    auto copy = new FilamentScene(engine_, resource_mgr_, renderer_);
+    copy->geometries_ = this->geometries_;
+    copy->lights_ = this->lights_;
+    copy->model_geometries_ = this->model_geometries_;
+    copy->background_color_ = this->background_color_;
+    copy->background_image_ = this->background_image_;
+    copy->ibl_name_ = this->ibl_name_;
+    copy->ibl_enabled_ = this->ibl_enabled_;
+    copy->skybox_enabled_ = this->skybox_enabled_;
+    copy->indirect_light_ = this->indirect_light_;
+    copy->skybox_ = this->skybox_;
+    copy->sun_ = this->sun_;
+
+    for (auto& name_geom : copy->geometries_) {
+        auto& name = name_geom.first;
+        auto& geom = name_geom.second;
+
+        auto& renderable_mgr = copy->engine_.getRenderableManager();
+        auto inst = renderable_mgr.getInstance(geom.filament_entity);
+        auto box = renderable_mgr.getAxisAlignedBoundingBox(inst);
+        auto vbuf = copy->resource_mgr_.GetVertexBuffer(geom.vb).lock();
+        auto ibuf = copy->resource_mgr_.GetIndexBuffer(geom.ib).lock();
+        auto new_entity = utils::EntityManager::get().create();
+        filament::RenderableManager::Builder builder(1);
+        builder.boundingBox(box)
+                .layerMask(FilamentView::kAllLayersMask,
+                           FilamentView::kMainLayer)
+                .castShadows(geom.cast_shadows)
+                .receiveShadows(geom.receive_shadows)
+                .culling(geom.culling_enabled)
+                .geometry(0, geom.primitive_type, vbuf.get(), ibuf.get());
+        if (geom.priority >= 0) {
+            builder.priority(uint8_t(geom.priority));
+        }
+        copy->resource_mgr_.ReuseVertexBuffer(geom.vb);
+
+        auto material_instance = copy->AssignMaterialToFilamentGeometry(
+                builder, geom.mat.properties);
+
+        auto result = builder.build(copy->engine_, new_entity);
+        if (result == filament::RenderableManager::Builder::Success) {
+            if (geom.visible) {
+                copy->scene_->addEntity(new_entity);
+            }
+            geom.filament_entity = new_entity;
+            geom.mat.mat_instance = material_instance;
+
+            auto transform = this->GetGeometryTransform(name);
+            copy->SetGeometryTransform(name, transform);
+            copy->UpdateMaterialProperties(
+                    copy->geometries_[name]);  // for non-const
+
+        } else {
+            utility::LogWarning(
+                    "Failed to copy Filament resources for geometry {}", name);
+        }
+    }
+    return copy;
+}
 
 ViewHandle FilamentScene::AddView(std::int32_t x,
                                   std::int32_t y,
@@ -452,8 +514,11 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                                    true,
                                    true,
                                    true,
+                                   true,
+                                   -1,
                                    {{}, material, material_instance},
                                    filament_entity,
+                                   buffer_builder.GetPrimitiveType(),
                                    vb,
                                    ib}));
 
@@ -705,6 +770,7 @@ void FilamentScene::SetGeometryCulling(const std::string& object_name,
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCulling(inst, enable);
+        g->culling_enabled = enable;
     }
 }
 
@@ -716,6 +782,7 @@ void FilamentScene::SetGeometryPriority(const std::string& object_name,
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setPriority(inst, priority);
+        g->priority = (int)priority;
     }
 }
 
@@ -812,6 +879,12 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetParameter("cameraNear", n)
             .SetParameter("cameraFar", f)
+            .Finish();
+}
+
+void FilamentScene::UpdateDepthValueShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
             .Finish();
 }
 
@@ -1013,6 +1086,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateNormalShader(geom.mat);
     } else if (props.shader == "depth") {
         UpdateDepthShader(geom.mat);
+    } else if (props.shader == "depthValue") {
+        UpdateDepthValueShader(geom.mat);
     } else if (props.shader == "unlitGradient") {
         UpdateGradientShader(geom.mat);
     } else if (props.shader == "unlitSolidColor") {
@@ -1077,6 +1152,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateLineShader(geom->mat);
         } else if (material.shader == "unlitPolygonOffset") {
             UpdateUnlitPolygonOffsetShader(geom->mat);
+        } else if (material.shader == "depthValue") {
+            UpdateDepthValueShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
@@ -1102,6 +1179,9 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
 void FilamentScene::OverrideMaterialAll(const Material& material,
                                         bool shader_only) {
     for (auto& ge : geometries_) {
+        if (ge.first == kBackgroundName) {
+            continue;
+        }
         OverrideMaterialInternal(&ge.second, material, shader_only);
     }
 }

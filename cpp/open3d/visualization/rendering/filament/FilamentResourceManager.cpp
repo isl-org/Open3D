@@ -250,6 +250,8 @@ const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultDepthValueShader =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
@@ -281,6 +283,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultUnlit,
         FilamentResourceManager::kDefaultNormalShader,
         FilamentResourceManager::kDefaultDepthShader,
+        FilamentResourceManager::kDefaultDepthValueShader,
         FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
         FilamentResourceManager::kDefaultUnlitBackgroundShader,
@@ -825,6 +828,12 @@ void FilamentResourceManager::LoadDefaults() {
     auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
     depth_mat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultDepthShader] = BoxResource(depth_mat, engine_);
+
+    const auto depth_value_path = resource_root + "/depth_value.filamat";
+    auto depth_value_mat = LoadMaterialFromFile(depth_value_path, engine_);
+    depth_value_mat->setDefaultParameter("pointSize", 3.f);
+    materials_[kDefaultDepthValueShader] =
+            BoxResource(depth_value_mat, engine_);
 
     const auto gradient_path = resource_root + "/unlitGradient.filamat";
     auto gradient_mat = LoadMaterialFromFile(gradient_path, engine_);
