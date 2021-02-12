@@ -39,6 +39,8 @@
 #include "open3d/visualization/webrtc_server/WindowCapturer.h"
 #endif
 
+#include "open3d/visualization/webrtc_server/ImageCapturer.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
@@ -180,6 +182,8 @@ public:
 #ifdef USE_X11
             videoSource = TrackSource<WindowCapturer>::Create(videourl, opts);
 #endif
+        } else if (videourl.find("image://") == 0) {
+            videoSource = TrackSource<ImageCapturer>::Create(videourl, opts);
         } else if (std::regex_match("videocap://", publishFilter)) {
             videoSource = TrackSource<VcmCapturer>::Create(videourl, opts);
         }
