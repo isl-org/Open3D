@@ -291,6 +291,23 @@ void FilamentView::ConfigureForColorPicking() {
 }
 
 void FilamentView::EnableViewCaching(bool enable) {
+    caching_enabled_ = enable;
+
+    if (caching_enabled_ && !render_target_) {
+        // Create RenderTarget
+        auto vp = view_->getViewport();
+        color_buffer_ =
+                resource_mgr_.CreateColorAttachmentTexture(vp.width, vp.height);
+        depth_buffer_ =
+                resource_mgr_.CreateDepthAttachmentTexture(vp.width, vp.height);
+        render_target_ =
+                resource_mgr_.CreateRenderTarget(color_buffer_, depth_buffer_);
+        SetRenderTarget(render_target_);
+    }
+
+    if (!caching_enabled_) {
+        view_->setRenderTarget(nullptr);
+    }
 }
 
 bool FilamentView::IsCached() const { return caching_enabled_; }

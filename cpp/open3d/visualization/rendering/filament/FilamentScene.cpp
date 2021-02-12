@@ -1803,6 +1803,21 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     }
 }
 
+void FilamentScene::DrawCached(filament::Renderer& renderer) {
+    for (auto& pair : views_) {
+        auto& container = pair.second;
+        // Skip inactive views
+        if (!container.is_active) continue;
+        if (container.render_count-- == 0) {
+            container.is_active = false;
+            continue;
+        }
+
+        if (container.view->IsCached()) {
+        }
+    }
+}
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
