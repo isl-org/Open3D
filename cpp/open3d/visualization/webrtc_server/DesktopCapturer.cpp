@@ -13,6 +13,9 @@
 
 #include <rtc_base/logging.h>
 
+#include <fstream>
+#include <iostream>
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
@@ -23,6 +26,16 @@ void DesktopCapturer::OnCaptureResult(
     RTC_LOG(INFO) << "DesktopCapturer:OnCaptureResult";
 
     if (result == webrtc::DesktopCapturer::Result::SUCCESS) {
+        std::ifstream file(
+                "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
+                "webrtc_server/html/lena_color_640_480.jpg",
+                std::ios::binary | std::ios::ate);
+        std::streamsize file_size = file.tellg();
+        file.seekg(0, std::ios::beg);
+        std::vector<char> file_buffer(file_size);
+        if (file.read(file_buffer.data(), file_size)) {
+            std::cout << "jpeg read" << std::endl;
+        }
         int width = frame->stride() / webrtc::DesktopFrame::kBytesPerPixel;
         int height = frame->rect().height();
 

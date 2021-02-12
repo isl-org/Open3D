@@ -118,7 +118,7 @@ void WebRTCServer::Impl::Run() {
     std::list<std::string> ice_servers(stun_urls.begin(), stun_urls.end());
     Json::Value config;
 
-    config["urls"]["Bunny"]["video"] =
+    config["urls"]["Bunny2"]["video"] =
             "file:///home/yixing/repo/webrtc-streamer/html/"
             "Big_Buck_Bunny_360_10s_1MB.webm";
     peer_connection_manager_ = std::make_shared<PeerConnectionManager>(
