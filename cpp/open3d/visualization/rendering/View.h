@@ -94,6 +94,7 @@ public:
 
     virtual void EnableViewCaching(bool enable) = 0;
     virtual bool IsCached() const = 0;
+    virtual TextureHandle GetColorBuffer() = 0;
 
     virtual Camera* GetCamera() const = 0;
 };

@@ -312,7 +312,7 @@ void FilamentView::EnableViewCaching(bool enable) {
 
 bool FilamentView::IsCached() const { return caching_enabled_; }
 
-TextureHandle FilamentView::GetColorBufer() { return color_buffer_; }
+TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
 
 void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
     if (!render_target) {

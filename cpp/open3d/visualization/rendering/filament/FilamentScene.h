@@ -216,6 +216,7 @@ public:
     void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) override;
+    void SetBackground(TextureHandle image) override;
     void EnableGroundPlane(bool enable, GroundPlane plane) override;
     void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
@@ -328,6 +329,7 @@ private:
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
+    void CreateBackgroundGeometry();
     void CreateGroundPlaneGeometry();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;

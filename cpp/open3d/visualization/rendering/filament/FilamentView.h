@@ -86,6 +86,7 @@ public:
 
     void EnableViewCaching(bool enable) override;
     bool IsCached() const override;
+    TextureHandle GetColorBuffer() override;
 
     Camera* GetCamera() const override;
 
@@ -95,7 +96,6 @@ public:
     void SetScene(FilamentScene& scene);
 
     filament::View* GetNativeView() const { return view_; }
-    TextureHandle GetColorBufer();
 
     void PreRender();
     void PostRender();

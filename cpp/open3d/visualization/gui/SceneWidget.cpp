@@ -902,8 +902,8 @@ void SceneWidget::EnableSceneCaching(bool enable) {
 //         impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
 //                                                  true);
 //     }
-    auto view = impl_->scene_->GetView();
-    view->EnableViewCaching(true);
+    // auto view = impl_->scene_->GetView();
+    // view->EnableViewCaching(true);
 }
 
 void SceneWidget::ForceRedraw() {
@@ -1024,8 +1024,9 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView();
-        view->SetViewport(f.x, y, f.width, f.height);
+        // auto view = impl_->scene_->GetView();
+        impl_->scene_->SetViewport(f.x, y, f.width, f.height);
+        // view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
         float aspect = 1.0f;
