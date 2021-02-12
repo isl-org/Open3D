@@ -197,8 +197,13 @@ parametrize = SimpleNamespace(
 
 
 def fetch_numpy(url):
-    req = urllib.request.Request(url)
-    with urllib.request.urlopen(req) as response:
+    # prevents security issue
+    if url.lower().startswith('http'):
+        req = urllib.request.Request(url)
+    else:
+        raise ValueError from None
+
+    with urllib.request.urlopen(req) as response:  #nosec
         np_file = response.read()
         return np.load(io.BytesIO(np_file))
     return None
