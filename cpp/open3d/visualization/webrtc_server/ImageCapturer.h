@@ -65,9 +65,10 @@ public:
     }
 
     void CaptureFrame() {
-        if (init_frame_count_ < 24) {
+        if (init_frame_count_ < 12) {
             init_frame_count_++;
             callback_->OnCaptureResult(frame_);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         } else {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
