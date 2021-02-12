@@ -9,9 +9,12 @@ All Rights Reserved 2018.
 
 #include "open3d/ml/contrib/RoIPoolKernel.h"
 
+namespace open3d {
+namespace ml {
+namespace contrib {
+
 #define THREADS_PER_BLOCK 256
 #define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
-// #define DEBUG
 
 __device__ inline int pt_in_box3d(float x,
                                   float y,
@@ -298,3 +301,7 @@ void roipool3dLauncher(int batch_size,
     cudaDeviceSynchronize();  // for using printf in kernel function
 #endif
 }
+
+}  // namespace contrib
+}  // namespace ml
+}  // namespace open3d

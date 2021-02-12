@@ -4,6 +4,8 @@ import pytest
 from collections import namedtuple
 import importlib
 from types import SimpleNamespace
+from urllib.request import urlopen
+import io
 
 # skip all tests if the ml ops were not built
 default_marks = [
@@ -192,3 +194,8 @@ parametrize = SimpleNamespace(
         v for k, v in _ml_modules.items() if v.module.__name__ == 'tensorflow'
     ]),
 )
+
+
+def fetch_numpy(url):
+    np_file = urlopen(url).read()
+    return np.load(io.BytesIO(np_file))

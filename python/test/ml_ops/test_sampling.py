@@ -41,11 +41,15 @@ ml_torch_gpu_only = pytest.mark.parametrize('ml', [
 @ml_torch_gpu_only
 def test_furthest_point_sampling(ml):
 
-    values = np.load('python/test/ml_ops/data/sampling/values.npy')
+    values = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/sampling/values.npy'
+    )
     samples = 4096
 
     ans = mltest.run_op(ml, ml.device, True, ml.ops.furthest_point_sampling,
                         values, samples)
 
-    expected = np.load('python/test/ml_ops/data/sampling/out.npy')
+    expected = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/sampling/out.npy'
+    )
     np.testing.assert_equal(ans, expected)

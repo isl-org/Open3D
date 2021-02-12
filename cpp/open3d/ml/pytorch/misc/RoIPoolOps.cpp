@@ -27,9 +27,10 @@ std::tuple<torch::Tensor, torch::Tensor> roipool3d(
     float *pooled_features_data = features.data<float>();
     int *pooled_empty_flag_data = empty_flag.data<int>();
 
-    roipool3dLauncher(batch_size, pts_num, boxes_num, feature_in_len,
-                      sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
-                      pooled_features_data, pooled_empty_flag_data);
+    open3d::ml::contrib::roipool3dLauncher(
+            batch_size, pts_num, boxes_num, feature_in_len, sampled_pts_num,
+            xyz_data, boxes3d_data, pts_feature_data, pooled_features_data,
+            pooled_empty_flag_data);
 
     return std::tuple<torch::Tensor, torch::Tensor>(features, empty_flag);
 }

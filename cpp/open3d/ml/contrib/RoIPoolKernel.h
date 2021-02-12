@@ -1,5 +1,11 @@
 #pragma once
 
+namespace open3d {
+namespace ml {
+namespace contrib {
+
+#ifdef BUILD_CUDA_MODULE
+
 void roipool3dLauncher(int batch_size,
                        int pts_num,
                        int boxes_num,
@@ -10,3 +16,8 @@ void roipool3dLauncher(int batch_size,
                        const float *pts_feature,
                        float *pooled_features,
                        int *pooled_empty_flag);
+#endif
+
+}  // namespace contrib
+}  // namespace ml
+}  // namespace open3d

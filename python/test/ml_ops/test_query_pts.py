@@ -41,8 +41,12 @@ ml_torch_gpu_only = pytest.mark.parametrize('ml', [
 @ml_torch_gpu_only
 def test_query_pts(ml):
 
-    values0 = np.load('python/test/ml_ops/data/query_pts/values0.npy')
-    values1 = np.load('python/test/ml_ops/data/query_pts/values1.npy')
+    values0 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/query_pts/values0.npy'
+    )
+    values1 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/query_pts/values1.npy'
+    )
 
     sample = 16
     radius = 0.1
@@ -50,5 +54,7 @@ def test_query_pts(ml):
     ans = mltest.run_op(ml, ml.device, True, ml.ops.ball_query, values0,
                         values1, radius, sample)
 
-    expected = np.load('python/test/ml_ops/data/query_pts/out.npy')
+    expected = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/query_pts/out.npy'
+    )
     np.testing.assert_equal(ans, expected)

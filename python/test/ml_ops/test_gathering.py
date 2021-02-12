@@ -41,11 +41,17 @@ ml_torch_gpu_only = pytest.mark.parametrize('ml', [
 @ml_torch_gpu_only
 def test_gathering(ml):
 
-    values0 = np.load('python/test/ml_ops/data/gathering/values0.npy')
-    values1 = np.load('python/test/ml_ops/data/gathering/values1.npy')
+    values0 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/gathering/values0.npy'
+    )
+    values1 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/gathering/values1.npy'
+    )
 
     ans = mltest.run_op(ml, ml.device, True, ml.ops.gather_points, values0,
                         values1)
 
-    expected = np.load('python/test/ml_ops/data/gathering/out.npy')
+    expected = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/gathering/out.npy'
+    )
     np.testing.assert_equal(ans, expected)

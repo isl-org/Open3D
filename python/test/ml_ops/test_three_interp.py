@@ -41,12 +41,20 @@ ml_torch_gpu_only = pytest.mark.parametrize('ml', [
 @ml_torch_gpu_only
 def test_three_interp(ml):
 
-    values0 = np.load('python/test/ml_ops/data/three_interp/values0.npy')
-    values1 = np.load('python/test/ml_ops/data/three_interp/values1.npy')
-    values2 = np.load('python/test/ml_ops/data/three_interp/values2.npy')
+    values0 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/three_interp/values0.npy'
+    )
+    values1 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/three_interp/values1.npy'
+    )
+    values2 = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/three_interp/values2.npy'
+    )
 
     ans = mltest.run_op(ml, ml.device, True, ml.ops.three_interpolate, values0,
                         values1, values2)
 
-    expected = np.load('python/test/ml_ops/data/three_interp/out.npy')
+    expected = mltest.fetch_numpy(
+        'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/three_interp/out.npy'
+    )
     np.testing.assert_equal(ans, expected)
