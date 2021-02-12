@@ -91,6 +91,7 @@ public:
     }
 
     /// Constructor from raw host buffer. The memory will be copied.
+    /// TODO: add a version that accpets uint8_t* or void*.
     template <typename T>
     Tensor(const T* init_vals,
            const SizeVector& shape,

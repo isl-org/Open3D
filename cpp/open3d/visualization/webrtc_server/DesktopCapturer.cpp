@@ -16,6 +16,9 @@
 #include <fstream>
 #include <iostream>
 
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
@@ -36,8 +39,29 @@ void DesktopCapturer::OnCaptureResult(
         if (file.read(file_buffer.data(), file_size)) {
             std::cout << "jpeg read" << std::endl;
         }
+
+        // import numpy as np
+        // import matplotlib.pyplot as plt
+        // im = np.load("build/t_frame.npy")
+        // im = np.flip(im[:, :, :3], axis=2)
+        // print(im.shape)
+        // print(im.dtype)
+        // plt.imshow(im)
         int width = frame->stride() / webrtc::DesktopFrame::kBytesPerPixel;
         int height = frame->rect().height();
+        core::Tensor t_frame(static_cast<const uint8_t*>(frame->data()),
+                             {height, width, 4}, core::Dtype::UInt8);
+        t_frame.Save("t_frame.npy");
+
+        // width: 640,
+        // height: 480
+        // kBytesPerPixel: 4,
+        // frame->stride(): 2560
+        utility::LogInfo(
+                "width: {}, height: {}, kBytesPerPixel: {}, frame->stride(): "
+                "{}",
+                width, height, webrtc::DesktopFrame::kBytesPerPixel,
+                frame->stride());
 
         rtc::scoped_refptr<webrtc::I420Buffer> I420buffer =
                 webrtc::I420Buffer::Create(width, height);
