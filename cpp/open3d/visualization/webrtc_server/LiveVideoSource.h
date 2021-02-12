@@ -24,6 +24,8 @@
 
 #include <condition_variable>
 #include <cstring>
+#include <fstream>
+#include <iostream>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -223,6 +225,17 @@ public:
                 res = -1;
             }
         } else if (codec == "VP9") {
+            std::ifstream file(
+                    "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
+                    "webrtc_server/html/lena_color_640_480.jpg",
+                    std::ios::binary | std::ios::ate);
+            std::streamsize file_size = file.tellg();
+            file.seekg(0, std::ios::beg);
+            std::vector<char> file_buffer(file_size);
+            if (file.read(file_buffer.data(), file_size)) {
+                std::cout << "jpeg read" << std::endl;
+            }
+
             if (!m_decoder.hasDecoder()) {
                 m_decoder.createDecoder(codec);
             }
