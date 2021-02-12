@@ -90,7 +90,7 @@ void Renderer::RenderToImage(
     auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
     render->Configure(
-            view, scene, vp[2], vp[3], 3,
+            view, scene, vp[2], vp[3], 3, false,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
@@ -110,25 +110,13 @@ void Renderer::RenderToDepthImage(
         View* view,
         Scene* scene,
         std::function<void(std::shared_ptr<geometry::Image>)> cb) {
-    Material depth;
-    depth.shader = "depthValue";
-    auto scene_copy = scene->Copy();
     auto vp = view->GetViewport();
-    auto view_id = scene_copy->AddView(vp[0], vp[1], vp[2], vp[3]);
-    auto view_copy = scene_copy->GetView(view_id);
-    scene_copy->OverrideMaterialAll(depth);
-    scene_copy->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
-
-    view_copy->ConfigureForColorPicking();
-    view_copy->GetCamera()->CopyFrom(view->GetCamera());
-
     auto render = CreateBufferRenderer();
     render->Configure(
-            view_copy, scene_copy, vp[2], vp[3], 4,
+            view, scene, vp[2], vp[3], 1, true,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
-            [render, cb,
-             scene_copy](const RenderToBuffer::Buffer& buffer) mutable {
+            [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
                 auto image = std::make_shared<geometry::Image>();
                 image->width_ = int(buffer.width);
                 image->height_ = int(buffer.height);
@@ -137,19 +125,8 @@ void Renderer::RenderToDepthImage(
                 image->data_.resize(image->width_ * image->height_ *
                                     image->num_of_channels_ *
                                     image->bytes_per_channel_);
-                for (int y = 0; y < image->height_; ++y) {
-                    for (int x = 0; x < image->width_; ++x) {
-                        auto* rgba = buffer.bytes +
-                                     (y * buffer.width + x) * buffer.n_channels;
-                        auto* depth = image->PointerAt<float>(x, y);
-                        uint32_t depth32 =
-                                ((rgba[0] << 16) | (rgba[1] << 8) | rgba[2]);
-                        *depth = float(depth32) / 16777215.0f;
-                    }
-                }
-
+                memcpy(image->data_.data(), buffer.bytes, buffer.size);
                 cb(image);
-                delete scene_copy;
                 render = nullptr;
             });
 }
