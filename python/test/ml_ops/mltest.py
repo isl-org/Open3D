@@ -4,7 +4,7 @@ import pytest
 from collections import namedtuple
 import importlib
 from types import SimpleNamespace
-from urllib.request import urlopen
+import urllib.request
 import io
 
 # skip all tests if the ml ops were not built
@@ -197,5 +197,8 @@ parametrize = SimpleNamespace(
 
 
 def fetch_numpy(url):
-    np_file = urlopen(url).read()
-    return np.load(io.BytesIO(np_file))
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as response:
+        np_file = response.read()
+        return np.load(io.BytesIO(np_file))
+    return None
