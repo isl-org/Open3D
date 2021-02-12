@@ -29,6 +29,7 @@
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
 namespace open3d {
@@ -78,6 +79,9 @@ public:
         bool show_settings = false;
         bool show_skybox = false;
         bool show_axes = false;
+        bool show_ground = false;
+        rendering::Scene::GroundPlane ground_plane =
+                rendering::Scene::GroundPlane::XZ;
         bool is_animating = false;
         std::set<std::string> enabled_groups;
 
@@ -138,6 +142,8 @@ public:
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
     void ShowAxes(bool show);
+    void ShowGround(bool show);
+    void SetGroundPlane(rendering::Scene::GroundPlane plane);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);

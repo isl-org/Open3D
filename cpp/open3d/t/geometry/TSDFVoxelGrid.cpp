@@ -26,7 +26,6 @@
 
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 
-#include "open3d/Open3D.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/utility/Console.h"
@@ -185,6 +184,31 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
+}
+
+std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        int width,
+        int height,
+        int max_steps,
+        float depth_min,
+        float depth_max,
+        float weight_threshold) {
+    // Extrinsic: world to camera -> pose: camera to world
+    core::Tensor pose = extrinsics.Inverse();
+
+    core::Tensor vertex_map = core::Tensor::Zeros(
+            {height, width, 3}, core::Dtype::Float32, device_);
+    core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
+                                                 core::Dtype::Float32, device_);
+    core::Tensor block_values = block_hashmap_->GetValueTensor();
+    auto device_hashmap = block_hashmap_->GetDeviceHashmap();
+    kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
+                          intrinsics, pose, block_resolution_, voxel_size_,
+                          sdf_trunc_, max_steps, depth_min, depth_max,
+                          weight_threshold);
+    return std::make_tuple(vertex_map, color_map);
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {

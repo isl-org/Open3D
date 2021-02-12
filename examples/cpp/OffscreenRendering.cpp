@@ -69,8 +69,7 @@ int main(int argc, const char *argv[]) {
     // This example demonstrates rendering to an image without a window.
     // If you want to render to an image from within a window you should use
     // scene->GetScene()->RenderToImage() instead.
-    Application::EnvUnlocker unlocker;
-    auto img = app.RenderToImage(unlocker, scene->GetView(), scene->GetScene(),
+    auto img = app.RenderToImage(*renderer, scene->GetView(), scene->GetScene(),
                                  width, height);
     std::cout << "Writing file to " << kOutputFilename << std::endl;
     io::WriteImage(kOutputFilename, *img);

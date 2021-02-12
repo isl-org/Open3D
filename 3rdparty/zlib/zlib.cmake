@@ -12,7 +12,6 @@ ExternalProject_Add(
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    BUILD_ALWAYS ON
 )
 
 ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
