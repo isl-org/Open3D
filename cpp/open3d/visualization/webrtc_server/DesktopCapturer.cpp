@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -29,16 +30,18 @@ void DesktopCapturer::OnCaptureResult(
     RTC_LOG(INFO) << "DesktopCapturer:OnCaptureResult";
 
     if (result == webrtc::DesktopCapturer::Result::SUCCESS) {
-        std::ifstream file(
-                "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
-                "webrtc_server/html/lena_color_640_480.jpg",
-                std::ios::binary | std::ios::ate);
-        std::streamsize file_size = file.tellg();
-        file.seekg(0, std::ios::beg);
-        std::vector<char> file_buffer(file_size);
-        if (file.read(file_buffer.data(), file_size)) {
-            std::cout << "jpeg read" << std::endl;
-        }
+        // t::geometry::Image im;
+        // t::io::ReadImage(
+        //         "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
+        //         "webrtc_server/html/lena_color_640_480.jpg",
+        //         im);
+        // core::Tensor im_tensor = im.AsTensor();
+        // core::Tensor im_tensor_bgra = core::Tensor::Zeros(
+        //         {im.GetRows(), im.GetCols(), 4}, im_tensor.GetDtype());
+        // im_tensor_bgra.Slice(2, 0, 1) = im_tensor.Slice(2, 2, 3);
+        // im_tensor_bgra.Slice(2, 1, 2) = im_tensor.Slice(2, 1, 2);
+        // im_tensor_bgra.Slice(2, 2, 3) = im_tensor.Slice(2, 0, 1);
+        // set data to: static_cast<const uint8_t*>(im_tensor_bgra.GetDataPtr())
 
         // import numpy as np
         // import matplotlib.pyplot as plt
@@ -49,19 +52,20 @@ void DesktopCapturer::OnCaptureResult(
         // plt.imshow(im)
         int width = frame->stride() / webrtc::DesktopFrame::kBytesPerPixel;
         int height = frame->rect().height();
-        core::Tensor t_frame(static_cast<const uint8_t*>(frame->data()),
-                             {height, width, 4}, core::Dtype::UInt8);
-        t_frame.Save("t_frame.npy");
+        // core::Tensor t_frame(static_cast<const uint8_t*>(frame->data()),
+        //                      {height, width, 4}, core::Dtype::UInt8);
+        // t_frame.Save("t_frame.npy");
 
         // width: 640,
         // height: 480
         // kBytesPerPixel: 4,
         // frame->stride(): 2560
-        utility::LogInfo(
-                "width: {}, height: {}, kBytesPerPixel: {}, frame->stride(): "
-                "{}",
-                width, height, webrtc::DesktopFrame::kBytesPerPixel,
-                frame->stride());
+        // utility::LogInfo(
+        //         "width: {}, height: {}, kBytesPerPixel: {}, frame->stride():
+        //         "
+        //         "{}",
+        //         width, height, webrtc::DesktopFrame::kBytesPerPixel,
+        //         frame->stride());
 
         rtc::scoped_refptr<webrtc::I420Buffer> I420buffer =
                 webrtc::I420Buffer::Create(width, height);
