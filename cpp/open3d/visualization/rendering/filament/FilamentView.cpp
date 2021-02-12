@@ -290,6 +290,29 @@ void FilamentView::ConfigureForColorPicking() {
     SetShadowing(false, ShadowType::kPCF);
 }
 
+void FilamentView::EnableViewCaching(bool enable) {
+}
+
+bool FilamentView::IsCached() const { return caching_enabled_; }
+
+TextureHandle FilamentView::GetColorBufer() { return color_buffer_; }
+
+void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
+    if (!render_target) {
+        view_->setRenderTarget(nullptr);
+    } else {
+        auto rt_weak = resource_mgr_.GetRenderTarget(render_target);
+        auto rt = rt_weak.lock();
+        if (!rt) {
+            utility::LogWarning(
+                    "Invalid render target given to SetRenderTarget");
+            view_->setRenderTarget(nullptr);
+        } else {
+            view_->setRenderTarget(rt.get());
+        }
+    }
+}
+
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
 void FilamentView::CopySettingsFrom(const FilamentView& other) {

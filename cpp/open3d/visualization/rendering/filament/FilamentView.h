@@ -84,6 +84,9 @@ public:
 
     void ConfigureForColorPicking() override;
 
+    void EnableViewCaching(bool enable) override;
+    bool IsCached() const override;
+
     Camera* GetCamera() const override;
 
     // Copies available settings for view and camera
@@ -92,14 +95,21 @@ public:
     void SetScene(FilamentScene& scene);
 
     filament::View* GetNativeView() const { return view_; }
+    TextureHandle GetColorBufer();
 
     void PreRender();
     void PostRender();
 
 private:
+    void SetRenderTarget(const RenderTargetHandle render_target);
+
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
+    bool caching_enabled_ = false;
+    TextureHandle color_buffer_;
+    TextureHandle depth_buffer_;
+    RenderTargetHandle render_target_;
 
     filament::Engine& engine_;
     FilamentScene* scene_ = nullptr;
