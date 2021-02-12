@@ -334,6 +334,8 @@ struct O3DVisualizer::Impl {
         CollapsableVert *scene_panel;
         Checkbox *show_skybox;
         Checkbox *show_axes;
+        Checkbox *show_ground;
+        Combobox *ground_plane;
         ColorEdit *bg_color;
         Slider *point_size;
         Combobox *shader;
@@ -515,11 +517,33 @@ struct O3DVisualizer::Impl {
         settings.show_axes->SetOnChecked(
                 [this](bool is_checked) { this->ShowAxes(is_checked); });
 
+        settings.show_ground = new Checkbox("Show Ground");
+        settings.show_ground->SetOnChecked(
+                [this](bool is_checked) { this->ShowGround(is_checked); });
+
+        settings.ground_plane = new Combobox();
+        settings.ground_plane->AddItem("XZ");
+        settings.ground_plane->AddItem("XY");
+        settings.ground_plane->AddItem("YZ");
+        settings.ground_plane->SetOnValueChanged([this](const char *item,
+                                                        int idx) {
+            if (idx == 1) {
+                ui_state_.ground_plane = rendering::Scene::GroundPlane::XY;
+            } else if (idx == 2) {
+                ui_state_.ground_plane = rendering::Scene::GroundPlane::YZ;
+            } else {
+                ui_state_.ground_plane = rendering::Scene::GroundPlane::XZ;
+            }
+            this->ShowGround(ui_state_.show_ground);
+        });
+
         h = new Horiz(v_spacing);
         h->AddChild(GiveOwnership(settings.show_axes));
         h->AddFixed(em);
         h->AddChild(GiveOwnership(settings.show_skybox));
         settings.scene_panel->AddChild(GiveOwnership(h));
+        settings.scene_panel->AddChild(GiveOwnership(settings.show_ground));
+        settings.scene_panel->AddChild(GiveOwnership(settings.ground_plane));
 
         settings.bg_color = new ColorEdit();
         settings.bg_color->SetValue(ui_state_.bg_color.x(),
@@ -961,9 +985,7 @@ struct O3DVisualizer::Impl {
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
                      const Eigen::Vector3f &up) {
-        auto scene = scene_->GetScene();
-        scene_->SetupCamera(fov, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
-        scene->GetCamera()->LookAt(center, eye, up);
+        scene_->LookAt(center, eye, up);
         scene_->ForceRedraw();
     }
 
@@ -1019,6 +1041,29 @@ struct O3DVisualizer::Impl {
         settings.show_axes->SetChecked(show);  // in case called manually
         scene_->GetScene()->ShowAxes(show);
         scene_->ForceRedraw();
+    }
+
+    void ShowGround(bool show) {
+        ui_state_.show_ground = show;
+        settings.show_ground->SetChecked(show);  // in case called manually
+        scene_->GetScene()->ShowGroundPlane(show, ui_state_.ground_plane);
+        scene_->ForceRedraw();
+    }
+
+    void SetGroundPlane(rendering::Scene::GroundPlane plane) {
+        ui_state_.ground_plane = plane;
+        if (plane == rendering::Scene::GroundPlane::XZ) {
+            settings.ground_plane->SetSelectedIndex(0);
+        } else if (plane == rendering::Scene::GroundPlane::XY) {
+            settings.ground_plane->SetSelectedIndex(1);
+        } else {
+            settings.ground_plane->SetSelectedIndex(2);
+        }
+        // Update ground plane if it is currently showing
+        if (ui_state_.show_ground) {
+            scene_->GetScene()->ShowGroundPlane(ui_state_.show_ground, plane);
+            scene_->ForceRedraw();
+        }
     }
 
     void SetPointSize(int px) {
@@ -1149,11 +1194,15 @@ struct O3DVisualizer::Impl {
         }
 
         scene_->SetViewControls(mode);
+        ui_state_.mouse_mode = mode;
         settings.view_mouse_mode = mode;
         for (const auto &t_b : settings.mouse_buttons) {
             t_b.second->SetOn(false);
         }
-        settings.mouse_buttons[mode]->SetOn(true);
+        auto it = settings.mouse_buttons.find(mode);
+        if (it != settings.mouse_buttons.end()) {
+            it->second->SetOn(true);
+        }
     }
 
     void SetPicking() {
@@ -1264,6 +1313,7 @@ struct O3DVisualizer::Impl {
         SetBackground(ui_state_.bg_color, nullptr);
         ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
+        ShowGround(ui_state_.show_ground);
 
         if (point_size_changed) {
             SetPointSize(ui_state_.point_size);
@@ -1687,8 +1737,17 @@ Open3DScene *O3DVisualizer::GetScene() const {
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
 #ifdef BUILD_RPC_INTERFACE
-    impl_->receiver_ = std::make_shared<Receiver>(
-            this, impl_->scene_->GetScene(), address, timeout);
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        impl_->AddGeometry(path, geom, nullptr, nullptr, layer, time, true);
+        if (impl_->objects_.size() == 1) {
+            impl_->ResetCameraToDefault();
+        }
+    };
+
+    impl_->receiver_ =
+            std::make_shared<Receiver>(address, timeout, this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
@@ -1784,12 +1843,22 @@ void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
+void O3DVisualizer::ShowGround(bool show) { impl_->ShowGround(show); }
+
+void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
+    impl_->SetGroundPlane(plane);
+}
+
 void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);
 }
 
 void O3DVisualizer::SetLineWidth(int line_width) {
     impl_->SetLineWidth(line_width);
+}
+
+void O3DVisualizer::SetMouseMode(SceneWidget::Controls mode) {
+    impl_->SetMouseMode(mode);
 }
 
 void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {
@@ -1845,7 +1914,9 @@ void O3DVisualizer::SetAnimating(bool is_animating) {
 void O3DVisualizer::SetupCamera(float fov,
                                 const Eigen::Vector3f &center,
                                 const Eigen::Vector3f &eye,
-                                const Eigen::Vector3f &up) {}
+                                const Eigen::Vector3f &up) {
+    return impl_->SetupCamera(fov, center, eye, up);
+}
 
 void O3DVisualizer::ResetCameraToDefault() {
     return impl_->ResetCameraToDefault();

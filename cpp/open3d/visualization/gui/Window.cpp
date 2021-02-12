@@ -70,6 +70,8 @@ static constexpr int AUTOSIZE_HEIGHT = 0;
 static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
 static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
 
+static constexpr double DOUBLE_CLICK_TIME = 0.300;  // 300 ms is a typical value
+
 // Assumes the correct ImGuiContext is current
 void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
@@ -166,6 +168,8 @@ struct Window::Impl {
     // the time we monitor key up/down events.
     int mouse_mods_ = 0;  // ORed KeyModifiers
     double last_render_time_ = 0.0;
+    double last_button_down_time_ = 0.0;  // we have to compute double-click
+    MouseButton last_button_down_ = MouseButton::NONE;
 
     Theme theme_;  // so that the font size can be different based on scaling
     std::unique_ptr<visualization::rendering::FilamentRenderer> renderer_;
@@ -354,20 +358,7 @@ Window::Window(const std::string& title,
     // after pressing "Open".)
     RestoreDrawContext(oldContext);
 
-#ifndef WIN32
     CreateRenderer();
-#else
-    // Don't create the renderer yet. If the program exits before the first
-    // draw callback from the operating system (Windows in particular),
-    // Filament's rendering may not have had time to start yet, so destroying
-    // the renderer will wait forever for the render thread to execute.
-    // This can be reproduced with the following Python script
-    //   import open3d as o3d
-    //   o3d.visualization.Application.instance.initialize()
-    //   w = o3d.visualization.Application.instance
-    //          .create_window("Crash", 640, 480)
-    //   <anything that throws an exception>
-#endif  // !WIN32
 }
 
 void Window::CreateRenderer() {
@@ -1452,6 +1443,19 @@ void Window::MouseButtonCallback(GLFWwindow* window,
 
     MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
     me.button.button = MouseButton(MouseButtonFromGLFW(button));
+    me.button.count = 1;
+
+    double now = Application::GetInstance().Now();
+    if (w->impl_->last_button_down_ == me.button.button) {
+        double dt = now - w->impl_->last_button_down_time_;
+        if (dt > 0.0 && dt < DOUBLE_CLICK_TIME) {
+            me.button.count += 1;
+        }
+    }
+    if (type == MouseEvent::BUTTON_DOWN) {
+        w->impl_->last_button_down_ = me.button.button;
+        w->impl_->last_button_down_time_ = now;
+    }
 
     utility::LogInfo("MouseButton GLFW: {}", me.ToString());
     w->OnMouseEvent(me);
