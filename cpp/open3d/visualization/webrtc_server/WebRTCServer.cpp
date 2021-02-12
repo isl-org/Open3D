@@ -105,8 +105,8 @@ void WebRTCServer::Impl::Run() {
 
     // Logging settings.
     // src/rtc_base/logging.h: LS_VERBOSE, LS_ERROR
-    // rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_ERROR);
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_VERBOSE);
+    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_ERROR);
+    // rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_VERBOSE);
     std::cout << "Logger level:" << rtc::LogMessage::GetLogToDebug()
               << std::endl;
     rtc::LogMessage::LogTimestamps();
