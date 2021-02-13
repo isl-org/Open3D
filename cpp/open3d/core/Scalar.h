@@ -54,7 +54,7 @@ public:
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
-    Scalar(int v) {
+    Scalar(int32_t v) {
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
