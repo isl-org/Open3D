@@ -1072,14 +1072,14 @@ else()
     if(UNIX)
         target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-DMKL_ILP64;-m64>")
         target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-        # cuSOLVER and cuBLAS
-        if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_mkl INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
-        endif()
     elseif(MSVC)
         target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:/DMKL_ILP64>")
+    endif()
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE
+                            ${CUDA_cusolver_LIBRARY}
+                            ${CUDA_CUBLAS_LIBRARIES})
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
