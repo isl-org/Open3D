@@ -42,7 +42,7 @@ int DeviceCount() {
     try {
         std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
         return cuda_state->GetNumDevices();
-    } catch (const std::runtime_error& e) {  // GetInstance can throw
+    } catch (const std::runtime_error&) {  // GetInstance can throw
         return 0;
     }
 #else
