@@ -43,6 +43,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+using dtype_channels_paris = std::vector<std::pair<core::Dtype, int64_t>>;
+
 Image::Image(int64_t rows,
              int64_t cols,
              int64_t channels,
@@ -163,13 +165,12 @@ Image Image::RGBToGray() const {
                 "Input image channels must be 3 for RGBToGray, but got {}.",
                 GetChannels());
     }
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},
             {core::Dtype::Float32, 3},
     };
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},
             {core::Dtype::Float32, 3},
@@ -200,9 +201,7 @@ Image Image::Resize(float sampling_rate, int interp_type) const {
         return *this;
     }
 
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
@@ -211,7 +210,7 @@ Image Image::Resize(float sampling_rate, int interp_type) const {
 
     };
 
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
@@ -244,11 +243,9 @@ Image Image::Resize(float sampling_rate, int interp_type) const {
 }
 
 Image Image::Dilate(int kernel_size) const {
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-
     // Check NPP datatype support for each function in documentation:
     // https://docs.nvidia.com/cuda/npp/group__nppi.html
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
             {core::Dtype::UInt16, 1},  {core::Dtype::Int32, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::Bool, 3},
@@ -260,7 +257,7 @@ Image Image::Dilate(int kernel_size) const {
     };
     // Check IPP datatype support for each function in IPP documentation:
     // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
             {core::Dtype::UInt16, 1},  {core::Dtype::Float32, 1},
             {core::Dtype::Bool, 3},    {core::Dtype::UInt8, 3},
@@ -293,14 +290,12 @@ Image Image::FilterBilateral(int kernel_size,
         utility::LogError("Kernel size must be >= 3, but got {}.", kernel_size);
     }
 
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
     };
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::UInt8, 1},
             {core::Dtype::Float32, 1},
             {core::Dtype::UInt8, 3},
@@ -330,15 +325,14 @@ Image Image::FilterBilateral(int kernel_size,
 }
 
 Image Image::Filter(const core::Tensor &kernel) const {
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
             {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
             {core::Dtype::Float32, 4},
     };
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
@@ -372,15 +366,14 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
                           kernel_size);
     }
 
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
             {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
             {core::Dtype::Float32, 4},
     };
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
             {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
             {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
@@ -414,16 +407,14 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
                           kernel_size);
     }
 
-    using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
-
     // 16 signed is also supported by the engines, but is non-standard thus
     // not supported by open3d. To filter 16 bit unsigned depth images, we
     // recommend first converting to Float32.
-    static const supported_t npp_supported{
+    static const dtype_channels_paris npp_supported{
             {core::Dtype::UInt8, 1},
             {core::Dtype::Float32, 1},
     };
-    static const supported_t ipp_supported{
+    static const dtype_channels_paris ipp_supported{
             {core::Dtype::UInt8, 1},
             {core::Dtype::Float32, 1},
     };
