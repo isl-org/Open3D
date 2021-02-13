@@ -1,14 +1,5 @@
 function(open3d_show_and_abort_on_warning trgt)
 
-    if (BUILD_CUDA_MODULE)
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
-            set(CUDA_FLAGS "--compiler-options -Wall --compiler-options -Werror --Werror cross-execution-space-call,reorder,deprecated-declarations")
-        else()
-            set(CUDA_FLAGS "--Werror all-warnings,cross-execution-space-call,reorder,deprecated-declarations")
-        endif()
-    else()
-        set(CUDA_FLAGS "")
-    endif()
     set(DISABLE_MSVC_WARNINGS
             /wd4201        # non-standard extention nameless struct (filament includes)
             /wd4310        # cast truncates const value (filament)
@@ -23,8 +14,32 @@ function(open3d_show_and_abort_on_warning trgt)
             /wd4245        # signed/unsigned mismatch (visualization, PoissonRecon, ...)
             )
 
+    if (BUILD_CUDA_MODULE)
+        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
+
+        if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
+            if (MSVC)
+                string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX")
+            else()
+                string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Werror")
+            endif()
+        else()
+            string(APPEND CUDA_FLAGS " --Werror all-warnings")
+        endif()
+
+        if (MSVC)
+            string(REPLACE ";" "," CUDA_DISABLE_MSVC_WARNINGS "${DISABLE_MSVC_WARNINGS}")
+            string(APPEND CUDA_FLAGS " -Xcompiler ${CUDA_DISABLE_MSVC_WARNINGS}")
+            string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
+        else()
+            string(APPEND CUDA_FLAGS " --Werror reorder")
+        endif()
+    else()
+        set(CUDA_FLAGS "")
+    endif()
+
     target_compile_options(${trgt} PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
         $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
