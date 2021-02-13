@@ -50,7 +50,11 @@ public:
         scalar_type_ = ScalarType::Double;
         value_.d = static_cast<double>(v);
     }
-    Scalar(int v) {
+    Scalar(int16_t v) {
+        scalar_type_ = ScalarType::Int64;
+        value_.i = static_cast<int64_t>(v);
+    }
+    Scalar(int32_t v) {
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
