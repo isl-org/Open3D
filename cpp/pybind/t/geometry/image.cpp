@@ -66,7 +66,10 @@ static const std::unordered_map<std::string, std::string>
                  "First multiply image pixel values with this factor. "
                  "This should be positive for unsigned dtypes."},
                 {"offset", "Then add this factor to all image pixel values."},
-                {"kernel_size", "Kernel size for filters and dilations."}};
+                {"kernel_size", "Kernel size for filters and dilations."},
+                {"value_sigma", "Standard deviation for the image content."},
+                {"dist_sigma",
+                 "Standard deviation for the image pixel positions."}};
 
 void pybind_image(py::module &m) {
     py::class_<Image, PyGeometry<Image>, Geometry> image(
@@ -141,8 +144,6 @@ void pybind_image(py::module &m) {
                  "kernel_size"_a = 3, "sigma"_a = 1.0)
             .def("filter_bilateral", &Image::FilterBilateral,
                  "Return a new image after bilateral filtering."
-                 "value_sigma: standard deviation for the image content."
-                 "dist_sigma: standard deviation for the image pixel positions."
                  "Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:"
                  "CPU uses a round kernel (radius = floor(kernel_size / 2)),"
                  "while CUDA uses a square kernel (width = kernel_size)."

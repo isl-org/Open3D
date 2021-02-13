@@ -149,7 +149,9 @@ Image Image::To(core::Dtype dtype,
 
 Image Image::RGBToGray() const {
     if (GetChannels() != 3) {
-        utility::LogError("Input image channels must be 3 for RGBToGray.");
+        utility::LogError(
+                "Input image channels must be 3 for RGBToGray, but got {}.",
+                GetChannels());
     }
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
     static const supported_t ipp_supported{
@@ -278,8 +280,7 @@ Image Image::FilterBilateral(int kernel_size,
                              float value_sigma,
                              float dist_sigma) const {
     if (kernel_size < 3) {
-        utility::LogError("Kernel size must be >= 3, but received {}.",
-                          kernel_size);
+        utility::LogError("Kernel size must be >= 3, but got {}.", kernel_size);
     }
 
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
@@ -357,9 +358,8 @@ Image Image::Filter(const core::Tensor &kernel) const {
 
 Image Image::FilterGaussian(int kernel_size, float sigma) const {
     if (kernel_size < 3 || kernel_size % 2 == 0) {
-        utility::LogError(
-                "Kernel size must be an odd number >= 3, but received {}.",
-                kernel_size);
+        utility::LogError("Kernel size must be an odd number >= 3, but got {}.",
+                          kernel_size);
     }
 
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
@@ -400,7 +400,8 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
 
 std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
     if (!(kernel_size == 3 || kernel_size == 5)) {
-        utility::LogError("Kernel size must be 3 or 5.");
+        utility::LogError("Kernel size must be 3 or 5, but got {}.",
+                          kernel_size);
     }
 
     using supported_t = std::vector<std::pair<core::Dtype, int64_t>>;
@@ -450,7 +451,7 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
     return std::make_pair(dst_im_dx, dst_im_dy);
 }
 
-Image Image::PyrDown() {
+Image Image::PyrDown() const {
     Image blur = FilterGaussian(5);
     return blur.Resize(0.5, Image::Nearest);
 }

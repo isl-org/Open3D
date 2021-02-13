@@ -181,7 +181,8 @@ public:
         return *this;
     }
 
-    /// Converts a 3-channel RGB image to a new 1-channel Grayscale image.
+    /// Converts a 3-channel RGB image to a new 1-channel Grayscale image by
+    /// I = 0.299 * R + 0.587 * G + 0.114 * B.
     Image RGBToGray() const;
 
     /// Return a new image after resizing with specified interpolation type.
@@ -199,16 +200,15 @@ public:
     /// Return a new image after performing morphological dilation. Supported
     /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
     /// 8-connected neighborhood is used to create the dilation mask.
-    /// \param half_kernel_size A dilation mask of size 2*half_kernel_size+1 is
-    /// used.
+    /// \param kernel_size An odd number >= 3.
     Image Dilate(int kernel_size = 3) const;
 
     /// Return a new image given the filtering kernel.
     Image Filter(const core::Tensor &kernel) const;
 
     /// Return a new image after bilateral filtering.
-    /// value_sigma: standard deviation for the image content.
-    /// dist_sigma: standard deviation for the image pixel positions.
+    /// \param value_sigma Standard deviation for the image content.
+    /// \param dist_sigma Standard deviation for the image pixel positions.
     /// Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:
     /// CPU uses a round kernel (radius = floor(kernel_size / 2)),
     /// while CUDA uses a square kernel (width = kernel_size).
@@ -219,7 +219,7 @@ public:
 
     /// Return a new image after Gaussian filtering.
     /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
-    /// Possible kernel_size: odd numbers >= 3 are supported.
+    /// \param kernel_size An odd number >= 3.
     Image FilterGaussian(int kernel_size = 3, float sigma = 1.0f) const;
 
     /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
@@ -228,7 +228,7 @@ public:
 
     /// Return a new downsampled image with pyramid downsampling formed by a
     /// chained 5x5 Gaussian filter and a downsampling operation.
-    Image PyrDown();
+    Image PyrDown() const;
 
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {

@@ -83,6 +83,8 @@ private:
             dl_data_type.code = DLDataTypeCode::kDLFloat;
         } else if (dtype == Dtype::Float64) {
             dl_data_type.code = DLDataTypeCode::kDLFloat;
+        } else if (dtype == Dtype::Int16) {
+            dl_data_type.code = DLDataTypeCode::kDLInt;
         } else if (dtype == Dtype::Int32) {
             dl_data_type.code = DLDataTypeCode::kDLInt;
         } else if (dtype == Dtype::Int64) {
@@ -241,7 +243,7 @@ Tensor Tensor::Arange(Scalar start,
 }
 
 Tensor Tensor::Reverse() const {
-    // Unoptimized with ai. Can be improved when negative step in Slice is
+    // TODO: Unoptimized with ai. Can be improved when negative step in Slice is
     // implemented.
     int64_t n = NumElements();
     Tensor reverse_idx = Tensor::Arange(n - 1, -1, -1);
@@ -1152,6 +1154,9 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
             break;
         case DLDataTypeCode::kDLInt:
             switch (src->dl_tensor.dtype.bits) {
+                case 16:
+                    dtype = Dtype::Int16;
+                    break;
                 case 32:
                     dtype = Dtype::Int32;
                     break;
