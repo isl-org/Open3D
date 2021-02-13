@@ -105,6 +105,7 @@ public:
     virtual Transform GetModelMatrix() const = 0;
     virtual Transform GetViewMatrix() const = 0;
     virtual Transform GetProjectionMatrix() const = 0;
+    virtual Transform GetCullingProjectionMatrix() const = 0;
 
     // Returns the normalized device coordinates (NDC) of the specified point
     // given the view and projection matrices of the camera. The returned point
