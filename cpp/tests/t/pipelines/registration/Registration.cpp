@@ -46,6 +46,12 @@ INSTANTIATE_TEST_SUITE_P(
         RegistrationPermuteDevicePairs,
         testing::ValuesIn(RegistrationPermuteDevicePairs::TestCases()));
 
+class RegistrationPermuteDevicesWithFaiss : public PermuteDevicesWithFaiss {};
+INSTANTIATE_TEST_SUITE_P(
+        Registration,
+        RegistrationPermuteDevicesWithFaiss,
+        testing::ValuesIn(PermuteDevicesWithFaiss::TestCases()));
+
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
@@ -75,7 +81,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
               init_trans_t.ToFlatVector<float>());
 }
 
-TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
+TEST_P(RegistrationPermuteDevicesWithFaiss, EvaluateRegistration) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
@@ -140,7 +146,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_, 0.0005);
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
+TEST_P(RegistrationPermuteDevicesWithFaiss, RegistrationICPPointToPoint) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
@@ -206,7 +212,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
+TEST_P(RegistrationPermuteDevicesWithFaiss, RegistrationICPPointToPlane) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 

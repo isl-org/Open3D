@@ -63,6 +63,30 @@ public:
     }
 };
 
+class PermuteDevicesWithFaiss : public testing::TestWithParam<core::Device> {
+public:
+    static std::vector<core::Device> TestCases() {
+#if defined(BUILD_CUDA_MODULE) && defined(WITH_FAISS)
+        std::shared_ptr<core::CUDAState> cuda_state =
+                core::CUDAState::GetInstance();
+        if (cuda_state->GetNumDevices() >= 1) {
+            return {
+                    core::Device("CPU:0"),
+                    core::Device("CUDA:0"),
+            };
+        } else {
+            return {
+                    core::Device("CPU:0"),
+            };
+        }
+#else
+        return {
+                core::Device("CPU:0"),
+        };
+#endif
+    }
+};
+
 class PermuteDevicePairs
     : public testing::TestWithParam<std::pair<core::Device, core::Device>> {
 public:
