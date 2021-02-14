@@ -9,7 +9,7 @@ ExternalProject_Add(
     ext_faiss
     PREFIX faiss
     GIT_REPOSITORY https://github.com/junha-l/faiss.git
-    GIT_TAG 954ada2cc1106bd8f20c0f99bff615e36c0053b1
+    GIT_TAG a27dbaf46eb499db590b507032ed495e16b11771
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}

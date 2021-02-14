@@ -11,19 +11,18 @@ System requirements
 * Ubuntu 18.04+: GCC 5+, Clang 7+
 * macOS 10.14+: XCode 8.0+
 * Windows 10 (64-bit): Visual Studio 2019+
-* CMake: 3.17+ for Ubuntu and macOS, 3.18+ for Windows
+* CMake: 3.18+
 
-  * Ubuntu (18.04):
+  * Ubuntu (18.04 / 20.04):
 
     * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
     * Install with ``snap``: ``sudo snap install cmake --classic``
     * Install with ``pip`` (run inside a Python virtualenv): ``pip install cmake``
 
-  * Ubuntu (20.04+): Use the default OS repository: ``sudo apt-get install cmake``
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 10.1 (optional): Open3D supports GPU acceleration of an increasing number
+* CUDA 11.0 (optional): Open3D supports GPU acceleration of an increasing number
   of operations through CUDA on Linux. Please see the `official documentation
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
   install the CUDA toolkit from Nvidia.
