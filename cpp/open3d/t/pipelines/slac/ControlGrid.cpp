@@ -237,6 +237,7 @@ geometry::Image ControlGrid::Warp(const geometry::Image& depth,
             depth, intrinsics, extrinsics);
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Warp(pcd_param);
+    return geometry::Image();
 }
 
 }  // namespace slac

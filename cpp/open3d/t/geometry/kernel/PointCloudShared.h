@@ -36,6 +36,17 @@
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Console.h"
 
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+__device__ inline float atomicMinf(float* addr, float value) {
+    float old;
+    old = (value >= 0)
+                  ? __int_as_float(atomicMin((int*)addr, __float_as_int(value)))
+                  : __uint_as_float(atomicMax((unsigned int*)addr,
+                                              __float_as_uint(value)));
+    return old;
+}
+#endif
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -119,12 +130,11 @@ void ProjectCPU
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
-         float depth_max,
-         int64_t stride) {
+         float depth_max) {
     int64_t n = points.GetLength();
     const float* points_ptr = static_cast<const float*>(points.GetDataPtr());
 
-    TransformIndexer ti(intrinsics, extrinsics, 1.0f);
+    TransformIndexer transform_indexer(intrinsics, extrinsics, 1.0f);
     NDArrayIndexer depth_indexer(depth, 2);
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -134,9 +144,9 @@ void ProjectCPU
     core::kernel::CPULauncher::LaunchGeneralKernel(
             n, [&](int64_t workload_idx) {
 #endif
-                float x = *points_ptr[3 * workload_idx + 0];
-                float y = *points_ptr[3 * workload_idx + 1];
-                float z = *points_ptr[3 * workload_idx + 2];
+                float x = points_ptr[3 * workload_idx + 0];
+                float y = points_ptr[3 * workload_idx + 1];
+                float z = points_ptr[3 * workload_idx + 2];
 
                 // coordinate in camera (in voxel -> in meter)
                 float xc, yc, zc, u, v;
@@ -152,9 +162,20 @@ void ProjectCPU
                 // TODO: atomicMax for float
                 float* depth_ptr = depth_indexer.GetDataPtrFromCoord<float>(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
-                *depth_ptr = zc * depth_scale;
+                float d = zc * depth_scale;
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+                float d_old = atomicExch(depth_ptr, d);
+                if (d_old > 0) {
+                    atomicMinf(depth_ptr, d_old);
+                }
+#else
+#pragma omp critical
+                {
+                    if (*depth_ptr == 0 || *depth_ptr >= d) *depth_ptr = d;
+                }
+#endif
             });
-}
+}  // namespace pointcloud
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

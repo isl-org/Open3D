@@ -168,7 +168,8 @@ geometry::Image PointCloud::Project(int width,
                                     const core::Tensor &extrinsics,
                                     float depth_scale,
                                     float depth_max) {
-    core::Tensor depth({height, width, 1}, core::Dtype::Float32, device_);
+    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
+                                             core::Dtype::Float32, device_);
     kernel::pointcloud::Project(depth, GetPoints(), intrinsics, extrinsics,
                                 depth_scale, depth_max);
     return geometry::Image(depth);
