@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 #include "open3d/Open3D.h"
+#include "open3d/t/pipelines/slac/ControlGrid.h"
 
 using namespace open3d;
 using namespace open3d::core;
@@ -77,32 +78,46 @@ int main(int argc, char** argv) {
 
     std::string method =
             utility::GetProgramOptionAsString(argc, argv, "--method", "rigid");
-    if ("rigid" == method) {
-        auto pose_graph_updated =
-                t::pipelines::slac::RunRigidOptimizerForFragments(
-                        fragment_fnames, *pose_graph, option);
-        io::WritePoseGraph(
-                option.GetSubfolderName() + "/rigid_optimized_posegraph.json",
-                pose_graph_updated);
 
-        camera::PinholeCameraTrajectory trajectory;
-        for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
-            auto fragment_pose_graph = io::CreatePoseGraphFromFile(fmt::format(
-                    "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
-            for (auto node : fragment_pose_graph->nodes_) {
-                auto pose = pose_graph_updated.nodes_[i].pose_ * node.pose_;
-                camera::PinholeCameraParameters param;
-                param.extrinsic_ = pose.inverse().eval();
-                trajectory.parameters_.push_back(param);
-            }
-        }
-        io::WritePinholeCameraTrajectory(
-                option.GetSubfolderName() + "/rigid_optimized_trajectory.log",
-                trajectory);
-    } else if ("slac" == method) {
-        auto result = t::pipelines::slac::RunSLACOptimizerForFragments(
+    pipelines::registration::PoseGraph pose_graph_updated;
+    if ("rigid" == method) {
+        pose_graph_updated = t::pipelines::slac::RunRigidOptimizerForFragments(
                 fragment_fnames, *pose_graph, option);
+    } else if ("slac" == method) {
+        t::pipelines::slac::ControlGrid control_grid;
+        std::tie(pose_graph_updated, control_grid) =
+                t::pipelines::slac::RunSLACOptimizerForFragments(
+                        fragment_fnames, *pose_graph, option);
+
+        auto hashmap = control_grid.GetHashmap();
+        core::Tensor active_addrs;
+        hashmap->GetActiveIndices(active_addrs);
+        hashmap->GetKeyTensor()
+                .IndexGet({active_addrs.To(core::Dtype::Int64)})
+                .Save(option.GetSubfolderName() + "/ctr_grid_keys.npy");
+        hashmap->GetValueTensor()
+                .IndexGet({active_addrs.To(core::Dtype::Int64)})
+                .Save(option.GetSubfolderName() + "/ctr_grid_values.npy");
     }
+
+    // Write pose graph
+    io::WritePoseGraph(option.GetSubfolderName() + "/optimized_posegraph.json",
+                       pose_graph_updated);
+
+    camera::PinholeCameraTrajectory trajectory;
+    for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
+        auto fragment_pose_graph = io::CreatePoseGraphFromFile(fmt::format(
+                "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
+        for (auto node : fragment_pose_graph->nodes_) {
+            auto pose = pose_graph_updated.nodes_[i].pose_ * node.pose_;
+            camera::PinholeCameraParameters param;
+            param.extrinsic_ = pose.inverse().eval();
+            trajectory.parameters_.push_back(param);
+        }
+    }
+    io::WritePinholeCameraTrajectory(
+            option.GetSubfolderName() + "/optimized_trajectory.log",
+            trajectory);
 
     return 0;
 }

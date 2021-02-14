@@ -162,6 +162,18 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
     return PointCloud(points);
 }
 
+geometry::Image PointCloud::Project(int width,
+                                    int height,
+                                    const core::Tensor &intrinsics,
+                                    const core::Tensor &extrinsics,
+                                    float depth_scale,
+                                    float depth_max) {
+    core::Tensor depth({height, width, 1}, core::Dtype::Float32, device_);
+    kernel::pointcloud::Project(depth, GetPoints(), intrinsics, extrinsics,
+                                depth_scale, depth_max);
+    return geometry::Image(depth);
+}
+
 PointCloud PointCloud::FromLegacyPointCloud(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,

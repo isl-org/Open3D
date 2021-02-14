@@ -229,6 +229,16 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     interp_pcd.SetPointNormals(interp_normals);
     return interp_pcd;
 }
+
+geometry::Image ControlGrid::Warp(const geometry::Image& depth,
+                                  const core::Tensor& intrinsics,
+                                  const core::Tensor& extrinsics) {
+    geometry::PointCloud pcd = geometry::PointCloud::CreateFromDepthImage(
+            depth, intrinsics, extrinsics);
+    geometry::PointCloud pcd_param = Parameterize(pcd);
+    geometry::PointCloud pcd_warped = Warp(pcd_param);
+}
+
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

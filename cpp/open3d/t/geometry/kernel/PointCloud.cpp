@@ -64,6 +64,34 @@ void Unproject(const core::Tensor& depth,
         utility::LogError("Unimplemented device");
     }
 }
+
+void Project(core::Tensor& depth,
+             const core::Tensor& points,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             float depth_scale,
+             float depth_max) {
+    core::Device device = depth.GetDevice();
+
+    core::Tensor intrinsics_d = intrinsics.To(device);
+    core::Tensor extrinsics_d = extrinsics.To(device);
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        ProjectCPU(depth, points, intrinsics_d, extrinsics_d, depth_scale,
+                   depth_max);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        ProjectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
+                    depth_max);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

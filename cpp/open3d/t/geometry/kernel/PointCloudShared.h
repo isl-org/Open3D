@@ -108,6 +108,53 @@ void UnprojectCPU
 #endif
     points = points.Slice(0, 0, total_pts_count);
 }
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+void ProjectCUDA
+#else
+void ProjectCPU
+#endif
+        (core::Tensor& depth,
+         const core::Tensor& points,
+         const core::Tensor& intrinsics,
+         const core::Tensor& extrinsics,
+         float depth_scale,
+         float depth_max,
+         int64_t stride) {
+    int64_t n = points.GetLength();
+    const float* points_ptr = static_cast<const float*>(points.GetDataPtr());
+
+    TransformIndexer ti(intrinsics, extrinsics, 1.0f);
+    NDArrayIndexer depth_indexer(depth, 2);
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+#else
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
+#endif
+                float x = *points_ptr[3 * workload_idx + 0];
+                float y = *points_ptr[3 * workload_idx + 1];
+                float z = *points_ptr[3 * workload_idx + 2];
+
+                // coordinate in camera (in voxel -> in meter)
+                float xc, yc, zc, u, v;
+                transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
+
+                // coordinate in image (in pixel)
+                transform_indexer.Project(xc, yc, zc, &u, &v);
+                if (!depth_indexer.InBoundary(u, v) || zc < 0 ||
+                    zc > depth_max) {
+                    return;
+                }
+
+                // TODO: atomicMax for float
+                float* depth_ptr = depth_indexer.GetDataPtrFromCoord<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                *depth_ptr = zc * depth_scale;
+            });
+}
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
