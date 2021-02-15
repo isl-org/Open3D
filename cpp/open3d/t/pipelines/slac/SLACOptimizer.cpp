@@ -75,20 +75,18 @@ t::geometry::PointCloud CreateTPCDFromFile(
             *pcd, core::Dtype::Float32, device);
 }
 
-void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
-                        t::geometry::PointCloud& tpcd_j,
-                        core::Tensor& corres,
+void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
+                        t::geometry::PointCloud& tpcd_param_j,
                         const Eigen::Matrix4d& pose_ij) {
     auto pcd_i = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_i.ToLegacyPointCloud());
+            tpcd_param_i.ToLegacyPointCloud());
     auto pcd_j = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_j.ToLegacyPointCloud());
+            tpcd_param_j.ToLegacyPointCloud());
     pcd_i->Transform(pose_ij);
 
     std::vector<std::pair<int, int>> corres_lines;
-    for (int64_t i = 0; i < corres.GetLength(); ++i) {
-        std::pair<int, int> pair = {corres[i][0].Item<int64_t>(),
-                                    corres[i][1].Item<int64_t>()};
+    for (int64_t i = 0; i < tpcd_param_i.GetPoints().GetLength(); ++i) {
+        std::pair<int, int> pair = {i, i};
         corres_lines.push_back(pair);
     }
     auto lineset =
@@ -98,12 +96,11 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
     visualization::DrawGeometries({pcd_i, pcd_j, lineset});
 }
 
-void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd,
-                            t::geometry::PointCloud& tpcd_param,
+void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
                             ControlGrid& ctr_grid) {
     // Prepare all ctr grid point cloud for lineset
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd.ToLegacyPointCloud());
+            tpcd_param.ToLegacyPointCloud());
 
     t::geometry::PointCloud tpcd_grid(ctr_grid.GetCurrPositions());
     auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
@@ -347,9 +344,9 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
             VisualizeWarp(tpcd_param_i, ctr_grid);
             VisualizeWarp(tpcd_param_j, ctr_grid);
 
-            VisualizePCDCorres(tpcd_i, tpcd_j, corres_ij, Tij_e);
-            VisualizePCDGridCorres(tpcd_i, tpcd_param_i, ctr_grid);
-            VisualizePCDGridCorres(tpcd_j, tpcd_param_j, ctr_grid);
+            VisualizePCDCorres(tpcd_param_i, tpcd_param_j, Tij_e);
+            VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
+            VisualizePCDGridCorres(tpcd_param_j, ctr_grid);
         }
 
         // TODO: use parameterization to update normals and points per grid

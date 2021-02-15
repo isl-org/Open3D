@@ -198,8 +198,6 @@ geometry::PointCloud ControlGrid::Parameterize(
     core::Tensor valid_mask =
             masks_nb.View({8, n}).To(core::Dtype::Int64).Sum({0}).Eq(8);
 
-    // int64_t valid_sum =
-    //         masks_nb.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
     // if (valid_sum != 8 * n) {
     //     utility::LogError("Unexpected invalid masks exist {} vs {}!",
     //     valid_sum,
@@ -243,8 +241,8 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     core::Tensor nb_grid_positions =
             grid_positions.IndexGet({nb_grid_indices.View({-1})})
                     .View({-1, 8, 3});
-    utility::LogInfo("{}, {}", nb_grid_indices.GetShape(),
-                     nb_grid_positions.GetShape());
+    // utility::LogInfo("{}, {}", nb_grid_indices.GetShape(),
+    //                  nb_grid_positions.GetShape());
 
     // N x 8 x 3 => N x 3 position interpolation
     core::Tensor nb_grid_point_interp =
@@ -253,7 +251,7 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
             (nb_grid_positions * nb_grid_point_interp.View({-1, 8, 1}))
                     .Sum({1});
 
-    utility::LogInfo("{}", interp_positions.GetShape());
+    // utility::LogInfo("{}", interp_positions.GetShape());
 
     // N x 8 x 3 => N x 3 normal interpolation
     core::Tensor interp_normals;

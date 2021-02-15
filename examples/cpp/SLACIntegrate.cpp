@@ -36,6 +36,8 @@ void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo(">    SLAC [dataset_folder] [slac_folder] [options]");
+    utility::LogInfo("     --color_subfolder [default: color]");
+    utility::LogInfo("     --depth_subfolder [default: depth]");
     utility::LogInfo("     --device [default: CPU:0]");
     utility::LogInfo("     --voxel_size [=0.0058 (m)]");
     utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
@@ -57,10 +59,15 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::string color_subfolder = utility::GetProgramOptionAsString(
+            argc, argv, "--color_subfolder", "color");
+    std::string depth_subfolder = utility::GetProgramOptionAsString(
+            argc, argv, "--depth_subfolder", "color");
+
     // Color and depth
     std::string dataset_folder = std::string(argv[1]);
-    std::string color_folder = dataset_folder + "/image";
-    std::string depth_folder = dataset_folder + "/depth";
+    std::string color_folder = dataset_folder + "/" + color_subfolder;
+    std::string depth_folder = dataset_folder + "/" + depth_subfolder;
     std::string fragment_folder = dataset_folder + "/fragments";
     std::vector<std::string> color_filenames;
     utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
