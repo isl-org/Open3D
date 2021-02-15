@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
     std::string dataset_folder = std::string(argv[1]);
     std::string color_folder = dataset_folder + "/image";
     std::string depth_folder = dataset_folder + "/depth";
+    std::string fragment_folder = dataset_folder + "/fragments";
     std::vector<std::string> color_filenames;
     utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
     std::sort(color_filenames.begin(), color_filenames.end());
@@ -69,18 +70,11 @@ int main(int argc, char** argv) {
     utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
     std::sort(depth_filenames.begin(), depth_filenames.end());
 
+    // Optimized fragment pose graph
     std::string slac_folder = std::string(argv[2]);
-
-    core::Tensor ctr_grid_keys =
-            core::Tensor::Load(slac_folder + "/ctr_grid_keys.npy");
-    core::Tensor ctr_grid_values =
-            core::Tensor::Load(slac_folder + "/ctr_grid_values.npy");
-
-    // Extrinsics
-    std::string trajectory_path =
-            std::string(slac_folder + "/optimized_trajectory.log");
-    auto trajectory =
-            io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
+    std::string posegraph_path =
+            std::string(slac_folder + "/optimized_posegraph.json");
+    auto posegraph = *io::CreatePoseGraphFromFile(posegraph_path);
 
     // Intrinsics
     std::string intrinsic_path = utility::GetProgramOptionAsString(
@@ -126,30 +120,73 @@ int main(int argc, char** argv) {
                                           voxel_size, sdf_trunc, 16,
                                           block_count, device);
 
-    for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
-        // Load image
-        std::shared_ptr<geometry::Image> depth_legacy =
-                io::CreateImageFromFile(depth_filenames[i]);
-        std::shared_ptr<geometry::Image> color_legacy =
-                io::CreateImageFromFile(color_filenames[i]);
+    core::Tensor ctr_grid_keys =
+            core::Tensor::Load(slac_folder + "/ctr_grid_keys.npy");
+    core::Tensor ctr_grid_values =
+            core::Tensor::Load(slac_folder + "/ctr_grid_values.npy");
 
-        t::geometry::Image depth =
-                t::geometry::Image::FromLegacyImage(*depth_legacy, device);
-        t::geometry::Image color =
-                t::geometry::Image::FromLegacyImage(*color_legacy, device);
+    utility::LogInfo("Control grid: {}", device.ToString());
+    t::pipelines::slac::ControlGrid ctr_grid(3.0 / 8, ctr_grid_keys.To(device),
+                                             ctr_grid_values.To(device),
+                                             device);
 
-        Eigen::Matrix4f extrinsic =
-                trajectory->parameters_[i].extrinsic_.cast<float>();
-        Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
-                        device);
+    int k = 0;
+    for (size_t i = 0; i < posegraph.nodes_.size(); ++i) {
+        utility::LogInfo("Fragment: {}", i);
+        auto fragment_pose_graph = *io::CreatePoseGraphFromFile(fmt::format(
+                "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
+        for (auto node : fragment_pose_graph.nodes_) {
+            Eigen::Matrix4d pose_local = node.pose_;
+            Eigen::Matrix4f extrinsic_local =
+                    pose_local.inverse().cast<float>().eval();
+            Tensor extrinsic_local_t =
+                    core::eigen_converter::EigenMatrixToTensor(extrinsic_local)
+                            .To(device);
 
-        utility::Timer timer;
-        timer.Start();
-        voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
-                             depth_scale, max_depth);
-        timer.Stop();
-        utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
+            Eigen::Matrix4d pose = posegraph.nodes_[i].pose_ * node.pose_;
+            Eigen::Matrix4f extrinsic = pose.inverse().cast<float>().eval();
+            Tensor extrinsic_t =
+                    core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
+                            device);
+
+            std::shared_ptr<geometry::Image> depth_legacy =
+                    io::CreateImageFromFile(depth_filenames[k]);
+            std::shared_ptr<geometry::Image> color_legacy =
+                    io::CreateImageFromFile(color_filenames[k]);
+            t::geometry::Image depth =
+                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
+            t::geometry::Image color =
+                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
+
+            utility::LogInfo("Reprojecting");
+            t::geometry::Image depth_reproj =
+                    ctr_grid.Warp(depth, intrinsic_t, extrinsic_local_t,
+                                  depth_scale, max_depth);
+            // if (k > 6930) {
+            //     t::geometry::PointCloud pcd_reproj =
+            //             t::geometry::PointCloud::CreateFromDepthImage(
+            //                     depth_reproj, intrinsic_t, extrinsic_t,
+            //                     depth_scale, max_depth);
+            //     auto pcd_legacy =
+            //             std::make_shared<open3d::geometry::PointCloud>(
+            //                     pcd_reproj.ToLegacyPointCloud());
+            //     visualization::DrawGeometries({pcd_legacy});
+            // }
+
+            utility::Timer timer;
+            timer.Start();
+            voxel_grid.Integrate(depth_reproj, color, intrinsic_t, extrinsic_t,
+                                 depth_scale, max_depth);
+            timer.Stop();
+
+            ++k;
+            utility::LogInfo("{}: Integration takes {}", k,
+                             timer.GetDuration());
+
+            if (k % 50 == 0) {
+                CUDACachedMemoryManager::ReleaseCache();
+            }
+        }
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {

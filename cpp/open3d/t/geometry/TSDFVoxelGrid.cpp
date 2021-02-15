@@ -136,6 +136,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     core::Tensor block_coords;
     kernel::tsdf::Touch(pcd.GetPoints().Contiguous(), block_coords,
                         block_resolution_, voxel_size_, sdf_trunc_);
+    utility::LogInfo("block_coords.size = {}", block_coords.GetLength());
 
     // Active voxel blocks in the block hashmap.
     core::Tensor addrs, masks;
@@ -185,6 +186,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
+    utility::LogInfo("active grids: {}", block_hashmap_->Size());
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {

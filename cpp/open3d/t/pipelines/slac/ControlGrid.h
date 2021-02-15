@@ -55,6 +55,10 @@ public:
     ControlGrid(float grid_size,
                 int64_t grid_count = 1000,
                 const core::Device& device = core::Device("CPU:0"));
+    ControlGrid(float grid_size,
+                const core::Tensor& keys,
+                const core::Tensor& values,
+                const core::Device& device = core::Device("CPU:0"));
     ~ControlGrid() {}
 
     int64_t Size() { return ctr_hashmap_->Size(); }
@@ -93,14 +97,9 @@ public:
     /// - project the warped point cloud back to the image.
     geometry::Image Warp(const geometry::Image& depth,
                          const core::Tensor& intrinsics,
-                         const core::Tensor& extrinsics);
-
-    /// Warp an RGB-D image with the geometry provided by the depth.
-    std::pair<geometry::Image, geometry::Image> Warp(
-            const geometry::Image& depth,
-            const geometry::Image& color,
-            const core::Tensor& extrinsics,
-            const core::Tensor& intrinsics);
+                         const core::Tensor& extrinsics,
+                         float depth_scale,
+                         float depth_max);
 
     std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
 

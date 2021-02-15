@@ -47,6 +47,18 @@ ControlGrid::ControlGrid(float grid_size,
             core::SizeVector{3}, core::SizeVector{3}, device);
 }
 
+ControlGrid::ControlGrid(float grid_size,
+                         const core::Tensor& keys,
+                         const core::Tensor& values,
+                         const core::Device& device)
+    : grid_size_(grid_size), device_(device) {
+    ctr_hashmap_ = std::make_shared<core::Hashmap>(
+            keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
+            core::SizeVector{3}, core::SizeVector{3}, device);
+    core::Tensor addrs, masks;
+    ctr_hashmap_->Insert(keys, values, addrs, masks);
+}
+
 void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     core::Tensor pts = pcd.GetPoints();
     int64_t n = pts.GetLength();
@@ -124,7 +136,10 @@ ControlGrid::GetNeighborGridMap() {
 geometry::PointCloud ControlGrid::Parameterize(
         const geometry::PointCloud& pcd) {
     core::Tensor pts = pcd.GetPoints();
-    core::Tensor nms = pcd.GetPointNormals().T().Contiguous();
+    core::Tensor nms;
+    if (pcd.HasPointNormals()) {
+        nms = pcd.GetPointNormals().T().Contiguous();
+    }
     int64_t n = pts.GetLength();
 
     core::Tensor pts_quantized = pts / grid_size_;
@@ -160,10 +175,14 @@ geometry::PointCloud ControlGrid::Parameterize(
         keys_nb[nb] = keys + dt;
         point_ratios_nb[nb] =
                 residuals[0][x_sel] * residuals[1][y_sel] * residuals[2][z_sel];
-        normal_ratios_nb[nb] =
-                x_sign * nms[0] * residuals[1][y_sel] * residuals[2][z_sel] +
-                y_sign * nms[1] * residuals[0][x_sel] * residuals[2][z_sel] +
-                z_sign * nms[2] * residuals[0][x_sel] * residuals[1][y_sel];
+        if (pcd.HasPointNormals()) {
+            normal_ratios_nb[nb] =
+                    x_sign * nms[0] * residuals[1][y_sel] *
+                            residuals[2][z_sel] +
+                    y_sign * nms[1] * residuals[0][x_sel] *
+                            residuals[2][z_sel] +
+                    z_sign * nms[2] * residuals[0][x_sel] * residuals[1][y_sel];
+        }
     }
 
     keys_nb = keys_nb.View({8 * n, 3});
@@ -171,42 +190,61 @@ geometry::PointCloud ControlGrid::Parameterize(
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
 
-    int64_t valid_sum =
-            masks_nb.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
-    if (valid_sum != 8 * n) {
-        utility::LogError("Unexpected invalid masks exist {} vs {}!", valid_sum,
-                          8 * n);
-    }
+    // (n, 8)
+    addrs_nb = addrs_nb.View({8, n}).T().Contiguous();
+    // (n, 8)
+    point_ratios_nb = point_ratios_nb.T().Contiguous();
+
+    core::Tensor valid_mask =
+            masks_nb.View({8, n}).To(core::Dtype::Int64).Sum({0}).Eq(8);
+
+    // int64_t valid_sum =
+    //         masks_nb.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
+    // if (valid_sum != 8 * n) {
+    //     utility::LogError("Unexpected invalid masks exist {} vs {}!",
+    //     valid_sum,
+    //                       8 * n);
+    // }
 
     geometry::PointCloud pcd_with_params = pcd;
+    pcd_with_params.SetPoints(pcd.GetPoints().IndexGet({valid_mask}));
     pcd_with_params.SetPointAttr(kAttrNbGridIdx,
-                                 addrs_nb.View({8, n}).T().Contiguous());
+                                 addrs_nb.IndexGet({valid_mask}));
     pcd_with_params.SetPointAttr(kAttrNbGridPointInterp,
-                                 point_ratios_nb.T().Contiguous());
-    pcd_with_params.SetPointAttr(kAttrNbGridNormalInterp,
-                                 normal_ratios_nb.T().Contiguous());
+                                 point_ratios_nb.IndexGet({valid_mask}));
+
+    if (pcd.HasPointNormals()) {
+        pcd_with_params.SetPointNormals(
+                pcd.GetPointNormals().IndexGet({valid_mask}));
+        normal_ratios_nb = normal_ratios_nb.T().Contiguous();
+        pcd_with_params.SetPointAttr(kAttrNbGridNormalInterp,
+                                     normal_ratios_nb.IndexGet({valid_mask}));
+    }
 
     return pcd_with_params;
 }
 
 geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     if (!pcd.HasPointAttr(kAttrNbGridIdx) ||
-        !pcd.HasPointAttr(kAttrNbGridPointInterp) ||
-        !pcd.HasPointAttr(kAttrNbGridNormalInterp)) {
+        !pcd.HasPointAttr(kAttrNbGridPointInterp)) {
         utility::LogError(
-                "Please use ControlGrid.Parameterize to obtain neighbor grids "
+                "Please use ControlGrid.Parameterize to obtain neighbor "
+                "grids "
                 "before calling Warp");
     }
 
     // N x 3
     core::Tensor grid_positions = ctr_hashmap_->GetValueTensor();
 
-    // N x 8, we have ensured that every neighbor is valid through grid.Touch()
+    // N x 8, we have ensured that every neighbor is valid through
+    // grid.Touch()
     core::Tensor nb_grid_indices =
             pcd.GetPointAttr(kAttrNbGridIdx).To(core::Dtype::Int64);
     core::Tensor nb_grid_positions =
             grid_positions.IndexGet({nb_grid_indices.View({-1})})
                     .View({-1, 8, 3});
+    utility::LogInfo("{}, {}", nb_grid_indices.GetShape(),
+                     nb_grid_positions.GetShape());
 
     // N x 8 x 3 => N x 3 position interpolation
     core::Tensor nb_grid_point_interp =
@@ -215,29 +253,51 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
             (nb_grid_positions * nb_grid_point_interp.View({-1, 8, 1}))
                     .Sum({1});
 
+    utility::LogInfo("{}", interp_positions.GetShape());
+
     // N x 8 x 3 => N x 3 normal interpolation
-    core::Tensor nb_grid_normal_interp =
-            pcd.GetPointAttr(kAttrNbGridNormalInterp);
-    core::Tensor interp_normals =
-            (nb_grid_positions * nb_grid_normal_interp.View({-1, 8, 1}))
-                    .Sum({1});
-    core::Tensor interp_normals_len =
-            (interp_normals * interp_normals).Sum({1}).Sqrt();
-    interp_normals = interp_normals / interp_normals_len.View({-1, 1});
+    core::Tensor interp_normals;
+    if (pcd.HasPointNormals()) {
+        core::Tensor nb_grid_normal_interp =
+                pcd.GetPointAttr(kAttrNbGridNormalInterp);
+        interp_normals =
+                (nb_grid_positions * nb_grid_normal_interp.View({-1, 8, 1}))
+                        .Sum({1});
+        core::Tensor interp_normals_len =
+                (interp_normals * interp_normals).Sum({1}).Sqrt();
+        interp_normals = interp_normals / interp_normals_len.View({-1, 1});
+    }
 
     geometry::PointCloud interp_pcd(interp_positions);
-    interp_pcd.SetPointNormals(interp_normals);
+    if (pcd.HasPointNormals()) {
+        interp_pcd.SetPointNormals(interp_normals);
+    }
     return interp_pcd;
 }
 
 geometry::Image ControlGrid::Warp(const geometry::Image& depth,
                                   const core::Tensor& intrinsics,
-                                  const core::Tensor& extrinsics) {
+                                  const core::Tensor& extrinsics,
+                                  float depth_scale,
+                                  float depth_max) {
+    utility::LogInfo("Create pcd from depth");
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics);
+
+    utility::LogInfo("Parameterize");
     geometry::PointCloud pcd_param = Parameterize(pcd);
+
+    utility::LogInfo("Warp");
     geometry::PointCloud pcd_warped = Warp(pcd_param);
-    return geometry::Image();
+    utility::LogInfo("{}", pcd_warped.GetPoints().GetLength());
+
+    utility::LogInfo("Project");
+    return geometry::Image(pcd_warped
+                                   .Project(depth.GetCols(), depth.GetRows(),
+                                            intrinsics, extrinsics, depth_scale,
+                                            depth_max)
+                                   .AsTensor()
+                                   .To(core::Dtype::UInt16));
 }
 
 }  // namespace slac
