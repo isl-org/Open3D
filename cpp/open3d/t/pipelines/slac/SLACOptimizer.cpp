@@ -543,13 +543,14 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                 1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
 
         utility::LogInfo("Iteration {}", itr);
+
+        FillInSLACAlignmentTerm(AtA, Atb, residual_data, ctr_grid, fnames_down,
+                                pose_graph_update, option);
+        utility::LogInfo("Residual Data = {}", residual_data[0].Item<float>());
+
         FillInSLACRegularizerTerm(AtA, Atb, residual_reg, ctr_grid,
                                   pose_graph_update.nodes_.size(), option);
-
-        FillInSLACAlignmentTerm(AtA, Atb, residual_reg, ctr_grid, fnames_down,
-                                pose_graph_update, option);
         utility::LogInfo("Residual Reg = {}", residual_reg[0].Item<float>());
-        utility::LogInfo("Residual Data = {}", residual_data[0].Item<float>());
 
         core::Tensor delta = Solve(AtA, Atb, option);
 

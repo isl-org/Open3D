@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     std::string color_subfolder = utility::GetProgramOptionAsString(
             argc, argv, "--color_subfolder", "color");
     std::string depth_subfolder = utility::GetProgramOptionAsString(
-            argc, argv, "--depth_subfolder", "color");
+            argc, argv, "--depth_subfolder", "depth");
 
     // Color and depth
     std::string dataset_folder = std::string(argv[1]);
@@ -169,6 +169,7 @@ int main(int argc, char** argv) {
             t::geometry::Image depth_reproj =
                     ctr_grid.Warp(depth, intrinsic_t, extrinsic_local_t,
                                   depth_scale, max_depth);
+            // utility::LogInfo("depth_reproj = {}", depth_reproj.ToString());
             // if (k > 6930) {
             //     t::geometry::PointCloud pcd_reproj =
             //             t::geometry::PointCloud::CreateFromDepthImage(

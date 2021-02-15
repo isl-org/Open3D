@@ -464,7 +464,9 @@ void FillInSLACRegularizerTermCPU
         // printf("%f %f %f\n", cov[1][0], cov[1][1], cov[1][2]);
         // printf("%f %f %f\n", cov[2][0], cov[2][1], cov[2][2]);
 
-        if (cnt < 4) return;
+        if (cnt < 3) {
+            return;
+        }
 
         // clang-format off
         svd(cov[0][0], cov[0][1], cov[0][2],

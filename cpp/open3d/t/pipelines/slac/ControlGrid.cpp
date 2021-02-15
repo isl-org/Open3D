@@ -186,6 +186,7 @@ geometry::PointCloud ControlGrid::Parameterize(
     }
 
     keys_nb = keys_nb.View({8 * n, 3});
+    // utility::LogInfo("{}", keys_nb.GetShape());
 
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
@@ -280,7 +281,7 @@ geometry::Image ControlGrid::Warp(const geometry::Image& depth,
                                   float depth_max) {
     utility::LogInfo("Create pcd from depth");
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromDepthImage(
-            depth, intrinsics, extrinsics);
+            depth, intrinsics, extrinsics, depth_scale, depth_max);
 
     utility::LogInfo("Parameterize");
     geometry::PointCloud pcd_param = Parameterize(pcd);
