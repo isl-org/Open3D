@@ -223,9 +223,9 @@ void FixedRadiusSearchCUDA(void* temp,
 /// \param query_neighbors_row_splits    This is the output pointer for the
 ///        prefix sum. The length of this array is \p num_queries + 1.
 ///
-/// \param indices_ptr    Pointer to unsorted indices.
+/// \param indices_unsorted    Pointer to unsorted indices.
 ///
-/// \param distances_ptr    Pointer to unsorted distances.
+/// \param distances_unsorted    Pointer to unsorted distances.
 ///
 /// \param indices_sorted    Pointer to sorted indices.
 ///
@@ -237,8 +237,8 @@ void SortPairs(void* temp,
                int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int64_t* indices_ptr,
-               T* distances_ptr,
+               int64_t* indices_unsorted,
+               T* distances_unsorted,
                int64_t* indices_sorted,
                T* distances_sorted);
 

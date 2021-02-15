@@ -640,8 +640,8 @@ void SortPairs(void* temp,
                int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int64_t* indices_ptr,
-               T* distances_ptr,
+               int64_t* indices_unsorted,
+               T* distances_unsorted,
                int64_t* indices_sorted,
                T* distances_sorted) {
     const bool get_temp_size = !temp;
@@ -655,19 +655,19 @@ void SortPairs(void* temp,
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
     std::pair<void*, size_t> sort_temp(nullptr, 0);
-    cub::DoubleBuffer<int64_t> sort_key(indices_ptr, indices_sorted);
-    cub::DoubleBuffer<T> sort_value(distances_ptr, distances_sorted);
 
     cub::DeviceSegmentedRadixSort::SortPairs(
-            sort_temp.first, sort_temp.second, sort_value, sort_key,
-            num_indices, num_segments, query_neighbors_row_splits,
+            sort_temp.first, sort_temp.second, distances_unsorted,
+            distances_sorted, indices_unsorted, indices_sorted, num_indices,
+            num_segments, query_neighbors_row_splits,
             query_neighbors_row_splits + 1);
     sort_temp = mem_temp.Alloc(sort_temp.second);
 
     if (!get_temp_size) {
         cub::DeviceSegmentedRadixSort::SortPairs(
-                sort_temp.first, sort_temp.second, sort_value, sort_key,
-                num_indices, num_segments, query_neighbors_row_splits,
+                sort_temp.first, sort_temp.second, distances_unsorted,
+                distances_sorted, indices_unsorted, indices_sorted, num_indices,
+                num_segments, query_neighbors_row_splits,
                 query_neighbors_row_splits + 1);
     }
     mem_temp.Free(sort_temp);
@@ -866,8 +866,8 @@ template void SortPairs(void* temp,
                         int64_t num_indices,
                         int64_t num_segments,
                         const int64_t* query_neighbors_row_splits,
-                        int64_t* indices_ptr,
-                        float* distances_ptr,
+                        int64_t* indices_unsorted,
+                        float* distances_unsorted,
                         int64_t* indices_sorted,
                         float* distances_sorted);
 
@@ -876,8 +876,8 @@ template void SortPairs(void* temp,
                         int64_t num_indices,
                         int64_t num_segments,
                         const int64_t* query_neighbors_row_splits,
-                        int64_t* indices_ptr,
-                        double* distances_ptr,
+                        int64_t* indices_unsorted,
+                        double* distances_unsorted,
                         int64_t* indices_sorted,
                         double* distances_sorted);
 

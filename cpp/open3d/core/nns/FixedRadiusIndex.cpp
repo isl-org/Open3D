@@ -243,12 +243,14 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     int64_t num_query_points = query_points.GetShape()[0];
 
     Tensor neighbors_index =
-            Tensor::Empty({num_query_points * max_knn}, Dtype::Int64, device);
+            Tensor::Empty({num_query_points, max_knn}, Dtype::Int64, device);
     Tensor neighbors_distance =
-            Tensor::Empty({num_query_points * max_knn}, dtype, device);
+            Tensor::Empty({num_query_points, max_knn}, dtype, device);
     Tensor num_neighbors =
             neighbors_row_splits.Slice(0, 1, num_query_points + 1)
                     .Sub(neighbors_row_splits.Slice(0, 0, num_query_points));
+    num_neighbors = num_neighbors.Contiguous();
+
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         MaxKnnThreshold(
                 static_cast<const int64_t *>(indices_sorted.GetDataPtr()),
@@ -259,8 +261,6 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
                 static_cast<const int64_t *>(neighbors_row_splits.GetDataPtr()),
                 size_t(num_query_points), max_knn);
     });
-    neighbors_index = neighbors_index.View({num_query_points, max_knn});
-    neighbors_distance = neighbors_distance.View({num_query_points, max_knn});
     return std::make_pair(neighbors_index, neighbors_distance);
 #else
     utility::LogError(
