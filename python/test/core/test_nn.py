@@ -94,9 +94,8 @@ def test_knn_search(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_fixed_radius_search(device):
-    dtype = o3c.Dtype.Float64
-
+@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+def test_fixed_radius_search(device, dtype):
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
          [0.0, 0.1, 0.1], [0.0, 0.1, 0.2], [0.0, 0.2, 0.0], [0.0, 0.2, 0.1],
@@ -141,12 +140,13 @@ def test_fixed_radius_search(device):
                             np.array([0, 2, 4], dtype=np.int64))
 
 
-def test_hybrid_search_random():
+@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+def test_hybrid_search_random(dtype):
     if o3d.core.cuda.device_count() > 0:
-        dtype = o3c.Dtype.Float32
+        # dtype = o3c.Dtype.Float32
 
         dataset_size, query_size = 1000, 100
-        radius, k = 0.05, 1
+        radius, k = 0.1, 10
 
         dataset_np = np.random.rand(dataset_size, 3)
 
@@ -175,10 +175,9 @@ def test_hybrid_search_random():
             np.testing.assert_equal(indices.numpy(), indices_cuda.cpu().numpy())
 
 
-def test_fixed_radius_search_random():
+@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+def test_fixed_radius_search_random(dtype):
     if o3d.core.cuda.device_count() > 0:
-        dtype = o3c.Dtype.Float64
-
         dataset_size, query_size = 1000, 100
         radius = 0.1
 
