@@ -338,22 +338,7 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
 
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
-
-    // TODO: Consider moving this code to FilamentCamera
-    auto& camera = view_->getCamera();
-    auto& other_camera = other.GetNativeView()->getCamera();
-
-    // TODO: Code below could introduce problems with culling,
-    //        because Camera::setCustomProjection method
-    //        assigns both culling projection and projection matrices
-    //        to the same matrix. Which is good for ORTHO but
-    //        makes culling matrix with infinite far plane for PERSPECTIVE
-    //        See FCamera::setCustomProjection and FCamera::setProjection
-    //        There is no easy way to fix it currently (Filament 1.4.3)
-    camera.setCustomProjection(other_camera.getProjectionMatrix(),
-                               other_camera.getNear(),
-                               other_camera.getCullingFar());
-    camera.setModelMatrix(other_camera.getModelMatrix());
+    camera_->CopyFrom(other.camera_.get());
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {
