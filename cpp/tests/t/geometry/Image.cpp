@@ -30,6 +30,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
+#include "open3d/io/ImageIO.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -191,6 +192,245 @@ TEST_P(ImagePermuteDevices,
                 ElementsAreArray(input_data));
 }
 
+TEST_P(ImagePermuteDevices, FilterBilateral) {
+    core::Device device = GetParam();
+
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0,
+       0, 0, 1, 0, 0,
+       0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0};
+    const std::vector<float> output_ref_ipp =
+      {0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.199001, 0.0, 0.0,
+       0.0, 0.199001, 0.201605, 0.199001, 0.0,
+       0.0, 0.0, 0.199001, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0};
+    const std::vector<float> output_ref_npp =
+      {0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.110249, 0.110802, 0.110249, 0.0,
+       0.0, 0.110802, 0.112351, 0.110802, 0.0,
+       0.0, 0.110249, 0.110802, 0.110249, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0};
+    // clang-format on
+    core::Tensor data =
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
+
+    t::geometry::Image im(data);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(im.FilterBilateral(3, 10, 10), std::runtime_error);
+    } else {
+        im = im.FilterBilateral(3, 10, 10);
+        if (device.GetType() == core::Device::DeviceType::CPU) {
+            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                    output_ref_ipp, {5, 5, 1}, core::Dtype::Float32, device)));
+        } else {
+            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                    output_ref_npp, {5, 5, 1}, core::Dtype::Float32, device)));
+        }
+    }
+}
+
+// IPP and NPP are consistent when kernel_size = 3x3.
+// Note: in 5 x 5 NPP adds a weird offset.
+TEST_P(ImagePermuteDevices, FilterGaussian) {
+    core::Device device = GetParam();
+
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 0, 0,
+       0, 1, 0, 0, 1,
+       0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0,
+       0, 0, 0, 1, 0};
+    const std::vector<float> output_ref =
+      {0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
+       0.123841, 0.204180, 0.123841, 0.123841, 0.328021,
+       0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
+       0.0, 0.0, 0.0751136, 0.123841, 0.0751136,
+       0.0, 0.0, 0.198955, 0.328021, 0.198955};
+    // clang-format on
+
+    core::Tensor data =
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(im.FilterGaussian(3), std::runtime_error);
+    } else {
+        im = im.FilterGaussian(3);
+        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                output_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+    }
+}
+
+TEST_P(ImagePermuteDevices, Filter) {
+    core::Device device = GetParam();
+
+    // clang-format off
+      const std::vector<float> input_data =
+        {0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0,
+         0, 0, 1, 0, 0,
+         0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0};
+      const std::vector<float> kernel_data =
+        {0.00296902, 0.0133062 , 0.02193824, 0.0133062 , 1.00296902,
+         0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+         0.02193824, 0.09832021, 0.16210286, 0.09832021, 0.02193824,
+         0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+         0.00296902, 0.0133062 , 0.02193824, 0.0133062 , -1.00296902
+        };
+    // clang-format on
+
+    core::Tensor data =
+            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
+    core::Tensor kernel =
+            core::Tensor(kernel_data, {5, 5}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(im.Filter(kernel), std::runtime_error);
+    } else {
+        t::geometry::Image im_new = im.Filter(kernel);
+        EXPECT_TRUE(im_new.AsTensor().Reverse().View({5, 5}).AllClose(kernel));
+    }
+}
+
+TEST_P(ImagePermuteDevices, FilterSobel) {
+    core::Device device = GetParam();
+
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 0, 1,
+       0, 1, 1, 0, 0,
+       0, 0, 1, 0, 0,
+       1, 0, 1, 0, 0,
+       0, 0, 1, 1, 0};
+    const std::vector<float> output_dx_ref =
+      {1, 1, -1, 2, 3,
+       2, 3, -2, -2, 1,
+       0, 3, -1, -4, 0,
+       -2, 2, 1, -4, -1,
+       -1, 3, 3, -4, -3};
+    const std::vector<float> output_dy_ref =
+      {1, 3, 3, 0, -3,
+       0, 1, 2, 0, -3,
+       2, -1, -1, 0, 0,
+       0, 0, 1, 2, 1,
+       -3, -1, 1, 2, 1};
+    // clang-format on
+
+    {  // Float32 -> Float32
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        t::geometry::Image dx, dy;
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.FilterSobel(3), std::runtime_error);
+        } else {
+            std::tie(dx, dy) = im.FilterSobel(3);
+
+            EXPECT_TRUE(dx.AsTensor().AllClose(core::Tensor(
+                    output_dx_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+            EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
+                    output_dy_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+            utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
+        }
+    }
+
+    {  // UInt8 -> Int16
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device)
+                                    .To(core::Dtype::UInt8);
+        t::geometry::Image im(data);
+        t::geometry::Image dx, dy;
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.FilterSobel(3), std::runtime_error);
+        } else {
+            std::tie(dx, dy) = im.FilterSobel(3);
+
+            EXPECT_TRUE(dx.AsTensor().AllClose(
+                    core::Tensor(output_dx_ref, {5, 5, 1}, core::Dtype::Float32,
+                                 device)
+                            .To(core::Dtype::Int16)));
+            EXPECT_TRUE(dy.AsTensor().AllClose(
+                    core::Tensor(output_dy_ref, {5, 5, 1}, core::Dtype::Float32,
+                                 device)
+                            .To(core::Dtype::Int16)));
+            utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
+        }
+    }
+}
+
+TEST_P(ImagePermuteDevices, Resize) {
+    core::Device device = GetParam();
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 1, 1, 1, 1,
+       0, 1, 1, 0, 0, 1,
+       1, 0, 0, 1, 0, 1,
+       0, 1, 1, 0, 1, 1,
+       1, 1, 1, 0, 1, 1,
+       1, 1, 1, 1, 1, 1};
+    const std::vector<float> output_ref =
+      {0, 1, 1,
+       1, 0, 0,
+       1, 1, 1};
+    // clang-format on
+
+    core::Tensor data =
+            core::Tensor(input_data, {6, 6, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(im.Resize(0.5, t::geometry::Image::Nearest),
+                     std::runtime_error);
+    } else {
+        im = im.Resize(0.5, t::geometry::Image::Nearest);
+        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
+    }
+}
+
+TEST_P(ImagePermuteDevices, PyrDown) {
+    core::Device device = GetParam();
+
+    // clang-format off
+    const std::vector<float> input_data =
+      {0, 0, 0, 1, 0, 1,
+       0, 1, 0, 0, 0, 1,
+       0, 0, 0, 1, 0, 1,
+       1, 0, 0, 0, 0, 1,
+       1, 0, 0, 0, 0, 1,
+       1, 1, 1, 1, 1, 1};
+    const std::vector<float> output_ref =
+      {0.0596343, 0.244201, 0.483257,
+       0.269109, 0.187536, 0.410317,
+       0.752312, 0.347241, 0.521471};
+    // clang-format on
+
+    core::Tensor data =
+            core::Tensor(input_data, {6, 6, 1}, core::Dtype::Float32, device);
+    t::geometry::Image im(data);
+
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(im.PyrDown(), std::runtime_error);
+    } else {
+        im = im.PyrDown();
+        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
+    }
+}
+
 TEST_P(ImagePermuteDevices, Dilate) {
     using ::testing::ElementsAreArray;
 
@@ -212,7 +452,7 @@ TEST_P(ImagePermuteDevices, Dilate) {
     const int rows = 4;
     const int cols = 8;
     const int channels = 1;
-    const int half_kernel_size = 1;
+    const int kernel_size = 3;
     core::Device device = GetParam();
 
     core::Tensor t_input{
@@ -226,10 +466,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     t::geometry::Image input_uint8_t(t_input_uint8_t);
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input_uint8_t.Dilate(half_kernel_size),
-                     std::runtime_error);
+        ASSERT_THROW(input_uint8_t.Dilate(kernel_size), std::runtime_error);
     } else {
-        output = input_uint8_t.Dilate(half_kernel_size);
+        output = input_uint8_t.Dilate(kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());
@@ -243,10 +482,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     t::geometry::Image input_uint16_t(t_input_uint16_t);
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input_uint16_t.Dilate(half_kernel_size),
-                     std::runtime_error);
+        ASSERT_THROW(input_uint16_t.Dilate(kernel_size), std::runtime_error);
     } else {
-        output = input_uint16_t.Dilate(half_kernel_size);
+        output = input_uint16_t.Dilate(kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());
@@ -257,9 +495,9 @@ TEST_P(ImagePermuteDevices, Dilate) {
     // Float32
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(input.Dilate(half_kernel_size), std::runtime_error);
+        ASSERT_THROW(input.Dilate(kernel_size), std::runtime_error);
     } else {
-        output = input.Dilate(half_kernel_size);
+        output = input.Dilate(kernel_size);
         EXPECT_EQ(output.GetRows(), input.GetRows());
         EXPECT_EQ(output.GetCols(), input.GetCols());
         EXPECT_EQ(output.GetChannels(), input.GetChannels());

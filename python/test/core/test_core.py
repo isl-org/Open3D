@@ -1132,7 +1132,7 @@ def test_save_load(device):
             o3_t_load = o3d.core.Tensor.load(file_name)
 
         # Unsupported dtype: exception.
-        np_t = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int16)
+        np_t = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.uint64)
         np.save(file_name, np_t)
         with pytest.raises(RuntimeError):
             o3_t_load = o3d.core.Tensor.load(file_name)
