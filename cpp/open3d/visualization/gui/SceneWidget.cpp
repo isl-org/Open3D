@@ -893,11 +893,11 @@ void SceneWidget::SetViewControls(Controls mode) {
 
 void SceneWidget::EnableSceneCaching(bool enable) {
     impl_->scene_caching_enabled_ = enable;
-    #if NO_RENDER_TARGET
-        if (impl_->is_picking_) {
-            enable = false;
-        }
-    #endif
+#if NO_RENDER_TARGET
+    if (impl_->is_picking_) {
+        enable = false;
+    }
+#endif
     if (!enable) {
         impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
                                                  true);
