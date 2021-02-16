@@ -1,5 +1,9 @@
 ## Master
 
+* CUDA support 10.1 -> 11.0. Tensorflow 2.3.1 -> 2.4.1. PyTorch 1.6.0 -> 1.7.1 (PR #3049)
+
+## 0.12
+
 * RealSense SDK v2 integrated for reading RS bag files (PR #2646)
 * Tensor based RGBDImage class, Python bindings for Image and RGBDImage
 * RealSense sensor configuration, live capture and recording (with example and tutorial) (PR #2748)

@@ -52,20 +52,26 @@ OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && 
 install_cuda_toolkit() {
 
     SUDO=${SUDO:-sudo}
+    options="$(echo "$@" | tr ' ' '|')"
     echo "Installing CUDA ${CUDA_VERSION[1]} with apt ..."
-    $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-    $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+
+    if [[ $UBUNTU_VERSION == "bionic" ]] ; then
+        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+    elif [[ $UBUNTU_VERSION == "focal" ]]
+        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
+    fi
     $SUDO apt-get install --yes --no-install-recommends \
         "cuda-minimal-build-${CUDA_VERSION[0]}" \
-        "cuda-cusolver-dev-${CUDA_VERSION[0]}" \
-        "cuda-cusparse-dev-${CUDA_VERSION[0]}" \
-        "cuda-curand-dev-${CUDA_VERSION[0]}" \
-        "cuda-cufft-dev-${CUDA_VERSION[0]}" \
+        "libcusolver-dev-${CUDA_VERSION[0]}" \
+        "libcusparse-dev-${CUDA_VERSION[0]}" \
+        "libcurand-dev-${CUDA_VERSION[0]}" \
+        "libcufft-dev-${CUDA_VERSION[0]}" \
         "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
         "cuda-nvtx-${CUDA_VERSION[0]}" \
-        "cuda-npp-dev-${CUDA_VERSION[0]}" \
+        "libnpp-dev-${CUDA_VERSION[0]}" \
         "libcublas-dev-${CUDA_VERSION[0]} "
-    options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
         # The repository method can cause "File has unexpected size" error so
         # we use a tar file copy approach instead. The scripts are taken from
