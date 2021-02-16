@@ -11,7 +11,7 @@ file(GLOB IPPICV_LIBRARY
 add_library(ippiw STATIC ${lib_srcs} ${lib_hdrs})
 target_compile_definitions(ippiw PRIVATE IW_BUILD ICV_BASE)
 target_include_directories(ippiw PRIVATE icv/include iw/include)
-add_compile_definitions(IW_ENABLE_iwiResize_Nearest=1)
+target_compile_definitions(ippiw PRIVATE IW_ENABLE_iwiResize_Nearest=1)
 
 if(UNIX)
     if(${CMAKE_C_COMPILER_ID} MATCHES GNU OR
