@@ -156,6 +156,7 @@ void Open3DScene::SetViewport(std::int32_t x,
     view->EnableViewCaching(true);
     auto window_view = GetWindowView();
     window_view->SetViewport(x, y, width, height);
+    window_view->ConfigureForColorPicking();
     auto window_scene = renderer_.GetScene(window_scene_);
     window_scene->SetBackground(view->GetColorBuffer());
 }
