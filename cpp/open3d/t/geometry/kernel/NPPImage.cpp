@@ -390,8 +390,11 @@ void FilterSobel(const core::Tensor &src_im,
 #undef NPP_ARGS_DX
 #undef NPP_ARGS_DY
 
-    /// Fix CI for lower cuda versions -- NVIDIA has changed the sign without
-    /// updating the documents.
+    // NPP uses a "right minus left" kernel in 10.2.
+    // https://docs.nvidia.com/cuda/npp/group__image__filter__sobel__border.html
+    // But it is observed to use "left minus right" in unit tests in 10.1.
+    // We need to negate it in-place for lower versions.
+    // TODO: this part is subject to changes given tests on more versions.
     int cuda_version;
     OPEN3D_CUDA_CHECK(cudaRuntimeGetVersion(&cuda_version));
     if (cuda_version < 10020) {

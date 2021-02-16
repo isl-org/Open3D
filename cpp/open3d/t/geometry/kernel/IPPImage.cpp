@@ -234,9 +234,6 @@ void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
                     int kernel_size,
                     float sigma) {
-    // Use a precomputed sigma to be consistent with npp:
-    // https://docs.nvidia.com/cuda/npp/group__image__filter__gauss__border.html
-
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
@@ -271,7 +268,7 @@ void FilterSobel(const core::Tensor &src_im,
     };
     auto it = kKernelSizeMap.find(kernel_size);
     if (it == kKernelSizeMap.end()) {
-        utility::LogError("Unsupported size {} for IPP FilterSobel",
+        utility::LogError("Unsupported kernel size {} for IPP FilterSobel",
                           kernel_size);
     }
 
@@ -299,7 +296,9 @@ void FilterSobel(const core::Tensor &src_im,
                               IwiDerivativeType::iwiDerivVerFirst, it->second);
         ::ipp::iwiFilterSobel(ipp_src_im, ipp_dst_im_dy,
                               IwiDerivativeType::iwiDerivHorFirst, it->second);
-        // IPP uses a left mins right kernel, so we need to negate it in-place.
+        // IPP uses a "left minus right" kernel,
+        // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing/filtering-functions-2/fixed-filters/filtersobel.html
+        // so we need to negate it in-place.
         dst_im_dx.Neg_();
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning

@@ -68,7 +68,7 @@ static const std::unordered_map<std::string, std::string>
                 {"offset", "Then add this factor to all image pixel values."},
                 {"kernel_size", "Kernel size for filters and dilations."},
                 {"value_sigma", "Standard deviation for the image content."},
-                {"dist_sigma",
+                {"distance_sigma",
                  "Standard deviation for the image pixel positions."}};
 
 void pybind_image(py::module &m) {
@@ -137,7 +137,8 @@ void pybind_image(py::module &m) {
                  "create the dilation mask.",
                  "kernel_size"_a = 3)
             .def("filter", &Image::Filter,
-                 "Return a new image given the filtering kernel.", "kernel"_a)
+                 "Return a new image after filtering with the given kernel.",
+                 "kernel"_a)
             .def("filter_gaussian", &Image::FilterGaussian,
                  "Return a new image after Gaussian filtering."
                  "Possible kernel_size: odd numbers >= 3 are supported.",
@@ -156,18 +157,19 @@ void pybind_image(py::module &m) {
                  "Possible kernel_size: 3 and 5.",
                  "kernel_size"_a = 3)
             .def("resize", &Image::Resize,
-                 "Return a new image after performing morphological dilation. "
-                 "Supported datatypes are UInt8, UInt16 and Float32 with "
-                 "{1, 3, 4} channels. An 8-connected neighborhood is used to "
-                 "create the dilation mask.",
-                 "sampling_rate"_a = 0.5, "interp_type"_a = Image::Nearest)
+                 "Return a new image after resizing with specified "
+                 "interpolation type. Downsample if sampling rate is < 1. "
+                 "Upsample if sampling rate > 1. Aspect ratio is always "
+                 "kept.",
+                 sampling_rate_a = 0.5, "interp_type"_a = Image::Nearest)
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a"
-                 "chained 5x5 Gaussian filter and a downsampling operation.")
+                 "chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a"
+                 "resize (ratio = 0.5) operation.")
             .def("rgb_to_gray", &Image::RGBToGray,
                  "Converts a 3-channel RGB image to a new 1-channel Grayscale "
-                 "image.")
+                 "image by I = 0.299 * R + 0.587 * G + 0.114 * B.")
             .def("__repr__", &Image::ToString);
     docstring::ClassMethodDocInject(m, "Image", "linear_transform",
                                     map_shared_argument_docstrings);
