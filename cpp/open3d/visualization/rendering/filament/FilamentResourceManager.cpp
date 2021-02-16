@@ -430,7 +430,7 @@ TextureHandle FilamentResourceManager::CreateDepthAttachmentTexture(
                            .width(width)
                            .height(height)
                            .levels(1)
-                           .format(Texture::InternalFormat::DEPTH24)
+                           .format(Texture::InternalFormat::DEPTH32F)
                            .usage(Texture::Usage::DEPTH_ATTACHMENT)
                            .build(engine_);
     TextureHandle handle;
