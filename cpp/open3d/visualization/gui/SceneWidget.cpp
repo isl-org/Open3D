@@ -51,7 +51,7 @@
 #include "open3d/visualization/rendering/View.h"
 
 // Once render target is available, please remove the #ifdefs
-#define NO_RENDER_TARGET 1
+#define NO_RENDER_TARGET 0
 
 namespace open3d {
 namespace visualization {
@@ -892,19 +892,16 @@ void SceneWidget::SetViewControls(Controls mode) {
 }
 
 void SceneWidget::EnableSceneCaching(bool enable) {
-    //     impl_->scene_caching_enabled_ = enable;
-    // #if NO_RENDER_TARGET
-    //     if (impl_->is_picking_) {
-    //         enable = false;
-    //     }
-    // #endif
-    //     if (!enable) {
-    //         impl_->scene_->GetRenderer().EnableCaching(false);
-    //         impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
-    //                                                  true);
-    //     }
-    // auto view = impl_->scene_->GetView();
-    // view->EnableViewCaching(true);
+    impl_->scene_caching_enabled_ = enable;
+    #if NO_RENDER_TARGET
+        if (impl_->is_picking_) {
+            enable = false;
+        }
+    #endif
+    if (!enable) {
+        impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
+                                                 true);
+    }
 }
 
 void SceneWidget::ForceRedraw() {
