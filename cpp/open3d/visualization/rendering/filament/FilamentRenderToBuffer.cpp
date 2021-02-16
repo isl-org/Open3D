@@ -160,7 +160,7 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
     if (depth_image_) {
         // Disable post-processing when rendering to depth image. It's uncessary
         // overhead and the depth buffer is discarded when post-processing is
-        // enabled so  and the returned image is all 0s.
+        // enabled so the returned image is all 0s.
         view_->ConfigureForColorPicking();
     }
 }
