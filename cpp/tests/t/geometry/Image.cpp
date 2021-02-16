@@ -195,41 +195,93 @@ TEST_P(ImagePermuteDevices,
 TEST_P(ImagePermuteDevices, FilterBilateral) {
     core::Device device = GetParam();
 
-    // clang-format off
-    const std::vector<float> input_data =
-      {0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0,
-       0, 0, 1, 0, 0,
-       0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0};
-    const std::vector<float> output_ref_ipp =
-      {0.0, 0.0, 0.0, 0.0, 0.0,
-       0.0, 0.0, 0.199001, 0.0, 0.0,
-       0.0, 0.199001, 0.201605, 0.199001, 0.0,
-       0.0, 0.0, 0.199001, 0.0, 0.0,
-       0.0, 0.0, 0.0, 0.0, 0.0};
-    const std::vector<float> output_ref_npp =
-      {0.0, 0.0, 0.0, 0.0, 0.0,
-       0.0, 0.110249, 0.110802, 0.110249, 0.0,
-       0.0, 0.110802, 0.112351, 0.110802, 0.0,
-       0.0, 0.110249, 0.110802, 0.110249, 0.0,
-       0.0, 0.0, 0.0, 0.0, 0.0};
-    // clang-format on
-    core::Tensor data =
-            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
+    {  // Float32
+        // clang-format off
+        const std::vector<float> input_data =
+          {0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 1, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0};
+        const std::vector<float> output_ref_ipp =
+          {0.0, 0.0, 0.0, 0.0, 0.0,
+           0.0, 0.0, 0.199001, 0.0, 0.0,
+           0.0, 0.199001, 0.201605, 0.199001, 0.0,
+           0.0, 0.0, 0.199001, 0.0, 0.0,
+           0.0, 0.0, 0.0, 0.0, 0.0};
+        const std::vector<float> output_ref_npp =
+          {0.0, 0.0, 0.0, 0.0, 0.0,
+           0.0, 0.110249, 0.110802, 0.110249, 0.0,
+           0.0, 0.110802, 0.112351, 0.110802, 0.0,
+           0.0, 0.110249, 0.110802, 0.110249, 0.0,
+           0.0, 0.0, 0.0, 0.0, 0.0};
+        // clang-format on
 
-    t::geometry::Image im(data);
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(im.FilterBilateral(3, 10, 10), std::runtime_error);
-    } else {
-        im = im.FilterBilateral(3, 10, 10);
-        if (device.GetType() == core::Device::DeviceType::CPU) {
-            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
-                    output_ref_ipp, {5, 5, 1}, core::Dtype::Float32, device)));
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device);
+
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.FilterBilateral(3, 10, 10), std::runtime_error);
         } else {
-            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
-                    output_ref_npp, {5, 5, 1}, core::Dtype::Float32, device)));
+            im = im.FilterBilateral(3, 10, 10);
+            if (device.GetType() == core::Device::DeviceType::CPU) {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_ipp, {5, 5, 1},
+                                     core::Dtype::Float32, device)));
+            } else {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_npp, {5, 5, 1},
+                                     core::Dtype::Float32, device)));
+            }
+        }
+    }
+
+    {  // UInt8
+        // clang-format off
+        const std::vector<uint8_t> input_data =
+          {0, 0, 0, 0, 0,
+           0, 121, 121, 121, 0,
+           0, 125, 128, 125, 0,
+           0, 121, 121, 121, 0,
+           0, 0, 0, 0, 0};
+        const std::vector<uint8_t> output_ref_ipp =
+          {0, 0, 0, 0, 0,
+           0, 122, 122, 122, 0,
+           0, 124, 125, 124, 0,
+           0, 122, 122, 122, 0,
+           0, 0, 0, 0, 0};
+        const std::vector<uint8_t> output_ref_npp =
+          {0, 0, 0, 0, 0,
+           0, 122, 122, 122, 0,
+           0, 123, 123, 123, 0,
+           0, 122, 122, 122, 0,
+           0, 0, 0, 0, 0};
+        // clang-format on
+
+        core::Tensor data =
+                core::Tensor(input_data, {5, 5, 1}, core::Dtype::UInt8, device);
+
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.FilterBilateral(3, 5, 5), std::runtime_error);
+        } else {
+            im = im.FilterBilateral(3, 5, 5);
+            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
+
+            if (device.GetType() == core::Device::DeviceType::CPU) {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_ipp, {5, 5, 1},
+                                     core::Dtype::UInt8, device)));
+            } else {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_npp, {5, 5, 1},
+                                     core::Dtype::UInt8, device)));
+            }
         }
     }
 }
@@ -239,64 +291,173 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
 TEST_P(ImagePermuteDevices, FilterGaussian) {
     core::Device device = GetParam();
 
-    // clang-format off
-    const std::vector<float> input_data =
-      {0, 0, 0, 0, 0,
-       0, 1, 0, 0, 1,
-       0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0,
-       0, 0, 0, 1, 0};
-    const std::vector<float> output_ref =
-      {0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
-       0.123841, 0.204180, 0.123841, 0.123841, 0.328021,
-       0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
-       0.0, 0.0, 0.0751136, 0.123841, 0.0751136,
-       0.0, 0.0, 0.198955, 0.328021, 0.198955};
-    // clang-format on
+    {  // Float32
+        // clang-format off
+        const std::vector<float> input_data =
+          {0, 0, 0, 0, 0,
+           0, 1, 0, 0, 1,
+           0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 0, 1, 0};
+        const std::vector<float> output_ref =
+          {0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
+           0.123841, 0.204180, 0.123841, 0.123841, 0.328021,
+           0.0751136, 0.123841, 0.0751136, 0.0751136, 0.198955,
+           0.0, 0.0, 0.0751136, 0.123841, 0.0751136,
+           0.0, 0.0, 0.198955, 0.328021, 0.198955};
+        // clang-format on
 
-    core::Tensor data =
-            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
-    t::geometry::Image im(data);
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(im.FilterGaussian(3), std::runtime_error);
-    } else {
-        im = im.FilterGaussian(3);
-        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
-                output_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.FilterGaussian(3), std::runtime_error);
+        } else {
+            im = im.FilterGaussian(3);
+            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                    output_ref, {5, 5, 1}, core::Dtype::Float32, device)));
+        }
+    }
+
+    {  // UInt8
+        // clang-format off
+        const std::vector<uint8_t> input_data =
+          {0, 0, 0, 0, 0,
+           0, 128, 0, 0, 255,
+           0, 0, 0, 128, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 0, 255, 0};
+        const std::vector<uint8_t> output_ref_ipp =
+          {10, 16, 10, 19, 51,
+           16, 26, 25, 47, 93,
+           10, 16, 25, 45, 67,
+           0, 0, 29, 47, 29,
+           0, 0, 51, 84, 51};
+        const std::vector<uint8_t> output_ref_npp =
+          {9, 15, 9, 19, 50,
+           15, 26, 25, 47, 93,
+           9, 15, 25, 45, 66,
+           0, 0, 28, 47, 28,
+           0, 0, 50, 83, 50};
+        // clang-format on
+
+        core::Tensor data =
+                core::Tensor(input_data, {5, 5, 1}, core::Dtype::UInt8, device);
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.FilterGaussian(3), std::runtime_error);
+        } else {
+            im = im.FilterGaussian(3);
+            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
+
+            if (device.GetType() == core::Device::DeviceType::CPU) {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_ipp, {5, 5, 1},
+                                     core::Dtype::UInt8, device)));
+            } else {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_npp, {5, 5, 1},
+                                     core::Dtype::UInt8, device)));
+            }
+        }
     }
 }
 
 TEST_P(ImagePermuteDevices, Filter) {
     core::Device device = GetParam();
 
-    // clang-format off
-      const std::vector<float> input_data =
-        {0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0,
-         0, 0, 1, 0, 0,
-         0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0};
-      const std::vector<float> kernel_data =
-        {0.00296902, 0.0133062 , 0.02193824, 0.0133062 , 1.00296902,
-         0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
-         0.02193824, 0.09832021, 0.16210286, 0.09832021, 0.02193824,
-         0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
-         0.00296902, 0.0133062 , 0.02193824, 0.0133062 , -1.00296902
+    {  // Float32
+        // clang-format off
+        const std::vector<float> input_data =
+          {0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 1, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0};
+       const std::vector<float> kernel_data =
+          {0.00296902, 0.0133062 , 0.02193824, 0.0133062 , 1.00296902,
+           0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+           0.02193824, 0.09832021, 0.16210286, 0.09832021, 0.02193824,
+           0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+           0.00296902, 0.0133062 , 0.02193824, 0.0133062 , -1.00296902
         };
-    // clang-format on
+        // clang-format on
 
-    core::Tensor data =
-            core::Tensor(input_data, {5, 5, 1}, core::Dtype::Float32, device);
-    core::Tensor kernel =
-            core::Tensor(kernel_data, {5, 5}, core::Dtype::Float32, device);
-    t::geometry::Image im(data);
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(im.Filter(kernel), std::runtime_error);
-    } else {
-        t::geometry::Image im_new = im.Filter(kernel);
-        EXPECT_TRUE(im_new.AsTensor().Reverse().View({5, 5}).AllClose(kernel));
+        core::Tensor data = core::Tensor(input_data, {5, 5, 1},
+                                         core::Dtype::Float32, device);
+        core::Tensor kernel =
+                core::Tensor(kernel_data, {5, 5}, core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.Filter(kernel), std::runtime_error);
+        } else {
+            t::geometry::Image im_new = im.Filter(kernel);
+            EXPECT_TRUE(
+                    im_new.AsTensor().Reverse().View({5, 5}).AllClose(kernel));
+        }
+    }
+
+    {  // UInt8
+        // clang-format off
+        const std::vector<uint8_t> input_data =
+          {0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 128, 0, 0,
+           0, 0, 0, 0, 0,
+           0, 0, 0, 0, 255};
+       const std::vector<float> kernel_data =
+          {0.00296902, 0.0133062 , 0.02193824, 0.0133062 , 1.00296902,
+           0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+           0.02193824, 0.09832021, 0.16210286, 0.09832021, 0.02193824,
+           0.0133062 , 0.05963413, 0.09832021, 0.05963413, 0.0133062 ,
+           0.00296902, 0.0133062 , 0.02193824, 0.0133062 , -1.00296902
+        };
+
+       const std::vector<uint8_t> output_ref_ipp =
+         {0, 2, 3, 2, 0,
+          2, 8, 13, 8, 2,
+          3, 13, 0, 0, 0,
+          2, 8, 0, 0, 0,
+          128, 2, 0, 0, 0
+         };
+       const std::vector<uint8_t> output_ref_npp =
+         {0, 1, 2, 1, 0,
+          1, 7, 12, 7, 1,
+          2, 12, 0, 0, 0,
+          1, 7, 0, 0, 0,
+          128, 1, 0, 0, 0
+         };
+        // clang-format on
+
+        core::Tensor data =
+                core::Tensor(input_data, {5, 5, 1}, core::Dtype::UInt8, device);
+        core::Tensor kernel =
+                core::Tensor(kernel_data, {5, 5}, core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.Filter(kernel), std::runtime_error);
+        } else {
+            im = im.Filter(kernel);
+            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
+
+            if (device.GetType() == core::Device::DeviceType::CPU) {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_ipp, {5, 5, 1},
+                                     core::Dtype::UInt8, device)));
+            } else {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_npp, {5, 5, 1},
+                                     core::Dtype::UInt8, device)));
+            }
+        }
     }
 }
 
@@ -372,62 +533,169 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
 
 TEST_P(ImagePermuteDevices, Resize) {
     core::Device device = GetParam();
-    // clang-format off
-    const std::vector<float> input_data =
-      {0, 0, 1, 1, 1, 1,
-       0, 1, 1, 0, 0, 1,
-       1, 0, 0, 1, 0, 1,
-       0, 1, 1, 0, 1, 1,
-       1, 1, 1, 0, 1, 1,
-       1, 1, 1, 1, 1, 1};
-    const std::vector<float> output_ref =
-      {0, 1, 1,
-       1, 0, 0,
-       1, 1, 1};
-    // clang-format on
 
-    core::Tensor data =
-            core::Tensor(input_data, {6, 6, 1}, core::Dtype::Float32, device);
-    t::geometry::Image im(data);
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(im.Resize(0.5, t::geometry::Image::Nearest),
-                     std::runtime_error);
-    } else {
-        im = im.Resize(0.5, t::geometry::Image::Nearest);
-        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
-                output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
+    {  // Float32
+        // clang-format off
+        const std::vector<float> input_data =
+          {0, 0, 1, 1, 1, 1,
+           0, 1, 1, 0, 0, 1,
+           1, 0, 0, 1, 0, 1,
+           0, 1, 1, 0, 1, 1,
+           1, 1, 1, 0, 1, 1,
+           1, 1, 1, 1, 1, 1};
+        const std::vector<float> output_ref =
+          {0, 1, 1,
+           1, 0, 0,
+           1, 1, 1};
+        // clang-format on
+
+        core::Tensor data = core::Tensor(input_data, {6, 6, 1},
+                                         core::Dtype::Float32, device);
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.Resize(0.5, t::geometry::Image::Nearest),
+                         std::runtime_error);
+        } else {
+            im = im.Resize(0.5, t::geometry::Image::Nearest);
+            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                    output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
+        }
+    }
+    {  // UInt8
+        // clang-format off
+        const std::vector<uint8_t> input_data =
+          {0, 0, 128, 1, 1, 1,
+           0, 1, 1, 0, 0, 1,
+           128, 0, 0, 255, 0, 1,
+           0, 1, 128, 0, 1, 128,
+           1, 128, 1, 0, 255, 128,
+           1, 1, 1, 1, 128, 1};
+        const std::vector<uint8_t> output_ref_ipp =
+          {0, 32, 1,
+           32, 96, 32,
+           33, 1, 128};
+        const std::vector<uint8_t> output_ref_npp =
+          {0, 33, 1,
+           32, 96, 33,
+           33, 1, 128};
+        // clang-format on
+
+        core::Tensor data =
+                core::Tensor(input_data, {6, 6, 1}, core::Dtype::UInt8, device);
+        t::geometry::Image im(data);
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.Resize(0.5, t::geometry::Image::Super),
+                         std::runtime_error);
+        } else {
+            t::geometry::Image im_low =
+                    im.Resize(0.5, t::geometry::Image::Super);
+            utility::LogInfo("{}", im_low.AsTensor().View({3, 3}).ToString());
+
+            if (device.GetType() == core::Device::DeviceType::CPU) {
+                EXPECT_TRUE(im_low.AsTensor().AllClose(
+                        core::Tensor(output_ref_ipp, {3, 3, 1},
+                                     core::Dtype::UInt8, device)));
+            } else {
+                EXPECT_TRUE(im_low.AsTensor().AllClose(
+                        core::Tensor(output_ref_npp, {3, 3, 1},
+                                     core::Dtype::UInt8, device)));
+
+                // Check output in the CI to see if other inteprolations works
+                // with other platforms
+                im_low = im.Resize(0.5, t::geometry::Image::Linear);
+                utility::LogInfo("Linear: {}",
+                                 im_low.AsTensor().View({3, 3}).ToString());
+
+                im_low = im.Resize(0.5, t::geometry::Image::Cubic);
+                utility::LogInfo("Cubic: {}",
+                                 im_low.AsTensor().View({3, 3}).ToString());
+
+                im_low = im.Resize(0.5, t::geometry::Image::Lanczos);
+                utility::LogInfo("Lanczos: {}",
+                                 im_low.AsTensor().View({3, 3}).ToString());
+            }
+        }
     }
 }
 
 TEST_P(ImagePermuteDevices, PyrDown) {
     core::Device device = GetParam();
 
-    // clang-format off
-    const std::vector<float> input_data =
-      {0, 0, 0, 1, 0, 1,
-       0, 1, 0, 0, 0, 1,
-       0, 0, 0, 1, 0, 1,
-       1, 0, 0, 0, 0, 1,
-       1, 0, 0, 0, 0, 1,
-       1, 1, 1, 1, 1, 1};
-    const std::vector<float> output_ref =
-      {0.0596343, 0.244201, 0.483257,
-       0.269109, 0.187536, 0.410317,
-       0.752312, 0.347241, 0.521471};
-    // clang-format on
+    {  // Float32
+        // clang-format off
+        const std::vector<float> input_data =
+          {0, 0, 0, 1, 0, 1,
+           0, 1, 0, 0, 0, 1,
+           0, 0, 0, 1, 0, 1,
+           1, 0, 0, 0, 0, 1,
+           1, 0, 0, 0, 0, 1,
+           1, 1, 1, 1, 1, 1};
+        const std::vector<float> output_ref =
+          {0.0596343, 0.244201, 0.483257,
+           0.269109, 0.187536, 0.410317,
+           0.752312, 0.347241, 0.521471};
+        // clang-format on
 
-    core::Tensor data =
-            core::Tensor(input_data, {6, 6, 1}, core::Dtype::Float32, device);
-    t::geometry::Image im(data);
+        core::Tensor data = core::Tensor(input_data, {6, 6, 1},
+                                         core::Dtype::Float32, device);
+        t::geometry::Image im(data);
 
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
-        ASSERT_THROW(im.PyrDown(), std::runtime_error);
-    } else {
-        im = im.PyrDown();
-        EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
-                output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.PyrDown(), std::runtime_error);
+        } else {
+            im = im.PyrDown();
+            EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                    output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
+        }
+    }
+
+    {  // UInt8
+        // clang-format off
+        const std::vector<uint8_t> input_data =
+          {0, 0, 0, 128, 0, 1,
+           0, 128, 0, 0, 0, 1,
+           0, 0, 0, 128, 0, 128,
+           255, 0, 0, 0, 0, 1,
+           1, 0, 0, 0, 0, 1,
+           1, 1, 255, 1, 128, 255};
+        const std::vector<uint8_t> output_ref_ipp =
+          {8, 31, 26,
+           51, 25, 30,
+           48, 38, 46};
+        const std::vector<uint8_t> output_ref_npp =
+          {7, 31, 25,
+           51, 25, 29,
+           48, 38, 46};
+        // clang-format on
+
+        core::Tensor data =
+                core::Tensor(input_data, {6, 6, 1}, core::Dtype::UInt8, device);
+        t::geometry::Image im(data);
+
+        if (!t::geometry::Image::HAVE_IPPICV &&
+            device.GetType() ==
+                    core::Device::DeviceType::CPU) {  // Not Implemented
+            ASSERT_THROW(im.PyrDown(), std::runtime_error);
+        } else {
+            im = im.PyrDown();
+            utility::LogInfo("{}", im.AsTensor().View({3, 3}).ToString());
+
+            if (device.GetType() == core::Device::DeviceType::CPU) {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_ipp, {3, 3, 1},
+                                     core::Dtype::UInt8, device)));
+            } else {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_npp, {3, 3, 1},
+                                     core::Dtype::UInt8, device)));
+            }
+        }
     }
 }
 
