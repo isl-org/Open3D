@@ -69,10 +69,8 @@ public:
     void DestroyScene(const SceneHandle& id) override;
 
     virtual void SetClearColor(const Eigen::Vector4f& color) override;
-    void SetPreserveBuffer(bool preserve) override;
     void UpdateSwapChain() override;
 
-    void EnableCaching(bool enable) override;
     void BeginFrame() override;
     void Draw() override;
     void EndFrame() override;
@@ -126,10 +124,6 @@ private:
             buffer_renderers_;
 
     bool frame_started_ = false;
-    bool render_caching_enabled_ = false;
-    int render_count_ = 0;
-    float clear_color_[4];
-    bool preserve_buffer_ = false;
 };
 
 }  // namespace rendering

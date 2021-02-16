@@ -915,7 +915,6 @@ void SceneWidget::ForceRedraw() {
     if (!impl_->scene_caching_enabled_) return;
 #endif  // NO_RENDER_TARGET
 
-    impl_->scene_->GetRenderer().EnableCaching(true);
     impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
     impl_->controls_->SetPickNeedsRedraw();
 }
@@ -931,7 +930,6 @@ void SceneWidget::SetRenderQuality(Quality quality) {
 #else
             if (impl_->scene_caching_enabled_) {
 #endif  // NO_RENDER_TARGET
-                impl_->scene_->GetRenderer().EnableCaching(false);
                 impl_->scene_->GetScene()->SetViewActive(
                         impl_->scene_->GetViewId(), true);
             }
@@ -942,7 +940,6 @@ void SceneWidget::SetRenderQuality(Quality quality) {
 #else
             if (impl_->scene_caching_enabled_) {
 #endif  // NO_RENDER_TARGET
-                impl_->scene_->GetRenderer().EnableCaching(true);
                 impl_->scene_->GetScene()->SetRenderOnce(
                         impl_->scene_->GetViewId());
             }
