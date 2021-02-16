@@ -224,7 +224,6 @@ public:
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
-    void DrawCached(filament::Renderer& renderer);
 
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }
