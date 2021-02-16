@@ -58,7 +58,7 @@ install_cuda_toolkit() {
     if [[ $UBUNTU_VERSION == "bionic" ]] ; then
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-    elif [[ $UBUNTU_VERSION == "focal" ]]
+    elif [[ $UBUNTU_VERSION == "focal" ]] ; then
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
     fi
@@ -201,19 +201,19 @@ build_all() {
     mkdir -p build
     cd build
 
-    cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED"
-        -DCMAKE_BUILD_TYPE=Release
-        -DBUILD_LIBREALSENSE=ON
-        -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
-        -DCUDA_ARCH=BasicPTX
-        -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
-        -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
-        -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
-        -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
-        -DPYTHON_EXECUTABLE="$(which python)"
-        -DBUILD_UNIT_TESTS=ON
-        -DBUILD_BENCHMARKS=ON
-        -DBUILD_EXAMPLES=OFF
+    cmakeOptions=("-DBUILD_SHARED_LIBS=$SHARED"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DBUILD_LIBREALSENSE=ON"
+        "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
+        "-DCUDA_ARCH=BasicPTX"
+        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
+        "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
+        "-DBUILD_RPC_INTERFACE=$BUILD_RPC_INTERFACE"
+        "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
+        "-DPYTHON_EXECUTABLE=$(command -v python)"
+        "-DBUILD_UNIT_TESTS=ON"
+        "-DBUILD_BENCHMARKS=ON"
+        "-DBUILD_EXAMPLES=OFF"
     )
 
     echo
@@ -264,21 +264,21 @@ build_pip_conda_package() {
     echo Building with CPU only...
     mkdir -p build
     cd build # PWD=Open3D/build
-    cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
-        -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
-        -DBUILD_AZURE_KINECT="$BUILD_AZURE_KINECT"
-        -DBUILD_LIBREALSENSE=ON
-        -DBUILD_TENSORFLOW_OPS=ON
-        -DBUILD_PYTORCH_OPS=ON
-        -DBUILD_RPC_INTERFACE=ON
-        -DBUILD_FILAMENT_FROM_SOURCE="$BUILD_FILAMENT_FROM_SOURCE"
-        -DBUILD_JUPYTER_EXTENSION=ON
-        -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
-        -DPYTHON_EXECUTABLE="$(which python)"
-        -DCMAKE_BUILD_TYPE=Release
-        -DBUILD_UNIT_TESTS=OFF
-        -DBUILD_BENCHMARKS=OFF
-        -DBUNDLE_OPEN3D_ML="$BUNDLE_OPEN3D_ML"
+    cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
+        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
+        "-DBUILD_LIBREALSENSE=ON"
+        "-DBUILD_TENSORFLOW_OPS=ON"
+        "-DBUILD_PYTORCH_OPS=ON"
+        "-DBUILD_RPC_INTERFACE=ON"
+        "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
+        "-DBUILD_JUPYTER_EXTENSION=ON"
+        "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
+        "-DPYTHON_EXECUTABLE=$(command -v python)"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DBUILD_UNIT_TESTS=OFF"
+        "-DBUILD_BENCHMARKS=OFF"
+        "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
     )
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
@@ -453,16 +453,16 @@ build_docs() {
         echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
         echo
     fi
-    cmakeOptions=(-DDEVELOPER_BUILD="$DEVELOPER_BUILD"
-        -DCMAKE_BUILD_TYPE=Release
-        -DBUILD_JUPYTER_EXTENSION=ON
-        -DWITH_OPENMP=ON
-        -DBUILD_AZURE_KINECT=ON
-        -DBUILD_LIBREALSENSE=ON
-        -DBUILD_TENSORFLOW_OPS=ON
-        -DBUILD_PYTORCH_OPS=ON
-        -DBUILD_RPC_INTERFACE=ON
-        -DBUNDLE_OPEN3D_ML=ON
+    cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DBUILD_JUPYTER_EXTENSION=ON"
+        "-DWITH_OPENMP=ON"
+        "-DBUILD_AZURE_KINECT=ON"
+        "-DBUILD_LIBREALSENSE=ON"
+        "-DBUILD_TENSORFLOW_OPS=ON"
+        "-DBUILD_PYTORCH_OPS=ON"
+        "-DBUILD_RPC_INTERFACE=ON"
+        "-DBUNDLE_OPEN3D_ML=ON"
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
