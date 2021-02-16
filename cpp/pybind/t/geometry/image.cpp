@@ -161,7 +161,7 @@ void pybind_image(py::module &m) {
                  "interpolation type. Downsample if sampling rate is < 1. "
                  "Upsample if sampling rate > 1. Aspect ratio is always "
                  "kept.",
-                 sampling_rate_a = 0.5, "interp_type"_a = Image::Nearest)
+                 "sampling_rate"_a = 0.5, "interp_type"_a = Image::Nearest)
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a"
