@@ -44,8 +44,8 @@
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
 #include <filament/Material.h>
-#include <filament/RenderableManager.h>
 #include <filament/RenderTarget.h>
+#include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
 #include <filament/Texture.h>
