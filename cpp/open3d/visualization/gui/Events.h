@@ -63,6 +63,7 @@ struct MouseEvent {
         } move;           // includes drag
         struct {
             MouseButton button;
+            int count;
         } button;
         struct {
             float dx;  // macOS gives fractional values, and is required

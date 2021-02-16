@@ -122,15 +122,14 @@ private:
     std::unique_ptr<FilamentMaterialModifier> materials_modifier_;
     FilamentResourceManager& resource_mgr_;
 
-    std::unordered_set<FilamentRenderToBuffer*> buffer_renderers_;
+    std::unordered_set<std::shared_ptr<FilamentRenderToBuffer>>
+            buffer_renderers_;
 
     bool frame_started_ = false;
     bool render_caching_enabled_ = false;
     int render_count_ = 0;
     float clear_color_[4];
     bool preserve_buffer_ = false;
-
-    void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
 };
 
 }  // namespace rendering

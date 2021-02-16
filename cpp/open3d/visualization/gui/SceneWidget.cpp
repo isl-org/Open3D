@@ -33,6 +33,7 @@
 #include <unordered_set>
 
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
@@ -418,15 +419,31 @@ class RotateCameraInteractor : public RotationInteractor {
     using Super = RotationInteractor;
 
 public:
-    explicit RotateCameraInteractor(rendering::Camera* camera)
+    explicit RotateCameraInteractor(rendering::Open3DScene* scene,
+                                    rendering::Camera* camera)
         : camera_controls_(std::make_unique<rendering::CameraInteractorLogic>(
-                  camera, MIN_FAR_PLANE)) {
+                  camera, MIN_FAR_PLANE)),
+          scene_(scene) {
         SetInteractor(camera_controls_.get());
     }
 
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
-            case MouseEvent::BUTTON_DOWN:
+            case MouseEvent::BUTTON_DOWN: {
+                if (e.button.count == 2 &&
+                    e.button.button == MouseButton::LEFT) {
+                    int x = e.x;
+                    int y = e.y;
+                    scene_->GetRenderer().RenderToDepthImage(
+                            scene_->GetView(), scene_->GetScene(),
+                            [x, y, this](std::shared_ptr<geometry::Image> img) {
+                                ChangeCenterOfRotation(img, x, y);
+                            });
+                } else {
+                    Super::Mouse(e);
+                }
+                break;
+            }
             case MouseEvent::DRAG:
             case MouseEvent::BUTTON_UP:
             default:
@@ -451,14 +468,42 @@ public:
 
 private:
     std::unique_ptr<rendering::CameraInteractorLogic> camera_controls_;
+    rendering::Open3DScene* scene_;
+
+    void ChangeCenterOfRotation(std::shared_ptr<geometry::Image> depth_img,
+                                int x,
+                                int y) {
+        const int radius_px = 2;  // should be even;  total size is 2*r+1
+        float far_z = 0.999999f;  // 1.0 - epsilon
+        float win_z = (1.0 - *depth_img->PointerAt<float>(x, y));
+        if (win_z >= far_z) {
+            for (int v = y - radius_px; v < y + radius_px; ++v) {
+                for (int u = x - radius_px; u < x + radius_px; ++u) {
+                    float z = *depth_img->PointerAt<float>(x, y);
+                    win_z = (1.0 - std::min(win_z, z));
+                }
+            }
+        }
+
+        if (win_z < far_z) {
+            auto vp = scene_->GetView()->GetViewport();
+            auto point = scene_->GetCamera()->Unproject(
+                    float(x), float(vp[3] - y), win_z, float(vp[2]),
+                    float(vp[3]));
+            SetCenterOfRotation(point);
+            interactor_->Rotate(0, 0);  // update now
+        }
+    }
 };
 
-class RotateCameraSphereInteractor : public RotationInteractor {
+class RotateCameraSphereInteractor : public RotateCameraInteractor {
     using Super = RotationInteractor;
 
 public:
-    explicit RotateCameraSphereInteractor(rendering::Camera* camera)
-        : camera_controls_(
+    explicit RotateCameraSphereInteractor(rendering::Open3DScene* scene,
+                                          rendering::Camera* camera)
+        : RotateCameraInteractor(scene, camera),
+          camera_controls_(
                   std::make_unique<rendering::CameraSphereInteractorLogic>(
                           camera, MIN_FAR_PLANE)) {
         SetInteractor(camera_controls_.get());
@@ -473,7 +518,8 @@ class PickInteractor : public RotateCameraInteractor {
 
 public:
     PickInteractor(rendering::Open3DScene* scene, rendering::Camera* camera)
-        : Super(camera), pick_(new PickPointsInteractor(scene, camera)) {}
+        : Super(scene, camera),
+          pick_(new PickPointsInteractor(scene, camera)) {}
 
     void SetViewSize(const Size& size) {
         GetMatrixInteractor().SetViewSize(size.width, size.height);
@@ -515,9 +561,9 @@ private:
 class Interactors {
 public:
     Interactors(rendering::Open3DScene* scene, rendering::Camera* camera)
-        : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
-          rotate_sphere_(
-                  std::make_unique<RotateCameraSphereInteractor>(camera)),
+        : rotate_(std::make_unique<RotateCameraInteractor>(scene, camera)),
+          rotate_sphere_(std::make_unique<RotateCameraSphereInteractor>(
+                  scene, camera)),
           fly_(std::make_unique<FlyInteractor>(camera)),
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
           ibl_(std::make_unique<RotateIBLInteractor>(scene->GetScene(),

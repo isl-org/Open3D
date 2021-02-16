@@ -84,6 +84,24 @@ public:
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
+    /// Use volumetric ray casting to obtain vertex and color maps, mainly for
+    /// dense visual odometry.
+    /// intrinsics and extrinsics defines the camera properties for image
+    /// generation. width and height defines the image size.
+    /// Note: vertex map is
+    /// interpolated along the ray, but color map is not trilinearly
+    /// interpolated due to performance requirements. Colormap is only used for
+    /// a reference now.
+    std::tuple<core::Tensor, core::Tensor> RayCast(
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics,
+            int width,
+            int height,
+            int max_steps = 50,
+            float depth_min = 0.1f,
+            float depth_max = 3.0f,
+            float weight_threshold = 3.0f);
+
     /// Extract point cloud near iso-surfaces.
     /// Weight threshold is used to filter outliers. By default we use 3.0,
     /// where we assume a reliable surface point comes from the fusion of at

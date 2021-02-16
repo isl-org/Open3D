@@ -44,10 +44,17 @@ INSTANTIATE_TEST_SUITE_P(NearestNeighborSearch,
                          NNSPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(NNSPermuteDevices, KnnSearch) {
+class NNSPermuteDevicesWithFaiss : public PermuteDevicesWithFaiss {};
+INSTANTIATE_TEST_SUITE_P(
+        NearestNeighborSearch,
+        NNSPermuteDevicesWithFaiss,
+        testing::ValuesIn(PermuteDevicesWithFaiss::TestCases()));
+
+TEST_P(NNSPermuteDevicesWithFaiss, KnnSearch) {
     // Set up nns.
     int size = 10;
     core::Device device = GetParam();
+
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
                               0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
@@ -172,7 +179,7 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
                      {0.00626358, 0.00747938, 0.00626358, 0.00747938}));
 }
 
-TEST_P(NNSPermuteDevices, HybridSearch) {
+TEST_P(NNSPermuteDevicesWithFaiss, HybridSearch) {
     // Set up nns.
     int size = 10;
     core::Device device = GetParam();
