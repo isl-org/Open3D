@@ -572,14 +572,18 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         // created. If the number of points has changed then it cannot be
         // updated. In that case, you must remove the geometry then add it
         // again.
-        if (n_vertices != vbuf->getVertexCount()) {
+        if (n_vertices > vbuf->getVertexCount()) {
             utility::LogWarning(
                     "Geometry for point cloud {} cannot be updated because the "
-                    "number of points has changed (Old: {}, New: {})",
+                    "number of points exceeds the existing point count (Old: "
+                    "{}, New: {})",
                     object_name, vbuf->getVertexCount(), n_vertices);
             return;
         }
 
+        bool geometry_update_needed = n_vertices != vbuf->getVertexCount();
+
+        // Update the each of the attribute requested
         if (update_flags & kUpdatePointsFlag) {
             filament::VertexBuffer::BufferDescriptor pts_descriptor(
                     points.GetDataPtr(), n_vertices * 3 * sizeof(float));
@@ -638,6 +642,15 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                         uv_array, uv_array_size, DeallocateBuffer);
                 vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
             }
+        }
+
+        // Update the geometry to reflect new geometry count
+        if (geometry_update_needed) {
+            auto& renderable_mgr = engine_.getRenderableManager();
+            auto inst = renderable_mgr.getInstance(g->filament_entity);
+            renderable_mgr.setGeometryAt(
+                    inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
+                    0, n_vertices);
         }
     }
 }
