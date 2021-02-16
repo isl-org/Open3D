@@ -27,22 +27,28 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/RGBDImage.h"
 
 namespace open3d {
 namespace t {
-
-namespace geometry {
-class RGBDImage;
-class Image;
-}  // namespace geometry
-
 namespace pipelines {
 namespace odometry {
 
+core::Tensor CreateVertexMap(const t::geometry::Image& depth,
+                             const core::Tensor& intrinsics,
+                             float depth_factor = 1000.0,
+                             float depth_max = 3.0);
+
+core::Tensor CreateNormalMap(const core::Tensor& vertex_map,
+                             float depth_scale = 1000.0,
+                             float depth_max = 3.0,
+                             float depth_diff = 0.07);
+
 /// Create an RGBD image pyramid given the original source and target and
 /// perform hierarchical odometry.
-core::Tensor RGBDOdometryMultiScale(const RGBDImage& source,
-                                    const RGBDImage& target,
+core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
+                                    const t::geometry::RGBDImage& target,
                                     const core::Tensor& intrinsics,
                                     const core::Tensor& init_source_to_target,
                                     const std::vector<int>& iterations = {10, 5,
@@ -53,9 +59,9 @@ core::Tensor RGBDOdometryMultiScale(const RGBDImage& source,
 /// requiring normal map generation.
 /// KinectFusion, ISMAR 2011
 core::Tensor RGBDOdometryPointToPlane(
-        const Image& source_vtx_map,
-        const Image& target_vtx_map,
-        const Image& source_normal_map,
+        const t::geometry::Image& source_vtx_map,
+        const t::geometry::Image& target_vtx_map,
+        const t::geometry::Image& source_normal_map,
         const core::Tensor& intrinsics,
         const core::Tensor& init_source_to_target);
 
@@ -63,12 +69,12 @@ core::Tensor RGBDOdometryPointToPlane(
 /// (I_p - I_q)^2 + lambda(D_p - (D_q)')^2,
 /// requiring the gradient images of target color and depth.
 /// Colored ICP Revisited, ICCV 2017
-core::Tensor RGBDOdometryJoint(const RGBDImage& source,
-                               const RGBDImage& target,
-                               const Image& source_color_dx,
-                               const Image& source_color_dy,
-                               const Image& source_depth_dx,
-                               const Image& source_depth_dy,
+core::Tensor RGBDOdometryJoint(const t::geometry::RGBDImage& source,
+                               const t::geometry::RGBDImage& target,
+                               const t::geometry::Image& source_color_dx,
+                               const t::geometry::Image& source_color_dy,
+                               const t::geometry::Image& source_depth_dx,
+                               const t::geometry::Image& source_depth_dy,
                                const core::Tensor& intrinsics,
                                const core::Tensor& init_source_to_target);
 
@@ -76,10 +82,10 @@ core::Tensor RGBDOdometryJoint(const RGBDImage& source,
 /// (I_p - I_q)^2,
 /// requiring the gradient image of target color.
 /// Real-time visual odometry from dense RGB-D images, ICCV Workshops, 2011
-core::Tensor RGBDOdometryColor(const RGBDImage& source,
-                               const RGBDImage& target,
-                               const Image& source_color_dx,
-                               const Image& source_color_dy,
+core::Tensor RGBDOdometryColor(const t::geometry::RGBDImage& source,
+                               const t::geometry::RGBDImage& target,
+                               const t::geometry::Image& source_color_dx,
+                               const t::geometry::Image& source_color_dy,
                                const core::Tensor& intrinsics,
                                const core::Tensor& init_source_to_target);
 
