@@ -44,7 +44,7 @@ GCE_ZID=${GCE_ZID:=0} # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
 GCE_BOOT_DISK_SIZE=32GB
-NVIDIA_DRIVER_VERSION=440 # Must be present in Ubuntu repos 20.04: {390, 418, 430, 435, 440}
+NVIDIA_DRIVER_VERSION=460 # Must be present in Ubuntu repos 20.04
 GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
 GCE_VM_CUSTOM_IMAGE_FAMILY=ubuntu-os-docker-gpu-2004-lts
@@ -142,10 +142,12 @@ run-ci)
             --env NPROC=$NPROC \
             --env SHARED=${SHARED[$CI_CONFIG_ID]} \
             --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \
+            --env BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE[$CI_CONFIG_ID]} \
             --env BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS[$CI_CONFIG_ID]} \
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
-            --env BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE[$CI_CONFIG_ID]} \
-            $DC_IMAGE_TAG"
+            --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
+            $DC_IMAGE_TAG; \
+            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh"
     ;;
 
 delete-image)

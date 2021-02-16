@@ -8,7 +8,7 @@ source "$(dirname "$0")"/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 if [ "$BUILD_CUDA_MODULE" == "ON" ] &&
-    ! nvcc --version | grep -q "release ${CUDA_VERSION[1]}" 2>/dev/null; then
+    ! nvcc --version 2>/dev/null | grep -q "release ${CUDA_VERSION[1]}"; then
     install_cuda_toolkit with-cudnn purge-cache
     nvcc --version
 fi
@@ -34,7 +34,7 @@ echo "Building examples iteratively..."
 make VERBOSE=1 -j"$NPROC" build-examples-iteratively
 echo
 
-echo "running Open3D C++ unit tests..."
+echo "Running Open3D C++ unit tests..."
 run_cpp_unit_tests
 
 # Run on GPU only. CPU versions run on Github already
@@ -50,5 +50,5 @@ echo "Test building a C++ example with installed Open3D..."
 test_cpp_example "${runExample:=ON}"
 echo
 
-echo "test uninstalling Open3D..."
+echo "Test uninstalling Open3D..."
 make uninstall

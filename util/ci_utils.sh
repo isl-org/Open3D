@@ -23,14 +23,14 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
 # CUDA
-CUDA_VERSION=("10-1" "10.1")
-CUDNN_MAJOR_VERSION=7
-CUDNN_VERSION="7.6.5.32-1+cuda10.1"
+CUDA_VERSION=("11-0" "11.0")
+CUDNN_MAJOR_VERSION=8
+CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
-TENSORFLOW_VER="2.3.1"
-TORCH_CUDA_GLNX_VER="1.6.0+cu101"
-TORCH_CPU_GLNX_VER="1.6.0+cpu"
-TORCH_MACOS_VER="1.6.0"
+TENSORFLOW_VER="2.4.1"
+TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+TORCH_CPU_GLNX_VER="1.7.1+cpu"
+TORCH_MACOS_VER="1.7.1"
 # Python
 CONDA_BUILD_VER="3.20.0"
 PIP_VER="20.2.4"
@@ -64,17 +64,7 @@ install_cuda_toolkit() {
         "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
         "cuda-nvtx-${CUDA_VERSION[0]}" \
         "cuda-npp-dev-${CUDA_VERSION[0]}" \
-        libcublas-dev
-    if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
-        echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
-        dpkg -L libcublas10 libcublas-dev | while read -r cufile; do
-            if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ]; then
-                set -x
-                $SUDO ln -s "$cufile" "${cufile/10.2/10.1}"
-                set +x
-            fi
-        done
-    fi
+        "libcublas-dev-${CUDA_VERSION[0]} "
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
         # The repository method can cause "File has unexpected size" error so
@@ -82,36 +72,34 @@ install_cuda_toolkit() {
         # CentOS 6 nvidia-docker scripts. The CUDA version and CUDNN version
         # should be the same as the repository method. Ref:
         # https://gitlab.com/nvidia/container-images/cuda/-/blob/2d67fde701915bd88a15038895203c894b36d3dd/dist/10.1/centos6-x86_64/devel/cudnn7/Dockerfile#L9
-        $SUDO apt-get install --yes --no-install-recommends curl
-        CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
-        curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
-        echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
-        $SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
-        rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
-        $SUDO ldconfig
-        # We may revisit the repository approach in the future.
-        # echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        # $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
-        # $SUDO apt-get install --yes --no-install-recommends \
-        #     "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
-        #     "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
+        #$SUDO apt-get install --yes --no-install-recommends curl
+        #CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
+        #curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
+        #echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
+        #$SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
+        #rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
+        #$SUDO ldconfig
+        # CUDNN is now part of the main CUDA repo, so re-trying apt install
+        echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
+        $SUDO apt-get install --yes --no-install-recommends \
+            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
+            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
+    $SUDO update-alternatives --install /usr/local/cuda cuda /usr/local/cuda-11.0 110
+    $SUDO update-alternatives --install /usr/local/cuda-11 cuda-11 /usr/local/cuda-11.0 110
     CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
-    [ -e /usr/local/cuda ] || $SUDO ln -s "$CUDA_TOOLKIT_DIR" /usr/local/cuda
-    set +u # Disable "unbound variable is error" since that gives a false alarm error below:
+    set +u -x # Disable "unbound variable is error" since that gives a false alarm error below:
     export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    set -u
-    echo PATH="$PATH"
-    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-    # Ensure g++ < 9 is installed for CUDA 10.1
+    set -u +x
+    # Ensure g++ < 10 is installed for CUDA 11.0
     cpp_version=$(c++ --version 2>/dev/null | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    if dpkg --compare-versions "$cpp_version" ge-nl 9; then
-        $SUDO apt-get install --yes --no-install-recommends g++-8 gcc-8
-        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-8 70 \
-            --slave /usr/bin/gcc gcc /usr/bin/gcc-8
-        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 70 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-8
+    if dpkg --compare-versions "$cpp_version" ge-nl 10; then
+        $SUDO apt-get install --yes --no-install-recommends g++-9 gcc-9
+        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-9 70 \
+            --slave /usr/bin/gcc gcc /usr/bin/gcc-9
+        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-9 70 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-9
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         $SUDO apt-get clean
@@ -226,7 +214,7 @@ build_all() {
     echo Running cmake "${cmakeOptions[@]}" ..
     cmake "${cmakeOptions[@]}" ..
     echo
-    echo "build & install Open3D..."
+    echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
     make install -j"$NPROC"
     make VERBOSE=1 install-pip-package -j"$NPROC"
