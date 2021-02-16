@@ -393,7 +393,7 @@ public:
 #else
 #define DEBUG_PRINT(x) \
     do {               \
-        x = x;         \
+        (void)x;       \
     } while (0)
 // Note: the "x=x;" statement is intended to eliminate "unused variable"
 // compiler warning messages
