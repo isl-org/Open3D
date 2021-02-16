@@ -245,7 +245,6 @@ private:
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
     filament::Scene* scene_ = nullptr;
-    filament::Scene* cached_render_scene_ = nullptr;
 
     struct TextureMaps {
         rendering::TextureHandle albedo_map =
