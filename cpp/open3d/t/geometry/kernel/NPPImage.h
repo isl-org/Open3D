@@ -28,6 +28,8 @@
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -41,7 +43,7 @@ void Dilate(const open3d::core::Tensor &srcim,
 
 void Resize(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
-            int interp_type);
+            t::geometry::Image::InterpType interp_type);
 
 void Filter(const open3d::core::Tensor &srcim,
             open3d::core::Tensor &dstim,
@@ -51,7 +53,7 @@ void FilterBilateral(const open3d::core::Tensor &srcim,
                      open3d::core::Tensor &dstim,
                      int kernel_size,
                      float value_sigma,
-                     float dist_sigma);
+                     float distance_sigma);
 
 void FilterGaussian(const open3d::core::Tensor &srcim,
                     open3d::core::Tensor &dstim,

@@ -196,7 +196,7 @@ Image Image::RGBToGray() const {
     return dst_im;
 }
 
-Image Image::Resize(float sampling_rate, int interp_type) const {
+Image Image::Resize(float sampling_rate, InterpType interp_type) const {
     if (sampling_rate == 1.0f) {
         return *this;
     }
@@ -453,8 +453,8 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
 }
 
 Image Image::PyrDown() const {
-    Image blur = FilterGaussian(5);
-    return blur.Resize(0.5, Image::Nearest);
+    Image blur = FilterGaussian(5, 1.0f);
+    return blur.Resize(0.5, InterpType::Nearest);
 }
 
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,

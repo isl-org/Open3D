@@ -78,11 +78,11 @@ void pybind_image(py::module &m) {
             "channels, dtype and device.");
 
     py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
-            .value("Nearest", Image::Nearest)
-            .value("Linear", Image::Linear)
-            .value("Cubic", Image::Cubic)
-            .value("Lanczos", Image::Lanczos)
-            .value("Super", Image::Super)
+            .value("Nearest", Image::InterpType::Nearest)
+            .value("Linear", Image::InterpType::Linear)
+            .value("Cubic", Image::InterpType::Cubic)
+            .value("Lanczos", Image::InterpType::Lanczos)
+            .value("Super", Image::InterpType::Super)
             .export_values();
 
     // Constructors
@@ -161,7 +161,8 @@ void pybind_image(py::module &m) {
                  "interpolation type. Downsample if sampling rate is < 1. "
                  "Upsample if sampling rate > 1. Aspect ratio is always "
                  "kept.",
-                 "sampling_rate"_a = 0.5, "interp_type"_a = Image::Nearest)
+                 "sampling_rate"_a = 0.5,
+                 "interp_type"_a = Image::InterpType::Nearest)
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a"

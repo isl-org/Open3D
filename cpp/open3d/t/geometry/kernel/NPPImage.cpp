@@ -69,7 +69,7 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
 
 void Resize(const open3d::core::Tensor &src_im,
             open3d::core::Tensor &dst_im,
-            int interp_type) {
+            t::geometry::Image::InterpType interp_type) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -83,13 +83,15 @@ void Resize(const open3d::core::Tensor &src_im,
     NppiRect dst_roi = {0, 0, static_cast<int>(dst_im.GetShape(1)),
                         static_cast<int>(dst_im.GetShape(0))};
 
-    static const std::unordered_map<int, int> type_dict = {
-            {Image::Nearest, NPPI_INTER_NN},
-            {Image::Linear, NPPI_INTER_LINEAR},
-            {Image::Cubic, NPPI_INTER_CUBIC},
-            {Image::Lanczos, NPPI_INTER_LANCZOS},
-            {Image::Super, NPPI_INTER_SUPER},
-    };
+    static const std::unordered_map<t::geometry::Image::InterpType, int>
+            type_dict = {
+                    {t::geometry::Image::InterpType::Nearest, NPPI_INTER_NN},
+                    {t::geometry::Image::InterpType::Linear, NPPI_INTER_LINEAR},
+                    {t::geometry::Image::InterpType::Cubic, NPPI_INTER_CUBIC},
+                    {t::geometry::Image::InterpType::Lanczos,
+                     NPPI_INTER_LANCZOS},
+                    {t::geometry::Image::InterpType::Super, NPPI_INTER_SUPER},
+            };
     auto it = type_dict.find(interp_type);
     if (it == type_dict.end()) {
         utility::LogError("Invalid interpolation type {}.", interp_type);
@@ -268,7 +270,7 @@ void FilterBilateral(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int kernel_size,
                      float value_sigma,
-                     float dist_sigma) {
+                     float distance_sigma) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -285,7 +287,7 @@ void FilterBilateral(const core::Tensor &src_im,
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,      \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),                     \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size / 2, \
-            1, value_sigma *value_sigma, dist_sigma *dist_sigma,               \
+            1, value_sigma *value_sigma, distance_sigma *distance_sigma,       \
             NPP_BORDER_REPLICATE
     if (dtype == core::Dtype::UInt8) {
         using npp_dtype = Npp8u;

@@ -97,7 +97,7 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
 
 void Resize(const open3d::core::Tensor &src_im,
             open3d::core::Tensor &dst_im,
-            int interp_type) {
+            t::geometry::Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
     // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
@@ -111,11 +111,15 @@ void Resize(const open3d::core::Tensor &src_im,
             0 /* border buffer size */, dst_im.GetDataPtr(),
             dst_im.GetStride(0) * dtype.ByteSize());
 
-    static const std::unordered_map<int, IppiInterpolationType> type_dict = {
-            {Image::Nearest, ippNearest}, {Image::Linear, ippLinear},
-            {Image::Cubic, ippCubic},     {Image::Lanczos, ippLanczos},
-            {Image::Super, ippSuper},
-    };
+    static const std::unordered_map<t::geometry::Image::InterpType,
+                                    IppiInterpolationType>
+            type_dict = {
+                    {t::geometry::Image::InterpType::Nearest, ippNearest},
+                    {t::geometry::Image::InterpType::Linear, ippLinear},
+                    {t::geometry::Image::InterpType::Cubic, ippCubic},
+                    {t::geometry::Image::InterpType::Lanczos, ippLanczos},
+                    {t::geometry::Image::InterpType::Super, ippSuper},
+            };
 
     auto it = type_dict.find(interp_type);
     if (it == type_dict.end()) {
@@ -203,7 +207,7 @@ void FilterBilateral(const core::Tensor &src_im,
                      core::Tensor &dst_im,
                      int kernel_size,
                      float value_sigma,
-                     float dist_sigma) {
+                     float distance_sigma) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
@@ -223,7 +227,7 @@ void FilterBilateral(const core::Tensor &src_im,
     try {
         ::ipp::iwiFilterBilateral(ipp_src_im, ipp_dst_im, kernel_size / 2,
                                   value_sigma * value_sigma,
-                                  dist_sigma * dist_sigma);
+                                  distance_sigma * distance_sigma);
     } catch (const ::ipp::IwException &e) {
         // See comments in icv/include/ippicv_types.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);

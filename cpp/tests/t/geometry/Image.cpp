@@ -555,10 +555,11 @@ TEST_P(ImagePermuteDevices, Resize) {
         if (!t::geometry::Image::HAVE_IPPICV &&
             device.GetType() ==
                     core::Device::DeviceType::CPU) {  // Not Implemented
-            ASSERT_THROW(im.Resize(0.5, t::geometry::Image::Nearest),
-                         std::runtime_error);
+            ASSERT_THROW(
+                    im.Resize(0.5, t::geometry::Image::InterpType::Nearest),
+                    std::runtime_error);
         } else {
-            im = im.Resize(0.5, t::geometry::Image::Nearest);
+            im = im.Resize(0.5, t::geometry::Image::InterpType::Nearest);
             EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
                     output_ref, {3, 3, 1}, core::Dtype::Float32, device)));
         }
@@ -588,11 +589,11 @@ TEST_P(ImagePermuteDevices, Resize) {
         if (!t::geometry::Image::HAVE_IPPICV &&
             device.GetType() ==
                     core::Device::DeviceType::CPU) {  // Not Implemented
-            ASSERT_THROW(im.Resize(0.5, t::geometry::Image::Super),
+            ASSERT_THROW(im.Resize(0.5, t::geometry::Image::InterpType::Super),
                          std::runtime_error);
         } else {
             t::geometry::Image im_low =
-                    im.Resize(0.5, t::geometry::Image::Super);
+                    im.Resize(0.5, t::geometry::Image::InterpType::Super);
             utility::LogInfo("{}", im_low.AsTensor().View({3, 3}).ToString());
 
             if (device.GetType() == core::Device::DeviceType::CPU) {
@@ -606,15 +607,16 @@ TEST_P(ImagePermuteDevices, Resize) {
 
                 // Check output in the CI to see if other inteprolations works
                 // with other platforms
-                im_low = im.Resize(0.5, t::geometry::Image::Linear);
+                im_low = im.Resize(0.5, t::geometry::Image::InterpType::Linear);
                 utility::LogInfo("Linear: {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
 
-                im_low = im.Resize(0.5, t::geometry::Image::Cubic);
+                im_low = im.Resize(0.5, t::geometry::Image::InterpType::Cubic);
                 utility::LogInfo("Cubic: {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
 
-                im_low = im.Resize(0.5, t::geometry::Image::Lanczos);
+                im_low =
+                        im.Resize(0.5, t::geometry::Image::InterpType::Lanczos);
                 utility::LogInfo("Lanczos: {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
             }
