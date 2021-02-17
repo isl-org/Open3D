@@ -43,7 +43,7 @@ public:
     /// a memory allocation.
     ///
     /// \param ptr          Pointer to the beginning of the memory.
-    /// \parma size         Size of the memory.
+    /// \param size         Size of the memory.
     /// \param alignment    The alignment for returned segments.
     ///
     MemoryAllocation(void* ptr, size_t size, size_t alignment = 1)

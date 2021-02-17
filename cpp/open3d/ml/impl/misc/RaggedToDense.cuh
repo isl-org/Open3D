@@ -47,7 +47,7 @@ __global__ void RaggedToDenseCUDAKernel(
         const size_t default_value_size,
         T* __restrict__ out_values) {
     const int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i >= row_splits_size) return;
+    if (i + 1 >= row_splits_size) return;
 
     const int64_t start = row_splits[i];
     const int64_t end = min(int64_t(out_col_size) + start, row_splits[i + 1]);

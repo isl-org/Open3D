@@ -33,7 +33,10 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
 namespace t {
@@ -70,19 +73,31 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
+PointCloud PointCloud::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+    PointCloud pcd(device);
+    for (auto &kv : point_attr_) {
+        pcd.SetPointAttr(kv.first, kv.second.To(device, /*copy=*/true));
+    }
+    return pcd;
+}
+
+PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
+
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device_);
 
     core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
-    // TODO: Make it more generalised [4x4][4xN] Transformation
+    // TODO: Make it more generalised [4x4][4xN] transformation.
 
-    // TODO: consider adding a new op extending MatMul to support `AB + C`
+    // TODO: Consider adding a new op extending MatMul to support `AB + C`
     // GEMM operation. Also, a parallel joint optimimsed kernel for
     // independent MatMul operation with common matrix like AB and AC
-    // with fusion based cache optimisation
-
+    // with fusion based cache optimisation.
     core::Tensor &points = GetPoints();
     points = (R.Matmul(points.T())).Add_(t).T();
 
@@ -133,7 +148,21 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-geometry::PointCloud PointCloud::FromLegacyPointCloud(
+PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
+                                            const core::Tensor &intrinsics,
+                                            const core::Tensor &extrinsics,
+                                            float depth_scale,
+                                            float depth_max,
+                                            int stride) {
+    depth.AsTensor().AssertDtype(core::Dtype::UInt16);
+
+    core::Tensor points;
+    kernel::pointcloud::Unproject(depth.AsTensor(), points, intrinsics,
+                                  extrinsics, depth_scale, depth_max, stride);
+    return PointCloud(points);
+}
+
+PointCloud PointCloud::FromLegacyPointCloud(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {

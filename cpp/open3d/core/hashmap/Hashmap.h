@@ -28,6 +28,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
+#pragma once
 namespace open3d {
 namespace core {
 
@@ -112,7 +113,12 @@ public:
     /// Parallel collect all iterators in the hash table
     /// Return \addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    void GetActiveIndices(Tensor& output_indices);
+    void GetActiveIndices(Tensor& output_indices) const;
+
+    Hashmap Clone() const;
+    Hashmap To(const Device& device, bool copy = false) const;
+    Hashmap CPU() const;
+    Hashmap CUDA(int device_id = 0) const;
 
     int64_t Size() const;
 
@@ -122,11 +128,11 @@ public:
     int64_t GetKeyBytesize() const;
     int64_t GetValueBytesize() const;
 
-    Tensor& GetKeyBuffer();
-    Tensor& GetValueBuffer();
+    Tensor& GetKeyBuffer() const;
+    Tensor& GetValueBuffer() const;
 
-    Tensor GetKeyTensor();
-    Tensor GetValueTensor();
+    Tensor GetKeyTensor() const;
+    Tensor GetValueTensor() const;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
@@ -134,6 +140,10 @@ public:
 
     /// Return size / bucket_count.
     float LoadFactor() const;
+
+    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() const {
+        return device_hashmap_;
+    }
 
 protected:
     void AssertKeyDtype(const Dtype& dtype_key,

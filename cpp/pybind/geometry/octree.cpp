@@ -108,20 +108,30 @@ void pybind_octree(py::module &m) {
             octree_internal_node(m, "OctreeInternalNode",
                                  "OctreeInternalNode class, containing "
                                  "OctreeNode children.");
-    octree_internal_node.def(
-            "__repr__", [](const OctreeInternalNode &internal_node) {
-                size_t num_children = 0;
-                for (const std::shared_ptr<OctreeNode> &child :
-                     internal_node.children_) {
-                    if (child != nullptr) {
-                        num_children++;
-                    }
-                }
-                std::ostringstream repr;
-                repr << "OctreeInternalNode with " << num_children
-                     << " non-empty child nodes";
-                return repr.str();
-            });
+    octree_internal_node
+            .def("__repr__",
+                 [](const OctreeInternalNode &internal_node) {
+                     size_t num_children = 0;
+                     for (const std::shared_ptr<OctreeNode> &child :
+                          internal_node.children_) {
+                         if (child != nullptr) {
+                             num_children++;
+                         }
+                     }
+                     std::ostringstream repr;
+                     repr << "OctreeInternalNode with " << num_children
+                          << " non-empty child nodes";
+                     return repr.str();
+                 })
+            .def_static(
+                    "get_init_function", &OctreeInternalNode::GetInitFunction,
+                    "Get lambda function for initializing OctreeInternalNode. "
+                    "When the init function is called, an empty "
+                    "OctreeInternalNode is created.")
+            .def_static("get_update_function",
+                        &OctreeInternalNode::GetUpdateFunction,
+                        "Get lambda function for updating OctreeInternalNode. "
+                        "This update function does nothing.");
     py::detail::bind_default_constructor<OctreeInternalNode>(
             octree_internal_node);
     py::detail::bind_copy_functions<OctreeInternalNode>(octree_internal_node);
@@ -129,6 +139,56 @@ void pybind_octree(py::module &m) {
                                        &OctreeInternalNode::children_,
                                        "List of children Nodes.");
     docstring::ClassMethodDocInject(m, "OctreeInternalNode", "__init__");
+
+    // OctreeInternalPointNode
+    py::class_<OctreeInternalPointNode, PyOctreeNode<OctreeInternalPointNode>,
+               std::shared_ptr<OctreeInternalPointNode>, OctreeInternalNode>
+            octree_internal_point_node(
+                    m, "OctreeInternalPointNode",
+                    "OctreeInternalPointNode class is an "
+                    "OctreeInternalNode with a list of point "
+                    "indices (from point cloud) belonging to "
+                    "children of this node.");
+    octree_internal_point_node
+            .def("__repr__",
+                 [](const OctreeInternalPointNode &internal_point_node) {
+                     size_t num_children = 0;
+                     for (const std::shared_ptr<OctreeNode> &child :
+                          internal_point_node.children_) {
+                         if (child != nullptr) {
+                             num_children++;
+                         }
+                     }
+                     std::ostringstream repr;
+                     repr << "OctreeInternalPointNode with " << num_children
+                          << " non-empty child nodes and "
+                          << internal_point_node.indices_.size() << " points";
+                     return repr.str();
+                 })
+            .def_readwrite("indices", &OctreeInternalPointNode::indices_,
+                           "List of point cloud point indices "
+                           "contained in children nodes.")
+            .def_static("get_init_function",
+                        &OctreeInternalPointNode::GetInitFunction,
+                        "Get lambda function for initializing "
+                        "OctreeInternalPointNode. "
+                        "When the init function is called, an empty "
+                        "OctreeInternalPointNode is created.")
+            .def_static(
+                    "get_update_function",
+                    &OctreeInternalPointNode::GetUpdateFunction,
+                    "Get lambda function for updating OctreeInternalPointNode. "
+                    "When called, the update function adds the input "
+                    "point index to the corresponding node's list of "
+                    "indices of children points.");
+    py::detail::bind_default_constructor<OctreeInternalPointNode>(
+            octree_internal_point_node);
+    py::detail::bind_copy_functions<OctreeInternalPointNode>(
+            octree_internal_point_node);
+    octree_internal_point_node.def_readwrite(
+            "children", &OctreeInternalPointNode::children_,
+            "List of children Nodes.");
+    docstring::ClassMethodDocInject(m, "OctreeInternalPointNode", "__init__");
 
     // OctreeLeafNode
     py::class_<OctreeLeafNode, PyOctreeLeafNode<OctreeLeafNode>,
@@ -173,13 +233,54 @@ void pybind_octree(py::module &m) {
             .def_static("get_update_function",
                         &OctreeColorLeafNode::GetUpdateFunction, "color"_a,
                         "Get lambda function for updating OctreeLeafNode. When "
-                        "called, the update function update the corresponding "
+                        "called, the update function updates the corresponding "
                         "node with the input color.");
 
     py::detail::bind_default_constructor<OctreeColorLeafNode>(
             octree_color_leaf_node);
     py::detail::bind_copy_functions<OctreeColorLeafNode>(
             octree_color_leaf_node);
+
+    // OctreePointColorLeafNode
+    py::class_<OctreePointColorLeafNode,
+               PyOctreeLeafNode<OctreePointColorLeafNode>,
+               std::shared_ptr<OctreePointColorLeafNode>, OctreeLeafNode>
+            octree_point_color_leaf_node(m, "OctreePointColorLeafNode",
+                                         "OctreePointColorLeafNode class is an "
+                                         "OctreeLeafNode containing color.");
+    octree_point_color_leaf_node
+            .def("__repr__",
+                 [](const OctreePointColorLeafNode &color_leaf_node) {
+                     std::ostringstream repr;
+                     repr << "OctreePointColorLeafNode with color ["
+                          << color_leaf_node.color_(0) << ", "
+                          << color_leaf_node.color_(1) << ", "
+                          << color_leaf_node.color_(2) << "] "
+                          << "containing " << color_leaf_node.indices_.size()
+                          << " points.";
+                     return repr.str();
+                 })
+            .def_readwrite("color", &OctreePointColorLeafNode::color_,
+                           "(3, 1) float numpy array: Color of the node.")
+            .def_readwrite("indices", &OctreePointColorLeafNode::indices_,
+                           "List of point cloud point indices "
+                           "contained in this leaf node.")
+            .def_static("get_init_function",
+                        &OctreePointColorLeafNode::GetInitFunction,
+                        "Get lambda function for initializing OctreeLeafNode. "
+                        "When the init function is called, an empty "
+                        "OctreePointColorLeafNode is created.")
+            .def_static("get_update_function",
+                        &OctreePointColorLeafNode::GetUpdateFunction, "idx"_a,
+                        "color"_a,
+                        "Get lambda function for updating OctreeLeafNode. When "
+                        "called, the update function updates the corresponding "
+                        "node with the new point index and the input color.");
+
+    py::detail::bind_default_constructor<OctreePointColorLeafNode>(
+            octree_point_color_leaf_node);
+    py::detail::bind_copy_functions<OctreePointColorLeafNode>(
+            octree_point_color_leaf_node);
 
     // Octree
     py::class_<Octree, PyGeometry3D<Octree>, std::shared_ptr<Octree>,
@@ -206,7 +307,16 @@ void pybind_octree(py::module &m) {
                      return repr.str();
                  })
             .def("insert_point", &Octree::InsertPoint, "point"_a, "f_init"_a,
-                 "f_update"_a, "Insert a point to the octree.")
+                 "f_update"_a, "fi_init"_a = nullptr, "fi_update"_a = nullptr,
+                 "Insert a point to the octree.")
+            .def("traverse",
+                 py::overload_cast<const std::function<bool(
+                         const std::shared_ptr<OctreeNode> &,
+                         const std::shared_ptr<OctreeNodeInfo> &)> &>(
+                         &Octree::Traverse, py::const_),
+                 "f"_a,
+                 "DFS traversal of the octree from the root, with a "
+                 "callback function f being called for each node.")
             .def("locate_leaf_node", &Octree::LocateLeafNode, "point"_a,
                  "Returns leaf OctreeNode and OctreeNodeInfo where the query"
                  "point should reside.")

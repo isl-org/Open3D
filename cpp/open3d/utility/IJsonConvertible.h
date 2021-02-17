@@ -49,6 +49,9 @@ public:
     virtual bool ConvertToJsonValue(Json::Value &value) const = 0;
     virtual bool ConvertFromJsonValue(const Json::Value &value) = 0;
 
+    /// Convert to a styled string representation of JSON data for display
+    virtual std::string ToString() const;
+
 public:
     static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
                                            const Json::Value &value);

@@ -42,7 +42,7 @@ enum class MouseButton {
 };
 
 // The key modifiers are labeled by functionality; for instance,
-// Ctrl on Windows and Command on macOS have roughly the samee functionality.
+// Ctrl on Windows and Command on macOS have roughly the same functionality.
 enum class KeyModifier {
     NONE = 0,
     SHIFT = (1 << 0),
@@ -63,10 +63,11 @@ struct MouseEvent {
         } move;           // includes drag
         struct {
             MouseButton button;
+            int count;
         } button;
         struct {
-            int dx;
-            int dy;
+            float dx;  // macOS gives fractional values, and is required
+            float dy;  //   for the buttery-smooth trackpad scrolling on macOS
             bool isTrackpad;
         } wheel;
     };

@@ -92,6 +92,8 @@ void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
 }
 
 const std::string kBackgroundName = "__background";
+const std::string kGroundPlaneName = "__ground_plane";
+const Eigen::Vector4f kDefaultGroundPlaneColor(0.5f, 0.5f, 0.5f, 1.f);
 
 namespace defaults_mapping {
 
@@ -104,14 +106,19 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
         {"defaultLitTransparency",
          ResourceManager::kDefaultLitWithTransparency},
+        {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
+        {"defaultUnlitTransparency",
+         ResourceManager::kDefaultUnlitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader},
+        {"depthValue", ResourceManager::kDefaultDepthValueShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
         {"unlitPolygonOffset",
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+        {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
         {"unlitLine", ResourceManager::kDefaultLineShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
@@ -166,6 +173,67 @@ FilamentScene::FilamentScene(filament::Engine& engine,
 }
 
 FilamentScene::~FilamentScene() {}
+
+Scene* FilamentScene::Copy() {
+    auto copy = new FilamentScene(engine_, resource_mgr_, renderer_);
+    copy->geometries_ = this->geometries_;
+    copy->lights_ = this->lights_;
+    copy->model_geometries_ = this->model_geometries_;
+    copy->background_color_ = this->background_color_;
+    copy->background_image_ = this->background_image_;
+    copy->ibl_name_ = this->ibl_name_;
+    copy->ibl_enabled_ = this->ibl_enabled_;
+    copy->skybox_enabled_ = this->skybox_enabled_;
+    copy->indirect_light_ = this->indirect_light_;
+    copy->skybox_ = this->skybox_;
+    copy->sun_ = this->sun_;
+
+    for (auto& name_geom : copy->geometries_) {
+        auto& name = name_geom.first;
+        auto& geom = name_geom.second;
+
+        auto& renderable_mgr = copy->engine_.getRenderableManager();
+        auto inst = renderable_mgr.getInstance(geom.filament_entity);
+        auto box = renderable_mgr.getAxisAlignedBoundingBox(inst);
+        auto vbuf = copy->resource_mgr_.GetVertexBuffer(geom.vb).lock();
+        auto ibuf = copy->resource_mgr_.GetIndexBuffer(geom.ib).lock();
+        auto new_entity = utils::EntityManager::get().create();
+        filament::RenderableManager::Builder builder(1);
+        builder.boundingBox(box)
+                .layerMask(FilamentView::kAllLayersMask,
+                           FilamentView::kMainLayer)
+                .castShadows(geom.cast_shadows)
+                .receiveShadows(geom.receive_shadows)
+                .culling(geom.culling_enabled)
+                .geometry(0, geom.primitive_type, vbuf.get(), ibuf.get());
+        if (geom.priority >= 0) {
+            builder.priority(uint8_t(geom.priority));
+        }
+        copy->resource_mgr_.ReuseVertexBuffer(geom.vb);
+
+        auto material_instance = copy->AssignMaterialToFilamentGeometry(
+                builder, geom.mat.properties);
+
+        auto result = builder.build(copy->engine_, new_entity);
+        if (result == filament::RenderableManager::Builder::Success) {
+            if (geom.visible) {
+                copy->scene_->addEntity(new_entity);
+            }
+            geom.filament_entity = new_entity;
+            geom.mat.mat_instance = material_instance;
+
+            auto transform = this->GetGeometryTransform(name);
+            copy->SetGeometryTransform(name, transform);
+            copy->UpdateMaterialProperties(
+                    copy->geometries_[name]);  // for non-const
+
+        } else {
+            utility::LogWarning(
+                    "Failed to copy Filament resources for geometry {}", name);
+        }
+    }
+    return copy;
+}
 
 ViewHandle FilamentScene::AddView(std::int32_t x,
                                   std::int32_t y,
@@ -446,8 +514,11 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                                    true,
                                    true,
                                    true,
+                                   true,
+                                   -1,
                                    {{}, material, material_instance},
                                    filament_entity,
+                                   buffer_builder.GetPrimitiveType(),
                                    vb,
                                    ib}));
 
@@ -691,6 +762,18 @@ void FilamentScene::GeometryShadows(const std::string& object_name,
     }
 }
 
+void FilamentScene::SetGeometryCulling(const std::string& object_name,
+                                       bool enable) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        auto& renderable_mgr = engine_.getRenderableManager();
+        filament::RenderableManager::Instance inst =
+                renderable_mgr.getInstance(g->filament_entity);
+        renderable_mgr.setCulling(inst, enable);
+        g->culling_enabled = enable;
+    }
+}
+
 void FilamentScene::SetGeometryPriority(const std::string& object_name,
                                         uint8_t priority) {
     auto geoms = GetGeometry(object_name);
@@ -699,6 +782,7 @@ void FilamentScene::SetGeometryPriority(const std::string& object_name,
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setPriority(inst, priority);
+        g->priority = (int)priority;
     }
 }
 
@@ -731,7 +815,43 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             // .SetTexture("clearCoatRoughnessMap",
             // maps.clear_coat_roughness_map,
             //             rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("anisotropyMap", maps.anisotropy_map,
+            // .SetTexture("anisotropyMap", maps.anisotropy_map,
+            //             rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
+
+void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
+    auto& material = geom_mi.properties;
+    auto& maps = geom_mi.maps;
+
+    auto absorption_float3 = filament::Color::absorptionAtDistance(
+            filament::math::float3(material.absorption_color.x(),
+                                   material.absorption_color.y(),
+                                   material.absorption_color.z()),
+            material.absorption_distance);
+    Eigen::Vector3f absorption(absorption_float3.x, absorption_float3.y,
+                               absorption_float3.z);
+
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", material.base_color, false)
+            .SetParameter("pointSize", material.point_size)
+            .SetParameter("baseRoughness", material.base_roughness)
+            .SetParameter("baseMetallic", material.base_metallic)
+            .SetParameter("reflectance", material.base_reflectance)
+            .SetParameter("clearCoat", material.base_clearcoat)
+            .SetParameter("clearCoatRoughness",
+                          material.base_clearcoat_roughness)
+            .SetParameter("anisotropy", material.base_anisotropy)
+            .SetParameter("thickness", material.thickness)
+            .SetParameter("transmission", material.transmission)
+            .SetParameter("absorption", absorption)
+            .SetTexture("albedo", maps.albedo_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("normalMap", maps.normal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("reflectanceMap", maps.reflectance_map,
                         rendering::TextureSamplerParameters::Pretty())
             .Finish();
 }
@@ -759,6 +879,12 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetParameter("cameraNear", n)
             .SetParameter("cameraFar", f)
+            .Finish();
+}
+
+void FilamentScene::UpdateDepthValueShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
             .Finish();
 }
 
@@ -790,6 +916,13 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
+
+void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("axis", geom_mi.properties.ground_plane_axis)
             .Finish();
 }
 
@@ -944,18 +1077,25 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (props.shader == "defaultLit" ||
         props.shader == "defaultLitTransparency") {
         UpdateDefaultLit(geom.mat);
-    } else if (props.shader == "defaultUnlit") {
+    } else if (props.shader == "defaultLitSSR") {
+        UpdateDefaultLitSSR(geom.mat);
+    } else if (props.shader == "defaultUnlit" ||
+               props.shader == "defaultUnlitTransparency") {
         UpdateDefaultUnlit(geom.mat);
     } else if (props.shader == "normals") {
         UpdateNormalShader(geom.mat);
     } else if (props.shader == "depth") {
         UpdateDepthShader(geom.mat);
+    } else if (props.shader == "depthValue") {
+        UpdateDepthValueShader(geom.mat);
     } else if (props.shader == "unlitGradient") {
         UpdateGradientShader(geom.mat);
     } else if (props.shader == "unlitSolidColor") {
         UpdateSolidColorShader(geom.mat);
     } else if (props.shader == "unlitBackground") {
         UpdateBackgroundShader(geom.mat);
+    } else if (props.shader == "infiniteGroundPlane") {
+        UpdateGroundPlaneShader(geom.mat);
     } else if (props.shader == "unlitLine") {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
@@ -991,7 +1131,10 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
         if (material.shader == "defaultLit" ||
             material.shader == "defaultLitTransparency") {
             UpdateDefaultLit(geom->mat);
-        } else if (material.shader == "defaultUnlit") {
+        } else if (material.shader == "defaultLitSSR") {
+            UpdateDefaultLitSSR(geom->mat);
+        } else if (material.shader == "defaultUnlit" ||
+                   material.shader == "defaultUnlitTransparency") {
             UpdateDefaultUnlit(geom->mat);
         } else if (material.shader == "normals") {
             UpdateNormalShader(geom->mat);
@@ -1003,10 +1146,14 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateSolidColorShader(geom->mat);
         } else if (material.shader == "unlitBackground") {
             UpdateBackgroundShader(geom->mat);
+        } else if (material.shader == "infiniteGroundPlane") {
+            UpdateGroundPlaneShader(geom->mat);
         } else if (material.shader == "unlitLine") {
             UpdateLineShader(geom->mat);
         } else if (material.shader == "unlitPolygonOffset") {
             UpdateUnlitPolygonOffsetShader(geom->mat);
+        } else if (material.shader == "depthValue") {
+            UpdateDepthValueShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
@@ -1032,6 +1179,9 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
 void FilamentScene::OverrideMaterialAll(const Material& material,
                                         bool shader_only) {
     for (auto& ge : geometries_) {
+        if (ge.first == kBackgroundName) {
+            continue;
+        }
         OverrideMaterialInternal(&ge.second, material, shader_only);
     }
 }
@@ -1062,6 +1212,7 @@ bool FilamentScene::AddPointLight(const std::string& light_name,
 
     if (result == filament::LightManager::Builder::Success) {
         lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+        scene_->addEntity(light);
     } else {
         utility::LogWarning("Failed to build Filament light resources for {}",
                             light_name);
@@ -1103,6 +1254,42 @@ bool FilamentScene::AddSpotLight(const std::string& light_name,
 
     if (result == filament::LightManager::Builder::Success) {
         lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+        scene_->addEntity(light);
+    } else {
+        utility::LogWarning("Failed to build Filament light resources for {}",
+                            light_name);
+        return false;
+    }
+
+    return true;
+}
+
+bool FilamentScene::AddDirectionalLight(const std::string& light_name,
+                                        const Eigen::Vector3f& color,
+                                        const Eigen::Vector3f& direction,
+                                        float intensity,
+                                        bool cast_shadows) {
+    if (lights_.count(light_name) > 0) {
+        utility::LogWarning(
+                "Cannot add point light because {} has already been added",
+                light_name);
+        return false;
+    }
+
+    filament::LightManager::Type light_type =
+            filament::LightManager::Type::DIRECTIONAL;
+    auto light = utils::EntityManager::get().create();
+    auto result =
+            filament::LightManager::Builder(light_type)
+                    .castShadows(cast_shadows)
+                    .direction({direction.x(), direction.y(), direction.z()})
+                    .color({color.x(), color.y(), color.z()})
+                    .intensity(intensity)
+                    .build(engine_, light);
+
+    if (result == filament::LightManager::Builder::Success) {
+        lights_.emplace(std::make_pair(light_name, LightEntity{true, light}));
+        scene_->addEntity(light);
     } else {
         utility::LogWarning("Failed to build Filament light resources for {}",
                             light_name);
@@ -1199,7 +1386,13 @@ void FilamentScene::UpdateLightConeAngles(const std::string& light_name,
 
 void FilamentScene::EnableLightShadow(const std::string& light_name,
                                       bool cast_shadows) {
-    // TODO: Research. Not previously implemented.
+    auto light = GetLightInternal(light_name);
+    if (light) {
+        auto& light_mgr = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                light_mgr.getInstance(light->filament_entity);
+        light_mgr.setShadowCaster(inst, cast_shadows);
+    }
 }
 
 void FilamentScene::CreateSunDirectionalLight() {
@@ -1222,9 +1415,9 @@ void FilamentScene::CreateSunDirectionalLight() {
     }
 }
 
-void FilamentScene::SetDirectionalLight(const Eigen::Vector3f& direction,
-                                        const Eigen::Vector3f& color,
-                                        float intensity) {
+void FilamentScene::SetSunLight(const Eigen::Vector3f& direction,
+                                const Eigen::Vector3f& color,
+                                float intensity) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
@@ -1233,7 +1426,7 @@ void FilamentScene::SetDirectionalLight(const Eigen::Vector3f& direction,
     light_mgr.setIntensity(inst, intensity);
 }
 
-void FilamentScene::EnableDirectionalLight(bool enable) {
+void FilamentScene::EnableSunLight(bool enable) {
     if (sun_.enabled != enable) {
         sun_.enabled = enable;
         if (enable) {
@@ -1244,26 +1437,71 @@ void FilamentScene::EnableDirectionalLight(bool enable) {
     }
 }
 
-void FilamentScene::EnableDirectionalLightShadows(bool enable) {
-    // TODO: Research. Not previously implemented
+void FilamentScene::EnableSunLightShadows(bool enable) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    return light_mgr.setShadowCaster(inst, enable);
 }
 
-float FilamentScene::GetDirectionalLightIntensity() {
+void FilamentScene::SetSunLightIntensity(float intensity) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setIntensity(inst, intensity);
+}
+
+float FilamentScene::GetSunLightIntensity() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
     return light_mgr.getIntensity(inst);
 }
 
-void FilamentScene::SetDirectionalLightDirection(
-        const Eigen::Vector3f& direction) {
+void FilamentScene::SetSunLightColor(const Eigen::Vector3f& color) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setColor(inst, {color.x(), color.y(), color.z()});
+}
+
+Eigen::Vector3f FilamentScene::GetSunLightColor() {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    auto dir = light_mgr.getColor(inst);
+    return {dir[0], dir[1], dir[2]};
+}
+
+void FilamentScene::SetSunLightDirection(const Eigen::Vector3f& direction) {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
     light_mgr.setDirection(inst, {direction.x(), direction.y(), direction.z()});
 }
 
-Eigen::Vector3f FilamentScene::GetDirectionalLightDirection() {
+void FilamentScene::SetSunAngularRadius(float radius) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunAngularRadius(inst, radius);
+}
+
+void FilamentScene::SetSunHaloSize(float size) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunHaloSize(inst, size);
+}
+
+void FilamentScene::SetSunHaloFalloff(float falloff) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setSunHaloFalloff(inst, falloff);
+}
+
+Eigen::Vector3f FilamentScene::GetSunLightDirection() {
     auto& light_mgr = engine_.getLightManager();
     filament::LightManager::Instance inst =
             light_mgr.getInstance(sun_.filament_entity);
@@ -1367,18 +1605,30 @@ void FilamentScene::SetBackground(
         const std::shared_ptr<geometry::Image> image) {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;
-        quad.vertices_ = {{-1.0, -1.0, -0.5},
-                          {1.0, -1.0, -0.5},
-                          {1.0, 1.0, -0.5},
-                          {-1.0, 1.0, -0.5}};
+        // The coordinates are in raw GL coordinates, what Filament calls
+        // "device coordinates". Since we want to draw on the entire screen,
+        // and GL's native coordinates range from (-1, 1) to (1, 1), that's
+        // what we use. The z value does not matter, as we are writing directly
+        // to GL coordinates and we won't be writing depth values.
+        quad.vertices_ = {{-1.0, -1.0, 0.0},
+                          {1.0, -1.0, 0.0},
+                          {1.0, 1.0, 0.0},
+                          {-1.0, 1.0, 0.0}};
         quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
         Material m;
         m.shader = "unlitBackground";
         m.base_color = color;
         m.aspect_ratio = 0.0;
         AddGeometry(kBackgroundName, quad, m);
+        // Since this is the background,
+        //    we don't want any shadows,
+        //    we want to prevent the object from getting culled out of the
+        //        scene (since the whole point is for it to always draw), and
+        //    we want to set the priority so that it draws first (the shader
+        //        will overwrite all the pixels
         GeometryShadows(kBackgroundName, false, false);
         SetGeometryPriority(kBackgroundName, 0);
+        SetGeometryCulling(kBackgroundName, false);
     }
 
     Material m;
@@ -1393,6 +1643,52 @@ void FilamentScene::SetBackground(
         m.aspect_ratio = 0.0;
     }
     OverrideMaterial(kBackgroundName, m);
+}
+
+void FilamentScene::CreateGroundPlaneGeometry() {
+    geometry::TriangleMesh quad;
+    // Please see note above about drawing a full screen quad with
+    // Filament. However, the ground plane shader expects the full screen quad
+    // to be rendered at the far plan hence the z must be set to 1.0
+    quad.vertices_ = {{-1.0, -1.0, 1.0},
+                      {1.0, -1.0, 1.0},
+                      {1.0, 1.0, 1.0},
+                      {-1.0, 1.0, 1.0}};
+    quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
+    rendering::Material m;
+    m.shader = "infiniteGroundPlane";
+    m.base_color = kDefaultGroundPlaneColor;
+    AddGeometry(kGroundPlaneName, quad, m);
+    GeometryShadows(kGroundPlaneName, false, false);
+    SetGeometryPriority(kGroundPlaneName, 1);
+    SetGeometryCulling(kGroundPlaneName, false);
+}
+
+void FilamentScene::EnableGroundPlane(bool enable, GroundPlane plane) {
+    if (!HasGeometry(kGroundPlaneName)) {
+        CreateGroundPlaneGeometry();
+    }
+    if (enable) {
+        rendering::Material m;
+        m.shader = "infiniteGroundPlane";
+        m.base_color = kDefaultGroundPlaneColor;
+        if (plane == GroundPlane::XY) {
+            m.ground_plane_axis = 1.f;
+        } else if (plane == GroundPlane::YZ) {
+            m.ground_plane_axis = -1.f;
+        }
+        OverrideMaterial(kGroundPlaneName, m);
+    }
+
+    ShowGeometry(kGroundPlaneName, enable);
+}
+
+void FilamentScene::SetGroundPlaneColor(const Eigen::Vector4f& color) {
+    if (!HasGeometry(kGroundPlaneName)) {
+        CreateGroundPlaneGeometry();
+    }
+
+    // NOTE: Not implemented yet. Not sure if we want/need this.
 }
 
 struct RenderRequest {

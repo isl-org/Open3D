@@ -63,12 +63,16 @@ class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
     static const MaterialHandle kDefaultLitWithTransparency;
+    static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kDefaultUnlitWithTransparency;
     static const MaterialHandle kDefaultNormalShader;
     static const MaterialHandle kDefaultDepthShader;
+    static const MaterialHandle kDefaultDepthValueShader;
     static const MaterialHandle kDefaultUnlitGradientShader;
     static const MaterialHandle kDefaultUnlitSolidColorShader;
     static const MaterialHandle kDefaultUnlitBackgroundShader;
+    static const MaterialHandle kInfinitePlaneShader;
     static const MaterialHandle kDefaultLineShader;
     static const MaterialHandle kDefaultUnlitPolygonOffsetShader;
     static const MaterialInstanceHandle kDepthMaterial;

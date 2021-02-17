@@ -44,10 +44,17 @@ INSTANTIATE_TEST_SUITE_P(NearestNeighborSearch,
                          NNSPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(NNSPermuteDevices, KnnSearch) {
+class NNSPermuteDevicesWithFaiss : public PermuteDevicesWithFaiss {};
+INSTANTIATE_TEST_SUITE_P(
+        NearestNeighborSearch,
+        NNSPermuteDevicesWithFaiss,
+        testing::ValuesIn(PermuteDevicesWithFaiss::TestCases()));
+
+TEST_P(NNSPermuteDevicesWithFaiss, KnnSearch) {
     // Set up nns.
     int size = 10;
     core::Device device = GetParam();
+
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
                               0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
@@ -56,7 +63,7 @@ TEST_P(NNSPermuteDevices, KnnSearch) {
     nns.KnnIndex();
 
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float32);
+                       {1, 3}, core::Dtype::Float32, device);
     std::pair<core::Tensor, core::Tensor> result;
     core::Tensor indices;
     core::Tensor distances;
@@ -172,29 +179,30 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
                      {0.00626358, 0.00747938, 0.00626358, 0.00747938}));
 }
 
-TEST(NearestNeighborSearch, HybridSearch) {
+TEST_P(NNSPermuteDevicesWithFaiss, HybridSearch) {
     // Set up nns.
     int size = 10;
-
-    std::vector<double> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
-                               0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
-                               0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
-                               0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::Device device = GetParam();
+    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
+                              0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
+                              0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::NearestNeighborSearch nns(ref);
-    nns.HybridIndex();
+    double radius = 0.1;
+    int max_knn = 3;
+    nns.HybridIndex(radius);
 
-    core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float64);
+    core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
+                       {1, 3}, core::Dtype::Float32, device);
 
     std::pair<core::Tensor, core::Tensor> result =
-            nns.HybridSearch(query, 0.1, 1);
+            nns.HybridSearch(query, radius, max_knn);
 
     core::Tensor indices = result.first;
     core::Tensor distainces = result.second;
-    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
-    ExpectEQ(distainces.ToFlatVector<double>(),
-             std::vector<double>({0.00626358}));
+    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, -1}));
+    ExpectEQ(distainces.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938, -1}));
 }
 
 }  // namespace tests

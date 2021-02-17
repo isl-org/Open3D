@@ -8,8 +8,8 @@ set(MKL_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/mkl_install)
 ExternalProject_Add(
     ext_faiss
     PREFIX faiss
-    GIT_REPOSITORY https://github.com/junha-l/faiss.git
-    GIT_TAG 954ada2cc1106bd8f20c0f99bff615e36c0053b1
+    GIT_REPOSITORY https://github.com/intel-isl/faiss.git
+    GIT_TAG 28ef0e0fa5b99dabb371df9016a7df3e836a31f4
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}

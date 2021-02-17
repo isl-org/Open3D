@@ -47,7 +47,8 @@ void ClassMethodDocInject(py::module& pybind_module,
                           const std::string& class_name,
                           const std::string& function_name,
                           const std::unordered_map<std::string, std::string>&
-                                  map_parameter_body_docs) {
+                                  map_parameter_body_docs,
+                          bool skip_init) {
     // Get function
     PyObject* module = pybind_module.ptr();
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
@@ -65,18 +66,11 @@ void ClassMethodDocInject(py::module& pybind_module,
 
     // Extract PyCFunctionObject
     PyCFunctionObject* f = nullptr;
-#ifdef PYTHON_2_FALLBACK
-    if (Py_TYPE(class_method_obj) == &PyMethod_Type) {
-        PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
-        f = (PyCFunctionObject*)class_method->im_func;
-    }
-#else
     if (Py_TYPE(class_method_obj) == &PyInstanceMethod_Type) {
         PyInstanceMethodObject* class_method =
                 (PyInstanceMethodObject*)class_method_obj;
         f = (PyCFunctionObject*)class_method->func;
     }
-#endif
     if (Py_TYPE(class_method_obj) == &PyCFunction_Type) {
         // def_static in Pybind is PyCFunction_Type, no need to convert
         f = (PyCFunctionObject*)class_method_obj;
@@ -85,14 +79,19 @@ void ClassMethodDocInject(py::module& pybind_module,
         return;
     }
 
-    // TODO: parse __init__ separately, currently __init__ can be overloaded
-    // which might cause parsing error. So we only do namespace fix and skip the
-    // parsing.
     if (function_name == "__init__") {
-        std::string pybind_doc = f->m_ml->ml_doc;
-        pybind_doc = FunctionDoc::NamespaceFix(pybind_doc);
-        f->m_ml->ml_doc = strdup(pybind_doc.c_str());
-        return;
+        // TODO: parse __init__ separately, currently __init__ can be
+        // overloaded which might cause parsing error. So we only do
+        // namespace fix and skip the parsing.
+        //
+        // If we know for sure that "__init__" is not overloaded, the doc
+        // injection should still work. In this case, skip_init == false.
+        if (skip_init) {
+            std::string pybind_doc = f->m_ml->ml_doc;
+            pybind_doc = FunctionDoc::NamespaceFix(pybind_doc);
+            f->m_ml->ml_doc = strdup(pybind_doc.c_str());
+            return;
+        }
     }
 
     // Parse existing docstring to FunctionDoc

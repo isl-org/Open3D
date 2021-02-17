@@ -26,6 +26,7 @@
 
 #include <open3d/geometry/Geometry3D.h>
 #include <open3d/t/geometry/Geometry.h>
+#include <open3d/visualization/gui/Dialog.h>
 #include <open3d/visualization/gui/Window.h>
 #include <open3d/visualization/rendering/Open3DScene.h>
 #include <open3d/visualization/visualizer/O3DVisualizer.h>
@@ -70,11 +71,21 @@ void pybind_o3dvisualizer(py::module& m) {
     dv_shader
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
+            .value("UNLIT", O3DVisualizer::Shader::UNLIT,
+                   "Normals will be ignored (useful for point clouds)")
             .value("NORMALS", O3DVisualizer::Shader::NORMALS,
                    "Pixel colors correspond to surface normal")
             .value("DEPTH", O3DVisualizer::Shader::DEPTH,
                    "Pixel colors correspond to depth buffer value")
             .export_values();
+
+    py::enum_<O3DVisualizer::TickResult> tick_result(
+            o3dvis, "TickResult", "Return value from animation tick callback");
+    tick_result
+            .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
+                   "Signals that no change happened and no redraw is required")
+            .value("REDRAW", O3DVisualizer::TickResult::REDRAW,
+                   "Signals that a redraw is required");
 
     py::class_<O3DVisualizer::DrawObject> drawobj(
             o3dvis, "DrawObject",
@@ -109,6 +120,51 @@ void pybind_o3dvisualizer(py::module& m) {
     o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
                "width"_a = 1024, "height"_a = 768,
                "Creates a O3DVisualizer object")
+            // selected functions inherited from Window
+            .def_property("os_frame", &O3DVisualizer::GetOSFrame,
+                          &O3DVisualizer::SetOSFrame,
+                          "Window rect in OS coords, not device pixels")
+            .def_property("title", &O3DVisualizer::GetTitle,
+                          &O3DVisualizer::SetTitle,
+                          "Returns the title of the window")
+            .def("size_to_fit", &O3DVisualizer::SizeToFit,
+                 "Sets the width and height of window to its preferred size")
+            .def_property("size", &O3DVisualizer::GetSize,
+                          &O3DVisualizer::SetSize,
+                          "The size of the window in device pixels, including "
+                          "menubar (except on macOS)")
+            .def_property_readonly(
+                    "content_rect", &O3DVisualizer::GetContentRect,
+                    "Returns the frame in device pixels, relative "
+                    " to the window, which is available for widgets "
+                    "(read-only)")
+            .def_property_readonly(
+                    "scaling", &O3DVisualizer::GetScaling,
+                    "Returns the scaling factor between OS pixels "
+                    "and device pixels (read-only)")
+            .def_property_readonly("is_visible", &O3DVisualizer::IsVisible,
+                                   "True if window is visible (read-only)")
+            .def("show", &O3DVisualizer::Show, "Shows or hides the window")
+            .def("close", &O3DVisualizer::Close,
+                 "Closes the window and destroys it, unless an on_close "
+                 "callback cancels the close.")
+            .def(
+                    "show_dialog",
+                    [](O3DVisualizer& w, UnownedPointer<gui::Dialog> dlg) {
+                        w.ShowDialog(TakeOwnership<gui::Dialog>(dlg));
+                    },
+                    "Displays the dialog")
+            .def("close_dialog", &O3DVisualizer::CloseDialog,
+                 "Closes the current dialog")
+            .def("show_message_box", &O3DVisualizer::ShowMessageBox,
+                 "Displays a simple dialog with a title and message and okay "
+                 "button")
+            .def("set_on_close", &O3DVisualizer::SetOnClose,
+                 "Sets a callback that will be called when the window is "
+                 "closed. The callback is given no arguments and should return "
+                 "True to continue closing the window or False to cancel the "
+                 "close")
+            // from O3DVisualizer
             .def("add_action", &O3DVisualizer::AddAction,
                  "Adds a button to the custom actions section of the UI "
                  "and a corresponding menu item in the \"Actions\" menu. "
@@ -124,15 +180,6 @@ void pybind_o3dvisualizer(py::module& m) {
                  "time"_a = 0.0, "is_visible"_a = true,
                  "Adds a geometry: geometry(name, geometry, material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
-            /*            .def("add_geometry",
-                             py::overload_cast<const std::string&,
-                                               std::shared_ptr<t::geometry::Geometry>,
-                                               rendering::Material *,
-                                               const std::string&,
-                                               double,
-                                               bool>(&O3DVisualizer::AddGeometry),
-                             "Adds a geometry")
-            */
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
@@ -185,15 +232,45 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
+            .def("setup_camera", &O3DVisualizer::SetupCamera,
+                 "setup_camera(field_of_view, center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("reset_camera_to_default",
                  &O3DVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
             .def("get_selection_sets", &O3DVisualizer::GetSelectionSets,
                  "Returns the selection sets, as [{'obj_name', "
                  "[SelectedIndex]}]")
+            .def("set_on_animation_frame", &O3DVisualizer::SetOnAnimationFrame,
+                 "set_on_animation(callback): Sets a callback that will be "
+                 "called every frame of the animation. The callback will be "
+                 "called as callback(o3dvis, current_time).")
+            .def("set_on_animation_tick", &O3DVisualizer::SetOnAnimationTick,
+                 "set_on_animation(callback): Sets a callback that will be "
+                 "called every frame of the animation. The callback will be "
+                 "called as callback(o3dvis, time_since_last_tick, "
+                 "total_elapsed_since_animation_started). Note that this "
+                 "is a low-level callback. If you need to change the current "
+                 "timestamp being shown you will need to update the "
+                 "o3dvis.current_time property in the callback. The callback "
+                 "must return either O3DVisualizer.TickResult.IGNORE if no "
+                 "redraw is required or O3DVisualizer.TickResult.REDRAW "
+                 "if a redraw is required.")
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
+            .def("start_rpc_interface", &O3DVisualizer::StartRPCInterface,
+                 "address"_a, "timeout"_a,
+                 "Starts the RPC interface.\n"
+                 "address: str with the address to listen on.\n"
+                 "timeout: int timeout in milliseconds for sending the reply.")
+            .def("stop_rpc_interface", &O3DVisualizer::StopRPCInterface,
+                 "Stops the RPC interface.")
+            .def("set_background", &O3DVisualizer::SetBackground,
+                 "set_background(color, image=None): Sets the background color "
+                 "and, optionally, the background image. Passing None for the "
+                 "background image will clear any image already there.")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {
@@ -202,12 +279,12 @@ void pybind_o3dvisualizer(py::module& m) {
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
             .def_property(
-                    "background_color",
+                    "mouse_mode",
                     [](const O3DVisualizer& dv) {
-                        return dv.GetUIState().bg_color;
+                        return dv.GetUIState().mouse_mode;
                     },
-                    &O3DVisualizer::SetBackgroundColor,
-                    "Gets/sets the background color")
+                    &O3DVisualizer::SetMouseMode,
+                    "Gets/sets the control mode being used for the mouse")
             .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {
@@ -221,6 +298,20 @@ void pybind_o3dvisualizer(py::module& m) {
                         return dv.GetUIState().show_axes;
                     },
                     &O3DVisualizer::ShowAxes, "Gets/sets if axes are visible")
+            .def_property(
+                    "show_ground",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().show_ground;
+                    },
+                    &O3DVisualizer::ShowGround,
+                    "Gets/sets if ground plane is visible")
+            .def_property(
+                    "ground_plane",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().ground_plane;
+                    },
+                    &O3DVisualizer::SetGroundPlane,
+                    "Sets the plane for ground plane, XZ, XY, or YZ")
             .def_property(
                     "point_size",
                     [](const O3DVisualizer& dv) {
@@ -253,11 +344,20 @@ void pybind_o3dvisualizer(py::module& m) {
                           &O3DVisualizer::GetAnimationTimeStep,
                           &O3DVisualizer::SetAnimationTimeStep,
                           "Gets/sets the time step for animations. Default is "
-                          "1.0")
+                          "1.0 sec")
             .def_property("animation_frame_delay",
                           &O3DVisualizer::GetAnimationFrameDelay,
                           &O3DVisualizer::SetAnimationFrameDelay,
                           "Gets/sets the length of time a frame is visible.")
+            .def_property("animation_duration",
+                          &O3DVisualizer::GetAnimationDuration,
+                          &O3DVisualizer::SetAnimationDuration,
+                          "Gets/sets the duration (in seconds) of the "
+                          "animation. This is automatically computed to be the "
+                          "difference between the minimum and maximum time "
+                          "values, but this is useful if no time values have "
+                          "been specified (that is, all objects are at the "
+                          "default t=0)")
             .def_property("is_animating", &O3DVisualizer::GetIsAnimating,
                           &O3DVisualizer::SetAnimating,
                           "Gets/sets the status of the animation. Changing "

@@ -32,6 +32,7 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/rendering/Gradient.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 namespace open3d {
 namespace visualization {
@@ -51,6 +52,13 @@ struct Material {
     float base_clearcoat = 0.f;
     float base_clearcoat_roughness = 0.f;
     float base_anisotropy = 0.f;
+
+    // PBR material properties for refractive materials
+    float thickness = 1.f;
+    float transmission = 1.f;
+    Eigen::Vector3f absorption_color =
+            Eigen::Vector3f(1.f, 1.f, 1.f);  // linear color
+    float absorption_distance = 1.f;
 
     float point_size = 3.f;
     float line_width = 1.f;
@@ -82,6 +90,9 @@ struct Material {
 
     // Background image (shader = "unlitBackground")
     float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
+
+    // Infinite ground plane
+    float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

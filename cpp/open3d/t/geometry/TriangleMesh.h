@@ -127,6 +127,32 @@ public:
     virtual ~TriangleMesh() override {}
 
 public:
+    /// Transfer the triangle mesh to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new triangle mesh is always created; if false,
+    /// the copy is avoided when the original triangle mesh is already on the
+    /// targeted device.
+    TriangleMesh To(const core::Device &device, bool copy = false) const;
+
+    /// Returns copy of the triangle mesh on the same device.
+    TriangleMesh Clone() const { return To(GetDevice()); }
+
+    /// Transfer the triangle mesh to CPU.
+    ///
+    /// If the triangle mesh is already on CPU, no copy will be performed.
+    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
+
+    /// Transfer the triangle mesh to a CUDA device.
+    ///
+    /// If the triangle mesh is already on the specified CUDA device, no copy
+    /// will be performed.
+    TriangleMesh CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
+    };
+
+    /// Getter for vertex_attr_ TensorMap. Used in Pybind.
+    const TensorMap &GetVertexAttr() const { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -146,6 +172,9 @@ public:
     /// Get the value of the "normals" attribute in vertex_attr_.
     /// Convenience function.
     core::Tensor &GetVertexNormals() { return GetVertexAttr("normals"); }
+
+    /// Getter for triangle_attr_ TensorMap. Used in Pybind.
+    const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.

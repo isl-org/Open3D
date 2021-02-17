@@ -51,7 +51,11 @@ public:
 void pybind_geometry(py::module& m);
 void pybind_geometry_class(py::module& m);
 void pybind_tensormap(py::module& m);
+void pybind_image(py::module& m);
 void pybind_pointcloud(py::module& m);
+void pybind_trianglemesh(py::module& m);
+void pybind_image(py::module& m);
+void pybind_tsdf_voxelgrid(py::module& m);
 
 }  // namespace geometry
 }  // namespace t

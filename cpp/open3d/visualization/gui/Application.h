@@ -43,6 +43,7 @@ class Image;
 namespace visualization {
 
 namespace rendering {
+class Renderer;
 class View;
 class Scene;
 }  // namespace rendering
@@ -117,7 +118,9 @@ public:
 
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
-    /// Must be called on the same thread that calls Run()
+    /// Must be called on the same thread that calls Run(). This is normally
+    /// called from Window::Close() and should not need to be called in user
+    /// code.
     void RemoveWindow(Window *window);
 
     /// Creates a message box window the next time the event loop processes.
@@ -174,11 +177,20 @@ public:
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
     /// need to render from a GUI, use Scene::RenderToImage().
-    std::shared_ptr<geometry::Image> RenderToImage(EnvUnlocker &unlocker,
-                                                   rendering::View *view,
-                                                   rendering::Scene *scene,
-                                                   int width,
-                                                   int height);
+    std::shared_ptr<geometry::Image> RenderToImage(
+            rendering::Renderer &renderer,
+            rendering::View *view,
+            rendering::Scene *scene,
+            int width,
+            int height);
+
+    // Same as RenderToImage(), but returns the depth values in a float image.
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            rendering::Renderer &renderer,
+            rendering::View *view,
+            rendering::Scene *scene,
+            int width,
+            int height);
 
     struct UserFontInfo {
         std::string path;

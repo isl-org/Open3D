@@ -34,7 +34,7 @@ if (NOT BUILD_CUDA_MODULE)
 endif()
 
 if (NOT WITH_FAISS)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/KnnFaiss.cpp)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/FaissIndex.cpp)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
@@ -45,6 +45,13 @@ if(BUILD_CUDA_MODULE)
     target_compile_definitions(tests PRIVATE GPU_CONDITIONAL_TEST_STR=) # Empty string
 else()
     target_compile_definitions(tests PRIVATE GPU_CONDITIONAL_TEST_STR=DISABLED_)
+endif()
+
+if (WITH_IPPICV)
+    target_compile_definitions(tests PRIVATE WITH_IPPICV
+        IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(tests PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
 endif()
 
 find_package(Threads)
@@ -66,4 +73,3 @@ if (BUILD_CUDA_MODULE)
     target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
     target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
-

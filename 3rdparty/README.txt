@@ -1,7 +1,7 @@
 This folder contains a set of external libraries that are used in Open3D.
 
-We want to make Open3D self-contained and cross-platformly consistent. So
-Open3DV does not detect system installed libraries and always link to these
+We want to make Open3D self-contained and cross-platform consistent. So
+Open3D does not detect system installed libraries and always links to these
 external libraries.
 
 Some external libraries rely on basic system level libraries such as OpenGL and
@@ -52,9 +52,9 @@ dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
-librealsense                0.9.1                               Apache-2 license
-A cross-platform library for capturing data from the Intel RealSense F200, SR300
-and R200 cameras
+librealsense                2.40.0                               Apache-2 license
+A cross-platform library for capturing data from the Intel RealSense F200,
+SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
 --------------------------------------------------------------------------------
 tinyfiledialogs             2.7.2                                   zlib license
@@ -69,7 +69,7 @@ tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
 --------------------------------------------------------------------------------
-pybind11                    2.2                                      BSD license
+pybind11                    v2.5.0                                   BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
 --------------------------------------------------------------------------------
 Parallel STL                20190522                            Apache-2 license
-An implementation of the C++ standard library algorithms with support for 
+An implementation of the C++ standard library algorithms with support for
 execution policies
 https://github.com/oneapi-src/oneDPL
 --------------------------------------------------------------------------------

@@ -1,2 +1,2 @@
-opencv
+opencv-python
 joblib

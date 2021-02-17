@@ -81,6 +81,13 @@ private:
 
 }  // namespace
 
+// static member definition
+constexpr const char* GuiSettingsModel::DEFAULT_IBL;
+constexpr const char* GuiSettingsModel::CUSTOM_IBL;
+constexpr const char* GuiSettingsModel::DEFAULT_MATERIAL_NAME;
+constexpr const char* GuiSettingsModel::MATERIAL_FROM_FILE_NAME;
+constexpr const char* GuiSettingsModel::POINT_CLOUD_PROFILE_NAME;
+
 const std::vector<GuiSettingsModel::LightingProfile>
         GuiSettingsModel::lighting_profiles_ = {
                 LightingProfileBuilder()
@@ -205,6 +212,18 @@ void GuiSettingsModel::SetShowSkybox(bool show) {
 bool GuiSettingsModel::GetShowAxes() const { return show_axes_; }
 void GuiSettingsModel::SetShowAxes(bool show) {
     show_axes_ = show;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetShowGround() const { return show_ground_; }
+void GuiSettingsModel::SetShowGround(bool show) {
+    show_ground_ = show;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
+void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
+    sun_follows_cam_ = follow;
     NotifyChanged();
 }
 

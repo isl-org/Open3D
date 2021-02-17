@@ -157,7 +157,7 @@ TEST_P(TensorObjectPermuteDevicePairs, CopyObject) {
 
     std::vector<TestObject> vals{0, 1, 2, 3, 4, 5};
     core::Tensor src_t(vals, shape, dtype, src_device);
-    core::Tensor dst_t = src_t.Copy(dst_device);
+    core::Tensor dst_t = src_t.To(dst_device);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
@@ -249,7 +249,7 @@ TEST_P(TensorObjectPermuteDevices, IsSameObject) {
     EXPECT_TRUE(t0_slice.IsSame(t1_slice));
     EXPECT_TRUE(t1_slice.IsSame(t0_slice));
     // Explicit copy to the same device.
-    core::Tensor t0_copy = t0.Copy(device);
+    core::Tensor t0_copy = t0.To(device, /*copy=*/true);
     EXPECT_FALSE(t0.IsSame(t0_copy));
     EXPECT_FALSE(t0_copy.IsSame(t0));
     // std::vector<Tensor> initializer list and push_back() are views.
