@@ -28,6 +28,8 @@
 
 #include <Eigen/Dense>
 #include <numeric>
+#include <random>
+#include <algorithm>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -425,6 +427,20 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     for (size_t i = 0; i < points_.size(); i += every_k_points) {
         indices.push_back(i);
     }
+    return SelectByIndex(indices);
+}
+
+std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
+        double sampling_ratio) const {
+    if (sampling_ratio <0 || sampling_ratio >1) {
+        utility::LogError("[RandomDownSample] Illegal sampling ratio.");
+    }
+    std::vector<size_t> indices(points_.size());
+    std::iota (std::begin(indices), std::end(indices), (size_t) 0);
+    std::random_device rd;
+    std::mt19937 prng(rd());
+    std::shuffle(indices.begin(),indices.end(), prng);
+    indices.resize((int)(sampling_ratio*points_.size()));
     return SelectByIndex(indices);
 }
 
