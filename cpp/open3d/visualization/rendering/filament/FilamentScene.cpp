@@ -47,6 +47,7 @@
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
 #include <filament/SwapChain.h>
+#include <filament/Texture.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
@@ -277,7 +278,7 @@ void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
         found->second.is_active = true;
         // NOTE: This value should match the value of render_count_ in
         // FilamentRenderer::EnableCaching
-        found->second.render_count = 2;
+        found->second.render_count = 1;
     }
 }
 
@@ -928,7 +929,7 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
-                        rendering::TextureSamplerParameters::Pretty())
+                        rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
 }
 
@@ -1613,9 +1614,7 @@ void FilamentScene::ShowSkybox(bool show) {
     }
 }
 
-void FilamentScene::SetBackground(
-        const Eigen::Vector4f& color,
-        const std::shared_ptr<geometry::Image> image) {
+void FilamentScene::CreateBackgroundGeometry() {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;
         // The coordinates are in raw GL coordinates, what Filament calls
@@ -1630,7 +1629,7 @@ void FilamentScene::SetBackground(
         quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
         Material m;
         m.shader = "unlitBackground";
-        m.base_color = color;
+        m.base_color = {1.f, 1.f, 1.f, 1.f};
         m.aspect_ratio = 0.0;
         AddGeometry(kBackgroundName, quad, m);
         // Since this is the background,
@@ -1643,7 +1642,13 @@ void FilamentScene::SetBackground(
         SetGeometryPriority(kBackgroundName, 0);
         SetGeometryCulling(kBackgroundName, false);
     }
+}
 
+void FilamentScene::SetBackground(
+        const Eigen::Vector4f& color,
+        const std::shared_ptr<geometry::Image> image) {
+    // Make sure background geometry exists
+    CreateBackgroundGeometry();
     Material m;
     m.shader = "unlitBackground";
     m.base_color = color;
@@ -1656,6 +1661,26 @@ void FilamentScene::SetBackground(
         m.aspect_ratio = 0.0;
     }
     OverrideMaterial(kBackgroundName, m);
+}
+
+void FilamentScene::SetBackground(TextureHandle image) {
+    CreateBackgroundGeometry();
+    auto geoms = GetGeometry(kBackgroundName);
+    auto geom_mi = geoms[0]->mat;
+
+    auto tex_weak = resource_mgr_.GetTexture(image);
+    auto tex = tex_weak.lock();
+    float aspect = 1.f;
+    if (tex) {
+        aspect = static_cast<float>(tex->getWidth()) /
+                 static_cast<float>(tex->getHeight());
+    }
+
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("aspectRatio", aspect)
+            .SetTexture("albedo", image,
+                        rendering::TextureSamplerParameters::LinearClamp())
+            .Finish();
 }
 
 void FilamentScene::CreateGroundPlaneGeometry() {
