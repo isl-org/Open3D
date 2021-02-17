@@ -24,5 +24,5 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_jsoncpp INSTALL_DIR)
 set(JSONCPP_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-set(JSONCPP_LIB_DIR ${INSTALL_DIR}/lib)
+set(JSONCPP_LIB_DIR ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(JSONCPP_LIBRARIES jsoncpp)
