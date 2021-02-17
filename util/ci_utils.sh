@@ -73,7 +73,7 @@ install_cuda_toolkit() {
         "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
         "cuda-nvtx-${CUDA_VERSION[0]}" \
         "libnpp-dev-${CUDA_VERSION[0]}" \
-        "libcublas-dev-${CUDA_VERSION[0]} "
+        "libcublas-dev-${CUDA_VERSION[0]}"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
         # The repository method can cause "File has unexpected size" error so
         # we use a tar file copy approach instead. The scripts are taken from
