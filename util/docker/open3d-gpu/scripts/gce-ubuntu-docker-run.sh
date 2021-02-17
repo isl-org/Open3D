@@ -4,7 +4,7 @@
 ## (for portability and ease of maintenance)
 
 # exit when any command fails
-set -e
+set -ex
 
 ## These variables should be in the environment (from github repo secrets)
 # GCE_PROJECT

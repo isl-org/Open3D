@@ -51,14 +51,16 @@ OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && 
 
 install_cuda_toolkit() {
 
+    set -x
     SUDO=${SUDO:-sudo}
     options="$(echo "$@" | tr ' ' '|')"
-    echo "Installing CUDA ${CUDA_VERSION[1]} with apt ..."
 
-    if [[ $UBUNTU_VERSION == "bionic" ]] ; then
+    if [[ $UBUNTU_VERSION == "bionic" ]]; then
+        echo "Installing CUDA ${CUDA_VERSION[1]} with apt from bionic repos..."
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-    elif [[ $UBUNTU_VERSION == "focal" ]] ; then
+    else
+        echo "Installing CUDA ${CUDA_VERSION[1]} with apt from focal repos..."
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
     fi
@@ -111,6 +113,7 @@ install_cuda_toolkit() {
         $SUDO apt-get clean
         $SUDO rm -rf /var/lib/apt/lists/*
     fi
+    set +x
 }
 
 install_python_dependencies() {
@@ -343,11 +346,17 @@ test_wheel() {
         python -c \
             "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
-    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
         echo "importing in the reversed order"
         python -c "import tensorflow as tf; import open3d.ml.torch as o3d"
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
+    fi
+    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
+    if [ $BUILD_CUDA_MODULE == ON ]; then
+        install_python_dependencies with-cuda
+    else
+        install_python_dependencies
     fi
     deactivate
 }
