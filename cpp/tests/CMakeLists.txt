@@ -34,7 +34,7 @@ if (NOT BUILD_CUDA_MODULE)
 endif()
 
 if (NOT WITH_FAISS)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/KnnFaiss.cpp)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/FaissIndex.cpp)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
