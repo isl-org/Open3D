@@ -28,6 +28,7 @@
 
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometry.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
@@ -58,19 +59,20 @@ core::Tensor CreateNormalMap(const core::Tensor& vertex_map,
 /// [(V_p - V_q)^T N_p]^2,
 /// requiring normal map generation.
 /// KinectFusion, ISMAR 2011
-// core::Tensor RGBDOdometryPointToPlane(
-//         const t::geometry::Image& source_vtx_map,
-//         const t::geometry::Image& target_vtx_map,
-//         const t::geometry::Image& source_normal_map,
-//         const core::Tensor& intrinsics,
-//         const core::Tensor& init_source_to_target) {
-//     core::Tensor se3_delta;
-//     kernel::RGBDOdometryPointToPlane(source_vtx_map.AsTensor(),
-//                                      target_vtx_map.AsTensor(),
-//                                      source_normal_map.AsTensor(),
-//                                      intrinsics, init_source_to_target,
-//                                      se3_delta);
-// }
+core::Tensor ComputePosePointToPlane(const core::Tensor& source_vtx_map,
+                                     const core::Tensor& target_vtx_map,
+                                     const core::Tensor& source_normal_map,
+                                     const core::Tensor& intrinsics,
+                                     const core::Tensor& init_source_to_target,
+                                     float depth_diff) {
+    // Delta target_to_source
+    core::Tensor se3_delta;
+    core::Tensor residual;
+    kernel::odometry::ComputePosePointToPlane(
+            source_vtx_map, target_vtx_map, source_normal_map, intrinsics,
+            init_source_to_target, se3_delta, residual, depth_diff);
+    return pipelines::kernel::PoseToTransformation(se3_delta).Inverse();
+}
 
 /// Perform single scale odometry using loss function
 /// (I_p - I_q)^2 + lambda(D_p - (D_q)')^2,

@@ -47,10 +47,12 @@ void CreateNormalMap(const core::Tensor &vertex_map,
                      float depth_diff);
 
 void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
-                             const core::Tensor &source_normal_map,
                              const core::Tensor &target_vertex_map,
-                             const core::Tensor &init,
+                             const core::Tensor &source_normal_map,
+                             const core::Tensor &intrinsics,
+                             const core::Tensor &init_source_to_target,
                              core::Tensor &delta,
+                             core::Tensor &residual,
                              float depth_diff);
 
 void CreateVertexMapCPU(const core::Tensor &depth_map,
@@ -68,8 +70,10 @@ void CreateNormalMapCPU(const core::Tensor &vertex_map,
 void ComputePosePointToPlaneCPU(const core::Tensor &source_vertex_map,
                                 const core::Tensor &source_normal_map,
                                 const core::Tensor &target_vertex_map,
-                                const core::Tensor &init,
+                                const core::Tensor &intrinsics,
+                                const core::Tensor &init_source_to_target,
                                 core::Tensor &delta,
+                                core::Tensor &residual,
                                 float depth_diff);
 
 #ifdef BUILD_CUDA_MODULE
@@ -88,8 +92,10 @@ void CreateNormalMapCUDA(const core::Tensor &vertex_map,
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_vertex_map,
                                  const core::Tensor &source_normal_map,
                                  const core::Tensor &target_vertex_map,
-                                 const core::Tensor &init,
+                                 const core::Tensor &intrinsics,
+                                 const core::Tensor &init_source_to_target,
                                  core::Tensor &delta,
+                                 core::Tensor &residual,
                                  float depth_diff);
 #endif
 

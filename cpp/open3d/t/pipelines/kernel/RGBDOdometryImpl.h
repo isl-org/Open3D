@@ -143,51 +143,120 @@ void CreateNormalMapCPU
             });
 }
 
-/* #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__) */
-/* void ComputePosePointToPlaneCUDA */
-/* #else */
-/* void ComputePosePointToPlaneCPU */
-/* #endif */
-/*         (const core::Tensor& source_vertex_map, */
-/*          const core::Tensor& source_normal_map, */
-/*          const core::Tensor& target_vertex_map, */
-/*          const core::Tensor& init, */
-/*          core::Tensor& delta, */
-/*          float depth_diff) { */
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+void ComputePosePointToPlaneCUDA
+#else
+void ComputePosePointToPlaneCPU
+#endif
+        (const core::Tensor& source_vertex_map,
+         const core::Tensor& target_vertex_map,
+         const core::Tensor& source_normal_map,
+         const core::Tensor& intrinsics,
+         const core::Tensor& init_source_to_target,
+         core::Tensor& delta,
+         core::Tensor& residual,
+         float depth_diff) {
 
-/*     t::geometry::kernel::NDArrayIndexer
- * source_vertex_indexer(source_vertex_map, */
-/*                                                               2); */
-/*     t::geometry::kernel::NDArrayIndexer
- * source_normal_indexer(source_vertex_map, */
-/*                                                               2); */
-/*     t::geometry::kernel::NDArrayIndexer
- * target_vertex_indexer(source_vertex_map, */
-/*                                                               2); */
+    t::geometry::kernel::NDArrayIndexer source_vertex_indexer(source_vertex_map,
+                                                              2);
+    t::geometry::kernel::NDArrayIndexer target_vertex_indexer(target_vertex_map,
+                                                              2);
+    t::geometry::kernel::NDArrayIndexer source_normal_indexer(source_normal_map,
+                                                              2);
 
-/*     // Output */
-/*     int64_t rows = vertex_indexer.GetShape(0); */
-/*     int64_t cols = vertex_indexer.GetShape(1); */
+    t::geometry::kernel::TransformIndexer ti(intrinsics,
+                                             init_source_to_target.Inverse());
 
-/*     normal_map = */
-/*             core::Tensor::Zeros(vertex_map.GetShape(), vertex_map.GetDtype(),
- */
-/*                                 vertex_map.GetDevice()); */
-/*     t::geometry::kernel::NDArrayIndexer normal_indexer(vertex_map, 2); */
+    // Output
+    int64_t rows = source_vertex_indexer.GetShape(0);
+    int64_t cols = source_vertex_indexer.GetShape(1);
 
-/*     int64_t n = rows * cols; */
-/* #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__) */
-/*   core::kernel::CUDALauncher::LaunchGeneralKernel( */
-/*                                                   n, [=]
- * OPEN3D_DEVICE(int64_t workload_idx) { */
-/* #else */
-/*                                                     core::kernel::CPULauncher::LaunchGeneralKernel(
- */
-/*                                                                                                    n,
- * [&](int64_t workload_idx) { */
-/* #endif */
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor AtA =
+            core::Tensor::Zeros({6, 6}, core::Dtype::Float32, device);
+    core::Tensor Atb = core::Tensor::Zeros({6}, core::Dtype::Float32, device);
+    residual = core::Tensor::Zeros({}, core::Dtype::Float32, device);
 
-/* } */
+    float* AtA_local_ptr = static_cast<float*>(AtA.GetDataPtr());
+    float* Atb_local_ptr = static_cast<float*>(Atb.GetDataPtr());
+    float* residual_ptr = static_cast<float*>(residual.GetDataPtr());
+
+    int64_t n = rows * cols;
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+#else
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
+#endif
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
+
+                float* dst_v =
+                        target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+
+                float T_dst_v[3], u, v;
+                ti.RigidTransform(dst_v[0], dst_v[1], dst_v[2], &T_dst_v[0],
+                                  &T_dst_v[1], &T_dst_v[2]);
+
+                ti.Project(T_dst_v[0], T_dst_v[1], T_dst_v[2], &u, &v);
+                if (T_dst_v[2] < 0 || !source_vertex_indexer.InBoundary(u, v)) {
+                    return;
+                }
+
+                float* src_v = source_vertex_indexer.GetDataPtrFromCoord<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+
+                float r = (T_dst_v[0] - src_v[0]) * src_n[0] +
+                          (T_dst_v[1] - src_v[1]) * src_n[1] +
+                          (T_dst_v[2] - src_v[2]) * src_n[2];
+
+                if (abs(r) > depth_diff) return;
+
+                float J_ij[6];
+                J_ij[0] = -T_dst_v[2] * src_n[1] + T_dst_v[1] * src_n[2];
+                J_ij[1] = T_dst_v[2] * src_n[0] - T_dst_v[0] * src_n[2];
+                J_ij[2] = -T_dst_v[1] * src_n[0] + T_dst_v[0] * src_n[1];
+                J_ij[3] = src_n[0];
+                J_ij[4] = src_n[1];
+                J_ij[5] = src_n[2];
+                printf("(%ld %ld) -> (%f %f): residual = %f, J = (%f %f %f %f "
+                       "%f %f)\n",
+                       x, y, u, v, r, J_ij[0], J_ij[1], J_ij[2], J_ij[3],
+                       J_ij[4], J_ij[5]);
+
+        // Not optimized; Switch to reduction if necessary.
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+                for (int i_local = 0; i_local < 6; ++i_local) {
+                    for (int j_local = 0; j_local < 6; ++j_local) {
+                        atomicAdd(&AtA_local_ptr[i_local * 6 + j_local],
+                                  J_ij[i_local] * J_ij[j_local]);
+                    }
+                    atomicAdd(&Atb_local_ptr[i_local], J_ij[i_local] * r);
+                }
+                atomicAdd(residual_ptr, r * r);
+#else
+#pragma omp critical
+                {
+                    for (int i_local = 0; i_local < 6; ++i_local) {
+                        for (int j_local = 0; j_local < 6; ++j_local) {
+                            AtA_local_ptr[i_local * 6 + j_local] +=
+                                    J_ij[i_local] * J_ij[j_local];
+                        }
+                        Atb_local_ptr[i_local] += J_ij[i_local] * r;
+                    }
+                    *residual_ptr += r * r;
+                }
+#endif
+            });
+
+    utility::LogInfo("AtA = {}", AtA.ToString());
+    utility::LogInfo("Atb = {}", Atb.ToString());
+
+    delta = AtA.Solve(Atb);
+}
 
 }  // namespace odometry
 }  // namespace kernel

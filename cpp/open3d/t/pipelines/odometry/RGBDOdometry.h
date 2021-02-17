@@ -45,25 +45,16 @@ core::Tensor CreateNormalMap(const core::Tensor& vertex_map,
                              float depth_max = 3.0,
                              float depth_diff = 0.07);
 
-/// Create an RGBD image pyramid given the original source and target and
-/// perform hierarchical odometry.
-core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
-                                    const t::geometry::RGBDImage& target,
-                                    const core::Tensor& intrinsics,
-                                    const core::Tensor& init_source_to_target,
-                                    const std::vector<int>& iterations = {10, 5,
-                                                                          3});
-
 /// Perform single scale odometry using loss function
 /// [(V_p - V_q)^T N_p]^2,
 /// requiring normal map generation.
 /// KinectFusion, ISMAR 2011
-core::Tensor RGBDOdometryPointToPlane(
-        const t::geometry::Image& source_vtx_map,
-        const t::geometry::Image& target_vtx_map,
-        const t::geometry::Image& source_normal_map,
-        const core::Tensor& intrinsics,
-        const core::Tensor& init_source_to_target);
+core::Tensor ComputePosePointToPlane(const core::Tensor& source_vtx_map,
+                                     const core::Tensor& target_vtx_map,
+                                     const core::Tensor& source_normal_map,
+                                     const core::Tensor& intrinsics,
+                                     const core::Tensor& init_source_to_target,
+                                     float depth_diff);
 
 /// Perform single scale odometry using loss function
 /// (I_p - I_q)^2 + lambda(D_p - (D_q)')^2,
@@ -88,6 +79,15 @@ core::Tensor RGBDOdometryColor(const t::geometry::RGBDImage& source,
                                const t::geometry::Image& source_color_dy,
                                const core::Tensor& intrinsics,
                                const core::Tensor& init_source_to_target);
+
+/// Create an RGBD image pyramid given the original source and target and
+/// perform hierarchical odometry.
+core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
+                                    const t::geometry::RGBDImage& target,
+                                    const core::Tensor& intrinsics,
+                                    const core::Tensor& init_source_to_target,
+                                    const std::vector<int>& iterations = {10, 5,
+                                                                          3});
 
 }  // namespace odometry
 }  // namespace pipelines

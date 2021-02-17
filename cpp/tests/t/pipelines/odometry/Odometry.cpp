@@ -121,5 +121,56 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
                                 .ToLegacyPointCloud());
 }
 
+TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
+    core::Device device = GetParam();
+
+    auto src_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/depth/00000.png");
+    auto dst_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/depth/00001.png");
+
+    t::geometry::Image src_depth =
+            t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
+    src_depth = src_depth.To(core::Dtype::Float32, false, 1.0);
+    t::geometry::Image dst_depth =
+            t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
+    dst_depth = dst_depth.To(core::Dtype::Float32, false, 1.0);
+
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+    core::Tensor intrinsic_t = core::Tensor(
+            std::vector<float>({static_cast<float>(focal_length.first), 0,
+                                static_cast<float>(principal_point.first), 0,
+                                static_cast<float>(focal_length.second),
+                                static_cast<float>(principal_point.second), 0,
+                                0, 1}),
+            {3, 3}, core::Dtype::Float32);
+
+    core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
+            src_depth, intrinsic_t.To(device));
+    src_vertex_map.Save("src_vertex_map.npy");
+
+    t::geometry::Image src_depth_filtered =
+            src_depth.FilterBilateral(5, 50, 50);
+    core::Tensor src_vertex_map_filtered =
+            t::pipelines::odometry::CreateVertexMap(src_depth_filtered,
+                                                    intrinsic_t.To(device));
+    core::Tensor src_normal_map =
+            t::pipelines::odometry::CreateNormalMap(src_vertex_map_filtered);
+    src_normal_map.Save("src_normal_map.npy");
+
+    core::Tensor dst_vertex_map = t::pipelines::odometry::CreateVertexMap(
+            dst_depth, intrinsic_t.To(device));
+    src_vertex_map.Save("dst_vertex_map.npy");
+
+    utility::LogInfo("Odometry starts");
+    core::Tensor delta_src_to_dst =
+            t::pipelines::odometry::ComputePosePointToPlane(
+                    src_vertex_map, dst_vertex_map, src_normal_map, intrinsic_t,
+                    core::Tensor::Eye(4, core::Dtype::Float32, device), 0.07);
+}
+
 }  // namespace tests
 }  // namespace open3d
