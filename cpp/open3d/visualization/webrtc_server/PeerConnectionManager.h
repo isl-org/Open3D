@@ -75,7 +75,7 @@ class PeerConnectionManager {
         }
         virtual void OnFailure(webrtc::RTCError error) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " " << error.message();
-            m_promise.set_value(NULL);
+            m_promise.set_value(nullptr);
         }
 
     protected:
@@ -111,7 +111,7 @@ class PeerConnectionManager {
         }
         virtual void OnFailure(webrtc::RTCError error) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " " << error.message();
-            m_promise.set_value(NULL);
+            m_promise.set_value(nullptr);
         }
 
     protected:
@@ -199,8 +199,8 @@ class PeerConnectionManager {
             : m_webrtc_server(webrtc_server),
               m_peerConnectionManager(peerConnectionManager),
               m_peerid(peerid),
-              m_localChannel(NULL),
-              m_remoteChannel(NULL),
+              m_localChannel(nullptr),
+              m_remoteChannel(nullptr),
               m_iceCandidateList(Json::arrayValue),
               m_deleting(false) {
             RTC_LOG(INFO) << __FUNCTION__
@@ -208,14 +208,14 @@ class PeerConnectionManager {
             m_pc = m_peerConnectionManager->m_peer_connection_factory
                            ->CreatePeerConnection(config,
                                                   std::move(portAllocator),
-                                                  NULL, this);
+                                                  nullptr, this);
 
             if (m_pc.get()) {
                 RTC_LOG(INFO) << __FUNCTION__
                               << "CreateDataChannel peerid:" << peerid;
 
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel =
-                        m_pc->CreateDataChannel("ServerDataChannel", NULL);
+                        m_pc->CreateDataChannel("ServerDataChannel", nullptr);
                 m_localChannel =
                         new DataChannelObserver(m_webrtc_server, channel);
             }

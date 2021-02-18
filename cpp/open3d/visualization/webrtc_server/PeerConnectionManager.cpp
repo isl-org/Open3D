@@ -72,7 +72,7 @@ std::string getServerIpFromClientIp(int clientip) {
                 if ((addr->sin_addr.s_addr & mask->sin_addr.s_addr) ==
                     (clientip & mask->sin_addr.s_addr)) {
                     if (getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
-                                    host, sizeof(host), NULL, 0,
+                                    host, sizeof(host), nullptr, 0,
                                     NI_NUMERICHOST) == 0) {
                         serverAddress = host;
                         break;
@@ -391,7 +391,8 @@ const Json::Value PeerConnectionManager::addIceCandidate(
         RTC_LOG(WARNING) << "Can't parse received message:" << jmessage;
     } else {
         std::unique_ptr<webrtc::IceCandidateInterface> candidate(
-                webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, NULL));
+                webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp,
+                                           nullptr));
         if (!candidate.get()) {
             RTC_LOG(WARNING) << "Can't parse received candidate message.";
         } else {
@@ -496,7 +497,7 @@ const Json::Value PeerConnectionManager::setAnswer(
         answer["error"] = "Can't parse received message.";
     } else {
         webrtc::SessionDescriptionInterface *session_description(
-                webrtc::CreateSessionDescription(type, sdp, NULL));
+                webrtc::CreateSessionDescription(type, sdp, nullptr));
         if (!session_description) {
             RTC_LOG(WARNING)
                     << "Can't parse received session description message.";
@@ -592,7 +593,7 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid,
 
             // set remote offer
             webrtc::SessionDescriptionInterface *session_description(
-                    webrtc::CreateSessionDescription(type, sdp, NULL));
+                    webrtc::CreateSessionDescription(type, sdp, nullptr));
             if (!session_description) {
                 RTC_LOG(WARNING)
                         << "Can't parse received session description message.";
@@ -610,7 +611,7 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid,
                     std::future_status::ready) {
                     RTC_LOG(INFO) << "remote_description is ready";
                 } else {
-                    RTC_LOG(WARNING) << "remote_description is NULL";
+                    RTC_LOG(WARNING) << "remote_description is nullptr";
                 }
             }
 

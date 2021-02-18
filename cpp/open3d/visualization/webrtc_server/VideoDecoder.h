@@ -156,7 +156,7 @@ public:
         }
     }
 
-    void destroyDecoder() { m_decoder.reset(NULL); }
+    void destroyDecoder() { m_decoder.reset(nullptr); }
 
     bool hasDecoder() { return (m_decoder.get() != nullptr); }
 
