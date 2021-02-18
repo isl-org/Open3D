@@ -186,6 +186,9 @@ public:
             videoSource = TrackSource<ImageCapturer>::Create(videourl, opts);
         } else if (std::regex_match("videocap://", publishFilter)) {
             videoSource = TrackSource<VcmCapturer>::Create(videourl, opts);
+        } else {
+            utility::LogError("CreateVideoSource failed for videourl: {}",
+                              videourl);
         }
         return videoSource;
     }
