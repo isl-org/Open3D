@@ -66,12 +66,13 @@ install_cuda_toolkit() {
     fi
     $SUDO apt-get install --yes --no-install-recommends \
         "cuda-minimal-build-${CUDA_VERSION[0]}" \
+        "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
+        "cuda-nvtx-${CUDA_VERSION[0]}" \
+        "cuda-nvprof-${CUDA_VERSION[0]}" \
         "libcusolver-dev-${CUDA_VERSION[0]}" \
         "libcusparse-dev-${CUDA_VERSION[0]}" \
         "libcurand-dev-${CUDA_VERSION[0]}" \
         "libcufft-dev-${CUDA_VERSION[0]}" \
-        "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
-        "cuda-nvtx-${CUDA_VERSION[0]}" \
         "libnpp-dev-${CUDA_VERSION[0]}" \
         "libcublas-dev-${CUDA_VERSION[0]}"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
