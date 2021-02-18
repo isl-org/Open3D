@@ -826,24 +826,6 @@ const Json::Value PeerConnectionManager::getPeerConnectionList() {
 
                             tracks[videoTrack->id()] = track;
                         }
-                        const webrtc::AudioTrackVector &audioTracks =
-                                localStream->GetAudioTracks();
-                        for (unsigned int j = 0; j < audioTracks.size(); j++) {
-                            auto audioTrack = audioTracks.at(j);
-                            Json::Value track;
-                            track["kind"] = audioTrack->kind();
-                            if (audioTrack->GetSource()) {
-                                track["state"] =
-                                        audioTrack->GetSource()->state();
-                            }
-                            int level = 0;
-                            if (audioTrack->GetSignalLevel(&level)) {
-                                track["level"] = level;
-                            }
-
-                            tracks[audioTrack->id()] = track;
-                        }
-
                         streams[localStream->id()] = tracks;
                     }
                 }
