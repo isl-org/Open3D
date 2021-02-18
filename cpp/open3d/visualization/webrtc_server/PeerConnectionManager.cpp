@@ -249,10 +249,9 @@ PeerConnectionManager::PeerConnectionManager(
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
             CivetServer::getParam(req_info->query_string, "url", url);
-            CivetServer::getParam(req_info->query_string, "audiourl", audiourl);
             CivetServer::getParam(req_info->query_string, "options", options);
         }
-        return this->createOffer(peerid, url, audiourl, options);
+        return this->createOffer(peerid, url, options);
     };
     m_func["/api/setAnswer"] = [this](const struct mg_request_info *req_info,
                                       const Json::Value &in) -> Json::Value {
@@ -455,10 +454,9 @@ const Json::Value PeerConnectionManager::addIceCandidate(
 const Json::Value PeerConnectionManager::createOffer(
         const std::string &peerid,
         const std::string &videourl,
-        const std::string &audiourl,
         const std::string &options) {
     RTC_LOG(INFO) << __FUNCTION__ << " video:" << videourl
-                  << " audio:" << audiourl << " options:" << options;
+                  << " options:" << options;
     Json::Value offer;
 
     PeerConnectionObserver *peerConnectionObserver =

@@ -350,7 +350,6 @@ public:
     const Json::Value getStreamList();
     const Json::Value createOffer(const std::string& peerid,
                                   const std::string& videourl,
-                                  const std::string& audiourl,
                                   const std::string& options);
     const Json::Value setAnswer(const std::string& peerid,
                                 const Json::Value& jmessage);
