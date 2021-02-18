@@ -9,11 +9,6 @@
 
 // # All sources
 // DesktopCapturer.h    # X11 <- implicit
-// FileAudioCapturer.h  # HAVE_LIVE555
-// FileVideoCapturer.h  # HAVE_LIVE555
-// RTPVideoCapturer.h   # HAVE_LIVE555
-// RTSPAudioCapturer.h  # HAVE_LIVE555
-// RTSPVideoCapturer.h  # HAVE_LIVE555
 // ScreenCapturer.h     # X11
 // VcmCapturer.h        #
 // WindowCapturer.h     # X11
@@ -177,21 +172,7 @@ public:
             rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule) {
         rtc::scoped_refptr<webrtc::AudioSourceInterface> audioSource;
 
-        if ((audiourl.find("rtsp://") == 0) &&
-            (std::regex_match("rtsp://", publishFilter))) {
-#ifdef HAVE_LIVE555
-            audioDeviceModule->Terminate();
-            audioSource = RTSPAudioSource::Create(audioDecoderfactory, audiourl,
-                                                  opts);
-#endif
-        } else if ((audiourl.find("file://") == 0) &&
-                   (std::regex_match("file://", publishFilter))) {
-#ifdef HAVE_LIVE555
-            audioDeviceModule->Terminate();
-            audioSource = FileAudioSource::Create(audioDecoderfactory, audiourl,
-                                                  opts);
-#endif
-        } else if (std::regex_match("audiocap://", publishFilter)) {
+        if (std::regex_match("audiocap://", publishFilter)) {
             audioDeviceModule->Init();
             int16_t num_audioDevices = audioDeviceModule->RecordingDevices();
             int16_t idx_audioDevice = -1;
@@ -230,6 +211,9 @@ public:
                 cricket::AudioOptions opt;
                 audioSource = peer_connection_factory->CreateAudioSource(opt);
             }
+        } else {
+            utility::LogError("CreateAudioSource failed for videourl: {}",
+                              audiourl);
         }
         return audioSource;
     }
