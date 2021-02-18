@@ -321,6 +321,7 @@ build_pip_conda_package() {
 # Test wheel in blank virtual environment
 # Usage: test_wheel wheel_path
 test_wheel() {
+    set -x
     wheel_path="$1"
     python -m venv open3d_test.venv
     source open3d_test.venv/bin/activate
@@ -339,6 +340,10 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
+    # Get 3DML requirements from github if Open3D-ML repo is not available
+    set +u
+    OPEN3D_ML_ROOT=${OPEN3D_ML_ROOT:-"https://raw.githubusercontent.com/intel-isl/Open3D-ML/master"}
+    set -u
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -c \
