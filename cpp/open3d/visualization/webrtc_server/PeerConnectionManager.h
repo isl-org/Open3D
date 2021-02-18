@@ -338,8 +338,6 @@ public:
     const Json::Value getIceCandidateList(const std::string& peerid);
     const Json::Value addIceCandidate(const std::string& peerid,
                                       const Json::Value& jmessage);
-    const Json::Value getVideoDeviceList();
-    const Json::Value getAudioDeviceList();
     const Json::Value getMediaList();
     const Json::Value hangUp(const std::string& peerid);
     const Json::Value call(const std::string& peerid,

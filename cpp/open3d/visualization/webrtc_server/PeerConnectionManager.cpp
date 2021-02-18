@@ -210,18 +210,6 @@ PeerConnectionManager::PeerConnectionManager(
         return this->getMediaList();
     };
 
-    m_func["/api/getVideoDeviceList"] =
-            [this](const struct mg_request_info *req_info,
-                   const Json::Value &in) -> Json::Value {
-        return this->getVideoDeviceList();
-    };
-
-    m_func["/api/getAudioDeviceList"] =
-            [this](const struct mg_request_info *req_info,
-                   const Json::Value &in) -> Json::Value {
-        return this->getAudioDeviceList();
-    };
-
     m_func["/api/getIceServers"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
@@ -378,38 +366,6 @@ const Json::Value PeerConnectionManager::getMediaList() {
     Json::Value media;
     media["video"] = "image://Open3D";
     value.append(media);
-
-    return value;
-}
-
-/* ---------------------------------------------------------------------------
-**  return video device List as JSON vector
-** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getVideoDeviceList() {
-    // No video capture device.
-    Json::Value value(Json::arrayValue);
-    return value;
-}
-
-/* ---------------------------------------------------------------------------
-**  return audio device List as JSON vector
-** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getAudioDeviceList() {
-    Json::Value value(Json::arrayValue);
-
-    if (std::regex_match("audiocap://", m_publishFilter)) {
-        int16_t num_audioDevices = m_audioDeviceModule->RecordingDevices();
-        RTC_LOG(INFO) << "nb audio devices:" << num_audioDevices;
-
-        for (int i = 0; i < num_audioDevices; ++i) {
-            char name[webrtc::kAdmMaxDeviceNameSize] = {0};
-            char id[webrtc::kAdmMaxGuidSize] = {0};
-            if (m_audioDeviceModule->RecordingDeviceName(i, name, id) != -1) {
-                RTC_LOG(INFO) << "audio device name:" << name << " id:" << id;
-                value.append(name);
-            }
-        }
-    }
 
     return value;
 }
