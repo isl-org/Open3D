@@ -45,8 +45,9 @@ void TriuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
                 n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
-                    if (idy - idx >= diagonal)
+                    if (idy - idx >= diagonal) {
                         output_ptr[workload_idx] = A_ptr[idx * cols + idy];
+                    }
                 });
     });
 }
@@ -64,8 +65,9 @@ void TrilCUDA(const Tensor &A, Tensor &output, const int diagonal) {
                 n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
-                    if (idy - idx <= diagonal)
+                    if (idy - idx <= diagonal) {
                         output_ptr[workload_idx] = A_ptr[idx * cols + idy];
+                    }
                 });
     });
 }

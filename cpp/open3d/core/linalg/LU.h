@@ -31,31 +31,10 @@
 namespace open3d {
 namespace core {
 
-/// \brief This function performs the LU factorization of 2D square matrix,
-/// following equation P * A = L * U where P is the permutation matrix,
-/// L is a lower triangular matrix with unit diagonal and U is an upper
-/// triangular matrix. [computes ipiv and output tensors].
-///
-/// \param A [input] 2D square matrix to be factorised. [Tensor of dtype
-/// Float32/64]
-/// \param ipiv [output] is a 1D int tensor that contains the pivot indices,
-/// indicating row i of the matrix was interchanged with row IPIV(i)).
-/// \param output [output] is a 2D tensor of same dimentions as input, and has
-/// L as lower triangular values and U as upper triangle values including
-/// the main diagonal (diagonal elemetes of L to be taken as unity).
+// See documentation for `core::Tensor::LUIpiv`.
 void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output);
 
-/// \brief This function performs the LU factorization of 2D square matrix,
-/// following equation A = P * L * U where P is the permutation matrix,
-/// L is a lower triangular matrix with unit diagonal and U is an upper
-/// triangular matrix, [computes P, L, U tensors].
-///
-/// \param A [input] 2D square matrix to be factorised. [Tensor of dtype
-/// Float32/64] \param permutation [output] 2D permutation matrix.
-/// \param lower [output] Lower triangular matrix.
-/// \param upper [output] Upper triangular matrix.
-/// \param permute_l [optional bool input (default: false)]
-///  If true then returns L as P * L.
+// See documentation for `core::Tensor::LU`.
 void LU(const Tensor& A,
         Tensor& permutation,
         Tensor& lower,

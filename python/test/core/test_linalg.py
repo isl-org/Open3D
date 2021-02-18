@@ -65,7 +65,7 @@ def test_matmul(device, dtype):
         a = o3d.core.Tensor.zeros((3, 4, 5), dtype=dtype)
         b = o3d.core.Tensor.zeros((4, 5), dtype=dtype)
         c = a @ b
-    assert 'Tensor A must be 2D' in str(excinfo.value)
+        assert 'Tensor A must be 2D' in str(excinfo.value)
 
     with pytest.raises(RuntimeError) as excinfo:
         a = o3d.core.Tensor.zeros((3, 4), dtype=dtype)

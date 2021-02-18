@@ -34,21 +34,22 @@ namespace core {
 
 void TriuCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void TriuCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
-
 void TrilCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
-
-void TrilCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
 
 void TriulCPU(const Tensor& A,
               Tensor& upper,
               Tensor& lower,
               const int diagonal = 0);
 
+#ifdef BUILD_CUDA_MODULE
+void TriuCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
+
+void TrilCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
+
 void TriulCUDA(const Tensor& A,
                Tensor& upper,
                Tensor& lower,
                const int diagonal = 0);
-
+#endif
 }  // namespace core
 }  // namespace open3d

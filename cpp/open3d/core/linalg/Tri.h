@@ -31,10 +31,13 @@
 namespace open3d {
 namespace core {
 
+// See documentation for `core::Tensor::Triu`.
 void Triu(const Tensor& A, Tensor& output, const int diagonal = 0);
 
+// See documentation for `core::Tensor::Tril`.
 void Tril(const Tensor& A, Tensor& output, const int diagonal = 0);
 
+// See documentation for `core::Tensor::Triul`.
 void Triul(const Tensor& A,
            Tensor& upper,
            Tensor& lower,
