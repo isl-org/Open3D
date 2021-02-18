@@ -26,8 +26,6 @@ target_compile_definitions(webrtc_server PRIVATE
     WEBRTC_POSIX
     USE_X11                            # optional: X11 (desktop capture)
     OPENSSL_API_1_1                    # optional: civetweb
-    NO_OPENSSL=1                       # optional: live555helper
-    SOCKLEN_T=socklen_t                # optional: live
     _FILE_OFFSET_BITS=64               # optional: civetweb
     _LARGEFILE_SOURCE=1                # optional: civetweb
 )
