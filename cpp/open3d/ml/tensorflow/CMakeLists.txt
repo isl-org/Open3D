@@ -49,6 +49,7 @@ set(TF_OPS_SOURCES
     "../contrib/GridSubsampling.cpp"
     "../contrib/neighbors.cpp"
     "../contrib/Nms.cpp"
+    "pointnet/SamplingOps.cpp"
 )
 
 set(TF_OPS_CUDA_SOURCES
@@ -64,6 +65,8 @@ set(TF_OPS_CUDA_SOURCES
     "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
     "../contrib/Nms.cu"
+    "../contrib/PointSampling.cu"
+    "pointnet/SamplingOpKernel.cu"
 )
 
 if(BUILD_CUDA_MODULE)
