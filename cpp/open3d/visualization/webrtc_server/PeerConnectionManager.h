@@ -370,7 +370,6 @@ protected:
             const std::string& audiourl,
             const std::map<std::string, std::string>& opts);
     bool streamStillUsed(const std::string& streamLabel);
-    const std::list<std::string> getVideoCaptureDeviceList();
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> getPeerConnection(
             const std::string& peerid);
     const std::string sanitizeLabel(const std::string& label);

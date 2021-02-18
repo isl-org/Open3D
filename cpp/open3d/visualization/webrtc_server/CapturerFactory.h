@@ -9,7 +9,6 @@
 
 // # All sources
 // DesktopCapturer.h    # X11 <- implicit
-// VcmCapturer.h        #
 // WindowCapturer.h     # X11
 
 #pragma once
@@ -17,8 +16,6 @@
 #include <pc/video_track_source.h>
 
 #include <regex>
-
-#include "open3d/visualization/webrtc_server/VcmCapturer.h"
 
 #ifdef USE_X11
 #include "open3d/visualization/webrtc_server/WindowCapturer.h"
@@ -58,41 +55,6 @@ private:
 
 class CapturerFactory {
 public:
-    static const std::list<std::string> GetVideoCaptureDeviceList(
-            const std::regex& publishFilter) {
-        std::list<std::string> videoDeviceList;
-
-        if (std::regex_match("videocap://", publishFilter)) {
-            std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
-                    webrtc::VideoCaptureFactory::CreateDeviceInfo());
-            if (info) {
-                int num_videoDevices = info->NumberOfDevices();
-                RTC_LOG(INFO) << "nb video devices:" << num_videoDevices;
-                for (int i = 0; i < num_videoDevices; ++i) {
-                    const uint32_t kSize = 256;
-                    char name[kSize] = {0};
-                    char id[kSize] = {0};
-                    if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) {
-                        RTC_LOG(INFO)
-                                << "video device name:" << name << " id:" << id;
-                        std::string devname;
-                        auto it = std::find(videoDeviceList.begin(),
-                                            videoDeviceList.end(), name);
-                        if (it == videoDeviceList.end()) {
-                            devname = name;
-                        } else {
-                            devname = "videocap://";
-                            devname += std::to_string(i);
-                        }
-                        videoDeviceList.push_back(devname);
-                    }
-                }
-            }
-        }
-
-        return videoDeviceList;
-    }
-
     static const std::list<std::string> GetVideoSourceList(
             const std::regex& publishFilter) {
         std::list<std::string> videoList;
@@ -131,8 +93,6 @@ public:
 #endif
         } else if (videourl.find("image://") == 0) {
             videoSource = TrackSource<ImageCapturer>::Create(videourl, opts);
-        } else if (std::regex_match("videocap://", publishFilter)) {
-            videoSource = TrackSource<VcmCapturer>::Create(videourl, opts);
         } else {
             utility::LogError("CreateVideoSource failed for videourl: {}",
                               videourl);

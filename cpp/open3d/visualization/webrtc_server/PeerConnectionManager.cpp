@@ -386,14 +386,8 @@ const Json::Value PeerConnectionManager::getMediaList() {
 **  return video device List as JSON vector
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::getVideoDeviceList() {
+    // No video capture device.
     Json::Value value(Json::arrayValue);
-
-    const std::list<std::string> videoCaptureDevice =
-            CapturerFactory::GetVideoCaptureDeviceList(m_publishFilter);
-    for (auto videoDevice : videoCaptureDevice) {
-        value.append(videoDevice);
-    }
-
     return value;
 }
 
