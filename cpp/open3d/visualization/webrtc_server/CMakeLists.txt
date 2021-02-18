@@ -5,13 +5,8 @@ add_custom_target(copy_html_dir
 
 file(GLOB WEBRTC_STREAMER_SRC
     DesktopCapturer.cpp
-    FileAudioCapturer.cpp
-    FileVideoCapturer.cpp
     HttpServerRequestHandler.cpp
     PeerConnectionManager.cpp
-    RTPVideoCapturer.cpp
-    RTSPAudioCapturer.cpp
-    RTSPVideoCapturer.cpp
     WebRTCServer.cpp
 )
 file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
@@ -40,7 +35,6 @@ target_compile_definitions(webrtc_server PRIVATE
     WEBRTC_POSIX
     USE_X11                            # optional: X11 (desktop capture)
     OPENSSL_API_1_1                    # optional: civetweb
-    HAVE_LIVE555                       # optional: live555helper
     NO_OPENSSL=1                       # optional: live555helper
     SOCKLEN_T=socklen_t                # optional: live
     _FILE_OFFSET_BITS=64               # optional: civetweb

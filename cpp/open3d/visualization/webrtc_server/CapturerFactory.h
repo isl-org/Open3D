@@ -26,14 +26,6 @@
 
 #include "open3d/visualization/webrtc_server/VcmCapturer.h"
 
-#ifdef HAVE_LIVE555
-#include "open3d/visualization/webrtc_server/FileAudioCapturer.h"
-#include "open3d/visualization/webrtc_server/FileVideoCapturer.h"
-#include "open3d/visualization/webrtc_server/RTPVideoCapturer.h"
-#include "open3d/visualization/webrtc_server/RTSPAudioCapturer.h"
-#include "open3d/visualization/webrtc_server/RTSPVideoCapturer.h"
-#endif
-
 #ifdef USE_X11
 #include "open3d/visualization/webrtc_server/ScreenCapturer.h"
 #include "open3d/visualization/webrtc_server/WindowCapturer.h"
@@ -154,26 +146,8 @@ public:
                       rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                               peer_connection_factory) {
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource;
-        if ((videourl.find("rtsp://") == 0) &&
-            (std::regex_match("rtsp://", publishFilter))) {
-#ifdef HAVE_LIVE555
-            videoSource =
-                    TrackSource<RTSPVideoCapturer>::Create(videourl, opts);
-#endif
-        } else if ((videourl.find("file://") == 0) &&
-                   (std::regex_match("file://", publishFilter))) {
-#ifdef HAVE_LIVE555
-            videoSource =
-                    TrackSource<FileVideoCapturer>::Create(videourl, opts);
-#endif
-        } else if ((videourl.find("rtp://") == 0) &&
-                   (std::regex_match("rtp://", publishFilter))) {
-#ifdef HAVE_LIVE555
-            videoSource = TrackSource<RTPVideoCapturer>::Create(
-                    SDPClient::getSdpFromRtpUrl(videourl), opts);
-#endif
-        } else if ((videourl.find("screen://") == 0) &&
-                   (std::regex_match("screen://", publishFilter))) {
+        if ((videourl.find("screen://") == 0) &&
+            (std::regex_match("screen://", publishFilter))) {
 #ifdef USE_X11
             videoSource = TrackSource<ScreenCapturer>::Create(videourl, opts);
 #endif
