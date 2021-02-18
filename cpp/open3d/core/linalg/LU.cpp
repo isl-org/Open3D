@@ -94,10 +94,10 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     if (A_shape.size() != 2) {
         utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
-    if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor must be square, but got {} x {}.", A_shape[0],
-                          A_shape[1]);
-    }
+    // if (A_shape[0] != A_shape[1]) {
+    //     utility::LogError("Tensor must be square, but got {} x {}.", A_shape[0],
+    //                       A_shape[1]);
+    // }
     int64_t n = A_shape[0];
     if (n == 0) {
         utility::LogError(
@@ -118,7 +118,7 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
 #ifdef BUILD_CUDA_MODULE
         ipiv = core::Tensor::Empty({n}, core::Dtype::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();
-        LUCUDA(A_data, ipiv_data, n, dtype, device);
+        LUCUDA(A_data, ipiv_data, A_shape[0], A_shape[1], dtype, device);
 #else
         utility::LogInfo("Unimplemented device.");
 #endif
@@ -133,7 +133,7 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
         }
         ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
         void* ipiv_data = ipiv.GetDataPtr();
-        LUCPU(A_data, ipiv_data, n, dtype, device);
+        LUCPU(A_data, ipiv_data, A_shape[0], A_shape[1], dtype, device);
     }
     // COL_MAJOR -> ROW_MAJOR.
     output = output.T().Contiguous();

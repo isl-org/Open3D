@@ -33,7 +33,8 @@ namespace core {
 
 void LUCUDA(void* A_data,
             void* ipiv_data,
-            int64_t n,
+            int64_t rows,
+            int64_t cols,
             Dtype dtype,
             const Device& device) {
     cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
@@ -42,14 +43,14 @@ void LUCUDA(void* A_data,
         int* dinfo =
                 static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
         OPEN3D_CUSOLVER_CHECK(
-                getrf_cuda_buffersize<scalar_t>(handle, n, n, n, &len),
+                getrf_cuda_buffersize<scalar_t>(handle, rows, cols, rows, &len),
                 "getrf_buffersize failed in LUCUDA");
 
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
-                getrf_cuda<scalar_t>(handle, n, n,
-                                     static_cast<scalar_t*>(A_data), n,
+                getrf_cuda<scalar_t>(handle, rows, cols,
+                                     static_cast<scalar_t*>(A_data), rows,
                                      static_cast<scalar_t*>(workspace),
                                      static_cast<int*>(ipiv_data), dinfo),
                 "getrf failed in LUCUDA", dinfo, device);
