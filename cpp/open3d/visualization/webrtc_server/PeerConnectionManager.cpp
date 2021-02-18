@@ -242,7 +242,6 @@ PeerConnectionManager::PeerConnectionManager(
                                         const Json::Value &in) -> Json::Value {
         std::string peerid;
         std::string url;
-        std::string audiourl;
         std::string options;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -1046,20 +1045,9 @@ bool PeerConnectionManager::AddStreams(
         RTC_LOG(WARNING) << "set bitrate:" << bitrate;
     }
 
-    // keep capturer options (to improve!!!)
-    std::string optcapturer;
-    if ((video.find("rtsp://") == 0) || (audio.find("rtsp://") == 0)) {
-        if (opts.find("rtptransport") != opts.end()) {
-            optcapturer += opts["rtptransport"];
-        }
-        if (opts.find("timeout") != opts.end()) {
-            optcapturer += opts["timeout"];
-        }
-    }
-
     // compute stream label removing space because SDP use label
     std::string streamLabel =
-            this->sanitizeLabel(videourl + "|" + audiourl + "|" + optcapturer);
+            this->sanitizeLabel(videourl + "|" + audiourl + "|");
 
     bool existingStream = false;
     {
