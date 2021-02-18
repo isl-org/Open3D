@@ -949,13 +949,6 @@ bool PeerConnectionManager::AddStreams(
         video = m_config[video]["video"].asString();
     }
 
-    // compute audiourl if not set
-    std::string audiourl = "";
-    std::string audio(audiourl);
-    if (audio.empty()) {
-        audio = videourl;
-    }
-
     // set bandwidth
     if (opts.find("bitrate") != opts.end()) {
         int bitrate = std::stoi(opts.at("bitrate"));
@@ -970,8 +963,7 @@ bool PeerConnectionManager::AddStreams(
     }
 
     // compute stream label removing space because SDP use label
-    std::string streamLabel =
-            this->sanitizeLabel(videourl + "|" + audiourl + "|");
+    std::string streamLabel = this->sanitizeLabel(videourl);
 
     bool existingStream = false;
     {
