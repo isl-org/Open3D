@@ -51,6 +51,7 @@
     });                                                                     \
     tensor.def(#py_name, &Tensor::cpp_name<float>);                         \
     tensor.def(#py_name, &Tensor::cpp_name<double>);                        \
+    tensor.def(#py_name, &Tensor::cpp_name<int16_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int32_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int64_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
@@ -62,6 +63,10 @@
                 .cpp_name(self);                                          \
     });                                                                   \
     tensor.def(#py_name, [](const Tensor& self, double value) {           \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, int16_t value) {          \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
     });                                                                   \
@@ -264,6 +269,7 @@ void pybind_core_tensor(py::module& m) {
     BindTensorCreation(tensor, "ones", Tensor::Ones);
     BindTensorFullCreation<float>(tensor);
     BindTensorFullCreation<double>(tensor);
+    BindTensorFullCreation<int16_t>(tensor);
     BindTensorFullCreation<int32_t>(tensor);
     BindTensorFullCreation<int64_t>(tensor);
     BindTensorFullCreation<uint8_t>(tensor);
@@ -590,6 +596,8 @@ void pybind_core_tensor(py::module& m) {
             return py::float_(tensor.Item<float>());
         } else if (dtype == Dtype::Float64) {
             return py::float_(tensor.Item<double>());
+        } else if (dtype == Dtype::Int16) {
+            return py::int_(tensor.Item<int16_t>());
         } else if (dtype == Dtype::Int32) {
             return py::int_(tensor.Item<int32_t>());
         } else if (dtype == Dtype::Int64) {

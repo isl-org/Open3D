@@ -47,6 +47,7 @@
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
 #include <filament/SwapChain.h>
+#include <filament/Texture.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
@@ -112,6 +113,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader},
+        {"depthValue", ResourceManager::kDefaultDepthValueShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
         {"unlitPolygonOffset",
@@ -173,6 +175,67 @@ FilamentScene::FilamentScene(filament::Engine& engine,
 
 FilamentScene::~FilamentScene() {}
 
+Scene* FilamentScene::Copy() {
+    auto copy = new FilamentScene(engine_, resource_mgr_, renderer_);
+    copy->geometries_ = this->geometries_;
+    copy->lights_ = this->lights_;
+    copy->model_geometries_ = this->model_geometries_;
+    copy->background_color_ = this->background_color_;
+    copy->background_image_ = this->background_image_;
+    copy->ibl_name_ = this->ibl_name_;
+    copy->ibl_enabled_ = this->ibl_enabled_;
+    copy->skybox_enabled_ = this->skybox_enabled_;
+    copy->indirect_light_ = this->indirect_light_;
+    copy->skybox_ = this->skybox_;
+    copy->sun_ = this->sun_;
+
+    for (auto& name_geom : copy->geometries_) {
+        auto& name = name_geom.first;
+        auto& geom = name_geom.second;
+
+        auto& renderable_mgr = copy->engine_.getRenderableManager();
+        auto inst = renderable_mgr.getInstance(geom.filament_entity);
+        auto box = renderable_mgr.getAxisAlignedBoundingBox(inst);
+        auto vbuf = copy->resource_mgr_.GetVertexBuffer(geom.vb).lock();
+        auto ibuf = copy->resource_mgr_.GetIndexBuffer(geom.ib).lock();
+        auto new_entity = utils::EntityManager::get().create();
+        filament::RenderableManager::Builder builder(1);
+        builder.boundingBox(box)
+                .layerMask(FilamentView::kAllLayersMask,
+                           FilamentView::kMainLayer)
+                .castShadows(geom.cast_shadows)
+                .receiveShadows(geom.receive_shadows)
+                .culling(geom.culling_enabled)
+                .geometry(0, geom.primitive_type, vbuf.get(), ibuf.get());
+        if (geom.priority >= 0) {
+            builder.priority(uint8_t(geom.priority));
+        }
+        copy->resource_mgr_.ReuseVertexBuffer(geom.vb);
+
+        auto material_instance = copy->AssignMaterialToFilamentGeometry(
+                builder, geom.mat.properties);
+
+        auto result = builder.build(copy->engine_, new_entity);
+        if (result == filament::RenderableManager::Builder::Success) {
+            if (geom.visible) {
+                copy->scene_->addEntity(new_entity);
+            }
+            geom.filament_entity = new_entity;
+            geom.mat.mat_instance = material_instance;
+
+            auto transform = this->GetGeometryTransform(name);
+            copy->SetGeometryTransform(name, transform);
+            copy->UpdateMaterialProperties(
+                    copy->geometries_[name]);  // for non-const
+
+        } else {
+            utility::LogWarning(
+                    "Failed to copy Filament resources for geometry {}", name);
+        }
+    }
+    return copy;
+}
+
 ViewHandle FilamentScene::AddView(std::int32_t x,
                                   std::int32_t y,
                                   std::uint32_t w,
@@ -215,7 +278,7 @@ void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
         found->second.is_active = true;
         // NOTE: This value should match the value of render_count_ in
         // FilamentRenderer::EnableCaching
-        found->second.render_count = 2;
+        found->second.render_count = 1;
     }
 }
 
@@ -452,8 +515,11 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                                    true,
                                    true,
                                    true,
+                                   true,
+                                   -1,
                                    {{}, material, material_instance},
                                    filament_entity,
+                                   buffer_builder.GetPrimitiveType(),
                                    vb,
                                    ib}));
 
@@ -507,14 +573,18 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         // created. If the number of points has changed then it cannot be
         // updated. In that case, you must remove the geometry then add it
         // again.
-        if (n_vertices != vbuf->getVertexCount()) {
+        if (n_vertices > vbuf->getVertexCount()) {
             utility::LogWarning(
                     "Geometry for point cloud {} cannot be updated because the "
-                    "number of points has changed (Old: {}, New: {})",
+                    "number of points exceeds the existing point count (Old: "
+                    "{}, New: {})",
                     object_name, vbuf->getVertexCount(), n_vertices);
             return;
         }
 
+        bool geometry_update_needed = n_vertices != vbuf->getVertexCount();
+
+        // Update the each of the attribute requested
         if (update_flags & kUpdatePointsFlag) {
             filament::VertexBuffer::BufferDescriptor pts_descriptor(
                     points.GetDataPtr(), n_vertices * 3 * sizeof(float));
@@ -573,6 +643,15 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                         uv_array, uv_array_size, DeallocateBuffer);
                 vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
             }
+        }
+
+        // Update the geometry to reflect new geometry count
+        if (geometry_update_needed) {
+            auto& renderable_mgr = engine_.getRenderableManager();
+            auto inst = renderable_mgr.getInstance(g->filament_entity);
+            renderable_mgr.setGeometryAt(
+                    inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
+                    0, n_vertices);
         }
     }
 }
@@ -705,6 +784,7 @@ void FilamentScene::SetGeometryCulling(const std::string& object_name,
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCulling(inst, enable);
+        g->culling_enabled = enable;
     }
 }
 
@@ -716,6 +796,7 @@ void FilamentScene::SetGeometryPriority(const std::string& object_name,
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setPriority(inst, priority);
+        g->priority = (int)priority;
     }
 }
 
@@ -815,6 +896,12 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateDepthValueShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .Finish();
+}
+
 void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
     bool isLUT =
             (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
@@ -842,7 +929,7 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
-                        rendering::TextureSamplerParameters::Pretty())
+                        rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
 }
 
@@ -1013,6 +1100,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateNormalShader(geom.mat);
     } else if (props.shader == "depth") {
         UpdateDepthShader(geom.mat);
+    } else if (props.shader == "depthValue") {
+        UpdateDepthValueShader(geom.mat);
     } else if (props.shader == "unlitGradient") {
         UpdateGradientShader(geom.mat);
     } else if (props.shader == "unlitSolidColor") {
@@ -1077,6 +1166,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateLineShader(geom->mat);
         } else if (material.shader == "unlitPolygonOffset") {
             UpdateUnlitPolygonOffsetShader(geom->mat);
+        } else if (material.shader == "depthValue") {
+            UpdateDepthValueShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
@@ -1102,6 +1193,9 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
 void FilamentScene::OverrideMaterialAll(const Material& material,
                                         bool shader_only) {
     for (auto& ge : geometries_) {
+        if (ge.first == kBackgroundName) {
+            continue;
+        }
         OverrideMaterialInternal(&ge.second, material, shader_only);
     }
 }
@@ -1520,9 +1614,7 @@ void FilamentScene::ShowSkybox(bool show) {
     }
 }
 
-void FilamentScene::SetBackground(
-        const Eigen::Vector4f& color,
-        const std::shared_ptr<geometry::Image> image) {
+void FilamentScene::CreateBackgroundGeometry() {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;
         // The coordinates are in raw GL coordinates, what Filament calls
@@ -1537,7 +1629,7 @@ void FilamentScene::SetBackground(
         quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
         Material m;
         m.shader = "unlitBackground";
-        m.base_color = color;
+        m.base_color = {1.f, 1.f, 1.f, 1.f};
         m.aspect_ratio = 0.0;
         AddGeometry(kBackgroundName, quad, m);
         // Since this is the background,
@@ -1550,7 +1642,13 @@ void FilamentScene::SetBackground(
         SetGeometryPriority(kBackgroundName, 0);
         SetGeometryCulling(kBackgroundName, false);
     }
+}
 
+void FilamentScene::SetBackground(
+        const Eigen::Vector4f& color,
+        const std::shared_ptr<geometry::Image> image) {
+    // Make sure background geometry exists
+    CreateBackgroundGeometry();
     Material m;
     m.shader = "unlitBackground";
     m.base_color = color;
@@ -1563,6 +1661,26 @@ void FilamentScene::SetBackground(
         m.aspect_ratio = 0.0;
     }
     OverrideMaterial(kBackgroundName, m);
+}
+
+void FilamentScene::SetBackground(TextureHandle image) {
+    CreateBackgroundGeometry();
+    auto geoms = GetGeometry(kBackgroundName);
+    auto geom_mi = geoms[0]->mat;
+
+    auto tex_weak = resource_mgr_.GetTexture(image);
+    auto tex = tex_weak.lock();
+    float aspect = 1.f;
+    if (tex) {
+        aspect = static_cast<float>(tex->getWidth()) /
+                 static_cast<float>(tex->getHeight());
+    }
+
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("aspectRatio", aspect)
+            .SetTexture("albedo", image,
+                        rendering::TextureSamplerParameters::LinearClamp())
+            .Finish();
 }
 
 void FilamentScene::CreateGroundPlaneGeometry() {
