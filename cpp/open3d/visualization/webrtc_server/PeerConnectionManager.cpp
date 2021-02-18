@@ -733,13 +733,7 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << streamLabel;
                     std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-                    std::map<std::string,
-                             std::pair<
-                                     rtc::scoped_refptr<
-                                             webrtc::VideoTrackSourceInterface>,
-                                     rtc::scoped_refptr<
-                                             webrtc::AudioSourceInterface>>>::
-                            iterator it = m_stream_map.find(streamLabel);
+                    auto it = m_stream_map.find(streamLabel);
                     if (it != m_stream_map.end()) {
                         m_stream_map.erase(it);
                     }
@@ -1069,11 +1063,7 @@ bool PeerConnectionManager::AddStreams(
     // create a new webrtc stream
     {
         std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-        std::map<
-                std::string,
-                std::pair<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>,
-                          rtc::scoped_refptr<webrtc::AudioSourceInterface>>>::
-                iterator it = m_stream_map.find(streamLabel);
+        auto it = m_stream_map.find(streamLabel);
         if (it != m_stream_map.end()) {
             rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
                     m_peer_connection_factory->CreateLocalMediaStream(
