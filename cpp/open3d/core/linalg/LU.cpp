@@ -34,14 +34,14 @@ namespace open3d {
 namespace core {
 
 // Get column permutation tensor from ipiv (swaping index array).
-inline core::Tensor GetColPermutation(Tensor& ipiv,
+inline core::Tensor GetColPermutation(const Tensor& ipiv,
                                       int number_of_indices,
                                       int number_of_rows) {
     Tensor full_ipiv = Tensor::Arange(0, number_of_rows, 1, core::Dtype::Int32,
                                       Device("CPU:0"));
     Tensor ipiv_cpu =
             ipiv.To(Device("CPU:0"), core::Dtype::Int32, /*copy=*/false);
-    int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+    const int* ipiv_ptr = static_cast<const int*>(ipiv_cpu.GetDataPtr());
     int* full_ipiv_ptr = static_cast<int*>(full_ipiv.GetDataPtr());
     for (int i = 0; i < number_of_rows; i++) {
         int temp = full_ipiv_ptr[i];
@@ -58,8 +58,8 @@ inline void OutputToPLU(const Tensor& output,
                         Tensor& permutation,
                         Tensor& lower,
                         Tensor& upper,
-                        Tensor& ipiv,
-                        bool permute_l) {
+                        const Tensor& ipiv,
+                        const bool permute_l) {
     int n = output.GetShape()[0];
     core::Device device = output.GetDevice();
 
@@ -134,6 +134,9 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
         ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
         void* ipiv_data = ipiv.GetDataPtr();
         LUCPU(A_data, ipiv_data, A_shape[0], A_shape[1], dtype, device);
+        utility::LogInfo(" IPIV DATA: {}", ipiv.ToString());
+        ipiv = ipiv.To(core::Dtype::Int32);
+        utility::LogInfo(" IPIV DATA 32: {}", ipiv.ToString());
     }
     // COL_MAJOR -> ROW_MAJOR.
     output = output.T().Contiguous();
@@ -143,7 +146,7 @@ void LU(const Tensor& A,
         Tensor& permutation,
         Tensor& lower,
         Tensor& upper,
-        bool permute_l) {
+        const bool permute_l) {
     // Get output matrix and ipiv.
     core::Tensor ipiv, output;
     LUIpiv(A, ipiv, output);

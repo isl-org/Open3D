@@ -39,7 +39,7 @@ void LU(const Tensor& A,
         Tensor& permutation,
         Tensor& lower,
         Tensor& upper,
-        bool permute_l = false);
+        const bool permute_l = false);
 
 }  // namespace core
 }  // namespace open3d
