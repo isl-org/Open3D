@@ -310,21 +310,6 @@ PeerConnectionManager::~PeerConnectionManager() {}
 const Json::Value PeerConnectionManager::getMediaList() {
     Json::Value value(Json::arrayValue);
 
-    // Cameras, microphones.
-    // const std::list<std::string> videoCaptureDevice =
-    //         CapturerFactory::GetVideoCaptureDeviceList(m_publishFilter);
-    // for (auto videoDevice : videoCaptureDevice) {
-    //     Json::Value media;
-    //     media["video"] = videoDevice;
-
-    //     std::map<std::string, std::string>::iterator it =
-    //             m_videoaudiomap.find(videoDevice);
-    //     if (it != m_videoaudiomap.end()) {
-    //         media["audio"] = it->second;
-    //     }
-    //     value.append(media);
-    // }
-
     // Windows, desktops.
     const std::list<std::string> videoList =
             CapturerFactory::GetVideoSourceList(m_publishFilter);
