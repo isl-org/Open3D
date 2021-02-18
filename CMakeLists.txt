@@ -64,6 +64,16 @@ option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON 
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
 
+find_program(CCACHE "ccache")
+if (CCACHE)
+    message(STATUS "ccache found at ${CCACHE}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+    if(BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_COMPILER_LAUNCHER ${CCACHE})
+    endif()
+endif()
+
 set(THIRD_PARTY_FROM "cmake options")
 if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
         IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
