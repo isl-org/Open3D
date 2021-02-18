@@ -10,25 +10,16 @@ file(GLOB WEBRTC_STREAMER_SRC
     WebRTCServer.cpp
 )
 file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
-    live/groupsock/*.c*
-    live/liveMedia/*.c*
-    live/UsageEnvironment/*.c*
-    live/BasicUsageEnvironment/*.c*
-    live555helper/*.cpp
     civetweb/civetweb.c
     civetweb/CivetServer.cpp
 )
 
 add_library(webrtc_server OBJECT
     ${WEBRTC_STREAMER_SRC}
-    ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: live(&555helper), civietweb
+    ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: civietweb
 )
 target_include_directories(webrtc_server SYSTEM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    live/groupsock/include             # optional: live
-    live/liveMedia/include             # optional: live
-    live/UsageEnvironment/include      # optional: live
-    live/BasicUsageEnvironment/include # optional: live
     civetweb                           # optional: civetweb
 )
 target_compile_definitions(webrtc_server PRIVATE
