@@ -51,6 +51,7 @@ void pybind_core_dtype(py::module &m) {
     dtype.def_readonly_static("Undefined", &Dtype::Undefined);
     dtype.def_readonly_static("Float32", &Dtype::Float32);
     dtype.def_readonly_static("Float64", &Dtype::Float64);
+    dtype.def_readonly_static("Int16", &Dtype::Int16);
     dtype.def_readonly_static("Int32", &Dtype::Int32);
     dtype.def_readonly_static("Int64", &Dtype::Int64);
     dtype.def_readonly_static("UInt8", &Dtype::UInt8);
