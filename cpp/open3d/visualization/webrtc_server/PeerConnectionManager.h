@@ -380,7 +380,6 @@ protected:
     std::mutex m_streamMapMutex;
     std::list<std::string> m_iceServerList;
     const Json::Value m_config;
-    std::map<std::string, std::string> m_videoaudiomap;
     const std::regex m_publishFilter;
     std::map<std::string, HttpServerRequestHandler::httpFunction> m_func;
     std::string m_webrtcPortRange;

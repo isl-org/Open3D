@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "open3d/visualization/webrtc_server/CapturerFactory.h"
-#include "open3d/visualization/webrtc_server/V4l2AlsaMap.h"
 #include "open3d/visualization/webrtc_server/VideoFilter.h"
 #include "open3d/visualization/webrtc_server/VideoScaler.h"
 
@@ -198,9 +197,6 @@ PeerConnectionManager::PeerConnectionManager(
       m_iceServerList(iceServerList),
       m_config(config),
       m_publishFilter(publishFilter) {
-    // build video audio map
-    m_videoaudiomap = getV4l2AlsaMap();
-
     // Set the webrtc port range
     m_webrtcPortRange = webrtcUdpPortRange;
 
