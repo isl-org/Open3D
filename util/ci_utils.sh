@@ -344,6 +344,7 @@ test_wheel() {
     set +u
     OPEN3D_ML_ROOT=${OPEN3D_ML_ROOT:-"https://raw.githubusercontent.com/intel-isl/Open3D-ML/master"}
     set -u
+    ls -R $(dirname $(python -c "import open3d as o3d; print(o3d.__file__)")) # debug
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -c \
@@ -360,7 +361,9 @@ test_wheel() {
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
     fi
+    set +u
     deactivate
+    set -u
 }
 
 # Run in virtual environment
@@ -374,7 +377,9 @@ run_python_tests() {
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
     python -m pytest "${pytest_args[@]}"
+    set +u
     deactivate
+    set -u
 }
 
 # Use: run_unit_tests
