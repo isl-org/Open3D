@@ -371,9 +371,6 @@ protected:
 
 protected:
     WebRTCServer* m_webrtc_server = nullptr;
-    typedef std::pair<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>,
-                      rtc::scoped_refptr<webrtc::AudioSourceInterface>>
-            AudioVideoPair;
     rtc::scoped_refptr<webrtc::AudioDecoderFactory> m_audioDecoderfactory;
     std::unique_ptr<webrtc::TaskQueueFactory> m_task_queue_factory;
     rtc::scoped_refptr<webrtc::AudioDeviceModule> m_audioDeviceModule;
@@ -381,7 +378,8 @@ protected:
             m_peer_connection_factory;
     std::mutex m_peerMapMutex;
     std::map<std::string, PeerConnectionObserver*> m_peer_connectionobs_map;
-    std::map<std::string, AudioVideoPair> m_stream_map;
+    std::map<std::string, rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>>
+            m_stream_map;
     std::mutex m_streamMapMutex;
     std::list<std::string> m_iceServerList;
     const Json::Value m_config;

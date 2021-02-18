@@ -1057,7 +1057,7 @@ bool PeerConnectionManager::AddStreams(
                 this->CreateAudioSource(audio, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
         std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-        m_stream_map[streamLabel] = std::make_pair(videoSource, audioSource);
+        m_stream_map[streamLabel] = videoSource;
     }
 
     // create a new webrtc stream
@@ -1071,11 +1071,8 @@ bool PeerConnectionManager::AddStreams(
             if (!stream.get()) {
                 RTC_LOG(LS_ERROR) << "Cannot create stream";
             } else {
-                std::pair<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>,
-                          rtc::scoped_refptr<webrtc::AudioSourceInterface>>
-                        pair = it->second;
                 rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
-                        videoSource(pair.first);
+                        videoSource = it->second;
                 rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
                 if (!videoSource) {
                     RTC_LOG(LS_ERROR)
