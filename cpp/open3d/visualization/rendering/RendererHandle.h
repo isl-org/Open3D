@@ -60,6 +60,7 @@ enum class EntityType : std::uint16_t {
     Material,
     MaterialInstance,
     Texture,
+    RenderTarget,
 
     VertexBuffer,
     IndexBuffer,
@@ -159,6 +160,7 @@ typedef REHandle<EntityType::Camera> CameraHandle;
 typedef REHandle<EntityType::Material> MaterialHandle;
 typedef REHandle<EntityType::MaterialInstance> MaterialInstanceHandle;
 typedef REHandle<EntityType::Texture> TextureHandle;
+typedef REHandle<EntityType::RenderTarget> RenderTargetHandle;
 typedef REHandle<EntityType::VertexBuffer> VertexBufferHandle;
 typedef REHandle<EntityType::IndexBuffer> IndexBufferHandle;
 

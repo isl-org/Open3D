@@ -193,6 +193,7 @@ public:
     virtual void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) = 0;
+    virtual void SetBackground(TextureHandle image) = 0;
 
     enum class GroundPlane { XZ, XY, YZ };
     virtual void EnableGroundPlane(bool enable, GroundPlane plane) = 0;
