@@ -3,7 +3,17 @@ add_custom_target(copy_html_dir
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/html ${CMAKE_BINARY_DIR}/html
 )
 
-file(GLOB WEBRTC_STREAMER_SRC *.cpp)
+file(GLOB WEBRTC_STREAMER_SRC
+    DesktopCapturer.cpp
+    FileAudioCapturer.cpp
+    FileVideoCapturer.cpp
+    HttpServerRequestHandler.cpp
+    PeerConnectionManager.cpp
+    RTPVideoCapturer.cpp
+    RTSPAudioCapturer.cpp
+    RTSPVideoCapturer.cpp
+    WebRTCServer.cpp
+)
 file(GLOB WEBRTC_STREAMER_3RD_PARTY_SRC
     live/groupsock/*.c*
     live/liveMedia/*.c*
