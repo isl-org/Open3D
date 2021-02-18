@@ -1308,7 +1308,7 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     return output;
 }
 
-std::tuple<Tensor, Tensor, Tensor> Tensor::LU(bool permute_l) const {
+std::tuple<Tensor, Tensor, Tensor> Tensor::LU(const bool permute_l) const {
     core::Tensor permutation, lower, upper;
     core::LU(*this, permutation, lower, upper, permute_l);
     return std::make_tuple(permutation, lower, upper);

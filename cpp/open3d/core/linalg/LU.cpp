@@ -62,7 +62,10 @@ inline void OutputToPLU(const Tensor& output,
                         bool permute_l) {
     int n = output.GetShape()[0];
     core::Device device = output.GetDevice();
-    std::tie(upper, lower) = output.Triul();
+
+    // Get upper and lower matrix from output matrix.
+    Triul(output, upper, lower, 0);
+    // Get column permutaion vector from pivot indices vector.
     Tensor col_permutation = GetColPermutation(ipiv, ipiv.GetShape()[0], n);
     // Creating "Permutation Matrix (P in P.A = L.U)".
     permutation = core::Tensor::Eye(n, output.GetDtype(), device)
