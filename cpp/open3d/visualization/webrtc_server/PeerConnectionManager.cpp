@@ -220,15 +220,13 @@ PeerConnectionManager::PeerConnectionManager(
                                  const Json::Value &in) -> Json::Value {
         std::string peerid;
         std::string url;
-        std::string audiourl;
         std::string options;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
             CivetServer::getParam(req_info->query_string, "url", url);
-            CivetServer::getParam(req_info->query_string, "audiourl", audiourl);
             CivetServer::getParam(req_info->query_string, "options", options);
         }
-        return this->call(peerid, url, audiourl, options, in);
+        return this->call(peerid, url, options, in);
     };
 
     m_func["/api/hangup"] = [this](const struct mg_request_info *req_info,
@@ -582,11 +580,10 @@ const Json::Value PeerConnectionManager::setAnswer(
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::call(const std::string &peerid,
                                               const std::string &videourl,
-                                              const std::string &audiourl,
                                               const std::string &options,
                                               const Json::Value &jmessage) {
     RTC_LOG(INFO) << __FUNCTION__ << " video:" << videourl
-                  << " audio:" << audiourl << " options:" << options;
+                  << " options:" << options;
 
     Json::Value answer;
 
