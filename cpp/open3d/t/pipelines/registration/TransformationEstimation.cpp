@@ -37,7 +37,7 @@ namespace registration {
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -62,7 +62,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -99,7 +99,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
 double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -127,7 +127,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -138,18 +138,10 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    // Get indexed source and target points and target normals, according to
-    // correspondences.
-    core::Tensor source_indexed =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_indexed =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_norm_indexed =
-            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
-
     // Get pose {6} from correspondences indexed source and target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
-            source_indexed, target_indexed, target_norm_indexed);
+            source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
+            corres);
 
     // Get transformation {4,4} from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);

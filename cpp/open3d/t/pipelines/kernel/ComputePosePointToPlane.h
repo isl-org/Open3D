@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/registration/Registration.h"
 
 namespace open3d {
 namespace t {
@@ -40,9 +41,10 @@ namespace kernel {
 /// indexed according to correspondences. \return Pose [X Y Z alpha beta
 /// gamma], a shape {6} tensor of dtype float32.
 core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_indexed,
-        const core::Tensor &target_points_indexed,
-        const core::Tensor &target_normals_indexed);
+        const core::Tensor &source,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const pipelines::registration::CorrespondenceSet &corres);
 
 }  // namespace kernel
 }  // namespace pipelines

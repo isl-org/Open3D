@@ -34,43 +34,58 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_indexed,
-        const core::Tensor &target_points_indexed,
-        const core::Tensor &target_normals_indexed) {
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const pipelines::registration::CorrespondenceSet &corres) {
     // Get dtype and device.
-    core::Dtype dtype = source_points_indexed.GetDtype();
-    core::Device device = source_points_indexed.GetDevice();
+    core::Dtype dtype = source_points.GetDtype();
+    core::Device device = source_points.GetDevice();
 
     // Checks.
     // TODO: These checks are redundant, so provide a environment
     // variable based method to skip these redundant tests.
-    target_points_indexed.AssertDtype(dtype);
-    target_normals_indexed.AssertDtype(dtype);
-    target_points_indexed.AssertDevice(device);
-    target_normals_indexed.AssertDevice(device);
+    target_points.AssertDtype(dtype);
+    target_normals.AssertDtype(dtype);
+    target_points.AssertDevice(device);
+    target_normals.AssertDevice(device);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, dtype, device);
-
     // Number of correspondences.
-    int n = source_points_indexed.GetShape()[0];
+    int n = corres.first.GetShape()[0];
+
+    utility::LogInfo(" ComputePose 0 ");
 
     // Pointer to point cloud data - indexed according to correspondences.
-    const float *src_pcd_ptr = static_cast<const float *>(
-            source_points_indexed.Contiguous().GetDataPtr());
-    const float *tar_pcd_ptr = static_cast<const float *>(
-            target_points_indexed.Contiguous().GetDataPtr());
-    const float *tar_norm_ptr = static_cast<const float *>(
-            target_normals_indexed.Contiguous().GetDataPtr());
+    core::Tensor source_points_contiguous = source_points.Contiguous();
+    core::Tensor target_points_contiguous = target_points.Contiguous();
+    core::Tensor target_normals_contiguous = target_normals.Contiguous();
+    core::Tensor corres_first_contiguous = corres.first.Contiguous();
+    core::Tensor corres_second_contiguous = corres.second.Contiguous();
+
+    const float *src_pcd_ptr =
+            static_cast<const float *>(source_points_contiguous.GetDataPtr());
+    const float *tar_pcd_ptr =
+            static_cast<const float *>(target_points_contiguous.GetDataPtr());
+    const float *tar_norm_ptr =
+            static_cast<const float *>(target_normals_contiguous.GetDataPtr());
+
+    const int64_t *corres_first =
+            static_cast<const int64_t *>(corres_first_contiguous.GetDataPtr());
+    const int64_t *corres_second =
+            static_cast<const int64_t *>(corres_second_contiguous.GetDataPtr());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(src_pcd_ptr, tar_pcd_ptr, tar_norm_ptr, n,
-                                   pose, dtype, device);
+        ComputePosePointToPlaneCPU(src_pcd_ptr, tar_pcd_ptr, tar_norm_ptr,
+                                   corres_first, corres_second, n, pose, dtype,
+                                   device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputePosePointToPlaneCUDA(src_pcd_ptr, tar_pcd_ptr, tar_norm_ptr, n,
-                                    pose, dtype, device);
+        ComputePosePointToPlaneCUDA(src_pcd_ptr, tar_pcd_ptr, tar_norm_ptr,
+                                    corres_first, corres_second, n, pose, dtype,
+                                    device);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

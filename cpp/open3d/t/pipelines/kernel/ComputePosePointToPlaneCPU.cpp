@@ -28,6 +28,7 @@
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/pipelines/kernel/ComputePosePointToPlaneImp.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -37,82 +38,62 @@ namespace kernel {
 void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
                                 const float *tar_pcd_ptr,
                                 const float *tar_norm_ptr,
+                                const int64_t *corres_first,
+                                const int64_t *corres_second,
                                 const int n,
                                 core::Tensor &pose,
                                 const core::Dtype dtype,
                                 const core::Device device) {
-    // Float64 is used for solving for higher precision.
-    core::Dtype solve_dtype = core::Dtype::Float32;
+    core::Tensor ATA =
+            core::Tensor::Zeros({6, 6}, core::Dtype::Float64, device);
+    core::Tensor ATA_1x21 =
+            core::Tensor::Zeros({1, 21}, core::Dtype::Float64, device);
+    core::Tensor ATB =
+            core::Tensor::Zeros({6, 1}, core::Dtype::Float64, device);
 
-    // atai: {n, 21} Stores local sum for ATA stacked vertically
-    core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
-    float *atai_ptr = static_cast<float *>(atai.GetDataPtr());
+    double *ata_ptr = static_cast<double *>(ATA.GetDataPtr());
+    double *ata_1x21 = static_cast<double *>(ATA_1x21.GetDataPtr());
+    double *atb_ptr = static_cast<double *>(ATB.GetDataPtr());
 
-    // atbi: {n, 6} Stores local sum for ATB.T() stacked vertically
-    core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
-    float *atbi_ptr = static_cast<float *>(atbi.GetDataPtr());
+#pragma omp parallel for reduction(+ : atb_ptr[:6], ata_1x21[:21])
+    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
+        const int64_t &source_index = 3 * corres_first[workload_idx];
+        const int64_t &target_index = 3 * corres_second[workload_idx];
 
-    // This kernel computes the {n,21} shape atai tensor
-    // and {n,6} shape atbi tensor.
-    core::kernel::CPULauncher::LaunchGeneralKernel(
-            n, [&] OPEN3D_DEVICE(int64_t workload_idx) {
-                const int64_t pcd_stride = 3 * workload_idx;
-                const int64_t atai_stride = 21 * workload_idx;
-                const int64_t atbi_stride = 6 * workload_idx;
+        const float &sx = (src_pcd_ptr[source_index + 0]);
+        const float &sy = (src_pcd_ptr[source_index + 1]);
+        const float &sz = (src_pcd_ptr[source_index + 2]);
+        const float &tx = (tar_pcd_ptr[target_index + 0]);
+        const float &ty = (tar_pcd_ptr[target_index + 1]);
+        const float &tz = (tar_pcd_ptr[target_index + 2]);
+        const float &nx = (tar_norm_ptr[target_index + 0]);
+        const float &ny = (tar_norm_ptr[target_index + 1]);
+        const float &nz = (tar_norm_ptr[target_index + 2]);
 
-                const float sx = (src_pcd_ptr[pcd_stride + 0]);
-                const float sy = (src_pcd_ptr[pcd_stride + 1]);
-                const float sz = (src_pcd_ptr[pcd_stride + 2]);
-                const float tx = (tar_pcd_ptr[pcd_stride + 0]);
-                const float ty = (tar_pcd_ptr[pcd_stride + 1]);
-                const float tz = (tar_pcd_ptr[pcd_stride + 2]);
-                const float nx = (tar_norm_ptr[pcd_stride + 0]);
-                const float ny = (tar_norm_ptr[pcd_stride + 1]);
-                const float nz = (tar_norm_ptr[pcd_stride + 2]);
+        float ai[] = {(nz * sy - ny * sz),
+                      (nx * sz - nz * sx),
+                      (ny * sx - nx * sy),
+                      nx,
+                      ny,
+                      nz};
 
-                float bi = (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                float ai[] = {(nz * sy - ny * sz),
-                              (nx * sz - nz * sx),
-                              (ny * sx - nx * sy),
-                              nx,
-                              ny,
-                              nz};
+        for (int i = 0, j = 0; j < 6; j++) {
+            for (int k = 0; k <= j; k++) {
+                // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
+                ata_1x21[i] += ai[j] * ai[k];
+                i++;
+            }
+            // ATB {6,1}.
+            atb_ptr[j] +=
+                    ai[j] * ((tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz);
+        }
+    }
 
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        atai_ptr[atai_stride + i] = ai[j] * ai[k];
-                        i++;
-                    }
-                    atbi_ptr[atbi_stride + j] = ai[j] * bi;
-                }
-            });
-
-    // Reduce matrix atai (to 1x21) and atbi (to ATB.T() 1x6).
-    core::Tensor ata_1x21 = atai.Sum({0}, true);
-    core::Tensor ATB = atbi.Sum({0}, true).T();
-
-    /*  ata_1x21 is a {1,21} vector having elements of the matrix ATA such
-        that the corresponding elemetes in ATA are like:
-
-        0
-        1   2
-        3   4   5
-        6   7   8   9
-        10  11  12  13  14
-        15  16  17  18  19  20
-
-        Since, ATA is a symmertric matrix, it can be regenerated from this
-    */
-    // Get the ATA matrix back.
-    core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
-    float *ATA_ptr = static_cast<float *>(ATA.GetDataPtr());
-    const float *ata_1x21_ptr =
-            static_cast<const float *>(ata_1x21.GetDataPtr());
-
+    // ATA_ {1,21} to ATA {6,6}.
     for (int i = 0, j = 0; j < 6; j++) {
         for (int k = 0; k <= j; k++) {
-            ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
-            ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
+            ata_ptr[j * 6 + k] = ata_1x21[i];
+            ata_ptr[k * 6 + j] = ata_1x21[i];
             i++;
         }
     }

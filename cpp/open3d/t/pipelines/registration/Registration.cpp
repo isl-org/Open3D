@@ -31,6 +31,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -70,29 +71,38 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    std::pair<core::Tensor, core::Tensor> result_nns = target_nns.HybridSearch(
+    core::Tensor indices, distances, valid;
+
+    std::tie(indices, distances) = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
 
-    result.correspondence_select_bool_ =
-            (result_nns.first.Ne(-1)).Reshape({-1});
-    result.correspondence_set_ =
-            result_nns.first.IndexGet({result.correspondence_select_bool_})
-                    .Reshape({-1});
-    core::Tensor dist_select =
-            result_nns.second.IndexGet({result.correspondence_select_bool_})
-                    .Reshape({-1});
+    valid = indices.Ne(-1).Reshape({-1});
+
+    int num_source_points = source.GetPoints().GetShape()[0];
+
+    // correpondence_set : (i, corres[i]).
+    // source[i] and target[corres[i]] is a correspondence.
+    result.correspondence_set.first =
+            core::Tensor::Arange(0, num_source_points, 1, core::Dtype::Int64,
+                                 device)
+                    .IndexGet({valid});
+    // Number of good correspondences (C).
+    int num_correspondences = result.correspondence_set.first.GetShape()[0];
+
+    // Only take valid indices.
+    result.correspondence_set.second = indices.IndexGet({valid}).Reshape({-1});
+    // Only take valid distances.
+    distances = distances.IndexGet({valid});
 
     // Reduction sum of "distances" for error.
     double squared_error =
-            static_cast<double>(dist_select.Sum({0}).Item<float>());
-    result.fitness_ =
-            static_cast<double>(result.correspondence_set_.GetShape()[0]) /
-            static_cast<double>(
-                    result.correspondence_select_bool_.GetShape()[0]);
-    result.inlier_rmse_ = std::sqrt(
-            squared_error /
-            static_cast<double>(result.correspondence_set_.GetShape()[0]));
+            static_cast<double>(distances.Sum({0}).Item<float>());
+    result.fitness_ = static_cast<double>(num_correspondences) /
+                      static_cast<double>(num_source_points);
+    result.inlier_rmse_ =
+            std::sqrt(squared_error / static_cast<double>(num_correspondences));
     result.transformation_ = transformation;
+
     return result;
 }
 
@@ -151,25 +161,26 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
             transformation_device);
-    CorrespondenceSet corres = std::make_pair(
-            result.correspondence_select_bool_, result.correspondence_set_);
+    CorrespondenceSet corres = result.correspondence_set;
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
+
         core::Tensor update = estimation.ComputeTransformation(
                 source_transformed, target, corres);
-        transformation_device = update.Matmul(transformation_device);
-        source_transformed.Transform(update);
 
+        transformation_device = update.Matmul(transformation_device);
+
+        source_transformed.Transform(update);
         double prev_fitness_ = result.fitness_;
         double prev_inliner_rmse_ = result.inlier_rmse_;
 
         result = GetRegistrationResultAndCorrespondences(
                 source_transformed, target, target_nns,
                 max_correspondence_distance, transformation_device);
-        corres = std::make_pair(result.correspondence_select_bool_,
-                                result.correspondence_set_);
+
+        corres = result.correspondence_set;
 
         if (std::abs(prev_fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
@@ -178,6 +189,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
             break;
         }
     }
+
     return result;
 }
 
