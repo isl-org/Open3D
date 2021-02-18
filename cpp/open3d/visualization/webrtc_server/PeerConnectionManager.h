@@ -10,7 +10,6 @@
 #pragma once
 
 #include <api/peer_connection_interface.h>
-#include <modules/audio_device/include/audio_device.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/strings/json.h>
 
