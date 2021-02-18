@@ -1053,8 +1053,6 @@ bool PeerConnectionManager::AddStreams(
         // need to create the stream
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource(
                 this->CreateVideoSource(video, opts));
-        rtc::scoped_refptr<webrtc::AudioSourceInterface> audioSource(
-                this->CreateAudioSource(audio, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
         std::lock_guard<std::mutex> mlock(m_streamMapMutex);
         m_stream_map[streamLabel] = videoSource;
