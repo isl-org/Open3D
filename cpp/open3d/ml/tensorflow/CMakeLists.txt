@@ -50,6 +50,7 @@ set(TF_OPS_SOURCES
     "../contrib/neighbors.cpp"
     "../contrib/Nms.cpp"
     "pointnet/SamplingOps.cpp"
+    "pointnet/BallQueryOps.cpp"
 )
 
 set(TF_OPS_CUDA_SOURCES
@@ -66,7 +67,9 @@ set(TF_OPS_CUDA_SOURCES
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
     "../contrib/Nms.cu"
     "../contrib/PointSampling.cu"
+    "../contrib/BallQuery.cu"
     "pointnet/SamplingOpKernel.cu"
+    "pointnet/BallQueryOpKernel.cu"
 )
 
 if(BUILD_CUDA_MODULE)

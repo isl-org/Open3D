@@ -24,7 +24,8 @@ REGISTER_OP("Open3DFurthestPointSampling")
                     c->MakeShape({c->Dim(dims1, 0), npoint});
             c->set_output(0, output);
             return Status::OK();
-        });
+        })
+        .Doc(R"doc( TODO )doc");
 
 REGISTER_OP("Open3DGatherPoints")
         .Input("points: float32")
@@ -42,7 +43,8 @@ REGISTER_OP("Open3DGatherPoints")
                     {c->Dim(dims1, 0), c->Dim(dims2, 1), c->Dim(dims1, 2)});
             c->set_output(0, output);
             return Status::OK();
-        });
+        })
+        .Doc(R"doc( TODO )doc");
 
 REGISTER_OP("Open3DGatherPointsGrad")
         .Input("grad_out: float32")
@@ -53,4 +55,5 @@ REGISTER_OP("Open3DGatherPointsGrad")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             c->set_output(0, c->input(0));
             return Status::OK();
-        });
+        })
+        .Doc(R"doc( TODO )doc");
