@@ -99,62 +99,6 @@ public:
         }
         return videoSource;
     }
-
-    static rtc::scoped_refptr<webrtc::AudioSourceInterface> CreateAudioSource(
-            const std::string& audiourl,
-            const std::map<std::string, std::string>& opts,
-            const std::regex& publishFilter,
-            rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-                    peer_connection_factory,
-            rtc::scoped_refptr<webrtc::AudioDecoderFactory> audioDecoderfactory,
-            rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule) {
-        rtc::scoped_refptr<webrtc::AudioSourceInterface> audioSource;
-
-        if (std::regex_match("audiocap://", publishFilter)) {
-            audioDeviceModule->Init();
-            int16_t num_audioDevices = audioDeviceModule->RecordingDevices();
-            int16_t idx_audioDevice = -1;
-            char name[webrtc::kAdmMaxDeviceNameSize] = {0};
-            char id[webrtc::kAdmMaxGuidSize] = {0};
-            if (audiourl.find("audiocap://") == 0) {
-                int deviceNumber =
-                        atoi(audiourl.substr(strlen("audiocap://")).c_str());
-                RTC_LOG(INFO) << "audiourl:" << audiourl
-                              << " device number:" << deviceNumber;
-                if (audioDeviceModule->RecordingDeviceName(deviceNumber, name,
-                                                           id) != -1) {
-                    idx_audioDevice = deviceNumber;
-                }
-
-            } else {
-                for (int i = 0; i < num_audioDevices; ++i) {
-                    if (audioDeviceModule->RecordingDeviceName(i, name, id) !=
-                        -1) {
-                        RTC_LOG(INFO)
-                                << "audiourl:" << audiourl
-                                << " idx_audioDevice:" << i << " " << name;
-                        if (audiourl == name) {
-                            idx_audioDevice = i;
-                            break;
-                        }
-                    }
-                }
-            }
-            RTC_LOG(LS_ERROR) << "audiourl:" << audiourl
-                              << " idx_audioDevice:" << idx_audioDevice << "/"
-                              << num_audioDevices;
-            if ((idx_audioDevice >= 0) &&
-                (idx_audioDevice < num_audioDevices)) {
-                audioDeviceModule->SetRecordingDevice(idx_audioDevice);
-                cricket::AudioOptions opt;
-                audioSource = peer_connection_factory->CreateAudioSource(opt);
-            }
-        } else {
-            utility::LogError("CreateAudioSource failed for videourl: {}",
-                              audiourl);
-        }
-        return audioSource;
-    }
 };
 
 }  // namespace webrtc_server

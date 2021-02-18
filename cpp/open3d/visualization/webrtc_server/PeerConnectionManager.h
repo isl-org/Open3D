@@ -361,9 +361,6 @@ protected:
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(
             const std::string& videourl,
             const std::map<std::string, std::string>& opts);
-    rtc::scoped_refptr<webrtc::AudioSourceInterface> CreateAudioSource(
-            const std::string& audiourl,
-            const std::map<std::string, std::string>& opts);
     bool streamStillUsed(const std::string& streamLabel);
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> getPeerConnection(
             const std::string& peerid);

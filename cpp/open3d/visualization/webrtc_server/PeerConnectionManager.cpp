@@ -947,28 +947,6 @@ PeerConnectionManager::CreateVideoSource(
                                               m_peer_connection_factory);
 }
 
-rtc::scoped_refptr<webrtc::AudioSourceInterface>
-PeerConnectionManager::CreateAudioSource(
-        const std::string &audiourl,
-        const std::map<std::string, std::string> &opts) {
-    RTC_LOG(INFO) << "audiourl:" << audiourl;
-
-    std::string audio = audiourl;
-    if (m_config.isMember(audio)) {
-        audio = m_config[audio]["audio"].asString();
-    }
-
-    std::map<std::string, std::string>::iterator it =
-            m_videoaudiomap.find(audio);
-    if (it != m_videoaudiomap.end()) {
-        audio = it->second;
-    }
-
-    return CapturerFactory::CreateAudioSource(
-            audio, opts, m_publishFilter, m_peer_connection_factory,
-            m_audioDecoderfactory, m_audioDeviceModule);
-}
-
 const std::string PeerConnectionManager::sanitizeLabel(
         const std::string &label) {
     std::string out(label);
