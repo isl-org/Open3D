@@ -44,6 +44,9 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
                                 core::Tensor &pose,
                                 const core::Dtype dtype,
                                 const core::Device device) {
+    utility::Timer time_reduction, time_kernel;
+    time_kernel.Start();
+
     core::Tensor ATA =
             core::Tensor::Zeros({6, 6}, core::Dtype::Float64, device);
     core::Tensor ATA_1x21 =
@@ -98,8 +101,19 @@ void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
         }
     }
 
+    time_kernel.Stop();
+    utility::LogInfo("         Kernel + Reduction: {}",
+                     time_reduction.GetDuration());
+
+    utility::Timer Solving_Pose_time_;
+    Solving_Pose_time_.Start();
+
     // ATA(6,6) . Pose(6,1) = ATB(6,1)
     pose = ATA.Solve(ATB).Reshape({-1}).To(dtype);
+
+    Solving_Pose_time_.Stop();
+    utility::LogInfo("         Solving_Pose. Time: {}",
+                     Solving_Pose_time_.GetDuration());
 }
 
 }  // namespace kernel

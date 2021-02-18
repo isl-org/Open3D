@@ -55,8 +55,6 @@ core::Tensor ComputePosePointToPlane(
     // Number of correspondences.
     int n = corres.first.GetShape()[0];
 
-    utility::LogInfo(" ComputePose 0 ");
-
     // Pointer to point cloud data - indexed according to correspondences.
     core::Tensor source_points_contiguous = source_points.Contiguous();
     core::Tensor target_points_contiguous = target_points.Contiguous();
