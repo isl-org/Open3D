@@ -1093,21 +1093,6 @@ bool PeerConnectionManager::AddStreams(
                             << "Adding VideoTrack to MediaStream failed";
                 }
 
-                rtc::scoped_refptr<webrtc::AudioSourceInterface> audioSource(
-                        pair.second);
-                rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track;
-                if (!audioSource) {
-                    RTC_LOG(LS_ERROR)
-                            << "Cannot create capturer audio:" << audio;
-                } else {
-                    audio_track = m_peer_connection_factory->CreateAudioTrack(
-                            streamLabel + "_audio", audioSource);
-                }
-                if ((audio_track) && (!stream->AddTrack(audio_track))) {
-                    RTC_LOG(LS_ERROR)
-                            << "Adding AudioTrack to MediaStream failed";
-                }
-
                 if (!peer_connection->AddStream(stream)) {
                     RTC_LOG(LS_ERROR)
                             << "Adding stream to PeerConnection failed";
