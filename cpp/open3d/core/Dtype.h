@@ -41,6 +41,7 @@ public:
     static const Dtype Undefined;
     static const Dtype Float32;
     static const Dtype Float64;
+    static const Dtype Int16;
     static const Dtype Int32;
     static const Dtype Int64;
     static const Dtype UInt8;
@@ -95,6 +96,11 @@ inline const Dtype Dtype::FromType<float>() {
 template <>
 inline const Dtype Dtype::FromType<double>() {
     return Dtype::Float64;
+}
+
+template <>
+inline const Dtype Dtype::FromType<int16_t>() {
+    return Dtype::Int16;
 }
 
 template <>
