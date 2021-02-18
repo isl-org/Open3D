@@ -31,7 +31,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -56,9 +55,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     transformation.AssertShape({4, 4});
     transformation.AssertDtype(dtype);
 
-    utility::Timer time_GetCorres, time_Search, time_GetResults;
-    time_GetCorres.Start();
-
     core::Tensor transformation_device = transformation.To(device);
 
     RegistrationResult result(transformation_device);
@@ -75,13 +71,9 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    time_Search.Start();
-
     core::Tensor indices, distances, valid;
-
     std::tie(indices, distances) = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
-
     valid = indices.Ne(-1).Reshape({-1});
 
     int num_source_points = source.GetPoints().GetShape()[0];
@@ -92,18 +84,14 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             core::Tensor::Arange(0, num_source_points, 1, core::Dtype::Int64,
                                  device)
                     .IndexGet({valid});
-    // Number of good correspondences (C).
-    int num_correspondences = result.correspondence_set.first.GetShape()[0];
 
     // Only take valid indices.
     result.correspondence_set.second = indices.IndexGet({valid}).Reshape({-1});
     // Only take valid distances.
     distances = distances.IndexGet({valid});
 
-    time_Search.Stop();
-    time_GetCorres.Stop();
-
-    time_GetResults.Start();
+    // Number of good correspondences (C).
+    int num_correspondences = result.correspondence_set.first.GetShape()[0];
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -113,17 +101,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     result.inlier_rmse_ =
             std::sqrt(squared_error / static_cast<double>(num_correspondences));
     result.transformation_ = transformation;
-
-    time_GetResults.Stop();
-
-    utility::LogInfo("       GetCorrespondences: {}",
-                     time_GetCorres.GetDuration());
-    utility::LogInfo("         Number of Correspondences: {}",
-                     result.correspondence_set.first.GetShape()[0]);
-
-    utility::LogInfo("       GetResults: {}", time_GetResults.GetDuration());
-    utility::LogInfo("         NNS Search: {}", time_Search.GetDuration());
-
     return result;
 }
 
@@ -179,43 +156,19 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     // TODO: Default constructor absent in RegistrationResult class.
     RegistrationResult result(transformation_device);
 
-    utility::Timer time_getCorres;
-    time_getCorres.Start();
-
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
             transformation_device);
     CorrespondenceSet corres = result.correspondence_set;
 
-    time_getCorres.Stop();
-
-    // Correspondence Search computed in current iteration is used in next
-    // iteration.
-    double getCorresTimeNew = 0.0;
-    double getCorresTimePrev = time_getCorres.GetDuration();
-
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
-
-        utility::Timer time_registrationICP, time_getCorres,
-                time_computeTransformation;
-
-        utility::LogInfo("     GetRegistrationResultAndCorrespondences: {}",
-                         getCorresTimePrev);
-
-        time_registrationICP.Start();
-
-        time_computeTransformation.Start();
 
         core::Tensor update = estimation.ComputeTransformation(
                 source_transformed, target, corres);
 
         transformation_device = update.Matmul(transformation_device);
-        time_computeTransformation.Stop();
-        utility::LogInfo("     ComputeTransform: {}",
-                         time_computeTransformation.GetDuration());
-
         source_transformed.Transform(update);
         double prev_fitness_ = result.fitness_;
         double prev_inliner_rmse_ = result.inlier_rmse_;
@@ -226,20 +179,12 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
 
         corres = result.correspondence_set;
 
-        time_getCorres.Stop();
-
-        getCorresTimeNew = time_getCorres.GetDuration();
-
         if (std::abs(prev_fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
             break;
         }
-        time_registrationICP.Stop();
-        utility::LogInfo("   Registration Loop: {}",
-                         time_registrationICP.GetDuration());
-        getCorresTimePrev = getCorresTimeNew;
     }
 
     return result;

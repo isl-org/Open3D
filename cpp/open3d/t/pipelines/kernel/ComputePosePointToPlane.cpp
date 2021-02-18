@@ -42,9 +42,6 @@ core::Tensor ComputePosePointToPlane(
     core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
 
-    // Checks.
-    // TODO: These checks are redundant, so provide a environment
-    // variable based method to skip these redundant tests.
     target_points.AssertDtype(dtype);
     target_normals.AssertDtype(dtype);
     target_points.AssertDevice(device);

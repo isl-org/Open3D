@@ -44,9 +44,6 @@ void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
                                  core::Tensor &pose,
                                  const core::Dtype dtype,
                                  const core::Device device) {
-    utility::Timer time_reduction, time_kernel;
-    time_kernel.Start();
-
     // Float64 is used for solving for higher precision.
     core::Dtype solve_dtype = core::Dtype::Float32;
 
@@ -94,18 +91,9 @@ void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
                     atbi_ptr[atbi_stride + j] = ai[j] * bi;
                 }
             });
-    time_kernel.Stop();
-    utility::LogInfo("         Kernel (Get N,21 ATA): {}",
-                     time_reduction.GetDuration());
-
-    time_reduction.Start();
     // Reduce matrix atai (to 1x21) and atbi (to ATB.T() 1x6).
     core::Tensor ata_1x21 = atai.Sum({0}, true);
     core::Tensor ATB = atbi.Sum({0}, true).T();
-
-    time_reduction.Stop();
-    utility::LogInfo("         Reduction (Get 1,21 ATA): {}",
-                     time_reduction.GetDuration());
 
     /*  ata_1x21 is a {1,21} vector having elements of the matrix ATA such
         that the corresponding elemetes in ATA are like:
@@ -136,14 +124,8 @@ void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
                 }
             });
 
-    utility::Timer Solving_Pose_time_;
-    Solving_Pose_time_.Start();
-
     // ATA(6,6) . Pose(6,1) = ATB(6,1)
     pose = ATA.Solve(ATB).Reshape({-1}).To(dtype);
-    Solving_Pose_time_.Stop();
-    utility::LogInfo("         Solving_Pose. Time: {}",
-                     Solving_Pose_time_.GetDuration());
 }
 
 }  // namespace kernel
