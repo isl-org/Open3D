@@ -469,7 +469,7 @@ const Json::Value PeerConnectionManager::createOffer(
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
                 peerConnectionObserver->getPeerConnection();
 
-        if (!this->AddStreams(peerConnection, videourl, audiourl, options)) {
+        if (!this->AddStreams(peerConnection, videourl, options)) {
             RTC_LOG(WARNING) << "Can't add stream";
         }
 
@@ -651,8 +651,7 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid,
             }
 
             // add local stream
-            if (!this->AddStreams(peerConnection, videourl, audiourl,
-                                  options)) {
+            if (!this->AddStreams(peerConnection, videourl, options)) {
                 RTC_LOG(WARNING) << "Can't add stream";
             }
 
@@ -1003,7 +1002,6 @@ const std::string PeerConnectionManager::sanitizeLabel(
 bool PeerConnectionManager::AddStreams(
         webrtc::PeerConnectionInterface *peer_connection,
         const std::string &videourl,
-        const std::string &audiourl,
         const std::string &options) {
     bool ret = false;
 
@@ -1034,6 +1032,7 @@ bool PeerConnectionManager::AddStreams(
     }
 
     // compute audiourl if not set
+    std::string audiourl = "";
     std::string audio(audiourl);
     if (audio.empty()) {
         audio = videourl;

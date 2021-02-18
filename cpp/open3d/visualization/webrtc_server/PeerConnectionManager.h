@@ -359,7 +359,6 @@ protected:
     PeerConnectionObserver* CreatePeerConnection(const std::string& peerid);
     bool AddStreams(webrtc::PeerConnectionInterface* peer_connection,
                     const std::string& videourl,
-                    const std::string& audiourl,
                     const std::string& options);
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(
             const std::string& videourl,
