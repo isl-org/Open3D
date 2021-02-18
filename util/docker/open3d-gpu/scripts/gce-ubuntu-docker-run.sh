@@ -138,7 +138,7 @@ create-vm)
 
 run-ci)
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
-        "sudo docker run --rm --gpus all \
+        "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
             --env NPROC=$NPROC \
             --env SHARED=${SHARED[$CI_CONFIG_ID]} \
             --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \

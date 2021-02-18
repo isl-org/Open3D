@@ -336,13 +336,19 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
+    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
+    if [ $BUILD_CUDA_MODULE == ON ]; then
+        install_python_dependencies with-cuda
+    else
+        install_python_dependencies
+    fi
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        # python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
+        # python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -c \
             "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
@@ -351,12 +357,6 @@ test_wheel() {
         python -c "import tensorflow as tf; import open3d.ml.torch as o3d"
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
-    fi
-    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
-    if [ $BUILD_CUDA_MODULE == ON ]; then
-        install_python_dependencies with-cuda
-    else
-        install_python_dependencies
     fi
     deactivate
 }
