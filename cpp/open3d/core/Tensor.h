@@ -1088,11 +1088,11 @@ public:
     /// using A = P * L * U and returns tuple output tensor of shape {n,n} and
     /// ipiv of shape {n}. [ipiv, output = open3d.core.lu_ipiv(a)]
     ///
-    /// \return Tuple {ipiv, output}. Where ipiv is a 1D int tensor. It contains
-    /// the pivot indices, indicating row i of the matrix was interchanged with
-    /// row ipiv(i)); and output it has L as lower triangular values and U as
-    /// upper triangle values including the main diagonal (diagonal elements of
-    /// L to be taken as unity).
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
+    /// tensor. It contains the pivot indices, indicating row i of the matrix
+    /// was interchanged with row ipiv(i)); and output it has L as 
+    /// lower triangular values and U as upper triangle values including the
+    /// main diagonal (diagonal elements of L to be taken as unity).
     std::tuple<Tensor, Tensor> LUIpiv() const;
 
     /// \brief Returns the upper triangular matrix of the 2D tensor,
@@ -1100,8 +1100,7 @@ public:
     /// therefore 0 is the main diagonal (row = col), and it shifts towards
     /// right for positive values (for diagonal = 1, col - row = 1), and towards
     /// left for negative values. The value of the diagonal parameter must be
-    /// between
-    /// [-m, n] for a {m,n} shaped tensor.
+    /// between [-m, n] for a {m,n} shaped tensor.
     ///
     /// \param diagonal value of col - row, above which the elements are to be
     /// taken for upper triangular matrix.
@@ -1112,8 +1111,7 @@ public:
     /// therefore 0 is the main diagonal (row = col), and it shifts towards
     /// right for positive values (for diagonal = 1, col - row = 1), and towards
     /// left for negative values. The value of the diagonal parameter must be
-    /// between
-    /// [-m, n] where {m, n} is the shape of input tensor.
+    /// between [-m, n] where {m, n} is the shape of input tensor.
     ///
     /// \param diagonal value of [col - row], below which the elements are to be
     /// taken for lower triangular matrix.
@@ -1125,8 +1123,7 @@ public:
     /// [The value of diagonal = col - row, therefore 0 is the main diagonal
     /// (i = j), and it shifts towards right for positive values
     /// (for diagonal = 1, col - row = 1), and towards left for negative values.
-    /// The value of the diagonal parameter must be between
-    /// [-m, n] where {m, n} is the shape of input tensor.
+    /// The value of the diagonal parameter must be between [-m, n] where {m, n} is the shape of input tensor.
     ///
     /// \param diagonal value of [col - row], above and below which the elements
     /// are to be taken for upper (diag. included) and lower triangular matrix.
