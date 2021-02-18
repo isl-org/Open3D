@@ -3,8 +3,6 @@
 ** support, and with no warranty, express or implied, as to its usefulness for
 ** any purpose.
 **
-** ScreenCapturer.h
-**
 ** -------------------------------------------------------------------------*/
 
 #pragma once

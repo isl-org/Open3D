@@ -9,7 +9,6 @@
 
 // # All sources
 // DesktopCapturer.h    # X11 <- implicit
-// ScreenCapturer.h     # X11
 // VcmCapturer.h        #
 // WindowCapturer.h     # X11
 
@@ -22,7 +21,6 @@
 #include "open3d/visualization/webrtc_server/VcmCapturer.h"
 
 #ifdef USE_X11
-#include "open3d/visualization/webrtc_server/ScreenCapturer.h"
 #include "open3d/visualization/webrtc_server/WindowCapturer.h"
 #endif
 
@@ -115,21 +113,6 @@ public:
                 }
             }
         }
-        if (std::regex_match("screen://", publishFilter)) {
-            std::unique_ptr<webrtc::DesktopCapturer> capturer =
-                    webrtc::DesktopCapturer::CreateScreenCapturer(
-                            webrtc::DesktopCaptureOptions::CreateDefault());
-            if (capturer) {
-                webrtc::DesktopCapturer::SourceList sourceList;
-                if (capturer->GetSourceList(&sourceList)) {
-                    for (auto source : sourceList) {
-                        std::ostringstream os;
-                        os << "screen://" << source.id;
-                        videoList.push_back(os.str());
-                    }
-                }
-            }
-        }
 #endif
         return videoList;
     }
@@ -141,13 +124,8 @@ public:
                       rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                               peer_connection_factory) {
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource;
-        if ((videourl.find("screen://") == 0) &&
-            (std::regex_match("screen://", publishFilter))) {
-#ifdef USE_X11
-            videoSource = TrackSource<ScreenCapturer>::Create(videourl, opts);
-#endif
-        } else if ((videourl.find("window://") == 0) &&
-                   (std::regex_match("window://", publishFilter))) {
+        if ((videourl.find("window://") == 0) &&
+            (std::regex_match("window://", publishFilter))) {
 #ifdef USE_X11
             videoSource = TrackSource<WindowCapturer>::Create(videourl, opts);
 #endif
