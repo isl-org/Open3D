@@ -289,14 +289,6 @@ PeerConnectionManager::PeerConnectionManager(
         Json::Value answer(rtc::LogMessage::GetLogToDebug());
         return answer;
     };
-    m_func["/api/help"] = [this](const struct mg_request_info *req_info,
-                                 const Json::Value &in) -> Json::Value {
-        Json::Value answer;
-        for (auto it : m_func) {
-            answer.append(it.first);
-        }
-        return answer;
-    };
 }
 
 /* ---------------------------------------------------------------------------
