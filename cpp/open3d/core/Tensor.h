@@ -36,6 +36,7 @@
 #include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/NestedInitializeList.h"
 #include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
@@ -231,18 +232,32 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
+    /// Create a n-D tensor with initializer list.
+    template <typename T, std::size_t I>
+    static Tensor InitN(const nested_initializer_list_t<T, I> nested_list,
+                        const Device& device = Device("CPU:0")) {
+        SizeVector sv = shape<SizeVector>(nested_list);
+
+        // Fix for handling 0-dimentional inputs.
+        size_t last_dim = 0;
+        while (sv.size() > (last_dim + 1) && sv[last_dim] != 0) {
+            last_dim++;
+        }
+        sv.resize(last_dim + 1);
+
+        std::vector<T> dest(sv.NumElements());
+        nested_copy(dest.begin(), nested_list);
+        Dtype type = Dtype::FromType<T>();
+        return Tensor(dest, sv, type, device);
+    };
+
     /// Create a 1-D tensor with initializer list.
     /// For example,
     /// core::Tensor::Init<float>({1,2,3});
     template <typename T>
     static Tensor Init(const std::initializer_list<T> in_list,
                        const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
-
-        SizeVector shape{static_cast<int64_t>(in_list.size())};
-        return Tensor(ele_list, shape, type, device);
+        return InitN<T, 1>(in_list, device);
     };
 
     /// Create a 2-D tensor with nested initializer list.
@@ -252,25 +267,7 @@ public:
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        int64_t dim1_size = -1;
-        for (const auto& ele0 : in_list) {
-            if (dim1_size == -1) {
-                dim1_size = static_cast<int64_t>(ele0.size());
-            } else {
-                if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    utility::LogError(
-                            "Cannot create Tensor with ragged nested sequences "
-                            "(nested lists with unequal sizes or shapes).");
-                }
-            }
-            ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
-        }
-
-        SizeVector shape{dim0_size, dim1_size};
-        return Tensor(ele_list, shape, type, device);
+        return InitN<T, 2>(in_list, device);
     };
 
     /// Create a 3-D tensor with nested initializer list.
@@ -281,50 +278,7 @@ public:
             const std::initializer_list<
                     std::initializer_list<std::initializer_list<T>>> in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        int64_t dim1_size = -1;
-        int64_t dim2_size = -1;
-
-        for (const auto& ele1 : in_list) {
-            if (dim1_size == -1) {
-                dim1_size = static_cast<int64_t>(ele1.size());
-            } else {
-                if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    utility::LogError(
-                            "Cannot create Tensor with ragged nested sequences "
-                            "(nested lists with unequal sizes or shapes).");
-                }
-            }
-
-            for (const auto& ele0 : ele1) {
-                if (dim2_size == -1) {
-                    dim2_size = static_cast<int64_t>(ele0.size());
-                } else {
-                    if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        utility::LogError(
-                                "Cannot create Tensor with ragged nested "
-                                "sequences (nested lists with unequal sizes or "
-                                "shapes).");
-                    }
-                }
-
-                ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
-            }
-        }
-
-        // Handles 0-sized input lists.
-        SizeVector shape;
-        if (dim1_size == -1) {
-            shape = {dim0_size};
-        } else if (dim2_size == -1) {
-            shape = {dim0_size, dim1_size};
-        } else {
-            shape = {dim0_size, dim1_size, dim2_size};
-        }
-
-        return Tensor(ele_list, shape, type, device);
+        return InitN<T, 3>(in_list, device);
     };
 
     /// Create a identity matrix of size n x n.
