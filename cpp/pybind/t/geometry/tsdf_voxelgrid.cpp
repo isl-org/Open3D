@@ -56,12 +56,17 @@ void pybind_tsdf_voxelgrid(py::module& m) {
     tsdf_voxelgrid.def("integrate",
                        py::overload_cast<const Image&, const core::Tensor&,
                                          const core::Tensor&, float, float>(
-                               &TSDFVoxelGrid::Integrate));
+                               &TSDFVoxelGrid::Integrate),
+                       "depth_image"_a, "intrinsics"_a, "extrinsics"_a,
+                       "depth_scale"_a, "depth_max"_a);
+
     tsdf_voxelgrid.def(
             "integrate",
             py::overload_cast<const Image&, const Image&, const core::Tensor&,
                               const core::Tensor&, float, float>(
-                    &TSDFVoxelGrid::Integrate));
+                    &TSDFVoxelGrid::Integrate),
+            "depth_image"_a, "color_image"_a, "intrinsics"_a, "extrinsics"_a,
+            "depth_scale"_a, "depth_max"_a);
 
     tsdf_voxelgrid.def("raycast", &TSDFVoxelGrid::RayCast, "intrinsics"_a,
                        "extrinsics"_a, "width"_a, "height"_a,
