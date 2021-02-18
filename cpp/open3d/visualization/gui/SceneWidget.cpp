@@ -51,7 +51,7 @@
 #include "open3d/visualization/rendering/View.h"
 
 // Once render target is available, please remove the #ifdefs
-#define NO_RENDER_TARGET 1
+#define NO_RENDER_TARGET 0
 
 namespace open3d {
 namespace visualization {
@@ -899,7 +899,6 @@ void SceneWidget::EnableSceneCaching(bool enable) {
     }
 #endif
     if (!enable) {
-        impl_->scene_->GetRenderer().EnableCaching(false);
         impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
                                                  true);
     }
@@ -913,7 +912,6 @@ void SceneWidget::ForceRedraw() {
     if (!impl_->scene_caching_enabled_) return;
 #endif  // NO_RENDER_TARGET
 
-    impl_->scene_->GetRenderer().EnableCaching(true);
     impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
     impl_->controls_->SetPickNeedsRedraw();
 }
@@ -929,7 +927,6 @@ void SceneWidget::SetRenderQuality(Quality quality) {
 #else
             if (impl_->scene_caching_enabled_) {
 #endif  // NO_RENDER_TARGET
-                impl_->scene_->GetRenderer().EnableCaching(false);
                 impl_->scene_->GetScene()->SetViewActive(
                         impl_->scene_->GetViewId(), true);
             }
@@ -940,7 +937,6 @@ void SceneWidget::SetRenderQuality(Quality quality) {
 #else
             if (impl_->scene_caching_enabled_) {
 #endif  // NO_RENDER_TARGET
-                impl_->scene_->GetRenderer().EnableCaching(true);
                 impl_->scene_->GetScene()->SetRenderOnce(
                         impl_->scene_->GetViewId());
             }
@@ -1023,8 +1019,9 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView();
-        view->SetViewport(f.x, y, f.width, f.height);
+        // auto view = impl_->scene_->GetView();
+        impl_->scene_->SetViewport(f.x, y, f.width, f.height);
+        // view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
         float aspect = 1.0f;
