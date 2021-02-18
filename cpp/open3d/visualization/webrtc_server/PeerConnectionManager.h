@@ -368,9 +368,7 @@ protected:
 
 protected:
     WebRTCServer* m_webrtc_server = nullptr;
-    rtc::scoped_refptr<webrtc::AudioDecoderFactory> m_audioDecoderfactory;
     std::unique_ptr<webrtc::TaskQueueFactory> m_task_queue_factory;
-    rtc::scoped_refptr<webrtc::AudioDeviceModule> m_audioDeviceModule;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             m_peer_connection_factory;
     std::mutex m_peerMapMutex;

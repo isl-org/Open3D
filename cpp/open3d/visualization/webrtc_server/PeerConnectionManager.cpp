@@ -133,9 +133,7 @@ IceServer getIceServerFromUrl(const std::string &url,
 }
 
 webrtc::PeerConnectionFactoryDependencies
-CreatePeerConnectionFactoryDependencies(
-        rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule,
-        rtc::scoped_refptr<webrtc::AudioDecoderFactory> audioDecoderfactory) {
+CreatePeerConnectionFactoryDependencies() {
     webrtc::PeerConnectionFactoryDependencies dependencies;
     dependencies.network_thread = nullptr;
     dependencies.worker_thread = rtc::Thread::Current();
@@ -151,19 +149,13 @@ CreatePeerConnectionFactoryDependencies(
             dependencies.task_queue_factory.get();
 
     // try to init audio
-    if (audioDeviceModule.get()) {
-        if (audioDeviceModule->Init() != 0) {
-            RTC_LOG(WARNING) << "audio init fails -> disable audio capture";
-            audioDeviceModule = new webrtc::FakeAudioDeviceModule();
-        }
-    } else {
-        RTC_LOG(WARNING) << "no audio device -> disable audio capture";
-        audioDeviceModule = new webrtc::FakeAudioDeviceModule();
-    }
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule(
+            new webrtc::FakeAudioDeviceModule());
     mediaDependencies.adm = std::move(audioDeviceModule);
     mediaDependencies.audio_encoder_factory =
             webrtc::CreateBuiltinAudioEncoderFactory();
-    mediaDependencies.audio_decoder_factory = std::move(audioDecoderfactory);
+    mediaDependencies.audio_decoder_factory =
+            webrtc::CreateBuiltinAudioDecoderFactory();
     mediaDependencies.audio_processing =
             webrtc::AudioProcessingBuilder().Create();
 
@@ -188,12 +180,9 @@ PeerConnectionManager::PeerConnectionManager(
         const std::string &publishFilter,
         const std::string &webrtcUdpPortRange)
     : m_webrtc_server(webrtc_server),
-      m_audioDecoderfactory(webrtc::CreateBuiltinAudioDecoderFactory()),
       m_task_queue_factory(webrtc::CreateDefaultTaskQueueFactory()),
-      m_audioDeviceModule(new webrtc::FakeAudioDeviceModule()),
       m_peer_connection_factory(webrtc::CreateModularPeerConnectionFactory(
-              CreatePeerConnectionFactoryDependencies(m_audioDeviceModule,
-                                                      m_audioDecoderfactory))),
+              CreatePeerConnectionFactoryDependencies())),
       m_iceServerList(iceServerList),
       m_config(config),
       m_publishFilter(publishFilter) {
