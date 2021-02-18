@@ -34,7 +34,7 @@ namespace core {
 
 double Det(const Tensor& A) {
     Tensor ipiv, output;
-    LU_with_ipiv(A, ipiv, output);
+    LUIpiv(A, ipiv, output);
     // Sequential loop to compute determinant from LU output, is more efficient
     // on CPU.
     Tensor output_cpu = output.To(core::Device("CPU:0"));
@@ -43,7 +43,7 @@ double Det(const Tensor& A) {
     int n = A.GetShape()[0];
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(A.GetDtype(), [&]() {
-        scalar_t* output_ptr = static_cast<scalar_t*>(output_cpu.GetDataPtr());
+        scalar_t* output_ptr = output_cpu.GetDataPtr<scalar_t>();
         int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
 
         for (int i = 0; i < n; i++) {

@@ -1077,29 +1077,30 @@ public:
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
 
-    /// \brief Computes LU factorisation of the sqaure tensor,
+    /// \brief Computes LU factorisation of the square tensor,
     /// using A = P * L * U and returns tuple (P, L, U).
     ///
     /// \param permute_l [optional input] If true: returns L as P * L.
-    /// \returns tuple of square matrix (P, L, U).
+    /// \return tuple of square matrix (P, L, U).
     std::tuple<Tensor, Tensor, Tensor> LU(bool permute_l = false) const;
 
-    /// \brief Computes LU factorisation of the nxn sqaure tensor,
+    /// \brief Computes LU factorisation of the nxn square tensor,
     /// using A = P * L * U and returns tuple output tensor of shape {n,n} and
-    /// ipiv of shape {n}. [ipiv, output = open3d.core.lu_with_ipiv(a)]
+    /// ipiv of shape {n}. [ipiv, output = open3d.core.lu_ipiv(a)]
     ///
-    /// \returns \p [IPIV] 1D int tensor. It contains the pivot indices,
-    /// indicating row i of the matrix was interchanged with row IPIV(i)).
-    /// \p [Output] it has L as lower triangular values and U as upper
-    /// triangle values including the main diagonal (diagonal elemetes of L to
-    /// be taken as unity).
-    std::tuple<Tensor, Tensor> LU_with_ipiv() const;
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D int tensor. It contains
+    /// the pivot indices, indicating row i of the matrix was interchanged with
+    /// row ipiv(i)); and output it has L as lower triangular values and U as
+    /// upper triangle values including the main diagonal (diagonal elements of
+    /// L to be taken as unity).
+    std::tuple<Tensor, Tensor> LUIpiv() const;
 
     /// \brief Returns the upper triangular matrix of the 2D tensor,
     /// above the given diagonal index. [The value of diagonal = col - row,
-    /// therefore 0 is the main diagonal (i = j), and it shifts towards right
-    /// for positive values (for diagonal = 1, col - row = 1), and towards left
-    /// for negative values. The value of the diagonal parameter must be between
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between
     /// [-m, n] for a {m,n} shaped tensor.
     ///
     /// \param diagonal value of col - row, above which the elements are to be
@@ -1108,12 +1109,13 @@ public:
 
     /// \brief Returns the lower triangular matrix of the 2D tensor,
     /// above the given diagonal index. [The value of diagonal = col - row,
-    /// therefore 0 is the main diagonal (i = j), and it shifts towards right
-    /// for positive values (for diagonal = 1, col - row = 1), and towards left
-    /// for negative values. The value of the diagonal parameter must be between
-    /// [-m, n] for a {m,n} shaped tensor.
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between
+    /// [-m, n] where {m, n} is the shape of input tensor.
     ///
-    /// \param diagonal value of col - row, below which the elements are to be
+    /// \param diagonal value of [col - row], below which the elements are to be
     /// taken for lower triangular matrix.
     Tensor Tril(const int diagonal = 0) const;
 
@@ -1124,9 +1126,9 @@ public:
     /// (i = j), and it shifts towards right for positive values
     /// (for diagonal = 1, col - row = 1), and towards left for negative values.
     /// The value of the diagonal parameter must be between
-    /// [-m, n] for a {m,n} shaped tensor.
+    /// [-m, n] where {m, n} is the shape of input tensor.
     ///
-    /// \param diagonal value of col - row, above and below which the elements
+    /// \param diagonal value of [col - row], above and below which the elements
     /// are to be taken for upper (diag. included) and lower triangular matrix.
     std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 

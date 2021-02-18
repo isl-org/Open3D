@@ -43,7 +43,7 @@ namespace core {
 /// \param output [output] is a 2D tensor of same dimentions as input, and has
 /// L as lower triangular values and U as upper triangle values including
 /// the main diagonal (diagonal elemetes of L to be taken as unity).
-void LU_with_ipiv(const Tensor& A, Tensor& ipiv, Tensor& output);
+void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output);
 
 /// \brief This function performs the LU factorization of 2D square matrix,
 /// following equation A = P * L * U where P is the permutation matrix,

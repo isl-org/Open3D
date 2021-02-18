@@ -71,13 +71,14 @@ def test_matmul(device, dtype):
         a = o3d.core.Tensor.zeros((3, 4), dtype=dtype)
         b = o3d.core.Tensor.zeros((4, 5, 6), dtype=dtype)
         c = a @ b
-    assert 'Tensor B must be 1D (vector) or 2D (matrix)' in str(excinfo.value)
+        assert 'Tensor B must be 1D (vector) or 2D (matrix)' in str(
+            excinfo.value)
 
     with pytest.raises(RuntimeError) as excinfo:
         a = o3d.core.Tensor.zeros((3, 4), dtype=dtype)
         b = o3d.core.Tensor.zeros((3, 7), dtype=dtype)
         c = a @ b
-    assert 'mismatch with' in str(excinfo.value)
+        assert 'mismatch with' in str(excinfo.value)
 
     for shapes in [((0, 0), (0, 0)), ((2, 0), (0, 3)), ((0, 2), (2, 0)),
                    ((2, 0), (0, 0))]:
@@ -86,7 +87,7 @@ def test_matmul(device, dtype):
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
             c = a @ b
-        assert 'dimensions with zero' in str(excinfo.value)
+            assert 'dimensions with zero' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -135,8 +136,8 @@ def test_lu(device, dtype):
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3d.core.lu(a)
-        assert 'Only tensors with Float32 or Float64 are supported' in str(
-            excinfo.value)
+            assert 'Only tensors with Float32 or Float64 are supported' in str(
+                excinfo.value)
         return
 
     p, l, u = o3d.core.lu(a)
@@ -152,13 +153,13 @@ def test_lu(device, dtype):
         with pytest.raises(RuntimeError) as excinfo:
             a_ = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
             o3d.core.lu(a_)
-        assert 'must be 2D' in str(excinfo.value)
+            assert 'must be 2D' in str(excinfo.value)
 
     # Non-square
     with pytest.raises(RuntimeError) as excinfo:
         a_ = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         o3d.core.lu(a_)
-    assert 'must be square' in str(excinfo.value)
+        assert 'must be square' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -166,18 +167,18 @@ def test_lu(device, dtype):
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
 ])
-def test_lu_with_ipiv(device, dtype):
+def test_lu_ipiv(device, dtype):
     a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                         dtype=dtype,
                         device=device)
     # print(" luipiv: working 0")
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
-            o3d.core.lu_with_ipiv(a)
-        assert 'Only tensors with Float32 or Float64 are supported' in str(
-            excinfo.value)
+            o3d.core.lu_ipiv(a)
+            assert 'Only tensors with Float32 or Float64 are supported' in str(
+                excinfo.value)
         return
-    ipiv, a_lu = o3d.core.lu_with_ipiv(a)
+    ipiv, a_lu = o3d.core.lu_ipiv(a)
 
     a_lu_ = o3d.core.Tensor(
         [[3.0, 3.0, 1.0], [0.666667, 2.0, 0.333333], [0.666667, 0.5, 0.166667]],
@@ -194,14 +195,14 @@ def test_lu_with_ipiv(device, dtype):
     for shape in [(), [1], (3, 4, 5)]:
         with pytest.raises(RuntimeError) as excinfo:
             a_ = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
-            o3d.core.lu_with_ipiv(a_)
-        assert 'must be 2D' in str(excinfo.value)
+            o3d.core.lu_ipiv(a_)
+            assert 'must be 2D' in str(excinfo.value)
 
     # Non-square
     with pytest.raises(RuntimeError) as excinfo:
         a_ = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
-        o3d.core.lu_with_ipiv(a_)
-    assert 'must be square' in str(excinfo.value)
+        o3d.core.lu_ipiv(a_)
+        assert 'must be square' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -217,8 +218,8 @@ def test_inverse(device, dtype):
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3d.core.inv(a)
-        assert 'Only tensors with Float32 or Float64 are supported' in str(
-            excinfo.value)
+            assert 'Only tensors with Float32 or Float64 are supported' in str(
+                excinfo.value)
         return
 
     a_inv = o3d.core.inv(a)
@@ -233,13 +234,13 @@ def test_inverse(device, dtype):
         with pytest.raises(RuntimeError) as excinfo:
             a = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
             a.inv()
-        assert 'must be 2D' in str(excinfo.value)
+            assert 'must be 2D' in str(excinfo.value)
 
     # Non-square
     with pytest.raises(RuntimeError) as excinfo:
         a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
         a.inv()
-    assert 'must be square' in str(excinfo.value)
+        assert 'must be square' in str(excinfo.value)
 
     a = o3d.core.Tensor([[1]], dtype=dtype, device=device)
     np.testing.assert_allclose(a.cpu().numpy(), a.inv().cpu().numpy(), 1e-6)
@@ -251,11 +252,11 @@ def test_inverse(device, dtype):
     ]:
         with pytest.raises(RuntimeError) as excinfo:
             a_inv = a.inv()
-        assert 'singular condition' in str(excinfo.value)
+            assert 'singular condition' in str(excinfo.value)
 
         with pytest.raises(np.linalg.LinAlgError) as excinfo:
             a_inv = np.linalg.inv(a.cpu().numpy())
-        assert 'Singular matrix' in str(excinfo.value)
+            assert 'Singular matrix' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -270,8 +271,8 @@ def test_svd(device, dtype):
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3d.core.svd(a)
-        assert 'Only tensors with Float32 or Float64 are supported' in str(
-            excinfo.value)
+            assert 'Only tensors with Float32 or Float64 are supported' in str(
+                excinfo.value)
         return
 
     u, s, vt = o3d.core.svd(a)
@@ -311,17 +312,17 @@ def test_svd(device, dtype):
         with pytest.raises(RuntimeError) as excinfo:
             a = o3d.core.Tensor.zeros(shapes, dtype=dtype, device=device)
             a.svd()
-        assert 'dimensions with zero' in str(excinfo.value)
+            assert 'dimensions with zero' in str(excinfo.value)
     for shapes in [(), [1], (1, 2, 4)]:
         with pytest.raises(RuntimeError) as excinfo:
             a = o3d.core.Tensor.zeros(shapes, dtype=dtype, device=device)
             a.svd()
-        assert 'must be 2D' in str(excinfo.value)
+            assert 'must be 2D' in str(excinfo.value)
 
     with pytest.raises(RuntimeError) as excinfo:
         a = o3d.core.Tensor(shapes, dtype=dtype, device=device)
         a.svd()
-    assert 'must be 2D' in str(excinfo.value)
+        assert 'must be 2D' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -340,7 +341,7 @@ def test_solve(device, dtype):
         a = o3d.core.Tensor.zeros((3, 3), dtype=dtype, device=device)
         b = o3d.core.Tensor.ones((3,), dtype=dtype, device=device)
         x = o3d.core.solve(a, b)
-    assert 'singular' in str(excinfo.value)
+        assert 'singular' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -380,7 +381,7 @@ def test_lstsq(device, dtype):
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
             a.lstsq(b)
-        assert 'dimensions with zero' in str(excinfo.value)
+            assert 'dimensions with zero' in str(excinfo.value)
 
     for shapes in [((2, 3), (2, 2))]:
         with pytest.raises(RuntimeError) as excinfo:
@@ -388,8 +389,8 @@ def test_lstsq(device, dtype):
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
             a.lstsq(b)
-        assert 'must satisfy rows({}) > cols({})'.format(
-            a_shape[0], a_shape[1]) in str(excinfo.value)
+            assert 'must satisfy rows({}) > cols({})'.format(
+                a_shape[0], a_shape[1]) in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())

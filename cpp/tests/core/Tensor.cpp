@@ -1208,7 +1208,7 @@ TEST_P(TensorPermuteDevices, Det) {
     // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
 
-    // Det expects a 2D sqaure matrix [shape test].
+    // Det expects a 2D square matrix [shape test].
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Det());
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());

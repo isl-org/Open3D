@@ -31,7 +31,7 @@
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
-#include "open3d/core/linalg/TriangularMat.h"
+#include "open3d/core/linalg/Tri.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
@@ -71,10 +71,10 @@ void pybind_core_linalg(py::module &m) {
             "A"_a, "permute_l"_a = false);
 
     m.def(
-            "lu_with_ipiv",
+            "lu_ipiv",
             [](const Tensor &A) {
                 Tensor ipiv, output;
-                LU_with_ipiv(A, ipiv, output);
+                LUIpiv(A, ipiv, output);
                 return py::make_tuple(ipiv, output);
             },
             "Function to compute LU factorisation of a square 2D tensor.",

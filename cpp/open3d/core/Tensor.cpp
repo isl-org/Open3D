@@ -46,7 +46,7 @@
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
-#include "open3d/core/linalg/TriangularMat.h"
+#include "open3d/core/linalg/Tri.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -1314,9 +1314,9 @@ std::tuple<Tensor, Tensor, Tensor> Tensor::LU(bool permute_l) const {
     return std::make_tuple(permutation, lower, upper);
 }
 
-std::tuple<Tensor, Tensor> Tensor::LU_with_ipiv() const {
+std::tuple<Tensor, Tensor> Tensor::LUIpiv() const {
     core::Tensor ipiv, output;
-    core::LU_with_ipiv(*this, ipiv, output);
+    core::LUIpiv(*this, ipiv, output);
     return std::make_tuple(ipiv, output);
 }
 

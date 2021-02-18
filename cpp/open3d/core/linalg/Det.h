@@ -31,9 +31,7 @@
 namespace open3d {
 namespace core {
 
-/// \brief This function returns Det of 2D square matrix.
-/// \param A input 2D sqaure matrix.
-/// \return determinant [double].
+// See documentation for `core::Tensor::Det`.
 double Det(const Tensor& A);
 
 }  // namespace core

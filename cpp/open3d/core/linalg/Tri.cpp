@@ -24,21 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/TriangularMat.h"
+#include "open3d/core/linalg/Tri.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/linalg/TriangularMatImpl.h"
+#include "open3d/core/linalg/TriImpl.h"
 
 namespace open3d {
 namespace core {
 
-void Triu(const Tensor& A, Tensor& output, const int diagonal) {
-    core::Device device = A.GetDevice();
-
+inline void CheckInput(const Tensor& A, const int diagonal) {
     // Check dimensions.
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
+        utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
     if (A_shape[0] == 0 || A_shape[1] == 0) {
         utility::LogError(
@@ -50,7 +48,11 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
                 "with shape {}, but got {}.",
                 A_shape[0], A_shape[1], A.GetShape().ToString(), diagonal);
     }
+}
 
+void Triu(const Tensor& A, Tensor& output, const int diagonal) {
+    CheckInput(A, diagonal);
+    core::Device device = A.GetDevice();
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
@@ -64,24 +66,8 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
 }
 
 void Tril(const Tensor& A, Tensor& output, const int diagonal) {
+    CheckInput(A, diagonal);
     core::Device device = A.GetDevice();
-
-    // Check dimensions.
-    SizeVector A_shape = A.GetShape();
-    if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
-    }
-    if (A_shape[0] == 0 || A_shape[1] == 0) {
-        utility::LogError(
-                "Tensor shapes should not contain dimensions with zero.");
-    }
-    if (diagonal <= -1 * A_shape[0] || diagonal >= A_shape[1]) {
-        utility::LogError(
-                "Diagonal parameter must be between [-{}, {}] for a matrix "
-                "with shape {}, but got {}.",
-                A_shape[0], A_shape[1], A.GetShape().ToString(), diagonal);
-    }
-
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
@@ -95,26 +81,8 @@ void Tril(const Tensor& A, Tensor& output, const int diagonal) {
 }
 
 void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
+    CheckInput(A, diagonal);
     core::Device device = A.GetDevice();
-
-    // Check dimensions.
-    SizeVector A_shape = A.GetShape();
-    if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
-    }
-    if (A_shape[0] == 0 || A_shape[1] == 0) {
-        utility::LogError(
-                "Tensor shapes should not contain dimensions with "
-                "zero.");
-    }
-    if (diagonal <= -1 * A_shape[0] || diagonal >= A_shape[1]) {
-        utility::LogError(
-                "Diagonal parameter must be between [-{}, {}] for a matrix "
-                "with shape {}, but got {}.",
-                A_shape[0] - 1, A_shape[1] - 1, A.GetShape().ToString(),
-                diagonal);
-    }
-
     upper = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     lower = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {

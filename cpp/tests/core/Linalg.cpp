@@ -127,7 +127,7 @@ TEST_P(LinalgPermuteDevices, LU) {
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
 }
 
-TEST_P(LinalgPermuteDevices, LU_with_ipiv) {
+TEST_P(LinalgPermuteDevices, LUIpiv) {
     const float EPSILON = 1e-6;
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
@@ -137,7 +137,7 @@ TEST_P(LinalgPermuteDevices, LU_with_ipiv) {
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
     core::Tensor ipiv3f, A3f;
-    std::tie(ipiv3f, A3f) = A_3x3f.LU_with_ipiv();
+    std::tie(ipiv3f, A3f) = A_3x3f.LUIpiv();
 
     EXPECT_TRUE(
             A3f.AllClose(core::Tensor::Init<float>({{3.0, 3.0, 1.0},
@@ -154,7 +154,7 @@ TEST_P(LinalgPermuteDevices, LU_with_ipiv) {
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
 
     core::Tensor ipiv3d, A3d;
-    std::tie(ipiv3d, A3d) = A_3x3d.LU_with_ipiv();
+    std::tie(ipiv3d, A3d) = A_3x3d.LUIpiv();
 
     EXPECT_TRUE(
             A3d.AllClose(core::Tensor::Init<double>({{3.0, 3.0, 1.0},

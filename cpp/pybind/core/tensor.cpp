@@ -407,7 +407,7 @@ void pybind_core_tensor(py::module& m) {
     /// Linalg operations.
     tensor.def("det", &Tensor::Det);
     tensor.def("lu", &Tensor::LU);
-    tensor.def("lu_with_ipiv", &Tensor::LU_with_ipiv);
+    tensor.def("lu_ipiv", &Tensor::LUIpiv);
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
     tensor.def("lstsq", &Tensor::LeastSquares);

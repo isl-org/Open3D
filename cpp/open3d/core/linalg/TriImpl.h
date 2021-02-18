@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/linalg/TriangularMat.h"
+#include "open3d/core/linalg/Tri.h"
 
 namespace open3d {
 namespace core {
