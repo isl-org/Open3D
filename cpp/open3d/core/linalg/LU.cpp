@@ -95,7 +95,8 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
         utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
     // if (A_shape[0] != A_shape[1]) {
-    //     utility::LogError("Tensor must be square, but got {} x {}.", A_shape[0],
+    //     utility::LogError("Tensor must be square, but got {} x {}.",
+    //     A_shape[0],
     //                       A_shape[1]);
     // }
     int64_t n = A_shape[0];
