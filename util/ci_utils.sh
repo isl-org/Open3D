@@ -346,7 +346,11 @@ test_wheel() {
     set -u
     ls -R $(dirname $(python -c "import open3d as o3d; print(o3d.__file__)")) # debug
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        if [ "$BUILD_CUDA_MODULE" == ON ]; then
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-cuda.txt"
+        else
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        fi
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
