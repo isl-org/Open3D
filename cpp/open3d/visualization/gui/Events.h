@@ -113,9 +113,9 @@ struct MouseEvent {
                 ss << "ERROR";
             }
         } else if (type == Type::WHEEL) {
-            ss << ", wheel.dx" << wheel.dx;
-            ss << ", wheel.dy" << wheel.dy;
-            ss << ", wheel.isTrackpad" << wheel.isTrackpad;
+            ss << ", wheel.dx: " << wheel.dx;
+            ss << ", wheel.dy: " << wheel.dy;
+            ss << ", wheel.isTrackpad: " << wheel.isTrackpad;
         }
         ss << "}";
         return ss.str();

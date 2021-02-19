@@ -1215,6 +1215,9 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             break;
         }
     }
+    if (e.type == MouseEvent::WHEEL) {
+        utility::LogInfo("Wheel event: {}", e.ToString());
+    }
 
     // TODO: standardize this.
     ImGuiIO& io = ImGui::GetIO();
