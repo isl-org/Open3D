@@ -217,12 +217,12 @@ PeerConnectionManager::PeerConnectionManager(
     // register api in http server
     func_["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
                                         const Json::Value &in) -> Json::Value {
-        return this->getMediaList();
+        return this->GetMediaList();
     };
 
     func_["/api/getIceServers"] = [this](const struct mg_request_info *req_info,
                                          const Json::Value &in) -> Json::Value {
-        return this->getIceServers(req_info->remote_addr);
+        return this->GetIceServers(req_info->remote_addr);
     };
 
     func_["/api/call"] = [this](const struct mg_request_info *req_info,
@@ -235,7 +235,7 @@ PeerConnectionManager::PeerConnectionManager(
             CivetServer::getParam(req_info->query_string, "url", url);
             CivetServer::getParam(req_info->query_string, "options", options);
         }
-        return this->call(peerid, url, options, in);
+        return this->Call(peerid, url, options, in);
     };
 
     func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
@@ -244,7 +244,7 @@ PeerConnectionManager::PeerConnectionManager(
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
         }
-        return this->hangUp(peerid);
+        return this->HangUp(peerid);
     };
 
     func_["/api/createOffer"] = [this](const struct mg_request_info *req_info,
@@ -257,7 +257,7 @@ PeerConnectionManager::PeerConnectionManager(
             CivetServer::getParam(req_info->query_string, "url", url);
             CivetServer::getParam(req_info->query_string, "options", options);
         }
-        return this->createOffer(peerid, url, options);
+        return this->CreateOffer(peerid, url, options);
     };
     func_["/api/setAnswer"] = [this](const struct mg_request_info *req_info,
                                      const Json::Value &in) -> Json::Value {
@@ -285,18 +285,18 @@ PeerConnectionManager::PeerConnectionManager(
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
         }
-        return this->addIceCandidate(peerid, in);
+        return this->AddIceCandidate(peerid, in);
     };
 
     func_["/api/getPeerConnectionList"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
-        return this->getPeerConnectionList();
+        return this->GetPeerConnectionList();
     };
 
     func_["/api/getStreamList"] = [this](const struct mg_request_info *req_info,
                                          const Json::Value &in) -> Json::Value {
-        return this->getStreamList();
+        return this->GetStreamList();
     };
 
     func_["/api/log"] = [](const struct mg_request_info *req_info,
@@ -322,7 +322,7 @@ PeerConnectionManager::~PeerConnectionManager() {}
 /* ---------------------------------------------------------------------------
 **  return deviceList as JSON vector
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getMediaList() {
+const Json::Value PeerConnectionManager::GetMediaList() {
     Json::Value value(Json::arrayValue);
 
     // Windows, desktops.
@@ -354,7 +354,7 @@ const Json::Value PeerConnectionManager::getMediaList() {
 /* ---------------------------------------------------------------------------
 **  return iceServers as JSON vector
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getIceServers(
+const Json::Value PeerConnectionManager::GetIceServers(
         const std::string &clientIp) {
     Json::Value urls(Json::arrayValue);
 
@@ -392,7 +392,7 @@ PeerConnectionManager::getPeerConnection(const std::string &peerid) {
 /* ---------------------------------------------------------------------------
 **  add ICE candidate to a PeerConnection
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::addIceCandidate(
+const Json::Value PeerConnectionManager::AddIceCandidate(
         const std::string &peerid, const Json::Value &jmessage) {
     bool result = false;
     std::string sdp_mid;
@@ -434,7 +434,7 @@ const Json::Value PeerConnectionManager::addIceCandidate(
 /* ---------------------------------------------------------------------------
 ** create an offer for a call
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::createOffer(
+const Json::Value PeerConnectionManager::CreateOffer(
         const std::string &peerid,
         const std::string &video_url,
         const std::string &options) {
@@ -563,7 +563,7 @@ const Json::Value PeerConnectionManager::setAnswer(
 /* ---------------------------------------------------------------------------
 **  auto-answer to a call
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::call(const std::string &peerid,
+const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                               const std::string &video_url,
                                               const std::string &options,
                                               const Json::Value &jmessage) {
@@ -689,7 +689,7 @@ bool PeerConnectionManager::streamStillUsed(const std::string &streamLabel) {
 /* ---------------------------------------------------------------------------
 **  hangup a call
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::hangUp(const std::string &peerid) {
+const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     bool result = false;
     RTC_LOG(INFO) << __FUNCTION__ << " " << peerid;
 
@@ -767,7 +767,7 @@ const Json::Value PeerConnectionManager::getIceCandidateList(
 /* ---------------------------------------------------------------------------
 **  get PeerConnection list
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getPeerConnectionList() {
+const Json::Value PeerConnectionManager::GetPeerConnectionList() {
     Json::Value value(Json::arrayValue);
 
     std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
@@ -836,7 +836,7 @@ const Json::Value PeerConnectionManager::getPeerConnectionList() {
 /* ---------------------------------------------------------------------------
 **  get StreamList list
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getStreamList() {
+const Json::Value PeerConnectionManager::GetStreamList() {
     std::lock_guard<std::mutex> mlock(stream_map_mutex_);
     Json::Value value(Json::arrayValue);
     for (auto it : stream_map_) {

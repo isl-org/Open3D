@@ -321,7 +321,7 @@ class PeerConnectionManager {
                 ice_candidate_list_.clear();
                 if (!deleting_) {
                     std::thread([this]() {
-                        peer_connection_manager_->hangUp(peerid_);
+                        peer_connection_manager_->HangUp(peerid_);
                     }).detach();
                 }
             }
@@ -359,18 +359,18 @@ public:
     };
 
     const Json::Value getIceCandidateList(const std::string& peerid);
-    const Json::Value addIceCandidate(const std::string& peerid,
+    const Json::Value AddIceCandidate(const std::string& peerid,
                                       const Json::Value& jmessage);
-    const Json::Value getMediaList();
-    const Json::Value hangUp(const std::string& peerid);
-    const Json::Value call(const std::string& peerid,
+    const Json::Value GetMediaList();
+    const Json::Value HangUp(const std::string& peerid);
+    const Json::Value Call(const std::string& peerid,
                            const std::string& video_url,
                            const std::string& options,
                            const Json::Value& jmessage);
-    const Json::Value getIceServers(const std::string& clientIp);
-    const Json::Value getPeerConnectionList();
-    const Json::Value getStreamList();
-    const Json::Value createOffer(const std::string& peerid,
+    const Json::Value GetIceServers(const std::string& clientIp);
+    const Json::Value GetPeerConnectionList();
+    const Json::Value GetStreamList();
+    const Json::Value CreateOffer(const std::string& peerid,
                                   const std::string& video_url,
                                   const std::string& options);
     const Json::Value setAnswer(const std::string& peerid,
