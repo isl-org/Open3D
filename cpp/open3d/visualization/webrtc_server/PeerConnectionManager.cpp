@@ -76,12 +76,12 @@ static bool IgnoreInLabel(char c) {
 ** -------------------------------------------------------------------------*/
 
 #ifdef WIN32
-std::string GetServerIpFromClientIp(int clientip) { return "127.0.0.1"; }
+std::string GetServerIpFromClientIp(int client_ip) { return "127.0.0.1"; }
 #else
 #include <ifaddrs.h>
 #include <net/if.h>
-std::string GetServerIpFromClientIp(int clientip) {
-    std::string serverAddress;
+std::string GetServerIpFromClientIp(int client_ip) {
+    std::string server_address;
     char host[NI_MAXHOST];
     struct ifaddrs *ifaddr = nullptr;
     if (getifaddrs(&ifaddr) == 0) {
@@ -95,11 +95,11 @@ std::string GetServerIpFromClientIp(int clientip) {
                 struct sockaddr_in *mask =
                         (struct sockaddr_in *)ifa->ifa_netmask;
                 if ((addr->sin_addr.s_addr & mask->sin_addr.s_addr) ==
-                    (clientip & mask->sin_addr.s_addr)) {
+                    (client_ip & mask->sin_addr.s_addr)) {
                     if (getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
                                     host, sizeof(host), nullptr, 0,
                                     NI_NUMERICHOST) == 0) {
-                        serverAddress = host;
+                        server_address = host;
                         break;
                     }
                 }
@@ -107,7 +107,7 @@ std::string GetServerIpFromClientIp(int clientip) {
         }
     }
     freeifaddrs(ifaddr);
-    return serverAddress;
+    return server_address;
 }
 #endif
 
@@ -118,7 +118,7 @@ struct IceServer {
 };
 
 IceServer GetIceServerFromUrl(const std::string &url,
-                              const std::string &clientIp = "") {
+                              const std::string &client_ip = "") {
     IceServer srv;
     srv.url = url;
 
@@ -134,10 +134,10 @@ IceServer GetIceServerFromUrl(const std::string &url,
             uri = uri.substr(pos + 1);
         }
 
-        if ((uri.find("0.0.0.0:") == 0) && (clientIp.empty() == false)) {
+        if ((uri.find("0.0.0.0:") == 0) && (client_ip.empty() == false)) {
             // answer with ip that is on same network as client
             std::string clienturl =
-                    GetServerIpFromClientIp(inet_addr(clientIp.c_str()));
+                    GetServerIpFromClientIp(inet_addr(client_ip.c_str()));
             clienturl += uri.substr(uri.find_first_of(':'));
             uri = clienturl;
         }
@@ -200,19 +200,19 @@ CreatePeerConnectionFactoryDependencies() {
 ** -------------------------------------------------------------------------*/
 PeerConnectionManager::PeerConnectionManager(
         WebRTCServer *webrtc_server,
-        const std::list<std::string> &iceServerList,
+        const std::list<std::string> &ice_server_list,
         const Json::Value &config,
         const std::string &publish_filter,
-        const std::string &webrtcUdpPortRange)
+        const std::string &webrtc_udp_port_range)
     : webrtc_server_(webrtc_server),
       task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
       peer_connection_factory_(webrtc::CreateModularPeerConnectionFactory(
               CreatePeerConnectionFactoryDependencies())),
-      ice_server_list_(iceServerList),
+      ice_server_list_(ice_server_list),
       config_(config),
       publish_filter_(publish_filter) {
     // Set the webrtc port range
-    webrtc_port_range_ = webrtcUdpPortRange;
+    webrtc_port_range_ = webrtc_udp_port_range;
 
     // register api in http server
     func_["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
@@ -355,13 +355,13 @@ const Json::Value PeerConnectionManager::GetMediaList() {
 **  return iceServers as JSON vector
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::GetIceServers(
-        const std::string &clientIp) {
+        const std::string &client_ip) {
     Json::Value urls(Json::arrayValue);
 
     for (auto iceServer : ice_server_list_) {
         Json::Value server;
         Json::Value urlList(Json::arrayValue);
-        IceServer srv = GetIceServerFromUrl(iceServer, clientIp);
+        IceServer srv = GetIceServerFromUrl(iceServer, client_ip);
         RTC_LOG(INFO) << "ICE URL:" << srv.url;
         urlList.append(srv.url);
         server["urls"] = urlList;

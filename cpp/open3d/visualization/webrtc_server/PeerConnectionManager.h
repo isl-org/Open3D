@@ -346,10 +346,10 @@ class PeerConnectionManager {
 
 public:
     PeerConnectionManager(WebRTCServer* webrtc_server,
-                          const std::list<std::string>& iceServerList,
+                          const std::list<std::string>& ice_server_list,
                           const Json::Value& config,
                           const std::string& publish_filter,
-                          const std::string& webrtcUdpPortRange);
+                          const std::string& webrtc_udp_port_range);
     virtual ~PeerConnectionManager();
 
     bool InitializePeerConnection();
