@@ -488,7 +488,6 @@ void Window::CreateRenderer() {
 
     std::function<void(int, double, double)> mouse_move_callback =
             [this](int mouse_status, double x, double y) {
-                (void)this;
                 float scaling = this->GetScaling();
                 int ix = int(std::ceil(x * scaling));
                 int iy = int(std::ceil(y * scaling));
@@ -504,6 +503,16 @@ void Window::CreateRenderer() {
                 UpdateAfterEvent(this);
             };
 
+    std::function<void(double, double)> mouse_wheel_callback =
+            [this](double dx, double dy) {
+                MouseEvent me;
+                me.type = MouseEvent::WHEEL;
+                me.wheel.dx = static_cast<float>(dx);
+                me.wheel.dy = static_cast<float>(dy);
+                this->OnMouseEvent(me);
+                UpdateAfterEvent(this);
+            };
+
     // Start WebRTCServer in a different thread.
     // TODO: give WebRTCServer the access to control GUI callbacks.
     // TODO: properly kill this thread
@@ -511,6 +520,7 @@ void Window::CreateRenderer() {
     auto server = std::make_shared<webrtc_server::WebRTCServer>();
     server->SetMouseButtonCallback(mouse_button_callback);
     server->SetMouseMoveCallback(mouse_move_callback);
+    server->SetMouseWheelCallback(mouse_wheel_callback);
     auto start_webrtc_thread = [server]() { server->Run(); };
     impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
     impl_->webrtc_server_ = server;
