@@ -28,6 +28,8 @@
 
 #include <Eigen/Geometry>
 
+#include "open3d/visualization/rendering/RendererHandle.h"
+
 namespace open3d {
 namespace visualization {
 namespace rendering {
@@ -89,6 +91,10 @@ public:
     virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
 
     virtual void ConfigureForColorPicking() = 0;
+
+    virtual void EnableViewCaching(bool enable) = 0;
+    virtual bool IsCached() const = 0;
+    virtual TextureHandle GetColorBuffer() = 0;
 
     virtual Camera* GetCamera() const = 0;
 };
