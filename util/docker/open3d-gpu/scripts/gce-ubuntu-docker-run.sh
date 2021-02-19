@@ -13,6 +13,7 @@ set -e
 # GITHUB_SHA
 ## CI test matrix:
 CI_CONFIG_ID=${CI_CONFIG_ID:=0}
+CI_CONFIG_ID=${CI_CONFIG_ID%%-*} # '3-ML-bionic' -> '3'
 
 # CI configuration specification
 SHARED=(OFF ON OFF ON OFF OFF)
