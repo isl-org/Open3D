@@ -92,22 +92,32 @@ TEST_P(LinalgPermuteDevices, LU) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // LU test for 3x3 const square 2D tensor of dtype Float32.
-    const core::Tensor A_3x3cf = core::Tensor::Init<float>(
-            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+    // LU test for 3x4 const 2D tensor of dtype Float32.
+    const core::Tensor A_3x4cf = core::Tensor::Init<float>(
+            {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}}, device);
 
+    // Default parameter for permute_l (false).
     core::Tensor permutationcf0, lowercf0, uppercf0;
-    std::tie(permutationcf0, lowercf0, uppercf0) = A_3x3cf.LU();
+    std::tie(permutationcf0, lowercf0, uppercf0) = A_3x4cf.LU();
     core::Tensor outputcf0 =
             permutationcf0.Matmul(lowercf0.Matmul(uppercf0)).Contiguous();
-    EXPECT_TRUE(A_3x3cf.AllClose(outputcf0, FLT_EPSILON, FLT_EPSILON));
+    EXPECT_TRUE(A_3x4cf.AllClose(outputcf0, FLT_EPSILON, FLT_EPSILON));
 
     // "permute_l = true": L must be P*L. So, output = L*U.
     core::Tensor permutationcf1, lowercf1, uppercf1;
     std::tie(permutationcf1, lowercf1, uppercf1) =
-            A_3x3cf.LU(/*permute_l*/ true);
+            A_3x4cf.LU(/*permute_l*/ true);
     core::Tensor outputcf1 = lowercf1.Matmul(uppercf1).Contiguous();
-    EXPECT_TRUE(A_3x3cf.AllClose(outputcf1, FLT_EPSILON, FLT_EPSILON));
+    EXPECT_TRUE(A_3x4cf.AllClose(outputcf1, FLT_EPSILON, FLT_EPSILON));
+
+    // LU test for 4x3 const 2D tensor of dtype Float32.
+    const core::Tensor A_4x3cf = core::Tensor::Init<float>(
+            {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, device);
+    core::Tensor permutationcf2, lowercf2, uppercf2;
+    std::tie(permutationcf2, lowercf2, uppercf2) = A_4x3cf.LU();
+    core::Tensor outputcf2 =
+            permutationcf2.Matmul(lowercf2.Matmul(uppercf2)).Contiguous();
+    EXPECT_TRUE(A_4x3cf.AllClose(outputcf2, FLT_EPSILON, FLT_EPSILON));
 
     // LU test for 3x3 const square 2D tensor of dtype Float64.
     const core::Tensor A_3x3cd = core::Tensor::Init<double>(
@@ -124,7 +134,6 @@ TEST_P(LinalgPermuteDevices, LU) {
     // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
-    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
 }
 
 TEST_P(LinalgPermuteDevices, LUIpiv) {
@@ -172,7 +181,6 @@ TEST_P(LinalgPermuteDevices, LUIpiv) {
     // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
-    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).LU());
 }
 
 TEST_P(LinalgPermuteDevices, Triu) {
