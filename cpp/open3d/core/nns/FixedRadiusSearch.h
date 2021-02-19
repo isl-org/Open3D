@@ -182,24 +182,24 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         Argument size specifies the size of the array as the number of
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
-template <class T>
+template <class TReal, class TIndex>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
                            int64_t* query_neighbors_row_splits,
                            size_t num_points,
-                           const T* const points,
+                           const TReal* const points,
                            size_t num_queries,
-                           const T* const queries,
-                           const T radius,
+                           const TReal* const queries,
+                           const TReal radius,
                            const size_t points_row_splits_size,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const uint32_t* const hash_table_splits,
+                           const TIndex* const hash_table_splits,
                            size_t hash_table_cell_splits_size,
-                           const uint32_t* const hash_table_cell_splits,
-                           const uint32_t* const hash_table_index,
-                           NeighborSearchAllocator<T>& output_allocator);
+                           const TIndex* const hash_table_cell_splits,
+                           const TIndex* const hash_table_index,
+                           NeighborSearchAllocator<TReal>& output_allocator);
 
 /// This function sorts a list of neighbor indices and distances in
 /// descending order of distance.
