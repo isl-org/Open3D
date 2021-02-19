@@ -54,13 +54,13 @@ namespace webrtc_server {
 class PeerConnectionManager {
     class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     public:
-        VideoSink(webrtc::VideoTrackInterface* track) : m_track(track) {
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " track:" << m_track->id();
-            m_track->AddOrUpdateSink(this, rtc::VideoSinkWants());
+        VideoSink(webrtc::VideoTrackInterface* track) : track_(track) {
+            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " track:" << track_->id();
+            track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
         }
         virtual ~VideoSink() {
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " track:" << m_track->id();
-            m_track->RemoveSink(this);
+            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " track:" << track_->id();
+            track_->RemoveSink(this);
         }
 
         // VideoSinkInterface implementation
@@ -73,7 +73,7 @@ class PeerConnectionManager {
         }
 
     protected:
-        rtc::scoped_refptr<webrtc::VideoTrackInterface> m_track;
+        rtc::scoped_refptr<webrtc::VideoTrackInterface> track_;
     };
 
     class SetSessionDescriptionObserver
@@ -88,19 +88,19 @@ class PeerConnectionManager {
         }
         virtual void OnSuccess() {
             std::string sdp;
-            if (m_pc->local_description()) {
-                m_promise.set_value(m_pc->local_description());
-                m_pc->local_description()->ToString(&sdp);
+            if (pc_->local_description()) {
+                promise_.set_value(pc_->local_description());
+                pc_->local_description()->ToString(&sdp);
                 RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " Local SDP:" << sdp;
-            } else if (m_pc->remote_description()) {
-                m_promise.set_value(m_pc->remote_description());
-                m_pc->remote_description()->ToString(&sdp);
+            } else if (pc_->remote_description()) {
+                promise_.set_value(pc_->remote_description());
+                pc_->remote_description()->ToString(&sdp);
                 RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " Remote SDP:" << sdp;
             }
         }
         virtual void OnFailure(webrtc::RTCError error) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " " << error.message();
-            m_promise.set_value(nullptr);
+            promise_.set_value(nullptr);
         }
 
     protected:
@@ -108,11 +108,11 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : m_pc(pc), m_promise(promise){};
+            : pc_(pc), promise_(promise){};
 
     private:
-        webrtc::PeerConnectionInterface* m_pc;
-        std::promise<const webrtc::SessionDescriptionInterface*>& m_promise;
+        webrtc::PeerConnectionInterface* pc_;
+        std::promise<const webrtc::SessionDescriptionInterface*>& promise_;
     };
 
     class CreateSessionDescriptionObserver
@@ -130,13 +130,12 @@ class PeerConnectionManager {
             desc->ToString(&sdp);
             RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " type:" << desc->type()
                           << " sdp:" << sdp;
-            m_pc->SetLocalDescription(
-                    SetSessionDescriptionObserver::Create(m_pc, m_promise),
-                    desc);
+            pc_->SetLocalDescription(
+                    SetSessionDescriptionObserver::Create(pc_, promise_), desc);
         }
         virtual void OnFailure(webrtc::RTCError error) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " " << error.message();
-            m_promise.set_value(nullptr);
+            promise_.set_value(nullptr);
         }
 
     protected:
@@ -144,19 +143,19 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : m_pc(pc), m_promise(promise){};
+            : pc_(pc), promise_(promise){};
 
     private:
-        webrtc::PeerConnectionInterface* m_pc;
-        std::promise<const webrtc::SessionDescriptionInterface*>& m_promise;
+        webrtc::PeerConnectionInterface* pc_;
+        std::promise<const webrtc::SessionDescriptionInterface*>& promise_;
     };
 
     class PeerConnectionStatsCollectorCallback
         : public webrtc::RTCStatsCollectorCallback {
     public:
         PeerConnectionStatsCollectorCallback() {}
-        void clearReport() { m_report.clear(); }
-        Json::Value getReport() { return m_report; }
+        void clearReport() { report_.clear(); }
+        Json::Value getReport() { return report_; }
 
     protected:
         virtual void OnStatsDelivered(
@@ -168,11 +167,11 @@ class PeerConnectionManager {
                      stats.Members()) {
                     statsMembers[member->name()] = member->ValueToString();
                 }
-                m_report[stats.id()] = statsMembers;
+                report_[stats.id()] = statsMembers;
             }
         }
 
-        Json::Value m_report;
+        Json::Value report_;
     };
 
     class DataChannelObserver : public webrtc::DataChannelObserver {
@@ -222,59 +221,59 @@ class PeerConnectionManager {
                 const webrtc::PeerConnectionInterface::RTCConfiguration& config,
                 std::unique_ptr<cricket::PortAllocator> portAllocator)
             : webrtc_server_(webrtc_server),
-              m_peerConnectionManager(peerConnectionManager),
-              m_peerid(peerid),
-              m_localChannel(nullptr),
-              m_remoteChannel(nullptr),
-              m_iceCandidateList(Json::arrayValue),
-              m_deleting(false) {
+              peer_connection_manager_(peerConnectionManager),
+              peerid_(peerid),
+              local_channel_(nullptr),
+              remote_channel_(nullptr),
+              ice_candidate_list_(Json::arrayValue),
+              deleting_(false) {
             RTC_LOG(INFO) << __FUNCTION__
                           << "CreatePeerConnection peerid:" << peerid;
-            m_pc = m_peerConnectionManager->peer_connection_factory_
-                           ->CreatePeerConnection(config,
-                                                  std::move(portAllocator),
-                                                  nullptr, this);
+            pc_ = peer_connection_manager_->peer_connection_factory_
+                          ->CreatePeerConnection(config,
+                                                 std::move(portAllocator),
+                                                 nullptr, this);
 
-            if (m_pc.get()) {
+            if (pc_.get()) {
                 RTC_LOG(INFO) << __FUNCTION__
                               << "CreateDataChannel peerid:" << peerid;
 
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel =
-                        m_pc->CreateDataChannel("ServerDataChannel", nullptr);
-                m_localChannel =
+                        pc_->CreateDataChannel("ServerDataChannel", nullptr);
+                local_channel_ =
                         new DataChannelObserver(webrtc_server_, channel);
             }
 
-            m_statsCallback = new rtc::RefCountedObject<
+            stats_callback_ = new rtc::RefCountedObject<
                     PeerConnectionStatsCollectorCallback>();
         };
 
         virtual ~PeerConnectionObserver() {
             RTC_LOG(INFO) << __PRETTY_FUNCTION__;
-            delete m_localChannel;
-            delete m_remoteChannel;
-            if (m_pc.get()) {
+            delete local_channel_;
+            delete remote_channel_;
+            if (pc_.get()) {
                 // warning: pc->close call OnIceConnectionChange
-                m_deleting = true;
-                m_pc->Close();
+                deleting_ = true;
+                pc_->Close();
             }
         }
 
-        Json::Value getIceCandidateList() { return m_iceCandidateList; }
+        Json::Value getIceCandidateList() { return ice_candidate_list_; }
 
         Json::Value getStats() {
-            m_statsCallback->clearReport();
-            m_pc->GetStats(m_statsCallback);
+            stats_callback_->clearReport();
+            pc_->GetStats(stats_callback_);
             int count = 10;
-            while ((m_statsCallback->getReport().empty()) && (--count > 0)) {
+            while ((stats_callback_->getReport().empty()) && (--count > 0)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
-            return Json::Value(m_statsCallback->getReport());
+            return Json::Value(stats_callback_->getReport());
         };
 
         rtc::scoped_refptr<webrtc::PeerConnectionInterface>
         getPeerConnection() {
-            return m_pc;
+            return pc_;
         };
 
         // PeerConnectionObserver interface
@@ -285,21 +284,21 @@ class PeerConnectionManager {
                     << " nb video tracks:" << stream->GetVideoTracks().size();
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {
-                m_videosink.reset(new VideoSink(videoTracks.at(0)));
+                video_sink_.reset(new VideoSink(videoTracks.at(0)));
             }
         }
         virtual void OnRemoveStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__;
-            m_videosink.reset();
+            video_sink_.reset();
         }
         virtual void OnDataChannel(
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__;
-            m_remoteChannel = new DataChannelObserver(webrtc_server_, channel);
+            remote_channel_ = new DataChannelObserver(webrtc_server_, channel);
         }
         virtual void OnRenegotiationNeeded() {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " peerid:" << m_peerid;
+            RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " peerid:" << peerid_;
             ;
         }
 
@@ -309,20 +308,20 @@ class PeerConnectionManager {
         virtual void OnSignalingChange(
                 webrtc::PeerConnectionInterface::SignalingState state) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " state:" << state
-                            << " peerid:" << m_peerid;
+                            << " peerid:" << peerid_;
         }
         virtual void OnIceConnectionChange(
                 webrtc::PeerConnectionInterface::IceConnectionState state) {
             RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " state:" << state
-                          << " peerid:" << m_peerid;
+                          << " peerid:" << peerid_;
             if ((state ==
                  webrtc::PeerConnectionInterface::kIceConnectionFailed) ||
                 (state ==
                  webrtc::PeerConnectionInterface::kIceConnectionClosed)) {
-                m_iceCandidateList.clear();
-                if (!m_deleting) {
+                ice_candidate_list_.clear();
+                if (!deleting_) {
                     std::thread([this]() {
-                        m_peerConnectionManager->hangUp(m_peerid);
+                        peer_connection_manager_->hangUp(peerid_);
                     }).detach();
                 }
             }
@@ -333,16 +332,16 @@ class PeerConnectionManager {
 
     private:
         WebRTCServer* webrtc_server_ = nullptr;
-        PeerConnectionManager* m_peerConnectionManager;
-        const std::string m_peerid;
-        rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_pc;
-        DataChannelObserver* m_localChannel;
-        DataChannelObserver* m_remoteChannel;
-        Json::Value m_iceCandidateList;
+        PeerConnectionManager* peer_connection_manager_;
+        const std::string peerid_;
+        rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
+        DataChannelObserver* local_channel_;
+        DataChannelObserver* remote_channel_;
+        Json::Value ice_candidate_list_;
         rtc::scoped_refptr<PeerConnectionStatsCollectorCallback>
-                m_statsCallback;
-        std::unique_ptr<VideoSink> m_videosink;
-        bool m_deleting;
+                stats_callback_;
+        std::unique_ptr<VideoSink> video_sink_;
+        bool deleting_;
     };
 
 public:

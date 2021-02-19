@@ -1059,7 +1059,7 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
         jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
         jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
         jmessage[kCandidateSdpName] = sdp;
-        m_iceCandidateList.append(jmessage);
+        ice_candidate_list_.append(jmessage);
     }
 }
 
