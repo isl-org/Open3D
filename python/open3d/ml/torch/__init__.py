@@ -73,7 +73,6 @@ for _lp in _lib_path:
         _loaded = True
         break
     except Exception as ex:
-        print(repr(ex))  # Debug
         _load_except = ex
         if not _os.path.isfile(_lp):
             print('The op library at "{}" was not found. Make sure that '

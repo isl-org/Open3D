@@ -204,6 +204,9 @@ install_azure_kinect_dependencies() {
 
 build_all() {
 
+    echo "Using cmake: $(which cmake)"
+    cmake --version
+
     mkdir -p build
     cd build
 
@@ -226,7 +229,7 @@ build_all() {
     echo Running cmake "${cmakeOptions[@]}" ..
     cmake "${cmakeOptions[@]}" ..
     echo
-    echo "build & install Open3D..."
+    echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
     make install -j"$NPROC"
     make VERBOSE=1 install-pip-package -j"$NPROC"
@@ -321,12 +324,16 @@ build_pip_conda_package() {
 # Test wheel in blank virtual environment
 # Usage: test_wheel wheel_path
 test_wheel() {
-    set -x
     wheel_path="$1"
     python -m venv open3d_test.venv
+    # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
+    echo "Using python: $(which python)"
+    python --version
+    echo -n "Using pip: "
+    python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d)"
@@ -344,7 +351,6 @@ test_wheel() {
     set +u
     OPEN3D_ML_ROOT=${OPEN3D_ML_ROOT:-"https://raw.githubusercontent.com/intel-isl/Open3D-ML/master"}
     set -u
-    ls -R $(dirname $(python -c "import open3d as o3d; print(o3d.__file__)")) # debug
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
         if [ "$BUILD_CUDA_MODULE" == ON ]; then
             python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-cuda.txt"
@@ -365,13 +371,12 @@ test_wheel() {
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
     fi
-    set +u
-    deactivate
-    set -u
+    deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
 # Run in virtual environment
 run_python_tests() {
+    # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
     python -m pip install -U pytest=="$PYTEST_VER"
     python -m pip install -U scipy=="$SCIPY_VER"
@@ -381,9 +386,7 @@ run_python_tests() {
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
     python -m pytest "${pytest_args[@]}"
-    set +u
-    deactivate
-    set -u
+    deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
 # Use: run_unit_tests
