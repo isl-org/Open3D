@@ -145,6 +145,29 @@
         navElt.className = "";
       }
 
+      function getModifiers(event) {
+        // See open3d/visualization/gui/Events.h.
+        var modNone = 0;
+        var modShift = 1 << 0;
+        var modCtrl = 1 << 1;
+        var modAlt = 1 << 2;
+        var modMeta = 1 << 3;
+        var mod = modNone;
+        if (event.getModifierState("Shift")) {
+          mod = mod | modShift;
+        }
+        if (event.getModifierState("Control")) {
+          mod = mod | modCtrl;
+        }
+        if (event.getModifierState("Alt")) {
+          mod = mod | modAlt;
+        }
+        if (event.getModifierState("Meta")) {
+          mod = mod | modMeta;
+        }
+        return mod;
+      }
+
       // ------------------------------------------
       // add a webrtc client connection
       // ------------------------------------------
@@ -209,22 +232,50 @@
 
           // Register callbacks for videoElt.
           videoElt.addEventListener("mousedown", (event) => {
-            var msg = "mousedown " + event.offsetX + " " + event.offsetY;
+            var msg =
+              "mousedown " +
+              event.offsetX +
+              " " +
+              event.offsetY +
+              " " +
+              getModifiers(event);
             console.log(msg);
             webRtcServer.dataChannel.send(msg);
           });
           videoElt.addEventListener("mouseup", (event) => {
-            var msg = "mouseup " + event.offsetX + " " + event.offsetY;
+            var msg =
+              "mouseup " +
+              event.offsetX +
+              " " +
+              event.offsetY +
+              " " +
+              getModifiers(event);
             console.log(msg);
             webRtcServer.dataChannel.send(msg);
           });
           videoElt.addEventListener("mousemove", (event) => {
-            var msg = "mousemove " + event.offsetX + " " + event.offsetY;
+            var msg =
+              "mousemove " +
+              event.offsetX +
+              " " +
+              event.offsetY +
+              " " +
+              getModifiers(event);
             console.log(msg);
             webRtcServer.dataChannel.send(msg);
           });
           videoElt.addEventListener("wheel", (event) => {
-            var msg = "wheel " + event.offsetX + " " + event.offsetY + " " + event.deltaX + " " + event.deltaY;
+            var msg =
+              "wheel " +
+              event.offsetX +
+              " " +
+              event.offsetY +
+              " " +
+              getModifiers(event) +
+              " " +
+              event.deltaX +
+              " " +
+              event.deltaY;
             console.log(msg);
             webRtcServer.dataChannel.send(msg);
           });
@@ -261,6 +312,7 @@
       };
     </script>
   </head>
+
   <body>
     <nav id="menu"></nav>
     <div id="content"></div>

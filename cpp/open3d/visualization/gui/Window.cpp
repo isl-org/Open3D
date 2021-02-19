@@ -466,14 +466,13 @@ void Window::CreateRenderer() {
     // down: action 1; up: action 0.
     // TODO: interesting read https://stackoverflow.com/a/20291676/1255535.
     // Delete this line.
-    std::function<void(int, double, double)> mouse_button_callback =
-            [this](int action, double x, double y) {
+    std::function<void(int, double, double, int)> mouse_button_callback =
+            [this](int action, double x, double y, int mods) {
                 auto type = (action == 1 ? MouseEvent::BUTTON_DOWN
                                          : MouseEvent::BUTTON_UP);
                 double mx = x;
                 double my = y;
                 int button = 0;
-                int mods = 0;
                 float scaling = this->GetScaling();
                 int ix = int(std::ceil(mx * scaling));
                 int iy = int(std::ceil(my * scaling));
@@ -486,15 +485,14 @@ void Window::CreateRenderer() {
                 UpdateAfterEvent(this);
             };
 
-    std::function<void(int, double, double)> mouse_move_callback =
-            [this](int mouse_status, double x, double y) {
+    std::function<void(int, double, double, int)> mouse_move_callback =
+            [this](int mouse_status, double x, double y, int mods) {
                 float scaling = this->GetScaling();
                 int ix = int(std::ceil(x * scaling));
                 int iy = int(std::ceil(y * scaling));
 
                 auto type = (mouse_status == 0 ? MouseEvent::MOVE
                                                : MouseEvent::DRAG);
-                int mods = 0;
                 int buttons = mouse_status;
                 MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
                 me.button.button = MouseButton(buttons);
@@ -503,18 +501,19 @@ void Window::CreateRenderer() {
                 UpdateAfterEvent(this);
             };
 
-    std::function<void(double, double, double, double)> mouse_wheel_callback =
-            [this](double x, double y, double dx, double dy) {
-                MouseEvent me;
-                me.type = MouseEvent::WHEEL;
-                me.x = static_cast<float>(x);
-                me.y = static_cast<float>(y);
-                me.modifiers = 0;
-                me.wheel.dx = static_cast<float>(dx);
-                me.wheel.dy = static_cast<float>(dy);
-                this->OnMouseEvent(me);
-                UpdateAfterEvent(this);
-            };
+    std::function<void(double, double, int, double, double)>
+            mouse_wheel_callback =
+                    [this](double x, double y, int mods, double dx, double dy) {
+                        MouseEvent me;
+                        me.type = MouseEvent::WHEEL;
+                        me.x = static_cast<float>(x);
+                        me.y = static_cast<float>(y);
+                        me.modifiers = mods;
+                        me.wheel.dx = static_cast<float>(dx);
+                        me.wheel.dy = static_cast<float>(dy);
+                        this->OnMouseEvent(me);
+                        UpdateAfterEvent(this);
+                    };
 
     // Start WebRTCServer in a different thread.
     // TODO: give WebRTCServer the access to control GUI callbacks.

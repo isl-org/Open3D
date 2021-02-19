@@ -44,10 +44,11 @@ public:
 
     void OnDataChannelMessage(const std::string& message);
 
-    void SetMouseButtonCallback(std::function<void(int, double, double)> f);
-    void SetMouseMoveCallback(std::function<void(int, double, double)> f);
+    void SetMouseButtonCallback(
+            std::function<void(int, double, double, int)> f);
+    void SetMouseMoveCallback(std::function<void(int, double, double, int)> f);
     void SetMouseWheelCallback(
-            std::function<void(double, double, double, double)> f);
+            std::function<void(double, double, int, double, double)> f);
 
 private:
     struct Impl;
