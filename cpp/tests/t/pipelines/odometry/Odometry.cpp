@@ -32,6 +32,7 @@
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -127,7 +128,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     auto src_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
                                                     "/RGBD/depth/00000.png");
     auto dst_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                    "/RGBD/depth/00001.png");
+                                                    "/RGBD/depth/00003.png");
 
     t::geometry::Image src_depth =
             t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
@@ -150,7 +151,6 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
 
     core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
             src_depth, intrinsic_t.To(device));
-    src_vertex_map.Save("src_vertex_map.npy");
 
     t::geometry::Image src_depth_filtered =
             src_depth.FilterBilateral(5, 50, 50);
@@ -159,17 +159,31 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
                                                     intrinsic_t.To(device));
     core::Tensor src_normal_map =
             t::pipelines::odometry::CreateNormalMap(src_vertex_map_filtered);
-    src_normal_map.Save("src_normal_map.npy");
 
     core::Tensor dst_vertex_map = t::pipelines::odometry::CreateVertexMap(
             dst_depth, intrinsic_t.To(device));
-    src_vertex_map.Save("dst_vertex_map.npy");
 
     utility::LogInfo("Odometry starts");
-    core::Tensor delta_src_to_dst =
-            t::pipelines::odometry::ComputePosePointToPlane(
-                    src_vertex_map, dst_vertex_map, src_normal_map, intrinsic_t,
-                    core::Tensor::Eye(4, core::Dtype::Float32, device), 0.07);
+
+    core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float32, device);
+    for (int i = 0; i < 10; ++i) {
+        core::Tensor delta_src_to_dst =
+                t::pipelines::odometry::ComputePosePointToPlane(
+                        src_vertex_map, dst_vertex_map, src_normal_map,
+                        intrinsic_t, trans, 0.07);
+        trans = delta_src_to_dst.Matmul(trans);
+    }
+
+    auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
+            t::geometry::PointCloud({{"points", src_vertex_map.View({-1, 3})}})
+                    .Transform(trans)
+                    .ToLegacyPointCloud());
+    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
+    auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
+            t::geometry::PointCloud({{"points", dst_vertex_map.View({-1, 3})}})
+                    .ToLegacyPointCloud());
+    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    visualization::DrawGeometries({source_pcd, target_pcd});
 }
 
 }  // namespace tests

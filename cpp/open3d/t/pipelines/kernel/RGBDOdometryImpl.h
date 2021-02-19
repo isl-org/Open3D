@@ -136,9 +136,11 @@ void CreateNormalMapCPU
                     float normal_norm =
                             sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
                                  normal[2] * normal[2]);
-                    normal[0] /= normal_norm;
-                    normal[1] /= normal_norm;
-                    normal[2] /= normal_norm;
+                    if (normal_norm > 1e-5) {
+                        normal[0] /= normal_norm;
+                        normal[1] /= normal_norm;
+                        normal[2] /= normal_norm;
+                    }
                 }
             });
 }
@@ -175,11 +177,14 @@ void ComputePosePointToPlaneCPU
     core::Tensor AtA =
             core::Tensor::Zeros({6, 6}, core::Dtype::Float32, device);
     core::Tensor Atb = core::Tensor::Zeros({6}, core::Dtype::Float32, device);
+
+    core::Tensor count = core::Tensor::Zeros({}, core::Dtype::Int32, device);
     residual = core::Tensor::Zeros({}, core::Dtype::Float32, device);
 
     float* AtA_local_ptr = static_cast<float*>(AtA.GetDataPtr());
     float* Atb_local_ptr = static_cast<float*>(Atb.GetDataPtr());
     float* residual_ptr = static_cast<float*>(residual.GetDataPtr());
+    int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
     int64_t n = rows * cols;
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -222,10 +227,10 @@ void ComputePosePointToPlaneCPU
                 J_ij[3] = src_n[0];
                 J_ij[4] = src_n[1];
                 J_ij[5] = src_n[2];
-                printf("(%ld %ld) -> (%f %f): residual = %f, J = (%f %f %f %f "
-                       "%f %f)\n",
-                       x, y, u, v, r, J_ij[0], J_ij[1], J_ij[2], J_ij[3],
-                       J_ij[4], J_ij[5]);
+        // printf("(%ld %ld) -> (%f %f): residual = %f, J = (%f %f %f %f "
+        //        "%f %f)\n",
+        //        x, y, u, v, r, J_ij[0], J_ij[1], J_ij[2], J_ij[3],
+        //        J_ij[4], J_ij[5]);
 
         // Not optimized; Switch to reduction if necessary.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -237,6 +242,7 @@ void ComputePosePointToPlaneCPU
                     atomicAdd(&Atb_local_ptr[i_local], J_ij[i_local] * r);
                 }
                 atomicAdd(residual_ptr, r * r);
+                atomicAdd(count_ptr, 1);
 #else
 #pragma omp critical
                 {
@@ -248,14 +254,17 @@ void ComputePosePointToPlaneCPU
                         Atb_local_ptr[i_local] += J_ij[i_local] * r;
                     }
                     *residual_ptr += r * r;
+                    *count_ptr += 1;
                 }
 #endif
             });
 
     utility::LogInfo("AtA = {}", AtA.ToString());
     utility::LogInfo("Atb = {}", Atb.ToString());
+    utility::LogInfo("residual = {}", residual.ToString());
+    utility::LogInfo("count = {}", count.ToString());
 
-    delta = AtA.Solve(Atb);
+    delta = AtA.Solve(Atb.Neg());
 }
 
 }  // namespace odometry
