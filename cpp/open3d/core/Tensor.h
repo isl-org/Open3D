@@ -36,10 +36,10 @@
 #include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/NestedInitializeList.h"
 #include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorInit.h"
 #include "open3d/core/TensorKey.h"
 
 namespace open3d {
@@ -230,25 +230,6 @@ public:
         std::vector<T> ele_list{val};
         SizeVector shape;
         return Tensor(ele_list, shape, type, device);
-    };
-
-    /// Create a n-D tensor with initializer list.
-    template <typename T, std::size_t I>
-    static Tensor InitN(const nested_initializer_list_t<T, I> nested_list,
-                        const Device& device = Device("CPU:0")) {
-        SizeVector sv = shape<SizeVector>(nested_list);
-
-        // Fix for handling 0-dimentional inputs.
-        size_t last_dim = 0;
-        while (sv.size() > (last_dim + 1) && sv[last_dim] != 0) {
-            last_dim++;
-        }
-        sv.resize(last_dim + 1);
-
-        std::vector<T> dest(sv.NumElements());
-        nested_copy(dest.begin(), nested_list);
-        Dtype type = Dtype::FromType<T>();
-        return Tensor(dest, sv, type, device);
     };
 
     /// Create a 1-D tensor with initializer list.
@@ -1133,6 +1114,26 @@ public:
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
+
+private:
+    /// Create a n-D tensor with initializer list.
+    template <typename T, std::size_t I>
+    static Tensor InitN(const NestedInitializerListT<T, I> nested_list,
+                        const Device& device = Device("CPU:0")) {
+        SizeVector sv = Shape<SizeVector>(nested_list);
+
+        // Fix for handling 0-dimentional inputs.
+        size_t last_dim = 0;
+        while (sv.size() > (last_dim + 1) && sv[last_dim] != 0) {
+            last_dim++;
+        }
+        sv.resize(last_dim + 1);
+
+        std::vector<T> dest(sv.NumElements());
+        NestedCopy(dest.begin(), nested_list);
+        Dtype type = Dtype::FromType<T>();
+        return Tensor(dest, sv, type, device);
+    };
 
 protected:
     /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension
