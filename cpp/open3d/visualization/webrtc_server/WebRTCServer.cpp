@@ -102,6 +102,19 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             double y = static_cast<double>(std::stoi(tokens[2]));
             double dx = static_cast<double>(std::stoi(tokens[3]));
             double dy = static_cast<double>(std::stoi(tokens[4]));
+            // TODO: better scaling.
+            if (dx > 0) {
+                dx = 1;
+            }
+            if (dx < 0) {
+                dx = -1;
+            }
+            if (dy > 0) {
+                dy = 1;
+            }
+            if (dy < 0) {
+                dy = -1;
+            }
             if (mouse_wheel_callback_) {
                 mouse_wheel_callback_(x, y, dx, dy);
             }
