@@ -1,11 +1,36 @@
-/* ---------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** HttpServerRequestHandler.cpp
-**
-** -------------------------------------------------------------------------*/
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Contains source code from
+// https://github.com/mpromonet/webrtc-streamer
+//
+// This software is in the public domain, furnished "as is", without technical
+// support, and with no warranty, express or implied, as to its usefulness for
+// any purpose.
+// ----------------------------------------------------------------------------
 
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 
@@ -33,8 +58,8 @@ const struct CivetCallbacks *getCivetCallbacks() {
 ** -------------------------------------------------------------------------*/
 class RequestHandler : public CivetHandler {
 public:
-    RequestHandler(HttpServerRequestHandler::httpFunction &func)
-        : m_func(func) {}
+    RequestHandler(HttpServerRequestHandler::HttpFunction &func)
+        : func_(func) {}
 
     bool handle(CivetServer *server, struct mg_connection *conn) {
         bool ret = false;
@@ -46,11 +71,11 @@ public:
         Json::Value in = this->getInputMessage(req_info, conn);
 
         // invoke API implementation
-        Json::Value out(m_func(req_info, in));
+        Json::Value out(func_(req_info, in));
 
         // fill out
         if (out.isNull() == false) {
-            std::string answer(Json::writeString(m_writerBuilder, out));
+            std::string answer(Json::writeString(writer_builder_, out));
             std::cout << "answer:" << answer << std::endl;
 
             mg_printf(conn, "HTTP/1.1 200 OK\r\n");
@@ -73,9 +98,9 @@ public:
     }
 
 private:
-    HttpServerRequestHandler::httpFunction m_func;
-    Json::StreamWriterBuilder m_writerBuilder;
-    Json::CharReaderBuilder m_readerBuilder;
+    HttpServerRequestHandler::HttpFunction func_;
+    Json::StreamWriterBuilder writer_builder_;
+    Json::CharReaderBuilder reader_builder_;
 
     Json::Value getInputMessage(const struct mg_request_info *req_info,
                                 struct mg_connection *conn) {
@@ -104,7 +129,7 @@ private:
 
             // parse in
             std::unique_ptr<Json::CharReader> reader(
-                    m_readerBuilder.newCharReader());
+                    reader_builder_.newCharReader());
             std::string errors;
             if (!reader->parse(body.c_str(), body.c_str() + body.size(),
                                &jmessage, &errors)) {
@@ -120,7 +145,7 @@ private:
 **  Constructor
 ** -------------------------------------------------------------------------*/
 HttpServerRequestHandler::HttpServerRequestHandler(
-        std::map<std::string, httpFunction> &func,
+        std::map<std::string, HttpFunction> &func,
         const std::vector<std::string> &options)
     : CivetServer(options, getCivetCallbacks()) {
     // register handlers

@@ -1,11 +1,36 @@
-/* ---------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** PeerConnectionManager.cpp
-**
-** -------------------------------------------------------------------------*/
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Contains source code from
+// https://github.com/mpromonet/webrtc-streamer
+//
+// This software is in the public domain, furnished "as is", without technical
+// support, and with no warranty, express or implied, as to its usefulness for
+// any purpose.
+// ----------------------------------------------------------------------------
 
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
@@ -177,32 +202,31 @@ PeerConnectionManager::PeerConnectionManager(
         WebRTCServer *webrtc_server,
         const std::list<std::string> &iceServerList,
         const Json::Value &config,
-        const std::string &publishFilter,
+        const std::string &publish_filter,
         const std::string &webrtcUdpPortRange)
-    : m_webrtc_server(webrtc_server),
-      m_task_queue_factory(webrtc::CreateDefaultTaskQueueFactory()),
-      m_peer_connection_factory(webrtc::CreateModularPeerConnectionFactory(
+    : webrtc_server_(webrtc_server),
+      task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+      peer_connection_factory_(webrtc::CreateModularPeerConnectionFactory(
               CreatePeerConnectionFactoryDependencies())),
-      m_iceServerList(iceServerList),
-      m_config(config),
-      m_publishFilter(publishFilter) {
+      ice_server_list_(iceServerList),
+      config_(config),
+      publish_filter_(publish_filter) {
     // Set the webrtc port range
-    m_webrtcPortRange = webrtcUdpPortRange;
+    webrtc_port_range_ = webrtcUdpPortRange;
 
     // register api in http server
-    m_func["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
-                                         const Json::Value &in) -> Json::Value {
+    func_["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
+                                        const Json::Value &in) -> Json::Value {
         return this->getMediaList();
     };
 
-    m_func["/api/getIceServers"] =
-            [this](const struct mg_request_info *req_info,
-                   const Json::Value &in) -> Json::Value {
+    func_["/api/getIceServers"] = [this](const struct mg_request_info *req_info,
+                                         const Json::Value &in) -> Json::Value {
         return this->getIceServers(req_info->remote_addr);
     };
 
-    m_func["/api/call"] = [this](const struct mg_request_info *req_info,
-                                 const Json::Value &in) -> Json::Value {
+    func_["/api/call"] = [this](const struct mg_request_info *req_info,
+                                const Json::Value &in) -> Json::Value {
         std::string peerid;
         std::string url;
         std::string options;
@@ -214,8 +238,8 @@ PeerConnectionManager::PeerConnectionManager(
         return this->call(peerid, url, options, in);
     };
 
-    m_func["/api/hangup"] = [this](const struct mg_request_info *req_info,
-                                   const Json::Value &in) -> Json::Value {
+    func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
+                                  const Json::Value &in) -> Json::Value {
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -223,8 +247,8 @@ PeerConnectionManager::PeerConnectionManager(
         return this->hangUp(peerid);
     };
 
-    m_func["/api/createOffer"] = [this](const struct mg_request_info *req_info,
-                                        const Json::Value &in) -> Json::Value {
+    func_["/api/createOffer"] = [this](const struct mg_request_info *req_info,
+                                       const Json::Value &in) -> Json::Value {
         std::string peerid;
         std::string url;
         std::string options;
@@ -235,8 +259,8 @@ PeerConnectionManager::PeerConnectionManager(
         }
         return this->createOffer(peerid, url, options);
     };
-    m_func["/api/setAnswer"] = [this](const struct mg_request_info *req_info,
-                                      const Json::Value &in) -> Json::Value {
+    func_["/api/setAnswer"] = [this](const struct mg_request_info *req_info,
+                                     const Json::Value &in) -> Json::Value {
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -244,7 +268,7 @@ PeerConnectionManager::PeerConnectionManager(
         return this->setAnswer(peerid, in);
     };
 
-    m_func["/api/getIceCandidate"] =
+    func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
         std::string peerid;
@@ -254,7 +278,7 @@ PeerConnectionManager::PeerConnectionManager(
         return this->getIceCandidateList(peerid);
     };
 
-    m_func["/api/addIceCandidate"] =
+    func_["/api/addIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
         std::string peerid;
@@ -264,20 +288,19 @@ PeerConnectionManager::PeerConnectionManager(
         return this->addIceCandidate(peerid, in);
     };
 
-    m_func["/api/getPeerConnectionList"] =
+    func_["/api/getPeerConnectionList"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
         return this->getPeerConnectionList();
     };
 
-    m_func["/api/getStreamList"] =
-            [this](const struct mg_request_info *req_info,
-                   const Json::Value &in) -> Json::Value {
+    func_["/api/getStreamList"] = [this](const struct mg_request_info *req_info,
+                                         const Json::Value &in) -> Json::Value {
         return this->getStreamList();
     };
 
-    m_func["/api/log"] = [](const struct mg_request_info *req_info,
-                            const Json::Value &in) -> Json::Value {
+    func_["/api/log"] = [](const struct mg_request_info *req_info,
+                           const Json::Value &in) -> Json::Value {
         std::string loglevel;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "level", loglevel);
@@ -304,12 +327,12 @@ const Json::Value PeerConnectionManager::getMediaList() {
 
     // Windows, desktops.
     const std::list<std::string> videoList =
-            CapturerFactory::GetVideoSourceList(m_publishFilter);
-    for (auto videoSource : videoList) {
+            CapturerFactory::GetVideoSourceList(publish_filter_);
+    for (auto video_source : videoList) {
         Json::Value media;
         // TODO: fix the hard-coded window name, or, don't use the window name.
-        media["video"] = videoSource;
-        if (videoSource == "window://Open3D") {
+        media["video"] = video_source;
+        if (video_source == "window://Open3D") {
             value.append(media);
             std::cout << "Added media: "
                       << Json::writeString(Json::StreamWriterBuilder(), media)
@@ -335,7 +358,7 @@ const Json::Value PeerConnectionManager::getIceServers(
         const std::string &clientIp) {
     Json::Value urls(Json::arrayValue);
 
-    for (auto iceServer : m_iceServerList) {
+    for (auto iceServer : ice_server_list_) {
         Json::Value server;
         Json::Value urlList(Json::arrayValue);
         IceServer srv = getIceServerFromUrl(iceServer, clientIp);
@@ -360,8 +383,8 @@ rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionManager::getPeerConnection(const std::string &peerid) {
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
     std::map<std::string, PeerConnectionObserver *>::iterator it =
-            m_peer_connectionobs_map.find(peerid);
-    if (it != m_peer_connectionobs_map.end()) {
+            peer_connectionobs_map_.find(peerid);
+    if (it != peer_connectionobs_map_.end()) {
         peerConnection = it->second->getPeerConnection();
     }
     return peerConnection;
@@ -388,7 +411,7 @@ const Json::Value PeerConnectionManager::addIceCandidate(
         if (!candidate.get()) {
             RTC_LOG(WARNING) << "Can't parse received candidate message.";
         } else {
-            std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
+            std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
             rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
                     this->getPeerConnection(peerid);
             if (peerConnection) {
@@ -413,9 +436,9 @@ const Json::Value PeerConnectionManager::addIceCandidate(
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::createOffer(
         const std::string &peerid,
-        const std::string &videourl,
+        const std::string &video_url,
         const std::string &options) {
-    RTC_LOG(INFO) << __FUNCTION__ << " video:" << videourl
+    RTC_LOG(INFO) << __FUNCTION__ << " video:" << video_url
                   << " options:" << options;
     Json::Value offer;
 
@@ -427,14 +450,14 @@ const Json::Value PeerConnectionManager::createOffer(
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
                 peerConnectionObserver->getPeerConnection();
 
-        if (!this->AddStreams(peerConnection, videourl, options)) {
+        if (!this->AddStreams(peerConnection, video_url, options)) {
             RTC_LOG(WARNING) << "Can't add stream";
         }
 
         // register peerid
         {
-            std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
-            m_peer_connectionobs_map.insert(
+            std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+            peer_connectionobs_map_.insert(
                     std::pair<std::string, PeerConnectionObserver *>(
                             peerid, peerConnectionObserver));
         }
@@ -500,7 +523,7 @@ const Json::Value PeerConnectionManager::setAnswer(
                             << " received session description :"
                             << session_description->type();
 
-            std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
+            std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
             rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
                     this->getPeerConnection(peerid);
             if (peerConnection) {
@@ -541,10 +564,10 @@ const Json::Value PeerConnectionManager::setAnswer(
 **  auto-answer to a call
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::call(const std::string &peerid,
-                                              const std::string &videourl,
+                                              const std::string &video_url,
                                               const std::string &options,
                                               const Json::Value &jmessage) {
-    RTC_LOG(INFO) << __FUNCTION__ << " video:" << videourl
+    RTC_LOG(INFO) << __FUNCTION__ << " video:" << video_url
                   << " options:" << options;
 
     Json::Value answer;
@@ -577,8 +600,8 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid,
 
             // register peerid
             {
-                std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
-                m_peer_connectionobs_map.insert(
+                std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+                peer_connectionobs_map_.insert(
                         std::pair<std::string, PeerConnectionObserver *>(
                                 peerid, peerConnectionObserver));
             }
@@ -608,7 +631,7 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid,
             }
 
             // add local stream
-            if (!this->AddStreams(peerConnection, videourl, options)) {
+            if (!this->AddStreams(peerConnection, video_url, options)) {
                 RTC_LOG(WARNING) << "Can't add stream";
             }
 
@@ -648,7 +671,7 @@ const Json::Value PeerConnectionManager::call(const std::string &peerid,
 
 bool PeerConnectionManager::streamStillUsed(const std::string &streamLabel) {
     bool stillUsed = false;
-    for (auto it : m_peer_connectionobs_map) {
+    for (auto it : peer_connectionobs_map_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
                 it.second->getPeerConnection();
         rtc::scoped_refptr<webrtc::StreamCollectionInterface> localstreams(
@@ -672,13 +695,13 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid) {
 
     PeerConnectionObserver *pcObserver = nullptr;
     {
-        std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
+        std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
         std::map<std::string, PeerConnectionObserver *>::iterator it =
-                m_peer_connectionobs_map.find(peerid);
-        if (it != m_peer_connectionobs_map.end()) {
+                peer_connectionobs_map_.find(peerid);
+        if (it != peer_connectionobs_map_.end()) {
             pcObserver = it->second;
             RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
-            m_peer_connectionobs_map.erase(it);
+            peer_connectionobs_map_.erase(it);
         }
 
         if (pcObserver) {
@@ -695,10 +718,10 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid) {
                 if (!stillUsed) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << streamLabel;
-                    std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-                    auto it = m_stream_map.find(streamLabel);
-                    if (it != m_stream_map.end()) {
-                        m_stream_map.erase(it);
+                    std::lock_guard<std::mutex> mlock(stream_map_mutex_);
+                    auto it = stream_map_.find(streamLabel);
+                    if (it != stream_map_.end()) {
+                        stream_map_.erase(it);
                     }
 
                     RTC_LOG(LS_ERROR) << "hangUp stream closed " << streamLabel;
@@ -727,10 +750,10 @@ const Json::Value PeerConnectionManager::getIceCandidateList(
     RTC_LOG(INFO) << __FUNCTION__;
 
     Json::Value value;
-    std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
+    std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
     std::map<std::string, PeerConnectionObserver *>::iterator it =
-            m_peer_connectionobs_map.find(peerid);
-    if (it != m_peer_connectionobs_map.end()) {
+            peer_connectionobs_map_.find(peerid);
+    if (it != peer_connectionobs_map_.end()) {
         PeerConnectionObserver *obs = it->second;
         if (obs) {
             value = obs->getIceCandidateList();
@@ -747,8 +770,8 @@ const Json::Value PeerConnectionManager::getIceCandidateList(
 const Json::Value PeerConnectionManager::getPeerConnectionList() {
     Json::Value value(Json::arrayValue);
 
-    std::lock_guard<std::mutex> peerlock(m_peerMapMutex);
-    for (auto it : m_peer_connectionobs_map) {
+    std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+    for (auto it : peer_connectionobs_map_) {
         Json::Value content;
 
         // get local SDP
@@ -814,9 +837,9 @@ const Json::Value PeerConnectionManager::getPeerConnectionList() {
 **  get StreamList list
 ** -------------------------------------------------------------------------*/
 const Json::Value PeerConnectionManager::getStreamList() {
-    std::lock_guard<std::mutex> mlock(m_streamMapMutex);
+    std::lock_guard<std::mutex> mlock(stream_map_mutex_);
     Json::Value value(Json::arrayValue);
-    for (auto it : m_stream_map) {
+    for (auto it : stream_map_) {
         value.append(it.first);
     }
     return value;
@@ -826,7 +849,7 @@ const Json::Value PeerConnectionManager::getStreamList() {
 **  check if factory is initialized
 ** -------------------------------------------------------------------------*/
 bool PeerConnectionManager::InitializePeerConnection() {
-    return (m_peer_connection_factory.get() != nullptr);
+    return (peer_connection_factory_.get() != nullptr);
 }
 
 /* ---------------------------------------------------------------------------
@@ -835,7 +858,7 @@ bool PeerConnectionManager::InitializePeerConnection() {
 PeerConnectionManager::PeerConnectionObserver *
 PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     webrtc::PeerConnectionInterface::RTCConfiguration config;
-    for (auto iceServer : m_iceServerList) {
+    for (auto iceServer : ice_server_list_) {
         webrtc::PeerConnectionInterface::IceServer server;
         IceServer srv = getIceServerFromUrl(iceServer);
         server.uri = srv.url;
@@ -848,7 +871,7 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     // https://soru.site/questions/51578447/api-c-webrtcyi-kullanarak-peerconnection-ve-ucretsiz-baglant-noktasn-serbest-nasl
     int minPort = 0;
     int maxPort = 65535;
-    std::istringstream is(m_webrtcPortRange);
+    std::istringstream is(webrtc_port_range_);
     std::string port;
     if (std::getline(is, port, ':')) {
         minPort = std::stoi(port);
@@ -865,7 +888,7 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
 
     RTC_LOG(INFO) << __FUNCTION__ << "CreatePeerConnection peerid:" << peerid;
     PeerConnectionObserver *obs =
-            new PeerConnectionObserver(this->m_webrtc_server, this, peerid,
+            new PeerConnectionObserver(this->webrtc_server_, this, peerid,
                                        config, std::move(port_allocator));
     if (!obs) {
         RTC_LOG(LERROR) << __FUNCTION__ << "CreatePeerConnection failed";
@@ -879,17 +902,17 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
 
 rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
 PeerConnectionManager::CreateVideoSource(
-        const std::string &videourl,
+        const std::string &video_url,
         const std::map<std::string, std::string> &opts) {
-    RTC_LOG(INFO) << "videourl:" << videourl;
+    RTC_LOG(INFO) << "video_url:" << video_url;
 
-    std::string video = videourl;
-    if (m_config.isMember(video)) {
-        video = m_config[video]["video"].asString();
+    std::string video = video_url;
+    if (config_.isMember(video)) {
+        video = config_[video]["video"].asString();
     }
 
-    return CapturerFactory::CreateVideoSource(video, opts, m_publishFilter,
-                                              m_peer_connection_factory);
+    return CapturerFactory::CreateVideoSource(video, opts, publish_filter_,
+                                              peer_connection_factory_);
 }
 
 const std::string PeerConnectionManager::sanitizeLabel(
@@ -912,14 +935,14 @@ const std::string PeerConnectionManager::sanitizeLabel(
 ** -------------------------------------------------------------------------*/
 bool PeerConnectionManager::AddStreams(
         webrtc::PeerConnectionInterface *peer_connection,
-        const std::string &videourl,
+        const std::string &video_url,
         const std::string &options) {
     bool ret = false;
 
     // compute options
     std::string optstring = options;
-    if (m_config.isMember(videourl)) {
-        std::string urlopts = m_config[videourl]["options"].asString();
+    if (config_.isMember(video_url)) {
+        std::string urlopts = config_[video_url]["options"].asString();
         if (options.empty()) {
             optstring = urlopts;
         } else if (options.find_first_of("&") == 0) {
@@ -937,9 +960,9 @@ bool PeerConnectionManager::AddStreams(
         opts[key] = value;
     }
 
-    std::string video = videourl;
-    if (m_config.isMember(video)) {
-        video = m_config[video]["video"].asString();
+    std::string video = video_url;
+    if (config_.isMember(video)) {
+        video = config_[video]["video"].asString();
     }
 
     // set bandwidth
@@ -956,45 +979,45 @@ bool PeerConnectionManager::AddStreams(
     }
 
     // compute stream label removing space because SDP use label
-    std::string streamLabel = this->sanitizeLabel(videourl);
+    std::string streamLabel = this->sanitizeLabel(video_url);
 
     bool existingStream = false;
     {
-        std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-        existingStream = (m_stream_map.find(streamLabel) != m_stream_map.end());
+        std::lock_guard<std::mutex> mlock(stream_map_mutex_);
+        existingStream = (stream_map_.find(streamLabel) != stream_map_.end());
     }
 
     if (!existingStream) {
         // need to create the stream
-        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource(
+        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
-        std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-        m_stream_map[streamLabel] = videoSource;
+        std::lock_guard<std::mutex> mlock(stream_map_mutex_);
+        stream_map_[streamLabel] = video_source;
     }
 
     // create a new webrtc stream
     {
-        std::lock_guard<std::mutex> mlock(m_streamMapMutex);
-        auto it = m_stream_map.find(streamLabel);
-        if (it != m_stream_map.end()) {
+        std::lock_guard<std::mutex> mlock(stream_map_mutex_);
+        auto it = stream_map_.find(streamLabel);
+        if (it != stream_map_.end()) {
             rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-                    m_peer_connection_factory->CreateLocalMediaStream(
+                    peer_connection_factory_->CreateLocalMediaStream(
                             streamLabel);
             if (!stream.get()) {
                 RTC_LOG(LS_ERROR) << "Cannot create stream";
             } else {
                 rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
-                        videoSource = it->second;
+                        video_source = it->second;
                 rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
-                if (!videoSource) {
+                if (!video_source) {
                     RTC_LOG(LS_ERROR)
-                            << "Cannot create capturer video:" << videourl;
+                            << "Cannot create capturer video:" << video_url;
                 } else {
                     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
                             videoScaled = VideoFilter<VideoScaler>::Create(
-                                    videoSource, opts);
-                    video_track = m_peer_connection_factory->CreateVideoTrack(
+                                    video_source, opts);
+                    video_track = peer_connection_factory_->CreateVideoTrack(
                             streamLabel + "_video", videoScaled);
                 }
 

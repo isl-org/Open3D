@@ -1,11 +1,36 @@
-/* ---------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** PeerConnectionManager.h
-**
-** -------------------------------------------------------------------------*/
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Contains source code from
+// https://github.com/mpromonet/webrtc-streamer
+//
+// This software is in the public domain, furnished "as is", without technical
+// support, and with no warranty, express or implied, as to its usefulness for
+// any purpose.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -155,7 +180,7 @@ class PeerConnectionManager {
         DataChannelObserver(
                 WebRTCServer* webrtc_server,
                 rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel)
-            : m_webrtc_server(webrtc_server), m_dataChannel(dataChannel) {
+            : webrtc_server_(webrtc_server), m_dataChannel(dataChannel) {
             m_dataChannel->RegisterObserver(this);
         }
         virtual ~DataChannelObserver() { m_dataChannel->UnregisterObserver(); }
@@ -180,11 +205,11 @@ class PeerConnectionManager {
                     << __PRETTY_FUNCTION__
                     << " channel:" << m_dataChannel->label() << " msg:" << msg;
 
-            m_webrtc_server->OnDataChannelMessage(msg);
+            webrtc_server_->OnDataChannelMessage(msg);
         }
 
     protected:
-        WebRTCServer* m_webrtc_server;
+        WebRTCServer* webrtc_server_;
         rtc::scoped_refptr<webrtc::DataChannelInterface> m_dataChannel;
     };
 
@@ -196,7 +221,7 @@ class PeerConnectionManager {
                 const std::string& peerid,
                 const webrtc::PeerConnectionInterface::RTCConfiguration& config,
                 std::unique_ptr<cricket::PortAllocator> portAllocator)
-            : m_webrtc_server(webrtc_server),
+            : webrtc_server_(webrtc_server),
               m_peerConnectionManager(peerConnectionManager),
               m_peerid(peerid),
               m_localChannel(nullptr),
@@ -205,7 +230,7 @@ class PeerConnectionManager {
               m_deleting(false) {
             RTC_LOG(INFO) << __FUNCTION__
                           << "CreatePeerConnection peerid:" << peerid;
-            m_pc = m_peerConnectionManager->m_peer_connection_factory
+            m_pc = m_peerConnectionManager->peer_connection_factory_
                            ->CreatePeerConnection(config,
                                                   std::move(portAllocator),
                                                   nullptr, this);
@@ -217,7 +242,7 @@ class PeerConnectionManager {
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel =
                         m_pc->CreateDataChannel("ServerDataChannel", nullptr);
                 m_localChannel =
-                        new DataChannelObserver(m_webrtc_server, channel);
+                        new DataChannelObserver(webrtc_server_, channel);
             }
 
             m_statsCallback = new rtc::RefCountedObject<
@@ -271,7 +296,7 @@ class PeerConnectionManager {
         virtual void OnDataChannel(
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel) {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__;
-            m_remoteChannel = new DataChannelObserver(m_webrtc_server, channel);
+            m_remoteChannel = new DataChannelObserver(webrtc_server_, channel);
         }
         virtual void OnRenegotiationNeeded() {
             RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " peerid:" << m_peerid;
@@ -307,7 +332,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface::IceGatheringState) {}
 
     private:
-        WebRTCServer* m_webrtc_server = nullptr;
+        WebRTCServer* webrtc_server_ = nullptr;
         PeerConnectionManager* m_peerConnectionManager;
         const std::string m_peerid;
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_pc;
@@ -324,14 +349,14 @@ public:
     PeerConnectionManager(WebRTCServer* webrtc_server,
                           const std::list<std::string>& iceServerList,
                           const Json::Value& config,
-                          const std::string& publishFilter,
+                          const std::string& publish_filter,
                           const std::string& webrtcUdpPortRange);
     virtual ~PeerConnectionManager();
 
     bool InitializePeerConnection();
-    const std::map<std::string, HttpServerRequestHandler::httpFunction>
+    const std::map<std::string, HttpServerRequestHandler::HttpFunction>
     getHttpApi() {
-        return m_func;
+        return func_;
     };
 
     const Json::Value getIceCandidateList(const std::string& peerid);
@@ -340,14 +365,14 @@ public:
     const Json::Value getMediaList();
     const Json::Value hangUp(const std::string& peerid);
     const Json::Value call(const std::string& peerid,
-                           const std::string& videourl,
+                           const std::string& video_url,
                            const std::string& options,
                            const Json::Value& jmessage);
     const Json::Value getIceServers(const std::string& clientIp);
     const Json::Value getPeerConnectionList();
     const Json::Value getStreamList();
     const Json::Value createOffer(const std::string& peerid,
-                                  const std::string& videourl,
+                                  const std::string& video_url,
                                   const std::string& options);
     const Json::Value setAnswer(const std::string& peerid,
                                 const Json::Value& jmessage);
@@ -355,10 +380,10 @@ public:
 protected:
     PeerConnectionObserver* CreatePeerConnection(const std::string& peerid);
     bool AddStreams(webrtc::PeerConnectionInterface* peer_connection,
-                    const std::string& videourl,
+                    const std::string& video_url,
                     const std::string& options);
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(
-            const std::string& videourl,
+            const std::string& video_url,
             const std::map<std::string, std::string>& opts);
     bool streamStillUsed(const std::string& streamLabel);
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> getPeerConnection(
@@ -366,20 +391,20 @@ protected:
     const std::string sanitizeLabel(const std::string& label);
 
 protected:
-    WebRTCServer* m_webrtc_server = nullptr;
-    std::unique_ptr<webrtc::TaskQueueFactory> m_task_queue_factory;
+    WebRTCServer* webrtc_server_ = nullptr;
+    std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-            m_peer_connection_factory;
-    std::mutex m_peerMapMutex;
-    std::map<std::string, PeerConnectionObserver*> m_peer_connectionobs_map;
+            peer_connection_factory_;
+    std::mutex peer_map_mutex_;
+    std::map<std::string, PeerConnectionObserver*> peer_connectionobs_map_;
     std::map<std::string, rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>>
-            m_stream_map;
-    std::mutex m_streamMapMutex;
-    std::list<std::string> m_iceServerList;
-    const Json::Value m_config;
-    const std::regex m_publishFilter;
-    std::map<std::string, HttpServerRequestHandler::httpFunction> m_func;
-    std::string m_webrtcPortRange;
+            stream_map_;
+    std::mutex stream_map_mutex_;
+    std::list<std::string> ice_server_list_;
+    const Json::Value config_;
+    const std::regex publish_filter_;
+    std::map<std::string, HttpServerRequestHandler::HttpFunction> func_;
+    std::string webrtc_port_range_;
 };
 
 }  // namespace webrtc_server

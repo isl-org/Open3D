@@ -1,9 +1,28 @@
-/* ---------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** -------------------------------------------------------------------------*/
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -96,7 +115,7 @@ public:
     ImageCapturer(const std::string& url_,
                   const std::map<std::string, std::string>& opts)
         : ImageCapturer(opts) {
-        m_capturer = std::unique_ptr<ImageReader>(new ImageReader());
+        capturer_ = std::unique_ptr<ImageReader>(new ImageReader());
     }
 
     static ImageCapturer* Create(
@@ -111,22 +130,22 @@ public:
     }
 
     ImageCapturer(const std::map<std::string, std::string>& opts)
-        : m_width(0), m_height(0) {
+        : width_(0), height_(0) {
         if (opts.find("width") != opts.end()) {
-            m_width = std::stoi(opts.at("width"));
+            width_ = std::stoi(opts.at("width"));
         }
         if (opts.find("height") != opts.end()) {
-            m_height = std::stoi(opts.at("height"));
+            height_ = std::stoi(opts.at("height"));
         }
-        // if (m_height != 480) {
+        // if (height_ != 480) {
         //     utility::LogError(
         //             "TODO: flexible height. Unsupported hight for now: {}",
-        //             m_height);
+        //             height_);
         // }
-        // if (m_width != 640) {
+        // if (width_ != 640) {
         //     utility::LogError(
         //             "TODO: flexible width. Unsupported width for now: {}",
-        //             m_width);
+        //             width_);
         // }
     }
     bool Init() { return this->Start(); }
@@ -135,22 +154,22 @@ public:
     void CaptureThread() {
         RTC_LOG(INFO) << "DesktopCapturer:Run start";
         while (IsRunning()) {
-            m_capturer->CaptureFrame();
+            capturer_->CaptureFrame();
         }
         RTC_LOG(INFO) << "DesktopCapturer:Run exit";
     }
 
     bool Start() {
-        m_capturer->Start(this);
-        m_isrunning = true;
-        m_capturethread = std::thread(&ImageCapturer::CaptureThread, this);
+        capturer_->Start(this);
+        is_running_ = true;
+        capture_thread_ = std::thread(&ImageCapturer::CaptureThread, this);
         return true;
     }
     void Stop() {
-        m_isrunning = false;
-        m_capturethread.join();
+        is_running_ = false;
+        capture_thread_.join();
     }
-    bool IsRunning() { return m_isrunning; }
+    bool IsRunning() { return is_running_; }
 
     // overide webrtc::DesktopCapturer::Callback
     // See: WindowCapturerX11::CaptureFrame
@@ -160,32 +179,34 @@ public:
         int height = (int)frame.GetShape(0);
         int width = (int)frame.GetShape(1);
 
-        rtc::scoped_refptr<webrtc::I420Buffer> I420buffer =
+        rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
                 webrtc::I420Buffer::Create(width, height);
 
         // frame->data()
-        const int conversionResult = libyuv::ConvertToI420(
+        const int conversion_result = libyuv::ConvertToI420(
                 static_cast<const uint8_t*>(frame.GetDataPtr()), 0,
-                I420buffer->MutableDataY(), I420buffer->StrideY(),
-                I420buffer->MutableDataU(), I420buffer->StrideU(),
-                I420buffer->MutableDataV(), I420buffer->StrideV(), 0, 0, width,
-                height, I420buffer->width(), I420buffer->height(),
+                i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                i420_buffer->MutableDataV(), i420_buffer->StrideV(), 0, 0,
+                width, height, i420_buffer->width(), i420_buffer->height(),
                 libyuv::kRotate0, ::libyuv::FOURCC_ARGB);
 
-        if (conversionResult >= 0) {
-            webrtc::VideoFrame videoFrame(
-                    I420buffer, webrtc::VideoRotation::kVideoRotation_0,
+        if (conversion_result >= 0) {
+            webrtc::VideoFrame video_frame(
+                    i420_buffer, webrtc::VideoRotation::kVideoRotation_0,
                     rtc::TimeMicros());
-            if ((m_height == 0) && (m_width == 0)) {
-                broadcaster_.OnFrame(videoFrame);
+            if ((height_ == 0) && (width_ == 0)) {
+                broadcaster_.OnFrame(video_frame);
 
             } else {
-                int height = m_height;
-                int width = m_width;
+                int height = height_;
+                int width = width_;
                 if (height == 0) {
-                    height = (videoFrame.height() * width) / videoFrame.width();
+                    height = (video_frame.height() * width) /
+                             video_frame.width();
                 } else if (width == 0) {
-                    width = (videoFrame.width() * height) / videoFrame.height();
+                    width = (video_frame.width() * height) /
+                            video_frame.height();
                 }
                 int stride_y = width;
                 int stride_uv = (width + 1) / 2;
@@ -193,7 +214,7 @@ public:
                         webrtc::I420Buffer::Create(width, height, stride_y,
                                                    stride_uv, stride_uv);
                 scaled_buffer->ScaleFrom(
-                        *videoFrame.video_frame_buffer()->ToI420());
+                        *video_frame.video_frame_buffer()->ToI420());
                 webrtc::VideoFrame frame = webrtc::VideoFrame(
                         scaled_buffer, webrtc::kVideoRotation_0,
                         rtc::TimeMicros());
@@ -203,7 +224,7 @@ public:
         } else {
             RTC_LOG(LS_ERROR)
                     << "DesktopCapturer:OnCaptureResult conversion error:"
-                    << conversionResult;
+                    << conversion_result;
         }
     }
 
@@ -219,11 +240,11 @@ public:
     }
 
 protected:
-    std::thread m_capturethread;
-    std::unique_ptr<ImageReader> m_capturer;
-    int m_width;
-    int m_height;
-    bool m_isrunning;
+    std::thread capture_thread_;
+    std::unique_ptr<ImageReader> capturer_;
+    int width_;
+    int height_;
+    bool is_running_;
     rtc::VideoBroadcaster broadcaster_;
 };
 

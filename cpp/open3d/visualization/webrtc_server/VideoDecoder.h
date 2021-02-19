@@ -1,12 +1,36 @@
-/* ---------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** VideoDecoder.h
-**
-** -------------------------------------------------------------------------*/
-
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Contains source code from
+// https://github.com/mpromonet/webrtc-streamer
+//
+// This software is in the public domain, furnished "as is", without technical
+// support, and with no warranty, express or implied, as to its usefulness for
+// any purpose.
+// ----------------------------------------------------------------------------
 #pragma once
 
 #include <api/video/i420_buffer.h>
@@ -41,22 +65,22 @@ public:
     VideoDecoder(rtc::VideoBroadcaster& broadcaster,
                  const std::map<std::string, std::string>& opts,
                  bool wait)
-        : m_broadcaster(broadcaster),
-          m_stop(false),
-          m_wait(wait),
-          m_previmagets(0),
-          m_prevts(0) {}
+        : broadcaster_(broadcaster),
+          stop_(false),
+          wait_(wait),
+          previmagets_(0),
+          prevts_(0) {}
 
     virtual ~VideoDecoder() {}
 
     void DecoderThread() {
-        while (!m_stop) {
-            std::unique_lock<std::mutex> mlock(m_queuemutex);
-            while (m_queue.empty()) {
-                m_queuecond.wait(mlock);
+        while (!stop_) {
+            std::unique_lock<std::mutex> mlock(queue_mutex_);
+            while (queue_.empty()) {
+                queue_cond_.wait(mlock);
             }
-            Frame frame = m_queue.front();
-            m_queue.pop();
+            Frame frame = queue_.front();
+            queue_.pop();
             mlock.unlock();
 
             if (frame.m_content.get() != nullptr) {
@@ -72,8 +96,8 @@ public:
                     input_image.SetTimestamp(
                             frame.m_timestamp_ms);  // store time in ms that
                                                     // overflow the 32bits
-                    int res = m_decoder->Decode(input_image, false,
-                                                frame.m_timestamp_ms);
+                    int res = decoder_->Decode(input_image, false,
+                                               frame.m_timestamp_ms);
                     if (res != WEBRTC_VIDEO_CODEC_OK) {
                         RTC_LOG(LS_ERROR)
                                 << "VideoDecoder::DecoderThread failure:"
@@ -86,20 +110,20 @@ public:
 
     void Start() {
         RTC_LOG(INFO) << "VideoDecoder::start";
-        m_stop = false;
-        m_decoderthread = std::thread(&VideoDecoder::DecoderThread, this);
+        stop_ = false;
+        decoder_thread_ = std::thread(&VideoDecoder::DecoderThread, this);
     }
 
     void Stop() {
         RTC_LOG(INFO) << "VideoDecoder::stop";
-        m_stop = true;
+        stop_ = true;
         Frame frame;
         {
-            std::unique_lock<std::mutex> lock(m_queuemutex);
-            m_queue.push(frame);
+            std::unique_lock<std::mutex> lock(queue_mutex_);
+            queue_.push(frame);
         }
-        m_queuecond.notify_all();
-        m_decoderthread.join();
+        queue_cond_.notify_all();
+        decoder_thread_.join();
     }
 
     std::vector<std::vector<uint8_t>> getInitFrames(const std::string& codec,
@@ -142,23 +166,23 @@ public:
     void createDecoder(const std::string& codec) {
         webrtc::VideoCodec codec_settings;
         if (codec == "H264") {
-            m_decoder = m_factory.CreateVideoDecoder(
+            decoder_ = factory_.CreateVideoDecoder(
                     webrtc::SdpVideoFormat(cricket::kH264CodecName));
             codec_settings.codecType = webrtc::VideoCodecType::kVideoCodecH264;
         } else if (codec == "VP9") {
-            m_decoder = m_factory.CreateVideoDecoder(
+            decoder_ = factory_.CreateVideoDecoder(
                     webrtc::SdpVideoFormat(cricket::kVp9CodecName));
             codec_settings.codecType = webrtc::VideoCodecType::kVideoCodecVP9;
         }
-        if (m_decoder.get() != nullptr) {
-            m_decoder->InitDecode(&codec_settings, 2);
-            m_decoder->RegisterDecodeCompleteCallback(this);
+        if (decoder_.get() != nullptr) {
+            decoder_->InitDecode(&codec_settings, 2);
+            decoder_->RegisterDecodeCompleteCallback(this);
         }
     }
 
-    void destroyDecoder() { m_decoder.reset(nullptr); }
+    void destroyDecoder() { decoder_.reset(nullptr); }
 
-    bool hasDecoder() { return (m_decoder.get() != nullptr); }
+    bool hasDecoder() { return (decoder_.get() != nullptr); }
 
     void PostFrame(
             const rtc::scoped_refptr<webrtc::EncodedImageBuffer>& content,
@@ -166,10 +190,10 @@ public:
             webrtc::VideoFrameType frameType) {
         Frame frame(content, ts, frameType);
         {
-            std::unique_lock<std::mutex> lock(m_queuemutex);
-            m_queue.push(frame);
+            std::unique_lock<std::mutex> lock(queue_mutex_);
+            queue_.push(frame);
         }
-        m_queuecond.notify_all();
+        queue_cond_.notify_all();
     }
 
     // overide webrtc::DecodedImageCallback
@@ -185,9 +209,9 @@ public:
                 << " source ts:" << ts;
 
         // waiting
-        if ((m_wait) && (m_prevts != 0)) {
-            int64_t periodSource = decodedImage.timestamp() - m_previmagets;
-            int64_t periodDecode = ts - m_prevts;
+        if ((wait_) && (prevts_ != 0)) {
+            int64_t periodSource = decodedImage.timestamp() - previmagets_;
+            int64_t periodDecode = ts - prevts_;
 
             RTC_LOG(LS_VERBOSE) << "VideoDecoder::Decoded interframe decode:"
                                 << periodDecode << " source:" << periodSource;
@@ -197,30 +221,30 @@ public:
             }
         }
 
-        m_broadcaster.OnFrame(decodedImage);
+        broadcaster_.OnFrame(decodedImage);
 
-        m_previmagets = decodedImage.timestamp();
-        m_prevts = std::chrono::high_resolution_clock::now()
-                           .time_since_epoch()
-                           .count() /
-                   1000 / 1000;
+        previmagets_ = decodedImage.timestamp();
+        prevts_ = std::chrono::high_resolution_clock::now()
+                          .time_since_epoch()
+                          .count() /
+                  1000 / 1000;
 
         return 1;
     }
 
-    rtc::VideoBroadcaster& m_broadcaster;
-    webrtc::InternalDecoderFactory m_factory;
-    std::unique_ptr<webrtc::VideoDecoder> m_decoder;
+    rtc::VideoBroadcaster& broadcaster_;
+    webrtc::InternalDecoderFactory factory_;
+    std::unique_ptr<webrtc::VideoDecoder> decoder_;
 
-    std::queue<Frame> m_queue;
-    std::mutex m_queuemutex;
-    std::condition_variable m_queuecond;
-    std::thread m_decoderthread;
-    bool m_stop;
+    std::queue<Frame> queue_;
+    std::mutex queue_mutex_;
+    std::condition_variable queue_cond_;
+    std::thread decoder_thread_;
+    bool stop_;
 
-    bool m_wait;
-    int64_t m_previmagets;
-    int64_t m_prevts;
+    bool wait_;
+    int64_t previmagets_;
+    int64_t prevts_;
 };
 
 }  // namespace webrtc_server

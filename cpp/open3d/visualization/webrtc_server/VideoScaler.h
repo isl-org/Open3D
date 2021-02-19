@@ -1,11 +1,36 @@
-/* ---------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** VideoScaler.h
-**
-** -------------------------------------------------------------------------*/
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Contains source code from
+// https://github.com/mpromonet/webrtc-streamer
+//
+// This software is in the public domain, furnished "as is", without technical
+// support, and with no warranty, express or implied, as to its usefulness for
+// any purpose.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -20,66 +45,66 @@ class VideoScaler : public rtc::VideoSinkInterface<webrtc::VideoFrame>,
                     public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
     VideoScaler(
-            rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> videoSource,
+            rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source,
             const std::map<std::string, std::string> &opts)
-        : m_videoSource(videoSource),
-          m_width(0),
-          m_height(0),
-          m_rotation(webrtc::kVideoRotation_0),
-          m_roi_x(0),
-          m_roi_y(0),
-          m_roi_width(0),
-          m_roi_height(0) {
+        : video_source_(video_source),
+          width_(0),
+          height_(0),
+          rotation_(webrtc::kVideoRotation_0),
+          roi_x_(0),
+          roi_y_(0),
+          roi_width_(0),
+          roi_height_(0) {
         if (opts.find("width") != opts.end()) {
-            m_width = std::stoi(opts.at("width"));
+            width_ = std::stoi(opts.at("width"));
         }
         if (opts.find("height") != opts.end()) {
-            m_height = std::stoi(opts.at("height"));
+            height_ = std::stoi(opts.at("height"));
         }
         if (opts.find("rotation") != opts.end()) {
             int rotation = std::stoi(opts.at("rotation"));
             switch (rotation) {
                 case 90:
-                    m_rotation = webrtc::kVideoRotation_90;
+                    rotation_ = webrtc::kVideoRotation_90;
                     break;
                 case 180:
-                    m_rotation = webrtc::kVideoRotation_180;
+                    rotation_ = webrtc::kVideoRotation_180;
                     break;
                 case 270:
-                    m_rotation = webrtc::kVideoRotation_270;
+                    rotation_ = webrtc::kVideoRotation_270;
                     break;
             }
         }
         if (opts.find("roi_x") != opts.end()) {
-            m_roi_x = std::stoi(opts.at("roi_x"));
-            if (m_roi_x < 0) {
+            roi_x_ = std::stoi(opts.at("roi_x"));
+            if (roi_x_ < 0) {
                 RTC_LOG(LS_ERROR)
-                        << "Ignore roi_x=" << m_roi_x << ", it muss be >=0";
-                m_roi_x = 0;
+                        << "Ignore roi_x=" << roi_x_ << ", it muss be >=0";
+                roi_x_ = 0;
             }
         }
         if (opts.find("roi_y") != opts.end()) {
-            m_roi_y = std::stoi(opts.at("roi_y"));
-            if (m_roi_y < 0) {
+            roi_y_ = std::stoi(opts.at("roi_y"));
+            if (roi_y_ < 0) {
                 RTC_LOG(LS_ERROR)
-                        << "Ignore roi_<=" << m_roi_y << ", it muss be >=0";
-                m_roi_y = 0;
+                        << "Ignore roi_<=" << roi_y_ << ", it muss be >=0";
+                roi_y_ = 0;
             }
         }
         if (opts.find("roi_width") != opts.end()) {
-            m_roi_width = std::stoi(opts.at("roi_width"));
-            if (m_roi_width <= 0) {
-                RTC_LOG(LS_ERROR) << "Ignore roi_width<=" << m_roi_width
+            roi_width_ = std::stoi(opts.at("roi_width"));
+            if (roi_width_ <= 0) {
+                RTC_LOG(LS_ERROR) << "Ignore roi_width<=" << roi_width_
                                   << ", it muss be >0";
-                m_roi_width = 0;
+                roi_width_ = 0;
             }
         }
         if (opts.find("roi_height") != opts.end()) {
-            m_roi_height = std::stoi(opts.at("roi_height"));
-            if (m_roi_height <= 0) {
-                RTC_LOG(LS_ERROR) << "Ignore roi_height<=" << m_roi_height
+            roi_height_ = std::stoi(opts.at("roi_height"));
+            if (roi_height_ <= 0) {
+                RTC_LOG(LS_ERROR) << "Ignore roi_height<=" << roi_height_
                                   << ", it muss be >0";
-                m_roi_height = 0;
+                roi_height_ = 0;
             }
         }
     }
@@ -87,101 +112,100 @@ public:
     virtual ~VideoScaler() {}
 
     void OnFrame(const webrtc::VideoFrame &frame) override {
-        if (m_roi_x >= frame.width()) {
+        if (roi_x_ >= frame.width()) {
             RTC_LOG(LS_ERROR) << "The ROI position protrudes beyond the right "
                                  "edge of the image. Ignore roi_x.";
-            m_roi_x = 0;
+            roi_x_ = 0;
         }
-        if (m_roi_y >= frame.height()) {
+        if (roi_y_ >= frame.height()) {
             RTC_LOG(LS_ERROR) << "The ROI position protrudes beyond the bottom "
                                  "edge of the image. Ignore roi_y.";
-            m_roi_y = 0;
+            roi_y_ = 0;
         }
-        if (m_roi_width != 0 && (m_roi_width + m_roi_x) > frame.width()) {
+        if (roi_width_ != 0 && (roi_width_ + roi_x_) > frame.width()) {
             RTC_LOG(LS_ERROR) << "The ROI protrudes beyond the right edge of "
                                  "the image. Ignore roi_width.";
-            m_roi_width = 0;
+            roi_width_ = 0;
         }
-        if (m_roi_height != 0 && (m_roi_height + m_roi_y) > frame.height()) {
+        if (roi_height_ != 0 && (roi_height_ + roi_y_) > frame.height()) {
             RTC_LOG(LS_ERROR) << "The ROI protrudes beyond the bottom edge of "
                                  "the image. Ignore roi_height.";
-            m_roi_height = 0;
+            roi_height_ = 0;
         }
 
-        if (m_roi_width == 0) {
-            m_roi_width = frame.width() - m_roi_x;
+        if (roi_width_ == 0) {
+            roi_width_ = frame.width() - roi_x_;
         }
-        if (m_roi_height == 0) {
-            m_roi_height = frame.height() - m_roi_y;
+        if (roi_height_ == 0) {
+            roi_height_ = frame.height() - roi_y_;
         }
 
         // source image is croped but destination image size is not set
-        if ((m_roi_width != frame.width() || m_roi_height != frame.height()) &&
-            (m_height == 0 && m_width == 0)) {
-            m_height = m_roi_height;
-            m_width = m_roi_width;
+        if ((roi_width_ != frame.width() || roi_height_ != frame.height()) &&
+            (height_ == 0 && width_ == 0)) {
+            height_ = roi_height_;
+            width_ = roi_width_;
         }
 
-        if ((m_height == 0) && (m_width == 0) &&
-            (m_rotation == webrtc::kVideoRotation_0)) {
-            m_broadcaster.OnFrame(frame);
+        if ((height_ == 0) && (width_ == 0) &&
+            (rotation_ == webrtc::kVideoRotation_0)) {
+            broadcaster_.OnFrame(frame);
         } else {
-            int height = m_height;
-            int width = m_width;
+            int height = height_;
+            int width = width_;
             if ((height == 0) && (width == 0)) {
                 height = frame.height();
                 width = frame.width();
             } else if (height == 0) {
-                height = (m_roi_height * width) / m_roi_width;
+                height = (roi_height_ * width) / roi_width_;
             } else if (width == 0) {
-                width = (m_roi_width * height) / m_roi_height;
+                width = (roi_width_ * height) / roi_height_;
             }
             rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
                     webrtc::I420Buffer::Create(width, height);
-            if (m_roi_width != frame.width() ||
-                m_roi_height != frame.height()) {
+            if (roi_width_ != frame.width() || roi_height_ != frame.height()) {
                 scaled_buffer->CropAndScaleFrom(
-                        *frame.video_frame_buffer()->ToI420(), m_roi_x, m_roi_y,
-                        m_roi_width, m_roi_height);
+                        *frame.video_frame_buffer()->ToI420(), roi_x_, roi_y_,
+                        roi_width_, roi_height_);
             } else {
                 scaled_buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
             }
             webrtc::VideoFrame scaledFrame =
                     webrtc::VideoFrame(scaled_buffer, frame.timestamp(),
-                                       frame.render_time_ms(), m_rotation);
+                                       frame.render_time_ms(), rotation_);
 
-            m_broadcaster.OnFrame(scaledFrame);
+            broadcaster_.OnFrame(scaledFrame);
         }
     }
 
     void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame> *sink,
                          const rtc::VideoSinkWants &wants) override {
-        m_videoSource->AddOrUpdateSink(this, wants);
+        video_source_->AddOrUpdateSink(this, wants);
 
-        m_broadcaster.AddOrUpdateSink(sink, wants);
+        broadcaster_.AddOrUpdateSink(sink, wants);
     }
 
     void RemoveSink(
             rtc::VideoSinkInterface<webrtc::VideoFrame> *sink) override {
-        m_videoSource->RemoveSink(this);
+        video_source_->RemoveSink(this);
 
-        m_broadcaster.RemoveSink(sink);
+        broadcaster_.RemoveSink(sink);
     }
 
-    int width() { return m_roi_width; }
-    int height() { return m_roi_height; }
+    int width() { return roi_width_; }
+    int height() { return roi_height_; }
 
 private:
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> m_videoSource;
-    rtc::VideoBroadcaster m_broadcaster;
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
+    rtc::VideoBroadcaster broadcaster_;
 
-    int m_width;
-    int m_height;
-    webrtc::VideoRotation m_rotation;
-    int m_roi_x;
-    int m_roi_y;
-    int m_roi_width;
-    int m_roi_height;
+    int width_;
+    int height_;
+    webrtc::VideoRotation rotation_;
+    int roi_x_;
+    int roi_y_;
+    int roi_width_;
+    int roi_height_;
 };
 
 }  // namespace webrtc_server
