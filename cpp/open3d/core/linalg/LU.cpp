@@ -135,8 +135,6 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
         void* ipiv_data = ipiv.GetDataPtr();
         LUCPU(A_data, ipiv_data, A_shape[0], A_shape[1], dtype, device);
         utility::LogInfo(" IPIV DATA: {}", ipiv.ToString());
-        ipiv = ipiv.To(core::Dtype::Int32);
-        utility::LogInfo(" IPIV DATA 32: {}", ipiv.ToString());
     }
     // COL_MAJOR -> ROW_MAJOR.
     output = output.T().Contiguous();
