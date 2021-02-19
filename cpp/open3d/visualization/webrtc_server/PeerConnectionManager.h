@@ -259,7 +259,7 @@ class PeerConnectionManager {
             }
         }
 
-        Json::Value getIceCandidateList() { return ice_candidate_list_; }
+        Json::Value GetIceCandidateList() { return ice_candidate_list_; }
 
         Json::Value getStats() {
             stats_callback_->clearReport();
@@ -358,7 +358,7 @@ public:
         return func_;
     };
 
-    const Json::Value getIceCandidateList(const std::string& peerid);
+    const Json::Value GetIceCandidateList(const std::string& peerid);
     const Json::Value AddIceCandidate(const std::string& peerid,
                                       const Json::Value& jmessage);
     const Json::Value GetMediaList();

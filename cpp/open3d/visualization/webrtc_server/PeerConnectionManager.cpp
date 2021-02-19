@@ -275,7 +275,7 @@ PeerConnectionManager::PeerConnectionManager(
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
         }
-        return this->getIceCandidateList(peerid);
+        return this->GetIceCandidateList(peerid);
     };
 
     func_["/api/addIceCandidate"] =
@@ -745,7 +745,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
 /* ---------------------------------------------------------------------------
 **  get list ICE candidate associayed with a PeerConnection
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::getIceCandidateList(
+const Json::Value PeerConnectionManager::GetIceCandidateList(
         const std::string &peerid) {
     RTC_LOG(INFO) << __FUNCTION__;
 
@@ -756,7 +756,7 @@ const Json::Value PeerConnectionManager::getIceCandidateList(
     if (it != peer_connectionobs_map_.end()) {
         PeerConnectionObserver *obs = it->second;
         if (obs) {
-            value = obs->getIceCandidateList();
+            value = obs->GetIceCandidateList();
         } else {
             RTC_LOG(LS_ERROR) << "No observer for peer:" << peerid;
         }
