@@ -264,21 +264,28 @@
             console.log(msg);
             webRtcServer.dataChannel.send(msg);
           });
-          videoElt.addEventListener("wheel", (event) => {
-            var msg =
-              "wheel " +
-              event.offsetX +
-              " " +
-              event.offsetY +
-              " " +
-              getModifiers(event) +
-              " " +
-              event.deltaX +
-              " " +
-              event.deltaY;
-            console.log(msg);
-            webRtcServer.dataChannel.send(msg);
-          });
+          videoElt.addEventListener(
+            "wheel",
+            (event) => {
+              // Prevent propaging the wheel event to the browser.
+              // https://stackoverflow.com/a/23606063/1255535
+              event.preventDefault();
+              var msg =
+                "wheel " +
+                event.offsetX +
+                " " +
+                event.offsetY +
+                " " +
+                getModifiers(event) +
+                " " +
+                event.deltaX +
+                " " +
+                event.deltaY;
+              console.log(msg);
+              webRtcServer.dataChannel.send(msg);
+            },
+            { passive: false }
+          );
         }
       }
 
