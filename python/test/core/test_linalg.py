@@ -129,7 +129,7 @@ def test_det(device, dtype):
     o3d.core.Dtype.Float64
 ])
 def test_lu(device, dtype):
-    a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
+    a = o3d.core.Tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
                         dtype=dtype,
                         device=device)
 
@@ -155,12 +155,6 @@ def test_lu(device, dtype):
             o3d.core.lu(a_)
             assert 'must be 2D' in str(excinfo.value)
 
-    # Non-square
-    with pytest.raises(RuntimeError) as excinfo:
-        a_ = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
-        o3d.core.lu(a_)
-        assert 'must be square' in str(excinfo.value)
-
 
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
@@ -171,7 +165,6 @@ def test_lu_ipiv(device, dtype):
     a = o3d.core.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                         dtype=dtype,
                         device=device)
-    # print(" luipiv: working 0")
     if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3d.core.lu_ipiv(a)
@@ -197,12 +190,6 @@ def test_lu_ipiv(device, dtype):
             a_ = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
             o3d.core.lu_ipiv(a_)
             assert 'must be 2D' in str(excinfo.value)
-
-    # Non-square
-    with pytest.raises(RuntimeError) as excinfo:
-        a_ = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
-        o3d.core.lu_ipiv(a_)
-        assert 'must be square' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", list_devices())

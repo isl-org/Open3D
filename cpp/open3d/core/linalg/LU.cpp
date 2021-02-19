@@ -34,16 +34,16 @@ namespace open3d {
 namespace core {
 
 // Get column permutation tensor from ipiv (swaping index array).
-inline core::Tensor GetColPermutation(Tensor& ipiv,
+inline core::Tensor GetColPermutation(const Tensor& ipiv,
                                       int number_of_indices,
                                       int number_of_rows) {
     Tensor full_ipiv = Tensor::Arange(0, number_of_rows, 1, core::Dtype::Int32,
                                       Device("CPU:0"));
     Tensor ipiv_cpu =
             ipiv.To(Device("CPU:0"), core::Dtype::Int32, /*copy=*/false);
-    int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+    const int* ipiv_ptr = static_cast<const int*>(ipiv_cpu.GetDataPtr());
     int* full_ipiv_ptr = static_cast<int*>(full_ipiv.GetDataPtr());
-    for (int i = 0; i < number_of_rows; i++) {
+    for (int i = 0; i < number_of_indices; i++) {
         int temp = full_ipiv_ptr[i];
         full_ipiv_ptr[i] = full_ipiv_ptr[ipiv_ptr[i] - 1];
         full_ipiv_ptr[ipiv_ptr[i] - 1] = temp;
@@ -58,8 +58,8 @@ inline void OutputToPLU(const Tensor& output,
                         Tensor& permutation,
                         Tensor& lower,
                         Tensor& upper,
-                        Tensor& ipiv,
-                        bool permute_l) {
+                        const Tensor& ipiv,
+                        const bool permute_l) {
     int n = output.GetShape()[0];
     core::Device device = output.GetDevice();
 
@@ -94,12 +94,10 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     if (A_shape.size() != 2) {
         utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
-    if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor must be square, but got {} x {}.", A_shape[0],
-                          A_shape[1]);
-    }
-    int64_t n = A_shape[0];
-    if (n == 0) {
+
+    int64_t rows = A_shape[0];
+    int64_t cols = A_shape[1];
+    if (rows == 0 || cols == 0) {
         utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
@@ -116,9 +114,10 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     // matrix was interchanged with row IPIV(i).
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ipiv = core::Tensor::Empty({n}, core::Dtype::Int32, device);
+        int64_t ipiv_len = std::min(rows, cols);
+        ipiv = core::Tensor::Empty({ipiv_len}, core::Dtype::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();
-        LUCUDA(A_data, ipiv_data, n, dtype, device);
+        LUCUDA(A_data, ipiv_data, rows, cols, dtype, device);
 #else
         utility::LogInfo("Unimplemented device.");
 #endif
@@ -131,9 +130,11 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
-        ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
+
+        int64_t ipiv_len = std::min(rows, cols);
+        ipiv = core::Tensor::Empty({ipiv_len}, ipiv_dtype, device);
         void* ipiv_data = ipiv.GetDataPtr();
-        LUCPU(A_data, ipiv_data, n, dtype, device);
+        LUCPU(A_data, ipiv_data, rows, cols, dtype, device);
     }
     // COL_MAJOR -> ROW_MAJOR.
     output = output.T().Contiguous();
@@ -143,12 +144,21 @@ void LU(const Tensor& A,
         Tensor& permutation,
         Tensor& lower,
         Tensor& upper,
-        bool permute_l) {
+        const bool permute_l) {
     // Get output matrix and ipiv.
     core::Tensor ipiv, output;
     LUIpiv(A, ipiv, output);
+
     // Decompose output in P, L, U matrix form.
     OutputToPLU(output, permutation, lower, upper, ipiv, permute_l);
+
+    // For non-square input case of shape {rows, cols}, shape of P, L, U:
+    // P {rows, rows}; L {rows, min(rows, cols)}; U {min(rows, cols), cols}.
+    if (A.GetShape()[0] != A.GetShape()[1]) {
+        int64_t min_ = std::min(A.GetShape()[0], A.GetShape()[1]);
+        lower = lower.Slice(1, 0, min_);
+        upper = upper.Slice(0, 0, min_);
+    }
 }
 
 }  // namespace core

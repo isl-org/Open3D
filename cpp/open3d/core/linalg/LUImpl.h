@@ -35,14 +35,16 @@ namespace core {
 
 void LUCPU(void* A_data,
            void* ipiv_data,
-           int64_t n,
+           int64_t rows,
+           int64_t cols,
            Dtype dtype,
            const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
 void LUCUDA(void* A_data,
             void* ipiv_data,
-            int64_t n,
+            int64_t rows,
+            int64_t cols,
             Dtype dtype,
             const Device& device);
 #endif
