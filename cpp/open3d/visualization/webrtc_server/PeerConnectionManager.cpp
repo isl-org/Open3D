@@ -67,7 +67,7 @@ const char kSessionDescriptionTypeName[] = "type";
 const char kSessionDescriptionSdpName[] = "sdp";
 
 // character to remove from url to make webrtc label
-bool ignoreInLabel(char c) {
+static bool IgnoreInLabel(char c) {
     return c == ' ' || c == ':' || c == '.' || c == '/' || c == '&';
 }
 
@@ -76,11 +76,11 @@ bool ignoreInLabel(char c) {
 ** -------------------------------------------------------------------------*/
 
 #ifdef WIN32
-std::string getServerIpFromClientIp(int clientip) { return "127.0.0.1"; }
+std::string GetServerIpFromClientIp(int clientip) { return "127.0.0.1"; }
 #else
 #include <ifaddrs.h>
 #include <net/if.h>
-std::string getServerIpFromClientIp(int clientip) {
+std::string GetServerIpFromClientIp(int clientip) {
     std::string serverAddress;
     char host[NI_MAXHOST];
     struct ifaddrs *ifaddr = nullptr;
@@ -117,7 +117,7 @@ struct IceServer {
     std::string pass;
 };
 
-IceServer getIceServerFromUrl(const std::string &url,
+IceServer GetIceServerFromUrl(const std::string &url,
                               const std::string &clientIp = "") {
     IceServer srv;
     srv.url = url;
@@ -137,7 +137,7 @@ IceServer getIceServerFromUrl(const std::string &url,
         if ((uri.find("0.0.0.0:") == 0) && (clientIp.empty() == false)) {
             // answer with ip that is on same network as client
             std::string clienturl =
-                    getServerIpFromClientIp(inet_addr(clientIp.c_str()));
+                    GetServerIpFromClientIp(inet_addr(clientIp.c_str()));
             clienturl += uri.substr(uri.find_first_of(':'));
             uri = clienturl;
         }
@@ -361,7 +361,7 @@ const Json::Value PeerConnectionManager::GetIceServers(
     for (auto iceServer : ice_server_list_) {
         Json::Value server;
         Json::Value urlList(Json::arrayValue);
-        IceServer srv = getIceServerFromUrl(iceServer, clientIp);
+        IceServer srv = GetIceServerFromUrl(iceServer, clientIp);
         RTC_LOG(INFO) << "ICE URL:" << srv.url;
         urlList.append(srv.url);
         server["urls"] = urlList;
@@ -860,7 +860,7 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     for (auto iceServer : ice_server_list_) {
         webrtc::PeerConnectionInterface::IceServer server;
-        IceServer srv = getIceServerFromUrl(iceServer);
+        IceServer srv = GetIceServerFromUrl(iceServer);
         server.uri = srv.url;
         server.username = srv.user;
         server.password = srv.pass;
@@ -926,7 +926,7 @@ const std::string PeerConnectionManager::sanitizeLabel(
         return std::to_string(hash);
     }
 
-    out.erase(std::remove_if(out.begin(), out.end(), ignoreInLabel), out.end());
+    out.erase(std::remove_if(out.begin(), out.end(), IgnoreInLabel), out.end());
     return out;
 }
 
