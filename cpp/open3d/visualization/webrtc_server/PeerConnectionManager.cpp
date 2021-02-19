@@ -169,28 +169,28 @@ CreatePeerConnectionFactoryDependencies() {
             absl::make_unique<webrtc::RtcEventLogFactory>(
                     dependencies.task_queue_factory.get());
 
-    cricket::MediaEngineDependencies mediaDependencies;
-    mediaDependencies.task_queue_factory =
+    cricket::MediaEngineDependencies media_dependencies;
+    media_dependencies.task_queue_factory =
             dependencies.task_queue_factory.get();
 
     // try to init audio
-    rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule(
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> audio_device_module(
             new webrtc::FakeAudioDeviceModule());
-    mediaDependencies.adm = std::move(audioDeviceModule);
-    mediaDependencies.audio_encoder_factory =
+    media_dependencies.adm = std::move(audio_device_module);
+    media_dependencies.audio_encoder_factory =
             webrtc::CreateBuiltinAudioEncoderFactory();
-    mediaDependencies.audio_decoder_factory =
+    media_dependencies.audio_decoder_factory =
             webrtc::CreateBuiltinAudioDecoderFactory();
-    mediaDependencies.audio_processing =
+    media_dependencies.audio_processing =
             webrtc::AudioProcessingBuilder().Create();
 
-    mediaDependencies.video_encoder_factory =
+    media_dependencies.video_encoder_factory =
             webrtc::CreateBuiltinVideoEncoderFactory();
-    mediaDependencies.video_decoder_factory =
+    media_dependencies.video_decoder_factory =
             webrtc::CreateBuiltinVideoDecoderFactory();
 
     dependencies.media_engine =
-            cricket::CreateMediaEngine(std::move(mediaDependencies));
+            cricket::CreateMediaEngine(std::move(media_dependencies));
 
     return dependencies;
 }
@@ -265,7 +265,7 @@ PeerConnectionManager::PeerConnectionManager(
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
         }
-        return this->setAnswer(peerid, in);
+        return this->SetAnswer(peerid, in);
     };
 
     func_["/api/getIceCandidate"] =
@@ -380,12 +380,12 @@ const Json::Value PeerConnectionManager::GetIceServers(
 **  get PeerConnection associated with peerid
 ** -------------------------------------------------------------------------*/
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-PeerConnectionManager::getPeerConnection(const std::string &peerid) {
+PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
     std::map<std::string, PeerConnectionObserver *>::iterator it =
             peer_connectionobs_map_.find(peerid);
     if (it != peer_connectionobs_map_.end()) {
-        peer_connection = it->second->getPeerConnection();
+        peer_connection = it->second->GetPeerConnection();
     }
     return peer_connection;
 }
@@ -413,7 +413,7 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
         } else {
             std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = this->getPeerConnection(peerid);
+                    peer_connection = this->GetPeerConnection(peerid);
             if (peer_connection) {
                 if (!peer_connection->AddIceCandidate(candidate.get())) {
                     RTC_LOG(WARNING)
@@ -448,7 +448,7 @@ const Json::Value PeerConnectionManager::CreateOffer(
         RTC_LOG(LERROR) << "Failed to initialize PeerConnection";
     } else {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
-                peerConnectionObserver->getPeerConnection();
+                peerConnectionObserver->GetPeerConnection();
 
         if (!this->AddStreams(peer_connection, video_url, options)) {
             RTC_LOG(WARNING) << "Can't add stream";
@@ -497,7 +497,7 @@ const Json::Value PeerConnectionManager::CreateOffer(
 /* ---------------------------------------------------------------------------
 ** set answer to a call initiated by createOffer
 ** -------------------------------------------------------------------------*/
-const Json::Value PeerConnectionManager::setAnswer(
+const Json::Value PeerConnectionManager::SetAnswer(
         const std::string &peerid, const Json::Value &jmessage) {
     RTC_LOG(INFO) << jmessage;
     Json::Value answer;
@@ -525,7 +525,7 @@ const Json::Value PeerConnectionManager::setAnswer(
 
             std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = this->getPeerConnection(peerid);
+                    peer_connection = this->GetPeerConnection(peerid);
             if (peer_connection) {
                 std::promise<const webrtc::SessionDescriptionInterface *>
                         remotepromise;
@@ -585,13 +585,13 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                 this->CreatePeerConnection(peerid);
         if (!peerConnectionObserver) {
             RTC_LOG(LERROR) << "Failed to initialize PeerConnectionObserver";
-        } else if (!peerConnectionObserver->getPeerConnection().get()) {
+        } else if (!peerConnectionObserver->GetPeerConnection().get()) {
             RTC_LOG(LERROR) << "Failed to initialize PeerConnection";
             delete peerConnectionObserver;
         } else {
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
                     peer_connection =
-                            peerConnectionObserver->getPeerConnection();
+                            peerConnectionObserver->GetPeerConnection();
             RTC_LOG(INFO) << "nbStreams local:"
                           << peer_connection->local_streams()->count()
                           << " remote:"
@@ -670,11 +670,11 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
     return answer;
 }
 
-bool PeerConnectionManager::streamStillUsed(const std::string &streamLabel) {
+bool PeerConnectionManager::StreamStillUsed(const std::string &streamLabel) {
     bool stillUsed = false;
     for (auto it : peer_connectionobs_map_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
-                it.second->getPeerConnection();
+                it.second->GetPeerConnection();
         rtc::scoped_refptr<webrtc::StreamCollectionInterface> localstreams(
                 peer_connection->local_streams());
         for (unsigned int i = 0; i < localstreams->count(); i++) {
@@ -707,7 +707,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
 
         if (pcObserver) {
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = pcObserver->getPeerConnection();
+                    peer_connection = pcObserver->GetPeerConnection();
 
             rtc::scoped_refptr<webrtc::StreamCollectionInterface> localstreams(
                     peer_connection->local_streams());
@@ -715,7 +715,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                 auto stream = localstreams->at(i);
 
                 std::string streamLabel = stream->id();
-                bool stillUsed = this->streamStillUsed(streamLabel);
+                bool stillUsed = this->StreamStillUsed(streamLabel);
                 if (!stillUsed) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << streamLabel;
@@ -777,7 +777,7 @@ const Json::Value PeerConnectionManager::GetPeerConnectionList() {
 
         // get local SDP
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
-                it.second->getPeerConnection();
+                it.second->GetPeerConnection();
         if ((peer_connection) && (peer_connection->local_description())) {
             content["pc_state"] =
                     (int)(peer_connection->peer_connection_state());
@@ -825,7 +825,7 @@ const Json::Value PeerConnectionManager::GetPeerConnectionList() {
         }
 
         // get Stats
-        //		content["stats"] = it.second->getStats();
+        //		content["stats"] = it.second->GetStats();
 
         Json::Value pc;
         pc[it.first] = content;
@@ -916,7 +916,7 @@ PeerConnectionManager::CreateVideoSource(
                                               peer_connection_factory_);
 }
 
-const std::string PeerConnectionManager::sanitizeLabel(
+const std::string PeerConnectionManager::SanitizeLabel(
         const std::string &label) {
     std::string out(label);
 
@@ -980,7 +980,7 @@ bool PeerConnectionManager::AddStreams(
     }
 
     // compute stream label removing space because SDP use label
-    std::string streamLabel = this->sanitizeLabel(video_url);
+    std::string streamLabel = this->SanitizeLabel(video_url);
 
     bool existingStream = false;
     {

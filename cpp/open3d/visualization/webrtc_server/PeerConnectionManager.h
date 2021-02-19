@@ -261,7 +261,7 @@ class PeerConnectionManager {
 
         Json::Value GetIceCandidateList() { return ice_candidate_list_; }
 
-        Json::Value getStats() {
+        Json::Value GetStats() {
             stats_callback_->clearReport();
             pc_->GetStats(stats_callback_);
             int count = 10;
@@ -272,7 +272,7 @@ class PeerConnectionManager {
         };
 
         rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-        getPeerConnection() {
+        GetPeerConnection() {
             return pc_;
         };
 
@@ -354,7 +354,7 @@ public:
 
     bool InitializePeerConnection();
     const std::map<std::string, HttpServerRequestHandler::HttpFunction>
-    getHttpApi() {
+    GetHttpApi() {
         return func_;
     };
 
@@ -373,7 +373,7 @@ public:
     const Json::Value CreateOffer(const std::string& peerid,
                                   const std::string& video_url,
                                   const std::string& options);
-    const Json::Value setAnswer(const std::string& peerid,
+    const Json::Value SetAnswer(const std::string& peerid,
                                 const Json::Value& jmessage);
 
 protected:
@@ -384,10 +384,10 @@ protected:
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(
             const std::string& video_url,
             const std::map<std::string, std::string>& opts);
-    bool streamStillUsed(const std::string& streamLabel);
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface> getPeerConnection(
+    bool StreamStillUsed(const std::string& streamLabel);
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection(
             const std::string& peerid);
-    const std::string sanitizeLabel(const std::string& label);
+    const std::string SanitizeLabel(const std::string& label);
 
 protected:
     WebRTCServer* webrtc_server_ = nullptr;

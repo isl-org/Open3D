@@ -186,7 +186,7 @@ void WebRTCServer::Impl::Run() {
         // PeerConnectionManager provides a set of callback functions for
         // HttpServerRequestHandler.
         std::map<std::string, HttpServerRequestHandler::HttpFunction> func =
-                peer_connection_manager_->getHttpApi();
+                peer_connection_manager_->GetHttpApi();
 
         // Main loop.
         std::cout << "HTTP Listen at " << http_address << std::endl;
