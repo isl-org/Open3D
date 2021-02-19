@@ -58,13 +58,13 @@ namespace visualization {
 namespace webrtc_server {
 
 // Names used for a IceCandidate JSON object.
-const char kCandidateSdpMidName[] = "sdpMid";
-const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
-const char kCandidateSdpName[] = "candidate";
+const char k_candidate_sdp_mid_name[] = "sdpMid";
+const char k_candidate_sdp_mline_index_name[] = "sdpMLineIndex";
+const char k_candidate_sdp_name[] = "candidate";
 
 // Names used for a SessionDescription JSON object.
-const char kSessionDescriptionTypeName[] = "type";
-const char kSessionDescriptionSdpName[] = "sdp";
+const char k_session_description_type_name[] = "type";
+const char k_session_description_sdp_name[] = "sdp";
 
 // character to remove from url to make webrtc label
 static bool IgnoreInLabel(char c) {
@@ -398,11 +398,11 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
     std::string sdp_mid;
     int sdp_mlineindex = 0;
     std::string sdp;
-    if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
+    if (!rtc::GetStringFromJsonObject(jmessage, k_candidate_sdp_mid_name,
                                       &sdp_mid) ||
-        !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
+        !rtc::GetIntFromJsonObject(jmessage, k_candidate_sdp_mline_index_name,
                                    &sdp_mlineindex) ||
-        !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
+        !rtc::GetStringFromJsonObject(jmessage, k_candidate_sdp_name, &sdp)) {
         RTC_LOG(WARNING) << "Can't parse received message:" << jmessage;
     } else {
         std::unique_ptr<webrtc::IceCandidateInterface> candidate(
@@ -482,8 +482,8 @@ const Json::Value PeerConnectionManager::CreateOffer(
                 std::string sdp;
                 desc->ToString(&sdp);
 
-                offer[kSessionDescriptionTypeName] = desc->type();
-                offer[kSessionDescriptionSdpName] = sdp;
+                offer[k_session_description_type_name] = desc->type();
+                offer[k_session_description_sdp_name] = sdp;
             } else {
                 RTC_LOG(LERROR) << "Failed to create offer";
             }
@@ -504,9 +504,9 @@ const Json::Value PeerConnectionManager::setAnswer(
 
     std::string type;
     std::string sdp;
-    if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName,
+    if (!rtc::GetStringFromJsonObject(jmessage, k_session_description_type_name,
                                       &type) ||
-        !rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
+        !rtc::GetStringFromJsonObject(jmessage, k_session_description_sdp_name,
                                       &sdp)) {
         RTC_LOG(WARNING) << "Can't parse received message.";
         answer["error"] = "Can't parse received message.";
@@ -545,8 +545,8 @@ const Json::Value PeerConnectionManager::setAnswer(
                         std::string sdp;
                         desc->ToString(&sdp);
 
-                        answer[kSessionDescriptionTypeName] = desc->type();
-                        answer[kSessionDescriptionSdpName] = sdp;
+                        answer[k_session_description_type_name] = desc->type();
+                        answer[k_session_description_sdp_name] = sdp;
                     } else {
                         answer["error"] = "Can't get remote description.";
                     }
@@ -575,9 +575,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
     std::string type;
     std::string sdp;
 
-    if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName,
+    if (!rtc::GetStringFromJsonObject(jmessage, k_session_description_type_name,
                                       &type) ||
-        !rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
+        !rtc::GetStringFromJsonObject(jmessage, k_session_description_sdp_name,
                                       &sdp)) {
         RTC_LOG(WARNING) << "Can't parse received message.";
     } else {
@@ -656,8 +656,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                     std::string sdp;
                     desc->ToString(&sdp);
 
-                    answer[kSessionDescriptionTypeName] = desc->type();
-                    answer[kSessionDescriptionSdpName] = sdp;
+                    answer[k_session_description_type_name] = desc->type();
+                    answer[k_session_description_sdp_name] = sdp;
                 } else {
                     RTC_LOG(LERROR) << "Failed to create answer";
                 }
@@ -1056,9 +1056,10 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
         RTC_LOG(INFO) << sdp;
 
         Json::Value jmessage;
-        jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
-        jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
-        jmessage[kCandidateSdpName] = sdp;
+        jmessage[k_candidate_sdp_mid_name] = candidate->sdp_mid();
+        jmessage[k_candidate_sdp_mline_index_name] =
+                candidate->sdp_mline_index();
+        jmessage[k_candidate_sdp_name] = sdp;
         ice_candidate_list_.append(jmessage);
     }
 }
