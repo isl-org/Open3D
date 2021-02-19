@@ -27,9 +27,9 @@
 #include "open3d/geometry/PointCloud.h"
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <numeric>
 #include <random>
-#include <algorithm>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -436,7 +436,7 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
         utility::LogError("[RandomDownSample] Illegal sampling ratio.");
     }
     std::vector<size_t> indices(points_.size());
-    std::iota (std::begin(indices), std::end(indices), (size_t)0);
+    std::iota(std::begin(indices), std::end(indices), (size_t)0);
     std::random_device rd;
     std::mt19937 prng(rd());
     std::shuffle(indices.begin(), indices.end(), prng);

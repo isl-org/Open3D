@@ -245,10 +245,11 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "uniform_down_sample",
             {{"every_k_points",
               "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
-     docstring::ClassMethodDocInject(
+    docstring::ClassMethodDocInject(
             m, "PointCloud", "random_down_sample",
             {{"sampling_ratio",
-              "Sampling ratio, the ratio of number of selected points to total number of points[0-1]"}});
+              "Sampling ratio, the ratio of number of selected points to total "
+              "number of points[0-1]"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
