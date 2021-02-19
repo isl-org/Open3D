@@ -24,6 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// This example tests ICP Registration pipeline on the given pointcloud.
+// To make things simple, and support any pointcloud for testing, input only
+// requires 1 pointcloud source in argument, and the example automatically
+// creates a target source by transforming the pointcloud, and estimating
+// normals. Adjust the voxel_downsample_factor and max_correspondence_dist
+// according to the test pointcloud.
+//
+//
+// To run this example from Open3D directory:
+// ./build/bin/example/test-tICP [device] [path to source pointcloud]
+// [device] : CPU:0 / CUDA:0 ...
+// [example path to source pointcloud relative to Open3D dir]:
+// examples/test_data/ICP/cloud_bin_0.pcd
+
 #include <iostream>
 #include <memory>
 
@@ -31,27 +45,31 @@
 
 using namespace open3d;
 
+// Parameters to adjust according to the test pointcloud.
+double voxel_downsample_factor = 1.0;
+double max_correspondence_dist = 0.2;
+
+// ICP ConvergenceCriteria:
+double relative_fitness = 1e-6;
+double relative_rmse = 1e-6;
+int max_iterations = 5;
+
 int main(int argc, char *argv[]) {
     // Argument 1: Device: 'CPU:0' for CPU, 'CUDA:0' for GPU
-    // Argument 2: Path to Source PointCloud
-    // Argument 3: Path to Target PointCloud
+    // Argument 2: Path to the test PointCloud
 
-    // TODO: Take this input as arguments
     auto device = core::Device(argv[1]);
     auto dtype = core::Dtype::Float32;
 
     // t::io::ReadPointCloud, changes the device to CPU and DType to Float64
-    t::geometry::PointCloud source_, target_;
+    t::geometry::PointCloud target_;
     // t::geometry::PointCloud target(device);
-    t::io::ReadPointCloud(argv[2], source_, {"auto", false, false, true});
-    t::io::ReadPointCloud(argv[3], target_, {"auto", false, false, true});
+    t::io::ReadPointCloud(argv[2], target_, {"auto", false, false, true});
 
     utility::LogInfo(" Input Successful ");
 
     // geometry::PointCloud legacy_s = source_.ToLegacyPointCloud();
     geometry::PointCloud legacy_t = target_.ToLegacyPointCloud();
-
-    double voxel_downsample_factor = 25.0;
 
     // legacy_s.VoxelDownSample(voxel_downsample_factor);
     legacy_t.VoxelDownSample(voxel_downsample_factor);
@@ -80,7 +98,7 @@ int main(int argc, char *argv[]) {
             source.GetPoints().To(device, dtype, /*copy=*/true);
     t::geometry::PointCloud source_device(device);
     source_device.SetPoints(source_points);
-    utility::LogInfo(" Source on device Successful ");
+    utility::LogInfo(" Creating Source Pointcloud on device Successful ");
 
     core::Tensor target_points =
             target.GetPoints().To(device, dtype, /*copy=*/true);
@@ -89,22 +107,16 @@ int main(int argc, char *argv[]) {
     t::geometry::PointCloud target_device(device);
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);
-    utility::LogInfo(" Target on device Successful ");
+    utility::LogInfo(" Creating Target Pointcloud on device Successful ");
 
     core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
 
     utility::LogInfo(" Input Process on {} Success", device.ToString());
-    double max_correspondence_dist = 5.0;
 
     t::pipelines::registration::RegistrationResult evaluation(trans);
     evaluation = open3d::t::pipelines::registration::EvaluateRegistration(
             source_device, target_device, max_correspondence_dist, init_trans);
     utility::LogInfo(" EvaluateRegistration Success", device.ToString());
-
-    // ICP ConvergenceCriteria for both Point To Point and Point To Plane:
-    double relative_fitness = 1e-6;
-    double relative_rmse = 1e-6;
-    int max_iterations = 5;
 
     // ICP: Point to Plane
     utility::Timer icp_p2plane_time;
