@@ -503,10 +503,13 @@ void Window::CreateRenderer() {
                 UpdateAfterEvent(this);
             };
 
-    std::function<void(double, double)> mouse_wheel_callback =
-            [this](double dx, double dy) {
+    std::function<void(double, double, double, double)> mouse_wheel_callback =
+            [this](double x, double y, double dx, double dy) {
                 MouseEvent me;
                 me.type = MouseEvent::WHEEL;
+                me.x = static_cast<float>(x);
+                me.y = static_cast<float>(y);
+                me.modifiers = 0;
                 me.wheel.dx = static_cast<float>(dx);
                 me.wheel.dy = static_cast<float>(dy);
                 this->OnMouseEvent(me);

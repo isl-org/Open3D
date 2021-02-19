@@ -59,7 +59,8 @@ struct WebRTCServer::Impl {
     std::string web_root_;
     std::function<void(int, double, double)> mouse_button_callback_ = nullptr;
     std::function<void(int, double, double)> mouse_move_callback_ = nullptr;
-    std::function<void(double, double)> mouse_wheel_callback_ = nullptr;
+    std::function<void(double, double, double, double)> mouse_wheel_callback_ =
+            nullptr;
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
@@ -97,10 +98,12 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
                 mouse_button_callback_(action, x, y);
             }
         } else if (type == "wheel") {
-            double dx = static_cast<double>(std::stoi(tokens[1]));
-            double dy = static_cast<double>(std::stoi(tokens[2]));
+            double x = static_cast<double>(std::stoi(tokens[1]));
+            double y = static_cast<double>(std::stoi(tokens[2]));
+            double dx = static_cast<double>(std::stoi(tokens[3]));
+            double dy = static_cast<double>(std::stoi(tokens[4]));
             if (mouse_wheel_callback_) {
-                mouse_wheel_callback_(dx, dy);
+                mouse_wheel_callback_(x, y, dx, dy);
             }
         }
     }
@@ -117,7 +120,7 @@ void WebRTCServer::SetMouseMoveCallback(
 }
 
 void WebRTCServer::SetMouseWheelCallback(
-        std::function<void(double, double)> f) {
+        std::function<void(double, double, double, double)> f) {
     impl_->mouse_wheel_callback_ = f;
 }
 

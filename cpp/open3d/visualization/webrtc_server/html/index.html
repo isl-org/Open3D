@@ -224,7 +224,7 @@
             webRtcServer.dataChannel.send(msg);
           });
           videoElt.addEventListener("wheel", (event) => {
-            var msg = "wheel " + event.deltaX + " " + event.deltaY;
+            var msg = "wheel " + event.offsetX + " " + event.offsetY + " " + event.deltaX + " " + event.deltaY;
             console.log(msg);
             webRtcServer.dataChannel.send(msg);
           });

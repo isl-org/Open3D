@@ -94,7 +94,7 @@ struct MouseEvent {
         ss << ", y: " << y;
         ss << ", modifiers: " << modifiers;
         if (type == Type::MOVE || type == Type::DRAG) {
-            ss << ", move.buttons: " << move.buttons;
+            ss << ", move.buttons : " << move.buttons;
         } else if (type == Type::BUTTON_DOWN || type == Type::BUTTON_UP) {
             ss << ", button.button: ";
             if (button.button == MouseButton::NONE) {
