@@ -29,12 +29,14 @@
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Hashmap.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
 namespace tsdf {
+
 void Touch(const core::Tensor& points,
            core::Tensor& voxel_block_coords,
            int64_t voxel_grid_resolution,
@@ -53,6 +55,20 @@ void Integrate(const core::Tensor& depth,
                float sdf_trunc,
                float depth_scale,
                float depth_max);
+
+void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+             core::Tensor& block_values,
+             core::Tensor& vertex_map,
+             core::Tensor& color_map,
+             const core::Tensor& intrinsics,
+             const core::Tensor& pose,
+             int64_t block_resolution,
+             float voxel_size,
+             float sdf_trunc,
+             int max_steps,
+             float depth_min,
+             float depth_max,
+             float weight_threshold);
 
 void ExtractSurfacePoints(const core::Tensor& block_indices,
                           const core::Tensor& nb_block_indices,
@@ -99,6 +115,20 @@ void IntegrateCPU(const core::Tensor& depth,
                   float depth_scale,
                   float depth_max);
 
+void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                core::Tensor& block_values,
+                core::Tensor& vertex_map,
+                core::Tensor& color_map,
+                const core::Tensor& intrinsics,
+                const core::Tensor& extrinsics,
+                int64_t block_resolution,
+                float voxel_size,
+                float sdf_trunc,
+                int max_steps,
+                float depth_min,
+                float depth_max,
+                float weight_threshold);
+
 void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              const core::Tensor& nb_block_indices,
                              const core::Tensor& nb_block_masks,
@@ -144,6 +174,20 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float sdf_trunc,
                    float depth_scale,
                    float depth_max);
+
+void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                 core::Tensor& block_values,
+                 core::Tensor& vertex_map,
+                 core::Tensor& color_map,
+                 const core::Tensor& intrinsics,
+                 const core::Tensor& extrinsics,
+                 int64_t block_resolution,
+                 float voxel_size,
+                 float sdf_trunc,
+                 int max_steps,
+                 float depth_min,
+                 float depth_max,
+                 float weight_threshold);
 
 void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
                               const core::Tensor& nb_block_indices,

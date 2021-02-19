@@ -195,9 +195,16 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height) {
-    PythonUnlocker unlocker;
     return Application::GetInstance().RenderToImage(
-            unlocker, scene->GetView(), scene->GetScene(), width, height);
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
+}
+
+std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height) {
+    return Application::GetInstance().RenderToDepthImage(
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
@@ -822,8 +829,13 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Label3D ----
     py::class_<Label3D> label3d(m, "Label3D", "Displays text in a 3D scene");
-    label3d.def_property("text", &Label3D::GetText, &Label3D::SetText,
-                         "The text to display with this label.")
+    label3d.def(py::init([](const char *text = "",
+                            const Eigen::Vector3f &pos = {0.f, 0.f, 0.f}) {
+                    return new Label3D(pos, text);
+                }),
+                "Create a 3D Label with given text and position")
+            .def_property("text", &Label3D::GetText, &Label3D::SetText,
+                          "The text to display with this label.")
             .def_property("position", &Label3D::GetPosition,
                           &Label3D::SetPosition,
                           "The position of the text in 3D coordinates")

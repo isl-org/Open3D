@@ -43,6 +43,8 @@ namespace gui {
 void InitializeForPython(std::string resource_path = "");
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height);
+std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height);
 
 void pybind_gui(py::module &m);
 

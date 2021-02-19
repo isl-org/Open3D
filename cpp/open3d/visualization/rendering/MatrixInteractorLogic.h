@@ -93,7 +93,9 @@ protected:
     void SetMatrix(const Camera::Transform& matrix);
     float CalcRotateRadians(int dx, int dy);
     float CalcRotateZRadians(int dx, int dy);
-    float CalcDollyDist(float dy, DragType drag_type);
+    float CalcDollyDist(float dy,
+                        DragType drag_type,
+                        const Camera::Transform& matrix);
 };
 
 }  // namespace rendering
