@@ -72,12 +72,22 @@ jobs:
           sudo apt-get --yes install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: cpp, python
+          queries: security-and-quality
+
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
           ./util/run_ci.sh
           ccache -s
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
+
 
   build-wheel:
     name: Build wheel
