@@ -290,6 +290,46 @@ void FilamentView::ConfigureForColorPicking() {
     SetShadowing(false, ShadowType::kPCF);
 }
 
+void FilamentView::EnableViewCaching(bool enable) {
+    caching_enabled_ = enable;
+
+    if (caching_enabled_ && !render_target_) {
+        // Create RenderTarget
+        auto vp = view_->getViewport();
+        color_buffer_ =
+                resource_mgr_.CreateColorAttachmentTexture(vp.width, vp.height);
+        depth_buffer_ =
+                resource_mgr_.CreateDepthAttachmentTexture(vp.width, vp.height);
+        render_target_ =
+                resource_mgr_.CreateRenderTarget(color_buffer_, depth_buffer_);
+        SetRenderTarget(render_target_);
+    }
+
+    if (!caching_enabled_) {
+        view_->setRenderTarget(nullptr);
+    }
+}
+
+bool FilamentView::IsCached() const { return caching_enabled_; }
+
+TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
+
+void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
+    if (!render_target) {
+        view_->setRenderTarget(nullptr);
+    } else {
+        auto rt_weak = resource_mgr_.GetRenderTarget(render_target);
+        auto rt = rt_weak.lock();
+        if (!rt) {
+            utility::LogWarning(
+                    "Invalid render target given to SetRenderTarget");
+            view_->setRenderTarget(nullptr);
+        } else {
+            view_->setRenderTarget(rt.get());
+        }
+    }
+}
+
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
