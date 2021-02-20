@@ -1,5 +1,9 @@
 # build
-file(GLOB_RECURSE ALL_SOURCE_FILES "*.cpp")
+set(ALL_SOURCE_FILES
+    PinholeCameraTrajectory.cpp
+    PinholeCameraParameters.cpp
+    PinholeCameraIntrinsic.cpp
+    )
 
 # create object library
 add_library(camera OBJECT ${ALL_SOURCE_FILES})
