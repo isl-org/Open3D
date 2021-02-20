@@ -78,18 +78,18 @@ namespace nns {
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-template <class TReal, class TIndex>
+template <class T>
 void BuildSpatialHashTableCUDA(void* temp,
                                size_t& temp_size,
                                const size_t num_points,
-                               const TReal* const points,
-                               const TReal radius,
+                               const T* const points,
+                               const T radius,
                                const size_t points_row_splits_size,
                                const int64_t* points_row_splits,
-                               const TIndex* hash_table_splits,
+                               const int64_t* hash_table_splits,
                                const size_t hash_table_cell_splits_size,
-                               TIndex* hash_table_cell_splits,
-                               TIndex* hash_table_index);
+                               int64_t* hash_table_cell_splits,
+                               int64_t* hash_table_index);
 
 /// Fixed radius search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and an exclusive prefix
@@ -182,7 +182,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         Argument size specifies the size of the array as the number of
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
-///
 template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
@@ -196,12 +195,89 @@ void FixedRadiusSearchCUDA(void* temp,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const uint32_t* const hash_table_splits,
+                           const int64_t* const hash_table_splits,
                            size_t hash_table_cell_splits_size,
-                           const uint32_t* const hash_table_cell_splits,
-                           const uint32_t* const hash_table_index,
+                           const int64_t* const hash_table_cell_splits,
+                           const int64_t* const hash_table_index,
                            NeighborSearchAllocator<T>& output_allocator);
 
+/// This function sorts a list of neighbor indices and distances in
+/// descending order of distance.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+///
+/// \param temp    Pointer to temporary memory. If nullptr then the required
+///        size of temporary memory will be written to \p temp_size and no
+///        work is done.
+///
+/// \param temp_size    The size of the temporary memory in bytes. This is
+///        used as an output if temp is nullptr
+///
+/// \param num_indices    The number of indices to sort.
+///
+/// \param num_segments    The number of segments to sort.
+///
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param indices_unsorted    Pointer to unsorted indices.
+///
+/// \param distances_unsorted    Pointer to unsorted distances.
+///
+/// \param indices_sorted    Pointer to sorted indices.
+///
+/// \param indices_sorted    Pointer to sorted distances.
+///
+template <class T>
+void SortPairs(void* temp,
+               size_t& temp_size,
+               int64_t num_indices,
+               int64_t num_segments,
+               const int64_t* query_neighbors_row_splits,
+               int64_t* indices_unsorted,
+               T* distances_unsorted,
+               int64_t* indices_sorted,
+               T* distances_sorted);
+
+/// This function computes a list of neighbor indices and distances
+/// for each query point for hybrid search. The lists are stored in
+/// ascending order of distance.
+/// If there are not enough neighbors, the lists are padded with -1.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+///
+/// \param indices_sorted    Pointer to sorted indices.
+///
+/// \param indices_sorted    Pointer to sorted distances.
+///
+/// \param indices_ptr    Pointer to output indices.
+///
+/// \param distances_ptr    Pointer to output distances.
+///
+/// \param neighbors_counts    Pointer to neighbor counts.
+///
+/// \param neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param num_queries   The number of query points.
+///
+/// \param max_knn    The maximum number of neighbors to search.
+///
+template <class T>
+void MaxKnnThreshold(const int64_t* const indices_sorted,
+                     const T* const distances_sorted,
+                     int64_t* indices_ptr,
+                     T* distances_ptr,
+                     const int64_t* const neighbors_counts,
+                     const int64_t* const neighbors_row_splits,
+                     int64_t num_queries,
+                     int max_knn);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

@@ -1039,6 +1039,11 @@ set(TBB_TARGET "3rdparty_tbb")
 add_dependencies(3rdparty_tbb ext_tbb)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
 
+# parallelstl
+build_3rdparty_library(3rdparty_parallelstl DIRECTORY parallelstl INCLUDE_DIRS include/ INCLUDE_ALL)
+set(PARALLELSTL_TARGET "3rdparty_parallelstl")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PARALLELSTL_TARGET}")
+
 if(USE_BLAS)
     # Try to locate system BLAS/LAPACK
     find_package(BLAS)
