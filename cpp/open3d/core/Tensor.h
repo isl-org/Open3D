@@ -221,9 +221,8 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    /// Create a 0-D tensor (scalar) with given value.
-    /// For example,
-    /// core::Tensor::Init<float>(1);
+    /// Create a 0-D tensor (scalar) with given value,
+    /// e.g., core::Tensor::Init<float>(0);
     template <typename T>
     static Tensor Init(const T val, const Device& device = Device("CPU:0")) {
         Dtype type = Dtype::FromType<T>();
@@ -232,18 +231,16 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 1-D tensor with initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({1,2,3});
+    /// Create a 1-D tensor with initializer list,
+    /// e.g., core::Tensor::Init<float>({0, 1, 2});
     template <typename T>
     static Tensor Init(const std::initializer_list<T> in_list,
                        const Device& device = Device("CPU:0")) {
         return InitN<T, 1>(in_list, device);
     };
 
-    /// Create a 2-D tensor with nested initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
+    /// Create a 2-D tensor with nested initializer list,
+    /// e.g., core::Tensor::Init<float>({{0, 1, 2}, {3, 4, 5}});
     template <typename T>
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
@@ -251,9 +248,8 @@ public:
         return InitN<T, 2>(in_list, device);
     };
 
-    /// Create a 3-D tensor with nested initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
+    /// Create a 3-D tensor with nested initializer list,
+    /// e.g., core::Tensor::Init<float>({{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}});
     template <typename T>
     static Tensor Init(
             const std::initializer_list<
