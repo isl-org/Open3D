@@ -85,6 +85,8 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           ccache -s
+          # Clean folders to prevent duplicate CodeQL alerts
+          rm -rf build/lib/python_package
 
       - name: Perform CodeQL Analysis
         if: matrix.CONFIG=='ON'
