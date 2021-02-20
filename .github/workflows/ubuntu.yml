@@ -73,9 +73,10 @@ jobs:
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Initialize CodeQL
+        if: matrix.CONFIG=='ON'
         uses: github/codeql-action/init@v1
         with:
-          languages: cpp, python
+          languages: cpp, python, javascript
           queries: security-and-quality
 
       - name: Config and build
@@ -86,6 +87,7 @@ jobs:
           ccache -s
 
       - name: Perform CodeQL Analysis
+        if: matrix.CONFIG=='ON'
         uses: github/codeql-action/analyze@v1
 
 
