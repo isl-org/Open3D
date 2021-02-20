@@ -44,6 +44,7 @@
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
 #include <filament/Material.h>
+#include <filament/RenderTarget.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
@@ -250,6 +251,8 @@ const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultDepthValueShader =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
@@ -401,6 +404,59 @@ TextureHandle FilamentResourceManager::CreateTextureFilled(
     auto texture = LoadFilledTexture(color, dimension);
     handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
 
+    return handle;
+}
+
+TextureHandle FilamentResourceManager::CreateColorAttachmentTexture(
+        int width, int height) {
+    using namespace filament;
+    auto texture = Texture::Builder()
+                           .width(width)
+                           .height(height)
+                           .levels(1)
+                           .format(Texture::InternalFormat::RGBA16F)
+                           .usage(Texture::Usage::COLOR_ATTACHMENT |
+                                  Texture::Usage::SAMPLEABLE)
+                           .build(engine_);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
+TextureHandle FilamentResourceManager::CreateDepthAttachmentTexture(
+        int width, int height) {
+    using namespace filament;
+    auto texture = Texture::Builder()
+                           .width(width)
+                           .height(height)
+                           .levels(1)
+                           .format(Texture::InternalFormat::DEPTH32F)
+                           .usage(Texture::Usage::DEPTH_ATTACHMENT)
+                           .build(engine_);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
+RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
+        TextureHandle color, TextureHandle depth) {
+    using namespace filament;
+
+    RenderTargetHandle handle;
+    auto color_tex_weak = GetTexture(color);
+    auto depth_tex_weak = GetTexture(depth);
+    auto color_tex = color_tex_weak.lock();
+    auto depth_tex = depth_tex_weak.lock();
+    if (!color_tex || !depth_tex) {
+        utility::LogWarning("Supplied texture attachments are invalid.");
+        return handle;
+    }
+
+    auto rt = RenderTarget::Builder()
+                      .texture(RenderTarget::COLOR, color_tex.get())
+                      .texture(RenderTarget::DEPTH, depth_tex.get())
+                      .build(engine_);
+    handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
     return handle;
 }
 
@@ -569,6 +625,11 @@ std::weak_ptr<filament::Texture> FilamentResourceManager::GetTexture(
     return FindResource(id, textures_);
 }
 
+std::weak_ptr<filament::RenderTarget> FilamentResourceManager::GetRenderTarget(
+        const RenderTargetHandle& id) {
+    return FindResource(id, render_targets_);
+}
+
 std::weak_ptr<filament::IndirectLight>
 FilamentResourceManager::GetIndirectLight(const IndirectLightHandle& id) {
     return FindResource(id, ibls_);
@@ -593,6 +654,7 @@ void FilamentResourceManager::DestroyAll() {
     material_instances_.clear();
     materials_.clear();
     textures_.clear();
+    render_targets_.clear();
     vertex_buffers_.clear();
     index_buffers_.clear();
     ibls_.clear();

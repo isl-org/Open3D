@@ -123,6 +123,11 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
     RecreateAxis(scene, bounds_, false);
+
+    window_scene_ = renderer_.CreateScene();
+    auto window_scene = renderer_.GetScene(window_scene_);
+    window_view_ = window_scene->AddView(0, 0, 1, 1);
+    window_scene->SetBackground({0.f, 1.f, 0.f, 1.f});
 }
 
 Open3DScene::~Open3DScene() {
@@ -135,6 +140,25 @@ Open3DScene::~Open3DScene() {
 View* Open3DScene::GetView() const {
     auto scene = renderer_.GetScene(scene_);
     return scene->GetView(view_);
+}
+
+View* Open3DScene::GetWindowView() const {
+    auto scene = renderer_.GetScene(window_scene_);
+    return scene->GetView(window_view_);
+}
+
+void Open3DScene::SetViewport(std::int32_t x,
+                              std::int32_t y,
+                              std::uint32_t width,
+                              std::uint32_t height) {
+    auto view = GetView();
+    view->SetViewport(x, y, width, height);
+    view->EnableViewCaching(true);
+    auto window_view = GetWindowView();
+    window_view->SetViewport(x, y, width, height);
+    window_view->ConfigureForColorPicking();
+    auto window_scene = renderer_.GetScene(window_scene_);
+    window_scene->SetBackground(view->GetColorBuffer());
 }
 
 void Open3DScene::ShowSkybox(bool enable) {
