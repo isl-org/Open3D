@@ -78,18 +78,18 @@ namespace nns {
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-template <class TReal, class TIndex>
+template <class T>
 void BuildSpatialHashTableCUDA(void* temp,
                                size_t& temp_size,
                                const size_t num_points,
-                               const TReal* const points,
-                               const TReal radius,
+                               const T* const points,
+                               const T radius,
                                const size_t points_row_splits_size,
                                const int64_t* points_row_splits,
-                               const TIndex* hash_table_splits,
+                               const int64_t* hash_table_splits,
                                const size_t hash_table_cell_splits_size,
-                               TIndex* hash_table_cell_splits,
-                               TIndex* hash_table_index);
+                               int64_t* hash_table_cell_splits,
+                               int64_t* hash_table_index);
 
 /// Fixed radius search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and an exclusive prefix
@@ -182,24 +182,24 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         Argument size specifies the size of the array as the number of
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
-template <class TReal, class TIndex>
+template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
                            int64_t* query_neighbors_row_splits,
                            size_t num_points,
-                           const TReal* const points,
+                           const T* const points,
                            size_t num_queries,
-                           const TReal* const queries,
-                           const TReal radius,
+                           const T* const queries,
+                           const T radius,
                            const size_t points_row_splits_size,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const TIndex* const hash_table_splits,
+                           const int64_t* const hash_table_splits,
                            size_t hash_table_cell_splits_size,
-                           const TIndex* const hash_table_cell_splits,
-                           const TIndex* const hash_table_index,
-                           NeighborSearchAllocator<TReal>& output_allocator);
+                           const int64_t* const hash_table_cell_splits,
+                           const int64_t* const hash_table_index,
+                           NeighborSearchAllocator<T>& output_allocator);
 
 /// This function sorts a list of neighbor indices and distances in
 /// descending order of distance.

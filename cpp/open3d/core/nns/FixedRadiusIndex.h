@@ -90,7 +90,7 @@ public:
 
 protected:
     std::vector<int64_t> points_row_splits_;
-    std::vector<uint32_t> hash_table_splits_;
+    std::vector<int64_t> hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
