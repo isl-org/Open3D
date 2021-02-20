@@ -111,13 +111,9 @@ public:
         *ptr = distances.GetDataPtr<T>();
     }
 
-    const int64_t* IndicesPtr() const {
-        return indices.GetDataPtr<int64_t>();
-    }
+    const int64_t* IndicesPtr() const { return indices.GetDataPtr<int64_t>(); }
 
-    const T* DistancesPtr() const {
-        return distances.GetDataPtr<T>();
-    }
+    const T* DistancesPtr() const { return distances.GetDataPtr<T>(); }
 
     const Tensor& NeighborsIndex() const { return indices; }
     const Tensor& NeighborsDistance() const { return distances; }
