@@ -130,9 +130,9 @@ void CountHashTableEntries(const cudaStream_t& stream,
 /// Kernel for ComputePointIndexTable
 template <class T>
 __global__ void ComputePointIndexTableKernel(
-        uint32_t* __restrict__ point_index_table,
+        int64_t* __restrict__ point_index_table,
         uint32_t* __restrict__ count_tmp,
-        const uint32_t* const __restrict__ hash_table_cell_splits,
+        const int64_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         T inv_voxel_size,
         const T* const __restrict__ points,
@@ -174,9 +174,9 @@ __global__ void ComputePointIndexTableKernel(
 template <class T>
 void ComputePointIndexTable(
         const cudaStream_t& stream,
-        uint32_t* __restrict__ point_index_table,
+        int64_t* __restrict__ point_index_table,
         uint32_t* __restrict__ count_tmp,
-        const uint32_t* const __restrict__ hash_table_cell_splits,
+        const int64_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_cell_splits_size,
         T inv_voxel_size,
         const T* const __restrict__ points,
@@ -201,9 +201,9 @@ void ComputePointIndexTable(
 /// Kernel for CountNeighbors
 template <int METRIC, class T>
 __global__ void CountNeighborsKernel(
-        uint32_t* __restrict__ neighbors_count,
-        const uint32_t* const __restrict__ point_index_table,
-        const uint32_t* const __restrict__ hash_table_cell_splits,
+        int64_t* __restrict__ neighbors_count,
+        const int64_t* const __restrict__ point_index_table,
+        const int64_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -254,7 +254,7 @@ __global__ void CountNeighborsKernel(
         size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
-            uint32_t idx = point_index_table[j];
+            int64_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
 
@@ -301,9 +301,9 @@ __global__ void CountNeighborsKernel(
 ///
 template <class T>
 void CountNeighbors(const cudaStream_t& stream,
-                    uint32_t* neighbors_count,
-                    const uint32_t* const point_index_table,
-                    const uint32_t* const hash_table_cell_splits,
+                    int64_t* neighbors_count,
+                    const int64_t* const point_index_table,
+                    const int64_t* const hash_table_cell_splits,
                     size_t hash_table_cell_splits_size,
                     const T* const query_points,
                     size_t num_queries,
@@ -347,8 +347,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         int64_t* __restrict__ indices,
         T* __restrict__ distances,
         const int64_t* const __restrict__ neighbors_row_splits,
-        const uint32_t* const __restrict__ point_index_table,
-        const uint32_t* const __restrict__ hash_table_cell_splits,
+        const int64_t* const __restrict__ point_index_table,
+        const int64_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -398,7 +398,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
-            uint32_t idx = point_index_table[j];
+            int64_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
 
@@ -463,8 +463,8 @@ void WriteNeighborsIndicesAndDistances(
         int64_t* indices,
         T* distances,
         const int64_t* const neighbors_row_splits,
-        const uint32_t* const point_index_table,
-        const uint32_t* const hash_table_cell_splits,
+        const int64_t* const point_index_table,
+        const int64_t* const hash_table_cell_splits,
         size_t hash_table_cell_splits_size,
         const T* const query_points,
         size_t num_queries,
@@ -539,18 +539,18 @@ __global__ void MaxKnnThresholdKernel(
 
 }  // namespace
 
-template <class TReal, class TIndex>
+template <class T>
 void BuildSpatialHashTableCUDA(void* temp,
                                size_t& temp_size,
                                const size_t num_points,
-                               const TReal* const points,
-                               const TReal radius,
+                               const T* const points,
+                               const T radius,
                                const size_t points_row_splits_size,
                                const int64_t* points_row_splits,
-                               const TIndex* hash_table_splits,
+                               const int64_t* hash_table_splits,
                                const size_t hash_table_cell_splits_size,
-                               TIndex* hash_table_cell_splits,
-                               TIndex* hash_table_index) {
+                               int64_t* hash_table_cell_splits,
+                               int64_t* hash_table_index) {
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
@@ -562,16 +562,16 @@ void BuildSpatialHashTableCUDA(void* temp,
 
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
-    std::pair<TIndex*, size_t> count_tmp =
-            mem_temp.Alloc<TIndex>(hash_table_cell_splits_size);
+    std::pair<uint32_t*, size_t> count_tmp =
+            mem_temp.Alloc<uint32_t>(hash_table_cell_splits_size);
 
     const int batch_size = points_row_splits_size - 1;
-    const TReal voxel_size = 2 * radius;
-    const TReal inv_voxel_size = 1 / voxel_size;
+    const T voxel_size = 2 * radius;
+    const T inv_voxel_size = 1 / voxel_size;
 
     // count number of points per hash entry
     if (!get_temp_size) {
-        cudaMemsetAsync(count_tmp.first, 0, sizeof(TIndex) * count_tmp.second,
+        cudaMemsetAsync(count_tmp.first, 0, sizeof(uint32_t) * count_tmp.second,
                         stream);
 
         for (int i = 0; i < batch_size; ++i) {
@@ -580,7 +580,7 @@ void BuildSpatialHashTableCUDA(void* temp,
             const size_t first_cell_idx = hash_table_splits[i];
             const size_t num_points_i =
                     points_row_splits[i + 1] - points_row_splits[i];
-            const TReal* const points_i = points + 3 * points_row_splits[i];
+            const T* const points_i = points + 3 * points_row_splits[i];
 
             CountHashTableEntries(stream, count_tmp.first + first_cell_idx,
                                   hash_table_size + 1, inv_voxel_size, points_i,
@@ -714,10 +714,10 @@ void FixedRadiusSearchCUDA(void* temp,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const uint32_t* const hash_table_splits,
+                           const int64_t* const hash_table_splits,
                            size_t hash_table_cell_splits_size,
-                           const uint32_t* const hash_table_cell_splits,
-                           const uint32_t* const hash_table_index,
+                           const int64_t* const hash_table_cell_splits,
+                           const int64_t* const hash_table_index,
                            NeighborSearchAllocator<T>& output_allocator) {
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
@@ -748,8 +748,8 @@ void FixedRadiusSearchCUDA(void* temp,
     const T voxel_size = 2 * radius;
     const T inv_voxel_size = 1 / voxel_size;
 
-    std::pair<uint32_t*, size_t> query_neighbors_count =
-            mem_temp.Alloc<uint32_t>(num_queries);
+    std::pair<int64_t*, size_t> query_neighbors_count =
+            mem_temp.Alloc<int64_t>(num_queries);
 
     // we need this value to compute the size of the index array
     if (!get_temp_size) {
@@ -843,10 +843,10 @@ template void BuildSpatialHashTableCUDA(
         const float radius,
         const size_t points_row_splits_size,
         const int64_t* points_row_splits,
-        const uint32_t* hash_table_splits,
+        const int64_t* hash_table_splits,
         const size_t hash_table_cell_splits_size,
-        uint32_t* hash_table_cell_splits,
-        uint32_t* hash_table_index);
+        int64_t* hash_table_cell_splits,
+        int64_t* hash_table_index);
 
 template void BuildSpatialHashTableCUDA(
         void* temp,
@@ -856,10 +856,48 @@ template void BuildSpatialHashTableCUDA(
         const double radius,
         const size_t points_row_splits_size,
         const int64_t* points_row_splits,
-        const uint32_t* hash_table_splits,
+        const int64_t* hash_table_splits,
         const size_t hash_table_cell_splits_size,
-        uint32_t* hash_table_cell_splits,
-        uint32_t* hash_table_index);
+        int64_t* hash_table_cell_splits,
+        int64_t* hash_table_index);
+
+template void SortPairs(void* temp,
+                        size_t& temp_size,
+                        int64_t num_indices,
+                        int64_t num_segments,
+                        const int64_t* query_neighbors_row_splits,
+                        int64_t* indices_unsorted,
+                        float* distances_unsorted,
+                        int64_t* indices_sorted,
+                        float* distances_sorted);
+
+template void SortPairs(void* temp,
+                        size_t& temp_size,
+                        int64_t num_indices,
+                        int64_t num_segments,
+                        const int64_t* query_neighbors_row_splits,
+                        int64_t* indices_unsorted,
+                        double* distances_unsorted,
+                        int64_t* indices_sorted,
+                        double* distances_sorted);
+
+template void MaxKnnThreshold(const int64_t* const prev_indices,
+                              const float* prev_distances,
+                              int64_t* indices,
+                              float* distances,
+                              const int64_t* const neighbors_counts,
+                              const int64_t* const neighbors_row_splits,
+                              int64_t num_queries,
+                              int max_knn);
+
+template void MaxKnnThreshold(const int64_t* const prev_indices,
+                              const double* prev_distances,
+                              int64_t* indices,
+                              double* distances,
+                              const int64_t* const neighbors_counts,
+                              const int64_t* const neighbors_row_splits,
+                              int64_t num_queries,
+                              int max_knn);
 
 template void SortPairs(void* temp,
                         size_t& temp_size,
@@ -912,10 +950,10 @@ template void FixedRadiusSearchCUDA(
         const int64_t* const points_row_splits,
         const size_t queries_row_splits_size,
         const int64_t* const queries_row_splits,
-        const uint32_t* const hash_table_splits,
+        const int64_t* const hash_table_splits,
         size_t hash_table_cell_splits_size,
-        const uint32_t* const hash_table_cell_splits,
-        const uint32_t* const hash_table_index,
+        const int64_t* const hash_table_cell_splits,
+        const int64_t* const hash_table_index,
         NeighborSearchAllocator<float>& output_allocator);
 
 template void FixedRadiusSearchCUDA(
@@ -931,10 +969,10 @@ template void FixedRadiusSearchCUDA(
         const int64_t* const points_row_splits,
         const size_t queries_row_splits_size,
         const int64_t* const queries_row_splits,
-        const uint32_t* const hash_table_splits,
+        const int64_t* const hash_table_splits,
         size_t hash_table_cell_splits_size,
-        const uint32_t* const hash_table_cell_splits,
-        const uint32_t* const hash_table_index,
+        const int64_t* const hash_table_cell_splits,
+        const int64_t* const hash_table_index,
         NeighborSearchAllocator<double>& output_allocator);
 
 }  // namespace nns

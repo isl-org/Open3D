@@ -90,7 +90,7 @@ public:
 
 protected:
     std::vector<int64_t> points_row_splits_;
-    std::vector<uint32_t> hash_table_splits_;
+    std::vector<int64_t> hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
@@ -102,22 +102,18 @@ public:
 
     void AllocIndices(int64_t** ptr, size_t num) {
         indices = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = static_cast<int64_t*>(indices.GetDataPtr());
+        *ptr = indices.GetDataPtr<int64_t>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
         distances =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = static_cast<T*>(distances.GetDataPtr());
+        *ptr = distances.GetDataPtr<T>();
     }
 
-    const int64_t* IndicesPtr() const {
-        return static_cast<const int64_t*>(indices.GetDataPtr());
-    }
+    const int64_t* IndicesPtr() const { return indices.GetDataPtr<int64_t>(); }
 
-    const T* DistancesPtr() const {
-        return static_cast<const T*>(distances.GetDataPtr());
-    }
+    const T* DistancesPtr() const { return distances.GetDataPtr<T>(); }
 
     const Tensor& NeighborsIndex() const { return indices; }
     const Tensor& NeighborsDistance() const { return distances; }
