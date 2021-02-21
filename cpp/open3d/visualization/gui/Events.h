@@ -112,6 +112,7 @@ struct MouseEvent {
             } else {
                 ss << "ERROR";
             }
+            ss << ", button.count: " << button.count;
         } else if (type == Type::WHEEL) {
             ss << ", wheel.dx: " << wheel.dx;
             ss << ", wheel.dy: " << wheel.dy;
