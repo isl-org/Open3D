@@ -48,17 +48,17 @@ class VideoDecoder : public webrtc::DecodedImageCallback {
 private:
     class Frame {
     public:
-        Frame() : m_timestamp_ms(0) {}
+        Frame() : timestamp_ms_(0) {}
         Frame(const rtc::scoped_refptr<webrtc::EncodedImageBuffer>& content,
               uint64_t timestamp_ms,
-              webrtc::VideoFrameType frameType)
-            : m_content(content),
-              m_timestamp_ms(timestamp_ms),
-              m_frameType(frameType) {}
+              webrtc::VideoFrameType frame_type)
+            : content_(content),
+              timestamp_ms_(timestamp_ms),
+              frame_type_(frame_type) {}
 
-        rtc::scoped_refptr<webrtc::EncodedImageBuffer> m_content;
-        uint64_t m_timestamp_ms;
-        webrtc::VideoFrameType m_frameType;
+        rtc::scoped_refptr<webrtc::EncodedImageBuffer> content_;
+        uint64_t timestamp_ms_;
+        webrtc::VideoFrameType frame_type_;
     };
 
 public:
@@ -83,21 +83,21 @@ public:
             queue_.pop();
             mlock.unlock();
 
-            if (frame.m_content.get() != nullptr) {
+            if (frame.content_.get() != nullptr) {
                 RTC_LOG(LS_VERBOSE) << "VideoDecoder::DecoderThread size:"
-                                    << frame.m_content->size()
-                                    << " ts:" << frame.m_timestamp_ms;
-                ssize_t size = frame.m_content->size();
+                                    << frame.content_->size()
+                                    << " ts:" << frame.timestamp_ms_;
+                ssize_t size = frame.content_->size();
 
                 if (size) {
                     webrtc::EncodedImage input_image;
-                    input_image.SetEncodedData(frame.m_content);
-                    input_image._frameType = frame.m_frameType;
+                    input_image.SetEncodedData(frame.content_);
+                    input_image._frameType = frame.frame_type_;
                     input_image.SetTimestamp(
-                            frame.m_timestamp_ms);  // store time in ms that
-                                                    // overflow the 32bits
+                            frame.timestamp_ms_);  // store time in ms that
+                                                   // overflow the 32bits
                     int res = decoder_->Decode(input_image, false,
-                                               frame.m_timestamp_ms);
+                                               frame.timestamp_ms_);
                     if (res != WEBRTC_VIDEO_CODEC_OK) {
                         RTC_LOG(LS_ERROR)
                                 << "VideoDecoder::DecoderThread failure:"
@@ -187,8 +187,8 @@ public:
     void PostFrame(
             const rtc::scoped_refptr<webrtc::EncodedImageBuffer>& content,
             uint64_t ts,
-            webrtc::VideoFrameType frameType) {
-        Frame frame(content, ts, frameType);
+            webrtc::VideoFrameType frame_type) {
+        Frame frame(content, ts, frame_type);
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
             queue_.push(frame);
@@ -196,7 +196,7 @@ public:
         queue_cond_.notify_all();
     }
 
-    // overide webrtc::DecodedImageCallback
+    // Overide webrtc::DecodedImageCallback.
     virtual int32_t Decoded(webrtc::VideoFrame& decodedImage) override {
         int64_t ts = std::chrono::high_resolution_clock::now()
                              .time_since_epoch()
@@ -208,7 +208,7 @@ public:
                 << " decode ts:" << decodedImage.ntp_time_ms()
                 << " source ts:" << ts;
 
-        // waiting
+        // Waiting.
         if ((wait_) && (prevts_ != 0)) {
             int64_t periodSource = decodedImage.timestamp() - previmagets_;
             int64_t periodDecode = ts - prevts_;

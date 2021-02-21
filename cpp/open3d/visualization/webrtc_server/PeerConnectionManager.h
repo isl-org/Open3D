@@ -162,12 +162,12 @@ class PeerConnectionManager {
                 const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
                         report) {
             for (const webrtc::RTCStats& stats : *report) {
-                Json::Value statsMembers;
+                Json::Value stats_members;
                 for (const webrtc::RTCStatsMemberInterface* member :
                      stats.Members()) {
-                    statsMembers[member->name()] = member->ValueToString();
+                    stats_members[member->name()] = member->ValueToString();
                 }
-                report_[stats.id()] = statsMembers;
+                report_[stats.id()] = stats_members;
             }
         }
 
@@ -179,37 +179,37 @@ class PeerConnectionManager {
         DataChannelObserver(
                 WebRTCServer* webrtc_server,
                 rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel)
-            : webrtc_server_(webrtc_server), m_dataChannel(dataChannel) {
-            m_dataChannel->RegisterObserver(this);
+            : webrtc_server_(webrtc_server), data_channel_(dataChannel) {
+            data_channel_->RegisterObserver(this);
         }
-        virtual ~DataChannelObserver() { m_dataChannel->UnregisterObserver(); }
+        virtual ~DataChannelObserver() { data_channel_->UnregisterObserver(); }
 
         // DataChannelObserver interface
         virtual void OnStateChange() {
             RTC_LOG(LERROR)
                     << __PRETTY_FUNCTION__
-                    << " channel:" << m_dataChannel->label() << " state:"
+                    << " channel:" << data_channel_->label() << " state:"
                     << webrtc::DataChannelInterface::DataStateString(
-                               m_dataChannel->state());
-            std::string msg(m_dataChannel->label() + " " +
+                               data_channel_->state());
+            std::string msg(data_channel_->label() + " " +
                             webrtc::DataChannelInterface::DataStateString(
-                                    m_dataChannel->state()));
+                                    data_channel_->state()));
             webrtc::DataBuffer buffer(msg);
-            m_dataChannel->Send(buffer);
+            data_channel_->Send(buffer);
         }
         virtual void OnMessage(const webrtc::DataBuffer& buffer) {
             std::string msg((const char*)buffer.data.data(),
                             buffer.data.size());
             RTC_LOG(LERROR)
                     << __PRETTY_FUNCTION__
-                    << " channel:" << m_dataChannel->label() << " msg:" << msg;
+                    << " channel:" << data_channel_->label() << " msg:" << msg;
 
             webrtc_server_->OnDataChannelMessage(msg);
         }
 
     protected:
         WebRTCServer* webrtc_server_;
-        rtc::scoped_refptr<webrtc::DataChannelInterface> m_dataChannel;
+        rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
     };
 
     class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
@@ -384,7 +384,7 @@ protected:
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> CreateVideoSource(
             const std::string& video_url,
             const std::map<std::string, std::string>& opts);
-    bool StreamStillUsed(const std::string& streamLabel);
+    bool StreamStillUsed(const std::string& stream_label);
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection(
             const std::string& peerid);
     const std::string SanitizeLabel(const std::string& label);

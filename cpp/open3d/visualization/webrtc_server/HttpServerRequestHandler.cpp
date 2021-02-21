@@ -53,9 +53,6 @@ const struct CivetCallbacks *getCivetCallbacks() {
     return &_callbacks;
 }
 
-/* ---------------------------------------------------------------------------
-**  Civet HTTP callback
-** -------------------------------------------------------------------------*/
 class RequestHandler : public CivetHandler {
 public:
     RequestHandler(HttpServerRequestHandler::HttpFunction &func)
@@ -106,7 +103,7 @@ private:
                                 struct mg_connection *conn) {
         Json::Value jmessage;
 
-        // read input
+        // Read input.
         long long tlen = req_info->content_length;
         if (tlen > 0) {
             std::string body;
@@ -127,7 +124,7 @@ private:
                 nlen += rlen;
             }
 
-            // parse in
+            // Parse in.
             std::unique_ptr<Json::CharReader> reader(
                     reader_builder_.newCharReader());
             std::string errors;
@@ -141,9 +138,6 @@ private:
     }
 };
 
-/* ---------------------------------------------------------------------------
-**  Constructor
-** -------------------------------------------------------------------------*/
 HttpServerRequestHandler::HttpServerRequestHandler(
         std::map<std::string, HttpFunction> &func,
         const std::vector<std::string> &options)

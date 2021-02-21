@@ -45,21 +45,21 @@ public:
     WindowCapturer(const std::string& url,
                    const std::map<std::string, std::string>& opts)
         : DesktopCapturer(opts) {
-        const std::string windowprefix("window://");
-        if (url.find(windowprefix) == 0) {
+        const std::string window_prefix("window://");
+        if (url.find(window_prefix) == 0) {
             capturer_ = webrtc::DesktopCapturer::CreateWindowCapturer(
                     webrtc::DesktopCaptureOptions::CreateDefault());
 
             if (capturer_) {
                 webrtc::DesktopCapturer::SourceList source_list;
                 if (capturer_->GetSourceList(&source_list)) {
-                    const std::string windowtitle(
-                            url.substr(windowprefix.length()));
+                    const std::string window_title(
+                            url.substr(window_prefix.length()));
                     for (auto source : source_list) {
                         RTC_LOG(LS_ERROR)
                                 << "WindowCapturer source:" << source.id
                                 << " title:" << source.title;
-                        if (windowtitle == source.title) {
+                        if (window_title == source.title) {
                             capturer_->SelectSource(source.id);
                             break;
                         }

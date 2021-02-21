@@ -44,9 +44,6 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-/* ---------------------------------------------------------------------------
-**  http callback
-** -------------------------------------------------------------------------*/
 class HttpServerRequestHandler : public CivetServer {
 public:
     typedef std::function<Json::Value(const struct mg_request_info* req_info,

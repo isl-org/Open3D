@@ -171,7 +171,7 @@ public:
     }
     bool IsRunning() { return is_running_; }
 
-    // overide webrtc::DesktopCapturer::Callback
+    // Overide webrtc::DesktopCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
     // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
     virtual void OnCaptureResult(const core::Tensor& frame) {
@@ -228,7 +228,7 @@ public:
         }
     }
 
-    // overide rtc::VideoSourceInterface<webrtc::VideoFrame>
+    // Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
     virtual void AddOrUpdateSink(
             rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
             const rtc::VideoSinkWants& wants) {
