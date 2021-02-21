@@ -61,8 +61,6 @@
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 
-#include "open3d/io/ImageIO.h"
-
 namespace open3d {
 namespace visualization {
 namespace rendering {
@@ -153,7 +151,6 @@ void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
 
 void FilamentRenderer::UpdateSwapChain() {
     void* native_win = swap_chain_->getNativeWindow();
-    std::cout << "[o3d] FilamentRenderer::UpdateSwapChain(): native_win: " << native_win << std::endl;
     engine_.destroy(swap_chain_);
 
 #if defined(__APPLE__)
@@ -260,22 +257,26 @@ struct UserData {
 };
 
 void ReadPixelsCallback(void*, size_t, void* user) {
-    auto *user_data = static_cast<UserData*>(user);
+    auto* user_data = static_cast<UserData*>(user);
     user_data->callback(user_data->image);
     delete user_data;
 }
 
 }  // namespace
 
-void FilamentRenderer::RequestReadPixels(int width, int height, std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+void FilamentRenderer::RequestReadPixels(
+        int width,
+        int height,
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
     auto image = std::make_shared<geometry::Image>();
     image->width_ = width;
     image->height_ = height;
     image->num_of_channels_ = 3;
     image->bytes_per_channel_ = 1;
-    size_t nbytes = image->width_ * image->height_ * image->num_of_channels_ * image->bytes_per_channel_;
+    size_t nbytes = image->width_ * image->height_ * image->num_of_channels_ *
+                    image->bytes_per_channel_;
     image->data_.resize(nbytes, 0);
-    auto *user_data = new UserData(callback, image);
+    auto* user_data = new UserData(callback, image);
 
     using namespace filament;
     using namespace backend;

@@ -61,27 +61,21 @@ struct HeadlessEvent {
 };
 
 struct HeadlessDrawEvent : public HeadlessEvent {
-    HeadlessDrawEvent(HeadlessWindow *target)
-        : HeadlessEvent(target) {}
+    HeadlessDrawEvent(HeadlessWindow *target) : HeadlessEvent(target) {}
 
-    void Execute() override {
-        event_target->o3d_window->OnDraw();
-    }
+    void Execute() override { event_target->o3d_window->OnDraw(); }
 };
 
 struct HeadlessResizeEvent : public HeadlessEvent {
-    HeadlessResizeEvent(HeadlessWindow *target)
-        : HeadlessEvent(target) {}
+    HeadlessResizeEvent(HeadlessWindow *target) : HeadlessEvent(target) {}
 
-    void Execute() override {
-        event_target->o3d_window->OnResize();
-    }
+    void Execute() override { event_target->o3d_window->OnResize(); }
 };
 
 struct HeadlessMouseEvent : public HeadlessEvent {
     MouseEvent event;
 
-    HeadlessMouseEvent(HeadlessWindow *target, const MouseEvent& e)
+    HeadlessMouseEvent(HeadlessWindow *target, const MouseEvent &e)
         : HeadlessEvent(target), event(e) {}
 
     void Execute() override {
@@ -98,20 +92,17 @@ struct HeadlessMouseEvent : public HeadlessEvent {
 struct HeadlessKeyEvent : public HeadlessEvent {
     KeyEvent event;
 
-    HeadlessKeyEvent(HeadlessWindow *target, const KeyEvent& e)
+    HeadlessKeyEvent(HeadlessWindow *target, const KeyEvent &e)
         : HeadlessEvent(target), event(e) {}
 
-    void Execute() override {
-        event_target->o3d_window->OnKeyEvent(event);
-    }
+    void Execute() override { event_target->o3d_window->OnKeyEvent(event); }
 };
 
 struct HeadlessTextInputEvent : public HeadlessEvent {
     std::string textUtf8;  // storage for the event
 
-    HeadlessTextInputEvent(HeadlessWindow *target, const TextInputEvent& e)
-        : HeadlessEvent(target), textUtf8(e.utf8) {
-    }
+    HeadlessTextInputEvent(HeadlessWindow *target, const TextInputEvent &e)
+        : HeadlessEvent(target), textUtf8(e.utf8) {}
 
     void Execute() override {
         event_target->o3d_window->OnTextInput({textUtf8.c_str()});
@@ -126,18 +117,13 @@ struct HeadlessWindowSystem::Impl {
 };
 
 HeadlessWindowSystem::HeadlessWindowSystem()
-    : impl_(new HeadlessWindowSystem::Impl()) {
-}
+    : impl_(new HeadlessWindowSystem::Impl()) {}
 
-HeadlessWindowSystem::~HeadlessWindowSystem() {
-}
+HeadlessWindowSystem::~HeadlessWindowSystem() {}
 
-void HeadlessWindowSystem::Initialize() {
-}
+void HeadlessWindowSystem::Initialize() {}
 
-void HeadlessWindowSystem::Uninitialize() {
-    impl_->on_draw_ = nullptr;
-}
+void HeadlessWindowSystem::Uninitialize() { impl_->on_draw_ = nullptr; }
 
 void HeadlessWindowSystem::SetOnWindowDraw(OnDrawCallback callback) {
     impl_->on_draw_ = callback;
@@ -164,41 +150,44 @@ Size HeadlessWindowSystem::GetScreenSize(OSWindow w) {
     return Size(32000, 32000);
 }
 
-WindowSystem::OSWindow HeadlessWindowSystem::CreateWindow(
-                                            Window *o3d_window,
-                                            int width, int height,
-                                            const char *title, int flags) {
+WindowSystem::OSWindow HeadlessWindowSystem::CreateWindow(Window *o3d_window,
+                                                          int width,
+                                                          int height,
+                                                          const char *title,
+                                                          int flags) {
     std::cout << "[debug] HeadlessWindowSystem::CreateWindow()" << std::endl;
     auto *w = new HeadlessWindow(o3d_window, width, height);
-    return (OSWindow*)w;
+    return (OSWindow *)w;
 }
 
 void HeadlessWindowSystem::DestroyWindow(OSWindow w) {
-    delete (HeadlessWindow*)w;
+    delete (HeadlessWindow *)w;
 }
 
 void HeadlessWindowSystem::PostRedrawEvent(OSWindow w) {
-    auto hw = (HeadlessWindow*)w;
+    auto hw = (HeadlessWindow *)w;
     impl_->event_queue_.push(std::make_shared<HeadlessDrawEvent>(hw));
 }
 
-void HeadlessWindowSystem::PostMouseEvent(OSWindow w, const MouseEvent& e) {
-    auto hw = (HeadlessWindow*)w;
+void HeadlessWindowSystem::PostMouseEvent(OSWindow w, const MouseEvent &e) {
+    auto hw = (HeadlessWindow *)w;
     impl_->event_queue_.push(std::make_shared<HeadlessMouseEvent>(hw, e));
 }
 
-void HeadlessWindowSystem::PostKeyEvent(OSWindow w, const KeyEvent& e) {
-    auto hw = (HeadlessWindow*)w;
+void HeadlessWindowSystem::PostKeyEvent(OSWindow w, const KeyEvent &e) {
+    auto hw = (HeadlessWindow *)w;
     impl_->event_queue_.push(std::make_shared<HeadlessKeyEvent>(hw, e));
 }
 
 void HeadlessWindowSystem::PostTextInputEvent(OSWindow w,
-                                              const TextInputEvent& e) {
-    auto hw = (HeadlessWindow*)w;
+                                              const TextInputEvent &e) {
+    auto hw = (HeadlessWindow *)w;
     impl_->event_queue_.push(std::make_shared<HeadlessTextInputEvent>(hw, e));
 }
 
-bool HeadlessWindowSystem::GetWindowIsVisible(OSWindow w) const { return false; }
+bool HeadlessWindowSystem::GetWindowIsVisible(OSWindow w) const {
+    return false;
+}
 
 void HeadlessWindowSystem::ShowWindow(OSWindow w, bool show) {}
 
@@ -207,22 +196,22 @@ void HeadlessWindowSystem::RaiseWindowToTop(OSWindow w) {}
 bool HeadlessWindowSystem::IsActiveWindow(OSWindow w) const { return true; }
 
 Point HeadlessWindowSystem::GetWindowPos(OSWindow w) const {
-    return Point(((HeadlessWindow*)w)->frame.x,
-                 ((HeadlessWindow*)w)->frame.y);
+    return Point(((HeadlessWindow *)w)->frame.x,
+                 ((HeadlessWindow *)w)->frame.y);
 }
 
 void HeadlessWindowSystem::SetWindowPos(OSWindow w, int x, int y) {
-    ((HeadlessWindow*)w)->frame.x = x;
-    ((HeadlessWindow*)w)->frame.y = y;
+    ((HeadlessWindow *)w)->frame.x = x;
+    ((HeadlessWindow *)w)->frame.y = y;
 }
 
 Size HeadlessWindowSystem::GetWindowSize(OSWindow w) const {
-    return Size(((HeadlessWindow*)w)->frame.width,
-                ((HeadlessWindow*)w)->frame.height);
+    return Size(((HeadlessWindow *)w)->frame.width,
+                ((HeadlessWindow *)w)->frame.height);
 }
 
 void HeadlessWindowSystem::SetWindowSize(OSWindow w, int width, int height) {
-    HeadlessWindow *hw = (HeadlessWindow*)w;
+    HeadlessWindow *hw = (HeadlessWindow *)w;
     hw->frame.width = width;
     hw->frame.height = height;
     hw->o3d_window->OnResize();
@@ -232,7 +221,7 @@ Size HeadlessWindowSystem::GetWindowSizePixels(OSWindow w) const {
     return GetWindowSize(w);
 }
 
-void HeadlessWindowSystem::SetWindowSizePixels(OSWindow w, const Size& size) {
+void HeadlessWindowSystem::SetWindowSizePixels(OSWindow w, const Size &size) {
     return SetWindowSize(w, size.width, size.height);
 }
 
@@ -243,32 +232,34 @@ float HeadlessWindowSystem::GetWindowScaleFactor(OSWindow w) const {
 void HeadlessWindowSystem::SetWindowTitle(OSWindow w, const char *title) {}
 
 Point HeadlessWindowSystem::GetMousePosInWindow(OSWindow w) const {
-    return ((HeadlessWindow*)w)->mouse_pos;
+    return ((HeadlessWindow *)w)->mouse_pos;
 }
 
 int HeadlessWindowSystem::GetMouseButtons(OSWindow w) const {
-    return ((HeadlessWindow*)w)->mouse_buttons;
+    return ((HeadlessWindow *)w)->mouse_buttons;
 }
 
-void HeadlessWindowSystem::CancelUserClose(OSWindow w) {
-}
+void HeadlessWindowSystem::CancelUserClose(OSWindow w) {}
 
-void* HeadlessWindowSystem::GetNativeDrawable(OSWindow w) { return nullptr; }
+void *HeadlessWindowSystem::GetNativeDrawable(OSWindow w) { return nullptr; }
 
-rendering::FilamentRenderer* HeadlessWindowSystem::CreateRenderer(OSWindow w) {
+rendering::FilamentRenderer *HeadlessWindowSystem::CreateRenderer(OSWindow w) {
     auto *renderer = new rendering::FilamentRenderer(
-                            rendering::EngineInstance::GetInstance(),
-                            ((HeadlessWindow*)w)->frame.width,
-                            ((HeadlessWindow*)w)->frame.height,
-                            rendering::EngineInstance::GetResourceManager());
-    
+            rendering::EngineInstance::GetInstance(),
+            ((HeadlessWindow *)w)->frame.width,
+            ((HeadlessWindow *)w)->frame.height,
+            rendering::EngineInstance::GetResourceManager());
+
     auto on_after_draw = [this, renderer, w]() {
-        if (!this->impl_->on_draw_) { return; }
+        if (!this->impl_->on_draw_) {
+            return;
+        }
 
         auto size = this->GetWindowSizePixels(w);
-        Window* window = ((HeadlessWindow*)w)->o3d_window;
+        Window *window = ((HeadlessWindow *)w)->o3d_window;
 
-        auto on_pixels = [this, window](std::shared_ptr<geometry::Image> image) {
+        auto on_pixels = [this,
+                          window](std::shared_ptr<geometry::Image> image) {
             if (this->impl_->on_draw_) {
                 this->impl_->on_draw_(window, image);
             }
@@ -279,8 +270,8 @@ rendering::FilamentRenderer* HeadlessWindowSystem::CreateRenderer(OSWindow w) {
     return renderer;
 }
 
-void HeadlessWindowSystem::ResizeRenderer(OSWindow w,
-                                          rendering::FilamentRenderer* renderer) {
+void HeadlessWindowSystem::ResizeRenderer(
+        OSWindow w, rendering::FilamentRenderer *renderer) {
     auto size = GetWindowSizePixels(w);
     renderer->UpdateHeadlessSwapChain(size.width, size.height);
 }

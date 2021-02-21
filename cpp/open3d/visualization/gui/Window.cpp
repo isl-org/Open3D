@@ -165,7 +165,7 @@ Window::Window(const std::string& title,
 
     int initial_width = std::max(10, width);
     int initial_height = std::max(10, height);
-    auto &ws = Application::GetInstance().GetWindowSystem();
+    auto& ws = Application::GetInstance().GetWindowSystem();
     impl_->window_ = ws.CreateWindow(this, initial_width, initial_height,
                                      title.c_str(), ws_flags);
     impl_->title_ = title;
@@ -276,12 +276,13 @@ void Window::CreateRenderer() {
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not GLFW's context, so create the renderer after the window.
-    impl_->renderer_ = Application::GetInstance().GetWindowSystem()
-                                                 .CreateRenderer(impl_->window_);
+    impl_->renderer_ =
+            Application::GetInstance().GetWindowSystem().CreateRenderer(
+                    impl_->window_);
     impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
 
-    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
-            impl_->renderer_, GetSize());
+    impl_->imgui_.imgui_bridge =
+            std::make_unique<ImguiFilamentBridge>(impl_->renderer_, GetSize());
 
     // If the given font path is invalid, ImGui will silently fall back to
     // proggy, which is a tiny "pixel art" texture that is compiled into the
@@ -405,14 +406,14 @@ visualization::rendering::Renderer& Window::GetRenderer() const {
 }
 
 Rect Window::GetOSFrame() const {
-    auto &ws = Application::GetInstance().GetWindowSystem();
+    auto& ws = Application::GetInstance().GetWindowSystem();
     auto pos = ws.GetWindowPos(impl_->window_);
     auto size = ws.GetWindowSize(impl_->window_);
     return Rect(pos.x, pos.y, size.width, size.height);
 }
 
 void Window::SetOSFrame(const Rect& r) {
-    auto &ws = Application::GetInstance().GetWindowSystem();
+    auto& ws = Application::GetInstance().GetWindowSystem();
     ws.SetWindowPos(impl_->window_, r.x, r.y);
     ws.SetWindowSize(impl_->window_, r.width, r.height);
 }
@@ -421,8 +422,8 @@ const char* Window::GetTitle() const { return impl_->title_.c_str(); }
 
 void Window::SetTitle(const char* title) {
     impl_->title_ = title;
-    return Application::GetInstance().GetWindowSystem()
-                                     .SetWindowTitle(impl_->window_, title);
+    return Application::GetInstance().GetWindowSystem().SetWindowTitle(
+            impl_->window_, title);
 }
 
 // Note: can only be called if the ImGUI context is current (that is,
@@ -467,15 +468,15 @@ void Window::SetSize(const Size& size) {
         auto scaling = this->impl_->imgui_.scaling;
         int width = int(std::round(float(size.width) / scaling));
         int height = int(std::round(float(size.height) / scaling));
-        Application::GetInstance().GetWindowSystem()
-                                  .SetWindowSize(impl_->window_, width, height);
+        Application::GetInstance().GetWindowSystem().SetWindowSize(
+                impl_->window_, width, height);
     };
     impl_->deferred_until_before_draw_.push(resize);
 }
 
 Size Window::GetSize() const {
-    return Application::GetInstance().GetWindowSystem()
-                                     .GetWindowSizePixels(impl_->window_);
+    return Application::GetInstance().GetWindowSystem().GetWindowSizePixels(
+            impl_->window_);
 }
 
 Rect Window::GetContentRect() const {
@@ -501,34 +502,35 @@ float Window::GetScaling() const {
 // returns the scale factor needed so that your fonts and icons and sizes
 // are correct. This is not the same thing as Apple does.
 #if __APPLE__
-    return Application::GetInstance().GetWindowSystem()
-                                     .GetWindowScaleFactor(impl_->window_);
+    return Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+            impl_->window_);
 #else
     return 1.0f;
 #endif  // __APPLE__
 }
 
 Point Window::GlobalToWindowCoord(int global_x, int global_y) {
-    auto pos = Application::GetInstance().GetWindowSystem()
-                                         .GetWindowPos(impl_->window_);
+    auto pos = Application::GetInstance().GetWindowSystem().GetWindowPos(
+            impl_->window_);
     return Point(global_y - pos.x, global_y - pos.y);
 }
 
 bool Window::IsVisible() const {
-    return Application::GetInstance().GetWindowSystem()
-                                     .GetWindowIsVisible(impl_->window_);
+    return Application::GetInstance().GetWindowSystem().GetWindowIsVisible(
+            impl_->window_);
 }
 
 void Window::Show(bool vis /*= true*/) {
-    Application::GetInstance().GetWindowSystem().ShowWindow(impl_->window_, vis);
+    Application::GetInstance().GetWindowSystem().ShowWindow(impl_->window_,
+                                                            vis);
 }
 
 void Window::Close() {
     if (impl_->on_close_) {
         bool shouldContinue = impl_->on_close_();
         if (!shouldContinue) {
-            Application::GetInstance().GetWindowSystem()
-                                      .CancelUserClose(impl_->window_);
+            Application::GetInstance().GetWindowSystem().CancelUserClose(
+                    impl_->window_);
             return;
         }
     }
@@ -544,19 +546,19 @@ void Window::PostRedraw() {
     if (impl_->is_drawing_) {
         impl_->needs_redraw_ = true;
     } else {
-        Application::GetInstance().GetWindowSystem()
-                                  .PostRedrawEvent(impl_->window_);
+        Application::GetInstance().GetWindowSystem().PostRedrawEvent(
+                impl_->window_);
     }
 }
 
 void Window::RaiseToTop() const {
-    Application::GetInstance().GetWindowSystem()
-                              .RaiseWindowToTop(impl_->window_);
+    Application::GetInstance().GetWindowSystem().RaiseWindowToTop(
+            impl_->window_);
 }
 
 bool Window::IsActiveWindow() const {
-    return Application::GetInstance().GetWindowSystem()
-                                     .IsActiveWindow(impl_->window_);
+    return Application::GetInstance().GetWindowSystem().IsActiveWindow(
+            impl_->window_);
 }
 
 void Window::SetFocusWidget(Widget* w) { impl_->focus_widget_ = w; }
@@ -772,7 +774,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 
     // Set mouse information
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-    auto &ws = Application::GetInstance().GetWindowSystem();
+    auto& ws = Application::GetInstance().GetWindowSystem();
     if (IsActiveWindow()) {
         auto mouse_pos = ws.GetMousePosInWindow(impl_->window_);
         io.MousePos = ImVec2(float(mouse_pos.x), float(mouse_pos.y));
@@ -932,7 +934,8 @@ void Window::OnResize() {
 #if __APPLE__
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong.
-    Application::GetInstance().GetWindowSystem().ResizeRenderer(impl_->window_, impl_->renderer_);
+    Application::GetInstance().GetWindowSystem().ResizeRenderer(
+            impl_->window_, impl_->renderer_);
 #endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
@@ -952,7 +955,7 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.y = 1.0f;
 
     if (impl_->wants_auto_size_ || impl_->wants_auto_center_) {
-        auto &ws = Application::GetInstance().GetWindowSystem();
+        auto& ws = Application::GetInstance().GetWindowSystem();
         auto screen_size = ws.GetScreenSize(impl_->window_);
         int w = GetOSFrame().width;
         int h = GetOSFrame().height;

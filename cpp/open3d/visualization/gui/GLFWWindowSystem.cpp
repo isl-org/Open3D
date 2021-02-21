@@ -27,15 +27,15 @@
 #include "open3d/visualization/gui/GLFWWindowSystem.h"
 
 #include <GLFW/glfw3.h>
+
+#include <iostream>
 #include <unordered_map>
 
-#include "open3d/visualization/rendering/filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Window.h"
-
-#include <iostream>
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -93,8 +93,7 @@ int KeymodsFromGLFW(int glfw_mods) {
 
 }  // namespace
 
-GLFWWindowSystem::GLFWWindowSystem() {
-}
+GLFWWindowSystem::GLFWWindowSystem() {}
 
 GLFWWindowSystem::~GLFWWindowSystem() {}
 
@@ -109,13 +108,11 @@ void GLFWWindowSystem::Initialize() {
     glfwInit();
 }
 
-void GLFWWindowSystem::Uninitialize() {
-    glfwTerminate();
-}
+void GLFWWindowSystem::Uninitialize() { glfwTerminate(); }
 
 void GLFWWindowSystem::WaitEventsTimeout(double timeout_secs) {
     glfwWaitEventsTimeout(timeout_secs);
-    const char *err;
+    const char* err;
     if (glfwGetError(&err) != GLFW_NO_ERROR) {
         std::cerr << "[error] GLFW error: " << err << std::endl;
     }
@@ -144,9 +141,10 @@ Size GLFWWindowSystem::GetScreenSize(OSWindow w) {
     return Size(screen_width, screen_height);
 }
 
-GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateWindow(Window *o3d_window,
-                                                          int width, int height,
-                                                          const char *title,
+GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateWindow(Window* o3d_window,
+                                                          int width,
+                                                          int height,
+                                                          const char* title,
                                                           int flags) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -167,7 +165,7 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateWindow(Window *o3d_window,
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
-    auto *glfw_window = glfwCreateWindow(width, height, title, NULL, NULL);
+    auto* glfw_window = glfwCreateWindow(width, height, title, NULL, NULL);
 
     glfwSetWindowUserPointer(glfw_window, o3d_window);
     glfwSetWindowSizeCallback(glfw_window, ResizeCallback);
@@ -239,7 +237,8 @@ Size GLFWWindowSystem::GetWindowSizePixels(OSWindow w) const {
 }
 
 void GLFWWindowSystem::SetWindowSizePixels(OSWindow w, const Size& size) {
-    std::cout << "[o3d] TODO: implement GLFWWindowSystem::SetWindowSizePixels()" << std::endl;
+    std::cout << "[o3d] TODO: implement GLFWWindowSystem::SetWindowSizePixels()"
+              << std::endl;
 }
 
 float GLFWWindowSystem::GetWindowScaleFactor(OSWindow w) const {
@@ -254,7 +253,7 @@ float GLFWWindowSystem::GetWindowScaleFactor(OSWindow w) const {
 #endif  // GLFW version >= 3.3
 }
 
-void GLFWWindowSystem::SetWindowTitle(OSWindow w, const char *title) {
+void GLFWWindowSystem::SetWindowTitle(OSWindow w, const char* title) {
     glfwSetWindowTitle((GLFWwindow*)w, title);
 }
 
@@ -266,7 +265,7 @@ Point GLFWWindowSystem::GetMousePosInWindow(OSWindow w) const {
 }
 
 int GLFWWindowSystem::GetMouseButtons(OSWindow w) const {
-    GLFWwindow *gw = (GLFWwindow*)w;
+    GLFWwindow* gw = (GLFWwindow*)w;
     int buttons = 0;
     if (glfwGetMouseButton(gw, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         buttons |= int(MouseButton::LEFT);
@@ -291,13 +290,15 @@ void GLFWWindowSystem::DrawCallback(GLFWwindow* window) {
 }
 
 void GLFWWindowSystem::ResizeCallback(GLFWwindow* window,
-                                      int os_width, int os_height) {
+                                      int os_width,
+                                      int os_height) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
 }
 
 void GLFWWindowSystem::WindowMovedCallback(GLFWwindow* window,
-                                           int os_x, int os_y) {
+                                           int os_x,
+                                           int os_y) {
 #ifdef __APPLE__
     // On macOS we need to recreate the swap chain if the window changes
     // size OR MOVES!
@@ -307,13 +308,15 @@ void GLFWWindowSystem::WindowMovedCallback(GLFWwindow* window,
 }
 
 void GLFWWindowSystem::RescaleCallback(GLFWwindow* window,
-                                       float xscale,float yscale) {
+                                       float xscale,
+                                       float yscale) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
 }
 
 void GLFWWindowSystem::MouseMoveCallback(GLFWwindow* window,
-                                         double x, double y) {
+                                         double x,
+                                         double y) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
@@ -352,7 +355,9 @@ void GLFWWindowSystem::MouseButtonCallback(GLFWwindow* window,
     w->OnMouseEvent(me);
 }
 
-void GLFWWindowSystem::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
+void GLFWWindowSystem::MouseScrollCallback(GLFWwindow* window,
+                                           double dx,
+                                           double dy) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     double mx, my;
@@ -427,7 +432,8 @@ void GLFWWindowSystem::KeyCallback(
     w->OnKeyEvent(e);
 }
 
-void GLFWWindowSystem::CharCallback(GLFWwindow* window, unsigned int utf32char) {
+void GLFWWindowSystem::CharCallback(GLFWwindow* window,
+                                    unsigned int utf32char) {
     // Convert utf-32 to utf8
     // From https://stackoverflow.com/a/42013433/218226
     // Note: This code handles all characters, but non-European characters
@@ -482,9 +488,8 @@ void* GLFWWindowSystem::GetNativeDrawable(OSWindow w) {
 
 rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
     return new rendering::FilamentRenderer(
-                rendering::EngineInstance::GetInstance(),
-                GetNativeDrawable(w),
-                rendering::EngineInstance::GetResourceManager());
+            rendering::EngineInstance::GetInstance(), GetNativeDrawable(w),
+            rendering::EngineInstance::GetResourceManager());
 }
 
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,

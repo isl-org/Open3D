@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "open3d/visualization/gui/WindowSystem.h"
-
 #include <functional>
 #include <memory>
+
+#include "open3d/visualization/gui/WindowSystem.h"
 
 namespace open3d {
 
@@ -52,14 +52,17 @@ public:
     void Initialize() override;
     void Uninitialize() override;
 
-    using OnDrawCallback = std::function<void(Window*,
-                                              std::shared_ptr<geometry::Image>)>;
+    using OnDrawCallback =
+            std::function<void(Window*, std::shared_ptr<geometry::Image>)>;
     void SetOnWindowDraw(OnDrawCallback callback);
 
     void WaitEventsTimeout(double timeout_secs) override;
 
-    OSWindow CreateWindow(Window *o3d_window, int width, int height,
-                                  const char *title, int flags) override;
+    OSWindow CreateWindow(Window* o3d_window,
+                          int width,
+                          int height,
+                          const char* title,
+                          int flags) override;
     void DestroyWindow(OSWindow w) override;
 
     Size GetScreenSize(OSWindow w) override;
@@ -86,7 +89,7 @@ public:
 
     float GetWindowScaleFactor(OSWindow w) const override;
 
-    void SetWindowTitle(OSWindow w, const char *title) override;
+    void SetWindowTitle(OSWindow w, const char* title) override;
 
     Point GetMousePosInWindow(OSWindow w) const override;
     int GetMouseButtons(OSWindow w) const override;

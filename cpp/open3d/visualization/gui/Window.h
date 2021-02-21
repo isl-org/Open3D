@@ -196,7 +196,7 @@ private:
     void CreateRenderer();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
     void ForceRedrawSceneWidget();
-     void* MakeDrawContextCurrent() const;
+    void* MakeDrawContextCurrent() const;
     void RestoreDrawContext(void* old_context) const;
 
 private:

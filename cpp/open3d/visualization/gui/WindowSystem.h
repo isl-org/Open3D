@@ -31,7 +31,7 @@
 namespace open3d {
 namespace visualization {
 
-namespace rendering { 
+namespace rendering {
 class FilamentRenderer;
 }  // namespace rendering
 
@@ -46,7 +46,7 @@ class WindowSystem {
 public:
     using OSWindow = void*;
 
-    virtual ~WindowSystem() {};
+    virtual ~WindowSystem(){};
 
     virtual void Initialize() = 0;
     virtual void Uninitialize() = 0;
@@ -59,8 +59,11 @@ public:
     static constexpr int FLAG_HIDDEN = (1 << 0);
     static constexpr int FLAG_TOPMOST = (1 << 1);
 
-    virtual OSWindow CreateWindow(Window *o3d_window, int width, int height,
-                                  const char *title, int flags) = 0;
+    virtual OSWindow CreateWindow(Window* o3d_window,
+                                  int width,
+                                  int height,
+                                  const char* title,
+                                  int flags) = 0;
     virtual void DestroyWindow(OSWindow w) = 0;
 
     virtual void PostRedrawEvent(OSWindow w) = 0;
@@ -77,13 +80,12 @@ public:
     virtual Size GetWindowSize(OSWindow w) const = 0;
     virtual void SetWindowSize(OSWindow w, int width, int height) = 0;
 
-
     virtual Size GetWindowSizePixels(OSWindow w) const = 0;
     virtual void SetWindowSizePixels(OSWindow w, const Size& size) = 0;
 
     virtual float GetWindowScaleFactor(OSWindow w) const = 0;
 
-    virtual void SetWindowTitle(OSWindow w, const char *title) = 0;
+    virtual void SetWindowTitle(OSWindow w, const char* title) = 0;
 
     virtual Point GetMousePosInWindow(OSWindow w) const = 0;
     virtual int GetMouseButtons(OSWindow w) const = 0;

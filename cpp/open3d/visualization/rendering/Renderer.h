@@ -78,7 +78,10 @@ public:
     virtual void BeginFrame() = 0;
     virtual void Draw() = 0;
     // If using the Filament renderer this must be called *before* EndFrame()!
-    virtual void RequestReadPixels(int width, int height, std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
+    virtual void RequestReadPixels(
+            int width,
+            int height,
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
     virtual void EndFrame() = 0;
 
     virtual void SetOnAfterDraw(std::function<void()> callback) = 0;

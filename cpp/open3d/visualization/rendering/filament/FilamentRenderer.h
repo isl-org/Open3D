@@ -76,7 +76,10 @@ public:
     void EnableCaching(bool enable) override;
     void BeginFrame() override;
     void Draw() override;
-    void RequestReadPixels(int width, int height, std::function<void(std::shared_ptr<geometry::Image>)> callback) override;
+    void RequestReadPixels(int width,
+                           int height,
+                           std::function<void(std::shared_ptr<geometry::Image>)>
+                                   callback) override;
     void EndFrame() override;
 
     void SetOnAfterDraw(std::function<void()> callback) override;

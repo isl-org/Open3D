@@ -225,12 +225,10 @@ struct Application::Impl {
 
     void InitWindowSystem() {
         if (!window_system_) {
-            std::cout << "[o3d] InitWindowSystem():  creating window system" << std::endl;
             window_system_ = std::make_shared<GLFWWindowSystem>();
         }
 
         if (!is_ws_initialized_) {
-            std::cout << "[o3d]     initializing" << std::endl;
             window_system_->Initialize();
             is_ws_initialized_ = true;
         }
@@ -375,7 +373,7 @@ void Application::Initialize(const char *resource_path) {
     impl_->is_initialized_ = true;
 }
 
-WindowSystem& Application::GetWindowSystem() const {
+WindowSystem &Application::GetWindowSystem() const {
     return *impl_->window_system_;
 }
 
@@ -411,7 +409,8 @@ const std::vector<Application::UserFontInfo> &Application::GetUserFontInfo()
 
 double Application::Now() const {
     static auto g_tzero = std::chrono::steady_clock::now();
-    std::chrono::duration<double> t = std::chrono::steady_clock::now() - g_tzero;
+    std::chrono::duration<double> t =
+            std::chrono::steady_clock::now() - g_tzero;
     return t.count();
 }
 
