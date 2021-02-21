@@ -121,6 +121,8 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             if (dy < 0) {
                 dy = -1;
             }
+            dx = dx * 5;
+            dy = dy * 5;
             if (mouse_wheel_callback_) {
                 mouse_wheel_callback_(x, y, mods, dx, dy);
             }
