@@ -108,21 +108,10 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             int mods = std::stoi(tokens[3]);
             double dx = static_cast<double>(std::stoi(tokens[4]));
             double dy = static_cast<double>(std::stoi(tokens[5]));
+            // Flip the sign and set abaolute value to 5.
             // TODO: better scaling.
-            if (dx > 0) {
-                dx = 1;
-            }
-            if (dx < 0) {
-                dx = -1;
-            }
-            if (dy > 0) {
-                dy = 1;
-            }
-            if (dy < 0) {
-                dy = -1;
-            }
-            dx = dx * 5;
-            dy = dy * 5;
+            dx = dx == 0 ? dx : -dx / std::abs(dx) * 5;
+            dy = dy == 0 ? dy : -dy / std::abs(dy) * 5;
             if (mouse_wheel_callback_) {
                 mouse_wheel_callback_(x, y, mods, dx, dy);
             }
