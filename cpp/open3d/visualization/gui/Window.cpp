@@ -1416,7 +1416,6 @@ void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
 }
 
 void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
-    // utility::LogInfo("Window::MouseMoveCallback: {}, {}", x, y);
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
@@ -1431,9 +1430,8 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
     MouseEvent me = {type, ix, iy, w->impl_->mouse_mods_};
     me.button.button = MouseButton(buttons);
-    // utility::LogInfo("Window::MouseMoveCallback: {}, {}, buttons:{}", x, y,
-    //                  buttons);
 
+    utility::LogInfo("Window::MouseMoveCallback: {}", me.ToString());
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);
 }
@@ -1442,10 +1440,6 @@ void Window::MouseButtonCallback(GLFWwindow* window,
                                  int button,
                                  int action,
                                  int mods) {
-    // utility::LogInfo("Window::MouseButtonCallback: {}, {}, {}", button,
-    // action,
-    //                  mods);
-
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
@@ -1472,7 +1466,7 @@ void Window::MouseButtonCallback(GLFWwindow* window,
         w->impl_->last_button_down_time_ = now;
     }
 
-    utility::LogInfo("MouseButton GLFW: {}", me.ToString());
+    utility::LogInfo("Window::MouseButtonCallback: {}", me.ToString());
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);
 }
