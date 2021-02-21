@@ -433,7 +433,9 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
 std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
         double sampling_ratio) const {
     if (sampling_ratio < 0 || sampling_ratio > 1) {
-        utility::LogError("[RandomDownSample] Illegal sampling ratio.");
+        utility::LogError(
+                "[RandomDownSample] Illegal sampling_ratio {}, sampling_ratio "
+                "must be between 0 and 1.");
     }
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
