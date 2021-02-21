@@ -59,6 +59,9 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                 "[FixedRadiusIndex::SetTensorData] radius should be positive.");
     }
     dataset_points_ = dataset_points.Contiguous();
+    Device device = GetDevice();
+    Dtype dtype = GetDtype();
+
     int64_t num_dataset_points = GetDatasetSize();
     int64_t hash_table_size = std::min<int64_t>(
             std::max<int64_t>(hash_table_size_factor * num_dataset_points, 1),
@@ -67,39 +70,36 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     hash_table_splits_ = std::vector<int64_t>({0, hash_table_size});
 
     hash_table_index_ =
-            Tensor::Empty({dataset_points_.GetShape()[0]}, Dtype::Int64,
-                          dataset_points_.GetDevice());
-    hash_table_cell_splits_ =
-            Tensor::Empty({hash_table_splits_.back() + 1}, Dtype::Int64,
-                          dataset_points_.GetDevice());
+            Tensor::Empty({num_dataset_points}, Dtype::Int64, device);
+    hash_table_cell_splits_ = Tensor::Empty({hash_table_splits_.back() + 1},
+                                            Dtype::Int64, device);
 
     void *temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    Dtype dtype = GetDtype();
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         // Determine temp_size.
-        BuildSpatialHashTableCUDA(
-                temp_ptr, temp_size, dataset_points_.GetShape()[0],
-                dataset_points_.GetDataPtr<scalar_t>(), scalar_t(radius),
-                points_row_splits_.size(), points_row_splits_.data(),
-                hash_table_splits_.data(),
-                hash_table_cell_splits_.GetShape()[0],
-                hash_table_cell_splits_.GetDataPtr<int64_t>(),
-                hash_table_index_.GetDataPtr<int64_t>());
-        Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
-                                           dataset_points_.GetDevice());
+        BuildSpatialHashTableCUDA(temp_ptr, temp_size, num_dataset_points,
+                                  dataset_points_.GetDataPtr<scalar_t>(),
+                                  scalar_t(radius), points_row_splits_.size(),
+                                  points_row_splits_.data(),
+                                  hash_table_splits_.data(),
+                                  hash_table_cell_splits_.GetShape()[0],
+                                  hash_table_cell_splits_.GetDataPtr<int64_t>(),
+                                  hash_table_index_.GetDataPtr<int64_t>());
+        Tensor temp_tensor =
+                Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the function.
-        BuildSpatialHashTableCUDA(
-                temp_ptr, temp_size, dataset_points_.GetShape()[0],
-                dataset_points_.GetDataPtr<scalar_t>(), scalar_t(radius),
-                points_row_splits_.size(), points_row_splits_.data(),
-                hash_table_splits_.data(),
-                hash_table_cell_splits_.GetShape()[0],
-                hash_table_cell_splits_.GetDataPtr<int64_t>(),
-                hash_table_index_.GetDataPtr<int64_t>());
+        BuildSpatialHashTableCUDA(temp_ptr, temp_size, num_dataset_points,
+                                  dataset_points_.GetDataPtr<scalar_t>(),
+                                  scalar_t(radius), points_row_splits_.size(),
+                                  points_row_splits_.data(),
+                                  hash_table_splits_.data(),
+                                  hash_table_cell_splits_.GetShape()[0],
+                                  hash_table_cell_splits_.GetDataPtr<int64_t>(),
+                                  hash_table_index_.GetDataPtr<int64_t>());
     });
     return true;
 #else
@@ -227,35 +227,46 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 #ifdef BUILD_CUDA_MODULE
     Dtype dtype = GetDtype();
     Device device = GetDevice();
+    int64_t num_dataset_points = GetDatasetSize();
 
-    Tensor indices_sorted;
-    Tensor distances_sorted;
-    Tensor neighbors_row_splits;
+    // Check dtype.
+    query_points.AssertDtype(dtype);
 
-    std::tie(indices_sorted, distances_sorted, neighbors_row_splits) =
-            SearchRadius(query_points, radius, true);
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
-    int64_t num_query_points = query_points.GetShape()[0];
+    // Check device.
+    query_points.AssertDevice(device);
 
-    Tensor neighbors_index =
-            Tensor::Empty({num_query_points, max_knn}, Dtype::Int64, device);
-    Tensor neighbors_distance =
-            Tensor::Empty({num_query_points, max_knn}, dtype, device);
-    Tensor num_neighbors =
-            neighbors_row_splits.Slice(0, 1, num_query_points + 1)
-                    .Sub(neighbors_row_splits.Slice(0, 0, num_query_points));
-    num_neighbors = num_neighbors.Contiguous();
+    if (radius <= 0) {
+        utility::LogError(
+                "[FixedRadiusIndex::SearchRadius] radius should be positive.");
+    }
+
+    Tensor query_points_ = query_points.Contiguous();
+    int64_t num_query_points = query_points_.GetShape()[0];
+    std::vector<int64_t> queries_row_splits({0, num_query_points});
+
+    Tensor neighbors_index, neighbors_distance;
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        MaxKnnThreshold(indices_sorted.GetDataPtr<int64_t>(),
-                        distances_sorted.GetDataPtr<scalar_t>(),
-                        neighbors_index.GetDataPtr<int64_t>(),
-                        neighbors_distance.GetDataPtr<scalar_t>(),
-                        num_neighbors.GetDataPtr<int64_t>(),
-                        neighbors_row_splits.GetDataPtr<int64_t>(),
-                        size_t(num_query_points), max_knn);
+        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        // Determine temp_size.
+        HybridSearchCUDA(
+                num_dataset_points, dataset_points_.GetDataPtr<scalar_t>(),
+                num_query_points, query_points_.GetDataPtr<scalar_t>(),
+                scalar_t(radius), max_knn, points_row_splits_.size(),
+                points_row_splits_.data(), queries_row_splits.size(),
+                queries_row_splits.data(), hash_table_splits_.data(),
+                hash_table_cell_splits_.GetShape()[0],
+                hash_table_cell_splits_.GetDataPtr<int64_t>(),
+                hash_table_index_.GetDataPtr<int64_t>(), output_allocator);
+
+        neighbors_index = output_allocator.NeighborsIndex();
+        neighbors_distance = output_allocator.NeighborsDistance();
     });
-    return std::make_pair(neighbors_index, neighbors_distance);
+    return std::make_pair(neighbors_index.View({num_query_points, max_knn}),
+                          neighbors_distance.View({num_query_points, max_knn}));
 #else
     utility::LogError(
             "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. Please "

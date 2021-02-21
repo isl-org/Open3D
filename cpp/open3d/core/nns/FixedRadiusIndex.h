@@ -105,9 +105,20 @@ public:
         *ptr = indices.GetDataPtr<int64_t>();
     }
 
+    void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
+        indices = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
+        *ptr = indices.GetDataPtr<int64_t>();
+    }
+
     void AllocDistances(T** ptr, size_t num) {
         distances =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
+        *ptr = distances.GetDataPtr<T>();
+    }
+
+    void AllocDistances(T** ptr, size_t num, T value) {
+        distances = Tensor::Full({int64_t(num)}, value, Dtype::FromType<T>(),
+                                 device_);
         *ptr = distances.GetDataPtr<T>();
     }
 
