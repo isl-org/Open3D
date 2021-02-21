@@ -85,8 +85,16 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           ccache -s
-          # Clean folders to prevent duplicate CodeQL alerts
+
+      - name: Prepare for CodeQL
+        if: matrix.CONFIG=='ON'
+        run: |
+          echo "Clean folders to prevent duplicate / 3rdparty CodeQL alerts"
+          set -x
           rm -rf build/lib/python_package
+          rm -rf 3rdparty
+          cd build
+          rm -rf _deps 3rdparty assimp boost faiss filament ippicv jsoncpp k4a libjpeg-turbo-install libpng librealsense mkl mkl_include mkl_install msgpack-c tbb turbojpeg zeromq zlib
 
       - name: Perform CodeQL Analysis
         if: matrix.CONFIG=='ON'
