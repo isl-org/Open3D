@@ -1115,7 +1115,7 @@ protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
     /// Create a n-D tensor with initializer list.
-    template <typename T, std::size_t I>
+    template <typename T, size_t I>
     static Tensor InitN(
             const tensor_init::NestedInitializerListT<T, I> nested_list,
             const Device& device = Device("CPU:0")) {
