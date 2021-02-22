@@ -47,7 +47,6 @@ namespace rendering {
 namespace {
 Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
     Camera::Transform::MatrixType m;
-
     m << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
             float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
             float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
@@ -259,9 +258,14 @@ Camera::Transform FilamentCamera::GetViewMatrix() const {
     return FilamentToCameraTransform(ftransform);
 }
 
-Camera::Transform FilamentCamera::GetProjectionMatrix() const {
-    auto ftransform = camera_->getProjectionMatrix();  // mat4 (not mat4f)
-    return FilamentToCameraTransform(ftransform);
+Camera::ProjectionMatrix FilamentCamera::GetProjectionMatrix() const {
+    auto ft = camera_->getProjectionMatrix();  // mat4 (not mat4f)
+    Camera::ProjectionMatrix::MatrixType proj;
+    proj << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
+            float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
+            float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
+            float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
+    return Camera::ProjectionMatrix(proj);
 }
 
 Camera::Transform FilamentCamera::GetCullingProjectionMatrix() const {
@@ -302,6 +306,17 @@ void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
 void FilamentCamera::SetModelMatrix(const Transform& view) {
     auto ftransform = CameraToFilamentTransformF(view);
     camera_->setModelMatrix(ftransform);  // model matrix uses mat4f
+}
+
+Eigen::Vector3f FilamentCamera::Unproject(
+        float x, float y, float z, float view_width, float view_height) const {
+    Eigen::Vector4f gl_pt(2.0f * x / view_width - 1.0f,
+                          2.0f * y / view_height - 1.0f, 2.0f * z - 1.0f, 1.0f);
+
+    auto proj = GetProjectionMatrix();
+    Eigen::Vector4f obj_pt = (proj * GetViewMatrix()).inverse() * gl_pt;
+    return {obj_pt.x() / obj_pt.w(), obj_pt.y() / obj_pt.w(),
+            obj_pt.z() / obj_pt.w()};
 }
 
 }  // namespace rendering

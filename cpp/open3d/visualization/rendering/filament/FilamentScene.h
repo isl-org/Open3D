@@ -91,6 +91,8 @@ public:
                   Renderer& renderer);
     ~FilamentScene();
 
+    Scene* Copy() override;
+
     // NOTE: Temporarily needed to support old View interface for ImGUI
     ViewHandle AddView(std::int32_t x,
                        std::int32_t y,
@@ -143,6 +145,7 @@ public:
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
+
     void OverrideMaterialAll(const Material& material,
                              bool shader_only = true) override;
 
@@ -213,6 +216,7 @@ public:
     void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) override;
+    void SetBackground(TextureHandle image) override;
     void EnableGroundPlane(bool enable, GroundPlane plane) override;
     void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
@@ -220,6 +224,7 @@ public:
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
+
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }
 
@@ -270,12 +275,15 @@ private:
         std::string name;
         bool visible = true;
         bool cast_shadows = true;
-        bool receive_shadow = true;
+        bool receive_shadows = true;
+        bool culling_enabled = true;
+        int priority = -1;  // default priority
 
         GeometryMaterialInstance mat;
 
         // Filament resources
         utils::Entity filament_entity;
+        filament::RenderableManager::PrimitiveType primitive_type;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
         void ReleaseResources(filament::Engine& engine,
@@ -309,6 +317,7 @@ private:
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateDepthValueShader(GeometryMaterialInstance& geom_mi);
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
@@ -318,6 +327,7 @@ private:
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
+    void CreateBackgroundGeometry();
     void CreateGroundPlaneGeometry();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;

@@ -101,6 +101,8 @@ struct Window::Impl {
     // the time we monitor key up/down events.
     int mouse_mods_ = 0;  // ORed KeyModifiers
     double last_render_time_ = 0.0;
+    double last_button_down_time_ = 0.0;  // we have to compute double-click
+    MouseButton last_button_down_ = MouseButton::NONE;
 
     Theme theme_;  // so that the font size can be different based on scaling
     visualization::rendering::FilamentRenderer* renderer_;

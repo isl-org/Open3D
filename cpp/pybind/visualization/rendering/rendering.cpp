@@ -73,6 +73,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
+    std::shared_ptr<geometry::Image> RenderToDepthImage() {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    }
+
 private:
     int width_;
     int height_;
@@ -119,7 +123,12 @@ void pybind_rendering_classes(py::module &m) {
                     "be accessed after that point.")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
-                 "returned");
+                 "returned")
+            .def("render_to_depth_image",
+                 &PyOffscreenRenderer::RenderToDepthImage,
+                 "Renders scene depth buffer to a float image, blocking until "
+                 "the image is returned. Pixels range from 0 (near plane) to "
+                 "1 (far plane)");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -160,7 +169,28 @@ void pybind_rendering_classes(py::module &m) {
                  "image_width, image_height)")
             .def("look_at", &Camera::LookAt,
                  "Sets the position and orientation of the camera: "
-                 "look_at(center, eye, up)");
+                 "look_at(center, eye, up)")
+            .def("unproject", &Camera::Unproject,
+                 "unproject(x, y, z, view_width, view_height): takes the "
+                 "(x, y, z) location in the view, where x, y are the number of "
+                 "pixels from the upper left of the view, and z is the depth "
+                 "value. Returns the world coordinate (x', y', z').")
+            .def("get_near", &Camera::GetNear,
+                 "Returns the distance from the camera to the near plane")
+            .def("get_far", &Camera::GetFar,
+                 "Returns the distance from the camera to the far plane")
+            .def("get_field_of_view", &Camera::GetFieldOfView,
+                 "Returns the field of view of camera, in degrees. Only valid "
+                 "if it was passed to set_projection().")
+            .def("get_field_of_view_type", &Camera::GetFieldOfViewType,
+                 "Returns the field of view type. Only valid if it was passed "
+                 "to set_projection().")
+            .def("get_projection_matrix", &Camera::GetProjectionMatrix,
+                 "Returns the projection matrix of the camera")
+            .def("get_view_matrix", &Camera::GetViewMatrix,
+                 "Returns the view matrix of the camera")
+            .def("get_model_matrix", &Camera::GetModelMatrix,
+                 "Returns the model matrix of the camera");
 
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(

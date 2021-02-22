@@ -125,7 +125,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
-                                                   float radius,
+                                                   double radius,
                                                    int max_knn) const {
     // Check dtype.
     query_points.AssertDtype(Dtype::Float32);

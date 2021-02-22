@@ -66,14 +66,25 @@ static const std::unordered_map<std::string, std::string>
                  "First multiply image pixel values with this factor. "
                  "This should be positive for unsigned dtypes."},
                 {"offset", "Then add this factor to all image pixel values."},
-                {"half_kernel_size",
-                 "A dilation mask of size 2*half_kernel_size+1 is used."}};
+                {"kernel_size", "Kernel size for filters and dilations."},
+                {"value_sigma", "Standard deviation for the image content."},
+                {"distance_sigma",
+                 "Standard deviation for the image pixel positions."}};
 
 void pybind_image(py::module &m) {
     py::class_<Image, PyGeometry<Image>, Geometry> image(
             m, "Image", py::buffer_protocol(),
             "The Image class stores image with customizable rols, cols, "
             "channels, dtype and device.");
+
+    py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
+            .value("Nearest", Image::InterpType::Nearest)
+            .value("Linear", Image::InterpType::Linear)
+            .value("Cubic", Image::InterpType::Cubic)
+            .value("Lanczos", Image::InterpType::Lanczos)
+            .value("Super", Image::InterpType::Super)
+            .export_values();
+
     // Constructors
     image.def(py::init<int64_t, int64_t, int64_t, core::Dtype, core::Device>(),
               "Row-major storage is used, similar to OpenCV. Use (row, col, "
@@ -124,7 +135,42 @@ void pybind_image(py::module &m) {
                  "Supported datatypes are UInt8, UInt16 and Float32 with "
                  "{1, 3, 4} channels. An 8-connected neighborhood is used to "
                  "create the dilation mask.",
-                 "half_kernel_size"_a = 1)
+                 "kernel_size"_a = 3)
+            .def("filter", &Image::Filter,
+                 "Return a new image after filtering with the given kernel.",
+                 "kernel"_a)
+            .def("filter_gaussian", &Image::FilterGaussian,
+                 "Return a new image after Gaussian filtering."
+                 "Possible kernel_size: odd numbers >= 3 are supported.",
+                 "kernel_size"_a = 3, "sigma"_a = 1.0)
+            .def("filter_bilateral", &Image::FilterBilateral,
+                 "Return a new image after bilateral filtering."
+                 "Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:"
+                 "CPU uses a round kernel (radius = floor(kernel_size / 2)),"
+                 "while CUDA uses a square kernel (width = kernel_size)."
+                 "Make sure to tune parameters accordingly.",
+                 "kernel_size"_a = 3, "value_sigma"_a = 20.0,
+                 "dist_sigma"_a = 10.0)
+            .def("filter_sobel", &Image::FilterSobel,
+                 "Return a pair of new gradient images (dx, dy) after Sobel "
+                 "filtering."
+                 "Possible kernel_size: 3 and 5.",
+                 "kernel_size"_a = 3)
+            .def("resize", &Image::Resize,
+                 "Return a new image after resizing with specified "
+                 "interpolation type. Downsample if sampling rate is < 1. "
+                 "Upsample if sampling rate > 1. Aspect ratio is always "
+                 "kept.",
+                 "sampling_rate"_a = 0.5,
+                 "interp_type"_a = Image::InterpType::Nearest)
+            .def("pyrdown", &Image::PyrDown,
+                 "Return a new downsampled image with pyramid downsampling "
+                 "formed by a"
+                 "chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a"
+                 "resize (ratio = 0.5) operation.")
+            .def("rgb_to_gray", &Image::RGBToGray,
+                 "Converts a 3-channel RGB image to a new 1-channel Grayscale "
+                 "image by I = 0.299 * R + 0.587 * G + 0.114 * B.")
             .def("__repr__", &Image::ToString);
     docstring::ClassMethodDocInject(m, "Image", "linear_transform",
                                     map_shared_argument_docstrings);
