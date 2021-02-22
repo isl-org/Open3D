@@ -1114,6 +1114,7 @@ public:
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
+private:
     /// Create a n-D tensor with initializer list.
     template <typename T, std::size_t I>
     static Tensor InitN(
@@ -1122,7 +1123,7 @@ protected:
         SizeVector sv = tensor_init::Shape<SizeVector>(nested_list);
 
         // Fix for handling 0-dimentional inputs.
-        std::size_t last_dim = 0;
+        size_t last_dim = 0;
         while (sv.size() > (last_dim + 1) && sv[last_dim] != 0) {
             last_dim++;
         }

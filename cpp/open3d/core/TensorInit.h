@@ -33,50 +33,50 @@ namespace open3d {
 namespace core {
 namespace tensor_init {
 
-template <class T, size_t I>
+template <typename T, size_t I>
 struct NestedInitializerList {
     using type = std::initializer_list<
             typename NestedInitializerList<T, I - 1>::type>;
 };
 
-template <class T>
+template <typename T>
 struct NestedInitializerList<T, 0> {
     using type = T;
 };
 
-template <class T, size_t I>
+template <typename T, size_t I>
 using NestedInitializerListT = typename NestedInitializerList<T, I>::type;
 
-template <class T, class S>
+template <typename T, typename S>
 void NestedCopy(T&& iter, const S& s) {
     *iter++ = s;
 }
 
-template <class T, class S>
+template <typename T, typename S>
 void NestedCopy(T&& iter, std::initializer_list<S> s) {
     for (auto it = s.begin(); it != s.end(); ++it) {
         NestedCopy(std::forward<T>(iter), *it);
     }
 }
 
-template <class U>
+template <typename U>
 struct InitializerDepthImpl {
     static constexpr size_t value = 0;
 };
 
-template <class T>
+template <typename T>
 struct InitializerDepthImpl<std::initializer_list<T>> {
     static constexpr size_t value = 1 + InitializerDepthImpl<T>::value;
 };
 
-template <class U>
+template <typename U>
 struct InitializerDimension {
     static constexpr size_t value = InitializerDepthImpl<U>::value;
 };
 
 template <size_t I>
 struct InitializerShapeImpl {
-    template <class T>
+    template <typename T>
     static constexpr size_t value(T t) {
         if (t.size() == 0) {
             return 0;
@@ -95,19 +95,19 @@ struct InitializerShapeImpl {
 
 template <>
 struct InitializerShapeImpl<0> {
-    template <class T>
+    template <typename T>
     static constexpr size_t value(T t) {
         return t.size();
     }
 };
 
-template <class R, class U, size_t... I>
+template <typename R, typename U, size_t... I>
 constexpr R InitializerShape(U t, std::index_sequence<I...>) {
     using size_type = typename R::value_type;
     return {size_type(InitializerShapeImpl<I>::value(t))...};
 }
 
-template <class R, class T>
+template <typename R, typename T>
 constexpr R Shape(T t) {
     return InitializerShape<R, decltype(t)>(
             t, std::make_index_sequence<
