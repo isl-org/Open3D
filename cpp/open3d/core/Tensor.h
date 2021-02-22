@@ -1114,12 +1114,12 @@ public:
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
-private:
     /// Create a n-D tensor with initializer list.
     template <typename T, std::size_t I>
-    static Tensor InitN(const NestedInitializerListT<T, I> nested_list,
-                        const Device& device = Device("CPU:0")) {
-        SizeVector sv = Shape<SizeVector>(nested_list);
+    static Tensor InitN(
+            const tensor_init::NestedInitializerListT<T, I> nested_list,
+            const Device& device = Device("CPU:0")) {
+        SizeVector sv = tensor_init::Shape<SizeVector>(nested_list);
 
         // Fix for handling 0-dimentional inputs.
         size_t last_dim = 0;
@@ -1129,7 +1129,7 @@ private:
         sv.resize(last_dim + 1);
 
         std::vector<T> dest(sv.NumElements());
-        NestedCopy(dest.begin(), nested_list);
+        tensor_init::NestedCopy(dest.begin(), nested_list);
         Dtype type = Dtype::FromType<T>();
         return Tensor(dest, sv, type, device);
     };

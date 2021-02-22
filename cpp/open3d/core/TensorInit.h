@@ -26,10 +26,14 @@
 
 #pragma once
 
+#include <initializer_list>
+#include <utility>
+
 namespace open3d {
 namespace core {
+namespace tensor_init {
 
-template <class T, std::size_t I>
+template <class T, size_t I>
 struct NestedInitializerList {
     using type = std::initializer_list<
             typename NestedInitializerList<T, I - 1>::type>;
@@ -40,7 +44,7 @@ struct NestedInitializerList<T, 0> {
     using type = T;
 };
 
-template <class T, std::size_t I>
+template <class T, size_t I>
 using NestedInitializerListT = typename NestedInitializerList<T, I>::type;
 
 template <class T, class S>
@@ -57,23 +61,23 @@ void NestedCopy(T&& iter, std::initializer_list<S> s) {
 
 template <class U>
 struct InitializerDepthImpl {
-    static constexpr std::size_t value = 0;
+    static constexpr size_t value = 0;
 };
 
 template <class T>
 struct InitializerDepthImpl<std::initializer_list<T>> {
-    static constexpr std::size_t value = 1 + InitializerDepthImpl<T>::value;
+    static constexpr size_t value = 1 + InitializerDepthImpl<T>::value;
 };
 
 template <class U>
 struct InitializerDimension {
-    static constexpr std::size_t value = InitializerDepthImpl<U>::value;
+    static constexpr size_t value = InitializerDepthImpl<U>::value;
 };
 
-template <std::size_t I>
+template <size_t I>
 struct InitializerShapeImpl {
     template <class T>
-    static constexpr std::size_t value(T t) {
+    static constexpr size_t value(T t) {
         if (t.size() == 0) {
             return 0;
         }
@@ -92,12 +96,12 @@ struct InitializerShapeImpl {
 template <>
 struct InitializerShapeImpl<0> {
     template <class T>
-    static constexpr std::size_t value(T t) {
+    static constexpr size_t value(T t) {
         return t.size();
     }
 };
 
-template <class R, class U, std::size_t... I>
+template <class R, class U, size_t... I>
 constexpr R InitializerShape(U t, std::index_sequence<I...>) {
     using size_type = typename R::value_type;
     return {size_type(InitializerShapeImpl<I>::value(t))...};
@@ -110,5 +114,6 @@ constexpr R Shape(T t) {
                        InitializerDimension<decltype(t)>::value>());
 }
 
+}  // namespace tensor_init
 }  // namespace core
 }  // namespace open3d
