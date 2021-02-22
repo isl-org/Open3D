@@ -79,16 +79,23 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
     }
 }
 
-bool NearestNeighborSearch::HybridIndex() {
+bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
-#ifdef WITH_FAISS
-        faiss_index_.reset(new FaissIndex());
-        return faiss_index_->SetTensorData(dataset_points_);
+        if (!radius.has_value())
+            utility::LogError(
+                    "[NearestNeighborSearch::HybridIndex] radius is "
+                    "required for GPU HybridIndex.");
+#ifdef BUILD_CUDA_MODULE
+        fixed_radius_index_.reset(new nns::FixedRadiusIndex());
+        return fixed_radius_index_->SetTensorData(dataset_points_,
+                                                  radius.value());
 #else
         utility::LogError(
-                "[NearestNeighborSearch::HybridIndex] Currently, Faiss is "
-                "disabled. Please recompile Open3D with WITH_FAISS=ON.");
+                "[NearestNeighborSearch::HybridIndex] HybridIndex"
+                "with GPU tensor is disabled since BUILD_CUDA_MODULE is OFF. "
+                "Please recompile Open3D with BUILD_CUDA_MODULE=ON.");
 #endif
+
     } else {
         return SetIndex();
     }
@@ -110,10 +117,11 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
-        const Tensor& query_points, double radius) {
+        const Tensor& query_points, double radius, bool sort) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
-            return fixed_radius_index_->SearchRadius(query_points, radius);
+            return fixed_radius_index_->SearchRadius(query_points, radius,
+                                                     sort);
         } else {
             utility::LogError(
                     "[NearsetNeighborSearch::FixedRadiusSearch] Index is not "
@@ -153,17 +161,22 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
-#ifdef WITH_FAISS
-    if (faiss_index_) {
-        return faiss_index_->SearchHybrid(query_points, radius, max_knn);
-    }
-#endif
-    if (nanoflann_index_) {
-        return nanoflann_index_->SearchHybrid(
-                query_points, static_cast<float>(radius), max_knn);
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        if (fixed_radius_index_) {
+            return fixed_radius_index_->SearchHybrid(query_points, radius,
+                                                     max_knn);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::HybridSearch] Index is not set.");
+        }
     } else {
-        utility::LogError(
-                "[NearestNeighborSearch::HybridSearch] Index is not set.");
+        if (nanoflann_index_) {
+            return nanoflann_index_->SearchHybrid(query_points, radius,
+                                                  max_knn);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::HybridSearch] Index is not set.");
+        }
     }
 }
 

@@ -181,10 +181,15 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         nns.FixedRadiusIndex();
         core::Tensor indices;
         core::Tensor distances;
-        core::Tensor num_neighbors;
-        std::tie(indices, distances, num_neighbors) =
+        core::Tensor neighbors_row_splits;
+        std::tie(indices, distances, neighbors_row_splits) =
                 nns.FixedRadiusSearch(current_query_points, radius);
         batched_indices[batch_idx] = indices;
+        int64_t current_num_query_points = current_query_points.GetShape()[0];
+        core::Tensor num_neighbors =
+                neighbors_row_splits.Slice(0, 1, current_num_query_points + 1)
+                        .Sub(neighbors_row_splits.Slice(
+                                0, 0, current_num_query_points));
         batched_num_neighbors[batch_idx] = num_neighbors;
     }
 

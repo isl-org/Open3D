@@ -141,4 +141,5 @@ target_link_libraries(open3d_tf_ops PRIVATE
     3rdparty_tbb
     ${Tensorflow_FRAMEWORK_LIB}
     ${FMT_TARGET}
+    ${CMAKE_PROJECT_NAME}
 )

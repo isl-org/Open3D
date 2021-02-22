@@ -74,7 +74,7 @@ public:
     /// Set index for hybrid search.
     ///
     /// \return Returns true if building index success, otherwise false.
-    bool HybridIndex();
+    bool HybridIndex(utility::optional<double> radius = {});
 
     /// Perform knn search.
     ///
@@ -82,7 +82,8 @@ public:
     /// \param knn Number of neighbors to search per query point.
     /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, same dtype with query_points.
+    /// - distances: Tensor of shape {n, knn}, same dtype with query_points.
+    ///              The distances are squared L2 distances.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
     /// Perform fixed radius search. All query points share the same radius.
@@ -94,10 +95,10 @@ public:
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
-    /// with query_points.
+    /// with query_points. The distances are squared L2 distances.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
-            const Tensor &query_points, double radius);
+            const Tensor &query_points, double radius, bool sort = true);
 
     /// Perform multi-radius search. Each query point has an independent radius.
     ///
@@ -108,7 +109,7 @@ public:
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
-    /// with query_points.
+    /// with query_points. The distances are squared L2 distances.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
             const Tensor &query_points, const Tensor &radii);
@@ -122,7 +123,7 @@ public:
     /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
-    /// query_points.
+    /// query_points. The distances are squared L2 distances.
     std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
                                            double radius,
                                            int max_knn);
