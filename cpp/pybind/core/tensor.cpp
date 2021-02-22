@@ -406,7 +406,6 @@ void pybind_core_tensor(py::module& m) {
 
     /// Linalg operations.
     tensor.def("det", &Tensor::Det);
-    tensor.def("lu", &Tensor::LU);
     tensor.def("lu_ipiv", &Tensor::LUIpiv);
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
@@ -417,6 +416,12 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("triu", &Tensor::Triu);
     tensor.def("tril", &Tensor::Tril);
     tensor.def("triul", &Tensor::Triul);
+    tensor.def(
+            "lu",
+            [](const Tensor& tensor, bool permute_l) {
+                return tensor.LU(permute_l);
+            },
+            "permute_l"_a = false);
 
     // Casting can copying.
     tensor.def(

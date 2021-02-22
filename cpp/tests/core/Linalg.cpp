@@ -94,19 +94,20 @@ TEST_P(LinalgPermuteDevices, LU) {
 
     // LU test for 3x4 const 2D tensor of dtype Float32.
     const core::Tensor A_3x4cf = core::Tensor::Init<float>(
-            {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}}, device);
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}, {2, 1, 3}}, device);
 
     // Default parameter for permute_l (false).
     core::Tensor permutationcf0, lowercf0, uppercf0;
     std::tie(permutationcf0, lowercf0, uppercf0) = A_3x4cf.LU();
     core::Tensor outputcf0 =
             permutationcf0.Matmul(lowercf0.Matmul(uppercf0)).Contiguous();
+
     EXPECT_TRUE(A_3x4cf.AllClose(outputcf0, FLT_EPSILON, FLT_EPSILON));
 
     // "permute_l = true": L must be P*L. So, output = L*U.
     core::Tensor permutationcf1, lowercf1, uppercf1;
     std::tie(permutationcf1, lowercf1, uppercf1) =
-            A_3x4cf.LU(/*permute_l*/ true);
+            A_3x4cf.LU(/*permute_l=*/true);
     core::Tensor outputcf1 = lowercf1.Matmul(uppercf1).Contiguous();
     EXPECT_TRUE(A_3x4cf.AllClose(outputcf1, FLT_EPSILON, FLT_EPSILON));
 
