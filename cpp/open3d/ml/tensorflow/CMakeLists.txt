@@ -77,6 +77,7 @@ set(TF_OPS_CUDA_SOURCES
     "pointnet/GroupPointsOpKernel.cu"
     "pointnet/SamplingOpKernel.cu"
     "pointnet/BallQueryOpKernel.cu"
+    "pointnet/InterpolateOpKernel.cu"
     "pointnet/RoiPoolOpKernel.cu"
 )
 
