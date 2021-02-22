@@ -165,6 +165,15 @@ public:
     /// 2k, …].
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
+    /// \brief Function to downsample input pointcloud into output pointcloud
+    /// randomly.
+    ///
+    /// The sample is performed by randomly selecting the index of the points
+    /// in the pointcloud.
+    ///
+    /// \param sampling_ratio Sampling ratio, the ratio of sample to total
+    /// number of points in the pointcloud.
+    std::shared_ptr<PointCloud> RandomDownSample(double sampling_ratio) const;
     /// \brief Function to crop pointcloud into output pointcloud
     ///
     /// All points with coordinates outside the bounding box \p bbox are

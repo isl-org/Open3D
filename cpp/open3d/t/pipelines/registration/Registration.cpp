@@ -61,7 +61,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         return result;
     }
 
-    bool check = target_nns.HybridIndex();
+    bool check = target_nns.HybridIndex(max_correspondence_distance);
     if (!check) {
         utility::LogError(
                 "[Tensor: EvaluateRegistration: "
@@ -69,10 +69,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "NearestNeighborSearch::HybridSearch] "
                 "Index is not set.");
     }
-    // max_correspondece_dist in HybridSearch tensor implementation
-    // is square root of that used in legacy implementation.
-    max_correspondence_distance =
-            max_correspondence_distance * max_correspondence_distance;
 
     std::pair<core::Tensor, core::Tensor> result_nns = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
