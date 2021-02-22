@@ -19,15 +19,6 @@ else
     install_python_dependencies with-unit-test purge-cache
 fi
 
-echo "using python: $(which python)"
-python --version
-echo -n "Using pip: "
-python -m pip --version
-echo -n "Using pytest:"
-python -m pytest --version
-echo "using cmake: $(which cmake)"
-cmake --version
-
 build_all
 
 echo "Building examples iteratively..."
@@ -39,9 +30,9 @@ run_cpp_unit_tests
 
 # Run on GPU only. CPU versions run on Github already
 if nvidia-smi 2>&1 >/dev/null; then
-    echo "try importing Open3D Python package"
+    echo "Try importing Open3D Python package"
     test_wheel lib/python_package/pip_package/open3d*.whl
-    echo "running Open3D Python tests..."
+    echo "Running Open3D Python tests..."
     run_python_tests
     echo
 fi

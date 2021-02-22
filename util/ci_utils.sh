@@ -202,6 +202,9 @@ install_azure_kinect_dependencies() {
 
 build_all() {
 
+    echo "Using cmake: $(which cmake)"
+    cmake --version
+
     mkdir -p build
     cd build
 
@@ -321,9 +324,14 @@ build_pip_conda_package() {
 test_wheel() {
     wheel_path="$1"
     python -m venv open3d_test.venv
+    # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
+    echo "Using python: $(which python)"
+    python --version
+    echo -n "Using pip: "
+    python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d)"
@@ -359,11 +367,12 @@ test_wheel() {
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
     fi
-    deactivate
+    deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
 # Run in virtual environment
 run_python_tests() {
+    # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
     python -m pip install -U pytest=="$PYTEST_VER"
     python -m pip install -U scipy=="$SCIPY_VER"
@@ -373,7 +382,7 @@ run_python_tests() {
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
     python -m pytest "${pytest_args[@]}"
-    deactivate
+    deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
 # Use: run_unit_tests
