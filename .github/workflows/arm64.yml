@@ -157,6 +157,8 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=~/open3d_install \
               -DPYTHON_EXECUTABLE=$(which python) \
               ..
+            make 3rdparty_qhullcpp -j$(nproc)
+            make ext_libpng -j$(nproc)
             ccache -s
 
       # GITHUB_WORKSPACE      : /home/runner/work/Open3D/Open3D
