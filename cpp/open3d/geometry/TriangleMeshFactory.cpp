@@ -130,27 +130,82 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(double width /* = 1.0*/,
     if (depth <= 0) {
         utility::LogError("[CreateBox] depth <= 0");
     }
-    mesh_ptr->vertices_.resize(8);
+    mesh_ptr->vertices_.resize(14);
     mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, 0.0);
     mesh_ptr->vertices_[1] = Eigen::Vector3d(width, 0.0, 0.0);
-    mesh_ptr->vertices_[2] = Eigen::Vector3d(0.0, 0.0, depth);
-    mesh_ptr->vertices_[3] = Eigen::Vector3d(width, 0.0, depth);
-    mesh_ptr->vertices_[4] = Eigen::Vector3d(0.0, height, 0.0);
-    mesh_ptr->vertices_[5] = Eigen::Vector3d(width, height, 0.0);
-    mesh_ptr->vertices_[6] = Eigen::Vector3d(0.0, height, depth);
-    mesh_ptr->vertices_[7] = Eigen::Vector3d(width, height, depth);
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(4, 7, 5));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(4, 6, 7));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, 2, 4));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 6, 4));
+    mesh_ptr->vertices_[2] = Eigen::Vector3d(width, 0.0, depth);
+    mesh_ptr->vertices_[3] = Eigen::Vector3d(0.0, 0.0, depth);
+    mesh_ptr->vertices_[4] = Eigen::Vector3d(width, height, depth);
+    mesh_ptr->vertices_[5] = Eigen::Vector3d(0.0, height, depth);
+    mesh_ptr->vertices_[6] = Eigen::Vector3d(width, height, 0.0);
+    mesh_ptr->vertices_[7] = Eigen::Vector3d(0.0, height, 0.0);
+    mesh_ptr->vertices_[8] = Eigen::Vector3d(width, 0.0, 0.0);
+    mesh_ptr->vertices_[9] = Eigen::Vector3d(0.0, 0.0, 0.0);
+    mesh_ptr->vertices_[10] = Eigen::Vector3d(0.0, 0.0, depth);
+    mesh_ptr->vertices_[11] = Eigen::Vector3d(0.0, 0.0, 0.0);
+    mesh_ptr->vertices_[12] = Eigen::Vector3d(width, 0.0, depth);
+    mesh_ptr->vertices_[13] = Eigen::Vector3d(width, 0.0, 0.0);
     mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, 1, 2));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 3, 2));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 5, 7));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 7, 3));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 3, 7));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 7, 6));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, 4, 1));
-    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 4, 5));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 3, 0));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(3, 2, 4));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(4, 5, 3));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(5, 4, 6));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(6, 7, 5));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(7, 6, 8));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(8, 9, 7));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(10, 5, 7));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(7, 11, 10));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(4, 12, 13));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(13, 6, 4));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.000000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.000000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.250000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.250000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.250000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.000000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.000000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.250000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.500000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.000000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.750000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.500000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 1.000000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 1.000000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 1.000000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.750000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.125000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.750000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.375000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.125000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.125000, 0.500000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.875000, 0.500000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.875000, 0.750000));
+
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.875000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.750000));
+    mesh_ptr->triangle_uvs_.push_back(Eigen::Vector2d(0.625000, 0.500000));
+
     return mesh_ptr;
 }
 
