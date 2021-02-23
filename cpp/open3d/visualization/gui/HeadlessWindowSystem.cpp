@@ -32,6 +32,7 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/MenuImgui.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
@@ -275,6 +276,8 @@ void HeadlessWindowSystem::ResizeRenderer(
     auto size = GetWindowSizePixels(w);
     renderer->UpdateHeadlessSwapChain(size.width, size.height);
 }
+
+MenuBase *HeadlessWindowSystem::CreateOSMenu() { return new MenuImgui(); }
 
 }  // namespace gui
 }  // namespace visualization

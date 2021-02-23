@@ -164,6 +164,11 @@ public:
     // Override to handle drag and drop on the windows.
     virtual void OnDragDropped(const char* path);
 
+    // Shows or hides the menubar, except on macOS when using real windows.
+    // This is intended to be used when using HeadlessWindowSystem but may
+    // be useful in other circumstances.
+    void ShowMenu(bool show);
+
     int GetMouseMods() const;  // internal, for WindowSystem
 
 protected:

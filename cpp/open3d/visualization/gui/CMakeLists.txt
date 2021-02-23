@@ -19,6 +19,7 @@ set(GUI_SOURCE_FILES
     Layout.cpp
     ListView.cpp
     Menu.cpp
+    MenuImgui.cpp
     NumberEdit.cpp
     PickPointsInteractor.cpp
     ProgressBar.cpp
@@ -56,6 +57,7 @@ set(GUI_HEADER_FILES
     Layout.h
     ListView.h
     Menu.h
+    MenuImgui.h
     NumberEdit.h
     PickPointsInteractor.h
     ProgressBar.h
@@ -78,6 +80,7 @@ if (WIN32)
     list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)
 elseif (APPLE)
     list(APPEND GUI_SOURCE_FILES NativeMacOS.mm)
+    list(APPEND GUI_HEADER_FILES MenuMacOS.h)
     list(APPEND GUI_SOURCE_FILES MenuMacOS.mm)
 else ()
     list(APPEND GUI_SOURCE_FILES NativeLinux.cpp)

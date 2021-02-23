@@ -103,6 +103,8 @@ public:
     void ResizeRenderer(OSWindow w,
                         rendering::FilamentRenderer* renderer) override;
 
+    MenuBase* CreateOSMenu() override;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
