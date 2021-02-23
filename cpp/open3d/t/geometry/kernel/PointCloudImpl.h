@@ -76,31 +76,36 @@ void UnprojectCPU
 #endif
 
     int64_t n = rows_strided * cols_strided;
+    DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        core::kernel::CUDALauncher::LaunchGeneralKernel(
+                n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
     core::kernel::CPULauncher::LaunchGeneralKernel(
             n, [&](int64_t workload_idx) {
 #endif
-                int64_t y = (workload_idx / cols_strided) * stride;
-                int64_t x = (workload_idx % cols_strided) * stride;
+                    int64_t y = (workload_idx / cols_strided) * stride;
+                    int64_t x = (workload_idx % cols_strided) * stride;
 
-                float d = *depth_indexer.GetDataPtrFromCoord<uint16_t>(x, y) /
-                          depth_scale;
-                if (d > 0 && d < depth_max) {
-                    int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                    float d =
+                            *depth_indexer.GetDataPtrFromCoord<scalar_t>(x, y) /
+                            depth_scale;
+                    if (d > 0 && d < depth_max) {
+                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
-                    float x_c = 0, y_c = 0, z_c = 0;
-                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
-                                 d, &x_c, &y_c, &z_c);
+                        float x_c = 0, y_c = 0, z_c = 0;
+                        ti.Unproject(static_cast<float>(x),
+                                     static_cast<float>(y), d, &x_c, &y_c,
+                                     &z_c);
 
-                    float* vertex =
-                            point_indexer.GetDataPtrFromCoord<float>(idx);
-                    ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
-                                      vertex + 2);
-                }
-            });
+                        float* vertex =
+                                point_indexer.GetDataPtrFromCoord<float>(idx);
+                        ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
+                                          vertex + 2);
+                    }
+                });
+    });
+
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     int total_pts_count = count.Item<int>();
 #else

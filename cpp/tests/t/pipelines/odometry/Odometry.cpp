@@ -178,7 +178,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
             t::geometry::PointCloud({{"points", dst_vertex_map.View({-1, 3})}})
                     .ToLegacyPointCloud());
     target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
-    visualization::DrawGeometries({source_pcd, target_pcd});
+    // visualization::DrawGeometries({source_pcd, target_pcd});
 
     core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float32, device);
     for (int i = 0; i < 10; ++i) {
@@ -194,7 +194,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
                     .Transform(trans)
                     .ToLegacyPointCloud());
     source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    visualization::DrawGeometries({source_pcd, target_pcd});
+    // visualization::DrawGeometries({source_pcd, target_pcd});
 }
 
 TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
@@ -231,33 +231,33 @@ TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
 
     core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float32, device);
 
-    // auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-    //         t::geometry::PointCloud::CreateFromDepthImage(
-    //                 src.depth_, intrinsic_t, trans, depth_scale)
-    //                 .ToLegacyPointCloud());
-    // source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    // auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-    //         t::geometry::PointCloud::CreateFromDepthImage(
-    //                 dst.depth_, intrinsic_t, trans, depth_scale)
-    //                 .ToLegacyPointCloud());
-    // target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
+            t::geometry::PointCloud::CreateFromDepthImage(
+                    src.depth_, intrinsic_t, trans, depth_scale)
+                    .ToLegacyPointCloud());
+    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
+    auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
+            t::geometry::PointCloud::CreateFromDepthImage(
+                    dst.depth_, intrinsic_t, trans, depth_scale)
+                    .ToLegacyPointCloud());
+    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     // visualization::DrawGeometries({source_pcd, target_pcd});
 
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale);
+            src, dst, intrinsic_t, trans, depth_scale, 0.07, {10, 5, 3});
 
-    // source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-    //         t::geometry::PointCloud::CreateFromDepthImage(
-    //                 src.depth_, intrinsic_t, trans, depth_scale)
-    //                 .ToLegacyPointCloud());
-    // source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    // target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-    //         t::geometry::PointCloud::CreateFromDepthImage(
-    //                 dst.depth_, intrinsic_t,
-    //                 core::Tensor::Eye(4, core::Dtype::Float32, device),
-    //                 depth_scale)
-    //                 .ToLegacyPointCloud());
-    // target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    source_pcd = std::make_shared<open3d::geometry::PointCloud>(
+            t::geometry::PointCloud::CreateFromDepthImage(
+                    src.depth_, intrinsic_t, trans.Inverse(), depth_scale)
+                    .ToLegacyPointCloud());
+    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
+    target_pcd = std::make_shared<open3d::geometry::PointCloud>(
+            t::geometry::PointCloud::CreateFromDepthImage(
+                    dst.depth_, intrinsic_t,
+                    core::Tensor::Eye(4, core::Dtype::Float32, device),
+                    depth_scale)
+                    .ToLegacyPointCloud());
+    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     // visualization::DrawGeometries({source_pcd, target_pcd});
 }
 
