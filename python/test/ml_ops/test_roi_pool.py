@@ -56,5 +56,6 @@ def test_roi_pool(ml):
     expected1 = mltest.fetch_numpy(
         'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/roi_pool/out1.npy'
     )
+
     np.testing.assert_equal(ans0, expected0)
     np.testing.assert_equal(ans1, expected1)

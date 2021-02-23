@@ -54,6 +54,9 @@ public:
         // output:
         //      idx: (B, M)
 
+        // fill with big value
+        cudaMemset(temp, 80, b * n * sizeof(float));
+
         auto stream = context->eigen_gpu_device().stream();
 
         cudaError_t err;
@@ -185,6 +188,8 @@ public:
         // idx: (B, npoints)
         // output:
         //      grad_points: (B, C, N)
+
+        cudaMemset(grad_points, 0, b * c * n * sizeof(float));
 
         auto stream = context->eigen_gpu_device().stream();
 

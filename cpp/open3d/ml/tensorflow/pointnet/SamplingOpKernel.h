@@ -69,8 +69,6 @@ public:
                                               &temp_tensor));
         auto temp_flat = temp_tensor.flat<float>();
         float* temp = &(temp_flat(0));
-        // fill with big value
-        cudaMemset(temp, 80, batch_size * pts_size * sizeof(float));
 
         Kernel(context, batch_size, pts_size, sample_size, inp, temp, out);
     }
@@ -178,7 +176,6 @@ public:
                                         &inp_g_tensor));
         auto inp_g_flat = inp_g_tensor->flat<float>();
         float* inp_g = &(inp_g_flat(0));
-        cudaMemset(inp_g, 0, batch_size * C * N * sizeof(float));
 
         Kernel(context, batch_size, C, N, idx_size, out_g, idx, inp_g);
     }

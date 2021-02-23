@@ -53,6 +53,11 @@ public:
                 int *pooled_empty_flag) {
         cudaError_t err;
 
+        cudaMemset(pooled_features, 0,
+                   batch_size * boxes_num * sampled_pts_num *
+                           (3 + feature_in_len) * sizeof(float));
+        cudaMemset(pooled_empty_flag, 0, batch_size * boxes_num * sizeof(int));
+
         roipool3dLauncher(batch_size, pts_num, boxes_num, feature_in_len,
                           sampled_pts_num, xyz, boxes3d, pts_feature,
                           pooled_features, pooled_empty_flag);
