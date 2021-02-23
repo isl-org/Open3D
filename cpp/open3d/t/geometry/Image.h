@@ -195,14 +195,15 @@ public:
     /// Return a new image after resizing with specified interpolation type.
     /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
     /// Aspect ratio is always kept.
-    enum InterpType {
+    enum class InterpType {
         Nearest = 0,
         Linear = 1,
         Cubic = 2,
         Lanczos = 3,
         Super = 4
     };
-    Image Resize(float sampling_rate = 0.5f, int interp_type = Nearest) const;
+    Image Resize(float sampling_rate = 0.5f,
+                 InterpType interp_type = InterpType::Nearest) const;
 
     /// Return a new image after performing morphological dilation. Supported
     /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
@@ -215,18 +216,18 @@ public:
 
     /// Return a new image after bilateral filtering.
     /// \param value_sigma Standard deviation for the image content.
-    /// \param dist_sigma Standard deviation for the image pixel positions.
+    /// \param distance_sigma Standard deviation for the image pixel positions.
     /// Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:
     /// CPU uses a round kernel (radius = floor(kernel_size / 2)),
     /// while CUDA uses a square kernel (width = kernel_size).
     /// Make sure to tune parameters accordingly.
     Image FilterBilateral(int kernel_size = 3,
                           float value_sigma = 20.0f,
-                          float dist_sigma = 10.0f) const;
+                          float distance_sigma = 10.0f) const;
 
     /// Return a new image after Gaussian filtering.
-    /// A fixed sigma is computed by sigma = 0.4F + (mask width / 2) * 0.6F.
-    /// \param kernel_size An odd number >= 3.
+    /// \param kernel_size Odd numbers >= 3 are supported.
+    /// \param sigma Standard deviation of the Gaussian distribution.
     Image FilterGaussian(int kernel_size = 3, float sigma = 1.0f) const;
 
     /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
@@ -234,7 +235,8 @@ public:
     std::pair<Image, Image> FilterSobel(int kernel_size = 3) const;
 
     /// Return a new downsampled image with pyramid downsampling formed by a
-    /// chained 5x5 Gaussian filter and a downsampling operation.
+    /// chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a
+    /// resize (ratio = 0.5) operation.
     Image PyrDown() const;
 
     /// Compute min 2D coordinates for the data (always {0, 0}).

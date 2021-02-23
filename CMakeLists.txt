@@ -62,6 +62,16 @@ option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON 
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
 
+find_program(CCACHE "ccache")
+if (CCACHE)
+    message(STATUS "ccache found at ${CCACHE}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+    if(BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_COMPILER_LAUNCHER ${CCACHE})
+    endif()
+endif()
+
 set(THIRD_PARTY_FROM "cmake options")
 if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
         IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
@@ -237,6 +247,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Global Security options (including 3rd party code)
+# Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # -Wall -Wextra -Werror or /W4 /WX are enabled for Open3D code (not 3rd party)
 if (MSVC)
     set(HARDENING_CFLAGS
@@ -246,33 +258,34 @@ if (MSVC)
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
         /INCREMENTAL:NO  # Disable incremental Linking
-        #/NXCOMPAT       # Data Execution Prevention: On by default in VS2019
+        /NXCOMPAT        # Data Execution Prevention: On by default in VS2019
         /DYNAMICBASE     # Randomized Base Address
         /HIGHENTROPYVA   #
         #/INTEGRITYCHECK # Signed binary: Disabled
         CACHE STRING "Linker flags for security hardening")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
-        -fsanitize=safe-stack           # Stack execution protection
         -fstack-protector               # Stack-based buffer overrun detection
-        -fpie -fPIC                     # Position independent execution
-        -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security      # Format string vulnerability
-        -fsanitize=cfi                  # Control flow integrity
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
+        -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
-        -pie                        # Position independent execution
+        -pie                        # Position independent executable
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+    if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
+        list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
+        list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
+    endif()
+    if(NOT DEVELOPER_BUILD)
         list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)
+        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
         -fstack-protector               # Stack-based buffer overrun detection
-        -fpie -fPIC                     # Position independent execution
-        -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security      # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS  ""
@@ -283,16 +296,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         list(APPEND HARDENING_LDFLAGS -S)
     endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
         -fstack-protector-strong    # Stack-based buffer overrun detection
-        -fPIE -fPIC                 # Position independent
-        -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security  # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
-        -pie                 # Position independent
+        -pie                 # Position independent executable
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
         list(APPEND HARDENING_CFLAGS -O2)
@@ -304,24 +316,28 @@ else()
 endif()
 include(CheckCXXCompilerFlag)
 foreach(FLAG ${HARDENING_CFLAGS})
-    check_cxx_compiler_flag(${FLAG} FLAG${FLAG})
-    if (NOT FLAG${FLAG})
+    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
+    check_cxx_compiler_flag("${FLAG}" FLAG${FLAGRESULT})
+    if (NOT FLAG${FLAGRESULT})
         list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
         message(WARNING "Compiler does not support security option ${FLAG}")
     endif()
 endforeach()
 include(CheckLinkerFlag)
 foreach(FLAG ${HARDENING_LDFLAGS})
-    check_linker_flag(CXX ${FLAG} FLAG${FLAG})              # cmake 3.18+
-    if (NOT FLAG${FLAG})
+    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
+    check_linker_flag(CXX "${FLAG}" FLAG${FLAGRESULT})              # cmake 3.18+
+    if (NOT FLAG${FLAGRESULT})
         list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
         message(WARNING "Linker does not support security option ${FLAG}")
     endif()
 endforeach()
-string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
-string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
 message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
 linker flags: ${HARDENING_LDFLAGS}")
+list(TRANSFORM HARDENING_LDFLAGS REPLACE "-pie"
+    "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-pie>")
+string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
+string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
 add_compile_options(
     "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
     "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"

@@ -31,7 +31,7 @@ fragment {
             float4 resolution = getResolution();  // {w, h, 1/w, 1/h}
             float bg_aspect_ratio = resolution[0] * resolution[3];
             float2 xy = getNormalizedViewportCoord().xy;
-            xy[1] = 1.0 - xy[1];  // flip y
+            //xy[1] = 1.0 - xy[1];  // flip y
             // (This if should be fast because all pixels take same branch)
             if (materialParams.aspectRatio < bg_aspect_ratio) {
                 float half_w = 0.5 / bg_aspect_ratio * materialParams.aspectRatio;
