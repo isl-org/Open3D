@@ -9,6 +9,8 @@ set(GUI_SOURCE_FILES
     Dialog.cpp
     FileDialog.cpp
     FileDialogNative.cpp
+    HeadlessWindowSystem.cpp
+    GLFWWindowSystem.cpp
     Gui.cpp
     ImageLabel.cpp
     ImguiFilamentBridge.cpp
@@ -44,6 +46,8 @@ set(GUI_HEADER_FILES
     Dialog.h
     Events.h
     FileDialog.h
+    HeadlessWindowSystem.h
+    GLFWWindowSystem.h
     Gui.h
     ImageLabel.h
     ImguiFilamentBridge.h
