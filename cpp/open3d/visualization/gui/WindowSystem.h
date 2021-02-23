@@ -59,11 +59,11 @@ public:
     static constexpr int FLAG_HIDDEN = (1 << 0);
     static constexpr int FLAG_TOPMOST = (1 << 1);
 
-    virtual OSWindow CreateWindow(Window* o3d_window,
-                                  int width,
-                                  int height,
-                                  const char* title,
-                                  int flags) = 0;
+    virtual OSWindow CreateOSWindow(Window* o3d_window,
+                                    int width,
+                                    int height,
+                                    const char* title,
+                                    int flags) = 0;
     virtual void DestroyWindow(OSWindow w) = 0;
 
     virtual void PostRedrawEvent(OSWindow w) = 0;

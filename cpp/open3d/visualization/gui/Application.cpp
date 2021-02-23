@@ -380,7 +380,7 @@ WindowSystem &Application::GetWindowSystem() const {
 }
 
 void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
-    assert(!impl_->window_system);
+    assert(!impl_->window_system_);
     impl_->window_system_ = ws;
     impl_->is_ws_initialized_ = false;
 }

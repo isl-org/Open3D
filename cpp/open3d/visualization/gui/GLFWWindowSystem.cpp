@@ -141,11 +141,11 @@ Size GLFWWindowSystem::GetScreenSize(OSWindow w) {
     return Size(screen_width, screen_height);
 }
 
-GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateWindow(Window* o3d_window,
-                                                          int width,
-                                                          int height,
-                                                          const char* title,
-                                                          int flags) {
+GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
+                                                            int width,
+                                                            int height,
+                                                            const char* title,
+                                                            int flags) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);

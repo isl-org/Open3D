@@ -58,11 +58,11 @@ public:
 
     void WaitEventsTimeout(double timeout_secs) override;
 
-    OSWindow CreateWindow(Window* o3d_window,
-                          int width,
-                          int height,
-                          const char* title,
-                          int flags) override;
+    OSWindow CreateOSWindow(Window* o3d_window,
+                            int width,
+                            int height,
+                            const char* title,
+                            int flags) override;
     void DestroyWindow(OSWindow w) override;
 
     Size GetScreenSize(OSWindow w) override;

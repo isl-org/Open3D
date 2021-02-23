@@ -150,12 +150,12 @@ Size HeadlessWindowSystem::GetScreenSize(OSWindow w) {
     return Size(32000, 32000);
 }
 
-WindowSystem::OSWindow HeadlessWindowSystem::CreateWindow(Window *o3d_window,
-                                                          int width,
-                                                          int height,
-                                                          const char *title,
-                                                          int flags) {
-    std::cout << "[debug] HeadlessWindowSystem::CreateWindow()" << std::endl;
+WindowSystem::OSWindow HeadlessWindowSystem::CreateOSWindow(Window *o3d_window,
+                                                            int width,
+                                                            int height,
+                                                            const char *title,
+                                                            int flags) {
+    std::cout << "[debug] HeadlessWindowSystem::CreateOSWindow()" << std::endl;
     auto *w = new HeadlessWindow(o3d_window, width, height);
     return (OSWindow *)w;
 }

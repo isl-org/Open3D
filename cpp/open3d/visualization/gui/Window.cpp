@@ -168,8 +168,8 @@ Window::Window(const std::string& title,
     int initial_width = std::max(10, width);
     int initial_height = std::max(10, height);
     auto& ws = Application::GetInstance().GetWindowSystem();
-    impl_->window_ = ws.CreateWindow(this, initial_width, initial_height,
-                                     title.c_str(), ws_flags);
+    impl_->window_ = ws.CreateOSWindow(this, initial_width, initial_height,
+                                       title.c_str(), ws_flags);
     impl_->title_ = title;
 
     if (x != CENTERED_X || y != CENTERED_Y) {
@@ -229,9 +229,7 @@ Window::Window(const std::string& title,
 
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
-#ifdef WIN32
-    io.ImeWindowHandle = GetNativeDrawable();
-#endif
+
     // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
     // io.KeyMap to map from our code to ImGui's code.
     io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
