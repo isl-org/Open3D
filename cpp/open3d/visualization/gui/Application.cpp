@@ -598,7 +598,9 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
                         found = true;
                     }
                 }
-                if (!found) { continue; }
+                if (!found) {
+                    continue;
+                }
             }
 
             void *old = nullptr;
