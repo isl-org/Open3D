@@ -259,10 +259,9 @@ void ComputePosePointToPlaneCPU
 #endif
             });
 
-    utility::LogInfo("AtA = {}", AtA.ToString());
-    utility::LogInfo("Atb = {}", Atb.ToString());
-    utility::LogInfo("residual = {}", residual.ToString());
-    utility::LogInfo("count = {}", count.ToString());
+    utility::LogInfo("avg loss = {}, residual = {}, count = {}",
+                     residual.Item<float>() / count.Item<int>(),
+                     residual.Item<float>(), count.Item<int>());
 
     delta = AtA.Solve(Atb.Neg());
 }

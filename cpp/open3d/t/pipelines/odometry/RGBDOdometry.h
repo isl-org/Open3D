@@ -35,6 +35,27 @@ namespace t {
 namespace pipelines {
 namespace odometry {
 
+enum class LossType {
+    PointToPlane,
+    DirectIntensity,
+    DirectHybrid,
+};
+
+/// Create an RGBD image pyramid given the original source and target and
+/// perform hierarchical odometry.
+/// Used for offline odometry where we do not care performance (too much) and
+/// not reuse vertex/normal map computed before.
+core::Tensor RGBDOdometryMultiScale(
+        const t::geometry::RGBDImage& source,
+        const t::geometry::RGBDImage& target,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target = core::Tensor::Eye(
+                4, core::Dtype::Float32, core::Device("CPU:0")),
+        float depth_factor = 1000.0f,
+        float depth_diff = 0.07f,
+        const std::vector<int>& iterations = {10, 5, 3},
+        const LossType method = LossType::PointToPlane);
+
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
                              const core::Tensor& intrinsics,
                              float depth_factor = 1000.0,
@@ -79,15 +100,6 @@ core::Tensor RGBDOdometryColor(const t::geometry::RGBDImage& source,
                                const t::geometry::Image& source_color_dy,
                                const core::Tensor& intrinsics,
                                const core::Tensor& init_source_to_target);
-
-/// Create an RGBD image pyramid given the original source and target and
-/// perform hierarchical odometry.
-core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
-                                    const t::geometry::RGBDImage& target,
-                                    const core::Tensor& intrinsics,
-                                    const core::Tensor& init_source_to_target,
-                                    const std::vector<int>& iterations = {10, 5,
-                                                                          3});
 
 }  // namespace odometry
 }  // namespace pipelines

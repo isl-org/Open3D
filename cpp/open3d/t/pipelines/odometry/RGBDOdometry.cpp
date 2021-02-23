@@ -74,6 +74,80 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vtx_map,
     return pipelines::kernel::PoseToTransformation(se3_delta).Inverse();
 }
 
+core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
+                                    const t::geometry::RGBDImage& target,
+                                    const core::Tensor& intrinsics,
+                                    const core::Tensor& init_source_to_target,
+                                    float depth_factor,
+                                    float depth_diff,
+                                    const std::vector<int>& iterations,
+                                    const LossType method) {
+    core::Device device = source.depth_.GetDevice();
+    if (target.depth_.GetDevice() != device) {
+        utility::LogError(
+                "Device mismatch, got {} for source and {} for target.",
+                device.ToString(), target.depth_.GetDevice().ToString());
+    }
+
+    core::Tensor intrinsics_d = intrinsics.To(device);
+    core::Tensor trans_d = init_source_to_target.To(device);
+    if (method == LossType::PointToPlane) {
+        int64_t n = int64_t(iterations.size());
+
+        std::vector<core::Tensor> src_vertex_maps(iterations.size());
+        std::vector<core::Tensor> src_normal_maps(iterations.size());
+        std::vector<core::Tensor> dst_vertex_maps(iterations.size());
+
+        t::geometry::Image src_depth = source.depth_;
+        t::geometry::Image dst_depth = target.depth_;
+
+        // Create image pyramid
+        for (int64_t i = 0; i < n; ++i) {
+            core::Tensor src_vertex_map =
+                    t::pipelines::odometry::CreateVertexMap(
+                            src_depth, intrinsics_d, depth_factor);
+
+            t::geometry::Image src_depth_filtered =
+                    src_depth.FilterBilateral(5, 50, 50);
+            core::Tensor src_vertex_map_filtered =
+                    t::pipelines::odometry::CreateVertexMap(
+                            src_depth_filtered, intrinsics_d, depth_factor);
+            core::Tensor src_normal_map =
+                    t::pipelines::odometry::CreateNormalMap(
+                            src_vertex_map_filtered);
+
+            core::Tensor dst_vertex_map =
+                    t::pipelines::odometry::CreateVertexMap(
+                            dst_depth, intrinsics_d, depth_factor);
+
+            src_vertex_maps[n - 1 - i] = src_vertex_map;
+            src_normal_maps[n - 1 - i] = src_normal_map;
+            dst_vertex_maps[n - 1 - i] = dst_vertex_map;
+
+            if (i != n - 1) {
+                src_depth = src_depth.PyrDown();
+                dst_depth = dst_depth.PyrDown();
+            }
+        }
+
+        // Odometry
+        for (int64_t i = 0; i < n; ++i) {
+            for (int iter = 0; iter < iterations[i]; ++iter) {
+                core::Tensor delta_src_to_dst =
+                        t::pipelines::odometry::ComputePosePointToPlane(
+                                src_vertex_maps[i], dst_vertex_maps[i],
+                                src_normal_maps[i], intrinsics_d, trans_d,
+                                depth_diff);
+                trans_d = delta_src_to_dst.Matmul(trans_d);
+            }
+        }
+    } else {
+        utility::LogError("Odometry method not implemented.");
+    }
+
+    return trans_d;
+}
+
 /// Perform single scale odometry using loss function
 /// (I_p - I_q)^2 + lambda(D_p - (D_q)')^2,
 /// requiring the gradient images of target color and depth.
