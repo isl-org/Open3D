@@ -70,7 +70,7 @@ public:
 
     virtual void SetClearColor(const Eigen::Vector4f& color) override;
     void UpdateSwapChain() override;
-    void UpdateHeadlessSwapChain(int width, int height) override;
+    void UpdateBitmapSwapChain(int width, int height) override;
 
     void BeginFrame() override;
     void Draw() override;

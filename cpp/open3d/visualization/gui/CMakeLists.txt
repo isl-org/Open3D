@@ -1,6 +1,7 @@
 # build
 set(GUI_SOURCE_FILES
     Application.cpp
+    BitmapWindowSystem.cpp
     Button.cpp
     Checkbox.cpp
     Color.cpp
@@ -9,7 +10,6 @@ set(GUI_SOURCE_FILES
     Dialog.cpp
     FileDialog.cpp
     FileDialogNative.cpp
-    HeadlessWindowSystem.cpp
     GLFWWindowSystem.cpp
     Gui.cpp
     ImageLabel.cpp
@@ -39,6 +39,7 @@ set(GUI_SOURCE_FILES
     )
 set(GUI_HEADER_FILES
     Application.h
+    BitmapWindowSystem.h
     Button.h
     Checkbox.h
     Color.h
@@ -47,7 +48,6 @@ set(GUI_HEADER_FILES
     Dialog.h
     Events.h
     FileDialog.h
-    HeadlessWindowSystem.h
     GLFWWindowSystem.h
     Gui.h
     ImageLabel.h

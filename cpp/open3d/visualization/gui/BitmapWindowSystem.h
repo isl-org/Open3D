@@ -44,10 +44,15 @@ struct MouseEvent;
 struct KeyEvent;
 struct TextInputEvent;
 
-class HeadlessWindowSystem : public WindowSystem {
+class BitmapWindowSystem : public WindowSystem {
 public:
-    HeadlessWindowSystem();
-    ~HeadlessWindowSystem();
+    enum class Rendering {
+        NORMAL,   // normal OpenGL rendering, requires X11, Win32, or Cocoa
+        HEADLESS  // uses EGL, does not require the OS to have a window system.
+                  // (Linux only)
+    };
+    BitmapWindowSystem(Rendering mode = Rendering::NORMAL);
+    ~BitmapWindowSystem();
 
     void Initialize() override;
     void Uninitialize() override;

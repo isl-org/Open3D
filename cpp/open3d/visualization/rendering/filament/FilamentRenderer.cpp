@@ -163,7 +163,7 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
-void FilamentRenderer::UpdateHeadlessSwapChain(int width, int height) {
+void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
     engine_.destroy(swap_chain_);
     swap_chain_ = engine_.createSwapChain(width, height,
                                           filament::SwapChain::CONFIG_READABLE);
