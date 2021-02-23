@@ -37,44 +37,6 @@ set(GUI_SOURCE_FILES
     Widget.cpp
     Window.cpp
     )
-set(GUI_HEADER_FILES
-    Application.h
-    BitmapWindowSystem.h
-    Button.h
-    Checkbox.h
-    Color.h
-    ColorEdit.h
-    Combobox.h
-    Dialog.h
-    Events.h
-    FileDialog.h
-    GLFWWindowSystem.h
-    Gui.h
-    ImageLabel.h
-    ImguiFilamentBridge.h
-    Label.h
-    Label3D.h
-    Layout.h
-    ListView.h
-    Menu.h
-    MenuImgui.h
-    NumberEdit.h
-    PickPointsInteractor.h
-    ProgressBar.h
-    SceneWidget.h
-    Slider.h
-    StackedWidget.h
-    TabControl.h
-    Task.h
-    TextEdit.h
-    Theme.h
-    TreeView.h
-    UIImage.h
-    Util.h
-    VectorEdit.h
-    Widget.h
-    Window.h
-    )
 
 if (WIN32)
     list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)
@@ -87,7 +49,7 @@ else ()
 endif()
 
 # create object library
-add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
+add_library(GUI OBJECT ${GUI_SOURCE_FILES})
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)
 open3d_link_3rdparty_libraries(GUI)
