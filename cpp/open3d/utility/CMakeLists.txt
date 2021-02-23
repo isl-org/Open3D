@@ -1,5 +1,12 @@
 # build
-file(GLOB ALL_SOURCE_FILES "*.cpp")
+set(ALL_SOURCE_FILES
+    Console.cpp
+    Eigen.cpp
+    FileSystem.cpp
+    Helper.cpp
+    IJsonConvertible.cpp
+    Timer.cpp
+    )
 
 # create object library
 add_library(utility OBJECT ${ALL_SOURCE_FILES})
