@@ -245,6 +245,14 @@ Tensor Tensor::Arange(Scalar start,
     return kernel::Arange(t_start, t_stop, t_step);
 }
 
+Tensor Tensor::Reverse() const {
+    // TODO: Unoptimized with ai. Can be improved when negative step in Slice is
+    // implemented.
+    int64_t n = NumElements();
+    Tensor reverse_idx = Tensor::Arange(n - 1, -1, -1);
+    return View({n}).IndexGet({reverse_idx}).View(GetShape());
+}
+
 Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
