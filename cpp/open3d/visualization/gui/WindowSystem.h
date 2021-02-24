@@ -37,6 +37,7 @@ class FilamentRenderer;
 
 namespace gui {
 
+class MenuBase;
 class Window;
 
 /// WindowSystem (and its derived classes) are internal to Open3D and not
@@ -100,6 +101,8 @@ public:
 
     virtual void ResizeRenderer(OSWindow w,
                                 rendering::FilamentRenderer* renderer) = 0;
+
+    virtual MenuBase* CreateOSMenu() = 0;
 };
 
 }  // namespace gui

@@ -71,7 +71,7 @@ public:
 
     virtual void SetClearColor(const Eigen::Vector4f& color) = 0;
     virtual void UpdateSwapChain() = 0;
-    virtual void UpdateHeadlessSwapChain(int width, int height) = 0;
+    virtual void UpdateBitmapSwapChain(int width, int height) = 0;
 
     virtual void BeginFrame() = 0;
     virtual void Draw() = 0;

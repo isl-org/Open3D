@@ -86,6 +86,8 @@ public:
     void ResizeRenderer(OSWindow w,
                         rendering::FilamentRenderer* renderer) override;
 
+    MenuBase* CreateOSMenu() override;
+
 private:
     static void DrawCallback(GLFWwindow* window);
     static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);

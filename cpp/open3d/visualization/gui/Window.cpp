@@ -93,6 +93,7 @@ const int Window::FLAG_TOPMOST = (1 << 1);
 struct Window::Impl {
     WindowSystem::OSWindow window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
+    bool draw_menu_ = true;
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
     std::function<bool(void)> on_close_;
@@ -482,13 +483,11 @@ Size Window::GetSize() const {
 Rect Window::GetContentRect() const {
     auto size = GetSize();
     int menu_height = 0;
-#if !(GUI_USE_NATIVE_MENUS && defined(__APPLE__))
     MakeDrawContextCurrent();
     auto menubar = Application::GetInstance().GetMenubar();
-    if (menubar) {
+    if (menubar && impl_->draw_menu_) {
         menu_height = menubar->CalcHeight(GetTheme());
     }
-#endif
 
     return Rect(0, menu_height, size.width, size.height - menu_height);
 }
@@ -657,6 +656,8 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     dlg->AddChild(layout);
     ShowDialog(dlg);
 }
+
+void Window::ShowMenu(bool show) { impl_->draw_menu_ = show; }
 
 void Window::Layout(const Theme& theme) {
     if (impl_->children_.size() == 1) {
@@ -847,7 +848,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // Draw menubar after the children so it is always on top (although it
     // shouldn't matter, as there shouldn't be anything under it)
     auto menubar = Application::GetInstance().GetMenubar();
-    if (menubar) {
+    if (menubar && impl_->draw_menu_) {
         auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);

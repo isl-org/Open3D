@@ -32,6 +32,10 @@
 #include <unordered_map>
 
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/MenuImgui.h"
+#ifdef __APPLE__
+#include "open3d/visualization/gui/MenuMacOS.h"
+#endif
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -495,6 +499,14 @@ rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,
                                       rendering::FilamentRenderer* renderer) {
     renderer->UpdateSwapChain();
+}
+
+MenuBase* GLFWWindowSystem::CreateOSMenu() {
+#ifdef __APPLE__
+    return new MenuMacOS();
+#else
+    return new MenuImgui();
+#endif
 }
 
 }  // namespace gui
