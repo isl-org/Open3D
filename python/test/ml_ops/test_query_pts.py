@@ -32,13 +32,8 @@ import mltest
 # Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
-ml_torch_gpu_only = pytest.mark.parametrize('ml', [
-    v for k, v in mltest._ml_modules.items()
-    if mltest.is_gpu_device_name(v.device) and v.module.__name__ == 'torch'
-])
 
-
-@ml_torch_gpu_only
+@mltest.parametrize.ml_gpu_only
 def test_query_pts(ml):
 
     values0 = mltest.fetch_numpy(
