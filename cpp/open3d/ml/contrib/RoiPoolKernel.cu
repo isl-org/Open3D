@@ -28,7 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "open3d/ml/contrib/RoIPoolKernel.h"
+#include "open3d/ml/contrib/RoiPoolKernel.h"
 
 namespace open3d {
 namespace ml {
