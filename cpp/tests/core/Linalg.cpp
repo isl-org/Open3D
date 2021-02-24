@@ -95,7 +95,7 @@ TEST_P(LinalgPermuteDevices, LU) {
     // LU test for 3x4 const 2D tensor of dtype Float32.
     const core::Tensor A_3x4cf = core::Tensor::Init<float>(
             {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}, {2, 1, 3}}, device);
-    
+
     // Default parameter for permute_l (false).
     core::Tensor permutationcf0, lowercf0, uppercf0;
     std::tie(permutationcf0, lowercf0, uppercf0) = A_3x4cf.LU();
