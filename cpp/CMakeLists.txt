@@ -33,10 +33,7 @@ function(open3d_show_and_abort_on_warning trgt)
         endif()
 
         if (MSVC)
-            set(CUDA_DISABLE_MSVC_WARNINGS
-                    ${DISABLE_MSVC_WARNINGS}
-                    /wd4456        # declaration hides previous local declaration (many cuda files)
-                    )
+            set(CUDA_DISABLE_MSVC_WARNINGS ${DISABLE_MSVC_WARNINGS})
             set(DISABLE_NVCC_WARNINGS
                     550            # variable was set but never used (Eigen)
                     940            # missing return statement at end of non-void function (Eigen)

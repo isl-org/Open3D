@@ -162,6 +162,10 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                         });
 
             } else {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4456)
+#endif
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
                     using src_t = scalar_t;
                     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
@@ -176,6 +180,9 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                                 });
                     });
                 });
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
             }
         } else {
             dst.CopyFrom(src.Contiguous().To(dst_device));
