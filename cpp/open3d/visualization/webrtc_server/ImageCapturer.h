@@ -171,7 +171,7 @@ public:
     }
     bool IsRunning() { return is_running_; }
 
-    // Overide webrtc::DesktopCapturer::Callback.
+    // Overide webrtc::ImageCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
     // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
     virtual void OnCaptureResult(const core::Tensor& frame) {
@@ -223,7 +223,7 @@ public:
             }
         } else {
             RTC_LOG(LS_ERROR)
-                    << "DesktopCapturer:OnCaptureResult conversion error:"
+                    << "ImageCapturer:OnCaptureResult conversion error:"
                     << conversion_result;
         }
     }
