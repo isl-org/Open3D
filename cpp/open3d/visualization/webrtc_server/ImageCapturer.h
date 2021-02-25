@@ -87,7 +87,7 @@ public:
             callback_->OnCaptureResult(frame_);
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         } else {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(10));
         }
         if (is_blank_) {
             frame_.AsRvalue() = lena_;

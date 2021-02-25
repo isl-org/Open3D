@@ -72,8 +72,6 @@ WebRTCWindowSystem::WebRTCWindowSystem()
     //       shall monitor and close connection to certain peerid.
     auto draw_callback = [this](gui::Window *window,
                                 std::shared_ptr<geometry::Image> im) -> void {
-        static int image_id = 0;
-        utility::LogInfo("draw_callback called, image id {}", image_id);
         this->impl_->webrtc_server_->OnFrame(*im);
     };
     SetOnWindowDraw(draw_callback);

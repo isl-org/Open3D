@@ -78,16 +78,21 @@ void WebRTCServer::Impl::OnFrame(const geometry::Image& im) {
     // TODO: name this differently and handle multiple instances.
     // dynamic_cast is better but "-fno-rtti" is required for WebRTC.
 
-    // vidao_track_source is nullptr if the server is running but no client is
+    // video_track_source is nullptr if the server is running but no client is
     // connected.
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> vidao_track_source =
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_track_source =
             peer_connection_manager_->GetVideoTrackSource("imageOpen3D");
-    if (vidao_track_source != nullptr) {
+    utility::LogInfo("WebRTCServer::Impl::OnFrame");
+    if (video_track_source != nullptr) {
+        utility::LogInfo(
+                "WebRTCServer::Impl::OnFrame, video_track_source != nullptr");
         auto image_capturer =
-                reinterpret_cast<ImageCapturer*>(vidao_track_source.get());
+                reinterpret_cast<ImageCapturer*>(video_track_source.get());
         t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
         core::Tensor im_frame = t_im.AsTensor();
+        utility::LogInfo("To call image_capturer->OnCaptureResult(im_frame);");
         image_capturer->OnCaptureResult(im_frame);
+        utility::LogInfo("Called image_capturer->OnCaptureResult(im_frame);");
     }
 }
 
