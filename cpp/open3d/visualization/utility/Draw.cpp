@@ -213,6 +213,8 @@ void Draw(const std::vector<DrawObject> &objects,
     webrtc_window->SetMouseMoveCallback(mouse_move_callback);
     webrtc_window->SetMouseWheelCallback(mouse_wheel_callback);
 
+    webrtc_window->StartWebRTCServer();
+
     // auto emulate_mouse_events = [webrtc_window, draw]() -> void {
     //     while (true) {
     //         std::this_thread::sleep_for(std::chrono::seconds(1));
