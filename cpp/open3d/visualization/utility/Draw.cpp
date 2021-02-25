@@ -33,7 +33,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/gui/BitmapWindowSystem.h"
+#include "open3d/visualization/gui/WebRTCWindowSystem.h"
 
 namespace open3d {
 namespace visualization {
@@ -92,8 +92,7 @@ void Draw(const std::vector<DrawObject> &objects,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
     auto &o3d_app = gui::Application::GetInstance();
-    auto bitmap_window = std::make_shared<gui::BitmapWindowSystem>(
-            gui::BitmapWindowSystem::Rendering::HEADLESS);
+    auto bitmap_window = std::make_shared<gui::WebRTCWindowSystem>();
     auto draw_callback = [](gui::Window *window,
                             std::shared_ptr<geometry::Image> im) -> void {
         static int image_id = 0;

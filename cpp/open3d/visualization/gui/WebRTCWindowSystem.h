@@ -33,6 +33,7 @@ namespace visualization {
 namespace gui {
 
 class WebRTCWindowSystem : public BitmapWindowSystem {
+public:
     WebRTCWindowSystem();
     ~WebRTCWindowSystem();
 
