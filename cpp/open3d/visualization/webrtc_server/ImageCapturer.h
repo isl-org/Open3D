@@ -58,13 +58,20 @@ public:
                 im);
         frame_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
                                      im.GetDtype());
-        blank_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
-                                     im.GetDtype());
-        lena_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
-                                    im.GetDtype());
-        lena_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
-        lena_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
-        lena_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+        // blank_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
+        //                              im.GetDtype());
+        // lena_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
+        //                             im.GetDtype());
+        // lena_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
+        // lena_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
+        // lena_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+
+        frame_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
+        frame_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
+        frame_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+        utility::LogInfo("ImageReader initialized Tensor(shape={}, dtype={})",
+                         frame_.GetShape().ToString(),
+                         frame_.GetDtype().ToString());
     }
     virtual ~ImageReader() {}
 
@@ -87,26 +94,38 @@ public:
             callback_->OnCaptureResult(frame_);
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         } else {
+            callback_->OnCaptureResult(frame_);
             std::this_thread::sleep_for(std::chrono::seconds(10));
         }
-        if (is_blank_) {
-            frame_.AsRvalue() = lena_;
-            is_blank_ = false;
-        } else {
-            frame_.AsRvalue() = blank_;
-            is_blank_ = true;
-        }
-        callback_->OnCaptureResult(frame_);
+        // if (is_blank_) {
+        //     frame_.AsRvalue() = lena_;
+        //     is_blank_ = false;
+        // } else {
+        //     frame_.AsRvalue() = blank_;
+        //     is_blank_ = true;
+        // }
+        // callback_->OnCaptureResult(frame_);
     }
+
+    // void SetFrame(const core::Tensor& im_rgb) {
+    //     // utility::LogInfo("SetFrame called");
+    //     // utility::LogInfo("frame_.GetShape() = {}",
+    //     //                  frame_.GetShape().ToString());
+    //     // im_rgb.AssertShape({frame_.GetShape(0), frame_.GetShape(1), 3});
+    //     // im_rgb.AssertDtype(frame_.GetDtype());
+    //     frame_.Slice(2, 0, 1) = im_rgb.Slice(2, 2, 3);
+    //     frame_.Slice(2, 1, 2) = im_rgb.Slice(2, 1, 2);
+    //     frame_.Slice(2, 2, 3) = im_rgb.Slice(2, 0, 1);
+    // }
 
     Callback* callback_ = nullptr;
 
 private:
     core::Tensor frame_;
-    core::Tensor lena_;
-    core::Tensor blank_;
+    // core::Tensor lena_;
+    // core::Tensor blank_;
     int init_frame_count_ = 0;
-    bool is_blank_ = true;
+    // bool is_blank_ = true;
 };
 
 class ImageCapturer : public rtc::VideoSourceInterface<webrtc::VideoFrame>,
@@ -115,7 +134,7 @@ public:
     ImageCapturer(const std::string& url_,
                   const std::map<std::string, std::string>& opts)
         : ImageCapturer(opts) {
-        capturer_ = std::unique_ptr<ImageReader>(new ImageReader());
+        capturer_ = std::shared_ptr<ImageReader>(new ImageReader());
     }
 
     static ImageCapturer* Create(
@@ -154,7 +173,6 @@ public:
     void CaptureThread() {
         RTC_LOG(INFO) << "ImageCapturer:Run start";
         while (IsRunning()) {
-            // std::this_thread::sleep_for(std::chrono::seconds(1));
             capturer_->CaptureFrame();
         }
         RTC_LOG(INFO) << "ImageCapturer:Run exit";
@@ -171,6 +189,17 @@ public:
         capture_thread_.join();
     }
     bool IsRunning() { return is_running_; }
+
+    // An alias to call OnCaptureResult(). Called by external functions. This is
+    // helpful when downcasting a webrtc::VideoTrackSourceInterfac pointer to an
+    // ImageCapturer pointer, since we cannot mark OnCaptureResult as override.
+    void OnFrame(const core::Tensor& frame) {
+        utility::LogInfo("ImageCapturer:OnFrame callback");
+        utility::LogInfo("ImageCapturer::OnFrame Tensor(shape={}, dtype={})",
+                         frame.GetShape().ToString(),
+                         frame.GetDtype().ToString());
+        // capturer_->SetFrame(frame);
+    }
 
     // Overide webrtc::ImageCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
@@ -242,7 +271,7 @@ public:
 
 protected:
     std::thread capture_thread_;
-    std::unique_ptr<ImageReader> capturer_;
+    std::shared_ptr<ImageReader> capturer_;
     int width_;
     int height_;
     bool is_running_;

@@ -91,7 +91,7 @@ void WebRTCServer::Impl::OnFrame(const geometry::Image& im) {
         t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
         core::Tensor im_frame = t_im.AsTensor();
         utility::LogInfo("To call image_capturer->OnCaptureResult(im_frame);");
-        image_capturer->OnCaptureResult(im_frame);
+        image_capturer->OnFrame(im_frame);
         utility::LogInfo("Called image_capturer->OnCaptureResult(im_frame);");
     }
 }
