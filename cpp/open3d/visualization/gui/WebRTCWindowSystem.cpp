@@ -32,7 +32,8 @@ namespace gui {
 
 struct WebRTCWindowSystem::Impl {};
 
-WebRTCWindowSystem::WebRTCWindowSystem() {}
+WebRTCWindowSystem::WebRTCWindowSystem()
+    : BitmapWindowSystem(BitmapWindowSystem::Rendering::HEADLESS) {}
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
 
