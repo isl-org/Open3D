@@ -26,6 +26,15 @@
 
 #include "open3d/visualization/gui/WebRTCWindowSystem.h"
 
+#include <chrono>
+#include <sstream>
+#include <thread>
+
+#include "open3d/io/ImageIO.h"
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/utility/Draw.h"
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -33,7 +42,16 @@ namespace gui {
 struct WebRTCWindowSystem::Impl {};
 
 WebRTCWindowSystem::WebRTCWindowSystem()
-    : BitmapWindowSystem(BitmapWindowSystem::Rendering::HEADLESS) {}
+    : BitmapWindowSystem(BitmapWindowSystem::Rendering::HEADLESS) {
+    auto draw_callback = [](gui::Window *window,
+                            std::shared_ptr<geometry::Image> im) -> void {
+        static int image_id = 0;
+        utility::LogInfo("draw_callback called, image id {}", image_id);
+        io::WriteImage(fmt::format("headless_{}.jpg", image_id), *im);
+        image_id++;
+    };
+    SetOnWindowDraw(draw_callback);
+}
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
 

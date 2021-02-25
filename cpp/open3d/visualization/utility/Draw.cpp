@@ -92,16 +92,8 @@ void Draw(const std::vector<DrawObject> &objects,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
     auto &o3d_app = gui::Application::GetInstance();
-    auto bitmap_window = std::make_shared<gui::WebRTCWindowSystem>();
-    auto draw_callback = [](gui::Window *window,
-                            std::shared_ptr<geometry::Image> im) -> void {
-        static int image_id = 0;
-        utility::LogInfo("draw_callback called, image id {}", image_id);
-        io::WriteImage(fmt::format("headless_{}.jpg", image_id), *im);
-        image_id++;
-    };
-    bitmap_window->SetOnWindowDraw(draw_callback);
-    o3d_app.SetWindowSystem(bitmap_window);
+    auto webrtc_window = std::make_shared<gui::WebRTCWindowSystem>();
+    o3d_app.SetWindowSystem(webrtc_window);
     o3d_app.Initialize();
 
     auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
@@ -123,7 +115,7 @@ void Draw(const std::vector<DrawObject> &objects,
 
     gui::Application::GetInstance().AddWindow(draw);
 
-    auto emulate_mouse_events = [bitmap_window, draw]() -> void {
+    auto emulate_mouse_events = [webrtc_window, draw]() -> void {
         while (true) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
             utility::LogInfo("emulate_mouse_events called");
@@ -141,27 +133,27 @@ void Draw(const std::vector<DrawObject> &objects,
             me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_DOWN, 139, 366,
                                  0};
             me.button.button = gui::MouseButton::LEFT;
-            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 149, 362, 0};
             me.move.buttons = 1;
-            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 209, 338, 0};
             me.move.buttons = 1;
-            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 259, 319, 0};
             me.move.buttons = 1;
-            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_UP, 263, 318, 0};
             me.button.button = gui::MouseButton::LEFT;
-            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     };
