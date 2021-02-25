@@ -34,9 +34,56 @@
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/WebRTCWindowSystem.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 namespace open3d {
 namespace visualization {
+
+static int MouseButtonFromGLFW(int button) {
+    switch (button) {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            return int(gui::MouseButton::LEFT);
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            return int(gui::MouseButton::RIGHT);
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            return int(gui::MouseButton::MIDDLE);
+        case GLFW_MOUSE_BUTTON_4:
+            return int(gui::MouseButton::BUTTON4);
+        case GLFW_MOUSE_BUTTON_5:
+            return int(gui::MouseButton::BUTTON5);
+        default:
+            return int(gui::MouseButton::NONE);
+    }
+}
+
+static int KeymodsFromGLFW(int glfw_mods) {
+    int keymods = 0;
+    if (glfw_mods & GLFW_MOD_SHIFT) {
+        keymods |= int(gui::KeyModifier::SHIFT);
+    }
+    if (glfw_mods & GLFW_MOD_CONTROL) {
+#if __APPLE__
+        keymods |= int(gui::KeyModifier::ALT);
+#else
+        keymods |= int(gui::KeyModifier::CTRL);
+#endif  // __APPLE__
+    }
+    if (glfw_mods & GLFW_MOD_ALT) {
+#if __APPLE__
+        keymods |= int(gui::KeyModifier::META);
+#else
+        keymods |= int(gui::KeyModifier::ALT);
+#endif  // __APPLE__
+    }
+    if (glfw_mods & GLFW_MOD_SUPER) {
+#if __APPLE__
+        keymods |= int(gui::KeyModifier::CTRL);
+#else
+        keymods |= int(gui::KeyModifier::META);
+#endif  // __APPLE__
+    }
+    return keymods;
+}
 
 DrawObject::DrawObject(const std::string &n,
                        std::shared_ptr<geometry::Geometry3D> g,
@@ -115,50 +162,118 @@ void Draw(const std::vector<DrawObject> &objects,
 
     gui::Application::GetInstance().AddWindow(draw);
 
-    auto emulate_mouse_events = [webrtc_window, draw]() -> void {
-        while (true) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            utility::LogInfo("emulate_mouse_events called");
+    // WebRTC related setups.
+    std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
+    std::thread webrtc_thread_;
 
-            // clang-format off
-            // MouseEvent{type: Type::BUTTON_DOWN, x: 139, y: 366, modifiers: 0, button.button: MouseButton::LEFT}
-            // MouseEvent{type: Type::DRAG, x: 149, y: 362, modifiers: 0, move.buttons : 1}
-            // MouseEvent{type: Type::DRAG, x: 209, y: 338, modifiers: 0, move.buttons : 1}
-            // MouseEvent{type: Type::DRAG, x: 259, y: 319, modifiers: 0, move.buttons : 1}
-            // MouseEvent{type: Type::BUTTON_UP, x: 263, y: 318, modifiers: 0, button.button: MouseButton::LEFT}
-            // clang-format on
+    std::function<void(int, double, double, int)> mouse_button_callback =
+            [webrtc_window, draw](int action, double x, double y, int mods) {
+                auto type = (action == 1 ? gui::MouseEvent::BUTTON_DOWN
+                                         : gui::MouseEvent::BUTTON_UP);
+                double mx = x;
+                double my = y;
+                int button = 0;
+                float scaling = draw->GetScaling();
+                int ix = int(std::ceil(mx * scaling));
+                int iy = int(std::ceil(my * scaling));
 
-            gui::MouseEvent me;
+                gui::MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+                me.button.button =
+                        gui::MouseButton(MouseButtonFromGLFW(button));
 
-            me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_DOWN, 139, 366,
-                                 0};
-            me.button.button = gui::MouseButton::LEFT;
-            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+            };
 
-            me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 149, 362, 0};
-            me.move.buttons = 1;
-            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::function<void(int, double, double, int)> mouse_move_callback =
+            [webrtc_window, draw](int mouse_status, double x, double y,
+                                  int mods) {
+                float scaling = draw->GetScaling();
+                int ix = int(std::ceil(x * scaling));
+                int iy = int(std::ceil(y * scaling));
 
-            me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 209, 338, 0};
-            me.move.buttons = 1;
-            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                auto type = (mouse_status == 0 ? gui::MouseEvent::MOVE
+                                               : gui::MouseEvent::DRAG);
+                int buttons = mouse_status;
+                gui::MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+                me.button.button = gui::MouseButton(buttons);
 
-            me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 259, 319, 0};
-            me.move.buttons = 1;
-            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+            };
 
-            me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_UP, 263, 318, 0};
-            me.button.button = gui::MouseButton::LEFT;
-            webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        }
-    };
+    std::function<void(double, double, int, double, double)>
+            mouse_wheel_callback = [webrtc_window, draw](double x, double y,
+                                                         int mods, double dx,
+                                                         double dy) {
+                gui::MouseEvent me;
+                me.type = gui::MouseEvent::WHEEL;
+                me.x = static_cast<float>(x);
+                me.y = static_cast<float>(y);
+                me.modifiers = mods;
+                me.wheel.dx = static_cast<float>(dx);
+                me.wheel.dy = static_cast<float>(dy);
+
+                webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+            };
+
+    auto server = std::make_shared<webrtc_server::WebRTCServer>();
+    server->SetMouseButtonCallback(mouse_button_callback);
+    server->SetMouseMoveCallback(mouse_move_callback);
+    server->SetMouseWheelCallback(mouse_wheel_callback);
+    auto start_webrtc_thread = [server]() { server->Run(); };
+    webrtc_thread_ = std::thread(start_webrtc_thread);
+    webrtc_server_ = server;
+
+    // auto emulate_mouse_events = [webrtc_window, draw]() -> void {
+    //     while (true) {
+    //         std::this_thread::sleep_for(std::chrono::seconds(1));
+    //         utility::LogInfo("emulate_mouse_events called");
+
+    //         // clang-format off
+    //         // MouseEvent{type: Type::BUTTON_DOWN, x: 139, y: 366, modifiers:
+    //         0, button.button: MouseButton::LEFT}
+    //         // MouseEvent{type: Type::DRAG, x: 149, y: 362, modifiers: 0,
+    //         move.buttons : 1}
+    //         // MouseEvent{type: Type::DRAG, x: 209, y: 338, modifiers: 0,
+    //         move.buttons : 1}
+    //         // MouseEvent{type: Type::DRAG, x: 259, y: 319, modifiers: 0,
+    //         move.buttons : 1}
+    //         // MouseEvent{type: Type::BUTTON_UP, x: 263, y: 318, modifiers:
+    //         0, button.button: MouseButton::LEFT}
+    //         // clang-format on
+
+    //         gui::MouseEvent me;
+
+    //         me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_DOWN, 139,
+    //         366,
+    //                              0};
+    //         me.button.button = gui::MouseButton::LEFT;
+    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    //         me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 149, 362, 0};
+    //         me.move.buttons = 1;
+    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    //         me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 209, 338, 0};
+    //         me.move.buttons = 1;
+    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    //         me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 259, 319, 0};
+    //         me.move.buttons = 1;
+    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    //         me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_UP, 263, 318,
+    //         0}; me.button.button = gui::MouseButton::LEFT;
+    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    //     }
+    // };
+    // std::thread thead(emulate_mouse_events);
+
     draw.reset();  // so we don't hold onto the pointer after Run() cleans up
-    std::thread thead(emulate_mouse_events);
 
     gui::Application::GetInstance().Run();
 }
