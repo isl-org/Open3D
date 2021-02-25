@@ -152,11 +152,11 @@ public:
     virtual ~ImageCapturer() { this->Stop(); }
 
     void CaptureThread() {
-        RTC_LOG(INFO) << "DesktopCapturer:Run start";
+        RTC_LOG(INFO) << "ImageCapturer:Run start";
         while (IsRunning()) {
             capturer_->CaptureFrame();
         }
-        RTC_LOG(INFO) << "DesktopCapturer:Run exit";
+        RTC_LOG(INFO) << "ImageCapturer:Run exit";
     }
 
     bool Start() {
