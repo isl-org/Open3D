@@ -1116,9 +1116,9 @@ protected:
 
 private:
     /// Create a n-D tensor with initializer list.
-    template <typename T, std::size_t I>
+    template <typename T, std::size_t S>
     static Tensor InitN(
-            const tensor_init::NestedInitializerListT<T, I> nested_list,
+            const tensor_init::NestedInitializerListT<T, S> nested_list,
             const Device& device = Device("CPU:0")) {
         SizeVector sv = tensor_init::Shape<SizeVector>(nested_list);
 
