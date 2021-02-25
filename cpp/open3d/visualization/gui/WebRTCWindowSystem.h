@@ -32,7 +32,14 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-class WebRTCWindowSystem : public BitmapWindowSystem {};
+class WebRTCWindowSystem : public BitmapWindowSystem {
+    WebRTCWindowSystem();
+    ~WebRTCWindowSystem();
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
 
 }  // namespace gui
 }  // namespace visualization

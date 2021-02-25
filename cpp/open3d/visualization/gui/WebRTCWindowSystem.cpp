@@ -28,6 +28,14 @@
 
 namespace open3d {
 namespace visualization {
-namespace gui {}  // namespace gui
+namespace gui {
+
+struct WebRTCWindowSystem::Impl {};
+
+WebRTCWindowSystem::WebRTCWindowSystem() {}
+
+WebRTCWindowSystem::~WebRTCWindowSystem() {}
+
+}  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
