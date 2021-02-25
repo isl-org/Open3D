@@ -31,6 +31,11 @@
 #include <string>
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
 namespace webrtc_server {
 
@@ -42,7 +47,10 @@ public:
                          "webrtc_server/html");
     void Run();
 
+    // Client -> server message.
     void OnDataChannelMessage(const std::string& message);
+    // Server -> client frame.
+    void OnFrame(const geometry::Image& im);
 
     void SetMouseButtonCallback(
             std::function<void(int, double, double, int)> f);

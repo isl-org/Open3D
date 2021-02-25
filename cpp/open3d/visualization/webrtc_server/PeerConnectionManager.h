@@ -376,6 +376,9 @@ public:
     const Json::Value SetAnswer(const std::string& peerid,
                                 const Json::Value& jmessage);
 
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> GetVideoTrackSource(
+            const std::string& video_url);
+
 protected:
     PeerConnectionObserver* CreatePeerConnection(const std::string& peerid);
     bool AddStreams(webrtc::PeerConnectionInterface* peer_connection,

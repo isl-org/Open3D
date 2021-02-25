@@ -37,6 +37,14 @@ public:
     WebRTCWindowSystem();
     ~WebRTCWindowSystem();
 
+    void SetMouseButtonCallback(
+            std::function<void(int, double, double, int)> f);
+    void SetMouseMoveCallback(std::function<void(int, double, double, int)> f);
+    void SetMouseWheelCallback(
+            std::function<void(double, double, int, double, double)> f);
+
+    void StartWebRTCServer();
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

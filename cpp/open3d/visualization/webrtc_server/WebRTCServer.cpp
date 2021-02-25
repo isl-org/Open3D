@@ -44,9 +44,12 @@
 #include <fstream>
 #include <iostream>
 
+#include "open3d/geometry/Image.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
+#include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
 namespace open3d {
@@ -66,9 +69,20 @@ struct WebRTCServer::Impl {
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
+    void OnFrame(const geometry::Image& im);
     void Run();
     int mouse_button_status_ = 0;
 };
+
+void WebRTCServer::Impl::OnFrame(const geometry::Image& im) {
+    // TODO: name this differently and handle multiple instances.
+    // dynamic_cast is better but "-fno-rtti" is required for WebRTC.
+    auto image_capturer = reinterpret_cast<ImageCapturer*>(
+            peer_connection_manager_->GetVideoTrackSource("imageOpen3D").get());
+    t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
+    core::Tensor im_frame = t_im.AsTensor();
+    image_capturer->OnCaptureResult(im_frame);
+}
 
 void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
     // TODO: use Json message.
@@ -137,6 +151,8 @@ void WebRTCServer::SetMouseWheelCallback(
 void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     impl_->OnDataChannelMessage(message);
 }
+
+void WebRTCServer::OnFrame(const geometry::Image& im) { impl_->OnFrame(im); }
 
 WebRTCServer::WebRTCServer(const std::string& http_address,
                            const std::string& web_root)

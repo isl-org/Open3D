@@ -34,12 +34,14 @@
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/utility/Draw.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
 struct WebRTCWindowSystem::Impl {
+    std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
     std::thread webrtc_thread_;
 };
 
@@ -61,21 +63,43 @@ WebRTCWindowSystem::WebRTCWindowSystem()
     //
     // O3DVisualizer is a gui::Window.
 
+    // Initialize WebRTC server.
+    impl_->webrtc_server_ = std::make_shared<webrtc_server::WebRTCServer>();
+
     // Set draw() callback.
     // TODO: when draw(), send frame via WebRTC server.
     // TODO: handle multiple instances of windows, that is, the WebRTC server
     //       shall monitor and close connection to certain peerid.
-    auto draw_callback = [](gui::Window *window,
-                            std::shared_ptr<geometry::Image> im) -> void {
+    auto draw_callback = [this](gui::Window *window,
+                                std::shared_ptr<geometry::Image> im) -> void {
         static int image_id = 0;
         utility::LogInfo("draw_callback called, image id {}", image_id);
-        io::WriteImage(fmt::format("headless_{}.jpg", image_id), *im);
-        image_id++;
+        this->impl_->webrtc_server_->OnFrame(*im);
     };
     SetOnWindowDraw(draw_callback);
 }
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
+
+void WebRTCWindowSystem::SetMouseButtonCallback(
+        std::function<void(int, double, double, int)> f) {
+    impl_->webrtc_server_->SetMouseButtonCallback(f);
+}
+
+void WebRTCWindowSystem::SetMouseMoveCallback(
+        std::function<void(int, double, double, int)> f) {
+    impl_->webrtc_server_->SetMouseMoveCallback(f);
+}
+
+void WebRTCWindowSystem::SetMouseWheelCallback(
+        std::function<void(double, double, int, double, double)> f) {
+    impl_->webrtc_server_->SetMouseWheelCallback(f);
+}
+
+void WebRTCWindowSystem::StartWebRTCServer() {
+    auto start_webrtc_thread = [this]() { this->impl_->webrtc_server_->Run(); };
+    impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
+}
 
 }  // namespace gui
 }  // namespace visualization

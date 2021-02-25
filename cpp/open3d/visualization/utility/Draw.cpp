@@ -34,7 +34,6 @@
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/WebRTCWindowSystem.h"
-#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 namespace open3d {
 namespace visualization {
@@ -162,10 +161,7 @@ void Draw(const std::vector<DrawObject> &objects,
 
     gui::Application::GetInstance().AddWindow(draw);
 
-    // WebRTC related setups.
-    std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
-    std::thread webrtc_thread_;
-
+    // WebRTC event handlers.
     std::function<void(int, double, double, int)> mouse_button_callback =
             [webrtc_window, draw](int action, double x, double y, int mods) {
                 auto type = (action == 1 ? gui::MouseEvent::BUTTON_DOWN
@@ -183,7 +179,6 @@ void Draw(const std::vector<DrawObject> &objects,
 
                 webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             };
-
     std::function<void(int, double, double, int)> mouse_move_callback =
             [webrtc_window, draw](int mouse_status, double x, double y,
                                   int mods) {
@@ -199,7 +194,6 @@ void Draw(const std::vector<DrawObject> &objects,
 
                 webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             };
-
     std::function<void(double, double, int, double, double)>
             mouse_wheel_callback = [webrtc_window, draw](double x, double y,
                                                          int mods, double dx,
@@ -215,13 +209,9 @@ void Draw(const std::vector<DrawObject> &objects,
                 webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
             };
 
-    auto server = std::make_shared<webrtc_server::WebRTCServer>();
-    server->SetMouseButtonCallback(mouse_button_callback);
-    server->SetMouseMoveCallback(mouse_move_callback);
-    server->SetMouseWheelCallback(mouse_wheel_callback);
-    auto start_webrtc_thread = [server]() { server->Run(); };
-    webrtc_thread_ = std::thread(start_webrtc_thread);
-    webrtc_server_ = server;
+    webrtc_window->SetMouseButtonCallback(mouse_button_callback);
+    webrtc_window->SetMouseMoveCallback(mouse_move_callback);
+    webrtc_window->SetMouseWheelCallback(mouse_wheel_callback);
 
     // auto emulate_mouse_events = [webrtc_window, draw]() -> void {
     //     while (true) {

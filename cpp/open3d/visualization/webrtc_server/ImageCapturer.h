@@ -154,6 +154,7 @@ public:
     void CaptureThread() {
         RTC_LOG(INFO) << "ImageCapturer:Run start";
         while (IsRunning()) {
+            // std::this_thread::sleep_for(std::chrono::seconds(1));
             capturer_->CaptureFrame();
         }
         RTC_LOG(INFO) << "ImageCapturer:Run exit";

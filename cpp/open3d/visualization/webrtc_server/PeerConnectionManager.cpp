@@ -1025,6 +1025,18 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
     }
 }
 
+rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
+PeerConnectionManager::GetVideoTrackSource(const std::string &video_url) {
+    {
+        std::lock_guard<std::mutex> mlock(stream_map_mutex_);
+        if (stream_map_.find(video_url) != stream_map_.end()) {
+            utility::LogError("Stream label {} not found.", video_url);
+        } else {
+            return stream_map_.at(video_url);
+        }
+    }
+}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d
