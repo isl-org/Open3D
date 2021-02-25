@@ -69,6 +69,7 @@ public:
         frame_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
         frame_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
         frame_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+        // e.g. ImageReader initialized Tensor(shape={480, 640, 4}, dtype=UInt8)
         utility::LogInfo("ImageReader initialized Tensor(shape={}, dtype={})",
                          frame_.GetShape().ToString(),
                          frame_.GetDtype().ToString());
@@ -195,6 +196,7 @@ public:
     // ImageCapturer pointer, since we cannot mark OnCaptureResult as override.
     void OnFrame(const core::Tensor& frame) {
         utility::LogInfo("ImageCapturer:OnFrame callback");
+        // e.g. ImageCapturer::OnFrame Tensor(shape={480, 640, 3}, dtype=UInt8)
         utility::LogInfo("ImageCapturer::OnFrame Tensor(shape={}, dtype={})",
                          frame.GetShape().ToString(),
                          frame.GetDtype().ToString());
