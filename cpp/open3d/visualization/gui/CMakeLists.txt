@@ -34,6 +34,7 @@ set(GUI_SOURCE_FILES
     UIImage.cpp
     Util.cpp
     VectorEdit.cpp
+    WebRTCWindowSystem.cpp
     Widget.cpp
     Window.cpp
     )
