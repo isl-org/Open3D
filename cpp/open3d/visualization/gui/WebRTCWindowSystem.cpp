@@ -39,10 +39,21 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-struct WebRTCWindowSystem::Impl {};
+struct WebRTCWindowSystem::Impl {
+    std::thread webrtc_thread_;
+};
 
 WebRTCWindowSystem::WebRTCWindowSystem()
-    : BitmapWindowSystem(BitmapWindowSystem::Rendering::HEADLESS) {
+    : BitmapWindowSystem(
+#if !defined(__APPLE__) && !defined(_WIN32) && !defined(_WIN64)
+              BitmapWindowSystem::Rendering::NORMAL
+#else
+              BitmapWindowSystem::Rendering::HEADLESS
+#endif
+              ),
+      impl_(new WebRTCWindowSystem::Impl()) {
+    // Set draw() callback.
+    // TODO: when draw(), send frame via WebRTC server.
     auto draw_callback = [](gui::Window *window,
                             std::shared_ptr<geometry::Image> im) -> void {
         static int image_id = 0;
