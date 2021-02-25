@@ -26,10 +26,14 @@
 
 #include "open3d/visualization/utility/Draw.h"
 
+#include <chrono>
 #include <sstream>
+#include <thread>
 
+#include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/BitmapWindowSystem.h"
 
 namespace open3d {
 namespace visualization {
@@ -87,7 +91,20 @@ void Draw(const std::vector<DrawObject> &objects,
           int width /*= 1024*/,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
-    gui::Application::GetInstance().Initialize();
+    auto &o3d_app = gui::Application::GetInstance();
+    auto bitmap_window = std::make_shared<gui::BitmapWindowSystem>(
+            gui::BitmapWindowSystem::Rendering::HEADLESS);
+    auto draw_callback = [](gui::Window *window,
+                            std::shared_ptr<geometry::Image> im) -> void {
+        static int image_id = 0;
+        utility::LogInfo("draw_callback called, image id {}", image_id);
+        io::WriteImage(fmt::format("headless_{}.jpg", image_id), *im);
+        image_id++;
+    };
+    bitmap_window->SetOnWindowDraw(draw_callback);
+    o3d_app.SetWindowSystem(bitmap_window);
+    o3d_app.Initialize();
+
     auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
                                                             height);
     for (auto &o : objects) {
@@ -106,7 +123,52 @@ void Draw(const std::vector<DrawObject> &objects,
     draw->ResetCameraToDefault();
 
     gui::Application::GetInstance().AddWindow(draw);
+
+    auto emulate_mouse_events = [bitmap_window, draw]() -> void {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            utility::LogInfo("emulate_mouse_events called");
+
+            // clang-format off
+            // MouseEvent{type: Type::BUTTON_DOWN, x: 139, y: 366, modifiers: 0, button.button: MouseButton::LEFT}
+            // MouseEvent{type: Type::DRAG, x: 149, y: 362, modifiers: 0, move.buttons : 1}
+            // MouseEvent{type: Type::DRAG, x: 209, y: 338, modifiers: 0, move.buttons : 1}
+            // MouseEvent{type: Type::DRAG, x: 259, y: 319, modifiers: 0, move.buttons : 1}
+            // MouseEvent{type: Type::BUTTON_UP, x: 263, y: 318, modifiers: 0, button.button: MouseButton::LEFT}
+            // clang-format on
+
+            gui::MouseEvent me;
+
+            me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_DOWN, 139, 366,
+                                 0};
+            me.button.button = gui::MouseButton::LEFT;
+            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 149, 362, 0};
+            me.move.buttons = 1;
+            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 209, 338, 0};
+            me.move.buttons = 1;
+            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 259, 319, 0};
+            me.move.buttons = 1;
+            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_UP, 263, 318, 0};
+            me.button.button = gui::MouseButton::LEFT;
+            bitmap_window->PostMouseEvent(draw->GetOSWindow(), me);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+    };
     draw.reset();  // so we don't hold onto the pointer after Run() cleans up
+    std::thread thead(emulate_mouse_events);
+
     gui::Application::GetInstance().Run();
 }
 
