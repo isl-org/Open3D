@@ -33,10 +33,10 @@ namespace open3d {
 namespace core {
 namespace tensor_init {
 
-template <typename T, size_t I>
+template <typename T, size_t S>
 struct NestedInitializerList {
     using type = std::initializer_list<
-            typename NestedInitializerList<T, I - 1>::type>;
+            typename NestedInitializerList<T, S - 1>::type>;
 };
 
 template <typename T>
@@ -44,8 +44,8 @@ struct NestedInitializerList<T, 0> {
     using type = T;
 };
 
-template <typename T, size_t I>
-using NestedInitializerListT = typename NestedInitializerList<T, I>::type;
+template <typename T, size_t S>
+using NestedInitializerListT = typename NestedInitializerList<T, S>::type;
 
 template <typename T, typename S>
 void NestedCopy(T&& iter, const S& s) {
@@ -74,16 +74,16 @@ struct InitializerDimension {
     static constexpr size_t value = InitializerDepthImpl<U>::value;
 };
 
-template <size_t I>
+template <size_t S>
 struct InitializerShapeImpl {
     template <typename T>
     static constexpr size_t value(T t) {
         if (t.size() == 0) {
             return 0;
         }
-        size_t dim = InitializerShapeImpl<I - 1>::value(*t.begin());
+        size_t dim = InitializerShapeImpl<S - 1>::value(*t.begin());
         for (auto it = t.begin(); it != t.end(); ++it) {
-            if (dim != InitializerShapeImpl<I - 1>::value(*it)) {
+            if (dim != InitializerShapeImpl<S - 1>::value(*it)) {
                 utility::LogError(
                         "Input contains ragged nested sequences"
                         "(nested lists with unequal sizes or shapes).");
@@ -101,10 +101,10 @@ struct InitializerShapeImpl<0> {
     }
 };
 
-template <typename R, typename U, size_t... I>
-constexpr R InitializerShape(U t, std::index_sequence<I...>) {
+template <typename R, typename U, size_t... S>
+constexpr R InitializerShape(U t, std::index_sequence<S...>) {
     using size_type = typename R::value_type;
-    return {size_type(InitializerShapeImpl<I>::value(t))...};
+    return {size_type(InitializerShapeImpl<S>::value(t))...};
 }
 
 template <typename R, typename T>

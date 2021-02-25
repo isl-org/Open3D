@@ -132,22 +132,22 @@ public:
                              int linenum,
                              const char *fn_name,
                              const char *format,
-                             const Args &... args) const {
+                             const Args &...args) const {
         VError(fname, linenum, fn_name, format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
-    void Warning(const char *format, const Args &... args) const {
+    void Warning(const char *format, const Args &...args) const {
         VWarning(format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
-    void Info(const char *format, const Args &... args) const {
+    void Info(const char *format, const Args &...args) const {
         VInfo(format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
-    void Debug(const char *format, const Args &... args) const {
+    void Debug(const char *format, const Args &...args) const {
         VDebug(format, fmt::make_format_args(args...));
     }
 
@@ -188,7 +188,7 @@ inline void _LogError [[noreturn]] (const char *fname,
                                     int linenum,
                                     const char *fn_name,
                                     const char *format,
-                                    Args &&... args) {
+                                    Args &&...args) {
     Logger::i().VError(fname, linenum, fn_name, format,
                        fmt::make_format_args(args...));
 }
@@ -214,17 +214,17 @@ inline void _LogError [[noreturn]] (const char *fname,
     _LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 template <typename... Args>
-inline void LogWarning(const char *format, const Args &... args) {
+inline void LogWarning(const char *format, const Args &...args) {
     Logger::i().VWarning(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
-inline void LogInfo(const char *format, const Args &... args) {
+inline void LogInfo(const char *format, const Args &...args) {
     Logger::i().VInfo(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
-inline void LogDebug(const char *format, const Args &... args) {
+inline void LogDebug(const char *format, const Args &...args) {
     Logger::i().VDebug(format, fmt::make_format_args(args...));
 }
 
