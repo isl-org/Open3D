@@ -200,14 +200,30 @@ public:
         utility::LogInfo("ImageCapturer::OnFrame Tensor(shape={}, dtype={})",
                          frame.GetShape().ToString(),
                          frame.GetDtype().ToString());
-        // capturer_->SetFrame(frame);
+
+        core::Tensor frame_bgra =
+                core::Tensor::Zeros({480, 640, 4}, core::Dtype::UInt8);
+        // blank_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
+        //                              im.GetDtype());
+        // lena_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
+        //                             im.GetDtype());
+        // lena_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
+        // lena_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
+        // lena_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+
+        frame_bgra.Slice(2, 0, 1) = frame.Slice(2, 2, 3);
+        frame_bgra.Slice(2, 1, 2) = frame.Slice(2, 1, 2);
+        frame_bgra.Slice(2, 2, 3) = frame.Slice(2, 0, 1);
+        OnCaptureResult(frame_bgra);
     }
 
-    // Overide webrtc::ImageCapturer::Callback.
+    // Overide webrtc::DesktopCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
     // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
-    virtual void OnCaptureResult(const core::Tensor& frame) {
-        utility::LogInfo("ImageCapturer:OnCaptureResult callback");
+    virtual void OnCaptureResult(const core::Tensor& frame) override {
+        utility::LogInfo(
+                "ImageCapturer:OnCaptureResult callback <<<<<<<<< Good "
+                ">>>>>>>>>");
         int height = (int)frame.GetShape(0);
         int width = (int)frame.GetShape(1);
 
@@ -263,11 +279,12 @@ public:
     // Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
     virtual void AddOrUpdateSink(
             rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-            const rtc::VideoSinkWants& wants) {
+            const rtc::VideoSinkWants& wants) override {
         broadcaster_.AddOrUpdateSink(sink, wants);
     }
 
-    virtual void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+    virtual void RemoveSink(
+            rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
         broadcaster_.RemoveSink(sink);
     }
 
