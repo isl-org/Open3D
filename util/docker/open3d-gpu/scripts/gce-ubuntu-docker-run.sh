@@ -44,7 +44,7 @@ GCE_INSTANCE_ZONE=(us-west1-a us-west1-b
 GCE_ZID=${GCE_ZID:=0} # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
-GCE_BOOT_DISK_SIZE=32GB
+GCE_BOOT_DISK_SIZE=64GB
 NVIDIA_DRIVER_VERSION=460 # Must be present in Ubuntu repos 20.04
 GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
@@ -146,7 +146,8 @@ run-ci)
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
             --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
             $DC_IMAGE_TAG; \
-            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh"
+            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh; \
+            sudo docker commit -m 'Debug' open3d_gpu_ci ${DC_IMAGE_TAG}_debug"
     ;;
 
 delete-image)
@@ -157,7 +158,7 @@ delete-image)
     ;;
 
 delete-vm)
-    gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
+    echo Skipping: gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
     ;;
 
 ssh-vm)
