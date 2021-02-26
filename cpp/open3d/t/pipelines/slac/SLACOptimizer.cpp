@@ -139,7 +139,6 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
     pcd_grid_nb->PaintUniformColor({1, 0, 0});
 
     visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
-    visualization::DrawGeometries({pcd});
 }
 
 void VisualizeWarp(const geometry::PointCloud& tpcd_param,
@@ -178,9 +177,11 @@ std::vector<std::string> PreprocessPointClouds(
         auto pcd = io::CreatePointCloudFromFile(fname);
         if (option.voxel_size_ > 0) {
             auto pcd_down = pcd->VoxelDownSample(option.voxel_size_);
+            pcd_down->RemoveStatisticalOutliers(20, 2.0);
             pcd_down->EstimateNormals();
             io::WritePointCloud(fname_down, *pcd_down);
         } else if (!pcd->HasNormals()) {
+            pcd->RemoveStatisticalOutliers(20, 2.0);
             pcd->EstimateNormals();
             io::WritePointCloud(fname_down, *pcd);
         }
@@ -214,7 +215,9 @@ void GetCorrespondencesForPointClouds(
         // Obtain correspondence via nns
         auto result = t::pipelines::registration::EvaluateRegistration(
                 tpcd_i, tpcd_j,
-                option.voxel_size_ < 0 ? 0.05 : option.voxel_size_,
+                option.voxel_size_ < 0
+                        ? 0.05
+                        : std::max<double>(3 * option.voxel_size_, 0.05),
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32));
 
@@ -341,12 +344,13 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
                 cgrid_ratio_ps, cgrid_ratio_qs, i, j, n_frags);
 
         if (option.grid_debug_) {
+            utility::LogInfo("edge {} -> {}", i, j);
             VisualizeWarp(tpcd_param_i, ctr_grid);
             VisualizeWarp(tpcd_param_j, ctr_grid);
 
             VisualizePCDCorres(tpcd_param_i, tpcd_param_j, Tij_e);
-            VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
-            VisualizePCDGridCorres(tpcd_param_j, ctr_grid);
+            // VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
+            // VisualizePCDGridCorres(tpcd_param_j, ctr_grid);
         }
 
         // TODO: use parameterization to update normals and points per grid

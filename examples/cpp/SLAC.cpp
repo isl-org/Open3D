@@ -72,12 +72,14 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
     option.voxel_size_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
+    option.regularizor_coeff_ =
+            utility::GetProgramOptionAsDouble(argc, argv, "--weight", 0.01);
     option.correspondence_debug_ =
             utility::ProgramOptionExists(argc, argv, "--debug");
     option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
 
     std::string method =
-            utility::GetProgramOptionAsString(argc, argv, "--method", "rigid");
+            utility::GetProgramOptionAsString(argc, argv, "--method", "slac");
 
     pipelines::registration::PoseGraph pose_graph_updated;
     if ("rigid" == method) {
@@ -85,10 +87,12 @@ int main(int argc, char** argv) {
                 fragment_fnames, *pose_graph, option);
     } else if ("slac" == method) {
         t::pipelines::slac::ControlGrid control_grid;
+
         std::tie(pose_graph_updated, control_grid) =
                 t::pipelines::slac::RunSLACOptimizerForFragments(
                         fragment_fnames, *pose_graph, option);
 
+        // Write control grids
         auto hashmap = control_grid.GetHashmap();
         core::Tensor active_addrs;
         hashmap->GetActiveIndices(active_addrs);
@@ -104,6 +108,7 @@ int main(int argc, char** argv) {
     io::WritePoseGraph(option.GetSubfolderName() + "/optimized_posegraph.json",
                        pose_graph_updated);
 
+    // Write trajectory
     camera::PinholeCameraTrajectory trajectory;
     for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
         auto fragment_pose_graph = io::CreatePoseGraphFromFile(fmt::format(
