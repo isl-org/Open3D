@@ -65,6 +65,7 @@ void SVDCUDA(const void* A_data,
                 "gesvd failed in SVDCUDA", dinfo, device);
 
         MemoryManager::Free(workspace, device);
+        MemoryManager::Free(dinfo, device);
     });
 }
 }  // namespace core
