@@ -55,33 +55,65 @@ int main(int argc, char *argv[]) {
     }
 
     std::string option(argv[1]);
-    if (option == "sphere") {
-        auto mesh = geometry::TriangleMesh::CreateSphere(0.05);
-        mesh->ComputeVertexNormals();
-        visualization::DrawGeometries({mesh});
-        io::WriteTriangleMesh("sphere.ply", *mesh, true, true);
-    }    
-    
-    else if (option == "box") {
-        auto mesh = geometry::TriangleMesh::CreateBox(3.0, 4.0, 5.0);
+
+    if (option == "box") {
+        auto mesh = geometry::TriangleMesh::CreateBox(1.0, 1.0, 1.0);
         // mesh->ComputeVertexNormals();
         utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
         visualization::DrawGeometries({mesh});
-        io::WriteTriangleMesh("box.obj", *mesh, true, false, false, true, true, true);
-    } 
-    
+        io::WriteTriangleMesh("Box.obj", *mesh, true, false, false, true, true,
+                              true);
+    }
+
+    else if (option == "tetrahedron") {
+        auto mesh = geometry::TriangleMesh::CreateTetrahedron(1.0);
+        // mesh->ComputeVertexNormals();
+        utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
+        visualization::DrawGeometries({mesh});
+        io::WriteTriangleMesh("Tetrahedron.obj", *mesh, true, false, false,
+                              true, true, true);
+    }
+
+    else if (option == "octahedron") {
+        auto mesh = geometry::TriangleMesh::CreateOctahedron(1.0);
+        // mesh->ComputeVertexNormals();
+        utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
+        visualization::DrawGeometries({mesh});
+        io::WriteTriangleMesh("Octahedron.obj", *mesh, true, false, false, true,
+                              true, true);
+    }
+
+    else if (option == "icosahedron") {
+        auto mesh = geometry::TriangleMesh::CreateIcosahedron(1.0);
+        // mesh->ComputeVertexNormals();
+        utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
+        visualization::DrawGeometries({mesh});
+        io::WriteTriangleMesh("Icosahedron.obj", *mesh, true, false, false,
+                              true, true, true);
+    }
+
     else if (option == "cylinder") {
         auto mesh = geometry::TriangleMesh::CreateCylinder(0.5, 2.0);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        io::WriteTriangleMesh("cylinder.ply", *mesh, true, true);
-    } 
-    
+        io::WriteTriangleMesh("cylinder.obj", *mesh, true, false, false, true,
+                              true, true);
+    }
+
     else if (option == "cone") {
         auto mesh = geometry::TriangleMesh::CreateCone(0.5, 2.0, 20, 3);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        io::WriteTriangleMesh("cone.ply", *mesh, true, true);
+        io::WriteTriangleMesh("cone.obj", *mesh, true, false, false, true, true,
+                              true);
+    }
+
+    else if (option == "sphere") {
+        auto mesh = geometry::TriangleMesh::CreateSphere(1, 20);
+        mesh->ComputeVertexNormals();
+        visualization::DrawGeometries({mesh});
+        io::WriteTriangleMesh("sphere.obj", *mesh, true, false, false, true,
+                              true, true);
     }
     return 0;
 }
