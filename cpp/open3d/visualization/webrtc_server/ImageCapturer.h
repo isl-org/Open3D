@@ -43,6 +43,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
+#include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 
 namespace open3d {
 namespace visualization {
@@ -95,8 +96,8 @@ public:
             callback_->OnCaptureResult(frame_);
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         } else {
-            callback_->OnCaptureResult(frame_);
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            callback_->OnCaptureResult(GlobalBuffer::GetInstance().Read());
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         // if (is_blank_) {
         //     frame_.AsRvalue() = lena_;

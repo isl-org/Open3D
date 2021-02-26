@@ -48,6 +48,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
@@ -86,13 +87,19 @@ void WebRTCServer::Impl::OnFrame(const geometry::Image& im) {
     if (video_track_source != nullptr) {
         utility::LogInfo(
                 "WebRTCServer::Impl::OnFrame, video_track_source != nullptr");
-        auto image_capturer =
-                reinterpret_cast<ImageCapturer*>(video_track_source.get());
+
+        // auto image_capturer =
+        //         reinterpret_cast<ImageCapturer*>(video_track_source.get());
+
         t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
-        core::Tensor im_frame = t_im.AsTensor();
-        utility::LogInfo("To call image_capturer->OnCaptureResult(im_frame);");
-        image_capturer->OnFrame(im_frame);
-        utility::LogInfo("Called image_capturer->OnCaptureResult(im_frame);");
+        core::Tensor rgb_frame = t_im.AsTensor();
+        GlobalBuffer::GetInstance().Write(rgb_frame);
+
+        // utility::LogInfo("To call
+        // image_capturer->OnCaptureResult(im_frame);");
+        // image_capturer->OnFrame(im_frame);
+        // utility::LogInfo("Called
+        // image_capturer->OnCaptureResult(im_frame);");
     }
 }
 
