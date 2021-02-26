@@ -4,6 +4,7 @@ add_custom_target(copy_html_dir
 )
 
 set(WEBRTC_STREAMER_SRC
+    ImageCapturer.cpp
     DesktopCapturer.cpp
     HttpServerRequestHandler.cpp
     PeerConnectionManager.cpp
