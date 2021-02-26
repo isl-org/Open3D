@@ -135,7 +135,7 @@ public:
     ImageCapturer(const std::string& url_,
                   const std::map<std::string, std::string>& opts)
         : ImageCapturer(opts) {
-        capturer_ = std::shared_ptr<ImageReader>(new ImageReader());
+        capturer_ = std::unique_ptr<ImageReader>(new ImageReader());
     }
 
     static ImageCapturer* Create(
@@ -290,7 +290,7 @@ public:
 
 protected:
     std::thread capture_thread_;
-    std::shared_ptr<ImageReader> capturer_;
+    std::unique_ptr<ImageReader> capturer_;
     int width_;
     int height_;
     bool is_running_;
