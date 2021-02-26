@@ -27,11 +27,13 @@
 #include <cstdlib>
 
 #include "open3d/Open3D.h"
+#include "open3d/utility/FileSystem.h"
 
 using namespace open3d;
 
 // TODO: remove hard-coded path.
-const std::string TEST_DIR = "/home/yixing/repo/Open3D/examples/test_data";
+const std::string TEST_DIR =
+        utility::filesystem::GetUnixHome() + "/repo/Open3D/examples/test_data";
 
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
@@ -278,7 +280,8 @@ int main(int argc, char **argv) {
     if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
         utility::LogError(
                 "This example needs to be run from the <build>/bin/examples "
-                "directory");
+                "directory, test_dir: {}",
+                TEST_DIR);
     }
 
     // SingleObject();

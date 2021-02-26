@@ -30,6 +30,8 @@
 #include <memory>
 #include <string>
 
+#include "open3d/utility/FileSystem.h"
+
 namespace open3d {
 
 namespace geometry {
@@ -43,7 +45,8 @@ class WebRTCServer {
 public:
     WebRTCServer(const std::string& http_address = "localhost:8888",
                  const std::string& web_root =
-                         "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
+                         utility::filesystem::GetUnixHome() +
+                         "/repo/Open3D/cpp/open3d/visualization/"
                          "webrtc_server/html");
     void Run();
 

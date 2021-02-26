@@ -34,6 +34,8 @@ namespace open3d {
 namespace utility {
 namespace filesystem {
 
+std::string GetUnixHome();
+
 std::string GetFileExtensionInLowerCase(const std::string &filename);
 
 std::string GetFileNameWithoutExtension(const std::string &filename);
