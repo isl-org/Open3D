@@ -372,8 +372,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
     int bins_to_visit[8] = {hash, -1, -1, -1, -1, -1, -1, -1};
 
-    for (int dz = -1; dz <= 1; dz += 2)
-        for (int dy = -1; dy <= 1; dy += 2)
+    for (int dz = -1; dz <= 1; dz += 2) {
+        for (int dy = -1; dy <= 1; dy += 2) {
             for (int dx = -1; dx <= 1; dx += 2) {
                 Vec3<T> p = query_pos + radius * Vec3<T>(T(dx), T(dy), T(dz));
                 voxel_index = ComputeVoxelIndex(p, inv_voxel_size);
@@ -389,6 +389,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
                     }
                 }
             }
+        }
+    }
 
     for (int bin_i = 0; bin_i < 8; ++bin_i) {
         int bin = bins_to_visit[bin_i];
@@ -543,8 +545,8 @@ __global__ void WriteNeighborsHybridKernel(
 
     int bins_to_visit[8] = {hash, -1, -1, -1, -1, -1, -1, -1};
 
-    for (int dz = -1; dz <= 1; dz += 2)
-        for (int dy = -1; dy <= 1; dy += 2)
+    for (int dz = -1; dz <= 1; dz += 2) {
+        for (int dy = -1; dy <= 1; dy += 2) {
             for (int dx = -1; dx <= 1; dx += 2) {
                 Vec3<T> p = query_pos + radius * Vec3<T>(T(dx), T(dy), T(dz));
                 voxel_index = ComputeVoxelIndex(p, inv_voxel_size);
@@ -560,6 +562,8 @@ __global__ void WriteNeighborsHybridKernel(
                     }
                 }
             }
+        }
+    }
 
     int max_index;
     T max_value;
