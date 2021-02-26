@@ -43,8 +43,8 @@ public:
 
     core::Tensor Read() {
         {
-            std::lock_guard<std::mutex> lock(rgb_buffer_mutex);
-            return rgb_buffer_.Clone();
+            // std::lock_guard<std::mutex> lock(rgb_buffer_mutex);
+            return rgb_buffer_;
         }
     }
 
@@ -61,17 +61,17 @@ public:
 
 private:
     GlobalBuffer() {
-        t::geometry::Image im;
-        t::io::ReadImage(
-                "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
-                "webrtc_server/html/lena_color_640_480.jpg",
-                im);
-        rgb_buffer_ = im.AsTensor().Clone();
+        core::Tensor two_fifty_five =
+                core::Tensor::Ones({}, core::Dtype::UInt8) * 255;
+        rgb_buffer_ = core::Tensor::Zeros({480, 640, 3}, core::Dtype::UInt8);
+        rgb_buffer_.Slice(0, 0, 160, 1).Slice(2, 0, 1, 1) = two_fifty_five;
+        rgb_buffer_.Slice(0, 160, 320, 1).Slice(2, 1, 2, 1) = two_fifty_five;
+        rgb_buffer_.Slice(0, 320, 480, 1).Slice(2, 2, 3, 1) = two_fifty_five;
     }
 
     virtual ~GlobalBuffer() {}
 
-    core::Tensor rgb_buffer_;  // bgra
+    core::Tensor rgb_buffer_;
     std::mutex rgb_buffer_mutex;
 };
 

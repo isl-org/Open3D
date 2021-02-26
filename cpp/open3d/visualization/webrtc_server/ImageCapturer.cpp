@@ -48,15 +48,7 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-ImageReader::ImageReader() {
-    t::geometry::Image im;
-    t::io::ReadImage(
-            "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
-            "webrtc_server/html/lena_color_640_480.jpg",
-            im);
-
-    frame_ = im.AsTensor().Clone();
-}
+ImageReader::ImageReader() {}
 
 ImageReader::~ImageReader() {}
 
@@ -66,13 +58,7 @@ void ImageReader::Start(Callback* callback) {
 }
 
 void ImageReader::CaptureFrame() {
-    if (init_frame_count_ < 12) {
-        init_frame_count_++;
-        callback_->OnCaptureResult(frame_);
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    } else {
-        callback_->OnCaptureResult(GlobalBuffer::GetInstance().Read());
-    }
+    callback_->OnCaptureResult(GlobalBuffer::GetInstance().Read());
 }
 
 ImageCapturer::ImageCapturer(const std::string& url_,
@@ -135,12 +121,6 @@ void ImageCapturer::OnFrame(const core::Tensor& frame) {
     // e.g. ImageCapturer::OnFrame Tensor(shape={480, 640, 3}, dtype=UInt8)
     utility::LogInfo("ImageCapturer::OnFrame Tensor(shape={}, dtype={})",
                      frame.GetShape().ToString(), frame.GetDtype().ToString());
-
-    // core::Tensor frame_bgra =
-    //         core::Tensor::Zeros({480, 640, 4}, core::Dtype::UInt8);
-    // frame_bgra.Slice(2, 0, 1) = frame.Slice(2, 2, 3);
-    // frame_bgra.Slice(2, 1, 2) = frame.Slice(2, 1, 2);
-    // frame_bgra.Slice(2, 2, 3) = frame.Slice(2, 0, 1);
     OnCaptureResult(frame);
 }
 

@@ -67,10 +67,6 @@ public:
     void CaptureFrame();
 
     Callback* callback_ = nullptr;
-
-private:
-    core::Tensor frame_;
-    int init_frame_count_ = 0;
 };
 
 class ImageCapturer : public rtc::VideoSourceInterface<webrtc::VideoFrame>,
