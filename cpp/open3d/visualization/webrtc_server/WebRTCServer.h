@@ -41,9 +41,26 @@ class Image;
 namespace visualization {
 namespace webrtc_server {
 
+inline std::string GetEnvIP() {
+    if (const char* env_p = std::getenv("WEBRTC_IP")) {
+        return std::string(env_p);
+    } else {
+        return "localhost";
+    }
+}
+
+inline std::string GetEnvPort() {
+    if (const char* env_p = std::getenv("WEBRTC_PORT")) {
+        return std::string(env_p);
+    } else {
+        return "8888";
+    }
+}
+
 class WebRTCServer {
 public:
-    WebRTCServer(const std::string& http_address = "192.168.86.121:8888",
+    WebRTCServer(const std::string& http_address = GetEnvIP() + ":" +
+                                                   GetEnvPort(),
                  const std::string& web_root =
                          utility::filesystem::GetUnixHome() +
                          "/repo/Open3D/cpp/open3d/visualization/"
