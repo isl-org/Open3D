@@ -73,12 +73,7 @@ TEST_P(OdometryPermuteDevices, CreateVertexMap) {
 
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
             depth, intrinsic_t.To(device));
-    vertex_map.Save("vertex_map.npy");
-
-    io::WritePointCloud(
-            "vertex_map.ply",
-            t::geometry::PointCloud({{"points", vertex_map.View({-1, 3})}})
-                    .ToLegacyPointCloud());
+    vertex_map.Save(fmt::format("vertex_map_{}.npy", device.ToString()));
 }
 
 TEST_P(OdometryPermuteDevices, CreateNormalMap) {
@@ -107,19 +102,23 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
             depth, intrinsic_t.To(device));
 
     t::geometry::Image depth_filtered = depth.FilterBilateral(5, 50, 50);
-    depth_filtered.AsTensor().Save("depth_filtered.npy");
+    depth_filtered.AsTensor().Save(
+            fmt::format("depth_filtered_{}.npy", device.ToString()));
+
     core::Tensor vertex_map_filtered = t::pipelines::odometry::CreateVertexMap(
             depth_filtered, intrinsic_t.To(device));
-    vertex_map_filtered.Save("vertex_map_filtered.npy");
+    vertex_map_filtered.Save(
+            fmt::format("vertex_map_filtered_{}.npy", device.ToString()));
     core::Tensor normal_map =
             t::pipelines::odometry::CreateNormalMap(vertex_map_filtered);
-    normal_map.Save("normal_map.npy");
+    normal_map.Save(fmt::format("normal_map_{}.npy", device.ToString()));
 
-    io::WritePointCloud("vertex_map_w_normal.ply",
-                        t::geometry::PointCloud(
-                                {{"points", vertex_map_filtered.View({-1, 3})},
-                                 {"normals", normal_map}})
-                                .ToLegacyPointCloud());
+    io::WritePointCloud(
+            fmt::format("vertex_map_w_normal_{}.ply", device.ToString()),
+            t::geometry::PointCloud(
+                    {{"points", vertex_map_filtered.View({-1, 3})},
+                     {"normals", normal_map}})
+                    .ToLegacyPointCloud());
 }
 
 TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {

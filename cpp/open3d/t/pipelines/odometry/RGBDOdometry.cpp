@@ -73,7 +73,21 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vtx_map,
     kernel::odometry::ComputePosePointToPlane(
             source_vtx_map, target_vtx_map, source_normal_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
-    return pipelines::kernel::PoseToTransformation(se3_delta).Inverse();
+
+    core::Tensor T_delta_inv = pipelines::kernel::PoseToTransformation(
+            se3_delta.To(core::Dtype::Float32));
+    utility::LogInfo("T_delta_inv = {}", T_delta_inv.ToString());
+
+    core::Tensor R_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 0, 3);
+    utility::LogInfo("RTR = {}", R_inv.T().Matmul(R_inv).ToString());
+    core::Tensor t_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 3, 4);
+
+    core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float32);
+    T_delta.Slice(0, 0, 3).Slice(1, 0, 3) = R_inv.T();
+    T_delta.Slice(0, 0, 3).Slice(1, 3, 4) = R_inv.T().Matmul(t_inv).Neg();
+    T_delta[-1][-1] = 1;
+
+    return T_delta;
 }
 
 core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
@@ -92,7 +106,9 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     }
 
     core::Tensor intrinsics_d = intrinsics.To(device, true);
-    core::Tensor trans_d = init_source_to_target.To(device);
+
+    core::Device host("CPU:0");
+    core::Tensor trans_d = init_source_to_target.To(host);
     if (method == LossType::PointToPlane) {
         int64_t n = int64_t(iterations.size());
 
@@ -110,14 +126,13 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                     t::pipelines::odometry::CreateVertexMap(
                             src_depth, intrinsics_d, depth_factor);
 
-            t::geometry::Image src_depth_filtered =
-                    src_depth.FilterBilateral(5, 50, 50);
-            core::Tensor src_vertex_map_filtered =
-                    t::pipelines::odometry::CreateVertexMap(
-                            src_depth_filtered, intrinsics_d, depth_factor);
+            // t::geometry::Image src_depth_filtered =
+            //         src_depth.FilterBilateral(5, 50, 50);
+            // core::Tensor src_vertex_map_filtered =
+            //         t::pipelines::odometry::CreateVertexMap(
+            //                 src_depth_filtered, intrinsics_d, depth_factor);
             core::Tensor src_normal_map =
-                    t::pipelines::odometry::CreateNormalMap(
-                            src_vertex_map_filtered);
+                    t::pipelines::odometry::CreateNormalMap(src_vertex_map);
 
             core::Tensor dst_vertex_map =
                     t::pipelines::odometry::CreateVertexMap(
@@ -140,34 +155,25 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
         // Odometry
         for (int64_t i = 0; i < n; ++i) {
-            utility::LogInfo("level {}, intrinsics {}", i,
-                             intrinsic_matrices[i].ToString());
+            // utility::LogInfo("level {}, intrinsics {}", i,
+            //                  intrinsic_matrices[i].ToString());
 
+            // utility::LogInfo("src_vtx_maps[{}].sum = {}", i,
+            //                  src_vertex_maps[i].Sum({0, 1}).ToString());
+            // utility::LogInfo("dst_vtx_maps[{}].sum = {}", i,
+            //                  dst_vertex_maps[i].Sum({0, 1}).ToString());
+            // utility::LogInfo("src_normal_maps[{}].sum = {}", i,
+            //                  src_normal_maps[i].Sum({0, 1}).ToString());
             for (int iter = 0; iter < iterations[i]; ++iter) {
-                // auto source_pcd =
-                //         std::make_shared<open3d::geometry::PointCloud>(
-                //                 t::geometry::PointCloud(
-                //                         {{"points",
-                //                           src_vertex_maps[i].View({-1, 3})}})
-                //                         .Transform(trans_d)
-                //                         .ToLegacyPointCloud());
-                // source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-
-                // auto target_pcd =
-                //         std::make_shared<open3d::geometry::PointCloud>(
-                //                 t::geometry::PointCloud(
-                //                         {{"points",
-                //                           dst_vertex_maps[i].View({-1, 3})}})
-                //                         .ToLegacyPointCloud());
-                // target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
-                // visualization::DrawGeometries({source_pcd, target_pcd});
-
                 core::Tensor delta_src_to_dst =
                         t::pipelines::odometry::ComputePosePointToPlane(
                                 src_vertex_maps[i], dst_vertex_maps[i],
                                 src_normal_maps[i], intrinsic_matrices[i],
-                                trans_d, depth_diff);
+                                trans_d.To(device), depth_diff);
                 trans_d = delta_src_to_dst.Matmul(trans_d);
+                utility::LogInfo("T = {}", trans_d.ToString());
+                utility::LogInfo("TTT = {}",
+                                 trans_d.T().Matmul(trans_d).ToString());
             }
         }
     } else {

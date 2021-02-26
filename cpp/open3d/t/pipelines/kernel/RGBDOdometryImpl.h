@@ -69,11 +69,13 @@ void CreateVertexMapCPU
 
                 float d = *depth_indexer.GetDataPtrFromCoord<float>(x, y) /
                           depth_scale;
+
+                float* vertex = vertex_indexer.GetDataPtrFromCoord<float>(x, y);
                 if (d > 0 && d < depth_max) {
-                    float* vertex =
-                            vertex_indexer.GetDataPtrFromCoord<float>(x, y);
                     ti.Unproject(static_cast<float>(x), static_cast<float>(y),
                                  d, vertex + 0, vertex + 1, vertex + 2);
+                } else {
+                    vertex[0] = INFINITY;
                 }
             });
 }
@@ -118,6 +120,14 @@ void CreateNormalMapCPU
                             vertex_indexer.GetDataPtrFromCoord<float>(x + 1, y);
                     float* v01 =
                             vertex_indexer.GetDataPtrFromCoord<float>(x, y + 1);
+                    float* normal =
+                            normal_indexer.GetDataPtrFromCoord<float>(x, y);
+
+                    if (v00[0] == INFINITY || v10[0] == INFINITY ||
+                        v01[0] == INFINITY) {
+                        normal[0] = INFINITY;
+                        return;
+                    }
 
                     float dx0 = v01[0] - v00[0];
                     float dy0 = v01[1] - v00[1];
@@ -127,8 +137,6 @@ void CreateNormalMapCPU
                     float dy1 = v10[1] - v00[1];
                     float dz1 = v10[2] - v00[2];
 
-                    float* normal =
-                            normal_indexer.GetDataPtrFromCoord<float>(x, y);
                     normal[0] = dy0 * dz1 - dz0 * dy1;
                     normal[1] = dz0 * dx1 - dx0 * dz1;
                     normal[2] = dx0 * dy1 - dy0 * dx1;
@@ -136,11 +144,9 @@ void CreateNormalMapCPU
                     float normal_norm =
                             sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
                                  normal[2] * normal[2]);
-                    if (normal_norm > 1e-5) {
-                        normal[0] /= normal_norm;
-                        normal[1] /= normal_norm;
-                        normal[2] /= normal_norm;
-                    }
+                    normal[0] /= normal_norm;
+                    normal[1] /= normal_norm;
+                    normal[2] /= normal_norm;
                 }
             });
 }
@@ -178,6 +184,10 @@ void ComputePosePointToPlaneCPU
             core::Tensor::Zeros({6, 6}, core::Dtype::Float32, device);
     core::Tensor Atb = core::Tensor::Zeros({6}, core::Dtype::Float32, device);
 
+    core::Tensor inlier =
+            core::Tensor::Zeros({cols, rows}, core::Dtype::Int32, device);
+    t::geometry::kernel::NDArrayIndexer inlier_indexer(inlier, 2);
+
     core::Tensor count = core::Tensor::Zeros({}, core::Dtype::Int32, device);
     residual = core::Tensor::Zeros({}, core::Dtype::Float32, device);
 
@@ -197,27 +207,56 @@ void ComputePosePointToPlaneCPU
                 int64_t y = workload_idx / cols;
                 int64_t x = workload_idx % cols;
 
+                bool flag = (y == -1 && x == -1);
+                if (flag) {
+                    printf("Yes!\n");
+                }
                 float* dst_v =
                         target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+
+                if (flag) {
+                    printf("dst_v[%ld, %ld] = %f %f %f\n", x, y, dst_v[0],
+                           dst_v[1], dst_v[2]);
+                }
+
+                if (dst_v[0] == INFINITY) {
+                    return;
+                }
 
                 float T_dst_v[3], u, v;
                 ti.RigidTransform(dst_v[0], dst_v[1], dst_v[2], &T_dst_v[0],
                                   &T_dst_v[1], &T_dst_v[2]);
-
                 ti.Project(T_dst_v[0], T_dst_v[1], T_dst_v[2], &u, &v);
+                u = round(u);
+                v = round(v);
                 if (T_dst_v[2] < 0 || !source_vertex_indexer.InBoundary(u, v)) {
                     return;
                 }
 
+                int64_t ui = static_cast<int64_t>(u);
+                int64_t vi = static_cast<int64_t>(v);
                 float* src_v = source_vertex_indexer.GetDataPtrFromCoord<float>(
-                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                        ui, vi);
                 float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(
-                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                        ui, vi);
+                if (flag) {
+                    printf("src_v[%ld, %ld] = %f %f %f\n", ui, vi, src_v[0],
+                           src_v[1], src_v[2]);
+                    printf("src_n[%ld, %ld] = %f %f %f\n", ui, vi, src_n[0],
+                           src_n[1], src_n[2]);
+                }
+
+                if ((src_v[0] == INFINITY) || (src_n[0] == INFINITY)) {
+                    return;
+                }
 
                 float r = (T_dst_v[0] - src_v[0]) * src_n[0] +
                           (T_dst_v[1] - src_v[1]) * src_n[1] +
                           (T_dst_v[2] - src_v[2]) * src_n[2];
 
+                if (flag) {
+                    printf("%f\n", r);
+                }
                 if (abs(r) > depth_diff) return;
 
                 float J_ij[6];
@@ -227,10 +266,17 @@ void ComputePosePointToPlaneCPU
                 J_ij[3] = src_n[0];
                 J_ij[4] = src_n[1];
                 J_ij[5] = src_n[2];
-        // printf("(%ld %ld) -> (%f %f): residual = %f, J = (%f %f %f %f "
+                *inlier_indexer.GetDataPtrFromCoord<int>(x, y) = 1;
+
+        // printf("(%ld %ld) -> (%ld %ld): residual = %f, J = (%f %f %f
+        // "
+        //        "%f "
         //        "%f %f)\n",
-        //        x, y, u, v, r, J_ij[0], J_ij[1], J_ij[2], J_ij[3],
-        //        J_ij[4], J_ij[5]);
+        //        x, y, static_cast<int64_t>(u),
+        //        static_cast<int64_t>(v), r, J_ij[0], J_ij[1], J_ij[2],
+        //        J_ij[3], J_ij[4], J_ij[5]);
+        // printf("(%ld %ld) -> (%ld %ld): residual = %f\n", x, y,
+        //        static_cast<int64_t>(u), static_cast<int64_t>(v), r);
 
         // Not optimized; Switch to reduction if necessary.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -259,11 +305,24 @@ void ComputePosePointToPlaneCPU
 #endif
             });
 
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    cudaDeviceSynchronize();
+#endif
+
     utility::LogInfo("avg loss = {}, residual = {}, count = {}",
                      residual.Item<float>() / count.Item<int>(),
                      residual.Item<float>(), count.Item<int>());
 
-    delta = AtA.Solve(Atb.Neg());
+    core::Device host(core::Device("CPU:0"));
+    delta = AtA.To(host, core::Dtype::Float64)
+                    .Solve(Atb.Neg().To(host, core::Dtype::Float64));
+
+    utility::LogInfo("delta = {}", delta.ToString());
+
+    source_vertex_map.Save(fmt::format("source_vtx_{}.npy", device.ToString()));
+    target_vertex_map.Save(fmt::format("target_vtx_{}.npy", device.ToString()));
+    source_normal_map.Save(fmt::format("normal_vtx_{}.npy", device.ToString()));
+    inlier.Save(fmt::format("inlier_{}.npy", device.ToString()));
 }
 
 }  // namespace odometry
