@@ -84,7 +84,7 @@ ExternalProject_Add(
     ext_webrtc
     PREFIX webrtc
     DOWNLOAD_COMMAND rm -rf ext_webrtc
-    COMMAND cp -ar /home/yixing/repo/webrtc ext_webrtc
+    COMMAND cp -ar ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/args.gn
         <SOURCE_DIR>/src/out/${WEBRTC_BUILD}/args.gn
@@ -96,9 +96,9 @@ ExternalProject_Add(
 )
 
 ExternalProject_Add_Step(ext_webrtc build_obj
-    COMMAND export PATH=$PATH:/home/yixing/repo/depot_tools
-    COMMAND /home/yixing/repo/depot_tools/gn gen .
-    COMMAND /home/yixing/repo/depot_tools/ninja ${NINJA_TARGET}
+    COMMAND export PATH=$PATH:${PROJECT_SOURCE_DIR}/../depot_tools
+    COMMAND ${PROJECT_SOURCE_DIR}/../depot_tools/gn gen .
+    COMMAND ${PROJECT_SOURCE_DIR}/../depot_tools/ninja ${NINJA_TARGET}
     WORKING_DIRECTORY <SOURCE_DIR>/src/out/${WEBRTC_BUILD}
     DEPENDEES build
     DEPENDERS install
