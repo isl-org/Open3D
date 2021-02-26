@@ -48,9 +48,10 @@ struct WebRTCWindowSystem::Impl {
 WebRTCWindowSystem::WebRTCWindowSystem()
     : BitmapWindowSystem(
 #if !defined(__APPLE__) && !defined(_WIN32) && !defined(_WIN64)
-              BitmapWindowSystem::Rendering::NORMAL
-#else
               BitmapWindowSystem::Rendering::HEADLESS
+
+#else
+              BitmapWindowSystem::Rendering::NORMAL
 #endif
               ),
       impl_(new WebRTCWindowSystem::Impl()) {
