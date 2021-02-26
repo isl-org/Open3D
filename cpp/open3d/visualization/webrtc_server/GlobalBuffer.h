@@ -43,7 +43,7 @@ public:
 
     core::Tensor Read() {
         {
-            std::lock_guard<std::mutex> lock(is_new_frame_mutex);
+            // std::lock_guard<std::mutex> lock(is_new_frame_mutex);
             is_new_frame = false;
         }
         return rgb_buffer_;
@@ -56,7 +56,7 @@ public:
         rgb_buffer.AssertDevice(rgb_buffer_.GetDevice());
         rgb_buffer_.AsRvalue() = rgb_buffer;
         {
-            std::lock_guard<std::mutex> lock(is_new_frame_mutex);
+            // std::lock_guard<std::mutex> lock(is_new_frame_mutex);
             is_new_frame = true;
         }
     }
