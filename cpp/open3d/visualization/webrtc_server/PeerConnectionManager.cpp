@@ -314,25 +314,6 @@ PeerConnectionManager::~PeerConnectionManager() {}
 const Json::Value PeerConnectionManager::GetMediaList() {
     Json::Value value(Json::arrayValue);
 
-    // Windows, desktops.
-    const std::list<std::string> videoList =
-            CapturerFactory::GetVideoSourceList(publish_filter_);
-    for (auto video_source : videoList) {
-        Json::Value media;
-        // TODO: fix the hard-coded window name, or, don't use the window name.
-        media["video"] = video_source;
-        if (video_source == "window://Open3D") {
-            value.append(media);
-            std::cout << "Added media: "
-                      << Json::writeString(Json::StreamWriterBuilder(), media)
-                      << std::endl;
-        }
-        // value.append(media);
-        // std::cout << "Added media: "
-        //           << Json::writeString(Json::StreamWriterBuilder(), media)
-        //           << std::endl;
-    }
-
     Json::Value media;
     media["video"] = "image://Open3D";
     value.append(media);

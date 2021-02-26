@@ -38,10 +38,6 @@
 
 #include <regex>
 
-#ifdef USE_X11
-#include "open3d/visualization/webrtc_server/WindowCapturer.h"
-#endif
-
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 
 namespace open3d {
@@ -80,23 +76,6 @@ public:
             const std::regex& publish_filter) {
         std::list<std::string> videoList;
 
-#ifdef USE_X11
-        if (std::regex_match("window://", publish_filter)) {
-            std::unique_ptr<webrtc::DesktopCapturer> capturer =
-                    webrtc::DesktopCapturer::CreateWindowCapturer(
-                            webrtc::DesktopCaptureOptions::CreateDefault());
-            if (capturer) {
-                webrtc::DesktopCapturer::SourceList source_list;
-                if (capturer->GetSourceList(&source_list)) {
-                    for (auto source : source_list) {
-                        std::ostringstream os;
-                        os << "window://" << source.title;
-                        videoList.push_back(os.str());
-                    }
-                }
-            }
-        }
-#endif
         return videoList;
     }
 
@@ -109,9 +88,6 @@ public:
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
         if ((video_url.find("window://") == 0) &&
             (std::regex_match("window://", publish_filter))) {
-#ifdef USE_X11
-            video_source = TrackSource<WindowCapturer>::Create(video_url, opts);
-#endif
         } else if (video_url.find("image://") == 0) {
             video_source = TrackSource<ImageCapturer>::Create(video_url, opts);
         } else {

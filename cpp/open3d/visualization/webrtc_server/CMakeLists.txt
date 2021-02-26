@@ -5,7 +5,6 @@ add_custom_target(copy_html_dir
 
 set(WEBRTC_STREAMER_SRC
     ImageCapturer.cpp
-    DesktopCapturer.cpp
     HttpServerRequestHandler.cpp
     PeerConnectionManager.cpp
     WebRTCServer.cpp
@@ -25,7 +24,6 @@ target_include_directories(webrtc_server SYSTEM PRIVATE
 )
 target_compile_definitions(webrtc_server PRIVATE
     WEBRTC_POSIX
-    USE_X11                            # optional: X11 (desktop capture)
     OPENSSL_API_1_1                    # optional: civetweb
     _FILE_OFFSET_BITS=64               # optional: civetweb
     _LARGEFILE_SOURCE=1                # optional: civetweb
