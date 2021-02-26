@@ -43,19 +43,30 @@ public:
 
     core::Tensor Read() {
         {
-            // std::lock_guard<std::mutex> lock(rgb_buffer_mutex);
+            std::lock_guard<std::mutex> lock(is_new_frame_mutex);
+            is_new_frame = false;
             return rgb_buffer_;
         }
     }
 
     void Write(const core::Tensor& rgb_buffer) {
         {
-            std::lock_guard<std::mutex> lock(rgb_buffer_mutex);
+            std::lock_guard<std::mutex> lock(is_new_frame_mutex);
             rgb_buffer.AssertShape(
                     {rgb_buffer_.GetShape(0), rgb_buffer_.GetShape(1), 3});
             rgb_buffer.AssertDtype(rgb_buffer_.GetDtype());
             rgb_buffer.AssertDevice(rgb_buffer_.GetDevice());
             rgb_buffer_.AsRvalue() = rgb_buffer;
+            is_new_frame = true;
+        }
+    }
+
+    // TODO: use proper "producer-consumer" model with signaling.
+    // Currently we need a thread continuously pulling IsNewFrame() to read.
+    bool IsNewFrame() {
+        {
+            std::lock_guard<std::mutex> lock(is_new_frame_mutex);
+            return is_new_frame;
         }
     }
 
@@ -72,7 +83,8 @@ private:
     virtual ~GlobalBuffer() {}
 
     core::Tensor rgb_buffer_;
-    std::mutex rgb_buffer_mutex;
+    std::mutex is_new_frame_mutex;
+    bool is_new_frame = false;
 };
 
 }  // namespace webrtc_server
