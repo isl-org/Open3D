@@ -54,13 +54,6 @@ ImageReader::ImageReader() {
             "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
             "webrtc_server/html/lena_color_640_480.jpg",
             im);
-    // e.g. ImageReader initialized Tensor(shape={480, 640, 4}, dtype=UInt8)
-    // frame_ =
-    //         core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
-    //         im.GetDtype());
-    // frame_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
-    // frame_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
-    // frame_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
 
     frame_ = im.AsTensor().Clone();
 }
