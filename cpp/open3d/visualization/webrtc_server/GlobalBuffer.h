@@ -43,21 +43,19 @@ public:
 
     core::Tensor Read() {
         {
-            std::lock_guard<std::mutex> lock(bgra_buffer_mutex);
-            return bgra_buffer_.Clone();
+            std::lock_guard<std::mutex> lock(rgb_buffer_mutex);
+            return rgb_buffer_.Clone();
         }
     }
 
     void Write(const core::Tensor& rgb_buffer) {
         {
-            std::lock_guard<std::mutex> lock(bgra_buffer_mutex);
+            std::lock_guard<std::mutex> lock(rgb_buffer_mutex);
             rgb_buffer.AssertShape(
-                    {bgra_buffer_.GetShape(0), bgra_buffer_.GetShape(1), 3});
-            rgb_buffer.AssertDtype(bgra_buffer_.GetDtype());
-            rgb_buffer.AssertDevice(bgra_buffer_.GetDevice());
-            bgra_buffer_.Slice(2, 0, 1) = rgb_buffer.Slice(2, 2, 3);
-            bgra_buffer_.Slice(2, 1, 2) = rgb_buffer.Slice(2, 1, 2);
-            bgra_buffer_.Slice(2, 2, 3) = rgb_buffer.Slice(2, 0, 1);
+                    {rgb_buffer_.GetShape(0), rgb_buffer_.GetShape(1), 3});
+            rgb_buffer.AssertDtype(rgb_buffer_.GetDtype());
+            rgb_buffer.AssertDevice(rgb_buffer_.GetDevice());
+            rgb_buffer_.AsRvalue() = rgb_buffer;
         }
     }
 
@@ -68,17 +66,13 @@ private:
                 "/home/yixing/repo/Open3D/cpp/open3d/visualization/"
                 "webrtc_server/html/lena_color_640_480.jpg",
                 im);
-        bgra_buffer_ = core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
-                                           im.GetDtype());
-        bgra_buffer_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
-        bgra_buffer_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
-        bgra_buffer_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+        rgb_buffer_ = im.AsTensor().Clone();
     }
 
     virtual ~GlobalBuffer() {}
 
-    core::Tensor bgra_buffer_;  // bgra
-    std::mutex bgra_buffer_mutex;
+    core::Tensor rgb_buffer_;  // bgra
+    std::mutex rgb_buffer_mutex;
 };
 
 }  // namespace webrtc_server

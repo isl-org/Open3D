@@ -55,11 +55,14 @@ ImageReader::ImageReader() {
             "webrtc_server/html/lena_color_640_480.jpg",
             im);
     // e.g. ImageReader initialized Tensor(shape={480, 640, 4}, dtype=UInt8)
-    frame_ =
-            core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4}, im.GetDtype());
-    frame_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
-    frame_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
-    frame_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+    // frame_ =
+    //         core::Tensor::Zeros({im.GetRows(), im.GetCols(), 4},
+    //         im.GetDtype());
+    // frame_.Slice(2, 0, 1) = im.AsTensor().Slice(2, 2, 3);
+    // frame_.Slice(2, 1, 2) = im.AsTensor().Slice(2, 1, 2);
+    // frame_.Slice(2, 2, 3) = im.AsTensor().Slice(2, 0, 1);
+
+    frame_ = im.AsTensor().Clone();
 }
 
 ImageReader::~ImageReader() {}
@@ -140,12 +143,12 @@ void ImageCapturer::OnFrame(const core::Tensor& frame) {
     utility::LogInfo("ImageCapturer::OnFrame Tensor(shape={}, dtype={})",
                      frame.GetShape().ToString(), frame.GetDtype().ToString());
 
-    core::Tensor frame_bgra =
-            core::Tensor::Zeros({480, 640, 4}, core::Dtype::UInt8);
-    frame_bgra.Slice(2, 0, 1) = frame.Slice(2, 2, 3);
-    frame_bgra.Slice(2, 1, 2) = frame.Slice(2, 1, 2);
-    frame_bgra.Slice(2, 2, 3) = frame.Slice(2, 0, 1);
-    OnCaptureResult(frame_bgra);
+    // core::Tensor frame_bgra =
+    //         core::Tensor::Zeros({480, 640, 4}, core::Dtype::UInt8);
+    // frame_bgra.Slice(2, 0, 1) = frame.Slice(2, 2, 3);
+    // frame_bgra.Slice(2, 1, 2) = frame.Slice(2, 1, 2);
+    // frame_bgra.Slice(2, 2, 3) = frame.Slice(2, 0, 1);
+    OnCaptureResult(frame);
 }
 
 // Overide webrtc::DesktopCapturer::Callback.
@@ -168,7 +171,7 @@ void ImageCapturer::OnCaptureResult(const core::Tensor& frame) {
             i420_buffer->MutableDataU(), i420_buffer->StrideU(),
             i420_buffer->MutableDataV(), i420_buffer->StrideV(), 0, 0, width,
             height, i420_buffer->width(), i420_buffer->height(),
-            libyuv::kRotate0, ::libyuv::FOURCC_ARGB);
+            libyuv::kRotate0, ::libyuv::FOURCC_RAW);
 
     if (conversion_result >= 0) {
         webrtc::VideoFrame video_frame(i420_buffer,
