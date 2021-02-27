@@ -49,7 +49,8 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
                         const Eigen::Matrix4d& pose_ij);
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
-                            ControlGrid& ctr_grid);
+                            ControlGrid& ctr_grid,
+                            bool show_lines = true);
 
 void VisualizeWarp(const geometry::PointCloud& tpcd_param,
                    ControlGrid& ctr_grid);

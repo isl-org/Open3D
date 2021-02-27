@@ -29,6 +29,7 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/t/pipelines/slac/Visualization.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -55,11 +56,36 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(ControlGridPermuteDevices, Touch) {
     core::Device device = GetParam();
-    t::pipelines::slac::ControlGrid cgrid(0.2, 1000, device);
+    t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     t::geometry::PointCloud pcd = CreateTPCDFromFile(
             std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
     cgrid.Touch(pcd);
+
+    t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
+    t::pipelines::slac::VisualizePCDGridCorres(pcd_param, cgrid, false);
+    t::pipelines::slac::VisualizePCDGridCorres(pcd_param, cgrid, true);
+}
+
+TEST_P(ControlGridPermuteDevices, Warp) {
+    core::Device device = GetParam();
+    t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
+
+    t::geometry::PointCloud pcd = CreateTPCDFromFile(
+            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+    cgrid.Touch(pcd);
+    cgrid.Compactify();
+
+    t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
+
+    // int64_t n = cgrid.Size();
+    core::Tensor prev = cgrid.GetInitPositions();
+    core::Tensor curr = cgrid.GetCurrPositions();
+    curr[0][0] += 0.5;
+    curr[1][2] -= 0.5;
+    curr[2][1] += 0.5;
+
+    t::pipelines::slac::VisualizeWarp(pcd_param, cgrid);
 }
 
 }  // namespace tests

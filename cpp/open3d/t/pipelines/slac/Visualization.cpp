@@ -85,7 +85,8 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
 }
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
-                            ControlGrid& ctr_grid) {
+                            ControlGrid& ctr_grid,
+                            bool show_lines) {
     // Prepare all ctr grid point cloud for lineset
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_param.ToLegacyPointCloud());
@@ -94,9 +95,21 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
     auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_grid.ToLegacyPointCloud());
 
-    // Prepare n x 8 corres for visualization
+    // Prepare nb point cloud for visualization
     core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kAttrNbGridIdx)
                                   .To(core::Device("CPU:0"));
+    t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
+            {corres.View({-1}).To(core::Dtype::Int64)}));
+    auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_grid_nb.ToLegacyPointCloud());
+    pcd_grid_nb->PaintUniformColor({1, 0, 0});
+
+    if (!show_lines) {
+        visualization::DrawGeometries({pcd, pcd_grid_nb});
+        return;
+    }
+
+    // Prepare n x 8 corres for visualization
     std::vector<std::pair<int, int>> corres_lines;
     for (int64_t i = 0; i < corres.GetLength(); ++i) {
         for (int k = 0; k < 8; ++k) {
@@ -119,27 +132,40 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
         }
     }
 
-    // Prepare nb point cloud for visualization
-    t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
-            {corres.View({-1}).To(core::Dtype::Int64)}));
-    auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_grid_nb.ToLegacyPointCloud());
-    pcd_grid_nb->PaintUniformColor({1, 0, 0});
-
     visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
 }
 
 void VisualizeWarp(const geometry::PointCloud& tpcd_param,
                    ControlGrid& ctr_grid) {
+    t::geometry::PointCloud tpcd_init_grid(ctr_grid.GetInitPositions());
+    auto pcd_init_grid = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_init_grid.ToLegacyPointCloud());
+    pcd_init_grid->PaintUniformColor({0, 1, 0});
+
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_param.ToLegacyPointCloud());
-    pcd->PaintUniformColor({1, 0, 0});
+    pcd->PaintUniformColor({0, 1, 0});
+
+    t::geometry::PointCloud tpcd_curr_grid(ctr_grid.GetCurrPositions());
+    auto pcd_curr_grid = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_curr_grid.ToLegacyPointCloud());
+    pcd_curr_grid->PaintUniformColor({1, 0, 0});
 
     auto tpcd_warped = ctr_grid.Warp(tpcd_param);
     auto pcd_warped = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_warped.ToLegacyPointCloud());
-    pcd_warped->PaintUniformColor({0, 1, 0});
-    visualization::DrawGeometries({pcd, pcd_warped});
+    pcd_warped->PaintUniformColor({1, 0, 0});
+
+    std::vector<std::pair<int, int>> deform_lines;
+    for (size_t i = 0; i < pcd_init_grid->points_.size(); ++i) {
+        deform_lines.push_back(std::make_pair(i, i));
+    }
+    auto lineset =
+            open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                    *pcd_init_grid, *pcd_curr_grid, deform_lines);
+
+    visualization::DrawGeometries(
+            {pcd, pcd_init_grid, pcd_warped, pcd_curr_grid, lineset});
 }
 }  // namespace slac
 }  // namespace pipelines
