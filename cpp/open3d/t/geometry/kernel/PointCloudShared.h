@@ -159,7 +159,6 @@ void ProjectCPU
                     return;
                 }
 
-                // TODO: atomicMax for float
                 float* depth_ptr = depth_indexer.GetDataPtrFromCoord<float>(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
                 float d = zc * depth_scale;

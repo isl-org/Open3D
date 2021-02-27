@@ -51,17 +51,21 @@ public:
     static const std::string kAttrNbGridPointInterp;
     static const std::string kAttrNbGridNormalInterp;
 
+    /// Default constructor.
     ControlGrid() {}
+
+    /// Constructor with initial grid size and grid count estimation.
     ControlGrid(float grid_size,
                 int64_t grid_count = 1000,
                 const core::Device& device = core::Device("CPU:0"));
+
+    /// Constructor with known keys (Int32 x 3 positions) and values (Float32 x
+    /// 3 shifted positions).
     ControlGrid(float grid_size,
                 const core::Tensor& keys,
                 const core::Tensor& values,
                 const core::Device& device = core::Device("CPU:0"));
     ~ControlGrid() {}
-
-    int64_t Size() { return ctr_hashmap_->Size(); }
 
     /// Allocate control grids in the shared camera space.
     void Touch(const geometry::PointCloud& pcd);
@@ -70,7 +74,11 @@ public:
     /// a contiguous index map.
     void Compactify();
 
-    /// Return a 6-way neighbor grid map.
+    /// \return A 6-way neighbor grid map for all the active entries.
+    /// - addrs (N, ) Active indices in the buffer
+    /// - addrs_nb (N, 6) Neighbor indices (including non-allocated entries) for
+    /// the active entries.
+    /// - masks_nb (N, 6) corresponding neighbor masks.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
 
     /// Parameterize an input point cloud with the control grids via indexing
@@ -81,17 +89,10 @@ public:
     /// points.
     geometry::PointCloud Parameterize(const geometry::PointCloud& pcd);
 
-    /// Get control grid positions directly by buffer tensor indices.
-    core::Tensor GetInitPositions() {
-        return ctr_hashmap_->GetKeyTensor().To(core::Dtype::Float32) *
-               grid_size_;
-    }
-    core::Tensor GetCurrPositions() { return ctr_hashmap_->GetValueTensor(); }
-
-    /// Warp a point cloud using control grid.
+    /// Non-rigidly warp a point cloud using the control grid.
     geometry::PointCloud Warp(const geometry::PointCloud& pcd);
 
-    /// Warp a depth image by
+    /// Non-rigidly warp a depth image by
     /// - unprojecting the image to a point cloud;
     /// - warp the point cloud;
     /// - project the warped point cloud back to the image.
@@ -101,7 +102,18 @@ public:
                          float depth_scale,
                          float depth_max);
 
+    /// Get control grid original positions directly from tensor keys.
+    core::Tensor GetInitPositions() {
+        return ctr_hashmap_->GetKeyTensor().To(core::Dtype::Float32) *
+               grid_size_;
+    }
+
+    /// Get control grid shifted positions from tensor values (optimized
+    /// in-place).
+    core::Tensor GetCurrPositions() { return ctr_hashmap_->GetValueTensor(); }
+
     std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
+    int64_t Size() { return ctr_hashmap_->Size(); }
 
 private:
     float grid_size_;

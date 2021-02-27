@@ -41,7 +41,6 @@ ControlGrid::ControlGrid(float grid_size,
                          int64_t grid_count,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
-    // Maps a coordinate to its non-rigidly transformed coordinate
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
             grid_count, core::Dtype::Int32, core::Dtype::Float32,
             core::SizeVector{3}, core::SizeVector{3}, device);
@@ -55,6 +54,7 @@ ControlGrid::ControlGrid(float grid_size,
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
             keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
             core::SizeVector{3}, core::SizeVector{3}, device);
+
     core::Tensor addrs, masks;
     ctr_hashmap_->Insert(keys, values, addrs, masks);
 }
@@ -94,16 +94,16 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
 
 void ControlGrid::Compactify() {
     ctr_hashmap_->Rehash(ctr_hashmap_->Size());
+
     core::Tensor active_addrs;
     ctr_hashmap_->GetActiveIndices(active_addrs);
-
-    utility::LogInfo("active_addrs = {}", active_addrs.ToString());
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
 ControlGrid::GetNeighborGridMap() {
     core::Tensor active_addrs;
     ctr_hashmap_->GetActiveIndices(active_addrs);
+
     core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
     core::Tensor active_keys =
             ctr_hashmap_->GetKeyTensor().IndexGet({active_indices});
@@ -129,6 +129,7 @@ ControlGrid::GetNeighborGridMap() {
 
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
+
     return std::make_tuple(active_addrs, addrs_nb.View({6, n}).T().Contiguous(),
                            masks_nb.View({6, n}).T().Contiguous());
 }
@@ -186,7 +187,6 @@ geometry::PointCloud ControlGrid::Parameterize(
     }
 
     keys_nb = keys_nb.View({8 * n, 3});
-    // utility::LogInfo("{}", keys_nb.GetShape());
 
     core::Tensor addrs_nb, masks_nb;
     ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
@@ -196,14 +196,11 @@ geometry::PointCloud ControlGrid::Parameterize(
     // (n, 8)
     point_ratios_nb = point_ratios_nb.T().Contiguous();
 
+    /// TODO: allow entries with less than 8 neighbors, probably in a kernel.
+    /// Now we simply discard them and only accepts points with all 8 neighbors
+    /// in the control grid map.
     core::Tensor valid_mask =
             masks_nb.View({8, n}).To(core::Dtype::Int64).Sum({0}).Eq(8);
-
-    // if (valid_sum != 8 * n) {
-    //     utility::LogError("Unexpected invalid masks exist {} vs {}!",
-    //     valid_sum,
-    //                       8 * n);
-    // }
 
     geometry::PointCloud pcd_with_params = pcd;
     pcd_with_params.SetPoints(pcd.GetPoints().IndexGet({valid_mask}));
@@ -227,48 +224,42 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     if (!pcd.HasPointAttr(kAttrNbGridIdx) ||
         !pcd.HasPointAttr(kAttrNbGridPointInterp)) {
         utility::LogError(
-                "Please use ControlGrid.Parameterize to obtain neighbor "
-                "grids "
-                "before calling Warp");
+                "Please use ControlGrid.Parameterize to obtain attributes "
+                "regarding neighbor grids before calling Warp");
     }
 
     // N x 3
     core::Tensor grid_positions = ctr_hashmap_->GetValueTensor();
 
     // N x 8, we have ensured that every neighbor is valid through
-    // grid.Touch()
+    // grid.Parameterize
     core::Tensor nb_grid_indices =
             pcd.GetPointAttr(kAttrNbGridIdx).To(core::Dtype::Int64);
     core::Tensor nb_grid_positions =
             grid_positions.IndexGet({nb_grid_indices.View({-1})})
                     .View({-1, 8, 3});
-    // utility::LogInfo("{}, {}", nb_grid_indices.GetShape(),
-    //                  nb_grid_positions.GetShape());
 
-    // N x 8 x 3 => N x 3 position interpolation
+    // (N, 8, 3) x (N, 8, 1) => Reduce on dim 1 => (N, 3) position
+    // interpolation.
     core::Tensor nb_grid_point_interp =
             pcd.GetPointAttr(kAttrNbGridPointInterp);
     core::Tensor interp_positions =
             (nb_grid_positions * nb_grid_point_interp.View({-1, 8, 1}))
                     .Sum({1});
 
-    // utility::LogInfo("{}", interp_positions.GetShape());
+    geometry::PointCloud interp_pcd(interp_positions);
 
-    // N x 8 x 3 => N x 3 normal interpolation
-    core::Tensor interp_normals;
     if (pcd.HasPointNormals()) {
+        // (N, 8, 3) x (N, 8, 1) => Reduce on dim 1 => (N, 3) normal
+        // interpolation.
         core::Tensor nb_grid_normal_interp =
                 pcd.GetPointAttr(kAttrNbGridNormalInterp);
-        interp_normals =
+        core::Tensor interp_normals =
                 (nb_grid_positions * nb_grid_normal_interp.View({-1, 8, 1}))
                         .Sum({1});
         core::Tensor interp_normals_len =
                 (interp_normals * interp_normals).Sum({1}).Sqrt();
         interp_normals = interp_normals / interp_normals_len.View({-1, 1});
-    }
-
-    geometry::PointCloud interp_pcd(interp_positions);
-    if (pcd.HasPointNormals()) {
         interp_pcd.SetPointNormals(interp_normals);
     }
     return interp_pcd;
@@ -279,18 +270,11 @@ geometry::Image ControlGrid::Warp(const geometry::Image& depth,
                                   const core::Tensor& extrinsics,
                                   float depth_scale,
                                   float depth_max) {
-    utility::LogInfo("Create pcd from depth");
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max);
 
-    utility::LogInfo("Parameterize");
     geometry::PointCloud pcd_param = Parameterize(pcd);
-
-    utility::LogInfo("Warp");
     geometry::PointCloud pcd_warped = Warp(pcd_param);
-    utility::LogInfo("{}", pcd_warped.GetPoints().GetLength());
-
-    utility::LogInfo("Project");
     return geometry::Image(pcd_warped
                                    .Project(depth.GetCols(), depth.GetRows(),
                                             intrinsics, extrinsics, depth_scale,
