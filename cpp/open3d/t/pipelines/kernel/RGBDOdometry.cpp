@@ -59,20 +59,14 @@ void CreateVertexMap(const core::Tensor &depth_map,
     }
 }
 
-void CreateNormalMap(const core::Tensor &vertex_map,
-                     core::Tensor &normal_map,
-                     float depth_scale,
-                     float depth_max,
-                     float depth_diff) {
+void CreateNormalMap(const core::Tensor &vertex_map, core::Tensor &normal_map) {
     core::Device device = vertex_map.GetDevice();
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
-        CreateNormalMapCPU(vertex_map, normal_map, depth_scale, depth_max,
-                           depth_diff);
+        CreateNormalMapCPU(vertex_map, normal_map);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CreateNormalMapCUDA(vertex_map, normal_map, depth_scale, depth_max,
-                            depth_diff);
+        CreateNormalMapCUDA(vertex_map, normal_map);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

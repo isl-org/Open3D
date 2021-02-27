@@ -40,11 +40,7 @@ void CreateVertexMap(const core::Tensor &depth_map,
                      float depth_scale,
                      float depth_max);
 
-void CreateNormalMap(const core::Tensor &vertex_map,
-                     core::Tensor &normal_map,
-                     float depth_scale,
-                     float depth_max,
-                     float depth_diff);
+void CreateNormalMap(const core::Tensor &vertex_map, core::Tensor &normal_map);
 
 void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
                              const core::Tensor &target_vertex_map,
@@ -62,10 +58,7 @@ void CreateVertexMapCPU(const core::Tensor &depth_map,
                         float depth_max);
 
 void CreateNormalMapCPU(const core::Tensor &vertex_map,
-                        core::Tensor &normal_map,
-                        float depth_scale,
-                        float depth_max,
-                        float depth_diff);
+                        core::Tensor &normal_map);
 
 void ComputePosePointToPlaneCPU(const core::Tensor &source_vertex_map,
                                 const core::Tensor &source_normal_map,
@@ -84,10 +77,7 @@ void CreateVertexMapCUDA(const core::Tensor &depth_map,
                          float depth_max);
 
 void CreateNormalMapCUDA(const core::Tensor &vertex_map,
-                         core::Tensor &normal_map,
-                         float depth_scale,
-                         float depth_max,
-                         float depth_diff);
+                         core::Tensor &normal_map);
 
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_vertex_map,
                                  const core::Tensor &source_normal_map,

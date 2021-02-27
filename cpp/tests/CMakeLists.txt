@@ -83,7 +83,7 @@ set(UNIT_TEST_SOURCE_FILES
     pipelines/odometry/OdometryOption.cpp
     t/io/PointCloudIO.cpp
     t/io/ImageIO.cpp
-    t/pipelines/odometry/Odometry.cpp
+    t/pipelines/odometry/RGBDOdometry.cpp
     t/pipelines/registration/Registration.cpp
     t/pipelines/registration/TransformationEstimation.cpp
     t/pipelines/TransformationConverter.cpp

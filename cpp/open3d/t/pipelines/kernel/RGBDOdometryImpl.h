@@ -85,11 +85,7 @@ void CreateNormalMapCUDA
 #else
 void CreateNormalMapCPU
 #endif
-        (const core::Tensor& vertex_map,
-         core::Tensor& normal_map,
-         float depth_scale,
-         float depth_max,
-         float depth_diff) {
+        (const core::Tensor& vertex_map, core::Tensor& normal_map) {
 
     t::geometry::kernel::NDArrayIndexer vertex_indexer(vertex_map, 2);
 
@@ -184,10 +180,6 @@ void ComputePosePointToPlaneCPU
             core::Tensor::Zeros({6, 6}, core::Dtype::Float32, device);
     core::Tensor Atb = core::Tensor::Zeros({6}, core::Dtype::Float32, device);
 
-    core::Tensor inlier =
-            core::Tensor::Zeros({cols, rows}, core::Dtype::Int32, device);
-    t::geometry::kernel::NDArrayIndexer inlier_indexer(inlier, 2);
-
     core::Tensor count = core::Tensor::Zeros({}, core::Dtype::Int32, device);
     residual = core::Tensor::Zeros({}, core::Dtype::Float32, device);
 
@@ -207,18 +199,8 @@ void ComputePosePointToPlaneCPU
                 int64_t y = workload_idx / cols;
                 int64_t x = workload_idx % cols;
 
-                bool flag = (y == -1 && x == -1);
-                if (flag) {
-                    printf("Yes!\n");
-                }
                 float* dst_v =
                         target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-
-                if (flag) {
-                    printf("dst_v[%ld, %ld] = %f %f %f\n", x, y, dst_v[0],
-                           dst_v[1], dst_v[2]);
-                }
-
                 if (dst_v[0] == INFINITY) {
                     return;
                 }
@@ -239,25 +221,16 @@ void ComputePosePointToPlaneCPU
                         ui, vi);
                 float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(
                         ui, vi);
-                if (flag) {
-                    printf("src_v[%ld, %ld] = %f %f %f\n", ui, vi, src_v[0],
-                           src_v[1], src_v[2]);
-                    printf("src_n[%ld, %ld] = %f %f %f\n", ui, vi, src_n[0],
-                           src_n[1], src_n[2]);
-                }
-
-                if ((src_v[0] == INFINITY) || (src_n[0] == INFINITY)) {
+                if (src_v[0] == INFINITY || src_n[0] == INFINITY) {
                     return;
                 }
 
                 float r = (T_dst_v[0] - src_v[0]) * src_n[0] +
                           (T_dst_v[1] - src_v[1]) * src_n[1] +
                           (T_dst_v[2] - src_v[2]) * src_n[2];
-
-                if (flag) {
-                    printf("%f\n", r);
+                if (abs(r) > depth_diff) {
+                    return;
                 }
-                if (abs(r) > depth_diff) return;
 
                 float J_ij[6];
                 J_ij[0] = -T_dst_v[2] * src_n[1] + T_dst_v[1] * src_n[2];
@@ -266,20 +239,9 @@ void ComputePosePointToPlaneCPU
                 J_ij[3] = src_n[0];
                 J_ij[4] = src_n[1];
                 J_ij[5] = src_n[2];
-                *inlier_indexer.GetDataPtrFromCoord<int>(x, y) = 1;
 
-        // printf("(%ld %ld) -> (%ld %ld): residual = %f, J = (%f %f %f
-        // "
-        //        "%f "
-        //        "%f %f)\n",
-        //        x, y, static_cast<int64_t>(u),
-        //        static_cast<int64_t>(v), r, J_ij[0], J_ij[1], J_ij[2],
-        //        J_ij[3], J_ij[4], J_ij[5]);
-        // printf("(%ld %ld) -> (%ld %ld): residual = %f\n", x, y,
-        //        static_cast<int64_t>(u), static_cast<int64_t>(v), r);
-
-        // Not optimized; Switch to reduction if necessary.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+                // TODO: Not optimized; Switch to reduction.
                 for (int i_local = 0; i_local < 6; ++i_local) {
                     for (int j_local = 0; j_local < 6; ++j_local) {
                         atomicAdd(&AtA_local_ptr[i_local * 6 + j_local],
@@ -305,24 +267,14 @@ void ComputePosePointToPlaneCPU
 #endif
             });
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    cudaDeviceSynchronize();
-#endif
+    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
+                      residual.Item<float>() / count.Item<int>(),
+                      residual.Item<float>(), count.Item<int>());
 
-    utility::LogInfo("avg loss = {}, residual = {}, count = {}",
-                     residual.Item<float>() / count.Item<int>(),
-                     residual.Item<float>(), count.Item<int>());
-
+    // Solve on CPU with double to ensure precision.
     core::Device host(core::Device("CPU:0"));
     delta = AtA.To(host, core::Dtype::Float64)
                     .Solve(Atb.Neg().To(host, core::Dtype::Float64));
-
-    utility::LogInfo("delta = {}", delta.ToString());
-
-    source_vertex_map.Save(fmt::format("source_vtx_{}.npy", device.ToString()));
-    target_vertex_map.Save(fmt::format("target_vtx_{}.npy", device.ToString()));
-    source_normal_map.Save(fmt::format("normal_vtx_{}.npy", device.ToString()));
-    inlier.Save(fmt::format("inlier_{}.npy", device.ToString()));
 }
 
 }  // namespace odometry

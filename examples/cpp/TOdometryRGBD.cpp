@@ -44,6 +44,7 @@ void PrintHelp() {
 
 int main(int argc, char **argv) {
     using namespace open3d;
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         argc < 3) {
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
     visualization::DrawGeometries({source_pcd, target_pcd});
 
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 4});
+            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3});
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(
