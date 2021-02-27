@@ -77,7 +77,15 @@ TEST_P(OdometryPermuteDevices, CreateVertexMap) {
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
             depth, intrinsic_t.To(device));
-    vertex_map.Save(fmt::format("vertex_map_{}.npy", device.ToString()));
+    core::Tensor vertex_map_gt =
+            core::Tensor::Load(std::string(TEST_DATA_DIR) + "/vertex_map.npy");
+
+    // AllClose doesn't work for inf, but two vtx maps are strictly equivalent.
+    int64_t sum = vertex_map.Eq(vertex_map_gt.To(device))
+                          .To(core::Dtype::Int64)
+                          .Sum({0, 1, 2})
+                          .Item<int64_t>();
+    EXPECT_EQ(sum, vertex_map.NumElements());
 }
 
 TEST_P(OdometryPermuteDevices, CreateNormalMap) {
@@ -95,7 +103,12 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
             depth, intrinsic_t.To(device));
     core::Tensor normal_map =
             t::pipelines::odometry::CreateNormalMap(vertex_map);
-    normal_map.Save(fmt::format("normal_map_{}.npy", device.ToString()));
+    core::Tensor normal_map_gt =
+            core::Tensor::Load(std::string(TEST_DATA_DIR) + "/normal_map.npy");
+
+    // AllClose doesn't work for inf, so we ignore the 1st dimension.
+    EXPECT_TRUE(normal_map.Slice(2, 1, 3).AllClose(
+            normal_map_gt.Slice(2, 1, 3).To(device)));
 }
 
 TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
@@ -127,13 +140,38 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
 
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 20; ++i) {
         core::Tensor delta_src_to_dst =
                 t::pipelines::odometry::ComputePosePointToPlane(
                         src_vertex_map, dst_vertex_map, src_normal_map,
                         intrinsic_t, trans.To(device), depth_diff);
         trans = delta_src_to_dst.Matmul(trans);
     }
+
+    core::Device host("CPU:0");
+    core::Tensor T0(
+            std::vector<double>{-0.2739592186924325, 0.021819345900466677,
+                                -0.9614937663021573, -0.31057997014702826,
+                                8.33962904204855e-19, -0.9997426093226981,
+                                -0.02268733357278151, 0.5730122438481298,
+                                -0.9617413095492113, -0.006215404179813816,
+                                0.27388870414358013, 2.1264800183565487, 0.0,
+                                0.0, 0.0, 1.0},
+            {4, 4}, core::Dtype::Float64, host);
+    core::Tensor T2(
+            std::vector<double>{-0.26535185454036697, 0.04522708142999141,
+                                -0.9630902888085378, -0.3097373196756845,
+                                1.6706953334814538e-18, -0.9988991819470762,
+                                -0.046908680491589354, 0.6204495589484211,
+                                -0.9641516443443884, -0.012447305362484767,
+                                0.2650597504285121, 2.1247894438735306, 0.0,
+                                0.0, 0.0, 1.0},
+            {4, 4}, core::Dtype::Float64, host);
+
+    core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
+            trans.To(host, core::Dtype::Float64).Inverse());
+    core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
+    EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 3e-4);
 }
 
 TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
@@ -158,6 +196,31 @@ TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
             core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_factor, depth_diff, {10, 5, 3});
+
+    core::Device host("CPU:0");
+    core::Tensor T0(
+            std::vector<double>{-0.2739592186924325, 0.021819345900466677,
+                                -0.9614937663021573, -0.31057997014702826,
+                                8.33962904204855e-19, -0.9997426093226981,
+                                -0.02268733357278151, 0.5730122438481298,
+                                -0.9617413095492113, -0.006215404179813816,
+                                0.27388870414358013, 2.1264800183565487, 0.0,
+                                0.0, 0.0, 1.0},
+            {4, 4}, core::Dtype::Float64, host);
+    core::Tensor T2(
+            std::vector<double>{-0.26535185454036697, 0.04522708142999141,
+                                -0.9630902888085378, -0.3097373196756845,
+                                1.6706953334814538e-18, -0.9988991819470762,
+                                -0.046908680491589354, 0.6204495589484211,
+                                -0.9641516443443884, -0.012447305362484767,
+                                0.2650597504285121, 2.1247894438735306, 0.0,
+                                0.0, 0.0, 1.0},
+            {4, 4}, core::Dtype::Float64, host);
+
+    core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
+            trans.To(host, core::Dtype::Float64).Inverse());
+    core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
+    EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
 
 }  // namespace tests
