@@ -47,41 +47,37 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> rotation_vec{1, 0, 0, 0, 1, 0, 0, 0, 1};
-    core::Tensor rotation(rotation_vec, {3, 3}, dtype, device);
+    core::Dtype dtype[2];
+    dtype[0] = core::Dtype::Float32;
+    dtype[1] = core::Dtype::Float64;
 
-    std::vector<float> translation_vec{0, 0, 0};
-    core::Tensor translation(translation_vec, {3}, dtype, device);
+    for (int i = 0; i < 2; i++) {
+        core::Tensor rotation = core::Tensor::Eye(3, dtype[i], device);
+        core::Tensor translation = core::Tensor::Zeros({3}, dtype[i], device);
+        core::Tensor transformation_ =
+                t::pipelines::kernel::RtToTransformation(rotation, translation);
 
-    std::vector<float> transformation_vec{1, 0, 0, 0, 0, 1, 0, 0,
-                                          0, 0, 1, 0, 0, 0, 0, 1};
-    core::Tensor transformation(transformation_vec, {4, 4}, dtype, device);
-
-    core::Tensor transformation_ =
-            t::pipelines::kernel::RtToTransformation(rotation, translation);
-
-    EXPECT_EQ(transformation.ToFlatVector<float>(),
-              transformation_.ToFlatVector<float>());
+        core::Tensor transformation = core::Tensor::Eye(4, dtype[i], device);
+        EXPECT_TRUE(transformation_.AllClose(transformation));
+    }
 }
 
 TEST_P(TransformationConverterPermuteDevices, PoseToTransformation) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> pose_vec{0, 0, 0, 0, 0, 0};
-    core::Tensor pose(pose_vec, {6}, dtype, device);
+    core::Dtype dtype[2];
+    dtype[0] = core::Dtype::Float32;
+    dtype[1] = core::Dtype::Float64;
 
-    std::vector<float> transformation_vec{1, 0, 0, 0, 0, 1, 0, 0,
-                                          0, 0, 1, 0, 0, 0, 0, 1};
-    core::Tensor transformation(transformation_vec, {4, 4}, dtype, device);
+    for (int i = 0; i < 2; i++) {
+        core::Tensor pose = core::Tensor::Zeros({6}, dtype[i], device);
+        core::Tensor transformation_ =
+                t::pipelines::kernel::PoseToTransformation(pose);
 
-    core::Tensor transformation_ =
-            t::pipelines::kernel::PoseToTransformation(pose);
-
-    EXPECT_EQ(transformation.ToFlatVector<float>(),
-              transformation_.ToFlatVector<float>());
+        core::Tensor transformation = core::Tensor::Eye(4, dtype[i], device);
+        EXPECT_TRUE(transformation_.AllClose(transformation));
+    }
 }
 
 }  // namespace tests

@@ -33,10 +33,10 @@ namespace core {
 
 #define DISPATCH_FLOAT32_FLOAT64_DTYPE(DTYPE, ...)       \
     [&] {                                                \
-        if (DTYPE == Dtype::Float32) {                   \
+        if (DTYPE == core::Dtype::Float32) {             \
             using scalar_t = float;                      \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == Dtype::Float64) {            \
+        } else if (DTYPE == core::Dtype::Float64) {      \
             using scalar_t = double;                     \
             return __VA_ARGS__();                        \
         } else {                                         \
