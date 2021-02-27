@@ -148,13 +148,17 @@ public:
                                         int knn) const override;
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, const Tensor &radii) const override;
+            const Tensor &query_points,
+            const Tensor &radii,
+            bool sort = true) const override;
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, double radius) const override;
+            const Tensor &query_points,
+            double radius,
+            bool sort = true) const override;
 
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                           float radius,
+                                           double radius,
                                            int max_knn) const override;
 
 protected:

@@ -499,16 +499,14 @@ endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
 # jsoncpp: always compile from source to avoid ABI issues.
-build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
-    SOURCES
-        json_reader.cpp
-        json_value.cpp
-        json_writer.cpp
-    INCLUDE_DIRS
-        include/
+include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
+import_3rdparty_library(3rdparty_jsoncpp
+    INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
+    LIB_DIR      ${JSONCPP_LIB_DIR}
+    LIBRARIES    ${JSONCPP_LIBRARIES}
 )
-target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
 set(JSONCPP_TARGET "3rdparty_jsoncpp")
+add_dependencies(3rdparty_jsoncpp ext_jsoncpp)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JSONCPP_TARGET}")
 
 # liblzf
@@ -542,20 +540,42 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
 # librealsense SDK
 if (BUILD_LIBREALSENSE)
-    include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
-    import_3rdparty_library(3rdparty_librealsense
-        INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
-        LIBRARIES    ${LIBREALSENSE_LIBRARIES}
-        LIB_DIR      ${LIBREALSENSE_LIB_DIR}
-    )
-    add_dependencies(3rdparty_librealsense ext_librealsense)
-    set(LIBREALSENSE_TARGET "3rdparty_librealsense")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
-
-    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
-        find_library(UDEV_LIBRARY udev REQUIRED
-            DOC "Library provided by the deb package libudev-dev")
-        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+    if(USE_SYSTEM_LIBREALSENSE AND NOT GLIBCXX_USE_CXX11_ABI)
+        # Turn off USE_SYSTEM_LIBREALSENSE.
+        # Because it is affected by libraries built with different CXX ABIs.
+        # See details: https://github.com/intel-isl/Open3D/pull/2876
+        message(STATUS "Set USE_SYSTEM_LIBREALSENSE=OFF, because GLIBCXX_USE_CXX11_ABI is OFF.")
+        set(USE_SYSTEM_LIBREALSENSE OFF)
+    endif()
+    if(USE_SYSTEM_LIBREALSENSE)
+        find_package(realsense2)
+        if(TARGET realsense2::realsense2)
+            message(STATUS "Using installed third-party library librealsense")
+            if(NOT BUILD_SHARED_LIBS)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
+            endif()
+            set(LIBREALSENSE_TARGET  "realsense2::realsense2")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+        else()
+            message(STATUS "Unable to find installed third-party library librealsense")
+            set(USE_SYSTEM_LIBREALSENSE OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_LIBREALSENSE)
+        include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+        import_3rdparty_library(3rdparty_librealsense
+            INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
+            LIBRARIES    ${LIBREALSENSE_LIBRARIES}
+            LIB_DIR      ${LIBREALSENSE_LIB_DIR}
+        )
+        add_dependencies(3rdparty_librealsense ext_librealsense)
+        set(LIBREALSENSE_TARGET "3rdparty_librealsense")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+        if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+            find_library(UDEV_LIBRARY udev REQUIRED
+                DOC "Library provided by the deb package libudev-dev")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+        endif()
     endif()
 endif()
 
@@ -1019,6 +1039,11 @@ set(TBB_TARGET "3rdparty_tbb")
 add_dependencies(3rdparty_tbb ext_tbb)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
 
+# parallelstl
+build_3rdparty_library(3rdparty_parallelstl DIRECTORY parallelstl INCLUDE_DIRS include/ INCLUDE_ALL)
+set(PARALLELSTL_TARGET "3rdparty_parallelstl")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PARALLELSTL_TARGET}")
+
 if(USE_BLAS)
     # Try to locate system BLAS/LAPACK
     find_package(BLAS)
@@ -1118,3 +1143,44 @@ if (WITH_FAISS)
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
+
+# NPP
+if (BUILD_CUDA_MODULE)
+    # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
+    foreach(NPPLIB nppc nppi npp nppicc nppif nppig nppim nppial)
+        list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
+    endforeach()
+    add_library(3rdparty_CUDA_NPP INTERFACE)
+    target_link_libraries(3rdparty_CUDA_NPP INTERFACE ${CUDA_NPP_LIBRARIES})
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS 3rdparty_CUDA_NPP EXPORT ${PROJECT_NAME}Targets)
+    endif()
+    set(CUDA_NPP_TARGET 3rdparty_CUDA_NPP)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${CUDA_NPP_TARGET})
+endif ()
+
+# IPP
+if (WITH_IPPICV)
+    # Ref: https://stackoverflow.com/a/45125525
+    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
+        set(WITH_IPPICV OFF)
+        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    else ()
+        include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
+        if (WITH_IPPICV)
+            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
+            import_3rdparty_library(3rdparty_ippicv
+                INCLUDE_DIRS "${IPPICV_INCLUDE_DIR}"
+                LIBRARIES     ${IPPICV_LIBRARIES}
+                LIB_DIR      "${IPPICV_LIB_DIR}"
+                )
+            add_dependencies(3rdparty_ippicv ext_ippicv)
+            target_compile_definitions(3rdparty_ippicv INTERFACE
+                ${IPPICV_DEFINITIONS})
+            set(IPPICV_TARGET "3rdparty_ippicv")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IPPICV_TARGET}")
+        endif()
+    endif()
+endif ()

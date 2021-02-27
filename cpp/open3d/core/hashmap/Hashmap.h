@@ -30,6 +30,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
+#pragma once
 namespace open3d {
 namespace core {
 
@@ -141,6 +142,10 @@ public:
 
     /// Return size / bucket_count.
     float LoadFactor() const;
+
+    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() const {
+        return device_hashmap_;
+    }
 
 protected:
     void AssertKeyDtype(const Dtype& dtype_key,

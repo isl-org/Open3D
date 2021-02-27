@@ -163,9 +163,16 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height) {
-    PythonUnlocker unlocker;
     return Application::GetInstance().RenderToImage(
-            unlocker, scene->GetView(), scene->GetScene(), width, height);
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
+}
+
+std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height) {
+    return Application::GetInstance().RenderToDepthImage(
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
@@ -380,7 +387,9 @@ void pybind_gui_classes(py::module &m) {
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
             .def("show", &PyWindow::Show, "Shows or hides the window")
-            .def("close", &PyWindow::Close, "Closes the window and destroys it")
+            .def("close", &PyWindow::Close,
+                 "Closes the window and destroys it, unless an on_close "
+                 "callback cancels the close.")
             .def("set_needs_layout", &PyWindow::SetNeedsLayout,
                  "Flags window to re-layout")
             .def("post_redraw", &PyWindow::PostRedraw,
@@ -399,6 +408,11 @@ void pybind_gui_classes(py::module &m) {
                  "and must return True if a redraw is needed (that is, if "
                  "any widget has changed in any fashion) or False if nothing "
                  "has changed")
+            .def("set_on_close", &PyWindow::SetOnClose,
+                 "Sets a callback that will be called when the window is "
+                 "closed. The callback is given no arguments and should return "
+                 "True to continue closing the window or False to cancel the "
+                 "close")
             .def(
                     "set_on_layout",
                     [](PyWindow *w, std::function<void(const Theme &)> f) {
@@ -779,8 +793,13 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Label3D ----
     py::class_<Label3D> label3d(m, "Label3D", "Displays text in a 3D scene");
-    label3d.def_property("text", &Label3D::GetText, &Label3D::SetText,
-                         "The text to display with this label.")
+    label3d.def(py::init([](const char *text = "",
+                            const Eigen::Vector3f &pos = {0.f, 0.f, 0.f}) {
+                    return new Label3D(pos, text);
+                }),
+                "Create a 3D Label with given text and position")
+            .def_property("text", &Label3D::GetText, &Label3D::SetText,
+                          "The text to display with this label.")
             .def_property("position", &Label3D::GetPosition,
                           &Label3D::SetPosition,
                           "The position of the text in 3D coordinates")
@@ -957,6 +976,8 @@ void pybind_gui_classes(py::module &m) {
             }),
             py::none(), py::none(), "");
     scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
+            .value("ROTATE_CAMERA_SPHERE",
+                   SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
             .value("FLY", SceneWidget::Controls::FLY)
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
@@ -982,6 +1003,10 @@ void pybind_gui_classes(py::module &m) {
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, "
                  "center_of_rotation)")
+            .def("look_at", &PySceneWidget::LookAt,
+                 "look_at(center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("set_on_mouse", &PySceneWidget::SetOnMouse,
                  "Sets a callback for mouse events. This callback is passed "
                  "a MouseEvent object. The callback must return "

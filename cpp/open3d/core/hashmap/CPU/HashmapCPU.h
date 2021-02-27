@@ -75,6 +75,11 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
+    std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
+    GetContext() const {
+        return impl_;
+    }
+
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
             impl_;
@@ -225,8 +230,7 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
 
         InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                   static_cast<bool*>(output_masks.GetDataPtr()),
-                   iterator_count);
+                   output_masks.GetDataPtr<bool>(), iterator_count);
     }
 
     impl_->rehash(buckets);

@@ -215,6 +215,18 @@ void GuiSettingsModel::SetShowAxes(bool show) {
     NotifyChanged();
 }
 
+bool GuiSettingsModel::GetShowGround() const { return show_ground_; }
+void GuiSettingsModel::SetShowGround(bool show) {
+    show_ground_ = show;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
+void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
+    sun_follows_cam_ = follow;
+    NotifyChanged();
+}
+
 const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const {
     return bg_color_;
 }

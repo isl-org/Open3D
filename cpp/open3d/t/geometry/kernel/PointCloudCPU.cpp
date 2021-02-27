@@ -25,4 +25,4 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/t/geometry/kernel/PointCloudShared.h"
+#include "open3d/t/geometry/kernel/PointCloudImpl.h"

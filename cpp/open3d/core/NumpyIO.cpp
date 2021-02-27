@@ -80,6 +80,7 @@ static char DtypeToChar(const Dtype& dtype) {
     // '?': object
     if (dtype == Dtype::Float32) return 'f';
     if (dtype == Dtype::Float64) return 'f';
+    if (dtype == Dtype::Int16) return 'i';
     if (dtype == Dtype::Int32) return 'i';
     if (dtype == Dtype::Int64) return 'i';
     if (dtype == Dtype::UInt8) return 'u';
@@ -253,6 +254,8 @@ Dtype NumpyArray::GetDtype() const {
         dtype = Dtype::Float32;
     } else if (type_ == 'f' && word_size_ == 8) {
         dtype = Dtype::Float64;
+    } else if (type_ == 'i' && word_size_ == 2) {
+        dtype = Dtype::Int16;
     } else if (type_ == 'i' && word_size_ == 4) {
         dtype = Dtype::Int32;
     } else if (type_ == 'i' && word_size_ == 8) {

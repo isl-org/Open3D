@@ -61,13 +61,30 @@ static const std::unordered_map<std::string, std::string>
                  "channels == 3; for grayscale image, channels == 1. channels "
                  "must be greater than 0."},
                 {"dtype", "Data type of the image."},
-                {"device", "Device where the image is stored."}};
+                {"device", "Device where the image is stored."},
+                {"scale",
+                 "First multiply image pixel values with this factor. "
+                 "This should be positive for unsigned dtypes."},
+                {"offset", "Then add this factor to all image pixel values."},
+                {"kernel_size", "Kernel size for filters and dilations."},
+                {"value_sigma", "Standard deviation for the image content."},
+                {"distance_sigma",
+                 "Standard deviation for the image pixel positions."}};
 
 void pybind_image(py::module &m) {
     py::class_<Image, PyGeometry<Image>, Geometry> image(
             m, "Image", py::buffer_protocol(),
             "The Image class stores image with customizable rols, cols, "
             "channels, dtype and device.");
+
+    py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
+            .value("Nearest", Image::InterpType::Nearest)
+            .value("Linear", Image::InterpType::Linear)
+            .value("Cubic", Image::InterpType::Cubic)
+            .value("Lanczos", Image::InterpType::Lanczos)
+            .value("Super", Image::InterpType::Super)
+            .export_values();
+
     // Constructors
     image.def(py::init<int64_t, int64_t, int64_t, core::Dtype, core::Device>(),
               "Row-major storage is used, similar to OpenCV. Use (row, col, "
@@ -109,9 +126,89 @@ void pybind_image(py::module &m) {
                  "Compute min 2D coordinates for the data (always {0, 0}).")
             .def("get_max_bound", &Image::GetMaxBound,
                  "Compute max 2D coordinates for the data ({rows, cols}).")
+            .def("linear_transform", &Image::LinearTransform,
+                 "Function to linearly transform pixel intensities in place: "
+                 "image = scale * image + offset.",
+                 "scale"_a = 1.0, "offset"_a = 0.0)
+            .def("dilate", &Image::Dilate,
+                 "Return a new image after performing morphological dilation. "
+                 "Supported datatypes are UInt8, UInt16 and Float32 with "
+                 "{1, 3, 4} channels. An 8-connected neighborhood is used to "
+                 "create the dilation mask.",
+                 "kernel_size"_a = 3)
+            .def("filter", &Image::Filter,
+                 "Return a new image after filtering with the given kernel.",
+                 "kernel"_a)
+            .def("filter_gaussian", &Image::FilterGaussian,
+                 "Return a new image after Gaussian filtering."
+                 "Possible kernel_size: odd numbers >= 3 are supported.",
+                 "kernel_size"_a = 3, "sigma"_a = 1.0)
+            .def("filter_bilateral", &Image::FilterBilateral,
+                 "Return a new image after bilateral filtering."
+                 "Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:"
+                 "CPU uses a round kernel (radius = floor(kernel_size / 2)),"
+                 "while CUDA uses a square kernel (width = kernel_size)."
+                 "Make sure to tune parameters accordingly.",
+                 "kernel_size"_a = 3, "value_sigma"_a = 20.0,
+                 "dist_sigma"_a = 10.0)
+            .def("filter_sobel", &Image::FilterSobel,
+                 "Return a pair of new gradient images (dx, dy) after Sobel "
+                 "filtering."
+                 "Possible kernel_size: 3 and 5.",
+                 "kernel_size"_a = 3)
+            .def("resize", &Image::Resize,
+                 "Return a new image after resizing with specified "
+                 "interpolation type. Downsample if sampling rate is < 1. "
+                 "Upsample if sampling rate > 1. Aspect ratio is always "
+                 "kept.",
+                 "sampling_rate"_a = 0.5,
+                 "interp_type"_a = Image::InterpType::Nearest)
+            .def("pyrdown", &Image::PyrDown,
+                 "Return a new downsampled image with pyramid downsampling "
+                 "formed by a"
+                 "chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a"
+                 "resize (ratio = 0.5) operation.")
+            .def("rgb_to_gray", &Image::RGBToGray,
+                 "Converts a 3-channel RGB image to a new 1-channel Grayscale "
+                 "image by I = 0.299 * R + 0.587 * G + 0.114 * B.")
             .def("__repr__", &Image::ToString);
+    docstring::ClassMethodDocInject(m, "Image", "linear_transform",
+                                    map_shared_argument_docstrings);
+
+    // Device transfers.
+    image.def("to",
+              py::overload_cast<const core::Device &, bool>(&Image::To,
+                                                            py::const_),
+              "Transfer the Image to a specified device.", "device"_a,
+              "copy"_a = false);
+    image.def("clone", &Image::Clone,
+              "Returns a copy of the Image on the same device.");
+    image.def("cpu", &Image::CPU,
+              "Transfer the Image to CPU. If the Image is "
+              "already on CPU, no copy will be performed.");
+    image.def(
+            "cuda", &Image::CUDA,
+            "Transfer the Image to a CUDA device. If the Image is "
+            "already on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
 
     // Conversion.
+    image.def("to",
+              py::overload_cast<core::Dtype, bool, utility::optional<double>,
+                                double>(&Image::To, py::const_),
+              "Returns an Image with the specified Dtype.", "dtype"_a,
+              "scale"_a = py::none(), "offset"_a = 0.0, "copy"_a = false);
+    docstring::ClassMethodDocInject(
+            m, "Image", "to",
+            {{"dtype", "The targeted dtype to convert to."},
+             {"scale",
+              "Optional scale value. This is 1./255 for UInt8 -> Float{32,64}, "
+              "1./65535 for UInt16 -> Float{32,64} and 1 otherwise"},
+             {"offset", "Optional shift value. Default 0."},
+             {"copy",
+              "If true, a new tensor is always created; if false, the copy is "
+              "avoided when the original tensor already has the targeted "
+              "dtype."}});
     image.def("to_legacy_image", &Image::ToLegacyImage,
               "Convert to legacy Image type.");
     image.def_static("from_legacy_image", &Image::FromLegacyImage,

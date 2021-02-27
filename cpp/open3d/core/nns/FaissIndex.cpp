@@ -88,7 +88,7 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     } else {
         index.reset(new faiss::IndexFlatL2(dimension));
     }
-    float *_data_ptr = static_cast<float *>(dataset_points_.GetDataPtr());
+    float *_data_ptr = dataset_points_.GetDataPtr<float>();
     index->add(dataset_size, _data_ptr);
     return true;
 }
@@ -109,7 +109,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     int64_t num_query_points = query_points.GetShape()[0];
     knn = std::min(knn, (int)GetDatasetSize());
 
-    auto *data_ptr = static_cast<const float *>(query_points.GetDataPtr());
+    auto *data_ptr = query_points.GetDataPtr<float>();
 
     Tensor indices = Tensor::Empty({num_query_points * knn}, Dtype::Int64,
                                    dataset_points_.GetDevice());
@@ -117,8 +117,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                      dataset_points_.GetDevice());
 
     index->search(num_query_points, data_ptr, knn,
-                  static_cast<float *>(distances.GetDataPtr()),
-                  static_cast<int64_t *>(indices.GetDataPtr()));
+                  distances.GetDataPtr<float>(), indices.GetDataPtr<int64_t>());
 
     indices = indices.Reshape({num_query_points, knn});
     distances = distances.Reshape({num_query_points, knn});
@@ -126,7 +125,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
-                                                   float radius,
+                                                   double radius,
                                                    int max_knn) const {
     // Check dtype.
     query_points.AssertDtype(Dtype::Float32);

@@ -37,8 +37,9 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import test_data_dir
 
 
+# @pytest.mark.skipif(not hasattr(o3d.t.io, 'RSBagReader'))
 @pytest.mark.skip(reason="Hangs in Github Actions, but succeeds locally")
-def test_RSBagReader(suspend_capture):
+def test_RSBagReader():
 
     shutil.unpack_archive(test_data_dir +
                           "/RGBD/other_formats/L515_test_s.bag.tar.xz")
@@ -101,4 +102,27 @@ def test_RSBagReader(suspend_capture):
     }.issubset(os.listdir('L515_test_s/color'))
 
     shutil.rmtree("L515_test_s")
-    # shutil.rmtree("L515_test_s.bag")  # Permission error in Windows
+    # os.remove("L515_test_s.bag")  # Permission error in Windows
+
+
+# Test recording from a RealSense camera, if one is connected
+@pytest.mark.skipif(not hasattr(o3d.t.io, 'RealSenseSensor'),
+                    reason="Not built with librealsense")
+def test_RealSenseSensor():
+
+    o3d.t.io.RealSenseSensor.list_devices()
+    rs_cam = o3d.t.io.RealSenseSensor()
+    bag_filename = "test_record.bag"
+    try:
+        rs_cam.init_sensor(o3d.t.io.RealSenseSensorConfig(), 0, bag_filename)
+        rs_cam.start_capture(True)  # true: start recording with capture
+        im_rgbd = rs_cam.capture_frame(True,
+                                       True)  # wait for frames and align them
+        assert im_rgbd.depth.rows == im_rgbd.color.rows
+        assert im_rgbd.depth.columns == im_rgbd.color.columns
+        rs_cam.stop_capture()
+        assert os.path.exists(bag_filename)
+        os.remove(bag_filename)
+    except RuntimeError as err:
+        assert "Invalid RealSense camera configuration, or camera not connected" in str(
+            err)
