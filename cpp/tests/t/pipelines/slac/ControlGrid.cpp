@@ -24,15 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/t/pipelines/slac/ControlGrid.h"
+
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/pipelines/registration/Registration.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/t/pipelines/registration/Registration.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
+
+t::geometry::PointCloud CreateTPCDFromFile(
+        const std::string& fname,
+        const core::Device& device = core::Device("CPU:0")) {
+    auto pcd = io::CreatePointCloudFromFile(fname);
+    return t::geometry::PointCloud::FromLegacyPointCloud(
+            *pcd, core::Dtype::Float32, device);
+}
 
 class ControlGridPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(ControlGrid,
@@ -45,6 +53,14 @@ INSTANTIATE_TEST_SUITE_P(
         ControlGridPermuteDevicePairs,
         testing::ValuesIn(ControlGridPermuteDevicePairs::TestCases()));
 
-TEST_P(ControlGridPermuteDevices, Initialize) {
+TEST_P(ControlGridPermuteDevices, Touch) {
     core::Device device = GetParam();
+    t::pipelines::slac::ControlGrid cgrid(0.2, 1000, device);
+
+    t::geometry::PointCloud pcd = CreateTPCDFromFile(
+            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+    cgrid.Touch(pcd);
 }
+
+}  // namespace tests
+}  // namespace open3d

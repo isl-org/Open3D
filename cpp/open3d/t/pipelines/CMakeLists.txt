@@ -7,6 +7,7 @@ set(REGISTRATION_SRC
 set (SLAC_SRC
     slac/ControlGrid.cpp
     slac/SLACOptimizer.cpp
+    slac/Visualization.cpp
 )
 
 set(KERNEL_SRC

@@ -85,6 +85,7 @@ set(UNIT_TEST_SOURCE_FILES
     t/io/ImageIO.cpp
     t/pipelines/registration/Registration.cpp
     t/pipelines/registration/TransformationEstimation.cpp
+    t/pipelines/slac/ControlGrid.cpp
     t/pipelines/TransformationConverter.cpp
     t/geometry/PointCloud.cpp
     t/geometry/TriangleMesh.cpp

@@ -24,50 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <string>
-#include <vector>
+#pragma once
 
+#include "open3d/core/EigenConverter.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/PoseGraph.h"
+#include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/t/pipelines/slac/ControlGrid.h"
-#include "open3d/t/pipelines/slac/Visualization.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace slac {
 
-using PoseGraph = open3d::pipelines::registration::PoseGraph;
+t::geometry::PointCloud CreateTPCDFromFile(
+        const std::string& fname,
+        const core::Device& device = core::Device("CPU:0"));
 
-struct SLACOptimizerOption {
-    int max_iterations_ = 10;
-    float voxel_size_ = 0.05;
-    float regularizor_coeff_ = 0.02;
-    bool correspondence_debug_ = false;
-    bool grid_debug_ = false;
-    std::string device_ = "CPU:0";
-    std::string buffer_folder_ = "";
+void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
+                        t::geometry::PointCloud& tpcd_param_j,
+                        const Eigen::Matrix4d& pose_ij);
 
-    std::string GetSubfolderName() const {
-        if (voxel_size_ < 0) {
-            return fmt::format("{}/original", buffer_folder_);
-        }
-        return fmt::format("{}/{:.3f}", buffer_folder_, voxel_size_);
-    }
-};
+void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
+                            ControlGrid& ctr_grid);
 
-/// Simultaneous Localization and Calibration: Self-Calibration of Consumer
-/// Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
-/// Estimate a shared control grid for all fragments for scene reconstruction,
-/// implemented in https://github.com/qianyizh/ElasticReconstruction.
-std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
-        const std::vector<std::string>& fragment_fnames,
-        const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerOption& option);
-
-PoseGraph RunRigidOptimizerForFragments(
-        const std::vector<std::string>& fragment_fnames,
-        const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerOption& option);
+void VisualizeWarp(const geometry::PointCloud& tpcd_param,
+                   ControlGrid& ctr_grid);
 
 }  // namespace slac
 }  // namespace pipelines
