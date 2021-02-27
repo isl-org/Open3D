@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
+
 #include "core/CoreTest.h"
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/core/Tensor.h"
@@ -31,7 +33,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
@@ -49,6 +50,20 @@ INSTANTIATE_TEST_SUITE_P(
         OdometryPermuteDevicePairs,
         testing::ValuesIn(OdometryPermuteDevicePairs::TestCases()));
 
+core::Tensor CreateIntrisicTensor() {
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+    return core::Tensor(
+            std::vector<float>({static_cast<float>(focal_length.first), 0,
+                                static_cast<float>(principal_point.first), 0,
+                                static_cast<float>(focal_length.second),
+                                static_cast<float>(principal_point.second), 0,
+                                0, 1}),
+            {3, 3}, core::Dtype::Float32);
+}
+
 TEST_P(OdometryPermuteDevices, CreateVertexMap) {
     core::Device device = GetParam();
 
@@ -59,18 +74,7 @@ TEST_P(OdometryPermuteDevices, CreateVertexMap) {
             t::geometry::Image::FromLegacyImage(*depth_legacy, device);
     depth = depth.To(core::Dtype::Float32, false, 1.0);
 
-    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
-            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
-    auto focal_length = intrinsic.GetFocalLength();
-    auto principal_point = intrinsic.GetPrincipalPoint();
-    core::Tensor intrinsic_t = core::Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, core::Dtype::Float32);
-
+    core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
             depth, intrinsic_t.To(device));
     vertex_map.Save(fmt::format("vertex_map_{}.npy", device.ToString()));
@@ -86,54 +90,24 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
             t::geometry::Image::FromLegacyImage(*depth_legacy, device);
     depth = depth.To(core::Dtype::Float32, false, 1.0);
 
-    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
-            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
-    auto focal_length = intrinsic.GetFocalLength();
-    auto principal_point = intrinsic.GetPrincipalPoint();
-    core::Tensor intrinsic_t = core::Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, core::Dtype::Float32);
-
+    core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
             depth, intrinsic_t.To(device));
-
-    t::geometry::Image depth_filtered = depth.FilterBilateral(5, 50, 50);
-    depth_filtered.AsTensor().Save(
-            fmt::format("depth_filtered_{}.npy", device.ToString()));
-
-    core::Tensor vertex_map_filtered = t::pipelines::odometry::CreateVertexMap(
-            depth_filtered, intrinsic_t.To(device));
-    vertex_map_filtered.Save(
-            fmt::format("vertex_map_filtered_{}.npy", device.ToString()));
     core::Tensor normal_map =
-            t::pipelines::odometry::CreateNormalMap(vertex_map_filtered);
+            t::pipelines::odometry::CreateNormalMap(vertex_map);
     normal_map.Save(fmt::format("normal_map_{}.npy", device.ToString()));
-
-    io::WritePointCloud(
-            fmt::format("vertex_map_w_normal_{}.ply", device.ToString()),
-            t::geometry::PointCloud(
-                    {{"points", vertex_map_filtered.View({-1, 3})},
-                     {"normals", normal_map}})
-                    .ToLegacyPointCloud());
 }
 
 TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     core::Device device = GetParam();
 
-    // std::string test_dir =
-    // "/home/wei/Workspace/data/open3d/stanford/copyroom";
-    std::string test_dir =
-            "/home/wei/Workspace/data/tum/objslam/"
-            "rgbd_dataset_freiburg3_long_office_household";
-    float depth_factor = 5000;
-    auto src_depth_legacy =
-            io::CreateImageFromFile(std::string(test_dir) + "/depth/0280.png");
-    auto dst_depth_legacy =
-            io::CreateImageFromFile(std::string(test_dir) + "/depth/0290.png");
+    float depth_factor = 1000.0;
+    float depth_diff = 0.07;
+
+    auto src_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/depth/00000.png");
+    auto dst_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/depth/00002.png");
 
     t::geometry::Image src_depth =
             t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
@@ -142,73 +116,36 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
             t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
     dst_depth = dst_depth.To(core::Dtype::Float32, false, 1.0);
 
-    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
-            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
-    auto focal_length = intrinsic.GetFocalLength();
-    auto principal_point = intrinsic.GetPrincipalPoint();
-    core::Tensor intrinsic_t = core::Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, core::Dtype::Float32);
-
+    core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
             src_depth, intrinsic_t.To(device), depth_factor);
-
-    t::geometry::Image src_depth_filtered =
-            src_depth.FilterBilateral(5, 50, 50);
-    core::Tensor src_vertex_map_filtered =
-            t::pipelines::odometry::CreateVertexMap(
-                    src_depth_filtered, intrinsic_t.To(device), depth_factor);
     core::Tensor src_normal_map =
-            t::pipelines::odometry::CreateNormalMap(src_vertex_map_filtered);
+            t::pipelines::odometry::CreateNormalMap(src_vertex_map);
 
     core::Tensor dst_vertex_map = t::pipelines::odometry::CreateVertexMap(
             dst_depth, intrinsic_t.To(device), depth_factor);
 
-    utility::LogInfo("Odometry starts");
-    auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud({{"points", src_vertex_map.View({-1, 3})}})
-                    .ToLegacyPointCloud());
-    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud({{"points", dst_vertex_map.View({-1, 3})}})
-                    .ToLegacyPointCloud());
-    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
-    // visualization::DrawGeometries({source_pcd, target_pcd});
-
-    core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float32, device);
+    core::Tensor trans =
+            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
     for (int i = 0; i < 10; ++i) {
         core::Tensor delta_src_to_dst =
                 t::pipelines::odometry::ComputePosePointToPlane(
                         src_vertex_map, dst_vertex_map, src_normal_map,
-                        intrinsic_t, trans, 0.07);
+                        intrinsic_t, trans.To(device), depth_diff);
         trans = delta_src_to_dst.Matmul(trans);
     }
-
-    source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud({{"points", src_vertex_map.View({-1, 3})}})
-                    .Transform(trans)
-                    .ToLegacyPointCloud());
-    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    // visualization::DrawGeometries({source_pcd, target_pcd});
 }
 
 TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
     core::Device device = GetParam();
 
-    // std::string test_dir =
-    // "/home/wei/Workspace/data/open3d/stanford/copyroom";
-    std::string test_dir =
-            "/home/wei/Workspace/data/tum/objslam/"
-            "rgbd_dataset_freiburg3_long_office_household";
-    float depth_scale = 5000;
-    auto src_depth_legacy =
-            io::CreateImageFromFile(std::string(test_dir) + "/depth/0280.png");
-    auto dst_depth_legacy =
-            io::CreateImageFromFile(std::string(test_dir) + "/depth/0290.png");
+    float depth_factor = 1000.0;
+    float depth_diff = 0.07;
+
+    auto src_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/depth/00000.png");
+    auto dst_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/depth/00002.png");
 
     t::geometry::RGBDImage src, dst;
     src.depth_ = t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
@@ -216,48 +153,11 @@ TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
     dst.depth_ = t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
     dst.depth_ = dst.depth_.To(core::Dtype::Float32, false, 1.0);
 
-    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
-            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
-    auto focal_length = intrinsic.GetFocalLength();
-    auto principal_point = intrinsic.GetPrincipalPoint();
-    core::Tensor intrinsic_t = core::Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, core::Dtype::Float32);
-
-    core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float32, device);
-
-    auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    src.depth_, intrinsic_t, trans, depth_scale)
-                    .ToLegacyPointCloud());
-    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    dst.depth_, intrinsic_t, trans, depth_scale)
-                    .ToLegacyPointCloud());
-    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
-    // visualization::DrawGeometries({source_pcd, target_pcd});
-
+    core::Tensor intrinsic_t = CreateIntrisicTensor();
+    core::Tensor trans =
+            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, 0.07, {10, 5, 3});
-
-    source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    src.depth_, intrinsic_t, trans.Inverse(), depth_scale)
-                    .ToLegacyPointCloud());
-    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    dst.depth_, intrinsic_t,
-                    core::Tensor::Eye(4, core::Dtype::Float32, device),
-                    depth_scale)
-                    .ToLegacyPointCloud());
-    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
-    // visualization::DrawGeometries({source_pcd, target_pcd});
+            src, dst, intrinsic_t, trans, depth_factor, depth_diff, {10, 5, 3});
 }
 
 }  // namespace tests
