@@ -66,6 +66,10 @@ core::Tensor CreateIntrisicTensor() {
 
 TEST_P(OdometryPermuteDevices, CreateVertexMap) {
     core::Device device = GetParam();
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {
+        return;
+    }
 
     auto depth_legacy =
             io::CreateImageFromFile(std::string(TEST_DATA_DIR) + "/depth.png");
@@ -90,6 +94,10 @@ TEST_P(OdometryPermuteDevices, CreateVertexMap) {
 
 TEST_P(OdometryPermuteDevices, CreateNormalMap) {
     core::Device device = GetParam();
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {
+        return;
+    }
 
     auto depth_legacy =
             io::CreateImageFromFile(std::string(TEST_DATA_DIR) + "/depth.png");
@@ -113,6 +121,10 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
 
 TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     core::Device device = GetParam();
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {
+        return;
+    }
 
     float depth_factor = 1000.0;
     float depth_diff = 0.07;
@@ -176,6 +188,10 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
 
 TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
     core::Device device = GetParam();
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {
+        return;
+    }
 
     float depth_factor = 1000.0;
     float depth_diff = 0.07;
