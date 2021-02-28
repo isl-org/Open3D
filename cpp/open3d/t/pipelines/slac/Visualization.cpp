@@ -167,6 +167,54 @@ void VisualizeWarp(const geometry::PointCloud& tpcd_param,
     visualization::DrawGeometries(
             {pcd, pcd_init_grid, pcd_warped, pcd_curr_grid, lineset});
 }
+
+void VisualizeRegularizor(ControlGrid& cgrid) {
+    core::Tensor indices, indices_nb, masks_nb;
+    std::tie(indices, indices_nb, masks_nb) = cgrid.GetNeighborGridMap();
+
+    core::Device host("CPU:0");
+    indices = indices.To(host);
+    indices_nb = indices_nb.To(host);
+    masks_nb = masks_nb.To(host);
+
+    int64_t n = cgrid.Size();
+    core::Tensor prev = cgrid.GetInitPositions().Slice(0, 0, n);
+    core::Tensor curr = cgrid.GetCurrPositions().Slice(0, 0, n);
+
+    t::geometry::PointCloud tpcd_init_grid(prev);
+    auto pcd_init_grid = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_init_grid.ToLegacyPointCloud());
+    pcd_init_grid->PaintUniformColor({0, 1, 0});
+
+    t::geometry::PointCloud tpcd_curr_grid(curr);
+    auto pcd_curr_grid = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_curr_grid.ToLegacyPointCloud());
+    pcd_curr_grid->PaintUniformColor({1, 0, 0});
+
+    std::vector<std::pair<int, int>> nb_lines;
+    for (int64_t i = 0; i < indices.GetLength(); ++i) {
+        for (int j = 0; j < 6; ++j) {
+            if (masks_nb[i][j].Item<bool>()) {
+                nb_lines.push_back(std::make_pair(
+                        indices[i].Item<int>(), indices_nb[i][j].Item<int>()));
+            }
+        }
+    }
+
+    {
+        auto lineset =
+                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                        *pcd_init_grid, *pcd_init_grid, nb_lines);
+        visualization::DrawGeometries({pcd_init_grid, lineset});
+    }
+
+    {
+        auto lineset =
+                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                        *pcd_curr_grid, *pcd_curr_grid, nb_lines);
+        visualization::DrawGeometries({pcd_curr_grid, lineset});
+    }
+}
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

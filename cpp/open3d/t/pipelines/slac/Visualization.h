@@ -55,6 +55,7 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
 void VisualizeWarp(const geometry::PointCloud& tpcd_param,
                    ControlGrid& ctr_grid);
 
+void VisualizeRegularizor(ControlGrid& cgrid);
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

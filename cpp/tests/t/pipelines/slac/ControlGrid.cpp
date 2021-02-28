@@ -88,5 +88,22 @@ TEST_P(ControlGridPermuteDevices, Warp) {
     t::pipelines::slac::VisualizeWarp(pcd_param, cgrid);
 }
 
+TEST_P(ControlGridPermuteDevices, Regularizor) {
+    core::Device device = GetParam();
+    t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
+
+    t::geometry::PointCloud pcd = CreateTPCDFromFile(
+            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+    cgrid.Touch(pcd);
+    cgrid.Compactify();
+    core::Tensor prev = cgrid.GetInitPositions();
+    core::Tensor curr = cgrid.GetCurrPositions();
+    curr[0][0] += 0.2;
+    curr[1][2] -= 0.2;
+    curr[2][1] += 0.2;
+
+    t::pipelines::slac::VisualizeRegularizor(cgrid);
+}
+
 }  // namespace tests
 }  // namespace open3d
