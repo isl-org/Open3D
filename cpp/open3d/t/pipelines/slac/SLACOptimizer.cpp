@@ -42,46 +42,79 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
-/// Write point clouds after downsampling and normal estimation for
-/// correspondence check.
+using PointCloud = open3d::geometry::PointCloud;
+using TPointCloud = t::geometry::PointCloud;
+
+/// Decoupled functions
+std::shared_ptr<PointCloud> PreprocessPointCloud(
+        std::shared_ptr<PointCloud>& pcd, float voxel_size) {
+    if (voxel_size > 0) {
+        auto pcd_down = pcd->VoxelDownSample(voxel_size);
+        pcd_down->RemoveStatisticalOutliers(20, 2.0);
+        pcd_down->EstimateNormals();
+        return pcd_down;
+    } else {
+        pcd->RemoveStatisticalOutliers(20, 2.0);
+        if (!pcd->HasNormals()) {
+            pcd->EstimateNormals();
+        }
+        return pcd;
+    }
+}
+
+core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
+                                       TPointCloud& tpcd_j,
+                                       const core::Tensor& T_ij,
+                                       float threshold) {
+    // Obtain correspondence via nns
+    auto result = t::pipelines::registration::EvaluateRegistration(
+            tpcd_i, tpcd_j, threshold, T_ij);
+
+    // Make correspondence indices (N x 2)
+    core::Tensor corres = core::Tensor(
+            {2, result.correspondence_set_.GetLength()}, core::Dtype::Int64);
+    core::Tensor indices = core::Tensor::Arange(
+            0, result.correspondence_select_bool_.GetLength(), 1,
+            core::Dtype::Int64);
+    corres.SetItem({core::TensorKey::Index(0)},
+                   indices.IndexGet({result.correspondence_select_bool_}));
+    corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
+    return corres.T();
+}
+
+/// Write point clouds after preprocessing (remove outliers, estimate normals,
+/// etc).
 std::vector<std::string> PreprocessPointClouds(
-        const std::vector<std::string>& fragment_fnames,
+        const std::vector<std::string>& fnames,
         const SLACOptimizerOption& option) {
     std::string subdir_name = option.GetSubfolderName();
     if (!subdir_name.empty()) {
         utility::filesystem::MakeDirectory(subdir_name);
     }
 
-    std::vector<std::string> fnames_down;
-    for (auto& fname : fragment_fnames) {
-        std::string fname_down = fmt::format(
+    std::vector<std::string> fnames_processed;
+
+    for (auto& fname : fnames) {
+        std::string fname_processed = fmt::format(
                 "{}/{}", subdir_name,
                 utility::filesystem::GetFileNameWithoutDirectory(fname));
-        fnames_down.emplace_back(fname_down);
-
-        if (utility::filesystem::FileExists(fname_down)) continue;
-        utility::LogInfo("Processing {}", fname_down);
+        fnames_processed.emplace_back(fname_processed);
+        if (utility::filesystem::FileExists(fname_processed)) continue;
 
         auto pcd = io::CreatePointCloudFromFile(fname);
-        if (option.voxel_size_ > 0) {
-            auto pcd_down = pcd->VoxelDownSample(option.voxel_size_);
-            pcd_down->RemoveStatisticalOutliers(20, 2.0);
-            pcd_down->EstimateNormals();
-            io::WritePointCloud(fname_down, *pcd_down);
-        } else if (!pcd->HasNormals()) {
-            pcd->RemoveStatisticalOutliers(20, 2.0);
-            pcd->EstimateNormals();
-            io::WritePointCloud(fname_down, *pcd);
-        }
+        auto pcd_processed = PreprocessPointCloud(pcd, option.voxel_size_);
+
+        io::WritePointCloud(fname_processed, *pcd_processed);
+        utility::LogInfo("Saving processed point cloud {}", fname_processed);
     }
 
-    return fnames_down;
+    return fnames_processed;
 }
 
 /// Read pose graph containing loop closures and odometry to compute
 /// correspondences.
 void GetCorrespondencesForPointClouds(
-        const std::vector<std::string>& fragment_down_fnames,
+        const std::vector<std::string>& fnames_processed,
         const PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
     // Enumerate pose graph edges
@@ -93,34 +126,24 @@ void GetCorrespondencesForPointClouds(
                                                option.GetSubfolderName(), i, j);
         if (utility::filesystem::FileExists(corres_fname)) continue;
 
-        auto tpcd_i = CreateTPCDFromFile(fragment_down_fnames[i]);
-        auto tpcd_j = CreateTPCDFromFile(fragment_down_fnames[j]);
+        auto tpcd_i = CreateTPCDFromFile(fnames_processed[i]);
+        auto tpcd_j = CreateTPCDFromFile(fnames_processed[j]);
 
         auto pose_i = pose_graph.nodes_[i].pose_;
         auto pose_j = pose_graph.nodes_[j].pose_;
         auto pose_ij = (pose_j.inverse() * pose_i).eval();
-
-        // Obtain correspondence via nns
-        auto result = t::pipelines::registration::EvaluateRegistration(
-                tpcd_i, tpcd_j,
+        core::Tensor T_ij =
+                core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
+                        core::Dtype::Float32);
+        float dist_threshold =
                 option.voxel_size_ < 0
                         ? 0.05
-                        : std::max<double>(3 * option.voxel_size_, 0.05),
-                core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
-                        core::Dtype::Float32));
+                        : std::max<double>(20 * option.voxel_size_, 0.05);
 
-        // Make correspondence indices (N x 2)
         core::Tensor corres =
-                core::Tensor({2, result.correspondence_set_.GetLength()},
-                             core::Dtype::Int64);
-        core::Tensor indices = core::Tensor::Arange(
-                0, result.correspondence_select_bool_.GetLength(), 1,
-                core::Dtype::Int64);
-        corres.SetItem({core::TensorKey::Index(0)},
-                       indices.IndexGet({result.correspondence_select_bool_}));
-        corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
-        corres = corres.T();
+                GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
         corres.Save(corres_fname);
+
         utility::LogInfo("Saving {} corres for {:02d} -> {:02d}",
                          corres.GetLength(), i, j);
     }
@@ -400,7 +423,8 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         utility::filesystem::MakeDirectory(option.buffer_folder_);
     }
 
-    // First preprocess the point cloud with downsampling and normal estimation.
+    // First preprocess the point cloud with downsampling and normal
+    // estimation.
     auto fnames_down = PreprocessPointClouds(fnames, option);
     // Then obtain the correspondences given the pose graph
     GetCorrespondencesForPointClouds(fnames_down, pose_graph, option);
@@ -464,7 +488,8 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
         utility::filesystem::MakeDirectory(option.buffer_folder_);
     }
 
-    // First preprocess the point cloud with downsampling and normal estimation.
+    // First preprocess the point cloud with downsampling and normal
+    // estimation.
     std::vector<std::string> fnames_down =
             PreprocessPointClouds(fnames, option);
     // Then obtain the correspondences given the pose graph
