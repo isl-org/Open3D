@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
     option.regularizor_coeff_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--weight", 0.01);
+    option.max_iterations_ =
+            utility::GetProgramOptionAsInt(argc, argv, "--iterations", 10);
     option.correspondence_debug_ =
             utility::ProgramOptionExists(argc, argv, "--debug");
     option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");

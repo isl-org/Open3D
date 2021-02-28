@@ -40,13 +40,16 @@ using PoseGraph = open3d::pipelines::registration::PoseGraph;
 
 struct SLACOptimizerOption {
     int max_iterations_ = 10;
+
     float voxel_size_ = 0.05;
     float regularizor_coeff_ = 0.02;
+
     bool correspondence_debug_ = false;
     bool grid_debug_ = false;
-    std::string device_ = "CPU:0";
-    std::string buffer_folder_ = "";
 
+    std::string device_ = "CPU:0";
+
+    std::string buffer_folder_ = "";
     std::string GetSubfolderName() const {
         if (voxel_size_ < 0) {
             return fmt::format("{}/original", buffer_folder_);

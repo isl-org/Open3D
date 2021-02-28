@@ -408,7 +408,6 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     // First initialize ctr_grid
     ControlGrid ctr_grid(3.0 / 8, 1000, device);
     InitializeControlGrid(ctr_grid, fnames_down, option);
-
     ctr_grid.Compactify();
 
     // Fill-in

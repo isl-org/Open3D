@@ -137,7 +137,11 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
 
 void VisualizeWarp(const geometry::PointCloud& tpcd_param,
                    ControlGrid& ctr_grid) {
-    t::geometry::PointCloud tpcd_init_grid(ctr_grid.GetInitPositions());
+    int64_t n = ctr_grid.Size();
+    core::Tensor prev = ctr_grid.GetInitPositions().Slice(0, 0, n);
+    core::Tensor curr = ctr_grid.GetCurrPositions().Slice(0, 0, n);
+
+    t::geometry::PointCloud tpcd_init_grid(prev);
     auto pcd_init_grid = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_init_grid.ToLegacyPointCloud());
     pcd_init_grid->PaintUniformColor({0, 1, 0});
@@ -146,7 +150,7 @@ void VisualizeWarp(const geometry::PointCloud& tpcd_param,
             tpcd_param.ToLegacyPointCloud());
     pcd->PaintUniformColor({0, 1, 0});
 
-    t::geometry::PointCloud tpcd_curr_grid(ctr_grid.GetCurrPositions());
+    t::geometry::PointCloud tpcd_curr_grid(curr);
     auto pcd_curr_grid = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_curr_grid.ToLegacyPointCloud());
     pcd_curr_grid->PaintUniformColor({1, 0, 0});
@@ -165,7 +169,7 @@ void VisualizeWarp(const geometry::PointCloud& tpcd_param,
                     *pcd_init_grid, *pcd_curr_grid, deform_lines);
 
     visualization::DrawGeometries(
-            {pcd, pcd_init_grid, pcd_warped, pcd_curr_grid, lineset});
+            {pcd, pcd_warped, pcd_init_grid, pcd_curr_grid});
 }
 
 void VisualizeRegularizor(ControlGrid& cgrid) {
