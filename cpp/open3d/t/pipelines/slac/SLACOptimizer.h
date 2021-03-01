@@ -44,8 +44,11 @@ struct SLACOptimizerOption {
     float voxel_size_ = 0.05;
     float regularizor_coeff_ = 0.02;
 
-    bool correspondence_debug_ = false;
-    bool grid_debug_ = false;
+    bool debug_ = false;
+    int debug_start_idx_ = 0;
+    int debug_start_itr_ = 1;
+
+    bool debug_enabled_ = false;
 
     std::string device_ = "CPU:0";
 
@@ -65,12 +68,12 @@ struct SLACOptimizerOption {
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerOption& option);
+        SLACOptimizerOption& option);
 
 PoseGraph RunRigidOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerOption& option);
+        SLACOptimizerOption& option);
 
 }  // namespace slac
 }  // namespace pipelines

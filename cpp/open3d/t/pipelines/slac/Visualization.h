@@ -44,9 +44,12 @@ t::geometry::PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0"));
 
-void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
+void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
+                        t::geometry::PointCloud& tpcd_j,
+                        t::geometry::PointCloud& tpcd_param_i,
                         t::geometry::PointCloud& tpcd_param_j,
-                        const Eigen::Matrix4d& pose_ij);
+                        const core::Tensor& Ti,
+                        const core::Tensor& Tj);
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
                             ControlGrid& ctr_grid,

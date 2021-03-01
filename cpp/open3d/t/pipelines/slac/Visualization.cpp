@@ -63,14 +63,34 @@ t::geometry::PointCloud CreateTPCDFromFile(const std::string& fname,
             *pcd, core::Dtype::Float32, device);
 }
 
-void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
+void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
+                        t::geometry::PointCloud& tpcd_j,
+                        t::geometry::PointCloud& tpcd_param_i,
                         t::geometry::PointCloud& tpcd_param_j,
-                        const Eigen::Matrix4d& pose_ij) {
+                        const core::Tensor& Ti,
+                        const core::Tensor& Tj) {
+    core::Tensor flip(std::vector<float>{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0,
+                                         0, 0, 0, 1},
+                      {4, 4}, core::Dtype::Float32, Ti.GetDevice());
+
     auto pcd_i = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_param_i.ToLegacyPointCloud());
+            tpcd_i.Clone().Transform(flip.Matmul(Ti)).ToLegacyPointCloud());
+    pcd_i->PaintUniformColor({0, 1, 0});
+
     auto pcd_j = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_param_j.ToLegacyPointCloud());
-    pcd_i->Transform(pose_ij);
+            tpcd_j.Clone().Transform(flip.Matmul(Tj)).ToLegacyPointCloud());
+    pcd_j->PaintUniformColor({1, 0, 0});
+
+    auto pcd_cropped_i = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_param_i.Clone()
+                    .Transform(flip.Matmul(Ti))
+                    .ToLegacyPointCloud());
+    pcd_cropped_i->PaintUniformColor({0, 1, 0});
+    auto pcd_cropped_j = std::make_shared<open3d::geometry::PointCloud>(
+            tpcd_param_j.Clone()
+                    .Transform(flip.Matmul(Tj))
+                    .ToLegacyPointCloud());
+    pcd_cropped_j->PaintUniformColor({1, 0, 0});
 
     std::vector<std::pair<int, int>> corres_lines;
     for (int64_t i = 0; i < tpcd_param_i.GetPoints().GetLength(); ++i) {
@@ -79,9 +99,10 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_param_i,
     }
     auto lineset =
             open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
-                    *pcd_i, *pcd_j, corres_lines);
-    lineset->PaintUniformColor({0, 1, 0});
-    visualization::DrawGeometries({pcd_i, pcd_j, lineset});
+                    *pcd_cropped_i, *pcd_cropped_j, corres_lines);
+    lineset->PaintUniformColor({0, 0, 1});
+    visualization::DrawGeometries(
+            {pcd_i, pcd_j, pcd_cropped_i, pcd_cropped_j, lineset});
 }
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
@@ -168,8 +189,7 @@ void VisualizeWarp(const geometry::PointCloud& tpcd_param,
             open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
                     *pcd_init_grid, *pcd_curr_grid, deform_lines);
 
-    visualization::DrawGeometries(
-            {pcd, pcd_warped, pcd_init_grid, pcd_curr_grid});
+    visualization::DrawGeometries({pcd, pcd_warped});
 }
 
 void VisualizeRegularizor(ControlGrid& cgrid) {

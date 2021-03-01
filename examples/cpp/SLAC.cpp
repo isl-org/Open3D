@@ -76,9 +76,11 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsDouble(argc, argv, "--weight", 0.01);
     option.max_iterations_ =
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", 10);
-    option.correspondence_debug_ =
-            utility::ProgramOptionExists(argc, argv, "--debug");
-    option.grid_debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
+    option.debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
+    option.debug_start_idx_ =
+            utility::GetProgramOptionAsInt(argc, argv, "--debug_idx", 0);
+    option.debug_start_itr_ =
+            utility::GetProgramOptionAsInt(argc, argv, "--debug_itr", 0);
 
     std::string method =
             utility::GetProgramOptionAsString(argc, argv, "--method", "slac");
