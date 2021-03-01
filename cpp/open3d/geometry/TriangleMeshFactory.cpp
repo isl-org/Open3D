@@ -218,6 +218,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
     mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
     mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
     mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.6363));
+    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
+    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.909));
+    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
 
     return mesh;
 }
