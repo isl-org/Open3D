@@ -142,8 +142,8 @@ void BitmapWindowSystem::SetOnWindowDraw(OnDrawCallback callback) {
 
 void BitmapWindowSystem::WaitEventsTimeout(double timeout_secs) {
     auto t0 = std::chrono::steady_clock::now();
-    std::chrono::duration<float> duration;
-    float dt;
+    std::chrono::duration<double> duration;
+    double dt;
     do {
         duration = std::chrono::steady_clock::now() - t0;
         dt = duration.count();
