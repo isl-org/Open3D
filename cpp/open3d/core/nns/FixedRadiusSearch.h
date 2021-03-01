@@ -163,9 +163,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
-///        search.
-///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
 ///         AllocIndices(int32_t** ptr, size_t size) and
@@ -252,9 +249,6 @@ void FixedRadiusSearchCUDA(void* temp,
 ///        BuildSpatialHashTableCUDA. This is array storing the values of the
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
-///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
-///        search.
 ///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
