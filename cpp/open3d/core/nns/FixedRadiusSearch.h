@@ -163,17 +163,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
-///        search.
-///
-/// \param ignore_query_point    If true then points with the same position as
-///        the query point will be ignored.
-///
-/// \param return_distances    If true then this function will return the
-///        distances for each neighbor to its query point in the same format
-///        as the indices.
-///        Note that for the L2 metric the squared distances will be returned!!
-///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
 ///         AllocIndices(int32_t** ptr, size_t size) and
@@ -200,6 +189,91 @@ void FixedRadiusSearchCUDA(void* temp,
                            const int64_t* const hash_table_cell_splits,
                            const int64_t* const hash_table_index,
                            NeighborSearchAllocator<T>& output_allocator);
+
+/// Hybrid search. This function computes a list of neighbor indices and
+/// distances for each query point. The lists are stored linearly per each query
+/// point. If the neighbors within radius is not enough, neighbor indices and
+/// distances are padded with -1.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \tparam OUTPUT_ALLOCATOR    Type of the output_allocator. See
+///         \p output_allocator for more information.
+///
+///
+/// \param num_points    The number of points.
+///
+/// \param points    Array with the 3D point positions. This may be the same
+///        array as \p queries.
+///
+/// \param num_queries    The number of query points.
+///
+/// \param queries    Array with the 3D query positions. This may be the same
+///                   array as \p points.
+///
+/// \param radius    The search radius.
+///
+/// \param max_knn    The maximum number of neighbors to search for each query.
+///
+/// \param points_row_splits_size    The size of the points_row_splits array.
+///        The size of the array is batch_size+1.
+///
+/// \param points_row_splits    This pointer points to host memory.
+///        Defines the start and end of the points in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_points]
+///
+/// \param queries_row_splits_size    The size of the queries_row_splits array.
+///        The size of the array is batch_size+1.
+///
+/// \param queries_row_splits    This pointer points to host memory.
+///        Defines the start and end of the queries in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_queries]
+///
+/// \param hash_table_splits    This pointer points to host memory.
+///        Array defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_cell_splits_size    This is the length of the
+///        hash_table_cell_splits array.
+///
+/// \param hash_table_cell_splits    This is an output of the function
+///        BuildSpatialHashTableCUDA. The row splits array describing the start
+///        and end of each cell.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCUDA. This is array storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        array must be equal to the number of points.
+///
+/// \param output_allocator    An object that implements functions for
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
+template <class T>
+void HybridSearchCUDA(size_t num_points,
+                      const T* const points,
+                      size_t num_queries,
+                      const T* const queries,
+                      const T radius,
+                      const int max_knn,
+                      const size_t points_row_splits_size,
+                      const int64_t* const points_row_splits,
+                      const size_t queries_row_splits_size,
+                      const int64_t* const queries_row_splits,
+                      const int64_t* const hash_table_splits,
+                      size_t hash_table_cell_splits_size,
+                      const int64_t* const hash_table_cell_splits,
+                      const int64_t* const hash_table_index,
+                      NeighborSearchAllocator<T>& output_allocator);
 
 /// This function sorts a list of neighbor indices and distances in
 /// descending order of distance.
@@ -242,42 +316,6 @@ void SortPairs(void* temp,
                int64_t* indices_sorted,
                T* distances_sorted);
 
-/// This function computes a list of neighbor indices and distances
-/// for each query point for hybrid search. The lists are stored in
-/// ascending order of distance.
-/// If there are not enough neighbors, the lists are padded with -1.
-///
-/// All pointer arguments point to device memory unless stated otherwise.
-///
-/// \tparam T    Floating-point data type for the point positions.
-///
-///
-/// \param indices_sorted    Pointer to sorted indices.
-///
-/// \param indices_sorted    Pointer to sorted distances.
-///
-/// \param indices_ptr    Pointer to output indices.
-///
-/// \param distances_ptr    Pointer to output distances.
-///
-/// \param neighbors_counts    Pointer to neighbor counts.
-///
-/// \param neighbors_row_splits    This is the output pointer for the
-///        prefix sum. The length of this array is \p num_queries + 1.
-///
-/// \param num_queries   The number of query points.
-///
-/// \param max_knn    The maximum number of neighbors to search.
-///
-template <class T>
-void MaxKnnThreshold(const int64_t* const indices_sorted,
-                     const T* const distances_sorted,
-                     int64_t* indices_ptr,
-                     T* distances_ptr,
-                     const int64_t* const neighbors_counts,
-                     const int64_t* const neighbors_row_splits,
-                     int64_t num_queries,
-                     int max_knn);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
