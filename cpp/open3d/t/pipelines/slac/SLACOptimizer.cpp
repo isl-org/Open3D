@@ -67,8 +67,10 @@ core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
                                        const core::Tensor& T_ij,
                                        float threshold) {
     // Obtain correspondence via nns
-    auto result = t::pipelines::registration::EvaluateRegistration(
-            tpcd_i, tpcd_j, threshold, T_ij);
+    auto result = t::pipelines::registration::RegistrationICP(tpcd_i, tpcd_j,
+                                                              threshold, T_ij);
+    // auto result = t::pipelines::registration::EvaluateRegistration(
+    //         tpcd_i, tpcd_j, threshold, T_ij);
 
     // Make correspondence indices (N x 2)
     core::Tensor corres = core::Tensor(
@@ -138,7 +140,7 @@ void GetCorrespondencesForPointClouds(
         float dist_threshold =
                 option.voxel_size_ < 0
                         ? 0.05
-                        : std::max<double>(10 * option.voxel_size_, 0.05);
+                        : std::max<double>(3 * option.voxel_size_, 0.05);
 
         core::Tensor corres =
                 GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
