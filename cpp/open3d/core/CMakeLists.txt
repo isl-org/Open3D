@@ -24,25 +24,32 @@ set(KERNEL_CUDA_SRC
 )
 
 set(LINALG_SRC
+    linalg/Det.cpp
     linalg/Matmul.cpp
     linalg/MatmulCPU.cpp
     linalg/LeastSquares.cpp
     linalg/LeastSquaresCPU.cpp
+    linalg/LU.cpp
+    linalg/LUCPU.cpp
     linalg/Solve.cpp
     linalg/SolveCPU.cpp
     linalg/Inverse.cpp
     linalg/InverseCPU.cpp
     linalg/SVD.cpp
     linalg/SVDCPU.cpp
+    linalg/Tri.cpp
+    linalg/TriCPU.cpp
 )
 
 set(LINALG_CUDA_SRC
     linalg/LinalgUtils.cpp
     linalg/MatmulCUDA.cpp
     linalg/LeastSquaresCUDA.cpp
+    linalg/LUCUDA.cpp
     linalg/SolveCUDA.cpp
     linalg/InverseCUDA.cpp
     linalg/SVDCUDA.cpp
+    linalg/TriCUDA.cu
 )
 
 set(CORE_SRC
