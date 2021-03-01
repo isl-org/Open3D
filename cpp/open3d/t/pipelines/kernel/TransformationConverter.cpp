@@ -69,6 +69,27 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     return transformation;
 }
 
+template <typename scalar_t>
+static void PoseToTransformationDevice(
+        core::Tensor &transformation,
+        const core::Tensor &pose,
+        const core::Device::DeviceType &device_type) {
+    scalar_t *transformation_ptr = transformation.GetDataPtr<scalar_t>();
+    const scalar_t *pose_ptr = pose.GetDataPtr<scalar_t>();
+
+    if (device_type == core::Device::DeviceType::CPU) {
+        PoseToTransformationImpl<scalar_t>(transformation_ptr, pose_ptr);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        PoseToTransformationCUDA<scalar_t>(transformation_ptr, pose_ptr);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
 core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::Device device = pose.GetDevice();
     core::Dtype dtype = pose.GetDtype();
@@ -86,23 +107,11 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::Tensor pose_ = pose.Contiguous();
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        scalar_t *transformation_ptr = transformation.GetDataPtr<scalar_t>();
-        const scalar_t *pose_ptr = pose_.GetDataPtr<scalar_t>();
-
-        // Rotation from pose.
         core::Device::DeviceType device_type = device.GetType();
-        if (device_type == core::Device::DeviceType::CPU) {
-            PoseToTransformationImpl<scalar_t>(transformation_ptr, pose_ptr);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-            PoseToTransformationCUDA<scalar_t>(transformation_ptr, pose_ptr);
-#else
-            utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-        } else {
-            utility::LogError("Unimplemented device.");
-        }
+        PoseToTransformationDevice<scalar_t>(transformation, pose_,
+                                             device_type);
     });
+
     // Translation from pose.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
