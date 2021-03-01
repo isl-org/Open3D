@@ -561,7 +561,7 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 3x3 Matrix.
+    /// \brief Compute the determinant of a 2D square tensor.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
@@ -1079,6 +1079,64 @@ public:
     /// Solves the linear system AX = B with QR decomposition and returns X.
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple (P, L, U).
+    ///
+    /// \param permute_l [optional input] If true: returns L as P * L.
+    /// \return Tuple (P, L, U).
+    std::tuple<Tensor, Tensor, Tensor> LU(const bool permute_l = false) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple `output` tensor of shape
+    /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of input
+    /// tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
+    ///
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
+    /// tensor. It contains the pivot indices, indicating row i of the matrix
+    /// was interchanged with row ipiv(i)); and output it has L as
+    /// lower triangular values and U as upper triangle values including the
+    /// main diagonal (diagonal elements of L to be taken as unity).
+    std::tuple<Tensor, Tensor> LUIpiv() const;
+
+    /// \brief Returns the upper triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] for a {m,n} shaped tensor.
+    ///
+    /// \param diagonal value of [col - row], above which the elements are to be
+    /// taken for upper triangular matrix.
+    Tensor Triu(const int diagonal = 0) const;
+
+    /// \brief Returns the lower triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] where {m, n} is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], below which the elements are to be
+    /// taken for lower triangular matrix.
+    Tensor Tril(const int diagonal = 0) const;
+
+    /// \brief Returns the tuple of upper and lower triangular matrix
+    /// of the 2D tensor, above and below the given diagonal index.
+    /// The diagonal elements of lower triangular matrix are taken to be unity.
+    /// [The value of diagonal = col - row, therefore 0 is the main diagonal
+    /// (row = col), and it shifts towards right for positive values
+    /// (for diagonal = 1, col - row = 1), and towards left for negative values.
+    /// The value of the diagonal parameter must be between [-m, n] where {m, n}
+    /// is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], above and below which the elements
+    /// are to be taken for upper (diag. included) and lower triangular matrix.
+    std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
