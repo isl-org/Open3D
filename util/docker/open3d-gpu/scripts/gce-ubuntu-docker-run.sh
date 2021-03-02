@@ -70,7 +70,6 @@ docker-build)
     docker build -t "$DC_IMAGE_TAG" \
         -f util/docker/open3d-gpu/Dockerfile \
         --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
-        --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
         .
     docker tag "$DC_IMAGE_TAG" "$DC_IMAGE_LATEST_TAG"
     ;;

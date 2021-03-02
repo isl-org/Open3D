@@ -1,7 +1,6 @@
 # Example build command:
 # docker build \
 #   --build-arg UBUNTU_VERSION=focal \
-#   --build-arg NVIDIA_DRIVER_VERSION=455 \
 #   -t open3d-gpu-ci-focal:latest \
 #   -f ./util/docker/open3d-gpu/Dockerfile \
 #    .
@@ -20,7 +19,6 @@ ARG UBUNTU_VERSION
 FROM ubuntu:${UBUNTU_VERSION} AS open3d-gpu
 # Persist ARG for the rest of the build
 ARG UBUNTU_VERSION
-ARG NVIDIA_DRIVER_VERSION=460
 LABEL name="open3d-dev/open3d-gpu-ci-${UBUNTU_VERSION}"
 LABEL vendor="open3d.org"
 LABEL architecture="x86_64"
