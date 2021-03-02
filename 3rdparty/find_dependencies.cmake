@@ -491,7 +491,7 @@ if(NOT USE_SYSTEM_JPEG)
     import_3rdparty_library(3rdparty_jpeg
         INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/include/
         LIBRARIES ${JPEG_TURBO_LIBRARIES}
-        LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/${CMAKE_INSTALL_LIBDIR}
+        LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/${Open3D_INSTALL_LIB_DIR}
     )
     add_dependencies(3rdparty_jpeg ext_turbojpeg)
     set(JPEG_TARGET "3rdparty_jpeg")
