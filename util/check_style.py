@@ -95,7 +95,7 @@ def _find_clang_format():
     if clang_format_bin is None:
         raise RuntimeError(
             "clang-format not found. "
-            "See http://www.open3d.org/docs/release/contribute.html#automated-style-checker "
+            "See http://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
             "for help on clang-format installation.")
     version_str = subprocess.check_output([clang_format_bin, "--version"
                                           ]).decode("utf-8").strip()

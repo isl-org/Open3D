@@ -39,11 +39,14 @@
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
+#include "open3d/core/linalg/Tri.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -728,16 +731,7 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det() const {
-    // TODO: Create a proper op for Determinant.
-    this->AssertShape({3, 3});
-    this->AssertDtype(core::Dtype::Float32);
-    core::Tensor D_ = this->Clone();
-    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
-               D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
-               D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
-    return static_cast<double>(D_[0][0].Item<float>());
-}
+double Tensor::Det() const { return core::Det(*this); }
 
 Tensor Tensor::Add(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
@@ -1320,6 +1314,36 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
+}
+
+std::tuple<Tensor, Tensor, Tensor> Tensor::LU(const bool permute_l) const {
+    core::Tensor permutation, lower, upper;
+    core::LU(*this, permutation, lower, upper, permute_l);
+    return std::make_tuple(permutation, lower, upper);
+}
+
+std::tuple<Tensor, Tensor> Tensor::LUIpiv() const {
+    core::Tensor ipiv, output;
+    core::LUIpiv(*this, ipiv, output);
+    return std::make_tuple(ipiv, output);
+}
+
+Tensor Tensor::Triu(const int diagonal) const {
+    Tensor output;
+    core::Triu(*this, output, diagonal);
+    return output;
+}
+
+Tensor Tensor::Tril(const int diagonal) const {
+    Tensor output;
+    core::Tril(*this, output, diagonal);
+    return output;
+}
+
+std::tuple<Tensor, Tensor> Tensor::Triul(const int diagonal) const {
+    Tensor upper, lower;
+    core::Triul(*this, upper, lower, diagonal);
+    return std::make_tuple(upper, lower);
 }
 
 Tensor Tensor::Inverse() const {

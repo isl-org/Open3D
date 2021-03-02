@@ -42,10 +42,7 @@ AzureKinectSensor::AzureKinectSensor(
         const AzureKinectSensorConfig &sensor_config)
     : RGBDSensor(), sensor_config_(sensor_config) {}
 
-AzureKinectSensor::~AzureKinectSensor() {
-    k4a_plugin::k4a_device_stop_cameras(device_);
-    k4a_plugin::k4a_device_close(device_);
-}
+AzureKinectSensor::~AzureKinectSensor() { Disconnect(); }
 
 bool AzureKinectSensor::Connect(size_t sensor_index) {
     utility::LogInfo("AzureKinectSensor::Connect");
@@ -100,7 +97,7 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     if (K4A_FAILED(k4a_plugin::k4a_device_start_cameras(device_,
                                                         &device_config))) {
         utility::LogWarning(
-                "Runtime error: k4a_plugin::k4a_device_set_color_control() "
+                "Runtime error: k4a_plugin::k4a_device_start_cameras() "
                 "failed");
         k4a_plugin::k4a_device_close(device_);
         return false;
@@ -126,6 +123,11 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
             k4a_plugin::k4a_transformation_create(&calibration);
 
     return true;
+}
+
+void AzureKinectSensor::Disconnect() {
+    k4a_plugin::k4a_device_stop_cameras(device_);
+    k4a_plugin::k4a_device_close(device_);
 }
 
 k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {

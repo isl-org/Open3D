@@ -208,5 +208,6 @@ inline cublasStatus_t trsm_cuda<double>(cublasHandle_t handle,
                        ldb);
 }
 #endif
+
 }  // namespace core
 }  // namespace open3d
