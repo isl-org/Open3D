@@ -152,6 +152,13 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
+    // Make sure that the Application instance is initialized before creating
+    // the window. It is easy to call, e.g. O3DVisualizer() and forgetting to
+    // initialize the application. This will cause a crash because the window
+    // system will not exist, nor will the resource directory be located, and
+    // so the renderer will not load properly and give cryptic messages.
+    Application::GetInstance().VerifyIsInitialized();
+
     impl_->wants_auto_center_ = (x == CENTERED_X || y == CENTERED_Y);
     impl_->wants_auto_size_ =
             (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
