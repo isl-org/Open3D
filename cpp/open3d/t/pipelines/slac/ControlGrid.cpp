@@ -209,6 +209,10 @@ geometry::PointCloud ControlGrid::Parameterize(
     pcd_with_params.SetPointAttr(kAttrNbGridPointInterp,
                                  point_ratios_nb.IndexGet({valid_mask}));
 
+    if (pcd.HasPointColors()) {
+        pcd_with_params.SetPointColors(
+                pcd.GetPointColors().IndexGet({valid_mask}));
+    }
     if (pcd.HasPointNormals()) {
         pcd_with_params.SetPointNormals(
                 pcd.GetPointNormals().IndexGet({valid_mask}));
@@ -279,6 +283,7 @@ geometry::Image ControlGrid::Warp(const geometry::Image& depth,
 
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Warp(pcd_param);
+
     return geometry::Image(
             pcd_warped
                     .ProjectDepth(depth.GetCols(), depth.GetRows(), intrinsics,

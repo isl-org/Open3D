@@ -99,20 +99,24 @@ void ProjectCUDA(core::Tensor& depth,
                 float d = zc * depth_scale;
                 float d_old = atomicExch(depth_ptr, d);
                 if (d_old > 0) {
-                    float d_min = atomicMinf(depth_ptr, d_old);
-                    if (process_color && d_min == d && *depth_ptr == d) {
-                        uint8_t* color_ptr =
-                                color_indexer.GetDataPtrFromCoord<uint8_t>(
-                                        static_cast<int64_t>(u),
-                                        static_cast<int64_t>(v));
+                    atomicMinf(depth_ptr, d_old);
+                }
 
-                        color_ptr[0] = static_cast<uint8_t>(
-                                point_colors_ptr[3 * workload_idx + 0] * 255.0);
-                        color_ptr[1] = static_cast<uint8_t>(
-                                point_colors_ptr[3 * workload_idx + 1] * 255.0);
-                        color_ptr[2] = static_cast<uint8_t>(
-                                point_colors_ptr[3 * workload_idx + 2] * 255.0);
-                    }
+                // Unsafe, but approximately fine for now
+                // TODO: more thread-safe operations, or tricks from e.g.
+                // ElasticFusion with higher-resolution projection map and
+                // min-pooling.
+                if (process_color) {
+                    uint8_t* color_ptr =
+                            color_indexer.GetDataPtrFromCoord<uint8_t>(
+                                    static_cast<int64_t>(u),
+                                    static_cast<int64_t>(v));
+                    color_ptr[0] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 0] * 255.0);
+                    color_ptr[1] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 1] * 255.0);
+                    color_ptr[2] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 2] * 255.0);
                 }
             });
 }

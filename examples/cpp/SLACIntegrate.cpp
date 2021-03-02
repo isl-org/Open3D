@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
                     ctr_grid.Warp(depth, color, intrinsic_t, extrinsic_local_t,
                                   depth_scale, max_depth);
             utility::LogInfo("depth_reproj = {}", depth_reproj.ToString());
-            {
+            if (false) {
                 t::geometry::PointCloud pcd =
                         t::geometry::PointCloud::CreateFromRGBDImages(
                                 depth, color, intrinsic_t, extrinsic_t,
@@ -193,8 +193,8 @@ int main(int argc, char** argv) {
 
             utility::Timer timer;
             timer.Start();
-            voxel_grid.Integrate(depth_reproj, color, intrinsic_t, extrinsic_t,
-                                 depth_scale, max_depth);
+            voxel_grid.Integrate(depth_reproj, color_reproj, intrinsic_t,
+                                 extrinsic_t, depth_scale, max_depth);
             timer.Stop();
 
             ++k;
