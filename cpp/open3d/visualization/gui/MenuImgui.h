@@ -24,45 +24,57 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/Label3D.h"
+#pragma once
 
-#include <string>
+#include "open3d/visualization/gui/MenuBase.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-static const Color DEFAULT_COLOR(0, 0, 0, 1);
+class MenuImgui : public MenuBase {
+public:
+    MenuImgui();
+    virtual ~MenuImgui();
 
-struct Label3D::Impl {
-    std::string text_;
-    Eigen::Vector3f position_;
-    Color color_ = DEFAULT_COLOR;
+    void AddItem(const char* name,
+                 ItemId item_id = NO_ITEM,
+                 KeyName key = KEY_NONE) override;
+    void AddMenu(const char* name, std::shared_ptr<MenuBase> submenu) override;
+    void AddSeparator() override;
+
+    void InsertItem(int index,
+                    const char* name,
+                    ItemId item_id = NO_ITEM,
+                    KeyName key = KEY_NONE) override;
+    void InsertMenu(int index,
+                    const char* name,
+                    std::shared_ptr<MenuBase> submenu) override;
+    void InsertSeparator(int index) override;
+
+    int GetNumberOfItems() const override;
+
+    bool IsEnabled(ItemId item_id) const override;
+    void SetEnabled(ItemId item_id, bool enabled) override;
+
+    bool IsChecked(ItemId item_id) const override;
+    void SetChecked(ItemId item_id, bool checked) override;
+
+    int CalcHeight(const Theme& theme) const override;
+
+    bool CheckVisibilityChange() const override;
+
+    ItemId DrawMenuBar(const DrawContext& context, bool is_enabled) override;
+    ItemId Draw(const DrawContext& context,
+                const char* name,
+                bool is_enabled) override;
+
+    void* GetNativePointer() override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
-
-Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
-    : impl_(new Label3D::Impl()) {
-    SetPosition(pos);
-    if (text) {
-        SetText(text);
-    }
-}
-
-Label3D::~Label3D() {}
-
-const char* Label3D::GetText() const { return impl_->text_.c_str(); }
-
-void Label3D::SetText(const char* text) { impl_->text_ = text; }
-
-Eigen::Vector3f Label3D::GetPosition() const { return impl_->position_; }
-
-void Label3D::SetPosition(const Eigen::Vector3f& pos) {
-    impl_->position_ = pos;
-}
-
-Color Label3D::GetTextColor() const { return impl_->color_; }
-
-void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
 
 }  // namespace gui
 }  // namespace visualization

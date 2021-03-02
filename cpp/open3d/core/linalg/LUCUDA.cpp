@@ -24,46 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/Label3D.h"
-
-#include <string>
+#include "open3d/core/linalg/LUImpl.h"
+#include "open3d/core/linalg/LapackWrapper.h"
+#include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace core {
 
-static const Color DEFAULT_COLOR(0, 0, 0, 1);
+void LUCUDA(void* A_data,
+            void* ipiv_data,
+            int64_t rows,
+            int64_t cols,
+            Dtype dtype,
+            const Device& device) {
+    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        int len;
+        int* dinfo =
+                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+        OPEN3D_CUSOLVER_CHECK(
+                getrf_cuda_buffersize<scalar_t>(handle, rows, cols, rows, &len),
+                "getrf_buffersize failed in LUCUDA");
 
-struct Label3D::Impl {
-    std::string text_;
-    Eigen::Vector3f position_;
-    Color color_ = DEFAULT_COLOR;
-};
+        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
-Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
-    : impl_(new Label3D::Impl()) {
-    SetPosition(pos);
-    if (text) {
-        SetText(text);
-    }
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                getrf_cuda<scalar_t>(handle, rows, cols,
+                                     static_cast<scalar_t*>(A_data), rows,
+                                     static_cast<scalar_t*>(workspace),
+                                     static_cast<int*>(ipiv_data), dinfo),
+                "getrf failed in LUCUDA", dinfo, device);
+
+        MemoryManager::Free(workspace, device);
+        MemoryManager::Free(dinfo, device);
+    });
 }
 
-Label3D::~Label3D() {}
-
-const char* Label3D::GetText() const { return impl_->text_.c_str(); }
-
-void Label3D::SetText(const char* text) { impl_->text_ = text; }
-
-Eigen::Vector3f Label3D::GetPosition() const { return impl_->position_; }
-
-void Label3D::SetPosition(const Eigen::Vector3f& pos) {
-    impl_->position_ = pos;
-}
-
-Color Label3D::GetTextColor() const { return impl_->color_; }
-
-void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace core
 }  // namespace open3d

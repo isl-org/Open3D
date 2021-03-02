@@ -24,46 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/Label3D.h"
+#pragma once
 
-#include <string>
+#include "open3d/core/Tensor.h"
+#include "open3d/core/linalg/Tri.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace core {
 
-static const Color DEFAULT_COLOR(0, 0, 0, 1);
+void TriuCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-struct Label3D::Impl {
-    std::string text_;
-    Eigen::Vector3f position_;
-    Color color_ = DEFAULT_COLOR;
-};
+void TrilCPU(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
-    : impl_(new Label3D::Impl()) {
-    SetPosition(pos);
-    if (text) {
-        SetText(text);
-    }
-}
+void TriulCPU(const Tensor& A,
+              Tensor& upper,
+              Tensor& lower,
+              const int diagonal = 0);
 
-Label3D::~Label3D() {}
+#ifdef BUILD_CUDA_MODULE
+void TriuCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-const char* Label3D::GetText() const { return impl_->text_.c_str(); }
+void TrilCUDA(const Tensor& A, Tensor& output, const int diagonal = 0);
 
-void Label3D::SetText(const char* text) { impl_->text_ = text; }
-
-Eigen::Vector3f Label3D::GetPosition() const { return impl_->position_; }
-
-void Label3D::SetPosition(const Eigen::Vector3f& pos) {
-    impl_->position_ = pos;
-}
-
-Color Label3D::GetTextColor() const { return impl_->color_; }
-
-void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
-
-}  // namespace gui
-}  // namespace visualization
+void TriulCUDA(const Tensor& A,
+               Tensor& upper,
+               Tensor& lower,
+               const int diagonal = 0);
+#endif
+}  // namespace core
 }  // namespace open3d
