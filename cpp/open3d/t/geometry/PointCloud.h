@@ -323,6 +323,16 @@ public:
             float depth_max = 3.0f,
             int stride = 1);
 
+    static PointCloud CreateFromRGBDImages(
+            const Image &depth,
+            const Image &color,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f,
+            int stride = 1);
+
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(
             const open3d::geometry::PointCloud &pcd_legacy,
@@ -332,15 +342,23 @@ public:
     /// Convert to a legacy Open3D PointCloud.
     open3d::geometry::PointCloud ToLegacyPointCloud() const;
 
-    geometry::Image Project(int width,
-                            int height,
-                            const core::Tensor &intrinsics,
-                            const core::Tensor &extrinsics =
-                                    core::Tensor::Eye(4,
-                                                      core::Dtype::Float32,
-                                                      core::Device("CPU:0")),
-                            float depth_scale = 1000.0f,
-                            float depth_max = 3.0f);
+    geometry::Image ProjectDepth(
+            int width,
+            int height,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f);
+
+    std::pair<geometry::Image, geometry::Image> ProjectRGBD(
+            int width,
+            int height,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -58,7 +58,9 @@ void UnprojectCUDA
 void UnprojectCPU
 #endif
         (const core::Tensor& depth,
+         const core::Tensor& color,
          core::Tensor& points,
+         core::Tensor& point_colors,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
@@ -66,6 +68,12 @@ void UnprojectCPU
          int64_t stride) {
 
     NDArrayIndexer depth_indexer(depth, 2);
+    NDArrayIndexer color_indexer(color, 2);
+
+    bool process_color =
+            color_indexer.GetShape(0) == depth_indexer.GetShape(0) &&
+            color_indexer.GetShape(1) == depth_indexer.GetShape(1);
+
     TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
 
     // Output
@@ -74,7 +82,16 @@ void UnprojectCPU
 
     points = core::Tensor({rows_strided * cols_strided, 3},
                           core::Dtype::Float32, depth.GetDevice());
+    if (process_color) {
+        point_colors = core::Tensor({rows_strided * cols_strided, 3},
+                                    core::Dtype::Float32, depth.GetDevice());
+    } else {
+        // Placeholder
+        point_colors =
+                core::Tensor({1, 3}, core::Dtype::Float32, depth.GetDevice());
+    }
     NDArrayIndexer point_indexer(points, 1);
+    NDArrayIndexer point_colors_indexer(point_colors, 1);
 
     // Counter
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -110,6 +127,18 @@ void UnprojectCPU
                             point_indexer.GetDataPtrFromCoord<float>(idx);
                     ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
                                       vertex + 2);
+
+                    if (process_color) {
+                        float* point_color =
+                                point_colors_indexer.GetDataPtrFromCoord<float>(
+                                        idx);
+                        uint8_t* pixel_color =
+                                color_indexer.GetDataPtrFromCoord<uint8_t>(x,
+                                                                           y);
+                        point_color[0] = pixel_color[0] / 255.0;
+                        point_color[1] = pixel_color[1] / 255.0;
+                        point_color[2] = pixel_color[2] / 255.0;
+                    }
                 }
             });
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -118,6 +147,9 @@ void UnprojectCPU
     int total_pts_count = (*count_ptr).load();
 #endif
     points = points.Slice(0, 0, total_pts_count);
+    if (process_color) {
+        point_colors = point_colors.Slice(0, 0, total_pts_count);
+    }
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -126,16 +158,23 @@ void ProjectCUDA
 void ProjectCPU
 #endif
         (core::Tensor& depth,
+         core::Tensor& color,
          const core::Tensor& points,
+         const core::Tensor& point_colors,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
          float depth_max) {
     int64_t n = points.GetLength();
     const float* points_ptr = static_cast<const float*>(points.GetDataPtr());
+    const float* point_colors_ptr =
+            static_cast<const float*>(point_colors.GetDataPtr());
+
+    bool process_color = point_colors.GetLength() == points.GetLength();
 
     TransformIndexer transform_indexer(intrinsics, extrinsics, 1.0f);
     NDArrayIndexer depth_indexer(depth, 2);
+    NDArrayIndexer color_indexer(color, 2);
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     core::kernel::CUDALauncher::LaunchGeneralKernel(
@@ -165,12 +204,44 @@ void ProjectCPU
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
                 float d_old = atomicExch(depth_ptr, d);
                 if (d_old > 0) {
-                    atomicMinf(depth_ptr, d_old);
+                    float d_min = atomicMinf(depth_ptr, d_old);
+                    if (process_color && d_min == d) {
+                        uint8_t* color_ptr =
+                                color_indexer.GetDataPtrFromCoord<uint8_t>(
+                                        static_cast<int64_t>(u),
+                                        static_cast<int64_t>(v));
+
+                        color_ptr[0] = static_cast<uint8_t>(
+                                point_colors_ptr[3 * workload_idx + 0] * 255.0);
+                        color_ptr[1] = static_cast<uint8_t>(
+                                point_colors_ptr[3 * workload_idx + 1] * 255.0);
+                        color_ptr[2] = static_cast<uint8_t>(
+                                point_colors_ptr[3 * workload_idx + 2] * 255.0);
+                    }
                 }
+
 #else
 #pragma omp critical
                 {
-                    if (*depth_ptr == 0 || *depth_ptr >= d) *depth_ptr = d;
+                    if (*depth_ptr == 0 || *depth_ptr >= d) {
+                        *depth_ptr = d;
+                        if (process_color) {
+                            uint8_t* color_ptr =
+                                    color_indexer.GetDataPtrFromCoord<uint8_t>(
+                                            static_cast<int64_t>(u),
+                                            static_cast<int64_t>(v));
+
+                            color_ptr[0] = static_cast<uint8_t>(
+                                    point_colors_ptr[3 * workload_idx + 0] *
+                                    255.0);
+                            color_ptr[1] = static_cast<uint8_t>(
+                                    point_colors_ptr[3 * workload_idx + 1] *
+                                    255.0);
+                            color_ptr[2] = static_cast<uint8_t>(
+                                    point_colors_ptr[3 * workload_idx + 2] *
+                                    255.0);
+                        }
+                    }
                 }
 #endif
             });

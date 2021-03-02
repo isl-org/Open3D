@@ -38,7 +38,9 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 void Unproject(const core::Tensor& depth,
+               const core::Tensor& color,
                core::Tensor& points,
+               core::Tensor& point_colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
@@ -51,12 +53,12 @@ void Unproject(const core::Tensor& depth,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        UnprojectCPU(depth, points, intrinsics_d, extrinsics_d, depth_scale,
-                     depth_max, stride);
+        UnprojectCPU(depth, color, points, point_colors, intrinsics_d,
+                     extrinsics_d, depth_scale, depth_max, stride);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        UnprojectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
-                      depth_max, stride);
+        UnprojectCUDA(depth, color, points, point_colors, intrinsics_d,
+                      extrinsics_d, depth_scale, depth_max, stride);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -66,7 +68,9 @@ void Unproject(const core::Tensor& depth,
 }
 
 void Project(core::Tensor& depth,
+             core::Tensor& color,
              const core::Tensor& points,
+             const core::Tensor& point_colors,
              const core::Tensor& intrinsics,
              const core::Tensor& extrinsics,
              float depth_scale,
@@ -78,12 +82,12 @@ void Project(core::Tensor& depth,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ProjectCPU(depth, points, intrinsics_d, extrinsics_d, depth_scale,
-                   depth_max);
+        ProjectCPU(depth, color, points, point_colors, intrinsics_d,
+                   extrinsics_d, depth_scale, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ProjectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
-                    depth_max);
+        ProjectCUDA(depth, color, points, point_colors, intrinsics_d,
+                    extrinsics_d, depth_scale, depth_max);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

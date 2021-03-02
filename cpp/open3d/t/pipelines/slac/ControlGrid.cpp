@@ -275,12 +275,12 @@ geometry::Image ControlGrid::Warp(const geometry::Image& depth,
 
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Warp(pcd_param);
-    return geometry::Image(pcd_warped
-                                   .Project(depth.GetCols(), depth.GetRows(),
-                                            intrinsics, extrinsics, depth_scale,
-                                            depth_max)
-                                   .AsTensor()
-                                   .To(core::Dtype::UInt16));
+    return geometry::Image(
+            pcd_warped
+                    .ProjectDepth(depth.GetCols(), depth.GetRows(), intrinsics,
+                                  extrinsics, depth_scale, depth_max)
+                    .AsTensor()
+                    .To(core::Dtype::UInt16));
 }
 
 }  // namespace slac

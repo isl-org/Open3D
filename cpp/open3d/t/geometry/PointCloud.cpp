@@ -157,24 +157,71 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             float depth_max,
                                             int stride) {
     depth.AsTensor().AssertDtype(core::Dtype::UInt16);
+    core::Tensor points, color_placeholder({1, 1, 1}, core::Dtype::UInt8);
+    core::Tensor point_colors_placeholder({1, 3}, core::Dtype::Float32);
 
-    core::Tensor points;
-    kernel::pointcloud::Unproject(depth.AsTensor(), points, intrinsics,
+    kernel::pointcloud::Unproject(depth.AsTensor(), color_placeholder, points,
+                                  point_colors_placeholder, intrinsics,
                                   extrinsics, depth_scale, depth_max, stride);
     return PointCloud(points);
 }
 
-geometry::Image PointCloud::Project(int width,
-                                    int height,
-                                    const core::Tensor &intrinsics,
-                                    const core::Tensor &extrinsics,
-                                    float depth_scale,
-                                    float depth_max) {
+PointCloud PointCloud::CreateFromRGBDImages(const Image &depth,
+                                            const Image &color,
+                                            const core::Tensor &intrinsics,
+                                            const core::Tensor &extrinsics,
+                                            float depth_scale,
+                                            float depth_max,
+                                            int stride) {
+    depth.AsTensor().AssertDtype(core::Dtype::UInt16);
+    color.AsTensor().AssertDtype(core::Dtype::UInt8);
+
+    core::Tensor points, point_colors;
+    kernel::pointcloud::Unproject(depth.AsTensor(), color.AsTensor(), points,
+                                  point_colors, intrinsics, extrinsics,
+                                  depth_scale, depth_max, stride);
+
+    geometry::PointCloud pcd(points);
+    pcd.SetPointColors(point_colors);
+    return pcd;
+}
+
+geometry::Image PointCloud::ProjectDepth(int width,
+                                         int height,
+                                         const core::Tensor &intrinsics,
+                                         const core::Tensor &extrinsics,
+                                         float depth_scale,
+                                         float depth_max) {
     core::Tensor depth = core::Tensor::Zeros({height, width, 1},
                                              core::Dtype::Float32, device_);
-    kernel::pointcloud::Project(depth, GetPoints(), intrinsics, extrinsics,
-                                depth_scale, depth_max);
+    core::Tensor color_placeholder({1, 1, 3}, core::Dtype::UInt8);
+    core::Tensor point_colors_placeholder({1, 3}, core::Dtype::Float32);
+    kernel::pointcloud::Project(depth, color_placeholder, GetPoints(),
+                                point_colors_placeholder, intrinsics,
+                                extrinsics, depth_scale, depth_max);
     return geometry::Image(depth);
+}
+
+std::pair<geometry::Image, geometry::Image> PointCloud::ProjectRGBD(
+        int width,
+        int height,
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        float depth_scale,
+        float depth_max) {
+    if (!HasPointColors()) {
+        utility::LogError(
+                "Unable to project to RGBD without the Color attribute in the "
+                "point cloud.");
+    }
+
+    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
+                                             core::Dtype::Float32, device_);
+    core::Tensor color = core::Tensor::Zeros({height, width, 3},
+                                             core::Dtype::UInt8, device_);
+    kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
+                                intrinsics, extrinsics, depth_scale, depth_max);
+    return std::make_pair(geometry::Image(depth), geometry::Image(color));
 }
 
 PointCloud PointCloud::FromLegacyPointCloud(

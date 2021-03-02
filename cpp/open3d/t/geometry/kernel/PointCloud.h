@@ -36,7 +36,9 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 void Unproject(const core::Tensor& depth,
+               const core::Tensor& color,
                core::Tensor& points,
+               core::Tensor& point_colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
@@ -44,14 +46,18 @@ void Unproject(const core::Tensor& depth,
                int64_t stride);
 
 void Project(core::Tensor& depth,
+             core::Tensor& color,
              const core::Tensor& points,
+             const core::Tensor& point_colors,
              const core::Tensor& intrinsics,
              const core::Tensor& extrinsics,
              float depth_scale,
              float depth_max);
 
 void UnprojectCPU(const core::Tensor& depth,
+                  const core::Tensor& color,
                   core::Tensor& points,
+                  core::Tensor& point_colors,
                   const core::Tensor& intrinsics,
                   const core::Tensor& extrinsics,
                   float depth_scale,
@@ -59,7 +65,9 @@ void UnprojectCPU(const core::Tensor& depth,
                   int64_t stride);
 
 void ProjectCPU(core::Tensor& depth,
+                core::Tensor& color,
                 const core::Tensor& points,
+                const core::Tensor& points_colors,
                 const core::Tensor& intrinsics,
                 const core::Tensor& extrinsics,
                 float depth_scale,
@@ -67,7 +75,9 @@ void ProjectCPU(core::Tensor& depth,
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(const core::Tensor& depth,
+                   const core::Tensor& color,
                    core::Tensor& points,
+                   core::Tensor& point_colors,
                    const core::Tensor& intrinsics,
                    const core::Tensor& extrinsics,
                    float depth_scale,
@@ -75,7 +85,9 @@ void UnprojectCUDA(const core::Tensor& depth,
                    int64_t stride);
 
 void ProjectCUDA(core::Tensor& depth,
+                 core::Tensor& color,
                  const core::Tensor& points,
+                 const core::Tensor& point_colors,
                  const core::Tensor& intrinsics,
                  const core::Tensor& extrinsics,
                  float depth_scale,
