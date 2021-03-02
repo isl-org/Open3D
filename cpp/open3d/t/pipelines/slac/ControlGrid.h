@@ -102,6 +102,14 @@ public:
                          float depth_scale,
                          float depth_max);
 
+    std::pair<geometry::Image, geometry::Image> Warp(
+            const geometry::Image& depth,
+            const geometry::Image& color,
+            const core::Tensor& intrinsics,
+            const core::Tensor& extrinsics,
+            float depth_scale,
+            float depth_max);
+
     /// Get control grid original positions directly from tensor keys.
     core::Tensor GetInitPositions() {
         return ctr_hashmap_->GetKeyTensor().To(core::Dtype::Float32) *

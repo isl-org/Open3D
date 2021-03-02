@@ -262,6 +262,10 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
         interp_normals = interp_normals / interp_normals_len.View({-1, 1});
         interp_pcd.SetPointNormals(interp_normals);
     }
+
+    if (pcd.HasPointColors()) {
+        interp_pcd.SetPointColors(pcd.GetPointColors());
+    }
     return interp_pcd;
 }
 
@@ -281,6 +285,28 @@ geometry::Image ControlGrid::Warp(const geometry::Image& depth,
                                   extrinsics, depth_scale, depth_max)
                     .AsTensor()
                     .To(core::Dtype::UInt16));
+}
+
+std::pair<geometry::Image, geometry::Image> ControlGrid::Warp(
+        const geometry::Image& depth,
+        const geometry::Image& color,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max) {
+    geometry::PointCloud pcd = geometry::PointCloud::CreateFromRGBDImages(
+            depth, color, intrinsics, extrinsics, depth_scale, depth_max);
+
+    geometry::PointCloud pcd_param = Parameterize(pcd);
+    geometry::PointCloud pcd_warped = Warp(pcd_param);
+
+    auto rgbd_warped =
+            pcd_warped.ProjectRGBD(depth.GetCols(), depth.GetRows(), intrinsics,
+                                   extrinsics, depth_scale, depth_max);
+
+    return std::make_pair(geometry::Image(rgbd_warped.first.AsTensor().To(
+                                  core::Dtype::UInt16)),
+                          geometry::Image(rgbd_warped.second.AsTensor()));
 }
 
 }  // namespace slac
