@@ -387,7 +387,9 @@ void Application::VerifyIsInitialized() {
     // It would be nice to make this LogWarning() and then call Initialize(),
     // but Python scripts requires a different heuristic for finding the
     // resource path than C++.
-    utility::LogError("gui::Initialize() must be called before creating a window or UI element.");
+    utility::LogError(
+            "gui::Initialize() must be called before creating a window or UI "
+            "element.");
 }
 
 WindowSystem &Application::GetWindowSystem() const {
