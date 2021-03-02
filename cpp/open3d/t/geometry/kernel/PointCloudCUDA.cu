@@ -66,17 +66,10 @@ void ProjectCUDA(core::Tensor& depth,
     const float* point_colors_ptr =
             static_cast<const float*>(point_colors.GetDataPtr());
 
-    bool process_color = point_colors.GetLength() == points.GetLength();
-
     TransformIndexer transform_indexer(intrinsics, extrinsics, 1.0f);
-
     NDArrayIndexer depth_indexer(depth, 2);
-    NDArrayIndexer color_indexer(color, 2);
-    core::Tensor pixel_counter =
-            core::Tensor({depth.GetShape()[0], depth.GetShape()[1], 1},
-                         core::Dtype::Int32, depth.GetDevice());
-    NDArrayIndexer pixel_indexer(pixel_counter, 2);
 
+    // Pass 1: depth map
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 float x = points_ptr[3 * workload_idx + 0];
@@ -101,12 +94,35 @@ void ProjectCUDA(core::Tensor& depth,
                 if (d_old > 0) {
                     atomicMinf(depth_ptr, d_old);
                 }
+            });
 
-                // Unsafe, but approximately fine for now
-                // TODO: more thread-safe operations, or tricks from e.g.
-                // ElasticFusion with higher-resolution projection map and
-                // min-pooling.
-                if (process_color) {
+    // Pass 2: color map
+    if (point_colors.GetLength() != points.GetLength()) return;
+
+    NDArrayIndexer color_indexer(color, 2);
+
+    float precision_bound = depth_scale * 1e-4;
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                float x = points_ptr[3 * workload_idx + 0];
+                float y = points_ptr[3 * workload_idx + 1];
+                float z = points_ptr[3 * workload_idx + 2];
+
+                // coordinate in camera (in voxel -> in meter)
+                float xc, yc, zc, u, v;
+                transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
+
+                // coordinate in image (in pixel)
+                transform_indexer.Project(xc, yc, zc, &u, &v);
+                if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
+                    zc > depth_max) {
+                    return;
+                }
+
+                float dmap = *depth_indexer.GetDataPtrFromCoord<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                float d = zc * depth_scale;
+                if (d < dmap + precision_bound) {
                     uint8_t* color_ptr =
                             color_indexer.GetDataPtrFromCoord<uint8_t>(
                                     static_cast<int64_t>(u),
