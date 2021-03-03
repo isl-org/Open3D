@@ -114,6 +114,11 @@ core::Tensor EigenVector3iVectorToTensor(
         core::Dtype dtype,
         const core::Device &device);
 
+core::Tensor EigenVector2iVectorToTensor(
+        const std::vector<Eigen::Vector2i> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+
 }  // namespace eigen_converter
 }  // namespace core
 }  // namespace open3d

@@ -32,6 +32,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/FileSystem.h"
@@ -68,20 +69,29 @@ core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
                                        float threshold) {
     // Obtain correspondence via nns
     try {
-        auto result = pipelines::registration::RegistrationICP(tpcd_i, tpcd_j,
-                                                               threshold, T_ij);
+        auto result = open3d::pipelines::registration::RegistrationColoredICP(
+                tpcd_i.ToLegacyPointCloud(), tpcd_j.ToLegacyPointCloud(),
+                threshold,
+                core::eigen_converter::TensorToEigenMatrix<float>(T_ij)
+                        .cast<double>());
+        core::Tensor corres =
+                core::eigen_converter::EigenVector2iVectorToTensor(
+                        result.correspondence_set_, core::Dtype::Int64,
+                        core::Device("CPU:0"));
+        return corres;
 
         // Make correspondence indices (N x 2)
-        core::Tensor corres =
-                core::Tensor({2, result.correspondence_set_.GetLength()},
-                             core::Dtype::Int64);
-        core::Tensor indices = core::Tensor::Arange(
-                0, result.correspondence_select_bool_.GetLength(), 1,
-                core::Dtype::Int64);
-        corres.SetItem({core::TensorKey::Index(0)},
-                       indices.IndexGet({result.correspondence_select_bool_}));
-        corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
-        return corres.T();
+        // core::Tensor corres =
+        //         core::Tensor({2, result.correspondence_set_.GetLength()},
+        //                      core::Dtype::Int64);
+        // core::Tensor indices = core::Tensor::Arange(
+        //         0, result.correspondence_select_bool_.GetLength(), 1,
+        //         core::Dtype::Int64);
+        // corres.SetItem({core::TensorKey::Index(0)},
+        //                indices.IndexGet({result.correspondence_select_bool_}));
+        // corres.SetItem({core::TensorKey::Index(1)},
+        // result.correspondence_set_);
+        // return corres.T();
     } catch (...) {
         return core::Tensor();
     }
@@ -143,9 +153,7 @@ void GetCorrespondencesForPointClouds(
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32);
         float dist_threshold =
-                option.voxel_size_ < 0
-                        ? 0.05
-                        : std::max<double>(3 * option.voxel_size_, 0.05);
+                option.voxel_size_ < 0 ? 0.01 : 1.5 * option.voxel_size_;
 
         core::Tensor corres =
                 GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
