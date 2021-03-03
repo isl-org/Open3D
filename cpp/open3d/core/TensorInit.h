@@ -62,18 +62,13 @@ void NestedCopy(T&& iter, std::initializer_list<S> s) {
 }
 
 template <typename T>
-struct InitializerDimImpl {
+struct InitializerDim {
     static constexpr size_t value = 0;
 };
 
 template <typename T>
-struct InitializerDimImpl<std::initializer_list<T>> {
-    static constexpr size_t value = 1 + InitializerDimImpl<T>::value;
-};
-
-template <typename T>
-struct InitializerDim {
-    static constexpr size_t value = InitializerDimImpl<T>::value;
+struct InitializerDim<std::initializer_list<T>> {
+    static constexpr size_t value = 1 + InitializerDim<T>::value;
 };
 
 template <size_t S>
@@ -111,8 +106,7 @@ SizeVector InitializerShape(T t, std::index_sequence<S...>) {
 template <typename T>
 SizeVector InferShape(T t) {
     SizeVector shape = InitializerShape<decltype(t)>(
-            t,
-            std::make_index_sequence<InitializerDimImpl<decltype(t)>::value>());
+            t, std::make_index_sequence<InitializerDim<decltype(t)>::value>());
 
     // Handle 0-dimensional inputs.
     size_t last_dim = 0;
