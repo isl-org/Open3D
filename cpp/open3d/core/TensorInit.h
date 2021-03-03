@@ -98,20 +98,20 @@ struct InitializerShapeImpl {
 template <>
 struct InitializerShapeImpl<0> {
     template <typename T>
-    static constexpr size_t value(T t) {
+    static size_t value(T t) {
         return t.size();
     }
 };
 
 template <typename R, typename U, size_t... S>
-constexpr R InitializerShape(U t, std::index_sequence<S...>) {
+R InitializerShape(U t, std::index_sequence<S...>) {
     using size_type = typename R::value_type;
     return {size_type(InitializerShapeImpl<S>::value(t))...};
 }
 
-template <typename R, typename T>
-constexpr R Shape(T t) {
-    return InitializerShape<R, decltype(t)>(
+template <typename T>
+SizeVector Shape(T t) {
+    return InitializerShape<SizeVector, decltype(t)>(
             t, std::make_index_sequence<
                        InitializerDimension<decltype(t)>::value>());
 }

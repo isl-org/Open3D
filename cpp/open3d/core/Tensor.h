@@ -1178,9 +1178,9 @@ private:
     static Tensor InitN(
             const tensor_init::NestedInitializerListT<T, S> nested_list,
             const Device& device = Device("CPU:0")) {
-        SizeVector sv = tensor_init::Shape<SizeVector>(nested_list);
+        SizeVector sv = tensor_init::Shape(nested_list);
 
-        // Fix for handling 0-dimentional inputs.
+        // Fix for handling 0-dimensional inputs.
         size_t last_dim = 0;
         while (sv.size() > (last_dim + 1) && sv[last_dim] != 0) {
             last_dim++;
