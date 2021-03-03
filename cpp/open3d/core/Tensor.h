@@ -1181,8 +1181,7 @@ private:
         SizeVector shape = tensor_init::InferShape(nested_list);
         std::vector<T> dest(shape.NumElements());
         tensor_init::NestedCopy(dest.begin(), nested_list);
-        Dtype type = Dtype::FromType<T>();
-        return Tensor(dest, shape, type, device);
+        return Tensor(dest, shape, Dtype::FromType<T>(), device);
     };
 
 protected:
