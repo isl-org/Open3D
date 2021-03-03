@@ -105,8 +105,8 @@ SizeVector InitializerShape(T t, std::index_sequence<S...>) {
 
 template <typename T>
 SizeVector InferShape(T t) {
-    SizeVector shape = InitializerShape<decltype(t)>(
-            t, std::make_index_sequence<InitializerDim<decltype(t)>::value>());
+    SizeVector shape = InitializerShape<T>(
+            t, std::make_index_sequence<InitializerDim<T>::value>());
 
     // Handle 0-dimensional inputs.
     size_t last_dim = 0;
