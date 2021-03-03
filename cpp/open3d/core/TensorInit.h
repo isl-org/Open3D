@@ -105,7 +105,7 @@ struct InitializerShapeImpl<0> {
 
 template <typename U, size_t... S>
 SizeVector InitializerShape(U t, std::index_sequence<S...>) {
-    return {int64_t(InitializerShapeImpl<S>::value(t))...};
+    return SizeVector{int64_t(InitializerShapeImpl<S>::value(t))...};
 }
 
 template <typename T>

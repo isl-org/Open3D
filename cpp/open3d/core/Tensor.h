@@ -1178,19 +1178,19 @@ private:
     static Tensor InitN(
             const tensor_init::NestedInitializerListT<T, S> nested_list,
             const Device& device = Device("CPU:0")) {
-        SizeVector sv = tensor_init::Shape(nested_list);
+        SizeVector shape = tensor_init::Shape(nested_list);
 
         // Fix for handling 0-dimensional inputs.
         size_t last_dim = 0;
-        while (sv.size() > (last_dim + 1) && sv[last_dim] != 0) {
+        while (shape.size() > (last_dim + 1) && shape[last_dim] != 0) {
             last_dim++;
         }
-        sv.resize(last_dim + 1);
+        shape.resize(last_dim + 1);
 
-        std::vector<T> dest(sv.NumElements());
+        std::vector<T> dest(shape.NumElements());
         tensor_init::NestedCopy(dest.begin(), nested_list);
         Dtype type = Dtype::FromType<T>();
-        return Tensor(dest, sv, type, device);
+        return Tensor(dest, shape, type, device);
     };
 
 protected:
