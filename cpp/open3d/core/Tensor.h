@@ -234,7 +234,7 @@ public:
     /// Create a 1-D tensor with initializer list,
     /// e.g., core::Tensor::Init<float>({0, 1, 2});
     template <typename T>
-    static Tensor Init(const std::initializer_list<T> in_list,
+    static Tensor Init(const std::initializer_list<T>& in_list,
                        const Device& device = Device("CPU:0")) {
         return InitWithInitializerList<T, 1>(in_list, device);
     };
@@ -243,7 +243,7 @@ public:
     /// e.g., core::Tensor::Init<float>({{0, 1, 2}, {3, 4, 5}});
     template <typename T>
     static Tensor Init(
-            const std::initializer_list<std::initializer_list<T>> in_list,
+            const std::initializer_list<std::initializer_list<T>>& in_list,
             const Device& device = Device("CPU:0")) {
         return InitWithInitializerList<T, 2>(in_list, device);
     };
@@ -253,7 +253,7 @@ public:
     template <typename T>
     static Tensor Init(
             const std::initializer_list<
-                    std::initializer_list<std::initializer_list<T>>> in_list,
+                    std::initializer_list<std::initializer_list<T>>>& in_list,
             const Device& device = Device("CPU:0")) {
         return InitWithInitializerList<T, 3>(in_list, device);
     };
@@ -1176,7 +1176,7 @@ private:
     /// Create a n-D tensor with initializer list.
     template <typename T, std::size_t S>
     static Tensor InitWithInitializerList(
-            const tensor_init::NestedInitializerListT<T, S> nested_list,
+            const tensor_init::NestedInitializerListT<T, S>& nested_list,
             const Device& device = Device("CPU:0")) {
         SizeVector shape = tensor_init::InferShape(nested_list);
         std::vector<T> dest(shape.NumElements());
