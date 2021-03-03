@@ -66,13 +66,13 @@ struct InitializerDim<std::initializer_list<L>> {
 
 template <size_t D>
 struct InitializerShapeImpl {
-    template <typename T>
-    static constexpr size_t value(T t) {
-        if (t.size() == 0) {
+    template <typename L>
+    static constexpr size_t value(L list) {
+        if (list.size() == 0) {
             return 0;
         }
-        size_t dim = InitializerShapeImpl<D - 1>::value(*t.begin());
-        for (auto it = t.begin(); it != t.end(); ++it) {
+        size_t dim = InitializerShapeImpl<D - 1>::value(*list.begin());
+        for (auto it = list.begin(); it != list.end(); ++it) {
             if (dim != InitializerShapeImpl<D - 1>::value(*it)) {
                 utility::LogError(
                         "Input contains ragged nested sequences"
