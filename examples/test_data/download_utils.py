@@ -26,6 +26,7 @@
 
 from pathlib import Path
 import urllib.request
+import sys
 
 # Typically "Open3D/examples/test_data", the test data dir.
 _test_data_dir = Path(__file__).parent.absolute().resolve()
@@ -33,13 +34,8 @@ _test_data_dir = Path(__file__).parent.absolute().resolve()
 # Typically "Open3D/examples/test_data/open3d_downloads", the test data download dir.
 _download_dir = _test_data_dir / "open3d_downloads"
 
-# Raw URL link prefix of the "open3d_downloads" repo's master branch.
-_repo_prefix = "https://github.com/intel-isl/open3d_downloads/raw/master"
-
-# Map absolute URL to relative path (relative to _download_dir).
-_url_to_relative_path = {
-    f"{_repo_prefix}/RGBD/raycast_vtx_004.npy": "RGBD/raycast_vtx_004.npy",
-}
+sys.path.append(_test_data_dir)
+from download_file_list import map_url_to_relative_path
 
 
 def _download_file(url, save_path, overwrite):
@@ -70,6 +66,6 @@ def _download_file(url, save_path, overwrite):
 
 
 def download_all_files(overwrite=False):
-    for url, relative_path in _url_to_relative_path.items():
+    for url, relative_path in map_url_to_relative_path.items():
         save_path = _download_dir / relative_path
         _download_file(url, save_path, overwrite)
