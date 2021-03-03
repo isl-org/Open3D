@@ -24,9 +24,12 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Download Open3D test data files. Typically they will be sotred in
+# Download Open3D test data files. The default download path is
 # Open3D/examples/test_data/open3d_downloads
-
+#
+# See https://github.com/intel-isl/open3d_downloads for details on how to
+# manage the test data files.
+#
 # We have to put the version check here and the rest of the Python 3.6+
 # compatible code in a separate file. Otherwise, Python 2 complains about syntax
 # errors before the version check. In addition, please keep this file simple and

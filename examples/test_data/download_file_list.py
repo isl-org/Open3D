@@ -7,6 +7,9 @@ _repo_prefix = "https://github.com/intel-isl/open3d_downloads/raw/master"
 # For example:
 # - relative download path: foo/bar/file.txt
 # - file will be saved to : Open3D/examples/test_data/open3d_downloads/foo/bar/file.txt
+#
+# See https://github.com/intel-isl/open3d_downloads for details on how to
+# manage the test data files.
 map_url_to_relative_path = {
     f"{_repo_prefix}/RGBD/raycast_vtx_004.npy": "RGBD/raycast_vtx_004.npy",
 }
