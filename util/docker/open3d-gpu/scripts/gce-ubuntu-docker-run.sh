@@ -138,6 +138,8 @@ create-vm)
     ;;
 
 run-ci)
+    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); \
+        do echo "ssh key removed"; gcloud compute os-login ssh-keys remove --key $i; done
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
         "sudo docker run --rm --gpus all \
             --env NPROC=$NPROC \
