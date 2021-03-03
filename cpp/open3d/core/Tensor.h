@@ -236,7 +236,7 @@ public:
     template <typename T>
     static Tensor Init(const std::initializer_list<T> in_list,
                        const Device& device = Device("CPU:0")) {
-        return InitN<T, 1>(in_list, device);
+        return InitWithInitializerList<T, 1>(in_list, device);
     };
 
     /// Create a 2-D tensor with nested initializer list,
@@ -245,7 +245,7 @@ public:
     static Tensor Init(
             const std::initializer_list<std::initializer_list<T>> in_list,
             const Device& device = Device("CPU:0")) {
-        return InitN<T, 2>(in_list, device);
+        return InitWithInitializerList<T, 2>(in_list, device);
     };
 
     /// Create a 3-D tensor with nested initializer list,
@@ -255,7 +255,7 @@ public:
             const std::initializer_list<
                     std::initializer_list<std::initializer_list<T>>> in_list,
             const Device& device = Device("CPU:0")) {
-        return InitN<T, 3>(in_list, device);
+        return InitWithInitializerList<T, 3>(in_list, device);
     };
 
     /// Create a identity matrix of size n x n.
@@ -1175,7 +1175,7 @@ protected:
 private:
     /// Create a n-D tensor with initializer list.
     template <typename T, std::size_t S>
-    static Tensor InitN(
+    static Tensor InitWithInitializerList(
             const tensor_init::NestedInitializerListT<T, S> nested_list,
             const Device& device = Device("CPU:0")) {
         SizeVector shape = tensor_init::InferShape(nested_list);
