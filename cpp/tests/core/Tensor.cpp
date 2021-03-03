@@ -106,7 +106,7 @@ TEST_P(TensorPermuteDevices, WithInitList) {
 
     core::Tensor t;
 
-    // 0-D tesnor with given value.
+    // 0-D tensor with given value.
     t = core::Tensor::Init<float>(1, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
