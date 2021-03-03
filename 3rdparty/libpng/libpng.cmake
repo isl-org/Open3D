@@ -23,7 +23,7 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-set(LIBPNG_LIB_DIR ${INSTALL_DIR}/lib)
+set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 if(MSVC)
     set(LIBPNG_LIBRARIES libpng16_static$<$<CONFIG:Debug>:d>)
 else()

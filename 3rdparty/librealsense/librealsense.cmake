@@ -37,7 +37,7 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
-set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/lib")
+set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR}")
 
 set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file usb) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
