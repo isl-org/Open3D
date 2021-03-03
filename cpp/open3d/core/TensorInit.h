@@ -35,6 +35,11 @@ namespace open3d {
 namespace core {
 namespace tensor_init {
 
+// Conventions used in this file:
+// T: scalar value type
+// D: dimension of type size_t
+// V: scalar value or (nested) initializer_list of scalar value(s)
+
 template <typename T, size_t D>
 struct NestedInitializerImpl {
     using type = std::initializer_list<
