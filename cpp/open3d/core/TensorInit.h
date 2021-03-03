@@ -92,6 +92,18 @@ SizeVector InitializerShape(T t, std::index_sequence<S...>) {
             static_cast<int64_t>(InitializerShapeImpl<S>::value(t))...};
 }
 
+template <typename T, typename S>
+void NestedCopy(T&& iter, const S& s) {
+    *iter++ = s;
+}
+
+template <typename T, typename S>
+void NestedCopy(T&& iter, std::initializer_list<S> s) {
+    for (auto it = s.begin(); it != s.end(); ++it) {
+        NestedCopy(std::forward<T>(iter), *it);
+    }
+}
+
 template <typename T>
 SizeVector InferShape(T t) {
     SizeVector shape = InitializerShape<T>(
@@ -105,18 +117,6 @@ SizeVector InferShape(T t) {
     shape.resize(last_dim + 1);
 
     return shape;
-}
-
-template <typename T, typename S>
-void NestedCopy(T&& iter, const S& s) {
-    *iter++ = s;
-}
-
-template <typename T, typename S>
-void NestedCopy(T&& iter, std::initializer_list<S> s) {
-    for (auto it = s.begin(); it != s.end(); ++it) {
-        NestedCopy(std::forward<T>(iter), *it);
-    }
 }
 
 template <typename T, size_t S>
