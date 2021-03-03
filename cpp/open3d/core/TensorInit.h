@@ -72,8 +72,8 @@ struct InitializerShapeImpl {
             return 0;
         }
         size_t dim = InitializerShapeImpl<D - 1>::value(*list.begin());
-        for (auto it = list.begin(); it != list.end(); ++it) {
-            if (dim != InitializerShapeImpl<D - 1>::value(*it)) {
+        for (const auto& value : list) {
+            if (dim != InitializerShapeImpl<D - 1>::value(value)) {
                 utility::LogError(
                         "Input contains ragged nested sequences"
                         "(nested lists with unequal sizes or shapes).");
@@ -117,8 +117,8 @@ void NestedCopy(T&& iter, const L& list) {
 
 template <typename T, typename L>
 void NestedCopy(T&& iter, const std::initializer_list<L>& list) {
-    for (auto it = list.begin(); it != list.end(); ++it) {
-        NestedCopy(std::forward<T>(iter), *it);
+    for (const auto& value : list) {
+        NestedCopy(std::forward<T>(iter), value);
     }
 }
 
