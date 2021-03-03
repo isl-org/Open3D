@@ -54,14 +54,14 @@ struct NestedInitializerImpl<T, 0> {
 template <typename T, size_t D>
 using NestedInitializerList = typename NestedInitializerImpl<T, D>::type;
 
-template <typename T>
+template <typename L>
 struct InitializerDim {
     static constexpr size_t value = 0;
 };
 
-template <typename T>
-struct InitializerDim<std::initializer_list<T>> {
-    static constexpr size_t value = 1 + InitializerDim<T>::value;
+template <typename L>
+struct InitializerDim<std::initializer_list<L>> {
+    static constexpr size_t value = 1 + InitializerDim<L>::value;
 };
 
 template <size_t D>
