@@ -109,10 +109,19 @@ SizeVector InitializerShape(U t, std::index_sequence<S...>) {
 }
 
 template <typename T>
-SizeVector Shape(T t) {
-    return InitializerShape<decltype(t)>(
+SizeVector InferShape(T t) {
+    SizeVector shape = InitializerShape<decltype(t)>(
             t, std::make_index_sequence<
                        InitializerDimension<decltype(t)>::value>());
+
+    // Handle 0-dimensional inputs.
+    size_t last_dim = 0;
+    while (shape.size() > (last_dim + 1) && shape[last_dim] != 0) {
+        last_dim++;
+    }
+    shape.resize(last_dim + 1);
+
+    return shape;
 }
 
 }  // namespace tensor_init
