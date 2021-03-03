@@ -117,7 +117,7 @@ def test_evaluate_registration(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_evaluate_registration(device):
+def test_registration_icp_point_to_point(device):
     dtype = o3c.Dtype.Float32
 
     source_points = o3c.Tensor(
@@ -168,7 +168,7 @@ def test_evaluate_registration(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_evaluate_registration(device):
+def test_test_registration_icp_point_to_plane(device):
     dtype = o3c.Dtype.Float32
 
     source_points = o3c.Tensor(
