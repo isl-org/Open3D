@@ -49,18 +49,6 @@ struct NestedInitializerList<T, 0> {
 template <typename T, size_t S>
 using NestedInitializerListT = typename NestedInitializerList<T, S>::type;
 
-template <typename T, typename S>
-void NestedCopy(T&& iter, const S& s) {
-    *iter++ = s;
-}
-
-template <typename T, typename S>
-void NestedCopy(T&& iter, std::initializer_list<S> s) {
-    for (auto it = s.begin(); it != s.end(); ++it) {
-        NestedCopy(std::forward<T>(iter), *it);
-    }
-}
-
 template <typename T>
 struct InitializerDim {
     static constexpr size_t value = 0;
@@ -93,7 +81,7 @@ struct InitializerShapeImpl {
 template <>
 struct InitializerShapeImpl<0> {
     template <typename T>
-    static size_t value(T t) {
+    static constexpr size_t value(T t) {
         return t.size();
     }
 };
@@ -116,6 +104,18 @@ SizeVector InferShape(T t) {
     shape.resize(last_dim + 1);
 
     return shape;
+}
+
+template <typename T, typename S>
+void NestedCopy(T&& iter, const S& s) {
+    *iter++ = s;
+}
+
+template <typename T, typename S>
+void NestedCopy(T&& iter, std::initializer_list<S> s) {
+    for (auto it = s.begin(); it != s.end(); ++it) {
+        NestedCopy(std::forward<T>(iter), *it);
+    }
 }
 
 template <typename T, size_t S>
