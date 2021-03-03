@@ -24,46 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/Label3D.h"
-
-#include <string>
+#include "open3d/core/linalg/LUImpl.h"
+#include "open3d/core/linalg/LapackWrapper.h"
+#include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace core {
 
-static const Color DEFAULT_COLOR(0, 0, 0, 1);
-
-struct Label3D::Impl {
-    std::string text_;
-    Eigen::Vector3f position_;
-    Color color_ = DEFAULT_COLOR;
-};
-
-Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
-    : impl_(new Label3D::Impl()) {
-    SetPosition(pos);
-    if (text) {
-        SetText(text);
-    }
+void LUCPU(void* A_data,
+           void* ipiv_data,
+           int64_t rows,
+           int64_t cols,
+           Dtype dtype,
+           const Device& device) {
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        OPEN3D_LAPACK_CHECK(
+                getrf_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, rows, cols,
+                        static_cast<scalar_t*>(A_data), rows,
+                        static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
+                "getrf failed in LUCPU");
+    });
 }
 
-Label3D::~Label3D() {}
-
-const char* Label3D::GetText() const { return impl_->text_.c_str(); }
-
-void Label3D::SetText(const char* text) { impl_->text_ = text; }
-
-Eigen::Vector3f Label3D::GetPosition() const { return impl_->position_; }
-
-void Label3D::SetPosition(const Eigen::Vector3f& pos) {
-    impl_->position_ = pos;
-}
-
-Color Label3D::GetTextColor() const { return impl_->color_; }
-
-void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace core
 }  // namespace open3d

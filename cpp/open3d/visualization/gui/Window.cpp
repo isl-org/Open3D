@@ -26,7 +26,6 @@
 
 #include "open3d/visualization/gui/Window.h"
 
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
 
@@ -45,12 +44,11 @@
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Menu.h"
-#include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Widget.h"
-#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/gui/WindowSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
 // ----------------------------------------------------------------------------
@@ -65,74 +63,11 @@ static constexpr int CENTERED_Y = -10000;
 static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
 
-static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
-static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
-
-static constexpr double DOUBLE_CLICK_TIME = 0.300;  // 300 ms is a typical value
-
 // Assumes the correct ImGuiContext is current
 void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
     style.FrameRounding *= new_scaling;
-}
-
-float GetScalingGLFW(GLFWwindow* w) {
-// Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
-#if (GLFW_VERSION_MAJOR > 3 || \
-     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
-    float xscale, yscale;
-    glfwGetWindowContentScale(w, &xscale, &yscale);
-    return std::min(xscale, yscale);
-#else
-    return 1.0f;
-#endif  // GLFW version >= 3.3
-}
-
-int MouseButtonFromGLFW(int button) {
-    switch (button) {
-        case GLFW_MOUSE_BUTTON_LEFT:
-            return int(MouseButton::LEFT);
-        case GLFW_MOUSE_BUTTON_RIGHT:
-            return int(MouseButton::RIGHT);
-        case GLFW_MOUSE_BUTTON_MIDDLE:
-            return int(MouseButton::MIDDLE);
-        case GLFW_MOUSE_BUTTON_4:
-            return int(MouseButton::BUTTON4);
-        case GLFW_MOUSE_BUTTON_5:
-            return int(MouseButton::BUTTON5);
-        default:
-            return int(MouseButton::NONE);
-    }
-}
-
-int KeymodsFromGLFW(int glfw_mods) {
-    int keymods = 0;
-    if (glfw_mods & GLFW_MOD_SHIFT) {
-        keymods |= int(KeyModifier::SHIFT);
-    }
-    if (glfw_mods & GLFW_MOD_CONTROL) {
-#if __APPLE__
-        keymods |= int(KeyModifier::ALT);
-#else
-        keymods |= int(KeyModifier::CTRL);
-#endif  // __APPLE__
-    }
-    if (glfw_mods & GLFW_MOD_ALT) {
-#if __APPLE__
-        keymods |= int(KeyModifier::META);
-#else
-        keymods |= int(KeyModifier::ALT);
-#endif  // __APPLE__
-    }
-    if (glfw_mods & GLFW_MOD_SUPER) {
-#if __APPLE__
-        keymods |= int(KeyModifier::CTRL);
-#else
-        keymods |= int(KeyModifier::META);
-#endif  // __APPLE__
-    }
-    return keymods;
 }
 
 void ChangeAllRenderQuality(
@@ -156,8 +91,9 @@ const int Window::FLAG_HIDDEN = (1 << 0);
 const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
-    GLFWwindow* window_ = nullptr;
+    WindowSystem::OSWindow window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
+    bool draw_menu_ = true;
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
     std::function<bool(void)> on_close_;
@@ -170,7 +106,7 @@ struct Window::Impl {
     MouseButton last_button_down_ = MouseButton::NONE;
 
     Theme theme_;  // so that the font size can be different based on scaling
-    std::unique_ptr<visualization::rendering::FilamentRenderer> renderer_;
+    visualization::rendering::FilamentRenderer* renderer_;
     struct {
         std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
         ImGuiContext* context = nullptr;
@@ -216,49 +152,37 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
+    // Make sure that the Application instance is initialized before creating
+    // the window. It is easy to call, e.g. O3DVisualizer() and forgetting to
+    // initialize the application. This will cause a crash because the window
+    // system will not exist, nor will the resource directory be located, and
+    // so the renderer will not load properly and give cryptic messages.
+    Application::GetInstance().VerifyIsInitialized();
+
     impl_->wants_auto_center_ = (x == CENTERED_X || y == CENTERED_Y);
     impl_->wants_auto_size_ =
             (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // NOTE: Setting alpha and stencil bits to match GLX standard default
-    // values. GLFW sets these internally to 8 and 8 respectively if not
-    // specified which causes problems with Filament on Linux with Nvidia binary
-    // driver
-    glfwWindowHint(GLFW_ALPHA_BITS, 0);
-    glfwWindowHint(GLFW_STENCIL_BITS, 0);
-
-#if __APPLE__
-    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
-#endif
     bool visible = (!(flags & FLAG_HIDDEN) &&
                     (impl_->wants_auto_size_ || impl_->wants_auto_center_));
-    glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
-    glfwWindowHint(GLFW_FLOATING,
-                   ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
+    int ws_flags = 0;
+    if (!visible) {
+        ws_flags |= WindowSystem::FLAG_HIDDEN;
+    }
+    if (flags & FLAG_TOPMOST) {
+        ws_flags |= WindowSystem::FLAG_TOPMOST;
+    }
 
-    impl_->window_ = glfwCreateWindow(std::max(10, width), std::max(10, height),
-                                      title.c_str(), NULL, NULL);
+    int initial_width = std::max(10, width);
+    int initial_height = std::max(10, height);
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    impl_->window_ = ws.CreateOSWindow(this, initial_width, initial_height,
+                                       title.c_str(), ws_flags);
     impl_->title_ = title;
 
     if (x != CENTERED_X || y != CENTERED_Y) {
-        glfwSetWindowPos(impl_->window_, x, y);
+        ws.SetWindowPos(impl_->window_, x, y);
     }
-
-    glfwSetWindowUserPointer(impl_->window_, this);
-    glfwSetWindowSizeCallback(impl_->window_, ResizeCallback);
-    glfwSetWindowPosCallback(impl_->window_, WindowMovedCallback);
-    glfwSetWindowRefreshCallback(impl_->window_, DrawCallback);
-    glfwSetCursorPosCallback(impl_->window_, MouseMoveCallback);
-    glfwSetMouseButtonCallback(impl_->window_, MouseButtonCallback);
-    glfwSetScrollCallback(impl_->window_, MouseScrollCallback);
-    glfwSetKeyCallback(impl_->window_, KeyCallback);
-    glfwSetCharCallback(impl_->window_, CharCallback);
-    glfwSetDropCallback(impl_->window_, DragDropCallback);
-    glfwSetWindowCloseCallback(impl_->window_, CloseCallback);
 
     auto& theme = impl_->theme_;  // shorter alias
     impl_->imgui_.context = ImGui::CreateContext();
@@ -272,7 +196,7 @@ Window::Window(const std::string& title,
     // is the scaling factor. On Linux, there is no scaling of pixels (just
     // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
     // the appropriate scale factor for text and icons and such.
-    float scaling = GetScalingGLFW(impl_->window_);
+    float scaling = ws.GetWindowScaleFactor(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
     impl_->theme_.font_size =
             int(std::round(impl_->theme_.font_size * scaling));
@@ -313,9 +237,7 @@ Window::Window(const std::string& title,
 
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
-#ifdef WIN32
-    io.ImeWindowHandle = GetNativeDrawable();
-#endif
+
     // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
     // io.KeyMap to map from our code to ImGui's code.
     io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
@@ -362,17 +284,13 @@ void Window::CreateRenderer() {
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not GLFW's context, so create the renderer after the window.
-    auto& engine = visualization::rendering::EngineInstance::GetInstance();
-    auto& resource_manager =
-            visualization::rendering::EngineInstance::GetResourceManager();
-
     impl_->renderer_ =
-            std::make_unique<visualization::rendering::FilamentRenderer>(
-                    engine, GetNativeDrawable(), resource_manager);
+            Application::GetInstance().GetWindowSystem().CreateRenderer(
+                    impl_->window_);
     impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
 
-    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
-            impl_->renderer_.get(), GetSize());
+    impl_->imgui_.imgui_bridge =
+            std::make_unique<ImguiFilamentBridge>(impl_->renderer_, GetSize());
 
     // If the given font path is invalid, ImGui will silently fall back to
     // proggy, which is a tiny "pixel art" texture that is compiled into the
@@ -462,16 +380,18 @@ Window::~Window() {
     impl_->children_.clear();  // needs to happen before deleting renderer
     ImGui::SetCurrentContext(impl_->imgui_.context);
     ImGui::DestroyContext();
-    impl_->renderer_.reset();
+    delete impl_->renderer_;
     DestroyWindow();
 }
 
 void Window::DestroyWindow() {
-    glfwDestroyWindow(impl_->window_);
+    Application::GetInstance().GetWindowSystem().DestroyWindow(impl_->window_);
     // Ensure DestroyWindow() can be called multiple times, which will
     // happen if you call DestroyWindow() before the destructor.
     impl_->window_ = nullptr;
 }
+
+int Window::GetMouseMods() const { return impl_->mouse_mods_; }
 
 const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
     return impl_->children_;
@@ -487,10 +407,6 @@ void Window::RestoreDrawContext(void* oldContext) const {
     ImGui::SetCurrentContext((ImGuiContext*)oldContext);
 }
 
-void* Window::GetNativeDrawable() const {
-    return open3d::visualization::gui::GetNativeDrawable(impl_->window_);
-}
-
 const Theme& Window::GetTheme() const { return impl_->theme_; }
 
 visualization::rendering::Renderer& Window::GetRenderer() const {
@@ -498,22 +414,24 @@ visualization::rendering::Renderer& Window::GetRenderer() const {
 }
 
 Rect Window::GetOSFrame() const {
-    int x, y, w, h;
-    glfwGetWindowPos(impl_->window_, &x, &y);
-    glfwGetWindowSize(impl_->window_, &w, &h);
-    return Rect(x, y, w, h);
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    auto pos = ws.GetWindowPos(impl_->window_);
+    auto size = ws.GetWindowSize(impl_->window_);
+    return Rect(pos.x, pos.y, size.width, size.height);
 }
 
 void Window::SetOSFrame(const Rect& r) {
-    glfwSetWindowPos(impl_->window_, r.x, r.y);
-    glfwSetWindowSize(impl_->window_, r.width, r.height);
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    ws.SetWindowPos(impl_->window_, r.x, r.y);
+    ws.SetWindowSize(impl_->window_, r.width, r.height);
 }
 
 const char* Window::GetTitle() const { return impl_->title_.c_str(); }
 
 void Window::SetTitle(const char* title) {
     impl_->title_ = title;
-    glfwSetWindowTitle(impl_->window_, title);
+    return Application::GetInstance().GetWindowSystem().SetWindowTitle(
+            impl_->window_, title);
 }
 
 // Note: can only be called if the ImGUI context is current (that is,
@@ -556,32 +474,27 @@ void Window::SetSize(const Size& size) {
     // errors if we happen to do this in the middle of a draw.
     auto resize = [this, size /*copy*/]() {
         auto scaling = this->impl_->imgui_.scaling;
-        glfwSetWindowSize(this->impl_->window_,
-                          int(std::round(float(size.width) / scaling)),
-                          int(std::round(float(size.height) / scaling)));
-        // SDL_SetWindowSize() doesn't generate an event, so we need to update
-        // the size ourselves
-        this->OnResize();
+        int width = int(std::round(float(size.width) / scaling));
+        int height = int(std::round(float(size.height) / scaling));
+        Application::GetInstance().GetWindowSystem().SetWindowSize(
+                impl_->window_, width, height);
     };
     impl_->deferred_until_before_draw_.push(resize);
 }
 
 Size Window::GetSize() const {
-    uint32_t w, h;
-    glfwGetFramebufferSize(impl_->window_, (int*)&w, (int*)&h);
-    return Size(w, h);
+    return Application::GetInstance().GetWindowSystem().GetWindowSizePixels(
+            impl_->window_);
 }
 
 Rect Window::GetContentRect() const {
     auto size = GetSize();
     int menu_height = 0;
-#if !(GUI_USE_NATIVE_MENUS && defined(__APPLE__))
     MakeDrawContextCurrent();
     auto menubar = Application::GetInstance().GetMenubar();
-    if (menubar) {
+    if (menubar && impl_->draw_menu_) {
         menu_height = menubar->CalcHeight(GetTheme());
     }
-#endif
 
     return Rect(0, menu_height, size.width, size.height - menu_height);
 }
@@ -595,35 +508,35 @@ float Window::GetScaling() const {
 // returns the scale factor needed so that your fonts and icons and sizes
 // are correct. This is not the same thing as Apple does.
 #if __APPLE__
-    return GetScalingGLFW(impl_->window_);
+    return Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+            impl_->window_);
 #else
     return 1.0f;
 #endif  // __APPLE__
 }
 
 Point Window::GlobalToWindowCoord(int global_x, int global_y) {
-    int wx, wy;
-    glfwGetWindowPos(impl_->window_, &wx, &wy);
-    return Point(global_y - wx, global_y - wy);
+    auto pos = Application::GetInstance().GetWindowSystem().GetWindowPos(
+            impl_->window_);
+    return Point(global_y - pos.x, global_y - pos.y);
 }
 
 bool Window::IsVisible() const {
-    return glfwGetWindowAttrib(impl_->window_, GLFW_VISIBLE);
+    return Application::GetInstance().GetWindowSystem().GetWindowIsVisible(
+            impl_->window_);
 }
 
 void Window::Show(bool vis /*= true*/) {
-    if (vis) {
-        glfwShowWindow(impl_->window_);
-    } else {
-        glfwHideWindow(impl_->window_);
-    }
+    Application::GetInstance().GetWindowSystem().ShowWindow(impl_->window_,
+                                                            vis);
 }
 
 void Window::Close() {
     if (impl_->on_close_) {
         bool shouldContinue = impl_->on_close_();
         if (!shouldContinue) {
-            glfwSetWindowShouldClose(impl_->window_, 0);
+            Application::GetInstance().GetWindowSystem().CancelUserClose(
+                    impl_->window_);
             return;
         }
     }
@@ -639,14 +552,19 @@ void Window::PostRedraw() {
     if (impl_->is_drawing_) {
         impl_->needs_redraw_ = true;
     } else {
-        PostNativeExposeEvent(impl_->window_);
+        Application::GetInstance().GetWindowSystem().PostRedrawEvent(
+                impl_->window_);
     }
 }
 
-void Window::RaiseToTop() const { glfwFocusWindow(impl_->window_); }
+void Window::RaiseToTop() const {
+    Application::GetInstance().GetWindowSystem().RaiseWindowToTop(
+            impl_->window_);
+}
 
 bool Window::IsActiveWindow() const {
-    return glfwGetWindowAttrib(impl_->window_, GLFW_FOCUSED);
+    return Application::GetInstance().GetWindowSystem().IsActiveWindow(
+            impl_->window_);
 }
 
 void Window::SetFocusWidget(Widget* w) { impl_->focus_widget_ = w; }
@@ -746,6 +664,8 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
+void Window::ShowMenu(bool show) { impl_->draw_menu_ = show; }
+
 void Window::Layout(const Theme& theme) {
     if (impl_->children_.size() == 1) {
         auto r = GetContentRect();
@@ -765,6 +685,8 @@ void Window::OnMenuItemSelected(Menu::ItemId item_id) {
         PostRedraw();  // might not be in a draw if from native menu
     }
 }
+
+WindowSystem::OSWindow Window::GetOSWindow() const { return impl_->window_; }
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
@@ -860,21 +782,15 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 
     // Set mouse information
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    auto& ws = Application::GetInstance().GetWindowSystem();
     if (IsActiveWindow()) {
-        double mx, my;
-        glfwGetCursorPos(impl_->window_, &mx, &my);
-        auto scaling = GetScaling();
-        io.MousePos = ImVec2(float(mx) * scaling, float(my) * scaling);
+        auto mouse_pos = ws.GetMousePosInWindow(impl_->window_);
+        io.MousePos = ImVec2(float(mouse_pos.x), float(mouse_pos.y));
     }
-    io.MouseDown[0] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_LEFT) ==
-             GLFW_PRESS);
-    io.MouseDown[1] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_RIGHT) ==
-             GLFW_PRESS);
-    io.MouseDown[2] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_MIDDLE) ==
-             GLFW_PRESS);
+    auto buttons = ws.GetMouseButtons(impl_->window_);
+    io.MouseDown[0] = (buttons & int(MouseButton::LEFT));
+    io.MouseDown[1] = (buttons & int(MouseButton::RIGHT));
+    io.MouseDown[2] = (buttons & int(MouseButton::MIDDLE));
 
     // Set key information
     io.KeyShift = (impl_->mouse_mods_ & int(KeyModifier::SHIFT));
@@ -939,7 +855,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // Draw menubar after the children so it is always on top (although it
     // shouldn't matter, as there shouldn't be anything under it)
     auto menubar = Application::GetInstance().GetMenubar();
-    if (menubar) {
+    if (menubar && impl_->draw_menu_) {
         auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
@@ -989,7 +905,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     }
 }
 
-Window::DrawResult Window::OnDraw() {
+void Window::OnDraw() {
     impl_->is_drawing_ = true;
     bool needed_layout = impl_->needs_layout_;
 
@@ -1012,7 +928,12 @@ Window::DrawResult Window::OnDraw() {
         impl_->needs_redraw_ = false;
     }
 
-    return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
+    if (result == Widget::DrawResult::REDRAW) {
+        // Can't just draw here, because Filament sometimes fences within
+        // a draw, and then you can get two draws happening at the same
+        // time, which ends up with a crash.
+        PostRedraw();
+    }
 }
 
 void Window::OnResize() {
@@ -1021,7 +942,8 @@ void Window::OnResize() {
 #if __APPLE__
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong.
-    impl_->renderer_->UpdateSwapChain();
+    Application::GetInstance().GetWindowSystem().ResizeRenderer(
+            impl_->window_, impl_->renderer_);
 #endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
@@ -1041,25 +963,8 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.y = 1.0f;
 
     if (impl_->wants_auto_size_ || impl_->wants_auto_center_) {
-        int screen_width = FALLBACK_MONITOR_WIDTH;
-        int screen_height = FALLBACK_MONITOR_HEIGHT;
-        auto* monitor = glfwGetWindowMonitor(impl_->window_);
-        if (!monitor) {
-            monitor = glfwGetPrimaryMonitor();
-        }
-        if (monitor) {
-            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-            if (mode) {
-                screen_width = mode->width;
-                screen_height = mode->height;
-            }
-            // TODO: if we can update GLFW we can replace the above with this
-            //       Also, see below.
-            // int xpos, ypos;
-            // glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
-            //                       &screen_width, &screen_height);
-        }
-
+        auto& ws = Application::GetInstance().GetWindowSystem();
+        auto screen_size = ws.GetScreenSize(impl_->window_);
         int w = GetOSFrame().width;
         int h = GetOSFrame().height;
 
@@ -1070,7 +975,7 @@ void Window::OnResize() {
             ImGui::PopFont();
             ImGui::EndFrame();
 
-            w = std::min(screen_width,
+            w = std::min(screen_size.width,
                          int(std::round(pref.width / impl_->imgui_.scaling)));
             // screen_height is the screen height, not the usable screen height.
             // If we cannot call glfwGetMonitorWorkarea(), then we need to guess
@@ -1078,14 +983,15 @@ void Window::OnResize() {
             // is often a global menubar (Linux/GNOME, macOS) or a toolbar
             // (Windows). A toolbar is somewhere around 2 - 3 ems.
             int unusable_height = 4 * impl_->theme_.font_size;
-            h = std::min(screen_height - unusable_height,
+            h = std::min(screen_size.height - unusable_height,
                          int(std::round(pref.height / impl_->imgui_.scaling)));
-            glfwSetWindowSize(impl_->window_, w, h);
+            ws.SetWindowSize(impl_->window_, w, h);
         }
 
         if (impl_->wants_auto_center_) {
-            glfwSetWindowPos(impl_->window_, (screen_width - w) / 2,
-                             (screen_height - h) / 2);
+            int x = (screen_size.width - w) / 2;
+            int y = (screen_size.height - h) / 2;
+            ws.SetWindowPos(impl_->window_, x, y);
         }
 
         impl_->wants_auto_size_ = false;
@@ -1108,6 +1014,7 @@ void Window::OnResize() {
     }
 
     RestoreDrawContext(old_context);
+    PostRedraw();
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
@@ -1155,6 +1062,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         if (e.type == MouseEvent::BUTTON_UP) {
             impl_->mouse_grabber_widget_ = nullptr;
         }
+        PostRedraw();
         return;
     }
 
@@ -1181,6 +1089,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
                     if (!weKnowThis) {
                         // This is not a rect that is one of our children,
                         // must be an ImGUI internal popup. Eat event.
+                        PostRedraw();
                         return;
                     }
                 }
@@ -1223,6 +1132,8 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             }
         }
     }
+
+    PostRedraw();
 }
 
 void Window::OnKeyEvent(const KeyEvent& e) {
@@ -1256,6 +1167,7 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     }
 
     RestoreDrawContext(old_context);
+    PostRedraw();
 }
 
 void Window::OnTextInput(const TextInputEvent& e) {
@@ -1263,9 +1175,11 @@ void Window::OnTextInput(const TextInputEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
     RestoreDrawContext(old_context);
+
+    PostRedraw();
 }
 
-bool Window::OnTickEvent(const TickEvent& e) {
+void Window::OnTickEvent(const TickEvent& e) {
     auto old_context = MakeDrawContextCurrent();
     bool redraw = false;
 
@@ -1279,234 +1193,13 @@ bool Window::OnTickEvent(const TickEvent& e) {
         }
     }
     RestoreDrawContext(old_context);
-    return redraw;
+
+    if (redraw) {
+        PostRedraw();
+    }
 }
 
 void Window::OnDragDropped(const char* path) {}
-
-// ----------------------------------------------------------------------------
-void Window::DrawCallback(GLFWwindow* window) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    if (!w->impl_->renderer_) {
-        // Lazily create the renderer, in case we quit before we get here
-        // and crash (macOS) or hang (Windows).
-        w->CreateRenderer();
-    }
-
-    if (w->OnDraw() == Window::REDRAW) {
-        // Can't just draw here, because Filament sometimes fences within
-        // a draw, and then you can get two draws happening at the same
-        // time, which ends up with a crash.
-        w->PostRedraw();
-    }
-}
-
-void Window::ResizeCallback(GLFWwindow* window, int os_width, int os_height) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnResize();
-    UpdateAfterEvent(w);
-}
-
-void Window::WindowMovedCallback(GLFWwindow* window, int os_x, int os_y) {
-#ifdef __APPLE__
-    // On macOS we need to recreate the swap chain if the window changes
-    // size OR MOVES!
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnResize();
-    UpdateAfterEvent(w);
-#endif
-}
-
-void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnResize();
-    UpdateAfterEvent(w);
-}
-
-void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    int buttons = 0;
-    for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
-        if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
-            buttons |= MouseButtonFromGLFW(b);
-        }
-    }
-    float scaling = w->GetScaling();
-    int ix = int(std::ceil(x * scaling));
-    int iy = int(std::ceil(y * scaling));
-
-    auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
-    MouseEvent me = {type, ix, iy, w->impl_->mouse_mods_};
-    me.button.button = MouseButton(buttons);
-
-    w->OnMouseEvent(me);
-    UpdateAfterEvent(w);
-}
-
-void Window::MouseButtonCallback(GLFWwindow* window,
-                                 int button,
-                                 int action,
-                                 int mods) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
-                                      : MouseEvent::BUTTON_UP);
-    double mx, my;
-    glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
-    int ix = int(std::ceil(mx * scaling));
-    int iy = int(std::ceil(my * scaling));
-
-    MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
-    me.button.button = MouseButton(MouseButtonFromGLFW(button));
-    me.button.count = 1;
-
-    double now = Application::GetInstance().Now();
-    if (w->impl_->last_button_down_ == me.button.button) {
-        double dt = now - w->impl_->last_button_down_time_;
-        if (dt > 0.0 && dt < DOUBLE_CLICK_TIME) {
-            me.button.count += 1;
-        }
-    }
-    if (type == MouseEvent::BUTTON_DOWN) {
-        w->impl_->last_button_down_ = me.button.button;
-        w->impl_->last_button_down_time_ = now;
-    }
-
-    w->OnMouseEvent(me);
-    UpdateAfterEvent(w);
-}
-
-void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    double mx, my;
-    glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
-    int ix = int(std::ceil(mx * scaling));
-    int iy = int(std::ceil(my * scaling));
-
-    // Note that although pixels are integers, the trackpad value needs to
-    // be a float, since macOS trackpads produce fractional values when
-    // scrolling slowly. These fractional values need to be passed all the way
-    // down to the MatrixInteractorLogic::Dolly() in order for dollying to
-    // feel buttery smooth with the trackpad.
-    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouse_mods_};
-    me.wheel.dx = dx;
-    me.wheel.dy = dy;
-
-    // GLFW doesn't give us any information about whether this scroll event
-    // came from a mousewheel or a trackpad two-finger scroll.
-#if __APPLE__
-    me.wheel.isTrackpad = true;
-#else
-    me.wheel.isTrackpad = false;
-#endif  // __APPLE__
-
-    w->OnMouseEvent(me);
-    UpdateAfterEvent(w);
-}
-
-void Window::KeyCallback(
-        GLFWwindow* window, int key, int scancode, int action, int mods) {
-    static std::unordered_map<int, uint32_t> g_GLFW2Key = {
-            {GLFW_KEY_BACKSPACE, KEY_BACKSPACE},
-            {GLFW_KEY_TAB, KEY_TAB},
-            {GLFW_KEY_ENTER, KEY_ENTER},
-            {GLFW_KEY_ESCAPE, KEY_ESCAPE},
-            {GLFW_KEY_DELETE, KEY_DELETE},
-            {GLFW_KEY_LEFT_SHIFT, KEY_LSHIFT},
-            {GLFW_KEY_RIGHT_SHIFT, KEY_RSHIFT},
-            {GLFW_KEY_LEFT_CONTROL, KEY_LCTRL},
-            {GLFW_KEY_RIGHT_CONTROL, KEY_RCTRL},
-            {GLFW_KEY_LEFT_ALT, KEY_ALT},
-            {GLFW_KEY_RIGHT_ALT, KEY_ALT},
-            {GLFW_KEY_LEFT_SUPER, KEY_META},
-            {GLFW_KEY_RIGHT_SUPER, KEY_META},
-            {GLFW_KEY_CAPS_LOCK, KEY_CAPSLOCK},
-            {GLFW_KEY_LEFT, KEY_LEFT},
-            {GLFW_KEY_RIGHT, KEY_RIGHT},
-            {GLFW_KEY_UP, KEY_UP},
-            {GLFW_KEY_DOWN, KEY_DOWN},
-            {GLFW_KEY_INSERT, KEY_INSERT},
-            {GLFW_KEY_HOME, KEY_HOME},
-            {GLFW_KEY_END, KEY_END},
-            {GLFW_KEY_PAGE_UP, KEY_PAGEUP},
-            {GLFW_KEY_PAGE_DOWN, KEY_PAGEDOWN},
-    };
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    auto type = (action == GLFW_RELEASE ? KeyEvent::Type::UP
-                                        : KeyEvent::Type::DOWN);
-
-    uint32_t k = key;
-    if (key >= 'A' && key <= 'Z') {
-        k += 32;  // GLFW gives uppercase for letters, convert to lowercase
-    } else {
-        auto it = g_GLFW2Key.find(key);
-        if (it != g_GLFW2Key.end()) {
-            k = it->second;
-        }
-    }
-    KeyEvent e = {type, k, (action == GLFW_REPEAT)};
-
-    w->OnKeyEvent(e);
-    UpdateAfterEvent(w);
-}
-
-void Window::CharCallback(GLFWwindow* window, unsigned int utf32char) {
-    // Convert utf-32 to utf8
-    // From https://stackoverflow.com/a/42013433/218226
-    // Note: This code handles all characters, but non-European characters
-    //       won't draw unless we will include them in the ImGUI font (which
-    //       is prohibitively large for hanzi/kanji)
-    char utf8[5];
-    if (utf32char <= 0x7f) {
-        utf8[0] = utf32char;
-        utf8[1] = '\0';
-    } else if (utf32char <= 0x7ff) {
-        utf8[0] = 0xc0 | (utf32char >> 6);
-        utf8[1] = 0x80 | (utf32char & 0x3f);
-        utf8[2] = '\0';
-    } else if (utf32char <= 0xffff) {
-        utf8[0] = 0xe0 | (utf32char >> 12);
-        utf8[1] = 0x80 | ((utf32char >> 6) & 0x3f);
-        utf8[2] = 0x80 | (utf32char & 0x3f);
-        utf8[3] = '\0';
-    } else if (utf32char <= 0x10ffff) {
-        utf8[0] = 0xf0 | (utf32char >> 18);
-        utf8[1] = 0x80 | ((utf32char >> 12) & 0x3f);
-        utf8[2] = 0x80 | ((utf32char >> 6) & 0x3f);
-        utf8[3] = 0x80 | (utf32char & 0x3f);
-        utf8[4] = '\0';
-    } else {
-        // These characters are supposed to be forbidden, but just in case
-        utf8[0] = '?';
-        utf8[1] = '\0';
-    }
-
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnTextInput(TextInputEvent{utf8});
-    UpdateAfterEvent(w);
-}
-
-void Window::DragDropCallback(GLFWwindow* window,
-                              int count,
-                              const char* paths[]) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    for (int i = 0; i < count; ++i) {
-        w->OnDragDropped(paths[i]);
-    }
-    UpdateAfterEvent(w);
-}
-
-void Window::CloseCallback(GLFWwindow* window) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->Close();
-}
-
-void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }
 
 }  // namespace gui
 }  // namespace visualization

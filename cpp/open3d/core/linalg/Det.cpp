@@ -24,46 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/Label3D.h"
+#include "open3d/core/linalg/Det.h"
 
-#include <string>
+#include "open3d/core/CoreUtil.h"
+#include "open3d/core/linalg/LU.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace core {
 
-static const Color DEFAULT_COLOR(0, 0, 0, 1);
+double Det(const Tensor& A) {
+    Tensor ipiv, output;
+    LUIpiv(A, ipiv, output);
+    // Sequential loop to compute determinant from LU output, is more efficient
+    // on CPU.
+    Tensor output_cpu = output.To(core::Device("CPU:0"));
+    Tensor ipiv_cpu = ipiv.To(core::Device("CPU:0"));
+    double det = 1.0;
+    int n = A.GetShape()[0];
 
-struct Label3D::Impl {
-    std::string text_;
-    Eigen::Vector3f position_;
-    Color color_ = DEFAULT_COLOR;
-};
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(A.GetDtype(), [&]() {
+        scalar_t* output_ptr = output_cpu.GetDataPtr<scalar_t>();
+        int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
 
-Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
-    : impl_(new Label3D::Impl()) {
-    SetPosition(pos);
-    if (text) {
-        SetText(text);
-    }
+        for (int i = 0; i < n; i++) {
+            det *= output_ptr[i * n + i];
+            if (ipiv_ptr[i] != i) {
+                det *= -1;
+            }
+        }
+    });
+    return det;
 }
 
-Label3D::~Label3D() {}
-
-const char* Label3D::GetText() const { return impl_->text_.c_str(); }
-
-void Label3D::SetText(const char* text) { impl_->text_ = text; }
-
-Eigen::Vector3f Label3D::GetPosition() const { return impl_->position_; }
-
-void Label3D::SetPosition(const Eigen::Vector3f& pos) {
-    impl_->position_ = pos;
-}
-
-Color Label3D::GetTextColor() const { return impl_->color_; }
-
-void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace core
 }  // namespace open3d

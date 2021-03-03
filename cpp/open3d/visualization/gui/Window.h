@@ -34,9 +34,8 @@
 #include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/Menu.h"
 #include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/gui/WindowSystem.h"
 #include "open3d/visualization/rendering/Renderer.h"
-
-struct GLFWwindow;
 
 namespace open3d {
 namespace visualization {
@@ -159,6 +158,19 @@ public:
     /// will not be called in a timely fashion.
     void DestroyWindow();
 
+    // Override to handle menu items
+    virtual void OnMenuItemSelected(Menu::ItemId item_id);
+
+    // Override to handle drag and drop on the windows.
+    virtual void OnDragDropped(const char* path);
+
+    // Shows or hides the menubar, except on macOS when using real windows.
+    // This is intended to be used when using HeadlessWindowSystem but may
+    // be useful in other circumstances.
+    void ShowMenu(bool show);
+
+    int GetMouseMods() const;  // internal, for WindowSystem
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window
@@ -172,45 +184,25 @@ protected:
     /// be overriden.
     virtual void Layout(const Theme& theme);
 
-    // Override to handle menu items
-    virtual void OnMenuItemSelected(Menu::ItemId item_id);
-
-    // Override to handle drag and drop on the windows.
-    virtual void OnDragDropped(const char* path);
-
     const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
 
-private:
-    void CreateRenderer();
-    enum DrawResult { NONE, REDRAW };
-    DrawResult OnDraw();
-    Widget::DrawResult DrawOnce(bool is_layout_pass);
-    void ForceRedrawSceneWidget();
+public:
+    // these are intended for internal delivery of events
+    void OnDraw();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
-    bool OnTickEvent(const TickEvent& e);
+    void OnTickEvent(const TickEvent& e);
+
+    WindowSystem::OSWindow GetOSWindow() const;
+
+private:
+    void CreateRenderer();
+    Widget::DrawResult DrawOnce(bool is_layout_pass);
+    void ForceRedrawSceneWidget();
     void* MakeDrawContextCurrent() const;
     void RestoreDrawContext(void* old_context) const;
-    void* GetNativeDrawable() const;
-
-    static void DrawCallback(GLFWwindow* window);
-    static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);
-    static void WindowMovedCallback(GLFWwindow* window, int os_x, int os_y);
-    static void RescaleCallback(GLFWwindow* window, float xscale, float yscale);
-    static void MouseMoveCallback(GLFWwindow* window, double x, double y);
-    static void MouseButtonCallback(GLFWwindow* window,
-                                    int button,
-                                    int action,
-                                    int mods);
-    static void MouseScrollCallback(GLFWwindow* window, double dx, double dy);
-    static void KeyCallback(
-            GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void CharCallback(GLFWwindow* window, unsigned int utf32char);
-    static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
-    static void CloseCallback(GLFWwindow* window);
-    static void UpdateAfterEvent(Window* w);
 
 private:
     struct Impl;

@@ -31,8 +31,6 @@
 #include <windows.h>  // so APIENTRY gets defined and GLFW doesn't define it
 #endif                // _MSC_VER
 
-#include <GLFW/glfw3.h>
-
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -46,6 +44,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/GLFWWindowSystem.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Native.h"
@@ -202,10 +201,11 @@ namespace gui {
 
 struct Application::Impl {
     bool is_initialized_ = false;
+    std::shared_ptr<WindowSystem> window_system_;
     std::vector<Application::UserFontInfo> fonts_;
     Theme theme_;
     double last_time_ = 0.0;
-    bool is_GLFW_initialized_ = false;
+    bool is_ws_initialized_ = false;
     bool is_running_ = false;
     bool should_quit_ = false;
 
@@ -225,26 +225,21 @@ struct Application::Impl {
     std::vector<Posted> posted_;
     // ----
 
-    void InitGLFW() {
-        if (is_GLFW_initialized_) {
-            return;
+    void InitWindowSystem() {
+        if (!window_system_) {
+            window_system_ = std::make_shared<GLFWWindowSystem>();
         }
 
-#if __APPLE__
-        // If we are running from Python we might not be running from a bundle
-        // and would therefore not be a Proper app yet.
-        MacTransformIntoApp();
-
-        glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
-#endif
-        glfwInit();
-        is_GLFW_initialized_ = true;
+        if (!is_ws_initialized_) {
+            window_system_->Initialize();
+            is_ws_initialized_ = true;
+        }
     }
 
     void PrepareForRunning() {
         // We already called this in the constructor, but it is possible
-        // (but unlikely) that the run loop finished and is starting again.
-        InitGLFW();
+        // that the run loop finished and is starting again.
+        InitWindowSystem();
 
         // Initialize rendering
         visualization::rendering::EngineInstance::SelectBackend(
@@ -263,8 +258,10 @@ struct Application::Impl {
         // script finishes.
         visualization::rendering::EngineInstance::DestroyInstance();
 
-        glfwTerminate();
-        is_GLFW_initialized_ = false;
+        if (window_system_) {
+            window_system_->Uninitialize();
+        }
+        is_ws_initialized_ = false;
     }
 };
 
@@ -378,6 +375,33 @@ void Application::Initialize(const char *resource_path) {
     impl_->is_initialized_ = true;
 }
 
+void Application::VerifyIsInitialized() {
+    if (impl_->is_initialized_) {
+        return;
+    }
+
+    // Call LogWarning() first because it is easier to visually parse than the
+    // error message.
+    utility::LogWarning("gui::Initialize() was not called");
+
+    // It would be nice to make this LogWarning() and then call Initialize(),
+    // but Python scripts requires a different heuristic for finding the
+    // resource path than C++.
+    utility::LogError(
+            "gui::Initialize() must be called before creating a window or UI "
+            "element.");
+}
+
+WindowSystem &Application::GetWindowSystem() const {
+    return *impl_->window_system_;
+}
+
+void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
+    assert(!impl_->window_system_);
+    impl_->window_system_ = ws;
+    impl_->is_ws_initialized_ = false;
+}
+
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {
     auto font_path = FindFontPath(font);
     if (font_path.empty()) {
@@ -402,7 +426,12 @@ const std::vector<Application::UserFontInfo> &Application::GetUserFontInfo()
     return impl_->fonts_;
 }
 
-double Application::Now() const { return glfwGetTime(); }
+double Application::Now() const {
+    static auto g_tzero = std::chrono::steady_clock::now();
+    std::chrono::duration<double> t =
+            std::chrono::steady_clock::now() - g_tzero;
+    return t.count();
+}
 
 std::shared_ptr<Menu> Application::GetMenubar() const {
     return impl_->menubar_;
@@ -491,7 +520,7 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
             // If we post two expose events they get coalesced, but
             // setting needsLayout forces two (for the reason given above).
             w->SetNeedsLayout();
-            Window::UpdateAfterEvent(w.get());
+            w->PostRedraw();
             return;
         }
     }
@@ -562,7 +591,7 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
 Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     unlocker.unlock();  // don't want to be locked while we wait
-    glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
+    impl_->window_system_->WaitEventsTimeout(RUNLOOP_DELAY_SEC);
     unlocker.relock();  // need to relock in case we call any callbacks to
                         // functions in the containing (e.g. Python) environment
 
@@ -570,9 +599,7 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     double now = Now();
     if (now - impl_->last_time_ >= 0.95 * RUNLOOP_DELAY_SEC) {
         for (auto w : impl_->windows_) {
-            if (w->OnTickEvent(TickEvent())) {
-                w->PostRedraw();
-            }
+            w->OnTickEvent(TickEvent());
         }
         impl_->last_time_ = now;
     }
