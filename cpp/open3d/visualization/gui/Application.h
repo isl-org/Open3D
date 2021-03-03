@@ -52,6 +52,7 @@ namespace gui {
 
 struct Theme;
 class Window;
+class WindowSystem;
 
 class Application {
 public:
@@ -133,6 +134,8 @@ public:
     /// have an alert (like Linux), then this can be used as a last resort.
     void ShowMessageBox(const char *title, const char *message);
 
+    WindowSystem &GetWindowSystem() const;
+
     // (std::string not good in interfaces for ABI reasons)
     const char *GetResourcePath() const;
 
@@ -173,6 +176,15 @@ public:
     /// cleanup_if_no_windows=false and schedule a call to OnTerminate() with
     /// atexit().
     bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
+
+    /// Sets the WindowSystem to given object. Can be used to override the
+    /// default GLFWWindowSystem (e.g. HeadlessWindowSystem). Must be called
+    /// before creating any Windows.
+    void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
+
+    /// Verifies that Initialize() has been called, printing out an error and
+    /// exiting if not.
+    void VerifyIsInitialized();
 
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
