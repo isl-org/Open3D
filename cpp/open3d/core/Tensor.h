@@ -1174,14 +1174,13 @@ protected:
 
 private:
     /// Create a n-D tensor with initializer list.
-    template <typename T, std::size_t S>
+    template <typename T, size_t S>
     static Tensor InitWithInitializerList(
             const tensor_init::NestedInitializerListT<T, S>& nested_list,
             const Device& device = Device("CPU:0")) {
         SizeVector shape = tensor_init::InferShape(nested_list);
-        std::vector<T> dest(shape.NumElements());
-        tensor_init::NestedCopy(dest.begin(), nested_list);
-        return Tensor(dest, shape, Dtype::FromType<T>(), device);
+        std::vector<T> values = tensor_init::ToFlatVector(shape, nested_list);
+        return Tensor(values, shape, Dtype::FromType<T>(), device);
     };
 
 protected:

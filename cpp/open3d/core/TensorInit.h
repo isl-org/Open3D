@@ -124,6 +124,15 @@ SizeVector InferShape(T t) {
     return shape;
 }
 
+template <typename T, size_t S>
+std::vector<T> ToFlatVector(
+        const SizeVector& shape,
+        const tensor_init::NestedInitializerListT<T, S>& nested_list) {
+    std::vector<T> values(shape.NumElements());
+    tensor_init::NestedCopy(values.begin(), nested_list);
+    return values;
+}
+
 }  // namespace tensor_init
 }  // namespace core
 }  // namespace open3d
