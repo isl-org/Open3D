@@ -36,18 +36,18 @@ namespace core {
 namespace tensor_init {
 
 template <typename T, size_t S>
-struct NestedInitializerList {
+struct NestedInitializerImpl {
     using type = std::initializer_list<
-            typename NestedInitializerList<T, S - 1>::type>;
+            typename NestedInitializerImpl<T, S - 1>::type>;
 };
 
 template <typename T>
-struct NestedInitializerList<T, 0> {
+struct NestedInitializerImpl<T, 0> {
     using type = T;
 };
 
 template <typename T, size_t S>
-using NestedInitializerListT = typename NestedInitializerList<T, S>::type;
+using NestedInitializerList = typename NestedInitializerImpl<T, S>::type;
 
 template <typename T>
 struct InitializerDim {
@@ -122,7 +122,7 @@ void NestedCopy(T&& iter, std::initializer_list<S> s) {
 template <typename T, size_t S>
 std::vector<T> ToFlatVector(
         const SizeVector& shape,
-        const tensor_init::NestedInitializerListT<T, S>& nested_list) {
+        const tensor_init::NestedInitializerList<T, S>& nested_list) {
     std::vector<T> values(shape.NumElements());
     tensor_init::NestedCopy(values.begin(), nested_list);
     return values;
