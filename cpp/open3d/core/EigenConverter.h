@@ -50,6 +50,26 @@ core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
                         dtype);
 }
 
+template <class T>
+Eigen::Matrix<T, -1, -1, Eigen::RowMajor> TensorToEigenMatrix(
+        const core::Tensor &matrix) {
+    if (core::Dtype::FromType<T>() != matrix.GetDtype()) {
+        utility::LogError(
+                "Dtype mismatch, cannot convert tensor to eigen matrix.");
+    }
+
+    core::Tensor matrix_cont = matrix.Contiguous();
+    Eigen::Matrix<T, -1, -1, Eigen::RowMajor> matrix_eigen(
+            matrix_cont.GetShape()[0], matrix_cont.GetShape()[1]);
+
+    MemoryManager::MemcpyToHost(
+            matrix_eigen.data(), matrix_cont.GetDataPtr(),
+            matrix_cont.GetDevice(),
+            matrix_cont.GetDtype().ByteSize() * matrix_cont.NumElements());
+
+    return matrix_eigen;
+}
+
 /// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
 /// the tensor dtype, the output will be converted to to double.

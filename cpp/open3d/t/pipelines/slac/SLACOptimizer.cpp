@@ -418,24 +418,13 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
                                         fragment_pose_graph.nodes_[i].pose_)
                                         .To(core::Dtype::Float32));
 
-        Eigen::Matrix4d pose_eigen;
-        pose_eigen << pose_tensor[0][0].Item<float>(),
-                pose_tensor[0][1].Item<float>(),
-                pose_tensor[0][2].Item<float>(),
-                pose_tensor[0][3].Item<float>(),
-                pose_tensor[1][0].Item<float>(),
-                pose_tensor[1][1].Item<float>(),
-                pose_tensor[1][2].Item<float>(),
-                pose_tensor[1][3].Item<float>(),
-                pose_tensor[2][0].Item<float>(),
-                pose_tensor[2][1].Item<float>(),
-                pose_tensor[2][2].Item<float>(),
-                pose_tensor[2][3].Item<float>(),
-                pose_tensor[3][0].Item<float>(),
-                pose_tensor[3][1].Item<float>(),
-                pose_tensor[3][2].Item<float>(),
-                pose_tensor[3][3].Item<float>();
-        fragment_pose_graph.nodes_[i].pose_ = pose_eigen;
+        Eigen::Matrix<float, -1, -1, Eigen::RowMajor> pose_eigen =
+                core::eigen_converter::TensorToEigenMatrix<float>(pose_tensor);
+        Eigen::Matrix<double, -1, -1, Eigen::RowMajor> pose_eigen_d =
+                pose_eigen.cast<double>().eval();
+        Eigen::Ref<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> pose_eigen_ref(
+                pose_eigen_d);
+        fragment_pose_graph.nodes_[i].pose_ = pose_eigen_ref;
     }
 }
 
