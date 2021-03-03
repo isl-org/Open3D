@@ -41,19 +41,15 @@ def test_icp_convergence_criteria_constructor(device):
     #Checking default values.
     assert convergence_criteria.max_iteration == 30
     assert convergence_criteria.relative_fitness == 1e-06
-    assert convergence_criteria.relative_relative_rmse == 1e-06
+    assert convergence_criteria.relative_rmse == 1e-06
 
 
 @pytest.mark.parametrize("device", list_devices())
 def test_registration_result_constructor(device):
     dtype = o3c.Dtype.Float32
 
-    #Initial transformation input for tensor implementation.
-    init_trans_t = o3c.Tensor.eye(4, dtype, device)
-
     #Constructor.
-    registration_result = o3d.t.pipelines.registration.RegistrationResult(
-        init_trans_t)
+    registration_result = o3d.t.pipelines.registration.RegistrationResult()
 
     #Checking default values.
     assert registration_result.inlier_rmse == 0.0
@@ -112,8 +108,10 @@ def test_evaluate_registration(device):
         source_legacy, target_legacy, max_correspondence_distance,
         init_trans_legacy)
 
-    assert evaluation_t.inlier_rmse == evaluation_legacy.inlier_rmse
-    assert evaluation_t.fitness == evaluation_legacy.fitness
+    np.testing.assert_almost_equal(evaluation_t.inlier_rmse,
+                                   evaluation_legacy.inlier_rmse, 4)
+    np.testing.assert_almost_equal(evaluation_t.fitness,
+                                   evaluation_legacy.fitness, 4)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -154,8 +152,8 @@ def test_registration_icp_point_to_point(device):
 
     reg_p2p_t = o3d.t.pipelines.registration.registration_icp(
         source_t, target_t, max_correspondence_distance, init_trans_t,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
-        o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
+        o3d.t.pipelines.registration.TransformationEstimationPointToPoint(),
+        o3d.t.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
     reg_p2p_legacy = o3d.pipelines.registration.registration_icp(
         source_legacy, target_legacy, max_correspondence_distance,
@@ -163,8 +161,9 @@ def test_registration_icp_point_to_point(device):
         o3d.pipelines.registration.TransformationEstimationPointToPoint(),
         o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
-    assert reg_p2p_t.inlier_rmse == reg_p2p_legacy.inlier_rmse
-    assert reg_p2p_t.fitness == reg_p2p_legacy.fitness
+    np.testing.assert_almost_equal(reg_p2p_t.inlier_rmse,
+                                   reg_p2p_legacy.inlier_rmse, 4)
+    np.testing.assert_almost_equal(reg_p2p_t.fitness, reg_p2p_legacy.fitness, 4)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -218,8 +217,8 @@ def test_test_registration_icp_point_to_plane(device):
 
     reg_p2plane_t = o3d.t.pipelines.registration.registration_icp(
         source_t, target_t, max_correspondence_distance, init_trans_t,
-        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
-        o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
+        o3d.t.pipelines.registration.TransformationEstimationPointToPlane(),
+        o3d.t.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
     reg_p2plane_legacy = o3d.pipelines.registration.registration_icp(
         source_legacy, target_legacy, max_correspondence_distance,
@@ -227,5 +226,7 @@ def test_test_registration_icp_point_to_plane(device):
         o3d.pipelines.registration.TransformationEstimationPointToPlane(),
         o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
-    assert reg_p2plane_t.inlier_rmse == reg_p2plane_legacy.inlier_rmse
-    assert reg_p2plane_t.fitness == reg_p2plane_legacy.fitness
+    np.testing.assert_almost_equal(reg_p2plane_t.inlier_rmse,
+                                   reg_p2plane_legacy.inlier_rmse, 4)
+    np.testing.assert_almost_equal(reg_p2plane_t.fitness,
+                                   reg_p2plane_legacy.fitness, 4)
