@@ -67,7 +67,7 @@ struct InitializerDim<std::initializer_list<L>> {
 template <size_t D>
 struct InitializerShapeImpl {
     template <typename L>
-    static constexpr size_t value(L list) {
+    static constexpr size_t value(const L& list) {
         if (list.size() == 0) {
             return 0;
         }
@@ -86,19 +86,19 @@ struct InitializerShapeImpl {
 template <>
 struct InitializerShapeImpl<0> {
     template <typename L>
-    static constexpr size_t value(L list) {
+    static constexpr size_t value(const L& list) {
         return list.size();
     }
 };
 
 template <typename L, size_t... D>
-SizeVector InitializerShape(L list, std::index_sequence<D...>) {
+SizeVector InitializerShape(const L& list, std::index_sequence<D...>) {
     return SizeVector{
             static_cast<int64_t>(InitializerShapeImpl<D>::value(list))...};
 }
 
 template <typename L>
-SizeVector InferShape(L list) {
+SizeVector InferShape(const L& list) {
     SizeVector shape = InitializerShape<L>(
             list, std::make_index_sequence<InitializerDim<L>::value>());
     // Handle 0-dimensional inputs.
@@ -116,7 +116,7 @@ void NestedCopy(T&& iter, const L& list) {
 }
 
 template <typename T, typename L>
-void NestedCopy(T&& iter, std::initializer_list<L> list) {
+void NestedCopy(T&& iter, const std::initializer_list<L>& list) {
     for (auto it = list.begin(); it != list.end(); ++it) {
         NestedCopy(std::forward<T>(iter), *it);
     }
