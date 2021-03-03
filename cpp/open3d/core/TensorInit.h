@@ -38,7 +38,7 @@ namespace tensor_init {
 // Conventions used in this file:
 // T: scalar value type
 // D: dimension of type size_t
-// V: scalar value or (nested) initializer_list of scalar value(s)
+// L: (nested) initializer_list, or a scalar value (0-d nested)
 
 template <typename T, size_t D>
 struct NestedInitializerImpl {
@@ -85,43 +85,41 @@ struct InitializerShapeImpl {
 
 template <>
 struct InitializerShapeImpl<0> {
-    template <typename T>
-    static constexpr size_t value(T t) {
-        return t.size();
+    template <typename L>
+    static constexpr size_t value(L list) {
+        return list.size();
     }
 };
 
-template <typename T, size_t... D>
-SizeVector InitializerShape(T t, std::index_sequence<D...>) {
+template <typename L, size_t... D>
+SizeVector InitializerShape(L list, std::index_sequence<D...>) {
     return SizeVector{
-            static_cast<int64_t>(InitializerShapeImpl<D>::value(t))...};
+            static_cast<int64_t>(InitializerShapeImpl<D>::value(list))...};
 }
 
-template <typename T, typename D>
-void NestedCopy(T&& iter, const D& s) {
-    *iter++ = s;
-}
-
-template <typename T, typename D>
-void NestedCopy(T&& iter, std::initializer_list<D> s) {
-    for (auto it = s.begin(); it != s.end(); ++it) {
-        NestedCopy(std::forward<T>(iter), *it);
-    }
-}
-
-template <typename T>
-SizeVector InferShape(T t) {
-    SizeVector shape = InitializerShape<T>(
-            t, std::make_index_sequence<InitializerDim<T>::value>());
-
+template <typename L>
+SizeVector InferShape(L list) {
+    SizeVector shape = InitializerShape<L>(
+            list, std::make_index_sequence<InitializerDim<L>::value>());
     // Handle 0-dimensional inputs.
     size_t last_dim = 0;
     while (shape.size() > (last_dim + 1) && shape[last_dim] != 0) {
         last_dim++;
     }
     shape.resize(last_dim + 1);
-
     return shape;
+}
+
+template <typename T, typename L>
+void NestedCopy(T&& iter, const L& list) {
+    *iter++ = list;
+}
+
+template <typename T, typename L>
+void NestedCopy(T&& iter, std::initializer_list<L> list) {
+    for (auto it = list.begin(); it != list.end(); ++it) {
+        NestedCopy(std::forward<T>(iter), *it);
+    }
 }
 
 template <typename T, size_t D>
