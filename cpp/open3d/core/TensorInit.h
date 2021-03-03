@@ -35,10 +35,10 @@ namespace open3d {
 namespace core {
 namespace tensor_init {
 
-template <typename T, size_t S>
+template <typename T, size_t D>
 struct NestedInitializerImpl {
     using type = std::initializer_list<
-            typename NestedInitializerImpl<T, S - 1>::type>;
+            typename NestedInitializerImpl<T, D - 1>::type>;
 };
 
 template <typename T>
@@ -46,8 +46,8 @@ struct NestedInitializerImpl<T, 0> {
     using type = T;
 };
 
-template <typename T, size_t S>
-using NestedInitializerList = typename NestedInitializerImpl<T, S>::type;
+template <typename T, size_t D>
+using NestedInitializerList = typename NestedInitializerImpl<T, D>::type;
 
 template <typename T>
 struct InitializerDim {
@@ -59,16 +59,16 @@ struct InitializerDim<std::initializer_list<T>> {
     static constexpr size_t value = 1 + InitializerDim<T>::value;
 };
 
-template <size_t S>
+template <size_t D>
 struct InitializerShapeImpl {
     template <typename T>
     static constexpr size_t value(T t) {
         if (t.size() == 0) {
             return 0;
         }
-        size_t dim = InitializerShapeImpl<S - 1>::value(*t.begin());
+        size_t dim = InitializerShapeImpl<D - 1>::value(*t.begin());
         for (auto it = t.begin(); it != t.end(); ++it) {
-            if (dim != InitializerShapeImpl<S - 1>::value(*it)) {
+            if (dim != InitializerShapeImpl<D - 1>::value(*it)) {
                 utility::LogError(
                         "Input contains ragged nested sequences"
                         "(nested lists with unequal sizes or shapes).");
@@ -86,19 +86,19 @@ struct InitializerShapeImpl<0> {
     }
 };
 
-template <typename T, size_t... S>
-SizeVector InitializerShape(T t, std::index_sequence<S...>) {
+template <typename T, size_t... D>
+SizeVector InitializerShape(T t, std::index_sequence<D...>) {
     return SizeVector{
-            static_cast<int64_t>(InitializerShapeImpl<S>::value(t))...};
+            static_cast<int64_t>(InitializerShapeImpl<D>::value(t))...};
 }
 
-template <typename T, typename S>
-void NestedCopy(T&& iter, const S& s) {
+template <typename T, typename D>
+void NestedCopy(T&& iter, const D& s) {
     *iter++ = s;
 }
 
-template <typename T, typename S>
-void NestedCopy(T&& iter, std::initializer_list<S> s) {
+template <typename T, typename D>
+void NestedCopy(T&& iter, std::initializer_list<D> s) {
     for (auto it = s.begin(); it != s.end(); ++it) {
         NestedCopy(std::forward<T>(iter), *it);
     }
@@ -119,10 +119,10 @@ SizeVector InferShape(T t) {
     return shape;
 }
 
-template <typename T, size_t S>
+template <typename T, size_t D>
 std::vector<T> ToFlatVector(
         const SizeVector& shape,
-        const tensor_init::NestedInitializerList<T, S>& nested_list) {
+        const tensor_init::NestedInitializerList<T, D>& nested_list) {
     std::vector<T> values(shape.NumElements());
     tensor_init::NestedCopy(values.begin(), nested_list);
     return values;
