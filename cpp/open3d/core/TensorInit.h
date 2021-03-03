@@ -29,6 +29,8 @@
 #include <initializer_list>
 #include <utility>
 
+#include "open3d/core/SizeVector.h"
+
 namespace open3d {
 namespace core {
 namespace tensor_init {
