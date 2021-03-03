@@ -146,20 +146,20 @@ int main(int argc, char** argv) {
                 core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
-        t::geometry::PointCloud pcd =
-                t::geometry::PointCloud::CreateFromDepthImage(
-                        depth, intrinsic_t, extrinsic_t, depth_scale,
-                        max_depth);
-        t::geometry::Image depth_proj =
-                pcd.Project(depth.GetCols(), depth.GetRows(), intrinsic_t,
-                            extrinsic_t, depth_scale, max_depth);
-        t::geometry::PointCloud pcd_reproj =
-                t::geometry::PointCloud::CreateFromDepthImage(
-                        t::geometry::Image(
-                                depth_proj.AsTensor().To(core::Dtype::UInt16)),
-                        intrinsic_t, extrinsic_t, depth_scale, max_depth);
-        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-                pcd_reproj.ToLegacyPointCloud());
+        // t::geometry::PointCloud pcd =
+        //         t::geometry::PointCloud::CreateFromDepthImage(
+        //                 depth, intrinsic_t, extrinsic_t, depth_scale,
+        //                 max_depth);
+        // t::geometry::Image depth_proj =
+        //         pcd.Project(depth.GetCols(), depth.GetRows(), intrinsic_t,
+        //                     extrinsic_t, depth_scale, max_depth);
+        // t::geometry::PointCloud pcd_reproj =
+        //         t::geometry::PointCloud::CreateFromDepthImage(
+        //                 t::geometry::Image(
+        //                         depth_proj.AsTensor().To(core::Dtype::UInt16)),
+        //                 intrinsic_t, extrinsic_t, depth_scale, max_depth);
+        // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+        //         pcd_reproj.ToLegacyPointCloud());
         // im.AsTensor().Save("depth.npy");
         // auto im_legacy =
         //         std::make_shared<open3d::geometry::Image>(im.ToLegacyImage());

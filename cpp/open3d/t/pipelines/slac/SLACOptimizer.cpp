@@ -67,21 +67,24 @@ core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
                                        const core::Tensor& T_ij,
                                        float threshold) {
     // Obtain correspondence via nns
-    auto result = t::pipelines::registration::RegistrationICP(tpcd_i, tpcd_j,
-                                                              threshold, T_ij);
-    // auto result = t::pipelines::registration::EvaluateRegistration(
-    //         tpcd_i, tpcd_j, threshold, T_ij);
+    try {
+        auto result = pipelines::registration::RegistrationICP(tpcd_i, tpcd_j,
+                                                               threshold, T_ij);
 
-    // Make correspondence indices (N x 2)
-    core::Tensor corres = core::Tensor(
-            {2, result.correspondence_set_.GetLength()}, core::Dtype::Int64);
-    core::Tensor indices = core::Tensor::Arange(
-            0, result.correspondence_select_bool_.GetLength(), 1,
-            core::Dtype::Int64);
-    corres.SetItem({core::TensorKey::Index(0)},
-                   indices.IndexGet({result.correspondence_select_bool_}));
-    corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
-    return corres.T();
+        // Make correspondence indices (N x 2)
+        core::Tensor corres =
+                core::Tensor({2, result.correspondence_set_.GetLength()},
+                             core::Dtype::Int64);
+        core::Tensor indices = core::Tensor::Arange(
+                0, result.correspondence_select_bool_.GetLength(), 1,
+                core::Dtype::Int64);
+        corres.SetItem({core::TensorKey::Index(0)},
+                       indices.IndexGet({result.correspondence_select_bool_}));
+        corres.SetItem({core::TensorKey::Index(1)}, result.correspondence_set_);
+        return corres.T();
+    } catch (...) {
+        return core::Tensor();
+    }
 }
 
 /// Write point clouds after preprocessing (remove outliers, estimate normals,
@@ -124,6 +127,8 @@ void GetCorrespondencesForPointClouds(
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
 
+        utility::LogInfo("Processing {:02d} -> {:02d}", i, j);
+
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
         if (utility::filesystem::FileExists(corres_fname)) continue;
@@ -144,10 +149,12 @@ void GetCorrespondencesForPointClouds(
 
         core::Tensor corres =
                 GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
-        corres.Save(corres_fname);
+        if (corres.GetLength() > 0) {
+            corres.Save(corres_fname);
 
-        utility::LogInfo("Saving {} corres for {:02d} -> {:02d}",
-                         corres.GetLength(), i, j);
+            utility::LogInfo("Saving {} corres for {:02d} -> {:02d}",
+                             corres.GetLength(), i, j);
+        }
     }
 }
 
@@ -226,7 +233,8 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
-            utility::LogError("Correspondence not processed!");
+            utility::LogWarning("Correspondence {} {} not processed!", i, j);
+            continue;
         }
 
         auto tpcd_i = CreateTPCDFromFile(fnames[i]);
@@ -361,7 +369,8 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
-            utility::LogError("Correspondence not processed");
+            utility::LogWarning("Correspondence {} {} not processed!", i, j);
+            continue;
         }
         core::Tensor corres_ij = core::Tensor::Load(corres_fname).To(device);
 
