@@ -27,9 +27,9 @@
 #include "pybind/t/t.h"
 
 #include "pybind/open3d_pybind.h"
-#include "pybind/t/pipelines/pipelines.h"
 #include "pybind/t/geometry/geometry.h"
 #include "pybind/t/io/io.h"
+#include "pybind/t/pipelines/pipelines.h"
 
 namespace open3d {
 namespace t {

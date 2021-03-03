@@ -24,8 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/open3d_pybind.h"
 #include "pybind/t/pipelines/pipelines.h"
+
+#include "pybind/open3d_pybind.h"
 #include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {

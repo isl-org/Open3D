@@ -29,11 +29,11 @@
 #include <memory>
 #include <utility>
 
-#include "pybind/docstring.h"
-#include "pybind/t/pipelines/registration/registration.h"
-#include "open3d/utility/Console.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
+#include "open3d/utility/Console.h"
+#include "pybind/docstring.h"
+#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
 namespace t {
@@ -44,8 +44,7 @@ template <class TransformationEstimationBase = TransformationEstimation>
 class PyTransformationEstimation : public TransformationEstimationBase {
 public:
     using TransformationEstimationBase::TransformationEstimationBase;
-    TransformationEstimationType GetTransformationEstimationType()
-            const {
+    TransformationEstimationType GetTransformationEstimationType() const {
         PYBIND11_OVERLOAD_PURE(TransformationEstimationType,
                                TransformationEstimationBase, void);
     }
@@ -55,10 +54,9 @@ public:
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
                                target, corres);
     }
-    core::Tensor ComputeTransformation(
-            const t::geometry::PointCloud &source,
-            const t::geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const {
+    core::Tensor ComputeTransformation(const t::geometry::PointCloud &source,
+                                       const t::geometry::PointCloud &target,
+                                       const CorrespondenceSet &corres) const {
         PYBIND11_OVERLOAD_PURE(core::Tensor, TransformationEstimationBase,
                                source, target, corres);
     }
@@ -110,17 +108,15 @@ void pybind_registration_classes(py::module &m) {
                "Base class that estimates a transformation between two point "
                "clouds. The virtual function ComputeTransformation() must be "
                "implemented in subclasses.");
-    // ERROR!!!
-    // te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
-    //        "target"_a, "corres"_a,
-    //        "Compute RMSE between source and target points cloud given "
-    //        "correspondences.");
-    // te.def("compute_transformation",
-    //        &TransformationEstimation::ComputeTransformation, "source"_a,
-    //        "target"_a, "corres"_a,
-    //        "Compute transformation from source to target point cloud given "
-    //        "correspondences.");
-
+    te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
+           "target"_a, "corres"_a,
+           "Compute RMSE between source and target points cloud given "
+           "correspondences.");
+    te.def("compute_transformation",
+           &TransformationEstimation::ComputeTransformation, "source"_a,
+           "target"_a, "corres"_a,
+           "Compute transformation from source to target point cloud given "
+           "correspondences.");
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_rmse",
             {{"source", "Source point cloud."},
@@ -162,8 +158,8 @@ void pybind_registration_classes(py::module &m) {
     py::class_<RegistrationResult> registration_result(
             m, "RegistrationResult",
             "Class that contains the registration results.");
-    // py::detail::bind_default_constructor<RegistrationResult>(
-    //         registration_result);
+    py::detail::bind_default_constructor<RegistrationResult>(
+            registration_result);
     py::detail::bind_copy_functions<RegistrationResult>(registration_result);
     registration_result
             .def_readwrite("transformation",
@@ -194,22 +190,44 @@ void pybind_registration_classes(py::module &m) {
             });
 }
 
+// Registration functions have similar arguments, sharing arg docstrings.
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"corres",
+                 "pair of Tensors that stores indices of "
+                 "corresponding point or feature arrays."},
+                {"criteria", "Convergence criteria"},
+                {"estimation_method",
+                 "Estimation method. One of "
+                 "(``"
+                 "TransformationEstimationPointToPoint``, "
+                 "``"
+                 "TransformationEstimationPointToPlane``)"},
+                {"init", "Initial transformation estimation"},
+                {"max_correspondence_distance",
+                 "Maximum correspondence points-pair distance."},
+                {"option", "Registration option"},
+                {"source", "The source point cloud."},
+                {"target", "The target point cloud."},
+                {"transformation",
+                 "The 4x4 transformation matrix to transform ``source`` to "
+                 "``target``"}};
+
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "transformation"_a = core::Tensor::Eye(
-                4, core::Dtype::Float32, core::Device("CPU:0")));
-    // docstring::FunctionDocInject(m, "evaluate_registration",
-    //                              map_shared_argument_docstrings);
+          "transformation"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                                 core::Device("CPU:0")));
+    docstring::FunctionDocInject(m, "evaluate_registration",
+                                 map_shared_argument_docstrings);
 
     m.def("registration_icp", &RegistrationICP, "Function for ICP registration",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "init"_a,
+          "source"_a, "target"_a, "max_correspondence_distance"_a, "init"_a,
           "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = ICPConvergenceCriteria());
-    // docstring::FunctionDocInject(m, "registration_icp",
-    //                              map_shared_argument_docstrings);
+    docstring::FunctionDocInject(m, "registration_icp",
+                                 map_shared_argument_docstrings);
 }
 
 void pybind_registration(py::module &m) {
