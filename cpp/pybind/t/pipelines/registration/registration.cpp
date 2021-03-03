@@ -63,7 +63,7 @@ public:
 };
 
 void pybind_registration_classes(py::module &m) {
-    // open3d.registration.ICPConvergenceCriteria
+    // open3d.t.pipelines.registration.ICPConvergenceCriteria
     py::class_<ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria",
             "Class that defines the convergence criteria of ICP. ICP "
