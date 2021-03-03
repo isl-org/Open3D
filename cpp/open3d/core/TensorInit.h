@@ -103,15 +103,14 @@ struct InitializerShapeImpl<0> {
     }
 };
 
-template <typename R, typename U, size_t... S>
-R InitializerShape(U t, std::index_sequence<S...>) {
-    using size_type = typename R::value_type;
-    return {size_type(InitializerShapeImpl<S>::value(t))...};
+template <typename U, size_t... S>
+SizeVector InitializerShape(U t, std::index_sequence<S...>) {
+    return {int64_t(InitializerShapeImpl<S>::value(t))...};
 }
 
 template <typename T>
 SizeVector Shape(T t) {
-    return InitializerShape<SizeVector, decltype(t)>(
+    return InitializerShape<decltype(t)>(
             t, std::make_index_sequence<
                        InitializerDimension<decltype(t)>::value>());
 }
