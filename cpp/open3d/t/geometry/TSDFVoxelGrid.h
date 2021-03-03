@@ -73,33 +73,69 @@ public:
     void Integrate(const Image &depth,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
-                   double depth_scale = 1000.0,
-                   double depth_max = 3.0);
+                   float depth_scale = 1000.0f,
+                   float depth_max = 3.0f);
 
     /// RGB-D integration.
     void Integrate(const Image &depth,
                    const Image &color,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
-                   double depth_scale = 1000.0,
-                   double depth_max = 3.0);
+                   float depth_scale = 1000.0f,
+                   float depth_max = 3.0f);
+
+    /// Use volumetric ray casting to obtain vertex and color maps, mainly for
+    /// dense visual odometry.
+    /// intrinsics and extrinsics defines the camera properties for image
+    /// generation. width and height defines the image size.
+    /// Note: vertex map is
+    /// interpolated along the ray, but color map is not trilinearly
+    /// interpolated due to performance requirements. Colormap is only used for
+    /// a reference now.
+    std::tuple<core::Tensor, core::Tensor> RayCast(
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics,
+            int width,
+            int height,
+            int max_steps = 50,
+            float depth_min = 0.1f,
+            float depth_max = 3.0f,
+            float weight_threshold = 3.0f);
 
     /// Extract point cloud near iso-surfaces.
-    PointCloud ExtractSurfacePoints();
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    PointCloud ExtractSurfacePoints(float weight_threshold = 3.0f);
 
     /// Extract mesh near iso-surfaces with Marching Cubes.
-    TriangleMesh ExtractSurfaceMesh();
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    TriangleMesh ExtractSurfaceMesh(float weight_threshold = 3.0f);
 
-    /// Copy TSDFVoxelGrid to the target device.
-    TSDFVoxelGrid Copy(const core::Device &device);
+    /// Convert TSDFVoxelGrid to the target device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new TSDFVoxelGrid is always created; if false,
+    /// the copy is avoided when the original TSDFVoxelGrid is already on the
+    /// targeted device.
+    TSDFVoxelGrid To(const core::Device &device, bool copy = false) const;
+
+    /// Clone TSDFVoxelGrid on the same device.
+    TSDFVoxelGrid Clone() const { return To(GetDevice(), true); }
 
     /// Copy TSDFVoxelGrid to CPU.
-    TSDFVoxelGrid CPU();
+    TSDFVoxelGrid CPU() const { return To(core::Device("CPU:0"), false); }
 
     /// Copy TSDFVoxelGrid to CUDA.
-    TSDFVoxelGrid CUDA(int device_id = 0);
+    TSDFVoxelGrid CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id),
+                  false);
+    }
 
-    core::Device GetDevice() { return device_; }
+    core::Device GetDevice() const { return device_; }
 
 protected:
     /// Return  \addrs and \masks for radius (3) neighbor entries.

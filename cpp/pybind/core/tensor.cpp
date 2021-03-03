@@ -51,6 +51,7 @@
     });                                                                     \
     tensor.def(#py_name, &Tensor::cpp_name<float>);                         \
     tensor.def(#py_name, &Tensor::cpp_name<double>);                        \
+    tensor.def(#py_name, &Tensor::cpp_name<int16_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int32_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int64_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
@@ -62,6 +63,10 @@
                 .cpp_name(self);                                          \
     });                                                                   \
     tensor.def(#py_name, [](const Tensor& self, double value) {           \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, int16_t value) {          \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
     });                                                                   \
@@ -213,11 +218,10 @@ void pybind_core_tensor(py::module& m) {
                            utility::optional<Device> device) {
                    Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
                    if (dtype.has_value()) {
-                       t = t.To(dtype.value(), /*copy=*/false);
+                       t = t.To(dtype.value());
                    }
-                   if (device.has_value() &&
-                       device.value() != core::Device("CPU:0")) {
-                       t = t.Copy(device.value());
+                   if (device.has_value()) {
+                       t = t.To(device.value());
                    }
                    return t;
                }),
@@ -265,6 +269,7 @@ void pybind_core_tensor(py::module& m) {
     BindTensorCreation(tensor, "ones", Tensor::Ones);
     BindTensorFullCreation<float>(tensor);
     BindTensorFullCreation<double>(tensor);
+    BindTensorFullCreation<int16_t>(tensor);
     BindTensorFullCreation<int32_t>(tensor);
     BindTensorFullCreation<int64_t>(tensor);
     BindTensorFullCreation<uint8_t>(tensor);
@@ -280,52 +285,55 @@ void pybind_core_tensor(py::module& m) {
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
-    // Tensor creation from arange for int
+    // Tensor creation from arange for int.
     tensor.def_static(
             "arange",
-            [](int64_t stop, utility::optional<Device> device) {
-                return Tensor::Arange<int64_t>(
+            [](int64_t stop, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
                         0, stop, 1,
+                        dtype.has_value() ? dtype.value() : Dtype::Int64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
-            "stop"_a, "device"_a = py::none());
+            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             "arange",
             [](utility::optional<int64_t> start, int64_t stop,
-               utility::optional<int64_t> step,
+               utility::optional<int64_t> step, utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
-                return Tensor::Arange<int64_t>(
+                return Tensor::Arange(
                         start.has_value() ? start.value() : 0, stop,
                         step.has_value() ? step.value() : 1,
+                        dtype.has_value() ? dtype.value() : Dtype::Int64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
-            "device"_a = py::none());
+            "dtype"_a = py::none(), "device"_a = py::none());
 
-    // Tensor creation from arange for float
+    // Tensor creation from arange for float.
     tensor.def_static(
             "arange",
-            [](double stop, utility::optional<Device> device) {
-                return Tensor::Arange<double>(
+            [](double stop, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
                         0.0, stop, 1.0,
+                        dtype.has_value() ? dtype.value() : Dtype::Float64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
-            "stop"_a, "device"_a = py::none());
+            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             "arange",
             [](utility::optional<double> start, double stop,
-               utility::optional<double> step,
+               utility::optional<double> step, utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
-                return Tensor::Arange<double>(
+                return Tensor::Arange(
                         start.has_value() ? start.value() : 0.0, stop,
                         step.has_value() ? step.value() : 1.0,
+                        dtype.has_value() ? dtype.value() : Dtype::Float64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
-            "device"_a = py::none());
-
-    // Tensor copy.
-    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
+            "dtype"_a = py::none(), "device"_a = py::none());
 
     // Device transfer.
     tensor.def(
@@ -341,11 +349,11 @@ void pybind_core_tensor(py::module& m) {
                             "device_id < {}",
                             device_id, cuda::DeviceCount());
                 }
-                return tensor.Copy(Device(Device::DeviceType::CUDA, device_id));
+                return tensor.To(Device(Device::DeviceType::CUDA, device_id));
             },
             "device_id"_a = 0);
     tensor.def("cpu", [](const Tensor& tensor) {
-        return tensor.Copy(Device(Device::DeviceType::CPU, 0));
+        return tensor.To(Device(Device::DeviceType::CPU, 0));
     });
 
     // Buffer I/O for Numpy and DLPack(PyTorch).
@@ -392,23 +400,51 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    // Numpy IO.
+    tensor.def("save", &Tensor::Save);
+    tensor.def_static("load", &Tensor::Load);
+
     /// Linalg operations.
+    tensor.def("det", &Tensor::Det);
+    tensor.def("lu_ipiv", &Tensor::LUIpiv);
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
     tensor.def("lstsq", &Tensor::LeastSquares);
     tensor.def("solve", &Tensor::Solve);
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
+    tensor.def("triu", &Tensor::Triu);
+    tensor.def("tril", &Tensor::Tril);
+    tensor.def("triul", &Tensor::Triul);
+    tensor.def(
+            "lu",
+            [](const Tensor& tensor, bool permute_l) {
+                return tensor.LU(permute_l);
+            },
+            "permute_l"_a = false);
 
-    // Casting.
+    // Casting can copying.
     tensor.def(
             "to",
-            [](const Tensor& tensor, const Dtype& dtype, bool copy) {
+            [](const Tensor& tensor, Dtype dtype, bool copy) {
                 return tensor.To(dtype, copy);
             },
             "dtype"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, bool copy) {
+                return tensor.To(device, copy);
+            },
+            "device"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, Dtype dtype,
+               bool copy) { return tensor.To(device, dtype, copy); },
+            "device"_a, "dtype"_a, "copy"_a = false);
+    tensor.def("clone", &Tensor::Clone);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
+    tensor.def("is_contiguous", &Tensor::IsContiguous);
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
@@ -565,6 +601,8 @@ void pybind_core_tensor(py::module& m) {
             return py::float_(tensor.Item<float>());
         } else if (dtype == Dtype::Float64) {
             return py::float_(tensor.Item<double>());
+        } else if (dtype == Dtype::Int16) {
+            return py::int_(tensor.Item<int16_t>());
         } else if (dtype == Dtype::Int32) {
             return py::int_(tensor.Item<int32_t>());
         } else if (dtype == Dtype::Int64) {

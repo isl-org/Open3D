@@ -11,23 +11,57 @@
 include(ExternalProject)
 
 if(WIN32)
-    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2")
-    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2")
-elseif(APPLE)
-    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2")
-    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2")
-else()
-    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2")
+    set_local_or_remote_url(
+        MKL_INCLUDE_URL
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mkl-include-2020.1-intel_216-win-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-win-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2"
+    )
+    set(MKL_INCLUDE_SHA256 65cedb770358721fd834224cd8be1fe1cc10b37ef2a1efcc899fc2fefbeb5b31)
     set_local_or_remote_url(
         MKL_URL
-        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_217.tar.bz2"
-        REMOTE_URLS "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2"
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_216-win-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-win-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2"
     )
+    set(MKL_SHA256 c6f037aa9e53501d91d5245b6e65020399ebf34174cc4d03637818ebb6e6b6b9)
+elseif(APPLE)
+    set_local_or_remote_url(
+        MKL_INCLUDE_URL
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mkl-include-2020.1-intel_216-osx-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-osx-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2"
+    )
+    set(MKL_INCLUDE_SHA256 d4d025bd17ce75b92c134f70759b93ae1dee07801d33bcc59e40778003f05de5)
+    set_local_or_remote_url(
+        MKL_URL
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_216-osx-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-osx-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2"
+    )
+    set(MKL_SHA256 ca94ab8933cf58cbb7b42ac1bdc8671a948490fd1e0e9cea71a5b4d613b21be4)
+else()
+    set_local_or_remote_url(
+        MKL_INCLUDE_URL
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mkl-include-2020.1-intel_217-linux-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_217-linux-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2"
+    )
+    set(MKL_INCLUDE_SHA256 c0c4e7f261aa9182d811b91132c622211e55a5f3dfb8afb65a5377804f39eb61)
+    set_local_or_remote_url(
+        MKL_URL
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_217-linux-64.tar.bz2"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_217-linux-64.tar.bz2"
+                    "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2"
+    )
+    set(MKL_SHA256 44fe60fa895c8967fe7c70fd1b680700f23ecac6ae038b267aa0a0c48dce3d59)
+    # URL for merged libmkl_merged.a for Ubuntu.
     set_local_or_remote_url(
         MKL_MERGED_URL
-        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/linux-merged-mkl-static-2020.1-intel_217.zip"
+        LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/linux-merged-mkl-static-2020.1-intel_217.zip"
         REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.10.0/linux-merged-mkl-static-2020.1-intel_217.zip"
     )
+    set(MKL_MERGED_SHA256 027c2b0d89c554479edbe5faecb93c26528877c1b682f939f8e1764d96860064)
 endif()
 
 # Where MKL and TBB headers and libs will be installed.
@@ -41,6 +75,7 @@ if(WIN32)
         ext_mkl_include
         PREFIX mkl_include
         URL ${MKL_INCLUDE_URL}
+        URL_HASH SHA256=${MKL_INCLUDE_SHA256}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -50,6 +85,7 @@ if(WIN32)
         ext_mkl
         PREFIX mkl
         URL ${MKL_URL}
+        URL_HASH SHA256=${MKL_SHA256}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -73,6 +109,7 @@ elseif(APPLE)
         ext_mkl_include
         PREFIX mkl_include
         URL ${MKL_INCLUDE_URL}
+        URL_HASH SHA256=${MKL_INCLUDE_SHA256}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -82,6 +119,7 @@ elseif(APPLE)
         ext_mkl
         PREFIX mkl
         URL ${MKL_URL}
+        URL_HASH SHA256=${MKL_SHA256}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -93,6 +131,7 @@ else()
         ext_mkl_include
         PREFIX mkl_include
         URL ${MKL_INCLUDE_URL}
+        URL_HASH SHA256=${MKL_INCLUDE_SHA256}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -118,6 +157,7 @@ else()
             ext_mkl
             PREFIX mkl
             URL ${MKL_URL}
+            URL_HASH SHA256=${MKL_SHA256}
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE ON
@@ -137,6 +177,7 @@ else()
             ext_mkl
             PREFIX mkl
             URL ${MKL_MERGED_URL}
+            URL_HASH SHA256=${MKL_MERGED_SHA256}
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE ON

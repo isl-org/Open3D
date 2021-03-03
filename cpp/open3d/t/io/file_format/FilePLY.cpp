@@ -66,7 +66,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
         return 0;
     }
 
-    T *data_ptr = static_cast<T *>(attr_state->data_.GetDataPtr());
+    T *data_ptr = attr_state->data_.GetDataPtr<T>();
     data_ptr[attr_state->current_size_++] =
             static_cast<T>(ply_get_argument_value(argument));
 
@@ -189,7 +189,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     PLYReaderState state;
 
     const char *element_name;
-    long element_size;
+    long element_size = 0;
     // Loop through ply elements and find "vertex".
     p_ply_element element = ply_get_next_element(ply_file, nullptr);
     while (element) {
@@ -331,7 +331,7 @@ static e_ply_type GetPlyType(const core::Dtype &dtype) {
 
 template <typename T>
 static const T *GetValue(core::Tensor t_attr, int pos) {
-    return static_cast<const T *>(t_attr.GetDataPtr());
+    return t_attr.GetDataPtr<T>();
 }
 
 bool WritePointCloudToPLY(const std::string &filename,

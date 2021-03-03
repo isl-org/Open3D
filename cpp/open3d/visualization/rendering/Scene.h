@@ -69,6 +69,8 @@ public:
     Scene(Renderer& renderer) : renderer_(renderer) {}
     virtual ~Scene() = default;
 
+    virtual Scene* Copy() = 0;
+
     // NOTE: Temporarily need to support old View interface for ImGUI
     virtual ViewHandle AddView(std::int32_t x,
                                std::int32_t y,
@@ -170,6 +172,9 @@ public:
                              float intensity) = 0;
     virtual void EnableSunLight(bool enable) = 0;
     virtual void EnableSunLightShadows(bool enable) = 0;
+    virtual void SetSunLightColor(const Eigen::Vector3f& color) = 0;
+    virtual Eigen::Vector3f GetSunLightColor() = 0;
+    virtual void SetSunLightIntensity(float intensity) = 0;
     virtual float GetSunLightIntensity() = 0;
     virtual void SetSunLightDirection(const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetSunLightDirection() = 0;
@@ -188,6 +193,11 @@ public:
     virtual void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) = 0;
+    virtual void SetBackground(TextureHandle image) = 0;
+
+    enum class GroundPlane { XZ, XY, YZ };
+    virtual void EnableGroundPlane(bool enable, GroundPlane plane) = 0;
+    virtual void SetGroundPlaneColor(const Eigen::Vector4f& color) = 0;
 
     /// Size of image is the size of the window.
     virtual void RenderToImage(

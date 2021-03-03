@@ -1,5 +1,12 @@
-file(GLOB HEADER_FILES "*.h")
-file(GLOB SOURCE_FILES "*.cpp")
+set(HEADER_FILES
+    AlignmentSession.h
+    VisualizerForAlignment.h
+    )
+set(SOURCE_FILES
+    AlignmentSession.cpp
+    ManuallyAlignPointCloud.cpp
+    VisualizerForAlignment.cpp
+    )
 
 include_directories(".")
 

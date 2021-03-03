@@ -230,6 +230,81 @@ SizeVector Iota(int64_t n) {
     return sv;
 }
 
+SizeVector DefaultStrides(const SizeVector& shape) {
+    SizeVector strides(shape.size());
+    int64_t stride_size = 1;
+    for (int64_t i = shape.size(); i > 0; --i) {
+        strides[i - 1] = stride_size;
+        // Handles 0-sized dimensions
+        stride_size *= std::max<int64_t>(shape[i - 1], 1);
+    }
+    return strides;
+}
+
+std::pair<bool, SizeVector> Restride(const SizeVector& old_shape,
+                                     const SizeVector& old_strides,
+                                     const SizeVector& new_shape) {
+    if (old_shape.empty()) {
+        return std::make_pair(true, SizeVector(new_shape.size(), 1));
+    }
+
+    // NOTE: Stride is arbitrary in the numel() == 0 case. To match NumPy
+    // behavior we copy the strides if the size matches, otherwise we use the
+    // stride as if it were computed via resize. This could perhaps be combined
+    // with the below code, but the complexity didn't seem worth it.
+    int64_t numel = old_shape.NumElements();
+    if (numel == 0 && old_shape == new_shape) {
+        return std::make_pair(true, old_strides);
+    }
+
+    SizeVector new_strides(new_shape.size());
+    if (numel == 0) {
+        for (int64_t view_d = new_shape.size() - 1; view_d >= 0; view_d--) {
+            if (view_d == (int64_t)(new_shape.size() - 1)) {
+                new_strides[view_d] = 1;
+            } else {
+                new_strides[view_d] =
+                        std::max<int64_t>(new_shape[view_d + 1], 1) *
+                        new_strides[view_d + 1];
+            }
+        }
+        return std::make_pair(true, new_strides);
+    }
+
+    int64_t view_d = new_shape.size() - 1;
+    // Stride for each subspace in the chunk
+    int64_t chunk_base_stride = old_strides.back();
+    // Numel in current chunk
+    int64_t tensor_numel = 1;
+    int64_t view_numel = 1;
+    for (int64_t tensor_d = old_shape.size() - 1; tensor_d >= 0; tensor_d--) {
+        tensor_numel *= old_shape[tensor_d];
+        // If end of tensor size chunk, check view
+        if ((tensor_d == 0) ||
+            (old_shape[tensor_d - 1] != 1 &&
+             old_strides[tensor_d - 1] != tensor_numel * chunk_base_stride)) {
+            while (view_d >= 0 &&
+                   (view_numel < tensor_numel || new_shape[view_d] == 1)) {
+                new_strides[view_d] = view_numel * chunk_base_stride;
+                view_numel *= new_shape[view_d];
+                view_d--;
+            }
+            if (view_numel != tensor_numel) {
+                return std::make_pair(false, SizeVector());
+            }
+            if (tensor_d > 0) {
+                chunk_base_stride = old_strides[tensor_d - 1];
+                tensor_numel = 1;
+                view_numel = 1;
+            }
+        }
+    }
+    if (view_d != -1) {
+        return std::make_pair(false, SizeVector());
+    }
+    return std::make_pair(true, new_strides);
+}
+
 }  // namespace shape_util
 }  // namespace core
 }  // namespace open3d

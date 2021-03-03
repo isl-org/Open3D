@@ -76,6 +76,16 @@ void pybind_viewcontrol(py::module &m) {
             .def("translate", &ViewControl::Translate,
                  "Function to process translation", "x"_a, "y"_a, "xo"_a = 0.0,
                  "yo"_a = 0.0)
+            .def("camera_local_translate", &ViewControl::CameraLocalTranslate,
+                 "Function to process translation of camera", "forward"_a,
+                 "right"_a, "up"_a)
+            .def("camera_local_rotate", &ViewControl::CameraLocalRotate,
+                 "Function to process rotation of camera in a local"
+                 "coordinate frame",
+                 "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
+            .def("reset_camera_local_rotate",
+                 &ViewControl::ResetCameraLocalRotate,
+                 "Resets the coordinate frame for local camera rotations")
             .def("get_field_of_view", &ViewControl::GetFieldOfView,
                  "Function to get field of view")
             .def("change_field_of_view", &ViewControl::ChangeFieldOfView,

@@ -34,6 +34,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
@@ -212,54 +213,46 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
 
 TEST_P(TensorPermuteDevices, Arange) {
     core::Device device = GetParam();
+    core::Tensor arange;
 
-    // Test float.
-    std::vector<float> valsf{0, 1, 2, 3, 4};
-    float startf = 0.0;
-    float stopf = 5.0;
-    float stepf = 1.0;
-    core::Tensor arangef =
-            core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+    // Double value to float type.
+    arange = core::Tensor::Arange(0.0, 5.0, 1.0, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(arange.GetShape(), core::SizeVector({5}));
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4}));
 
-    // Test float with non-one step.
-    valsf = {0.1, 2.1, 4.1};
-    startf = 0.1;
-    stopf = 6.0;
-    stepf = 2.0;
-    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+    // Double value to int type.
+    arange = core::Tensor::Arange(0.0, 5.0, 1.0, core::Dtype::Int32, device);
+    EXPECT_EQ(arange.GetDtype(), core::Dtype::Int32);
+    EXPECT_EQ(arange.GetShape(), core::SizeVector({5}));
+    EXPECT_EQ(arange.ToFlatVector<int>(), std::vector<int>({0, 1, 2, 3, 4}));
 
-    // Test float with negative step.
-    valsf = {0, -2.0, -4.0};
-    startf = 0.0;
-    stopf = -4.1;
-    stepf = -2.0;
-    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.ToFlatVector<float>(), valsf);
+    // Int value to float type.
+    arange = core::Tensor::Arange(0, 5, 1, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(arange.GetShape(), core::SizeVector({5}));
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4}));
+
+    // Float value with non-integer step.
+    arange = core::Tensor::Arange(0.1, 6.0, 2.0, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0.1, 2.1, 4.1}));
+
+    // Float value with negative step.
+    arange =
+            core::Tensor::Arange(0.0, -4.1, -2.0, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.ToFlatVector<float>(),
+              std::vector<float>({0, -2.0, -4.0}));
 
     // Test empty set -- empty Tensor.
-    startf = 0.0;
-    stopf = 2.0;
-    stepf = -2.0;
-    arangef = core::Tensor::Arange<float>(startf, stopf, stepf, device);
-    EXPECT_EQ(arangef.NumElements(), 0);
+    arange = core::Tensor::Arange(0, 2, -2, core::Dtype::Float32, device);
+    EXPECT_EQ(arange.NumElements(), 0);
 
     // Test zero step -- error.
-    startf = 0.0;
-    stopf = 2.0;
-    stepf = 0.0;
-    EXPECT_THROW(core::Tensor::Arange<float>(startf, stopf, stepf, device),
+    EXPECT_THROW(core::Tensor::Arange(0, 2, 0, core::Dtype::Float32, device),
                  std::runtime_error);
-
-    // Test int.
-    std::vector<int64_t> valsi{0, 1, 2, 3, 4};
-    int64_t starti = 0;
-    int64_t stopi = 5;
-    int64_t stepi = 1;
-    core::Tensor arangei =
-            core::Tensor::Arange<int64_t>(starti, stopi, stepi, device);
-    EXPECT_EQ(arangei.ToFlatVector<int64_t>(), valsi);
 }
 
 TEST_P(TensorPermuteDevices, Fill) {
@@ -320,7 +313,7 @@ TEST_P(TensorPermuteDevicePairs, Copy) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     core::Tensor src_t(vals, shape, dtype, src_device);
 
-    core::Tensor dst_t = src_t.Copy(dst_device);
+    core::Tensor dst_t = src_t.To(dst_device, /*copy=*/true);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
@@ -339,7 +332,7 @@ TEST_P(TensorPermuteDevicePairs, CopyBool) {
     std::vector<bool> vals{true, false, true, false, true, true};
     core::Tensor src_t(vals, shape, dtype, src_device);
 
-    core::Tensor dst_t = src_t.Copy(dst_device);
+    core::Tensor dst_t = src_t.To(dst_device, /*copy=*/true);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
@@ -635,7 +628,7 @@ TEST_P(TensorPermuteDevicePairs, CopyContiguous) {
     EXPECT_NE(t_1.GetDataPtr(), t_1.GetBlob()->GetDataPtr());
     EXPECT_TRUE(t_1.IsContiguous());
 
-    core::Tensor t_1_copy = t_1.Copy(dst_device);
+    core::Tensor t_1_copy = t_1.To(dst_device, /*copy=*/true);
     EXPECT_EQ(t_1_copy.GetShape(), core::SizeVector({3, 4}));
     EXPECT_EQ(t_1_copy.GetStrides(), core::SizeVector({4, 1}));
     EXPECT_EQ(t_1_copy.GetDataPtr(),
@@ -873,7 +866,7 @@ TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
 
     // Copy ensures contiguous
     {
-        core::Tensor t_1_copy = t_1.Copy(src_device);
+        core::Tensor t_1_copy = t_1.To(src_device, /*copy=*/true);
         EXPECT_TRUE(t_1_copy.IsContiguous());
         EXPECT_EQ(t_1_copy.GetShape(), core::SizeVector({2, 2, 2}));
         EXPECT_EQ(t_1_copy.GetStrides(), core::SizeVector({4, 2, 1}));
@@ -881,7 +874,7 @@ TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
                   std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
     }
     {
-        core::Tensor t_1_copy = t_1.Copy(dst_device);
+        core::Tensor t_1_copy = t_1.To(dst_device, /*copy=*/true);
         EXPECT_TRUE(t_1_copy.IsContiguous());
         EXPECT_EQ(t_1_copy.GetShape(), core::SizeVector({2, 2, 2}));
         EXPECT_EQ(t_1_copy.GetStrides(), core::SizeVector({4, 2, 1}));
@@ -1196,21 +1189,29 @@ TEST_P(TensorPermuteDevices, T) {
 
 TEST_P(TensorPermuteDevices, Det) {
     core::Device device = GetParam();
+    // Det supports both Float32 and Float64.
+    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
-    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
-    double t_t = t.Det();
-    EXPECT_DOUBLE_EQ(t_t, -40.0);
+    // Float32 test.
+    core::Tensor A_3x3f = core::Tensor::Init<float>(
+            {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
 
-    // Current implementation does not support any shape other than {3,3}.
-    std::vector<float> vals_4x4{-5, 0, -1, 1, 2, -1, -3, 4,
-                                1,  1, 1,  1, 1, 2,  2,  2};
-    core::Tensor t_4x4(vals_4x4, {4, 4}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x4.Det());
+    double A_3x3f_det = A_3x3f.Det();
+    EXPECT_DOUBLE_EQ(A_3x3f_det, -40.0);
 
-    std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
-    core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x3.Det());
+    // Float64 test.
+    core::Tensor A_3x3d = core::Tensor::Init<double>(
+            {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
+    double A_3x3d_det = A_3x3d.Det();
+    EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
+
+    // Singular test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
+
+    // Det expects a 2D square matrix [shape test].
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());
 }
 
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
@@ -2732,7 +2733,7 @@ TEST_P(TensorPermuteDevices, IsSame) {
     EXPECT_TRUE(t1_slice.IsSame(t0_slice));
 
     // Explicit copy to the same device.
-    core::Tensor t0_copy = t0.Copy(device);
+    core::Tensor t0_copy = t0.Clone();
     EXPECT_FALSE(t0.IsSame(t0_copy));
     EXPECT_FALSE(t0_copy.IsSame(t0));
 
@@ -2742,6 +2743,62 @@ TEST_P(TensorPermuteDevices, IsSame) {
     EXPECT_TRUE(t0.IsSame(vec[0]));
     EXPECT_TRUE(t1.IsSame(vec[1]));
     EXPECT_TRUE(vec[0].IsSame(vec[1]));
+}
+
+TEST_P(TensorPermuteDevices, NumpyIO) {
+    const core::Device &device = GetParam();
+    const std::string file_name = "tensor.npy";
+
+    core::Tensor t;
+    core::Tensor t_load;
+
+    // 2x2 tensor.
+    t = core::Tensor::Init<float>({{1, 2}, {3, 4}}, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
+
+    // Non-contiguous tensor will be stored as contiguous tensor.
+    t = core::Tensor::Init<float>(
+            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
+             {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
+            device);
+    // t[0:2:1, 0:3:2, 0:4:2]
+    t = t.Slice(0, 0, 2, 1).Slice(1, 0, 3, 2).Slice(2, 0, 4, 2);
+    t.Save(file_name);
+    EXPECT_FALSE(t.IsContiguous());
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t_load.IsContiguous());
+    EXPECT_EQ(t_load.GetShape(), core::SizeVector({2, 2, 2}));
+    EXPECT_EQ(t_load.ToFlatVector<float>(),
+              std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
+
+    // {} tensor (scalar).
+    t = core::Tensor::Init<float>(3.14, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
+
+    // {0} tensor.
+    t = core::Tensor::Ones({0}, core::Dtype::Float32, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
+
+    // {0, 0} tensor.
+    t = core::Tensor::Ones({0, 0}, core::Dtype::Float32, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
+
+    // {0, 1, 0} tensor.
+    t = core::Tensor::Ones({0, 1, 0}, core::Dtype::Float32, device);
+    t.Save(file_name);
+    t_load = core::Tensor::Load(file_name);
+    EXPECT_TRUE(t.AllClose(t_load.To(device)));
+
+    // Clean up.
+    utility::filesystem::RemoveFile(file_name);
 }
 
 }  // namespace tests

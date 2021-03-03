@@ -27,6 +27,7 @@
 import open3d as o3d
 import numpy as np
 import pytest
+import tempfile
 
 import sys
 import os
@@ -34,22 +35,60 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
 
+def list_dtypes():
+    return [
+        o3d.core.Dtype.Float32,
+        o3d.core.Dtype.Float64,
+        o3d.core.Dtype.Int16,
+        o3d.core.Dtype.Int32,
+        o3d.core.Dtype.Int64,
+        o3d.core.Dtype.UInt8,
+        o3d.core.Dtype.UInt16,
+        o3d.core.Dtype.Bool,
+    ]
+
+
+def list_non_bool_dtypes():
+    return [
+        o3d.core.Dtype.Float32,
+        o3d.core.Dtype.Float64,
+        o3d.core.Dtype.Int16,
+        o3d.core.Dtype.Int32,
+        o3d.core.Dtype.Int64,
+        o3d.core.Dtype.UInt8,
+        o3d.core.Dtype.UInt16,
+    ]
+
+
+def to_numpy_dtype(dtype: o3d.core.Dtype):
+    conversions = {
+        o3d.core.Dtype.Float32: np.float32,
+        o3d.core.Dtype.Float64: np.float64,
+        o3d.core.Dtype.Int16: np.int16,
+        o3d.core.Dtype.Int32: np.int32,
+        o3d.core.Dtype.Int64: np.int64,
+        o3d.core.Dtype.UInt8: np.uint8,
+        o3d.core.Dtype.UInt16: np.uint16,
+        o3d.core.Dtype.Bool: bool,  # np.bool deprecated
+    }
+    return conversions[dtype]
+
+
+@pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices())
-def test_creation(device):
+def test_creation(dtype, device):
     # Shape takes tuple, list or o3d.core.SizeVector
-    t = o3d.core.Tensor.empty((2, 3), o3d.core.Dtype.Float32, device=device)
+    t = o3d.core.Tensor.empty((2, 3), dtype, device=device)
     assert t.shape == o3d.core.SizeVector([2, 3])
-    t = o3d.core.Tensor.empty([2, 3], o3d.core.Dtype.Float32, device=device)
+    t = o3d.core.Tensor.empty([2, 3], dtype, device=device)
     assert t.shape == o3d.core.SizeVector([2, 3])
-    t = o3d.core.Tensor.empty(o3d.core.SizeVector([2, 3]),
-                              o3d.core.Dtype.Float32,
-                              device=device)
+    t = o3d.core.Tensor.empty(o3d.core.SizeVector([2, 3]), dtype, device=device)
     assert t.shape == o3d.core.SizeVector([2, 3])
 
     # Test zeros and ones
-    t = o3d.core.Tensor.zeros((2, 3), o3d.core.Dtype.Float32, device=device)
+    t = o3d.core.Tensor.zeros((2, 3), dtype, device=device)
     np.testing.assert_equal(t.cpu().numpy(), np.zeros((2, 3), dtype=np.float32))
-    t = o3d.core.Tensor.ones((2, 3), o3d.core.Dtype.Float32, device=device)
+    t = o3d.core.Tensor.ones((2, 3), dtype, device=device)
     np.testing.assert_equal(t.cpu().numpy(), np.ones((2, 3), dtype=np.float32))
 
     # Automatic casting of dtype.
@@ -62,14 +101,12 @@ def test_creation(device):
 
 @pytest.mark.parametrize("shape", [(), (0,), (1,), (0, 2), (0, 0, 2),
                                    (2, 0, 3)])
+@pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices())
-def test_creation_special_shapes(shape, device):
-    o3_t = o3d.core.Tensor.full(shape,
-                                3.14,
-                                o3d.core.Dtype.Float32,
-                                device=device)
-    np_t = np.full(shape, 3.14, dtype=np.float32)
-    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+def test_creation_special_shapes(shape, dtype, device):
+    o3_t = o3d.core.Tensor.full(shape, 3.14, dtype, device=device)
+    np_t = np.full(shape, 3.14, dtype=to_numpy_dtype(dtype))
+    np.testing.assert_allclose(o3_t.cpu().numpy(), np_t)
 
 
 def test_dtype():
@@ -140,19 +177,19 @@ def test_size_vector():
         sv = o3d.core.SizeVector(["foo", "bar"])
 
 
+@pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices())
-def test_tensor_constructor(device):
-    dtype = o3d.core.Dtype.Int32
-
+def test_tensor_constructor(dtype, device):
     # Numpy array
-    np_t = np.array([[0, 1, 2], [3, 4, 5]])
-    o3_t = o3d.core.Tensor(np_t, dtype, device)
+    np_t = np.array([[0, 1, 2], [3, 4, 5]], dtype=to_numpy_dtype(dtype))
+    o3_t = o3d.core.Tensor(np_t, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list
     li_t = [[0, 1, 2], [3, 4, 5]]
-    no3_t = o3d.core.Tensor(li_t, dtype, device)
-    np.testing.assert_equal(li_t, o3_t.cpu().numpy())
+    np_t = np.array(li_t, dtype=to_numpy_dtype(dtype))
+    o3_t = o3d.core.Tensor(li_t, dtype, device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
@@ -162,12 +199,12 @@ def test_tensor_constructor(device):
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
     np_t_int = np.array([[0, 1, 2], [3, 4, 5]])
-    o3_t = o3d.core.Tensor(np_t_double, dtype, device)
+    o3_t = o3d.core.Tensor(np_t_double, o3d.core.Dtype.Int32, device)
     np.testing.assert_equal(np_t_int, o3_t.cpu().numpy())
 
     # Special strides
     np_t = np.random.randint(10, size=(10, 10))[1:10:2, 1:10:3].T
-    o3_t = o3d.core.Tensor(np_t, dtype, device)
+    o3_t = o3d.core.Tensor(np_t, o3d.core.Dtype.Int32, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Boolean
@@ -184,13 +221,17 @@ def test_arange(device):
     setups = [(0, 10, 1), (0, 10, 1), (0.0, 10.0, 2.0), (0.0, -10.0, -2.0)]
     for start, stop, step in setups:
         np_t = np.arange(start, stop, step)
-        o3_t = o3d.core.Tensor.arange(start, stop, step, device)
+        o3_t = o3d.core.Tensor.arange(start,
+                                      stop,
+                                      step,
+                                      dtype=None,
+                                      device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Only stop.
     for stop in [1.0, 2.0, 3.0, 1, 2, 3]:
         np_t = np.arange(stop)
-        o3_t = o3d.core.Tensor.arange(stop, device)
+        o3_t = o3d.core.Tensor.arange(stop, dtype=None, device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Only start, stop (step = 1).
@@ -198,8 +239,35 @@ def test_arange(device):
     for start, stop in setups:
         np_t = np.arange(start, stop)
         # Not full parameter list, need to specify device by kw.
-        o3_t = o3d.core.Tensor.arange(start, stop, device=device)
+        o3_t = o3d.core.Tensor.arange(start, stop, dtype=None, device=device)
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: int -> int.
+    o3_t = o3d.core.Tensor.arange(0, 5, dtype=None, device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Int64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: int, float -> float.
+    o3_t = o3d.core.Tensor.arange(0, 5.0, dtype=None, device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Float64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: float, float -> float.
+    o3_t = o3d.core.Tensor.arange(0.0, 5.0, dtype=None, device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Float64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Type inference: explicit type.
+    o3_t = o3d.core.Tensor.arange(0.0,
+                                  5.0,
+                                  dtype=o3d.core.Dtype.Int64,
+                                  device=device)
+    np_t = np.arange(0, 5)
+    assert o3_t.dtype == o3d.core.Dtype.Int64
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
 def test_tensor_from_to_numpy():
@@ -253,10 +321,15 @@ def test_tensor_to_numpy_scope():
     np.testing.assert_equal(dst_t, src_t)
 
 
+@pytest.mark.parametrize("dtype", list_non_bool_dtypes())
 @pytest.mark.parametrize("device", list_devices())
-def test_binary_ew_ops(device):
-    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
-    b = o3d.core.Tensor(np.array([2, 3, 4, 5, 6, 7]), device=device)
+def test_binary_ew_ops(dtype, device):
+    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]),
+                        dtype=dtype,
+                        device=device)
+    b = o3d.core.Tensor(np.array([2, 3, 4, 5, 6, 7]),
+                        dtype=dtype,
+                        device=device)
     np.testing.assert_equal((a + b).cpu().numpy(),
                             np.array([6, 9, 12, 15, 18, 21]))
     np.testing.assert_equal((a - b).cpu().numpy(), np.array([2, 3, 4, 5, 6, 7]))
@@ -264,19 +337,27 @@ def test_binary_ew_ops(device):
                             np.array([8, 18, 32, 50, 72, 98]))
     np.testing.assert_equal((a / b).cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
-    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
+    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]),
+                        dtype=dtype,
+                        device=device)
     a += b
     np.testing.assert_equal(a.cpu().numpy(), np.array([6, 9, 12, 15, 18, 21]))
 
-    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
+    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]),
+                        dtype=dtype,
+                        device=device)
     a -= b
     np.testing.assert_equal(a.cpu().numpy(), np.array([2, 3, 4, 5, 6, 7]))
 
-    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
+    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]),
+                        dtype=dtype,
+                        device=device)
     a *= b
     np.testing.assert_equal(a.cpu().numpy(), np.array([8, 18, 32, 50, 72, 98]))
 
-    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
+    a = o3d.core.Tensor(np.array([4, 6, 8, 10, 12, 14]),
+                        dtype=dtype,
+                        device=device)
     a //= b
     np.testing.assert_equal(a.cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
@@ -360,7 +441,6 @@ def test_getitem(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_setitem(device):
     np_ref = np.array(range(24)).reshape((2, 3, 4))
-    o3_ref = o3d.core.Tensor(np_ref, device=device)
 
     np_t = np_ref.copy()
     o3_t = o3d.core.Tensor(np_t, device=device)
@@ -1042,3 +1122,75 @@ def test_item(device):
                                 device=device)
     assert o3_t[0, 0].item() == True
     assert isinstance(o3_t[0, 0].item(), bool)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_save_load(device):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/tensor.npy"
+
+        o3_tensors = [
+            o3d.core.Tensor([[1, 2], [3, 4]],
+                            dtype=o3d.core.Dtype.Float32,
+                            device=device),
+            o3d.core.Tensor(3.14, dtype=o3d.core.Dtype.Float32, device=device),
+            o3d.core.Tensor.ones((0,),
+                                 dtype=o3d.core.Dtype.Float32,
+                                 device=device),
+            o3d.core.Tensor.ones((0, 0),
+                                 dtype=o3d.core.Dtype.Float32,
+                                 device=device),
+            o3d.core.Tensor.ones((0, 1, 0),
+                                 dtype=o3d.core.Dtype.Float32,
+                                 device=device)
+        ]
+        np_tensors = [
+            np.array([[1, 2], [3, 4]], dtype=np.float32),
+            np.array(3.14, dtype=np.float32),
+            np.ones((0,), dtype=np.float32),
+            np.ones((0, 0), dtype=np.float32),
+            np.ones((0, 1, 0), dtype=np.float32)
+        ]
+        for o3_t, np_t in zip(o3_tensors, np_tensors):
+            # Open3D -> Numpy.
+            o3_t.save(file_name)
+            o3_t_load = o3d.core.Tensor.load(file_name)
+            np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
+
+            # Open3D -> Numpy.
+            np_t_load = np.load(file_name)
+            np.testing.assert_equal(np_t_load, np_t_load)
+
+            # Numpy -> Open3D.
+            np.save(file_name, np_t)
+            o3_t_load = o3d.core.Tensor.load(file_name)
+            np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
+
+        # Ragged tensor: exception.
+        np_t = np.array([[1, 2, 3], [4, 5]], dtype=np.dtype(object))
+        np.save(file_name, np_t)
+        with pytest.raises(RuntimeError):
+            o3_t_load = o3d.core.Tensor.load(file_name)
+
+        # Fortran order: exception.
+        np_t = np.array([[1, 2, 3], [4, 5, 6]])
+        np_t = np.asfortranarray(np_t)
+        np.save(file_name, np_t)
+        with pytest.raises(RuntimeError):
+            o3_t_load = o3d.core.Tensor.load(file_name)
+
+        # Unsupported dtype: exception.
+        np_t = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.uint32)
+        np.save(file_name, np_t)
+        with pytest.raises(RuntimeError):
+            o3_t_load = o3d.core.Tensor.load(file_name)
+
+        # Non-contiguous numpy array.
+        np_t = np.arange(24).reshape(2, 3, 4)
+        assert np_t.flags['C_CONTIGUOUS']
+        np_t = np_t[0:2:1, 0:3:2, 0:4:2]
+        assert not np_t.flags['C_CONTIGUOUS']
+        np.save(file_name, np_t)
+        o3_t_load = o3d.core.Tensor.load(file_name)
+        assert o3_t_load.is_contiguous()
+        np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)

@@ -43,6 +43,7 @@ void PrintHelp() {
     utility::LogInfo("     --max_depth [=3.0]");
     utility::LogInfo("     --sdf_trunc [=0.04]");
     utility::LogInfo("     --device [CPU:0]");
+    utility::LogInfo("     --raycast");
     utility::LogInfo("     --mesh");
     utility::LogInfo("     --pointcloud");
     // clang-format on
@@ -103,14 +104,16 @@ int main(int argc, char** argv) {
     int block_count =
             utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
 
-    double voxel_size = utility::GetProgramOptionAsDouble(
-            argc, argv, "--voxel_size", 3.0 / 512);
-    double depth_scale = utility::GetProgramOptionAsDouble(
-            argc, argv, "--depth_scale", 1000.0);
-    double max_depth =
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.0);
-    double sdf_trunc =
-            utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc", 0.04);
+    float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--voxel_size", 3.f / 512.f));
+    float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--depth_scale", 1000.f));
+    float max_depth = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--sdf_trunc", 0.04f));
+
+    bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
 
     // Device
     std::string device_code = "CPU:0";
@@ -122,8 +125,7 @@ int main(int argc, char** argv) {
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
                                            {"color", core::Dtype::UInt16}},
-                                          static_cast<float>(voxel_size),
-                                          static_cast<float>(sdf_trunc), 16,
+                                          voxel_size, sdf_trunc, 16,
                                           block_count, device);
 
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
@@ -141,13 +143,25 @@ int main(int argc, char** argv) {
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
         Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
         utility::Timer timer;
         timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
+
+        if (enable_raycast && i % 100 == 0) {
+            core::Tensor vertex_map, color_map;
+            std::tie(vertex_map, color_map) = voxel_grid.RayCast(
+                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                    50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+
+            t::geometry::Image vertex_im(vertex_map);
+            visualization::DrawGeometries(
+                    {std::make_shared<open3d::geometry::Image>(
+                            vertex_im.ToLegacyImage())});
+        }
         timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
     }

@@ -9,8 +9,6 @@ set(KERNEL_SRC
     kernel/UnaryEWCPU.cpp
     kernel/BinaryEW.cpp
     kernel/BinaryEWCPU.cpp
-    kernel/GeneralEW.cpp
-    kernel/GeneralEWCPU.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
     kernel/Kernel.cpp
@@ -22,30 +20,36 @@ set(KERNEL_CUDA_SRC
     kernel/NonZeroCUDA.cu
     kernel/UnaryEWCUDA.cu
     kernel/BinaryEWCUDA.cu
-    kernel/GeneralEWCUDA.cu
     kernel/ReductionCUDA.cu
 )
 
 set(LINALG_SRC
+    linalg/Det.cpp
     linalg/Matmul.cpp
     linalg/MatmulCPU.cpp
     linalg/LeastSquares.cpp
     linalg/LeastSquaresCPU.cpp
+    linalg/LU.cpp
+    linalg/LUCPU.cpp
     linalg/Solve.cpp
     linalg/SolveCPU.cpp
     linalg/Inverse.cpp
     linalg/InverseCPU.cpp
     linalg/SVD.cpp
     linalg/SVDCPU.cpp
+    linalg/Tri.cpp
+    linalg/TriCPU.cpp
 )
 
 set(LINALG_CUDA_SRC
     linalg/LinalgUtils.cpp
     linalg/MatmulCUDA.cpp
     linalg/LeastSquaresCUDA.cpp
+    linalg/LUCUDA.cpp
     linalg/SolveCUDA.cpp
     linalg/InverseCUDA.cpp
     linalg/SVDCUDA.cpp
+    linalg/TriCUDA.cu
 )
 
 set(CORE_SRC
@@ -57,6 +61,7 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
+    NumpyIO.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
@@ -75,7 +80,9 @@ set(HASHMAP_SRC
 
 set(HASHMAP_CUDA_SRC
   hashmap/CUDA/DefaultHashmapCUDA.cu
-  )
+  hashmap/CUDA/HashmapBufferCUDA.cu
+  hashmap/CUDA/InternalNodeManager.cu
+)
 
 set(CORE_NNS_SRC
     nns/NNSIndex.cpp

@@ -6,9 +6,21 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
     GIT_TAG v2.40.0 # 18 Nov 2020
     UPDATE_COMMAND ""
+    # Patch for libusb static build failure on Linux
+    PATCH_COMMAND git -C <SOURCE_DIR> reset --hard v2.40.0
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
+    <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
+    # Patch for libstdc++ regex bug
+    COMMAND git -C <SOURCE_DIR> apply
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-2837.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_EXAMPLES=OFF
         -DBUILD_UNIT_TESTS=OFF
@@ -16,41 +28,31 @@ ExternalProject_Add(
         -DBUILD_GRAPHICAL_EXAMPLES=OFF
         -DBUILD_PYTHON_BINDINGS=OFF
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
-        -DFORCE_RSUSB_BACKEND=ON      # https://github.com/IntelRealSense/librealsense/wiki/Release-Notes#release-2400
-        $<$<PLATFORM_ID:Darwin>:-DUSE_EXTERNAL_USB=ON>
+        -DFORCE_RSUSB_BACKEND=$<IF:$<PLATFORM_ID:Linux>,ON,OFF>      # https://github.com/IntelRealSense/librealsense/wiki/Release-Notes#release-2400
+        -DUSE_EXTERNAL_USB=ON
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
-        $<$<PLATFORM_ID:Windows>:-DUSE_EXTERNAL_USB=ON>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
 )
 
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
-set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/lib")
+set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR}")
 
-set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file) # The order is critical.
+set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file usb) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> realsense2d.lib realsense2.lib
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> fwd.lib fw.lib
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> realsense-filed.lib realsense-file.lib
+        COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense2d.lib realsense2.lib
+        COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y fwd.lib fw.lib
+        COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense-filed.lib realsense-file.lib
         WORKING_DIRECTORY "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
 endif()
 
-if(APPLE)
-    ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "<BINARY_DIR>/libusb_install/lib/libusb.a" "${LIBREALSENSE_LIB_DIR}"
-        DEPENDEES install
+ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
+    COMMAND ${CMAKE_COMMAND} -E copy
+    "<BINARY_DIR>/libusb_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${LIBREALSENSE_LIB_DIR}"
+    DEPENDEES install
     )
-    set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
-elseif(WIN32)
-    ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "<BINARY_DIR>/libusb_install/lib/usb.lib" "${LIBREALSENSE_LIB_DIR}"
-        DEPENDEES install
-    )
-    set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
-endif()

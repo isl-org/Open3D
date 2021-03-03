@@ -1,0 +1,40 @@
+// This shader packs the actual depth value into RGB, which can then be used
+// with Camera::Unproject() to get the (x, y, z) world coordinate of a pixel.
+// Black is 0.0f and white is 1.0f, although since Filament will only render
+// objects, you will need to call Scene::SetBackground({1.0f, 1.0f, 1.0f, 1.0f})
+// to ensure that the background is drawn.
+material {
+    name : depth_value,
+    shadingModel : unlit,
+    doubleSided : true,
+
+    parameters : [
+            { type : float,  name : pointSize }
+        ],
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        float depth24 = floor((1.0 - gl_FragCoord.z) * 16777215.0f);
+
+        float nibble = floor(depth24 / 65536.0f);
+        material.baseColor.r = nibble / 255.0f;
+        depth24 -= nibble * 65536.0f;
+
+        nibble = floor(depth24 / 256.0f);
+        material.baseColor.g = nibble / 255.0f;
+        depth24 -= nibble * 256.0f;
+
+        material.baseColor.b = depth24 / 255.0f;
+
+        material.baseColor.a = 1.0f;
+    }
+}

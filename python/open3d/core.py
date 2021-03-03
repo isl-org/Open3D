@@ -30,9 +30,11 @@ if o3d.__DEVICE_API__ == 'cuda':
     from open3d.cuda.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
                                          Device, cuda, nns, SizeVector,
                                          DynamicSizeVector, matmul, lstsq,
-                                         solve, inv, svd)
+                                         solve, det, lu, lu_ipiv, inv, svd,
+                                         triu, tril, triul)
 else:
     from open3d.cpu.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
                                         Device, cuda, nns, SizeVector,
                                         DynamicSizeVector, matmul, lstsq, solve,
-                                        inv, svd)
+                                        det, lu, lu_ipiv, inv, svd, triu, tril,
+                                        triul)

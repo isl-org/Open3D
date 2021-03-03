@@ -55,22 +55,34 @@ void pybind_tsdf_voxelgrid(py::module& m) {
 
     tsdf_voxelgrid.def("integrate",
                        py::overload_cast<const Image&, const core::Tensor&,
-                                         const core::Tensor&, double, double>(
-                               &TSDFVoxelGrid::Integrate));
+                                         const core::Tensor&, float, float>(
+                               &TSDFVoxelGrid::Integrate),
+                       "depth"_a, "intrinsics"_a, "extrinsics"_a,
+                       "depth_scale"_a, "depth_max"_a);
+
     tsdf_voxelgrid.def(
             "integrate",
             py::overload_cast<const Image&, const Image&, const core::Tensor&,
-                              const core::Tensor&, double, double>(
-                    &TSDFVoxelGrid::Integrate));
+                              const core::Tensor&, float, float>(
+                    &TSDFVoxelGrid::Integrate),
+            "depth"_a, "color"_a, "intrinsics"_a, "extrinsics"_a,
+            "depth_scale"_a, "depth_max"_a);
 
+    tsdf_voxelgrid.def("raycast", &TSDFVoxelGrid::RayCast, "intrinsics"_a,
+                       "extrinsics"_a, "width"_a, "height"_a,
+                       "max_steps"_a = 50, "depth_min"_a = 0.1f,
+                       "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f);
     tsdf_voxelgrid.def("extract_surface_points",
-                       &TSDFVoxelGrid::ExtractSurfacePoints);
+                       &TSDFVoxelGrid::ExtractSurfacePoints,
+                       "weight_threshold"_a = 3.0f);
     tsdf_voxelgrid.def("extract_surface_mesh",
-                       &TSDFVoxelGrid::ExtractSurfaceMesh);
+                       &TSDFVoxelGrid::ExtractSurfaceMesh,
+                       "weight_threshold"_a = 3.0f);
 
-    tsdf_voxelgrid.def("copy", &TSDFVoxelGrid::Copy);
+    tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
+    tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);
     tsdf_voxelgrid.def("cpu", &TSDFVoxelGrid::CPU);
-    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA);
+    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA, "device_id"_a);
 
     tsdf_voxelgrid.def("get_device", &TSDFVoxelGrid::GetDevice);
 }

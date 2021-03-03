@@ -63,6 +63,7 @@ install_cuda_toolkit() {
         "cuda-cufft-dev-${CUDA_VERSION[0]}" \
         "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
         "cuda-nvtx-${CUDA_VERSION[0]}" \
+        "cuda-npp-dev-${CUDA_VERSION[0]}" \
         libcublas-dev
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
         echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
@@ -203,6 +204,9 @@ install_azure_kinect_dependencies() {
 
 build_all() {
 
+    echo "Using cmake: $(which cmake)"
+    cmake --version
+
     mkdir -p build
     cd build
 
@@ -225,7 +229,7 @@ build_all() {
     echo Running cmake "${cmakeOptions[@]}" ..
     cmake "${cmakeOptions[@]}" ..
     echo
-    echo "build & install Open3D..."
+    echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
     make install -j"$NPROC"
     make VERBOSE=1 install-pip-package -j"$NPROC"
@@ -322,9 +326,14 @@ build_pip_conda_package() {
 test_wheel() {
     wheel_path="$1"
     python -m venv open3d_test.venv
+    # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
+    echo "Using python: $(which python)"
+    python --version
+    echo -n "Using pip: "
+    python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d)"
@@ -338,8 +347,16 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
+    # Get 3DML requirements from github if Open3D-ML repo is not available
+    set +u
+    OPEN3D_ML_ROOT=${OPEN3D_ML_ROOT:-"https://raw.githubusercontent.com/intel-isl/Open3D-ML/master"}
+    set -u
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        if [ "$BUILD_CUDA_MODULE" == ON ]; then
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-cuda.txt"
+        else
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        fi
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
@@ -354,11 +371,12 @@ test_wheel() {
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
     fi
-    deactivate
+    deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
 # Run in virtual environment
 run_python_tests() {
+    # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
     python -m pip install -U pytest=="$PYTEST_VER"
     python -m pip install -U scipy=="$SCIPY_VER"
@@ -368,7 +386,7 @@ run_python_tests() {
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
     python -m pytest "${pytest_args[@]}"
-    deactivate
+    deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
 # Use: run_unit_tests
@@ -498,4 +516,43 @@ build_docs() {
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
+}
+
+install_arm64_dependencies() {
+    apt-get update -q -y
+    apt-get install -y apt-utils build-essential git wget
+    apt-get install -y python3 python3-dev python3-pip python3-virtualenv
+    apt-get install -y xorg-dev libglu1-mesa-dev ccache
+    apt-get install -y libblas-dev liblapack-dev liblapacke-dev libssl-dev
+    apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
+    apt-get install -y libudev-dev autoconf libtool # librealsense
+    apt-get install -y clang-7
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
+    update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+    /usr/sbin/update-ccache-symlinks
+    echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
+    virtualenv --python=$(which python) ${HOME}/venv
+    source ${HOME}/venv/bin/activate
+    which python
+    python --version
+    pip install pytest=="$PYTEST_VER" -U
+    pip install wheel=="$WHEEL_VER" -U
+    # Get pre-compiled CMake
+    wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
+    tar -xvf cmake-3.18-aarch64.tar.gz
+    cp -ar cmake-3.18-aarch64 ${HOME}
+    PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+    which cmake
+    cmake --version
+}
+
+maximize_ubuntu_github_actions_build_space() {
+    df -h
+    $SUDO rm -rf /usr/share/dotnet
+    $SUDO rm -rf /usr/local/lib/android
+    $SUDO rm -rf /opt/ghc
+    $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
+    df -h
 }

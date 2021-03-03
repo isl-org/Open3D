@@ -89,10 +89,32 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
         core::Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
+
+        if (i == trajectory->parameters_.size() - 1) {
+            core::Tensor vertex_map, color_map;
+            std::tie(vertex_map, color_map) = voxel_grid.RayCast(
+                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                    50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+
+            // There are CPU/CUDA numerical differences around edges, so we need
+            // to be tolerant.
+            core::Tensor vertex_map_gt = core::Tensor::Load(
+                    fmt::format("{}/RGBD/raycast_vtx_{:03d}.npy",
+                                std::string(TEST_DATA_DIR), i));
+            int64_t discrepancy_count =
+                    ((vertex_map.To(core::Device("CPU:0")) - vertex_map_gt)
+                             .Abs()
+                             .Ge(1e-5))
+                            .To(core::Dtype::Int64)
+                            .Sum({0, 1, 2})
+                            .Item<int64_t>();
+            EXPECT_LE(discrepancy_count * 1.0f / vertex_map.NumElements(),
+                      1e-3);
+        }
     }
 
     auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();

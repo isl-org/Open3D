@@ -203,13 +203,9 @@ public:
     /// returned tensor will always be resizable.
     void CopyFrom(const TensorList& other);
 
-    /// Performs "shallow" copy from another tensorlist. The internal tensor
-    /// memory will be shared.
-    void ShallowCopyFrom(const TensorList& other);
-
     /// Duplicate the current tensorlist. Values will be copied. The returned
     /// tensor will always be resizable.
-    TensorList Copy() const;
+    TensorList Clone() const;
 
     /// Return the reference of the contained valid tensors with shared memory.
     Tensor AsTensor() const;

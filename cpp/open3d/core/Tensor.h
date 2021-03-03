@@ -36,6 +36,7 @@
 #include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -54,7 +55,7 @@ public:
            Dtype dtype,
            const Device& device = Device("CPU:0"))
         : shape_(shape),
-          strides_(DefaultStrides(shape)),
+          strides_(shape_util::DefaultStrides(shape)),
           dtype_(dtype),
           blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
                                        device)) {
@@ -181,18 +182,18 @@ public:
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
-    template <typename Scalar>
-    void Fill(Scalar v);
+    template <typename S>
+    void Fill(S v);
 
     template <typename Object>
     void FillObject(const Object& v);
 
-    /// Create a tensor with uninitilized values.
+    /// Create a tensor with uninitialized values.
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
 
-    /// Create a tensor with uninitilized values with the same dtype and device
+    /// Create a tensor with uninitialized values with the same dtype and device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
         return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
@@ -230,7 +231,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 1-D tensor with initilizer list.
+    /// Create a 1-D tensor with initializer list.
     /// For example,
     /// core::Tensor::Init<float>({1,2,3});
     template <typename T>
@@ -244,7 +245,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 2-D tensor with nested initilizer list.
+    /// Create a 2-D tensor with nested initializer list.
     /// For example,
     /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
     template <typename T>
@@ -272,7 +273,7 @@ public:
         return Tensor(ele_list, shape, type, device);
     };
 
-    /// Create a 3-D tensor with nested initilizer list.
+    /// Create a 3-D tensor with nested initializer list.
     /// For example,
     /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
     template <typename T>
@@ -333,28 +334,14 @@ public:
     static Tensor Diag(const Tensor& input);
 
     /// Create a 1D tensor with evenly spaced values in the given interval.
-    static Tensor Arange(const Tensor& start,
-                         const Tensor& stop,
-                         const Tensor& step);
+    static Tensor Arange(Scalar start,
+                         Scalar stop,
+                         Scalar step = 1,
+                         Dtype dtype = Dtype::Int64,
+                         const Device& device = core::Device("CPU:0"));
 
-    template <typename T>
-    static Tensor Arange(T start,
-                         T stop,
-                         T step = 1,
-                         const Device& device = core::Device("CPU:0")) {
-        Dtype dtype = Dtype::FromType<T>();
-        if (step == 0) {
-            utility::LogError("Step cannot be 0");
-        }
-        if (stop == start) {
-            return Tensor({0}, dtype, device);
-        }
-
-        Tensor tstart = Tensor::Full({}, start, dtype, device);
-        Tensor tstop = Tensor::Full({}, stop, dtype, device);
-        Tensor tstep = Tensor::Full({}, step, dtype, device);
-        return Arange(tstart, tstop, tstep);
-    }
+    /// Reverse a Tensor's elements by viewing the tensor as a 1D array.
+    Tensor Reverse() const;
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -479,24 +466,31 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
-    /// Copy Tensor to a specified device.
-    /// The resulting Tensor will be compacted and contiguous.
-    Tensor Copy(const Device& device) const;
-
     /// Copy Tensor to the same device.
-    Tensor Copy() const { return Copy(GetDevice()); };
+    Tensor Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-    /// Copy Tensor values to current tensor for source tensor
+    /// Copy Tensor values to current tensor from the source tensor.
     void CopyFrom(const Tensor& other);
-
-    /// Shallow copy a tensor, returning a tensor sharing the same memory.
-    void ShallowCopyFrom(const Tensor& other);
 
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
     /// is avoided when the original tensor already have the targeted dtype.
     Tensor To(Dtype dtype, bool copy = false) const;
+
+    /// Returns a tensor with the specified \p device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor is already on the targeted device.
+    Tensor To(const Device& device, bool copy = false) const;
+
+    /// Returns a tensor with the specified \p device and \p dtype.
+    /// \param device The targeted device to convert to.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor is already on the targeted device
+    /// and have the targeted dtype.
+    Tensor To(const Device& device, Dtype dtype, bool copy = false) const;
 
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
@@ -513,7 +507,7 @@ public:
     /// \param dim The dimension to slice.
     /// \param start The start index (inclusive).
     /// \param stop The end index (exclusive).
-    /// \param step Pick one eleemnt for every \p step elements.
+    /// \param step Pick one element for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
@@ -567,7 +561,7 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 3x3 Matrix.
+    /// \brief Compute the determinant of a 2D square tensor.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
@@ -766,6 +760,18 @@ public:
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val], returning a new tensor.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
+    Tensor Clip(double min_val, double max_val) const;
+
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val]. In-place version.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
+    Tensor Clip_(double min_val, double max_val);
 
     /// Element-wise floor value of a tensor, returning a new tensor.
     Tensor Floor() const;
@@ -1054,7 +1060,7 @@ public:
     /// Returns True if the underlying memory buffer is contiguous. A contiguous
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
-        return DefaultStrides(shape_) == strides_;
+        return shape_util::DefaultStrides(shape_) == strides_;
     };
 
     /// Returns a contiguous Tensor containing the same data in the same device.
@@ -1066,13 +1072,71 @@ public:
     /// result.
     Tensor Matmul(const Tensor& rhs) const;
 
-    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// Solves the linear system AX = B with LU decomposition and returns X.
     /// A must be a square matrix.
     Tensor Solve(const Tensor& rhs) const;
 
     /// Solves the linear system AX = B with QR decomposition and returns X.
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple (P, L, U).
+    ///
+    /// \param permute_l [optional input] If true: returns L as P * L.
+    /// \return Tuple (P, L, U).
+    std::tuple<Tensor, Tensor, Tensor> LU(const bool permute_l = false) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple `output` tensor of shape
+    /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of input
+    /// tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
+    ///
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
+    /// tensor. It contains the pivot indices, indicating row i of the matrix
+    /// was interchanged with row ipiv(i)); and output it has L as
+    /// lower triangular values and U as upper triangle values including the
+    /// main diagonal (diagonal elements of L to be taken as unity).
+    std::tuple<Tensor, Tensor> LUIpiv() const;
+
+    /// \brief Returns the upper triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] for a {m,n} shaped tensor.
+    ///
+    /// \param diagonal value of [col - row], above which the elements are to be
+    /// taken for upper triangular matrix.
+    Tensor Triu(const int diagonal = 0) const;
+
+    /// \brief Returns the lower triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] where {m, n} is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], below which the elements are to be
+    /// taken for lower triangular matrix.
+    Tensor Tril(const int diagonal = 0) const;
+
+    /// \brief Returns the tuple of upper and lower triangular matrix
+    /// of the 2D tensor, above and below the given diagonal index.
+    /// The diagonal elements of lower triangular matrix are taken to be unity.
+    /// [The value of diagonal = col - row, therefore 0 is the main diagonal
+    /// (row = col), and it shifts towards right for positive values
+    /// (for diagonal = 1, col - row = 1), and towards left for negative values.
+    /// The value of the diagonal parameter must be between [-m, n] where {m, n}
+    /// is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], above and below which the elements
+    /// are to be taken for upper (diag. included) and lower triangular matrix.
+    std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
@@ -1102,6 +1166,23 @@ public:
         return strides_[shape_util::WrapDim(dim, NumDims())];
     }
 
+    template <typename T>
+    inline T* GetDataPtr() {
+        return const_cast<T*>(const_cast<const Tensor*>(this)->GetDataPtr<T>());
+    }
+
+    template <typename T>
+    inline const T* GetDataPtr() const {
+        if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
+            utility::LogError(
+                    "Requested values have type {} but Tensor has type {}. "
+                    "Please use non templated GetDataPtr() with manual "
+                    "casting.",
+                    Dtype::FromType<T>().ToString(), dtype_.ToString());
+        }
+        return static_cast<T*>(data_ptr_);
+    }
+
     inline void* GetDataPtr() { return data_ptr_; }
 
     inline const void* GetDataPtr() const { return data_ptr_; }
@@ -1129,28 +1210,17 @@ public:
         }
     }
 
-    static SizeVector DefaultStrides(const SizeVector& shape);
-
-    /// 1. Separate `oldshape` into chunks of dimensions, where the
-    /// dimensions
-    ///    are ``contiguous'' in each chunk, i.e.,
-    ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
-    /// 2. `newshape` must be able to be separated into same number of
-    /// chunks as
-    ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching ``numel'', i.e., number of subspaces, as the
-    ///    corresponding chunk of `oldshape`.
-    /// Ref: aten/src/ATen/TensorUtils.cpp
-    static std::pair<bool, SizeVector> ComputeNewStrides(
-            const SizeVector& old_shape,
-            const SizeVector& old_strides,
-            const SizeVector& new_shape);
-
     /// Convert the Tensor to DLManagedTensor.
     DLManagedTensor* ToDLPack() const;
 
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
+
+    /// Save tensor to numpy's npy format.
+    void Save(const std::string& file_name) const;
+
+    /// Load tensor from numpy's npy format.
+    static Tensor Load(const std::string& file_name);
 
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape,
@@ -1264,8 +1334,8 @@ inline bool Tensor::Item() const {
     return static_cast<bool>(value);
 }
 
-template <typename Scalar>
-inline void Tensor::Fill(Scalar v) {
+template <typename S>
+inline void Tensor::Fill(S v) {
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
         scalar_t casted_v = static_cast<scalar_t>(v);
         Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),

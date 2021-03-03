@@ -26,6 +26,9 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
+#include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -90,7 +93,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     R = U.Matmul(S.Matmul(VT));
     t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
 
-    return t::pipelines::RtToTransformation(R, t);
+    return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -125,7 +128,6 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         CorrespondenceSet &corres) const {
-    // TODO: If corres empty throw Error.
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
     source.GetPoints().AssertDtype(dtype);
@@ -136,60 +138,21 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    core::Tensor source_select =
+    // Get indexed source and target points and target normals, according to
+    // correspondences.
+    core::Tensor source_indexed =
             source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
+    core::Tensor target_indexed =
             target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_n_select =
+    core::Tensor target_norm_indexed =
             target.GetPointNormals().IndexGet({corres.second}).To(dtype);
 
-    core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
-                             .Sum({1}, true)
-                             .To(dtype);
+    // Get pose {6} from correspondences indexed source and target point cloud.
+    core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
+            source_indexed, target_indexed, target_norm_indexed);
 
-    // --- Computing A in AX = B.
-    int64_t num_corres = source_select.GetShape()[0];
-    // Slicing normals: (nx, ny, nz) and source points: (sx, sy, sz).
-    core::Tensor nx =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor ny =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor nz =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(2, 3, 1)});
-    core::Tensor sx =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor sy =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor sz =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(2, 3, 1)});
-    // Cross product calculation.
-    core::Tensor a1 = (nz * sy) - (ny * sz);
-    core::Tensor a2 = (nx * sz) - (nz * sx);
-    core::Tensor a3 = (ny * sx) - (nx * sy);
-
-    // Putting the pieces back together.
-    core::Tensor A({num_corres, 6}, dtype, device);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(0, 1, 1)},
-              a1);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(1, 2, 1)},
-              a2);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(2, 3, 1)},
-              a3);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(3, 6, 1)},
-              target_n_select);
-
-    core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
-    return t::pipelines::PoseToTransformation(Pose);
+    // Get transformation {4,4} from pose {6}.
+    return pipelines::kernel::PoseToTransformation(pose);
 }
 
 }  // namespace registration
