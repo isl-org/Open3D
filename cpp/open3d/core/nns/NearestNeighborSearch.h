@@ -128,6 +128,17 @@ public:
                                            double radius,
                                            int max_knn);
 
+    /// Perform hybrid search and return tuple {source_index, target_index,
+    /// distance}.
+    ///
+    /// \param query_points Data points for querying. Must be 2D, with shape {n,
+    /// d}.
+    /// \param radius Radius.
+    /// \param squeeze If true, returns tuple of {C,1} tensors, instead of
+    /// {N,1}.
+    std::tuple<Tensor, Tensor, Tensor> SqueezedHybridSearch(
+            const Tensor &query_points, double radius);
+
 private:
     bool SetIndex();
 

@@ -56,17 +56,19 @@ core::Tensor ComputePosePointToPlane(
     int n = corres.first.GetShape()[0];
 
     // Pointer to point cloud data - indexed according to correspondences.
-    const float *src_pcd_ptr =
-            static_cast<const float *>(source_points.Contiguous().GetDataPtr());
-    const float *tar_pcd_ptr =
-            static_cast<const float *>(target_points.Contiguous().GetDataPtr());
-    const float *tar_norm_ptr = static_cast<const float *>(
-            target_normals.Contiguous().GetDataPtr());
+    // Pointer to point cloud data - indexed according to correspondences.
+    core::Tensor source_points_contiguous = source_points.Contiguous();
+    core::Tensor target_points_contiguous = target_points.Contiguous();
+    core::Tensor target_normals_contiguous = target_normals.Contiguous();
+    core::Tensor corres_first_contiguous = corres.first.Contiguous();
+    core::Tensor corres_second_contiguous = corres.second.Contiguous();
 
-    const int64_t *corres_first = static_cast<const int64_t *>(
-            corres.first.Contiguous().GetDataPtr());
-    const int64_t *corres_second = static_cast<const int64_t *>(
-            corres.second.Contiguous().GetDataPtr());
+    const float *src_pcd_ptr = source_points_contiguous.GetDataPtr<float>();
+    const float *tar_pcd_ptr = target_points_contiguous.GetDataPtr<float>();
+    const float *tar_norm_ptr = target_normals_contiguous.GetDataPtr<float>();
+    const int64_t *corres_first = corres_first_contiguous.GetDataPtr<int64_t>();
+    const int64_t *corres_second =
+            corres_second_contiguous.GetDataPtr<int64_t>();
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

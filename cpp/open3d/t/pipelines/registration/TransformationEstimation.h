@@ -46,12 +46,6 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 
-/// CorrespondenceSet is a pair of tensor, where first tensor
-/// [correspondence_select_bool_] is a {N,1} bool tensor (N is the number of
-/// query points), with value true for source points having good correspondence,
-/// and false otherwise, and second [correspondence_set_] is a {C,1} shape
-/// Float32 tensor (C is the number of good correspondences), where value at
-/// [i, 1] is the corresponding index in the target, for query point [i, 1].
 typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
 
 enum class TransformationEstimationType {

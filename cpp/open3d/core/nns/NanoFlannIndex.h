@@ -161,6 +161,9 @@ public:
                                            double radius,
                                            int max_knn) const override;
 
+    std::tuple<Tensor, Tensor, Tensor> SearchSqueezedHybrid(
+            const Tensor &query_points, double radius) const;
+
 protected:
     // Tensor dataset_points_;
     std::unique_ptr<NanoFlannIndexHolderBase> holder_;

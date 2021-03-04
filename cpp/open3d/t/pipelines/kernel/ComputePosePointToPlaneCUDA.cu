@@ -35,15 +35,15 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
-                                 const float *tar_pcd_ptr,
-                                 const float *tar_norm_ptr,
-                                 const int64_t *corres_first,
-                                 const int64_t *corres_second,
+void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
+                                 const float *target_points_ptr,
+                                 const float *target_normals_ptr,
+                                 const int64_t *correspondence_first,
+                                 const int64_t *correspondence_second,
                                  const int n,
                                  core::Tensor &pose,
-                                 const core::Dtype dtype,
-                                 const core::Device device) {
+                                 const core::Dtype &dtype,
+                                 const core::Device &device) {
     // Float64 is used for solving for higher precision.
     core::Dtype solve_dtype = core::Dtype::Float32;
 
@@ -59,29 +59,32 @@ void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
     // and {n,6} shape atbi tensor.
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                const int64_t source_index = 3 * corres_first[workload_idx];
-                const int64_t target_index = 3 * corres_second[workload_idx];
+                const int64_t &source_index =
+                        3 * correspondence_first[workload_idx];
+                const int64_t &target_index =
+                        3 * correspondence_second[workload_idx];
 
                 const int64_t atai_stride = 21 * workload_idx;
                 const int64_t atbi_stride = 6 * workload_idx;
 
-                const float &sx = (src_pcd_ptr[source_index + 0]);
-                const float &sy = (src_pcd_ptr[source_index + 1]);
-                const float &sz = (src_pcd_ptr[source_index + 2]);
-                const float &tx = (tar_pcd_ptr[target_index + 0]);
-                const float &ty = (tar_pcd_ptr[target_index + 1]);
-                const float &tz = (tar_pcd_ptr[target_index + 2]);
-                const float &nx = (tar_norm_ptr[target_index + 0]);
-                const float &ny = (tar_norm_ptr[target_index + 1]);
-                const float &nz = (tar_norm_ptr[target_index + 2]);
+                const float &sx = (source_points_ptr[source_index + 0]);
+                const float &sy = (source_points_ptr[source_index + 1]);
+                const float &sz = (source_points_ptr[source_index + 2]);
+                const float &tx = (target_points_ptr[target_index + 0]);
+                const float &ty = (target_points_ptr[target_index + 1]);
+                const float &tz = (target_points_ptr[target_index + 2]);
+                const float &nx = (target_normals_ptr[target_index + 0]);
+                const float &ny = (target_normals_ptr[target_index + 1]);
+                const float &nz = (target_normals_ptr[target_index + 2]);
 
-                float bi = (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                float ai[] = {(nz * sy - ny * sz),
-                              (nx * sz - nz * sx),
-                              (ny * sx - nx * sy),
-                              nx,
-                              ny,
-                              nz};
+                const float bi =
+                        (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
+                const float ai[] = {(nz * sy - ny * sz),
+                                    (nx * sz - nz * sx),
+                                    (ny * sx - nx * sy),
+                                    nx,
+                                    ny,
+                                    nz};
 
                 for (int i = 0, j = 0; j < 6; j++) {
                     for (int k = 0; k <= j; k++) {

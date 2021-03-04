@@ -75,26 +75,11 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    // TODO: Move the following to NNS::HybridSeach with optional paramater.
-    core::Tensor indices, distances;
-    int num_source_points = source.GetPoints().GetShape()[0];
-
-    // Returns, indices of corresponding source points with distance.
-    std::tie(indices, distances) = target_nns.KnnSearch(source.GetPoints(), 1);
-    // Only validate those points within max_correspondence_distance.
-    core::Tensor valid =
-            distances.Le(max_correspondence_distance).Reshape({-1});
-
-    // correpondence_set : (i, corres[i]).
-    // source[i] and target[corres[i]] is a correspondence.
-    result.correspondence_set.first =
-            core::Tensor::Arange(0, num_source_points, 1, core::Dtype::Int64,
-                                 device)
-                    .IndexGet({valid});
-    // Only take valid indices.
-    result.correspondence_set.second = indices.IndexGet({valid});
-    // Only take valid distances.
-    distances = distances.IndexGet({valid});
+    core::Tensor distances;
+    std::tie(result.correspondence_set.first, result.correspondence_set.second,
+             distances) =
+            target_nns.SqueezedHybridSearch(source.GetPoints(),
+                                            max_correspondence_distance);
 
     // Number of good correspondences (C).
     int num_correspondences = result.correspondence_set.first.GetShape()[0];
@@ -103,7 +88,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     double squared_error =
             static_cast<double>(distances.Sum({0}).Item<float>());
     result.fitness_ = static_cast<double>(num_correspondences) /
-                      static_cast<double>(num_source_points);
+                      static_cast<double>(source.GetPoints().GetShape()[0]);
     result.inlier_rmse_ =
             std::sqrt(squared_error / static_cast<double>(num_correspondences));
     result.transformation_ = transformation;

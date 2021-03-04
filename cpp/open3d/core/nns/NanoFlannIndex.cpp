@@ -273,6 +273,39 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     return std::make_pair(indices, distances);
 }
 
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchSqueezedHybrid(
+        const Tensor &query_points, double radius) const {
+    Device device = GetDevice();
+    // Check dtype.
+    query_points.AssertDtype(GetDtype());
+    // Check shapes.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
+    if (radius <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] radius should be larger than "
+                "0.");
+    }
+
+    double radius_squared = radius * radius;
+
+    Tensor indices, distances, source_indices, target_indices;
+    std::tie(indices, distances) = SearchKnn(query_points, 1);
+
+    Tensor valid = distances.Le(radius_squared).Reshape({-1});
+    // correpondence_set : (i, corres[i]).
+    // source[i] and target[corres[i]] is a correspondence.
+    source_indices = core::Tensor::Arange(0, query_points.GetShape()[0], 1,
+                                          core::Dtype::Int64, device)
+                             .IndexGet({valid});
+    // Only take valid indices.
+    target_indices = indices.IndexGet({valid}).Reshape({-1});
+    // Only take valid distances.
+    distances = distances.IndexGet({valid});
+
+    return std::make_tuple(source_indices, target_indices, distances);
+}
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

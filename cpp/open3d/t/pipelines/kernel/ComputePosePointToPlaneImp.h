@@ -35,26 +35,26 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
-                                const float *tar_pcd_ptr,
-                                const float *tar_norm_ptr,
-                                const int64_t *corres_first,
-                                const int64_t *corres_second,
+void ComputePosePointToPlaneCPU(const float *source_points_ptr,
+                                const float *target_points_ptr,
+                                const float *target_normals_ptr,
+                                const int64_t *correspondence_first,
+                                const int64_t *correspondence_second,
                                 const int n,
                                 core::Tensor &pose,
-                                const core::Dtype dtype,
-                                const core::Device device);
+                                const core::Dtype &dtype,
+                                const core::Device &device);
 
 #ifdef BUILD_CUDA_MODULE
-void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
-                                 const float *tar_pcd_ptr,
-                                 const float *tar_norm_ptr,
-                                 const int64_t *corres_first,
-                                 const int64_t *corres_second,
+void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
+                                 const float *target_points_ptr,
+                                 const float *target_normals_ptr,
+                                 const int64_t *correspondence_first,
+                                 const int64_t *correspondence_second,
                                  const int n,
                                  core::Tensor &pose,
-                                 const core::Dtype dtype,
-                                 const core::Device device);
+                                 const core::Dtype &dtype,
+                                 const core::Device &device);
 #endif
 
 }  // namespace kernel
