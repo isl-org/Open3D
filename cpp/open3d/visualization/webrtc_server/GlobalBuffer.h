@@ -47,8 +47,8 @@ public:
         g_cv.wait(ul, [this]() { return this->g_ready; });
         out_frame = rgb_buffer_.Clone();
         g_ready = false;
-        ul.unlock();
-        g_cv.notify_one();
+        // ul.unlock();
+        // g_cv.notify_one();
     }
 
     void Write(const core::Tensor& rgb_buffer) {
@@ -61,8 +61,8 @@ public:
         g_ready = true;
         ul.unlock();
         g_cv.notify_one();
-        ul.lock();
-        g_cv.wait(ul, [this]() { return this->g_ready == false; });
+        // ul.lock();
+        // g_cv.wait(ul, [this]() { return this->g_ready == false; });
     }
 
     // TODO: use proper "producer-consumer" model with signaling.
