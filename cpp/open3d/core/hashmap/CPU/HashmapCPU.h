@@ -75,6 +75,11 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
+    std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
+    GetContext() const {
+        return impl_;
+    }
+
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
             impl_;

@@ -51,6 +51,7 @@
     });                                                                     \
     tensor.def(#py_name, &Tensor::cpp_name<float>);                         \
     tensor.def(#py_name, &Tensor::cpp_name<double>);                        \
+    tensor.def(#py_name, &Tensor::cpp_name<int16_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int32_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int64_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
@@ -62,6 +63,10 @@
                 .cpp_name(self);                                          \
     });                                                                   \
     tensor.def(#py_name, [](const Tensor& self, double value) {           \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, int16_t value) {          \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
     });                                                                   \
@@ -264,6 +269,7 @@ void pybind_core_tensor(py::module& m) {
     BindTensorCreation(tensor, "ones", Tensor::Ones);
     BindTensorFullCreation<float>(tensor);
     BindTensorFullCreation<double>(tensor);
+    BindTensorFullCreation<int16_t>(tensor);
     BindTensorFullCreation<int32_t>(tensor);
     BindTensorFullCreation<int64_t>(tensor);
     BindTensorFullCreation<uint8_t>(tensor);
@@ -399,12 +405,23 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_static("load", &Tensor::Load);
 
     /// Linalg operations.
+    tensor.def("det", &Tensor::Det);
+    tensor.def("lu_ipiv", &Tensor::LUIpiv);
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
     tensor.def("lstsq", &Tensor::LeastSquares);
     tensor.def("solve", &Tensor::Solve);
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
+    tensor.def("triu", &Tensor::Triu);
+    tensor.def("tril", &Tensor::Tril);
+    tensor.def("triul", &Tensor::Triul);
+    tensor.def(
+            "lu",
+            [](const Tensor& tensor, bool permute_l) {
+                return tensor.LU(permute_l);
+            },
+            "permute_l"_a = false);
 
     // Casting can copying.
     tensor.def(
@@ -584,6 +601,8 @@ void pybind_core_tensor(py::module& m) {
             return py::float_(tensor.Item<float>());
         } else if (dtype == Dtype::Float64) {
             return py::float_(tensor.Item<double>());
+        } else if (dtype == Dtype::Int16) {
+            return py::int_(tensor.Item<int16_t>());
         } else if (dtype == Dtype::Int32) {
             return py::int_(tensor.Item<int32_t>());
         } else if (dtype == Dtype::Int64) {

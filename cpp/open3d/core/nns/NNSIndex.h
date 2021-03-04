@@ -82,7 +82,9 @@ public:
     /// dataset_points.
     /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
     virtual std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, const Tensor &radii) const = 0;
+            const Tensor &query_points,
+            const Tensor &radii,
+            bool sort) const = 0;
 
     /// Perform radius search.
     ///
@@ -95,7 +97,7 @@ public:
     /// dataset_points.
     /// - num_neighbors: Tensor of shape {n}, dtype Int64.
     virtual std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, double radius) const = 0;
+            const Tensor &query_points, double radius, bool sort) const = 0;
 
     /// Perform hybrid search.
     ///
@@ -107,7 +109,7 @@ public:
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
     virtual std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                                   float radius,
+                                                   double radius,
                                                    int max_knn) const = 0;
 
     /// Get dimension of the dataset points.

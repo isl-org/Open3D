@@ -288,6 +288,56 @@ void FilamentView::ConfigureForColorPicking() {
     SetPostProcessing(false);
     SetAmbientOcclusion(false, false);
     SetShadowing(false, ShadowType::kPCF);
+    configured_for_picking_ = true;
+}
+
+void FilamentView::EnableViewCaching(bool enable) {
+    caching_enabled_ = enable;
+
+    if (caching_enabled_) {
+        if (render_target_) {
+            resource_mgr_.Destroy(render_target_);
+            resource_mgr_.Destroy(color_buffer_);
+            resource_mgr_.Destroy(depth_buffer_);
+            render_target_ = RenderTargetHandle();
+            color_buffer_ = TextureHandle();
+            depth_buffer_ = TextureHandle();
+        }
+
+        // Create RenderTarget
+        auto vp = view_->getViewport();
+        color_buffer_ =
+                resource_mgr_.CreateColorAttachmentTexture(vp.width, vp.height);
+        depth_buffer_ =
+                resource_mgr_.CreateDepthAttachmentTexture(vp.width, vp.height);
+        render_target_ =
+                resource_mgr_.CreateRenderTarget(color_buffer_, depth_buffer_);
+        SetRenderTarget(render_target_);
+    }
+
+    if (!caching_enabled_) {
+        view_->setRenderTarget(nullptr);
+    }
+}
+
+bool FilamentView::IsCached() const { return caching_enabled_; }
+
+TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
+
+void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
+    if (!render_target) {
+        view_->setRenderTarget(nullptr);
+    } else {
+        auto rt_weak = resource_mgr_.GetRenderTarget(render_target);
+        auto rt = rt_weak.lock();
+        if (!rt) {
+            utility::LogWarning(
+                    "Invalid render target given to SetRenderTarget");
+            view_->setRenderTarget(nullptr);
+        } else {
+            view_->setRenderTarget(rt.get());
+        }
+    }
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
@@ -295,25 +345,12 @@ Camera* FilamentView::GetCamera() const { return camera_.get(); }
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
     SetMode(other.mode_);
     view_->setRenderTarget(nullptr);
-
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
-
-    // TODO: Consider moving this code to FilamentCamera
-    auto& camera = view_->getCamera();
-    auto& other_camera = other.GetNativeView()->getCamera();
-
-    // TODO: Code below could introduce problems with culling,
-    //        because Camera::setCustomProjection method
-    //        assigns both culling projection and projection matrices
-    //        to the same matrix. Which is good for ORTHO but
-    //        makes culling matrix with infinite far plane for PERSPECTIVE
-    //        See FCamera::setCustomProjection and FCamera::setProjection
-    //        There is no easy way to fix it currently (Filament 1.4.3)
-    camera.setCustomProjection(other_camera.getProjectionMatrix(),
-                               other_camera.getNear(),
-                               other_camera.getCullingFar());
-    camera.setModelMatrix(other_camera.getModelMatrix());
+    camera_->CopyFrom(other.camera_.get());
+    if (other.configured_for_picking_) {
+        ConfigureForColorPicking();
+    }
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {

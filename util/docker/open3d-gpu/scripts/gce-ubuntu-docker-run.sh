@@ -13,6 +13,7 @@ set -e
 # GITHUB_SHA
 ## CI test matrix:
 CI_CONFIG_ID=${CI_CONFIG_ID:=0}
+CI_CONFIG_ID=${CI_CONFIG_ID%%-*} # '3-ML-bionic' -> '3'
 
 # CI configuration specification
 SHARED=(OFF ON OFF ON OFF OFF)
@@ -62,6 +63,11 @@ case "$1" in
 gcloud-setup)
     gcloud auth configure-docker
     gcloud info
+    # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
+    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+        echo "Removing ssh key"; \
+        gcloud compute os-login ssh-keys remove --key $i || true; \
+    done
     ;;
 
     # Build the Docker image

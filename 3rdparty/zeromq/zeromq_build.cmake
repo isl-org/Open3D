@@ -6,7 +6,7 @@ include(FetchContent)
 
 # Define the compile flags for Windows
 if(WIN32)
-    set(WIN_CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> /Zi /Ob0 /Od /RTC1" 
+    set(WIN_CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> /Zi /Ob0 /Od /RTC1"
                        "-DCMAKE_CXX_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> /O2 /Ob2 /DNDEBUG"
                        "-DCMAKE_C_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> /Zi /Ob0 /Od /RTC1"
                        "-DCMAKE_C_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> /O2 /Ob2 /DNDEBUG"
@@ -25,7 +25,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         # Does not seem to work. We have to directly set the flags on Windows.
-        #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW 
+        #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DBUILD_STATIC=ON
         -DBUILD_SHARED=OFF
@@ -36,6 +36,10 @@ ExternalProject_Add(
         -DWITH_DOCS=OFF
         -DWITH_PERF_TOOL=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         ${WIN_CMAKE_ARGS}
 )
 
@@ -54,8 +58,8 @@ endif()
 if( WIN32 )
     # On windows the lib name is more complicated
     set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s$<$<CONFIG:Debug>:gd>-4_3_3 )
- 
-    # On windows we need to link some additional libs. We will use them 
+
+    # On windows we need to link some additional libs. We will use them
     # directly as targets in find_dependencies.cmake.
     # The following code is taken from the zeromq CMakeLists.txt and collects
     # the additional libs in ZEROMQ_ADDITIONAL_LIBS.
@@ -84,5 +88,5 @@ else()
     set(ZEROMQ_LIBRARIES zmq)
 endif()
 ExternalProject_Get_Property( ext_zeromq INSTALL_DIR )
-set(ZEROMQ_LIB_DIR ${INSTALL_DIR}/lib)
+set(ZEROMQ_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(ZEROMQ_INCLUDE_DIRS "${INSTALL_DIR}/include/;${ext_cppzmq_SOURCE_DIR}/")
