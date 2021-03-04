@@ -35,6 +35,10 @@ namespace geometry {
 class Image;
 }
 
+namespace core {
+class Tensor;
+}
+
 namespace visualization {
 namespace rendering {
 
@@ -79,7 +83,7 @@ public:
     virtual void RequestReadPixels(
             int width,
             int height,
-            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
+            std::function<void(std::shared_ptr<core::Tensor>)> callback) = 0;
     virtual void EndFrame() = 0;
 
     virtual void SetOnAfterDraw(std::function<void()> callback) = 0;

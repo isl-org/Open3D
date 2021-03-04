@@ -38,6 +38,10 @@ namespace geometry {
 class Image;
 }
 
+namespace core {
+class Tensor;
+}
+
 namespace visualization {
 namespace webrtc_server {
 
@@ -70,7 +74,7 @@ public:
     // Client -> server message.
     void OnDataChannelMessage(const std::string& message);
     // Server -> client frame.
-    void OnFrame(const geometry::Image& im);
+    void OnFrame(const core::Tensor& im);
 
     void SetMouseButtonCallback(
             std::function<void(int, double, double, int)> f);

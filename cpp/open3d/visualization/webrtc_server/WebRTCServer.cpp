@@ -70,12 +70,12 @@ struct WebRTCServer::Impl {
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
-    void OnFrame(const geometry::Image& im);
+    void OnFrame(const core::Tensor& im);
     void Run();
     int mouse_button_status_ = 0;
 };
 
-void WebRTCServer::Impl::OnFrame(const geometry::Image& im) {
+void WebRTCServer::Impl::OnFrame(const core::Tensor& im) {
     // TODO: name this differently and handle multiple instances.
     // dynamic_cast is better but "-fno-rtti" is required for WebRTC.
 
@@ -91,9 +91,9 @@ void WebRTCServer::Impl::OnFrame(const geometry::Image& im) {
         // auto image_capturer =
         //         reinterpret_cast<ImageCapturer*>(video_track_source.get());
 
-        t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
-        core::Tensor rgb_frame = t_im.AsTensor();
-        GlobalBuffer::GetInstance().Write(rgb_frame);
+        // t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
+        // core::Tensor rgb_frame = t_im.AsTensor();
+        GlobalBuffer::GetInstance().Write(im);
 
         // utility::LogInfo("To call
         // image_capturer->OnCaptureResult(im_frame);");
@@ -171,7 +171,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     impl_->OnDataChannelMessage(message);
 }
 
-void WebRTCServer::OnFrame(const geometry::Image& im) { impl_->OnFrame(im); }
+void WebRTCServer::OnFrame(const core::Tensor& im) { impl_->OnFrame(im); }
 
 WebRTCServer::WebRTCServer(const std::string& http_address,
                            const std::string& web_root)

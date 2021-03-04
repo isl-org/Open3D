@@ -33,6 +33,10 @@
 
 namespace open3d {
 
+namespace core {
+class Tensor;
+}
+
 namespace geometry {
 class Image;
 }  // namespace geometry
@@ -58,7 +62,7 @@ public:
     void Uninitialize() override;
 
     using OnDrawCallback =
-            std::function<void(Window*, std::shared_ptr<geometry::Image>)>;
+            std::function<void(Window*, std::shared_ptr<core::Tensor>)>;
     void SetOnWindowDraw(OnDrawCallback callback);
 
     void WaitEventsTimeout(double timeout_secs) override;
