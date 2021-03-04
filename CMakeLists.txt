@@ -473,10 +473,11 @@ function(open3d_set_global_properties target)
         cxx_trailing_return_types
         cxx_return_type_deduction
     )
+    # Colorize GCC/Clang terminal outputs
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${target} PRIVATE -fdiagnostics-color=always)
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target} PRIVATE -fcolor-diagnostics)
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fcolor-diagnostics>)
     endif ()
     target_include_directories(${target} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>

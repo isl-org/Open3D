@@ -35,6 +35,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "open3d/core/Blob.h"
 #include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
@@ -847,8 +848,8 @@ public:
         } else {
             int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
-            buffer_ = (char*)MemoryManager::Malloc(size, device);
-            acc_ptr_ = (char*)buffer_;
+            buffer_ = std::make_unique<Blob>(size, device);
+            acc_ptr_ = (char*)buffer_->GetDataPtr();
             numerator_ = acc_t_size;
             denominator_ = out_t_size;
             ReduceFraction(numerator_, denominator_);
@@ -863,12 +864,12 @@ public:
     }
 
 private:
+    std::unique_ptr<Blob> buffer_;
     char* acc_ptr_ = nullptr;
     char* out_ptr_ = nullptr;
     float size_factor_ = -1;
     int64_t numerator_ = -1;
     int64_t denominator_ = -1;
-    char* buffer_ = nullptr;
 };
 
 class CUDAReductionEngine {
@@ -966,14 +967,20 @@ private:
 
         ReduceConfig config(sizeof(arg_t), indexer);
 
+        std::unique_ptr<Blob> buffer_blob;
+        std::unique_ptr<Blob> semaphores_blob;
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
             int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
 
-            buffer = MemoryManager::Malloc(config.GlobalMemorySize(), device);
-            semaphores = MemoryManager::Malloc(config.SemaphoreSize(), device);
+            buffer_blob =
+                    std::make_unique<Blob>(config.GlobalMemorySize(), device);
+            semaphores_blob =
+                    std::make_unique<Blob>(config.SemaphoreSize(), device);
+            buffer = buffer_blob->GetDataPtr();
+            semaphores = semaphores_blob->GetDataPtr();
             OPEN3D_CUDA_CHECK(
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }

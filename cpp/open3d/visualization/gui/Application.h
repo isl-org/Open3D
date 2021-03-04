@@ -182,6 +182,10 @@ public:
     /// before creating any Windows.
     void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
 
+    /// Verifies that Initialize() has been called, printing out an error and
+    /// exiting if not.
+    void VerifyIsInitialized();
+
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
     /// need to render from a GUI, use Scene::RenderToImage().

@@ -378,6 +378,23 @@ void Application::Initialize(const char *resource_path_) {
     impl_->is_initialized_ = true;
 }
 
+void Application::VerifyIsInitialized() {
+    if (impl_->is_initialized_) {
+        return;
+    }
+
+    // Call LogWarning() first because it is easier to visually parse than the
+    // error message.
+    utility::LogWarning("gui::Initialize() was not called");
+
+    // It would be nice to make this LogWarning() and then call Initialize(),
+    // but Python scripts requires a different heuristic for finding the
+    // resource path than C++.
+    utility::LogError(
+            "gui::Initialize() must be called before creating a window or UI "
+            "element.");
+}
+
 WindowSystem &Application::GetWindowSystem() const {
     return *impl_->window_system_;
 }
