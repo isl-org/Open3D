@@ -118,17 +118,6 @@ void ImageCapturer::Stop() {
 
 bool ImageCapturer::IsRunning() { return is_running_; }
 
-// // An alias to call OnCaptureResult(). Called by external functions. This is
-// // helpful when downcasting a webrtc::VideoTrackSourceInterfac pointer to an
-// // ImageCapturer pointer, since we cannot mark OnCaptureResult as override.
-// void ImageCapturer::OnFrame(const core::Tensor& frame) {
-//     utility::LogInfo("ImageCapturer:OnFrame callback");
-//     // e.g. ImageCapturer::OnFrame Tensor(shape={480, 640, 3}, dtype=UInt8)
-//     utility::LogInfo("ImageCapturer::OnFrame Tensor(shape={}, dtype={})",
-//                      frame.GetShape().ToString(), frame.GetDtype().ToString());
-//     OnCaptureResult(frame);
-// }
-
 // Overide webrtc::DesktopCapturer::Callback.
 // See: WindowCapturerX11::CaptureFrame
 // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc

@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/Window.h"
-
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
@@ -51,6 +49,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/webrtc_server/WebRTCServer.h"
