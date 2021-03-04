@@ -25,8 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/io/ImageIO.h"
@@ -36,6 +38,8 @@ namespace visualization {
 namespace webrtc_server {
 
 class GlobalBuffer {
+    static const int s_max_initial_frames_ = 10;
+
 public:
     static GlobalBuffer& GetInstance() {
         static GlobalBuffer instance;
@@ -43,7 +47,33 @@ public:
     }
 
     std::shared_ptr<core::Tensor> Read() {
-        // TODO: implement initial RGB test image before actual frames.
+        // At the initialization state, do not wait for the conditional
+        // variables for the initial frames. This flushes the intial the WebRTC
+        // stream for the client. The initialization state ends when the
+        // s_max_initial_frames_ is reached or when the frame_ready_ is true.
+        // Essentially, we are doing the "sleep and busy waiting" syncronization
+        // at the initilization stage and then switch to conditional variables.
+        //
+        // If the initial frame rate is too high, WebRTC will potentailly drop
+        // actual frames after the initilization phase is done. This leads to a
+        // behavior of high-latency from the client's perspective when they
+        // first see the actual rendering.
+        //
+        // TODO: (important) do not use the test pattern for the initial frames.
+        // Instead, pro-actively get the rendered image from the renderer.
+        if (num_initial_frames_ < s_max_initial_frames_) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::unique_lock<std::mutex> ul(frame_mutex_);
+            bool ready = frame_ready_;
+            ul.unlock();
+            if (ready) {
+                num_initial_frames_ = s_max_initial_frames_;
+            } else {
+                num_initial_frames_++;
+            }
+            return frame_;
+        }
+
         std::unique_lock<std::mutex> ul(frame_mutex_);
         frame_cv_.wait(ul, [this]() { return this->frame_ready_; });
         frame_ready_ = false;
@@ -84,6 +114,7 @@ private:
     std::mutex frame_mutex_;
     std::condition_variable frame_cv_;
     bool frame_ready_ = false;
+    int num_initial_frames_ = 0;
 };
 
 }  // namespace webrtc_server
