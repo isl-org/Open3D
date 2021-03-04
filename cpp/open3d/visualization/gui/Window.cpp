@@ -861,9 +861,6 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
             OnMenuItemSelected(id);
             needs_redraw = true;
         }
-        if (menubar->CheckVisibilityChange()) {
-            ForceRedrawSceneWidget();
-        }
     }
 
     // Draw any active dialog
