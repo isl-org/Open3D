@@ -49,11 +49,11 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
 
     // atai: {n, 21} Stores local sum for ATA stacked vertically
     core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
-    float *atai_ptr = static_cast<float *>(atai.GetDataPtr());
+    float *atai_ptr = atai.GetDataPtr<float>();
 
     // atbi: {n, 6} Stores local sum for ATB.T() stacked vertically
     core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
-    float *atbi_ptr = static_cast<float *>(atbi.GetDataPtr());
+    float *atbi_ptr = atbi.GetDataPtr<float>();
 
     // This kernel computes the {n,21} shape atai tensor
     // and {n,6} shape atbi tensor.
@@ -99,19 +99,15 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
     core::Tensor ata_1x21 = atai.Sum({0}, true);
     core::Tensor ATB = atbi.Sum({0}, true).T();
 
-    /*  ata_1x21 is a {1,21} vector having elements of the matrix ATA such
-        that the corresponding elemetes in ATA are like:
-
-        0
-        1   2
-        3   4   5
-        6   7   8   9
-        10  11  12  13  14
-        15  16  17  18  19  20
-
-        Since, ATA is a symmertric matrix, it can be regenerated from this
-    */
-    // Get the ATA matrix back.
+    //   ata_1x21 is a {1,21} vector having elements of the matrix ATA such
+    //     that the corresponding elemetes in ATA are like:
+    //     0
+    //     1   2
+    //     3   4   5
+    //     6   7   8   9
+    //     10  11  12  13  14
+    //     15  16  17  18  19  20
+    //     Since, ATA is a symmertric matrix, it can be regenerated from this
     core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
     float *ATA_ptr = static_cast<float *>(ATA.GetDataPtr());
     const float *ata_1x21_ptr =
