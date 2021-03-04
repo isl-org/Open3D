@@ -45,7 +45,7 @@ public:
     void Read(core::Tensor& out_frame) {
         std::unique_lock<std::mutex> ul(g_mutex);
         g_cv.wait(ul, [this]() { return this->g_ready; });
-        out_frame = rgb_buffer_;
+        out_frame = rgb_buffer_;  // Not a copy.
         g_ready = false;
     }
 
