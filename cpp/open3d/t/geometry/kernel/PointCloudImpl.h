@@ -56,8 +56,9 @@ void UnprojectCPU
          float depth_scale,
          float depth_max,
          int64_t stride) {
+    const bool have_colors = (image_colors.NumElements() != 0);
     NDArrayIndexer depth_indexer(depth, 2);
-    NDArrayIndexer image_colors_indexer(image_colors, 2);
+    NDArrayIndexer image_colors_indexer(image_colors, have_colors ? 2 : 0);
     TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
 
     // Output
@@ -67,13 +68,11 @@ void UnprojectCPU
     points = core::Tensor({rows_strided * cols_strided, 3},
                           core::Dtype::Float32, depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
-    bool have_colors = false;
-    if (image_colors.NumElements() != 0) {
-        have_colors = true;
+    if (have_colors) {
         colors = core::Tensor({rows_strided * cols_strided, 3},
                               core::Dtype::Float32, image_colors.GetDevice());
     }
-    NDArrayIndexer colors_indexer(colors, 1);
+    NDArrayIndexer colors_indexer(colors, have_colors ? 1 : 0);
 
     // Counter
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -110,12 +109,14 @@ void UnprojectCPU
                     ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
                                       vertex + 2);
                     if (have_colors) {
-                        core::MemoryManager::Memcpy(
-                                colors_indexer.GetDataPtrFromCoord<float>(idx),
-                                colors.GetDevice(),
+                        float* pcd_pixel =
+                                colors_indexer.GetDataPtrFromCoord<float>(idx);
+                        float* image_pixel =
                                 image_colors_indexer.GetDataPtrFromCoord<float>(
-                                        x, y),
-                                image_colors.GetDevice(), 3 * sizeof(float));
+                                        x, y);
+                        *pcd_pixel = *image_pixel;
+                        *(pcd_pixel + 1) = *(image_pixel + 1);
+                        *(pcd_pixel + 2) = *(image_pixel + 2);
                     }
                 }
             });
