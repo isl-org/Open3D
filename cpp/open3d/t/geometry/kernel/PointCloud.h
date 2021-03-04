@@ -36,7 +36,9 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 void Unproject(const core::Tensor& depth,
+               const core::Tensor& image_colors,
                core::Tensor& points,
+               core::Tensor& colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
@@ -44,7 +46,9 @@ void Unproject(const core::Tensor& depth,
                int64_t stride);
 
 void UnprojectCPU(const core::Tensor& depth,
+                  const core::Tensor& image_colors,
                   core::Tensor& points,
+                  core::Tensor& colors,
                   const core::Tensor& intrinsics,
                   const core::Tensor& extrinsics,
                   float depth_scale,
@@ -53,7 +57,9 @@ void UnprojectCPU(const core::Tensor& depth,
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(const core::Tensor& depth,
+                   const core::Tensor& image_colors,
                    core::Tensor& points,
+                   core::Tensor& colors,
                    const core::Tensor& intrinsics,
                    const core::Tensor& extrinsics,
                    float depth_scale,

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <atomic>
+#include <vector>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -47,14 +48,16 @@ void UnprojectCUDA
 void UnprojectCPU
 #endif
         (const core::Tensor& depth,
+         const core::Tensor& image_colors,
          core::Tensor& points,
+         core::Tensor& colors,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
          float depth_max,
          int64_t stride) {
-
     NDArrayIndexer depth_indexer(depth, 2);
+    NDArrayIndexer image_colors_indexer(image_colors, 2);
     TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
 
     // Output
@@ -64,6 +67,13 @@ void UnprojectCPU
     points = core::Tensor({rows_strided * cols_strided, 3},
                           core::Dtype::Float32, depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
+    bool have_colors = false;
+    if (image_colors.NumElements() != 0) {
+        have_colors = true;
+        colors = core::Tensor({rows_strided * cols_strided, 3},
+                              core::Dtype::Float32, image_colors.GetDevice());
+    }
+    NDArrayIndexer colors_indexer(colors, 1);
 
     // Counter
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -99,6 +109,14 @@ void UnprojectCPU
                             point_indexer.GetDataPtrFromCoord<float>(idx);
                     ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
                                       vertex + 2);
+                    if (have_colors) {
+                        core::MemoryManager::Memcpy(
+                                colors_indexer.GetDataPtrFromCoord<float>(idx),
+                                colors.GetDevice(),
+                                image_colors_indexer.GetDataPtrFromCoord<float>(
+                                        x, y),
+                                image_colors.GetDevice(), 3 * sizeof(float));
+                    }
                 }
             });
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -107,6 +125,9 @@ void UnprojectCPU
     int total_pts_count = (*count_ptr).load();
 #endif
     points = points.Slice(0, 0, total_pts_count);
+    if (have_colors) {
+        colors = colors.Slice(0, 0, total_pts_count);
+    }
 }
 }  // namespace pointcloud
 }  // namespace kernel
