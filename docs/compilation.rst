@@ -22,7 +22,7 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 11.0 (optional): Open3D supports GPU acceleration of an increasing number
+* CUDA 10.1 (optional): Open3D supports GPU acceleration of an increasing number
   of operations through CUDA on Linux. Please see the `official documentation
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
   install the CUDA toolkit from Nvidia.
