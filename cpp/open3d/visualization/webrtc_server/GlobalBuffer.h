@@ -45,7 +45,7 @@ public:
     void Read(core::Tensor& out_frame) {
         std::unique_lock<std::mutex> ul(g_mutex);
         g_cv.wait(ul, [this]() { return this->g_ready; });
-        out_frame = rgb_buffer_.Clone();
+        out_frame = rgb_buffer_;
         g_ready = false;
         ul.unlock();
         g_cv.notify_one();
@@ -64,15 +64,6 @@ public:
         ul.lock();
         g_cv.wait(ul, [this]() { return this->g_ready == false; });
     }
-
-    // TODO: use proper "producer-consumer" model with signaling.
-    // Currently we need a thread continuously pulling IsNewFrame() to read.
-    // bool IsNewFrame() {
-    //     {
-    //         std::lock_guard<std::mutex> lock(g_mutex);
-    //         return g_ready;
-    //     }
-    // }
 
 private:
     GlobalBuffer() {
