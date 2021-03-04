@@ -42,11 +42,11 @@ public:
         return instance;
     }
 
-    void Read(core::Tensor& out_frame) {
+    core::Tensor Read() {
         std::unique_lock<std::mutex> ul(g_mutex);
         g_cv.wait(ul, [this]() { return this->g_ready; });
-        out_frame = rgb_buffer_;  // Not a copy.
         g_ready = false;
+        return rgb_buffer_;
     }
 
     void Write(const core::Tensor& rgb_buffer) {
