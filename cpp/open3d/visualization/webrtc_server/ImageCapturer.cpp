@@ -58,12 +58,9 @@ void ImageReader::Start(Callback* callback) {
 }
 
 void ImageReader::CaptureFrame() {
-    while (true) {
-        if (GlobalBuffer::GetInstance().IsNewFrame()) {
-            callback_->OnCaptureResult(GlobalBuffer::GetInstance().Read());
-            break;
-        }
-    }
+    core::Tensor frame;
+    GlobalBuffer::GetInstance().Read(frame);
+    callback_->OnCaptureResult(frame);
 }
 
 ImageCapturer::ImageCapturer(const std::string& url_,

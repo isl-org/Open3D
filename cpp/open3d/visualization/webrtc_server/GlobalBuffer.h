@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <condition_variable>
 #include <mutex>
 
 #include "open3d/core/Tensor.h"
@@ -41,12 +42,13 @@ public:
         return instance;
     }
 
-    core::Tensor Read() {
-        {
-            std::lock_guard<std::mutex> lock(is_new_frame_mutex_);
-            is_new_frame_ = false;
-        }
-        return rgb_buffer_;
+    void Read(core::Tensor& out_frame) {
+        std::unique_lock<std::mutex> ul(g_mutex);
+        g_cv.wait(ul, [this]() { return this->g_ready; });
+        out_frame = rgb_buffer_.Clone();
+        g_ready = false;
+        ul.unlock();
+        g_cv.notify_one();
     }
 
     void Write(const core::Tensor& rgb_buffer) {
@@ -54,21 +56,23 @@ public:
                 {rgb_buffer_.GetShape(0), rgb_buffer_.GetShape(1), 3});
         rgb_buffer.AssertDtype(rgb_buffer_.GetDtype());
         rgb_buffer.AssertDevice(rgb_buffer_.GetDevice());
+        std::unique_lock<std::mutex> ul(g_mutex);
         rgb_buffer_.AsRvalue() = rgb_buffer;
-        {
-            std::lock_guard<std::mutex> lock(is_new_frame_mutex_);
-            is_new_frame_ = true;
-        }
+        g_ready = true;
+        ul.unlock();
+        g_cv.notify_one();
+        ul.lock();
+        g_cv.wait(ul, [this]() { return this->g_ready == false; });
     }
 
     // TODO: use proper "producer-consumer" model with signaling.
     // Currently we need a thread continuously pulling IsNewFrame() to read.
-    bool IsNewFrame() {
-        {
-            std::lock_guard<std::mutex> lock(is_new_frame_mutex_);
-            return is_new_frame_;
-        }
-    }
+    // bool IsNewFrame() {
+    //     {
+    //         std::lock_guard<std::mutex> lock(g_mutex);
+    //         return g_ready;
+    //     }
+    // }
 
 private:
     GlobalBuffer() {
@@ -83,8 +87,9 @@ private:
     virtual ~GlobalBuffer() {}
 
     core::Tensor rgb_buffer_;
-    std::mutex is_new_frame_mutex_;
-    bool is_new_frame_ = false;
+    std::mutex g_mutex;
+    std::condition_variable g_cv;
+    bool g_ready = false;
 };
 
 }  // namespace webrtc_server
