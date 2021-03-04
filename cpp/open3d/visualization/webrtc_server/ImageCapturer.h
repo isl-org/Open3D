@@ -92,10 +92,10 @@ public:
 
     bool IsRunning();
 
-    // An alias to call OnCaptureResult(). Called by external functions. This is
-    // helpful when downcasting a webrtc::VideoTrackSourceInterfac pointer to an
-    // ImageCapturer pointer, since we cannot mark OnCaptureResult as override.
-    void OnFrame(const core::Tensor& frame);
+    // // An alias to call OnCaptureResult(). Called by external functions. This is
+    // // helpful when downcasting a webrtc::VideoTrackSourceInterfac pointer to an
+    // // ImageCapturer pointer, since we cannot mark OnCaptureResult as override.
+    // void OnFrame(const core::Tensor& frame);
 
     // Overide webrtc::DesktopCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
