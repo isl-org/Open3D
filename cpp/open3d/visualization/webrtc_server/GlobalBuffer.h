@@ -42,22 +42,22 @@ public:
         return instance;
     }
 
-    core::Tensor Read() {
+    std::shared_ptr<core::Tensor> Read() {
         std::unique_lock<std::mutex> ul(g_mutex);
         g_cv.wait(ul, [this]() { return this->g_ready; });
         g_ready = false;
         return rgb_buffer_;
     }
 
-    void Write(const core::Tensor& rgb_buffer) {
-        rgb_buffer.AssertShape(
-                {rgb_buffer_.GetShape(0), rgb_buffer_.GetShape(1), 3});
-        rgb_buffer.AssertDtype(rgb_buffer_.GetDtype());
-        rgb_buffer.AssertDevice(rgb_buffer_.GetDevice());
+    void Write(const std::shared_ptr<core::Tensor>& rgb_buffer) {
+        rgb_buffer->AssertShape(
+                {rgb_buffer_->GetShape(0), rgb_buffer_->GetShape(1), 3});
+        rgb_buffer->AssertDtype(rgb_buffer_->GetDtype());
+        rgb_buffer->AssertDevice(rgb_buffer_->GetDevice());
 
         // Updating buffer is not protected by mutex, but it is fine since
         // partial frame is acceptable to minimize latency.
-        rgb_buffer_.AsRvalue() = rgb_buffer;
+        rgb_buffer_ = rgb_buffer;
 
         std::unique_lock<std::mutex> ul(g_mutex);
         g_ready = true;
@@ -69,15 +69,17 @@ private:
     GlobalBuffer() {
         core::Tensor two_fifty_five =
                 core::Tensor::Ones({}, core::Dtype::UInt8) * 255;
-        rgb_buffer_ = core::Tensor::Zeros({480, 640, 3}, core::Dtype::UInt8);
-        rgb_buffer_.Slice(0, 0, 160, 1).Slice(2, 0, 1, 1) = two_fifty_five;
-        rgb_buffer_.Slice(0, 160, 320, 1).Slice(2, 1, 2, 1) = two_fifty_five;
-        rgb_buffer_.Slice(0, 320, 480, 1).Slice(2, 2, 3, 1) = two_fifty_five;
+        rgb_buffer_ = std::make_shared<core::Tensor>(
+                core::SizeVector({480, 640, 3}), core::Dtype::UInt8);
+        rgb_buffer_->Fill(0);
+        rgb_buffer_->Slice(0, 0, 160, 1).Slice(2, 0, 1, 1) = two_fifty_five;
+        rgb_buffer_->Slice(0, 160, 320, 1).Slice(2, 1, 2, 1) = two_fifty_five;
+        rgb_buffer_->Slice(0, 320, 480, 1).Slice(2, 2, 3, 1) = two_fifty_five;
     }
 
     virtual ~GlobalBuffer() {}
 
-    core::Tensor rgb_buffer_;
+    std::shared_ptr<core::Tensor> rgb_buffer_ = nullptr;
     std::mutex g_mutex;
     std::condition_variable g_cv;
     bool g_ready = false;

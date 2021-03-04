@@ -70,12 +70,12 @@ struct WebRTCServer::Impl {
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
-    void OnFrame(const core::Tensor& im);
+    void OnFrame(const std::shared_ptr<core::Tensor>& im);
     void Run();
     int mouse_button_status_ = 0;
 };
 
-void WebRTCServer::Impl::OnFrame(const core::Tensor& im) {
+void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
     // TODO: name this differently and handle multiple instances.
     // dynamic_cast is better but "-fno-rtti" is required for WebRTC.
 
@@ -171,7 +171,9 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     impl_->OnDataChannelMessage(message);
 }
 
-void WebRTCServer::OnFrame(const core::Tensor& im) { impl_->OnFrame(im); }
+void WebRTCServer::OnFrame(const std::shared_ptr<core::Tensor>& im) {
+    impl_->OnFrame(im);
+}
 
 WebRTCServer::WebRTCServer(const std::string& http_address,
                            const std::string& web_root)

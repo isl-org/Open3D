@@ -74,7 +74,7 @@ public:
     // Client -> server message.
     void OnDataChannelMessage(const std::string& message);
     // Server -> client frame.
-    void OnFrame(const core::Tensor& im);
+    void OnFrame(const std::shared_ptr<core::Tensor>& im);
 
     void SetMouseButtonCallback(
             std::function<void(int, double, double, int)> f);

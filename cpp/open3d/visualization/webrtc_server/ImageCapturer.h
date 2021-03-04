@@ -53,7 +53,7 @@ class ImageReader {
 public:
     class Callback {
     public:
-        virtual void OnCaptureResult(const core::Tensor&) = 0;
+        virtual void OnCaptureResult(const std::shared_ptr<core::Tensor>&) = 0;
 
     protected:
         virtual ~Callback() {}
@@ -95,7 +95,8 @@ public:
     // Overide webrtc::DesktopCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
     // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
-    virtual void OnCaptureResult(const core::Tensor& frame) override;
+    virtual void OnCaptureResult(
+            const std::shared_ptr<core::Tensor>& frame) override;
 
     // Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
     virtual void AddOrUpdateSink(
