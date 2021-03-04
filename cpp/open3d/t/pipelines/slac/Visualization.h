@@ -33,6 +33,7 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/t/pipelines/slac/ControlGrid.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/utility/Draw.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
@@ -48,8 +49,7 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
                         t::geometry::PointCloud& tpcd_j,
                         t::geometry::PointCloud& tpcd_param_i,
                         t::geometry::PointCloud& tpcd_param_j,
-                        const core::Tensor& Ti,
-                        const core::Tensor& Tj);
+                        const core::Tensor& Tij);
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
                             ControlGrid& ctr_grid,

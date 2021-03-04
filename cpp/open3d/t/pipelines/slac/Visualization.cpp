@@ -67,29 +67,26 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
                         t::geometry::PointCloud& tpcd_j,
                         t::geometry::PointCloud& tpcd_param_i,
                         t::geometry::PointCloud& tpcd_param_j,
-                        const core::Tensor& Ti,
-                        const core::Tensor& Tj) {
+                        const core::Tensor& Tij) {
     core::Tensor flip(std::vector<float>{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0,
                                          0, 0, 0, 1},
-                      {4, 4}, core::Dtype::Float32, Ti.GetDevice());
+                      {4, 4}, core::Dtype::Float32, Tij.GetDevice());
 
     auto pcd_i = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_i.Clone().Transform(flip.Matmul(Ti)).ToLegacyPointCloud());
+            tpcd_i.Clone().Transform(flip.Matmul(Tij)).ToLegacyPointCloud());
     pcd_i->PaintUniformColor({0, 1, 0});
 
     auto pcd_j = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_j.Clone().Transform(flip.Matmul(Tj)).ToLegacyPointCloud());
+            tpcd_j.Clone().Transform(flip).ToLegacyPointCloud());
     pcd_j->PaintUniformColor({1, 0, 0});
 
     auto pcd_cropped_i = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_param_i.Clone()
-                    .Transform(flip.Matmul(Ti))
+                    .Transform(flip.Matmul(Tij))
                     .ToLegacyPointCloud());
     pcd_cropped_i->PaintUniformColor({0, 1, 0});
     auto pcd_cropped_j = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_param_j.Clone()
-                    .Transform(flip.Matmul(Tj))
-                    .ToLegacyPointCloud());
+            tpcd_param_j.Clone().Transform(flip).ToLegacyPointCloud());
     pcd_cropped_j->PaintUniformColor({1, 0, 0});
 
     std::vector<std::pair<int, int>> corres_lines;
@@ -102,7 +99,8 @@ void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
                     *pcd_cropped_i, *pcd_cropped_j, corres_lines);
     lineset->PaintUniformColor({0, 0, 1});
     visualization::DrawGeometries(
-            {pcd_i, pcd_j, pcd_cropped_i, pcd_cropped_j, lineset});
+            {pcd_i, pcd_j, pcd_cropped_i, pcd_cropped_j, lineset},
+            "PCD correspondences", 1280, 960);
 }
 
 void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
