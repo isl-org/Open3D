@@ -34,7 +34,7 @@ _test_data_dir = Path(__file__).parent.absolute().resolve()
 # Typically "Open3D/examples/test_data/open3d_downloads", the test data download dir.
 _download_dir = _test_data_dir / "open3d_downloads"
 
-sys.path.append(_test_data_dir)
+sys.path.append(str(_test_data_dir))
 from download_file_list import map_url_to_relative_path
 
 
