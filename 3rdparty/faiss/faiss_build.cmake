@@ -31,4 +31,4 @@ ExternalProject_Add(
 
 set(FAISS_LIBRARIES faiss)
 set(FAISS_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/include/")
-set(FAISS_LIB_DIR "${MKL_INSTALL_PREFIX}/lib")  # Must have no trailing "/".
+set(FAISS_LIB_DIR "${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}")  # Must have no trailing "/".
