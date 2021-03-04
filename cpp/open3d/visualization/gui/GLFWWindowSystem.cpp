@@ -31,6 +31,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
 #ifdef __APPLE__
@@ -48,6 +49,15 @@ namespace gui {
 namespace {
 static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
 static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
+
+// GLFW doesn't provide double-click messages, nor will it read the default
+// values from the OS, so we need to do it ourselves.
+static constexpr double DOUBLE_CLICK_TIME = 0.300;  // 300 ms is a typical value
+
+// These are used in the GLFW callbacks, which are global functions, and it's
+// not worth creating a wrapper around Window just for this.
+double g_last_button_down_time = 0.0;
+MouseButton g_last_button_down = MouseButton::NONE;
 
 int MouseButtonFromGLFW(int button) {
     switch (button) {
@@ -355,7 +365,19 @@ void GLFWWindowSystem::MouseButtonCallback(GLFWwindow* window,
 
     MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
     me.button.button = MouseButton(MouseButtonFromGLFW(button));
+    me.button.count = 1;
 
+    double now = Application::GetInstance().Now();
+    if (g_last_button_down == me.button.button) {
+        double dt = now - g_last_button_down_time;
+        if (dt > 0.0 && dt < DOUBLE_CLICK_TIME) {
+            me.button.count += 1;
+        }
+    }
+    if (type == MouseEvent::BUTTON_DOWN) {
+        g_last_button_down = me.button.button;
+        g_last_button_down_time = now;
+    }
     w->OnMouseEvent(me);
 }
 
