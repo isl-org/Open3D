@@ -28,21 +28,15 @@
 
 #include "open3d/utility/Console.h"
 
-namespace open3d {
-namespace core {
-
-#define DISPATCH_FLOAT32_FLOAT64_DTYPE(DTYPE, ...)       \
-    [&] {                                                \
-        if (DTYPE == Dtype::Float32) {                   \
-            using scalar_t = float;                      \
-            return __VA_ARGS__();                        \
-        } else if (DTYPE == Dtype::Float64) {            \
-            using scalar_t = double;                     \
-            return __VA_ARGS__();                        \
-        } else {                                         \
-            utility::LogError("Unsupported data type."); \
-        }                                                \
+#define DISPATCH_FLOAT32_FLOAT64_DTYPE(DTYPE, ...)          \
+    [&] {                                                   \
+        if (DTYPE == open3d::core::Dtype::Float32) {        \
+            using scalar_t = float;                         \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Float64) { \
+            using scalar_t = double;                        \
+            return __VA_ARGS__();                           \
+        } else {                                            \
+            utility::LogError("Unsupported data type.");    \
+        }                                                   \
     }()
-
-}  // namespace core
-}  // namespace open3d
