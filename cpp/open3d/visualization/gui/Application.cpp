@@ -50,6 +50,7 @@
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/WebRTCWindowSystem.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -403,6 +404,10 @@ void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
     assert(!impl_->window_system_);
     impl_->window_system_ = ws;
     impl_->is_ws_initialized_ = false;
+}
+
+void Application::EnableWebRTC() {
+    SetWindowSystem(std::make_shared<gui::WebRTCWindowSystem>());
 }
 
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {

@@ -182,6 +182,11 @@ public:
     /// before creating any Windows.
     void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
 
+    /// Sets WebRTCWindowSystem as the default window system. This enables a
+    /// global WebRTC server and each gui::Window will be rendered to a WebRTC
+    /// video stream.
+    void EnableWebRTC();
+
     /// Verifies that Initialize() has been called, printing out an error and
     /// exiting if not.
     void VerifyIsInitialized();

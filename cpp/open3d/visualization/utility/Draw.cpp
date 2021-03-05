@@ -138,7 +138,7 @@ void Draw(const std::vector<DrawObject> &objects,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
     auto &o3d_app = gui::Application::GetInstance();
-    o3d_app.SetWindowSystem(std::make_shared<gui::WebRTCWindowSystem>());
+    o3d_app.EnableWebRTC();
     o3d_app.Initialize();
     gui::WebRTCWindowSystem *webrtc_window_system =
             dynamic_cast<gui::WebRTCWindowSystem *>(&o3d_app.GetWindowSystem());
