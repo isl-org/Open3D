@@ -138,9 +138,14 @@ void Draw(const std::vector<DrawObject> &objects,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
     auto &o3d_app = gui::Application::GetInstance();
-    auto webrtc_window = std::make_shared<gui::WebRTCWindowSystem>();
-    o3d_app.SetWindowSystem(webrtc_window);
+    o3d_app.SetWindowSystem(std::make_shared<gui::WebRTCWindowSystem>());
     o3d_app.Initialize();
+    gui::WebRTCWindowSystem *webrtc_window =
+            dynamic_cast<gui::WebRTCWindowSystem *>(&o3d_app.GetWindowSystem());
+    if (webrtc_window == nullptr) {
+        utility::LogError(
+                "Internal error: cannot cast to gui::WebRTCWindowSystem.");
+    }
 
     auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
                                                             height);
