@@ -12,4 +12,5 @@ _repo_prefix = "https://github.com/intel-isl/open3d_downloads/raw/master"
 # manage the test data files.
 map_url_to_relative_path = {
     f"{_repo_prefix}/RGBD/raycast_vtx_004.npy": "RGBD/raycast_vtx_004.npy",
+    f"{_repo_prefix}/ICP/Civil.pcd": "ICP/Civil.pcd",
 }
