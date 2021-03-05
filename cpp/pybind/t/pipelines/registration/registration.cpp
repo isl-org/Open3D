@@ -101,7 +101,7 @@ void pybind_registration_classes(py::module &m) {
                         c.max_iteration_);
             });
 
-    // open3d.registration.TransformationEstimation
+    // open3d.t.registration.TransformationEstimation
     py::class_<TransformationEstimation,
                PyTransformationEstimation<TransformationEstimation>>
             te(m, "TransformationEstimation",
@@ -130,7 +130,7 @@ void pybind_registration_classes(py::module &m) {
              {"corres",
               "Correspondence set between source and target point cloud."}});
 
-    // open3d.registration.TransformationEstimationPointToPoint:
+    // open3d.t.registration.TransformationEstimationPointToPoint:
     // TransformationEstimation
     py::class_<TransformationEstimationPointToPoint,
                PyTransformationEstimation<TransformationEstimationPointToPoint>,
@@ -140,19 +140,26 @@ void pybind_registration_classes(py::module &m) {
                    "distance.");
     py::detail::bind_copy_functions<TransformationEstimationPointToPoint>(
             te_p2p);
+    te_p2p.def("__repr__", [](const TransformationEstimationPointToPoint &te) {
+        return std::string("TransformationEstimationPointToPoint");
+    });
 
-    // open3d.registration.TransformationEstimationPointToPlane:
+    // open3d.t.registration.TransformationEstimationPointToPlane:
     // TransformationEstimation
     py::class_<TransformationEstimationPointToPlane,
                PyTransformationEstimation<TransformationEstimationPointToPlane>,
                TransformationEstimation>
             te_p2l(m, "TransformationEstimationPointToPlane",
-                   "Class to estimate a transformation for point to plane "
+                   "Class to estimate a transformation for point to "
+                   "plane "
                    "distance.");
     py::detail::bind_default_constructor<TransformationEstimationPointToPlane>(
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
+    te_p2l.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
+        return std::string("TransformationEstimationPointToPlane");
+    });
 
     // open3d.registration.RegistrationResult
     py::class_<RegistrationResult> registration_result(
