@@ -51,7 +51,6 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                                 core::Tensor &pose,
                                 const core::Dtype &dtype,
                                 const core::Device &device) {
-
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
@@ -61,59 +60,61 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     std::vector<double> zeros_27(27, 0.0);
     // For TBB reduction, A_ is a reduction variable of type vector<double>.
     A_1x27 = tbb::parallel_reduce(
-        tbb::blocked_range<int>(0, n), zeros_27,
-        [&](tbb::blocked_range<int> r, std::vector<double> A_) {
-            for (int workload_idx = r.begin(); workload_idx < r.end();
-                    workload_idx++) {
+            tbb::blocked_range<int>(0, n), zeros_27,
+            [&](tbb::blocked_range<int> r, std::vector<double> A_) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
 #else
     // For OpenMP reduction, A_ is a double pointer to A_1x27.
-    double* A_ = A_1x27.data();
-    #pragma omp parallel for reduction(+ : A_1x27_ptr[:27])
-        for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
+    double *A_ = A_1x27.data();
+#pragma omp parallel for reduction(+ : A_1x27_ptr[:27])
+    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
-            const int64_t &source_index = 3 * correspondence_first[workload_idx];
-            const int64_t &target_index = 3 * correspondence_second[workload_idx];
+                    const int64_t &source_index =
+                            3 * correspondence_first[workload_idx];
+                    const int64_t &target_index =
+                            3 * correspondence_second[workload_idx];
 
-            const float &sx = (source_points_ptr[source_index + 0]);
-            const float &sy = (source_points_ptr[source_index + 1]);
-            const float &sz = (source_points_ptr[source_index + 2]);
-            const float &tx = (target_points_ptr[target_index + 0]);
-            const float &ty = (target_points_ptr[target_index + 1]);
-            const float &tz = (target_points_ptr[target_index + 2]);
-            const float &nx = (target_normals_ptr[target_index + 0]);
-            const float &ny = (target_normals_ptr[target_index + 1]);
-            const float &nz = (target_normals_ptr[target_index + 2]);
+                    const float &sx = (source_points_ptr[source_index + 0]);
+                    const float &sy = (source_points_ptr[source_index + 1]);
+                    const float &sz = (source_points_ptr[source_index + 2]);
+                    const float &tx = (target_points_ptr[target_index + 0]);
+                    const float &ty = (target_points_ptr[target_index + 1]);
+                    const float &tz = (target_points_ptr[target_index + 2]);
+                    const float &nx = (target_normals_ptr[target_index + 0]);
+                    const float &ny = (target_normals_ptr[target_index + 1]);
+                    const float &nz = (target_normals_ptr[target_index + 2]);
 
-            const double bi =
-                    (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-            const double ai[] = {(nz * sy - ny * sz),
-                                (nx * sz - nz * sx),
-                                (ny * sx - nx * sy),
-                                nx,
-                                ny,
-                                nz};
+                    const double bi =
+                            (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
+                    const double ai[] = {(nz * sy - ny * sz),
+                                         (nx * sz - nz * sx),
+                                         (ny * sx - nx * sy),
+                                         nx,
+                                         ny,
+                                         nz};
 
-            for (int i = 0, j = 0; j < 6; j++) {
-                for (int k = 0; k <= j; k++) {
-                    // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
-                    A_[i] += ai[j] * ai[k];
-                    i++;
+                    for (int i = 0, j = 0; j < 6; j++) {
+                        for (int k = 0; k <= j; k++) {
+                            // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
+                            A_[i] += ai[j] * ai[k];
+                            i++;
+                        }
+                        // ATB {6,1}.
+                        A_[21 + j] += ai[j] * bi;
+                    }
                 }
-                // ATB {6,1}.
-                A_[21 + j] +=  ai[j] * bi;
-            }
-        }
-#ifdef _WIN32    
-        return A_;
-    },
-    // TBB: Defining reduction operation.
-    [&](std::vector<double> a, std::vector<double> b) {
-        std::vector<double> result(27);
-        for (int j = 0; j < 27; j++) {
-            result[j] = a[j] + b[j];
-        }
-        return result;
-    });
+#ifdef _WIN32
+                return A_;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<double> a, std::vector<double> b) {
+                std::vector<double> result(27);
+                for (int j = 0; j < 27; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
 #endif
 
     core::Tensor ATA =
