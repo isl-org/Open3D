@@ -92,7 +92,6 @@ void Draw(const std::vector<DrawObject> &objects,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
     auto &o3d_app = gui::Application::GetInstance();
-    o3d_app.EnableWebRTC();
     o3d_app.Initialize();
 
     auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,

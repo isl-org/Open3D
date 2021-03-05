@@ -283,6 +283,7 @@ int main(int argc, char **argv) {
                 "directory, test_dir: {}",
                 TEST_DIR);
     }
+    open3d::visualization::gui::Application::GetInstance().EnableWebRTC();
 
     // SingleObject();
     MultiObjects();
