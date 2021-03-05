@@ -57,6 +57,7 @@
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 namespace {
 
@@ -199,6 +200,52 @@ std::string FindFontPath(const std::string &font) {
 namespace open3d {
 namespace visualization {
 namespace gui {
+
+static int MouseButtonFromGLFW(int button) {
+    switch (button) {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            return int(gui::MouseButton::LEFT);
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            return int(gui::MouseButton::RIGHT);
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            return int(gui::MouseButton::MIDDLE);
+        case GLFW_MOUSE_BUTTON_4:
+            return int(gui::MouseButton::BUTTON4);
+        case GLFW_MOUSE_BUTTON_5:
+            return int(gui::MouseButton::BUTTON5);
+        default:
+            return int(gui::MouseButton::NONE);
+    }
+}
+
+static int KeymodsFromGLFW(int glfw_mods) {
+    int keymods = 0;
+    if (glfw_mods & GLFW_MOD_SHIFT) {
+        keymods |= int(gui::KeyModifier::SHIFT);
+    }
+    if (glfw_mods & GLFW_MOD_CONTROL) {
+#if __APPLE__
+        keymods |= int(gui::KeyModifier::ALT);
+#else
+        keymods |= int(gui::KeyModifier::CTRL);
+#endif  // __APPLE__
+    }
+    if (glfw_mods & GLFW_MOD_ALT) {
+#if __APPLE__
+        keymods |= int(gui::KeyModifier::META);
+#else
+        keymods |= int(gui::KeyModifier::ALT);
+#endif  // __APPLE__
+    }
+    if (glfw_mods & GLFW_MOD_SUPER) {
+#if __APPLE__
+        keymods |= int(gui::KeyModifier::CTRL);
+#else
+        keymods |= int(gui::KeyModifier::META);
+#endif  // __APPLE__
+    }
+    return keymods;
+}
 
 struct Application::Impl {
     bool is_initialized_ = false;
@@ -465,6 +512,74 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
+    // TODO: move this elsewhere.
+    // TODO: better way to check window system type.
+    if (std::shared_ptr<gui::WebRTCWindowSystem> webrtc_window_system =
+                std::dynamic_pointer_cast<gui::WebRTCWindowSystem>(
+                        impl_->window_system_)) {
+        // Mouse down/up.
+        std::function<void(int, double, double, int)> mouse_button_callback =
+                [webrtc_window_system, window](int action, double x, double y,
+                                               int mods) {
+                    auto type = (action == 1 ? gui::MouseEvent::BUTTON_DOWN
+                                             : gui::MouseEvent::BUTTON_UP);
+                    double mx = x;
+                    double my = y;
+                    int button = 0;
+                    float scaling = window->GetScaling();
+                    int ix = int(std::ceil(mx * scaling));
+                    int iy = int(std::ceil(my * scaling));
+
+                    gui::MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+                    me.button.button =
+                            gui::MouseButton(MouseButtonFromGLFW(button));
+
+                    webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
+                                                         me);
+                };
+        // Mouse move.
+        std::function<void(int, double, double, int)> mouse_move_callback =
+                [webrtc_window_system, window](int mouse_status, double x,
+                                               double y, int mods) {
+                    float scaling = window->GetScaling();
+                    int ix = int(std::ceil(x * scaling));
+                    int iy = int(std::ceil(y * scaling));
+
+                    auto type = (mouse_status == 0 ? gui::MouseEvent::MOVE
+                                                   : gui::MouseEvent::DRAG);
+                    int buttons = mouse_status;
+                    gui::MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+                    me.button.button = gui::MouseButton(buttons);
+
+                    webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
+                                                         me);
+                };
+        // Mouse wheel.
+        std::function<void(double, double, int, double, double)>
+                mouse_wheel_callback = [webrtc_window_system, window](
+                                               double x, double y, int mods,
+                                               double dx, double dy) {
+                    gui::MouseEvent me;
+                    me.type = gui::MouseEvent::WHEEL;
+                    me.x = static_cast<float>(x);
+                    me.y = static_cast<float>(y);
+                    me.modifiers = mods;
+                    me.wheel.dx = static_cast<float>(dx);
+                    me.wheel.dy = static_cast<float>(dy);
+
+                    webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
+                                                         me);
+                };
+
+        webrtc_window_system->SetMouseButtonCallback(mouse_button_callback);
+        webrtc_window_system->SetMouseMoveCallback(mouse_move_callback);
+        webrtc_window_system->SetMouseWheelCallback(mouse_wheel_callback);
+
+        // TODO: only start the sever once. Can you add new streams while the
+        // sever is running?
+        webrtc_window_system->StartWebRTCServer();
+    }
+
     window->OnResize();  // so we get an initial resize
     window->Show();
     impl_->windows_.insert(window);
