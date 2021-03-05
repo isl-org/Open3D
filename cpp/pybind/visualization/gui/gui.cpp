@@ -298,6 +298,8 @@ void pybind_gui_classes(py::module &m) {
                     "Runs the event loop once, returns True if the app is "
                     "still running, or False if all the windows have closed "
                     "or quit() has been called.")
+            .def("enable_webrtc", &Application::EnableWebRTC,
+                 "Use WebRTC streams to display rendered gui window.")
             .def(
                     "render_to_image",
                     [](Application &instance, rendering::Open3DScene *scene,
