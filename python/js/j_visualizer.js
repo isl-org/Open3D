@@ -436,7 +436,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
       "video",
       "http://192.168.86.121:8888/"
     );
-    this.webRtcServer.connect("window://Open3D");
+    this.webRtcServer.connect("image://Open3D");
 
     // Register callbacks for videoElt.
     var videoElt = document.getElementById("video");
