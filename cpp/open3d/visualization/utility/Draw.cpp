@@ -140,9 +140,9 @@ void Draw(const std::vector<DrawObject> &objects,
     auto &o3d_app = gui::Application::GetInstance();
     o3d_app.SetWindowSystem(std::make_shared<gui::WebRTCWindowSystem>());
     o3d_app.Initialize();
-    gui::WebRTCWindowSystem *webrtc_window =
+    gui::WebRTCWindowSystem *webrtc_window_system =
             dynamic_cast<gui::WebRTCWindowSystem *>(&o3d_app.GetWindowSystem());
-    if (webrtc_window == nullptr) {
+    if (webrtc_window_system == nullptr) {
         utility::LogError(
                 "Internal error: cannot cast to gui::WebRTCWindowSystem.");
     }
@@ -168,7 +168,8 @@ void Draw(const std::vector<DrawObject> &objects,
 
     // WebRTC event handlers.
     std::function<void(int, double, double, int)> mouse_button_callback =
-            [webrtc_window, draw](int action, double x, double y, int mods) {
+            [webrtc_window_system, draw](int action, double x, double y,
+                                         int mods) {
                 auto type = (action == 1 ? gui::MouseEvent::BUTTON_DOWN
                                          : gui::MouseEvent::BUTTON_UP);
                 double mx = x;
@@ -182,11 +183,11 @@ void Draw(const std::vector<DrawObject> &objects,
                 me.button.button =
                         gui::MouseButton(MouseButtonFromGLFW(button));
 
-                webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+                webrtc_window_system->PostMouseEvent(draw->GetOSWindow(), me);
             };
     std::function<void(int, double, double, int)> mouse_move_callback =
-            [webrtc_window, draw](int mouse_status, double x, double y,
-                                  int mods) {
+            [webrtc_window_system, draw](int mouse_status, double x, double y,
+                                         int mods) {
                 float scaling = draw->GetScaling();
                 int ix = int(std::ceil(x * scaling));
                 int iy = int(std::ceil(y * scaling));
@@ -197,12 +198,12 @@ void Draw(const std::vector<DrawObject> &objects,
                 gui::MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
                 me.button.button = gui::MouseButton(buttons);
 
-                webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+                webrtc_window_system->PostMouseEvent(draw->GetOSWindow(), me);
             };
     std::function<void(double, double, int, double, double)>
-            mouse_wheel_callback = [webrtc_window, draw](double x, double y,
-                                                         int mods, double dx,
-                                                         double dy) {
+            mouse_wheel_callback = [webrtc_window_system, draw](
+                                           double x, double y, int mods,
+                                           double dx, double dy) {
                 gui::MouseEvent me;
                 me.type = gui::MouseEvent::WHEEL;
                 me.x = static_cast<float>(x);
@@ -211,14 +212,14 @@ void Draw(const std::vector<DrawObject> &objects,
                 me.wheel.dx = static_cast<float>(dx);
                 me.wheel.dy = static_cast<float>(dy);
 
-                webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
+                webrtc_window_system->PostMouseEvent(draw->GetOSWindow(), me);
             };
 
-    webrtc_window->SetMouseButtonCallback(mouse_button_callback);
-    webrtc_window->SetMouseMoveCallback(mouse_move_callback);
-    webrtc_window->SetMouseWheelCallback(mouse_wheel_callback);
+    webrtc_window_system->SetMouseButtonCallback(mouse_button_callback);
+    webrtc_window_system->SetMouseMoveCallback(mouse_move_callback);
+    webrtc_window_system->SetMouseWheelCallback(mouse_wheel_callback);
 
-    webrtc_window->StartWebRTCServer();
+    webrtc_window_system->StartWebRTCServer();
 
     draw.reset();  // so we don't hold onto the pointer after Run() cleans up
 
