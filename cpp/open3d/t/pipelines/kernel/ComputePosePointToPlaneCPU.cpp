@@ -67,7 +67,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
 #else
     // For OpenMP reduction, A_ is a double pointer to A_1x27.
     double *A_ = A_1x27.data();
-#pragma omp parallel for reduction(+ : A_1x27_ptr[:27])
+#pragma omp parallel for reduction(+ : A_[:27])
     for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
                     const int64_t &source_index =
