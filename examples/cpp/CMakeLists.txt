@@ -7,9 +7,9 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
 
     # Don't use open3d_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
-    # Unlike benchmarks, examples are intended as a standalone app that links
-    # the main Open3D library, while benchmarks needs 3rd party libraries since
-    # it measures the internal componets of the Open3D library.
+    # Unlike benchmarks, examples are intended as standalone apps that link
+    # the main Open3D library, while the benchmarks executable needs 3rd-party
+    # libraries since it measures the internal componets of the Open3D.
     open3d_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
     open3d_set_global_properties(${EXAMPLE_CPP_NAME})
 
