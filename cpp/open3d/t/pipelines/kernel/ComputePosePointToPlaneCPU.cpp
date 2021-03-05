@@ -85,7 +85,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                     const float &ny = (target_normals_ptr[target_index + 1]);
                     const float &nz = (target_normals_ptr[target_index + 2]);
 
-                    const double bi =
+                    const double bi_neg =
                             (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
                     const double ai[] = {(nz * sy - ny * sz),
                                          (nx * sz - nz * sx),
@@ -101,7 +101,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                             i++;
                         }
                         // ATB {6,1}.
-                        A_[21 + j] += ai[j] * bi;
+                        A_[21 + j] += ai[j] * bi_neg;
                     }
                 }
 #ifdef _WIN32
@@ -121,9 +121,11 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             core::Tensor::Empty({6, 6}, core::Dtype::Float64, device);
     double *ata_ptr = ATA.GetDataPtr<double>();
 
-    core::Tensor ATB =
+    // ATB_neg is -(ATB), as bi_neg is used in kernel instead of bi,
+    // where  bi = [source_points - target_points].(target_normals).
+    core::Tensor ATB_neg =
             core::Tensor::Empty({6, 1}, core::Dtype::Float64, device);
-    double *atb_ptr = ATB.GetDataPtr<double>();
+    double *atb_ptr = ATB_neg.GetDataPtr<double>();
 
     // ATA_ {1,21} to ATA {6,6}.
     for (int i = 0, j = 0; j < 6; j++) {
@@ -135,8 +137,8 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
         atb_ptr[j] = A_1x27[21 + j];
     }
 
-    // ATA(6,6) . Pose(6,1) = ATB(6,1)
-    pose = ATA.Solve(ATB).Reshape({-1}).To(dtype);
+    // ATA(6,6) . Pose(6,1) = -ATB(6,1).
+    pose = ATA.Solve(ATB_neg).Reshape({-1}).To(dtype);
 }
 
 }  // namespace kernel
