@@ -215,56 +215,6 @@ void Draw(const std::vector<DrawObject> &objects,
 
     webrtc_window->StartWebRTCServer();
 
-    // auto emulate_mouse_events = [webrtc_window, draw]() -> void {
-    //     while (true) {
-    //         std::this_thread::sleep_for(std::chrono::seconds(1));
-    //         utility::LogInfo("emulate_mouse_events called");
-
-    //         // clang-format off
-    //         // MouseEvent{type: Type::BUTTON_DOWN, x: 139, y: 366, modifiers:
-    //         0, button.button: MouseButton::LEFT}
-    //         // MouseEvent{type: Type::DRAG, x: 149, y: 362, modifiers: 0,
-    //         move.buttons : 1}
-    //         // MouseEvent{type: Type::DRAG, x: 209, y: 338, modifiers: 0,
-    //         move.buttons : 1}
-    //         // MouseEvent{type: Type::DRAG, x: 259, y: 319, modifiers: 0,
-    //         move.buttons : 1}
-    //         // MouseEvent{type: Type::BUTTON_UP, x: 263, y: 318, modifiers:
-    //         0, button.button: MouseButton::LEFT}
-    //         // clang-format on
-
-    //         gui::MouseEvent me;
-
-    //         me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_DOWN, 139,
-    //         366,
-    //                              0};
-    //         me.button.button = gui::MouseButton::LEFT;
-    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-    //         me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 149, 362, 0};
-    //         me.move.buttons = 1;
-    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-    //         me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 209, 338, 0};
-    //         me.move.buttons = 1;
-    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-    //         me = gui::MouseEvent{gui::MouseEvent::Type::DRAG, 259, 319, 0};
-    //         me.move.buttons = 1;
-    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-    //         me = gui::MouseEvent{gui::MouseEvent::Type::BUTTON_UP, 263, 318,
-    //         0}; me.button.button = gui::MouseButton::LEFT;
-    //         webrtc_window->PostMouseEvent(draw->GetOSWindow(), me);
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    //     }
-    // };
-    // std::thread thead(emulate_mouse_events);
-
     draw.reset();  // so we don't hold onto the pointer after Run() cleans up
 
     gui::Application::GetInstance().Run();
