@@ -438,24 +438,86 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
     );
     this.webRtcServer.connect("image://Open3D");
 
+    function getModifiers(event) {
+      // See open3d/visualization/gui/Events.h.
+      var modNone = 0;
+      var modShift = 1 << 0;
+      var modCtrl = 1 << 1;
+      var modAlt = 1 << 2;
+      var modMeta = 1 << 3;
+      var mod = modNone;
+      if (event.getModifierState("Shift")) {
+        mod = mod | modShift;
+      }
+      if (event.getModifierState("Control")) {
+        mod = mod | modCtrl;
+      }
+      if (event.getModifierState("Alt")) {
+        mod = mod | modAlt;
+      }
+      if (event.getModifierState("Meta")) {
+        mod = mod | modMeta;
+      }
+      return mod;
+    }
+
     // Register callbacks for videoElt.
     var videoElt = document.getElementById("video");
     if (videoElt) {
       videoElt.addEventListener("mousedown", (event) => {
-        var msg = "mousedown " + event.offsetX + " " + event.offsetY;
+        var msg =
+          "mousedown " + event.offsetX +
+          " " +
+          event.offsetY +
+          " " +
+          getModifiers(event);
         console.log(msg);
         this.webRtcServer.dataChannel.send(msg);
       });
       videoElt.addEventListener("mouseup", (event) => {
-        var msg = "mouseup " + event.offsetX + " " + event.offsetY;
+        var msg =
+          "mouseup " +
+          event.offsetX +
+          " " +
+          event.offsetY +
+          " " +
+          getModifiers(event);
         console.log(msg);
         this.webRtcServer.dataChannel.send(msg);
       });
       videoElt.addEventListener("mousemove", (event) => {
-        var msg = "mousemove " + event.offsetX + " " + event.offsetY;
+        var msg =
+          "mousemove " +
+          event.offsetX +
+          " " +
+          event.offsetY +
+          " " +
+          getModifiers(event);
         console.log(msg);
         this.webRtcServer.dataChannel.send(msg);
       });
+      videoElt.addEventListener(
+        "wheel",
+        (event) => {
+          // Prevent propagating the wheel event to the browser.
+          // https://stackoverflow.com/a/23606063/1255535
+          event.preventDefault();
+          var msg =
+            "wheel " +
+            event.offsetX +
+            " " +
+            event.offsetY +
+            " " +
+            getModifiers(event) +
+            " " +
+            event.deltaX +
+            " " +
+            event.deltaY;
+          console.log(msg);
+          this.webRtcServer.dataChannel.send(msg);
+        },
+        { passive: false }
+      );
     }
   },
 });
