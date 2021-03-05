@@ -59,7 +59,7 @@ struct ReadWritePCArgs {
 
 const std::unordered_map<std::string, TensorCtorData> pc_data_1{
         {"points", {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1}, {5, 3}}},
-        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}}};
+        {"intensities", {{0, 5, 5, 5, 1}, {5, 1}}}};
 
 // Bad data.
 const std::unordered_map<std::string, TensorCtorData> pc_data_bad{
@@ -184,6 +184,50 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
             {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetLength(), 7);
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
+}
+
+// ReadWritePTS pts with colors and intensities.
+TEST(TPointCloudIO, ReadWRitePTS) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/point_cloud_sample1.pts", pcd,
+            {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointColors().GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+
+    // Write poitclod and match it after read.
+    t::io::WritePointCloud("test.pts", pcd);
+    t::geometry::PointCloud pct;
+    t::io::ReadPointCloud("test.pts", pct, {"auto", false, false, true});
+    EXPECT_TRUE(pcd.GetPoints().AllClose(pct.GetPoints()));
+    EXPECT_TRUE(pcd.GetPointColors().AllClose(pct.GetPointColors()));
+    EXPECT_TRUE(pcd.GetPointAttr("intensities")
+                        .AllClose(pct.GetPointAttr("intensities")));
+
+    // Write bad data.
+    pcd.SetPointAttr("intensities",
+                     pcd.GetPointAttr("intensities").To(core::Dtype::Int32));
+    EXPECT_FALSE(t::io::WritePointCloud("test.pts", pcd));
+}
+
+// Reading pts with intensities.
+TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/point_cloud_sample2.pts", pcd,
+            {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
+}
+
+// Reading bunny pts.
+TEST(TPointCloudIO, ReadPointCloudFromPTS2) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/bunnyData.pts", pcd,
+                          {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 30571);
 }
 
 }  // namespace tests

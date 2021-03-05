@@ -47,6 +47,7 @@ static const std::unordered_map<
         file_extension_to_pointcloud_read_function{
                 {"xyzi", ReadPointCloudFromXYZI},
                 {"ply", ReadPointCloudFromPLY},
+                {"pts", ReadPointCloudFromPTS},
         };
 
 static const std::unordered_map<
@@ -57,6 +58,7 @@ static const std::unordered_map<
         file_extension_to_pointcloud_write_function{
                 {"xyzi", WritePointCloudToXYZI},
                 {"ply", WritePointCloudToPLY},
+                {"pts", WritePointCloudToPTS},
         };
 
 std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
