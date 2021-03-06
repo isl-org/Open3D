@@ -1,11 +1,7 @@
 .. _cplusplus_example_project:
 
-Build C++ projects with Open3D
----------------------------------
-
-This page explains how to create a CMake based C++ project using the Open3D C++ interface.
-
-.. note:: For help on the C++ interfaces, refer to examples in [examples/cpp/Test], [examples/cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <../../cpp_api/index.html>`_.
+Build your C++ projects with Open3D
+-----------------------------------
 
 .. _install_open3d_from_source:
 
@@ -19,7 +15,7 @@ For installing from source see :ref:`compilation`.
 Create C++ project
 ==================
 
-Ubuntu/MacOs
+Ubuntu/MacOS
 ````````````
 
 Let's create a basic C++ project based on CMake and Open3D installed libraries and headers.

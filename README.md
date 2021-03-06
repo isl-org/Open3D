@@ -74,8 +74,8 @@ Checkout the following links to get started with Open3D C++ API
 
 To use Open3D in your C++ project, checkout the following examples
 
-* [Open3D as a CMake external project](https://github.com/intel-isl/Open3D-Example-Project)
-* [Install and find Open3D package](http://www.open3d.org/docs/latest/cpp_project.html)
+* [Use Open3D as a CMake External Project](https://github.com/intel-isl/open3d-cmake-external-project)
+* [Find Pre-Installed Open3D Package in CMake](https://github.com/intel-isl/open3d-cmake-find-package)
 
 ## Open3D-Viewer app
 
