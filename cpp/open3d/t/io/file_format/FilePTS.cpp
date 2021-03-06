@@ -64,7 +64,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         core::Tensor intensities;
         core::Tensor colors;
         double *points_ptr;
-        uint8_t *intensities_ptr;
+        double *intensities_ptr;
         uint8_t *colors_ptr;
         int64_t idx = 0;
         std::vector<std::string> st;
@@ -86,8 +86,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 // X Y Z I
                 if (num_of_fields >= 4) {
                     intensities =
-                            core::Tensor({num_of_pts, 1}, core::Dtype::UInt8);
-                    intensities_ptr = intensities.GetDataPtr<uint8_t>();
+                            core::Tensor({num_of_pts, 1}, core::Dtype::Float64);
+                    intensities_ptr = intensities.GetDataPtr<double>();
                 }
 
                 // X Y Z I R G B
@@ -103,10 +103,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 return false;
             }
 
-            double x, y, z;
-            int i, r, g, b;
+            double x, y, z, i;
+            int r, g, b;
             if (num_of_fields >= 7 &&
-                (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z, &i,
+                (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z, &i,
                         &r, &g, &b) == 7)) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
@@ -116,8 +116,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
             } else if (num_of_fields >= 4 &&
-                       (sscanf(line_buffer, "%lf %lf %lf %d", &x, &y, &z, &i) ==
-                        4)) {
+                       (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z,
+                               &i) == 4)) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
@@ -189,11 +189,12 @@ bool WritePointCloudToPTS(const std::string &filename,
         for (size_t i = 0; i < num_points; i++) {
             if (pointcloud.HasPointColors() &&
                 pointcloud.HasPointAttr("intensities")) {
-                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %d %d %d %d\r\n",
+                if (fprintf(file.GetFILE(),
+                            "%.10f %.10f %.10f %.10f %d %d %d\r\n",
                             points[i][0].Item<double>(),
                             points[i][1].Item<double>(),
                             points[i][2].Item<double>(),
-                            intensities[i].Item<uint8_t>(),
+                            intensities[i].Item<double>(),
                             colors[i][0].Item<uint8_t>(),
                             colors[i][1].Item<uint8_t>(),
                             colors[i][2].Item<uint8_t>()) < 0) {
@@ -203,11 +204,11 @@ bool WritePointCloudToPTS(const std::string &filename,
                     return false;
                 }
             } else if (pointcloud.HasPointAttr("intensities")) {
-                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %d\r\n",
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\r\n",
                             points[i][0].Item<double>(),
                             points[i][1].Item<double>(),
                             points[i][2].Item<double>(),
-                            intensities[i].Item<uint8_t>()) < 0) {
+                            intensities[i].Item<double>()) < 0) {
                     utility::LogWarning(
                             "Write PTS failed: unable to write file: {}",
                             filename);

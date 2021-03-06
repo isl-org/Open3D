@@ -59,7 +59,7 @@ struct ReadWritePCArgs {
 
 const std::unordered_map<std::string, TensorCtorData> pc_data_1{
         {"points", {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1}, {5, 3}}},
-        {"intensities", {{0, 5, 5, 5, 1}, {5, 1}}}};
+        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}}};
 
 // Bad data.
 const std::unordered_map<std::string, TensorCtorData> pc_data_bad{
@@ -187,7 +187,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
 }
 
 // ReadWritePTS pts with colors and intensities.
-TEST(TPointCloudIO, ReadWRitePTS) {
+TEST(TPointCloudIO, ReadWritePTS) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/point_cloud_sample1.pts", pcd,
@@ -207,8 +207,8 @@ TEST(TPointCloudIO, ReadWRitePTS) {
                         .AllClose(pct.GetPointAttr("intensities")));
 
     // Write bad data.
-    pcd.SetPointAttr("intensities",
-                     pcd.GetPointAttr("intensities").To(core::Dtype::Int32));
+    pcd.SetPointAttr("colors",
+                     pcd.GetPointAttr("colors").To(core::Dtype::Int32));
     EXPECT_FALSE(t::io::WritePointCloud("test.pts", pcd));
 }
 
