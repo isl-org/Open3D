@@ -412,7 +412,8 @@ test_cpp_example() {
     if [ "$runExample" == ON ]; then
         ./Draw --skip-for-unit-test
     fi
-    cd ../../../../build
+    # Now I am in Open3D/open3d-cmake-find-package/build/
+    cd ../../build
 }
 
 # Install dependencies needed for building documentation (on Ubuntu 18.04)
