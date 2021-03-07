@@ -79,17 +79,17 @@ void TouchCUDA(const core::Tensor& points,
                 float z = pcd_ptr[3 * workload_idx + 2];
 
                 int xb_lo =
-                        static_cast<int>(floor((x - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((x - sdf_trunc) / block_size));
                 int xb_hi =
-                        static_cast<int>(floor((x + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((x + sdf_trunc) / block_size));
                 int yb_lo =
-                        static_cast<int>(floor((y - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((y - sdf_trunc) / block_size));
                 int yb_hi =
-                        static_cast<int>(floor((y + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((y + sdf_trunc) / block_size));
                 int zb_lo =
-                        static_cast<int>(floor((z - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((z - sdf_trunc) / block_size));
                 int zb_hi =
-                        static_cast<int>(floor((z + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((z + sdf_trunc) / block_size));
 
                 for (int xb = xb_lo; xb <= xb_hi; ++xb) {
                     for (int yb = yb_lo; yb <= yb_hi; ++yb) {
@@ -200,9 +200,12 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 y_g = y_o + t * y_d;
                                 z_g = z_o + t * z_d;
 
-                                x_b = static_cast<int>(floor(x_g / block_size));
-                                y_b = static_cast<int>(floor(y_g / block_size));
-                                z_b = static_cast<int>(floor(z_g / block_size));
+                                x_b = static_cast<int>(
+                                        floorf(x_g / block_size));
+                                y_b = static_cast<int>(
+                                        floorf(y_g / block_size));
+                                z_b = static_cast<int>(
+                                        floorf(z_g / block_size));
 
                                 key[0] = x_b;
                                 key[1] = y_b;
