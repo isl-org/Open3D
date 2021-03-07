@@ -47,10 +47,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                                 filename);
             return false;
         }
-        int64_t num_of_pts = 0;
+        size_t num_of_pts = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
-            sscanf(line_buffer, "%lld", &num_of_pts);
+            sscanf(line_buffer, "%zu", &num_of_pts);
         }
         if (num_of_pts <= 0) {
             utility::LogWarning("Read PTS failed: unable to read header.");
@@ -80,19 +80,19 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                             "Read PTS failed: insufficient data fields.");
                     return false;
                 }
-                points = core::Tensor({num_of_pts, 3}, core::Dtype::Float64);
+                points = core::Tensor({(int64_t)num_of_pts, 3}, core::Dtype::Float64);
                 points_ptr = points.GetDataPtr<double>();
 
                 // X Y Z I
                 if (num_of_fields >= 4) {
                     intensities =
-                            core::Tensor({num_of_pts, 1}, core::Dtype::Float64);
+                            core::Tensor({(int64_t)num_of_pts, 1}, core::Dtype::Float64);
                     intensities_ptr = intensities.GetDataPtr<double>();
                 }
 
                 // X Y Z I R G B
                 if (num_of_fields >= 7) {
-                    colors = core::Tensor({num_of_pts, 3}, core::Dtype::UInt8);
+                    colors = core::Tensor({(int64_t)num_of_pts, 3}, core::Dtype::UInt8);
                     colors_ptr = colors.GetDataPtr<uint8_t>();
                 }
             }
@@ -186,7 +186,7 @@ bool WritePointCloudToPTS(const std::string &filename,
             return false;
         }
 
-        for (size_t i = 0; i < num_points; i++) {
+        for (int i = 0; i < num_points; i++) {
             if (pointcloud.HasPointColors() &&
                 pointcloud.HasPointAttr("intensities")) {
                 if (fprintf(file.GetFILE(),
