@@ -28,7 +28,6 @@
 
 #include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {

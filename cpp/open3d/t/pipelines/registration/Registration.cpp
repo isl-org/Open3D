@@ -31,7 +31,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -55,9 +54,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
     transformation.AssertShape({4, 4});
     transformation.AssertDtype(dtype);
-
-    utility::Timer time_GetCorres, time_Search, time_GetResults;
-    time_GetCorres.Start();
 
     core::Tensor transformation_device = transformation.To(device);
 
@@ -147,9 +143,6 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
 
     // TODO: Default constructor absent in RegistrationResult class.
     RegistrationResult result(transformation_device);
-
-    utility::Timer time_getCorres;
-    time_getCorres.Start();
 
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
