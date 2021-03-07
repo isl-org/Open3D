@@ -66,7 +66,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         double *points_ptr = NULL;
         double *intensities_ptr = NULL;
         uint8_t *colors_ptr = NULL;
-        int64_t idx = 0;
+        size_t idx = 0;
         std::vector<std::string> st;
         int num_of_fields = 0;
 
@@ -80,19 +80,21 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                             "Read PTS failed: insufficient data fields.");
                     return false;
                 }
-                points = core::Tensor({(int64_t)num_of_pts, 3}, core::Dtype::Float64);
+                points = core::Tensor({(int64_t)num_of_pts, 3},
+                                      core::Dtype::Float64);
                 points_ptr = points.GetDataPtr<double>();
 
                 // X Y Z I
                 if (num_of_fields >= 4) {
-                    intensities =
-                            core::Tensor({(int64_t)num_of_pts, 1}, core::Dtype::Float64);
+                    intensities = core::Tensor({(int64_t)num_of_pts, 1},
+                                               core::Dtype::Float64);
                     intensities_ptr = intensities.GetDataPtr<double>();
                 }
 
                 // X Y Z I R G B
                 if (num_of_fields >= 7) {
-                    colors = core::Tensor({(int64_t)num_of_pts, 3}, core::Dtype::UInt8);
+                    colors = core::Tensor({(int64_t)num_of_pts, 3},
+                                          core::Dtype::UInt8);
                     colors_ptr = colors.GetDataPtr<uint8_t>();
                 }
             }
