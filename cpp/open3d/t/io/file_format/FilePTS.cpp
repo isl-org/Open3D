@@ -50,7 +50,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         int64_t num_of_pts = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
-            sscanf(line_buffer, "%llu", &num_of_pts);
+            sscanf(line_buffer, "%lld", &num_of_pts);
         }
         if (num_of_pts <= 0) {
             utility::LogWarning("Read PTS failed: unable to read header.");
@@ -63,9 +63,9 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         core::Tensor points;
         core::Tensor intensities;
         core::Tensor colors;
-        double *points_ptr;
-        double *intensities_ptr;
-        uint8_t *colors_ptr;
+        double *points_ptr = NULL;
+        double *intensities_ptr = NULL;
+        uint8_t *colors_ptr = NULL;
         int64_t idx = 0;
         std::vector<std::string> st;
         int num_of_fields = 0;

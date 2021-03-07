@@ -76,13 +76,11 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     return false;
                 }
                 pointcloud.points_.resize(num_of_pts);
-
                 if (num_of_fields >= 7) {
                     // X Y Z I R G B
                     pointcloud.colors_.resize(num_of_pts);
                 }
             }
-
             double x, y, z, i;
             int r, g, b;
             if (num_of_fields < 7) {
@@ -96,7 +94,6 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
                 }
             }
-
             idx++;
             if (idx % 1000 == 0) {
                 reporter.Update(idx);
