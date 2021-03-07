@@ -46,13 +46,18 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 
+/// \brief CorrespondenceSet: pair of 2 tensors of shape {C,1},
+/// where C is the number of good correspondences between source and
+/// target pointcloud. The first tensor is the source indexes, and
+/// the second tensor is target indexes. Such that,
+/// source[correspondence.first] and target[correspondence.second]
+/// is a correspondence pair.
 typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,
     PointToPoint = 1,
     PointToPlane = 2,
-    ColoredICP = 3,
 };
 
 /// \class TransformationEstimation

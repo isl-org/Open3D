@@ -128,14 +128,14 @@ public:
                                            double radius,
                                            int max_knn);
 
-    /// Perform hybrid search and return tuple {source_index, target_index,
-    /// distance}.
+    /// \brief SqueezedHybridSearch is similar to HybridSearch with max_knn = 1,
+    /// and it retuns tuple of tensors {source_index, target_index, distance},
+    /// such that pair of {source_index, target_index} is the correspondences
+    /// of type t::pipelines::registration::CorrespondenceSet;
     ///
     /// \param query_points Data points for querying. Must be 2D, with shape {n,
     /// d}.
     /// \param radius Radius.
-    /// \param squeeze If true, returns tuple of {C,1} tensors, instead of
-    /// {N,1}.
     std::tuple<Tensor, Tensor, Tensor> SqueezedHybridSearch(
             const Tensor &query_points, double radius);
 

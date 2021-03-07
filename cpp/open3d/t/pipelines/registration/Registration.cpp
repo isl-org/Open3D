@@ -153,21 +153,25 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
 
+        // Get transformation between source and target points, given
+        // correspondences, and multiply it cumulative transformation (update).
         core::Tensor update = estimation.ComputeTransformation(
                 source_transformed, target, corres);
         transformation_device = update.Matmul(transformation_device);
 
+        // Apply the transform on source pointcloud.
         source_transformed.Transform(update);
         double prev_fitness_ = result.fitness_;
         double prev_inliner_rmse_ = result.inlier_rmse_;
 
-        time_getCorres.Start();
+        // Get new correspondences, which will be used to calculate
+        // updated transform in next iteration.
         result = GetRegistrationResultAndCorrespondences(
                 source_transformed, target, target_nns,
                 max_correspondence_distance, transformation_device);
-
         corres = result.correspondence_set;
 
+        // ICPConvergenceCriteria, to terminate iteration.
         if (std::abs(prev_fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
