@@ -130,6 +130,20 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
                               src.GetDataPtr(), src.GetDevice(),
                               src_dtype.ByteSize() * shape.NumElements());
+    } else if (dst.IsContiguous() && src.NumElements() == 1) {
+        utility::LogInfo(" Debug! ");
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+            using src_t = scalar_t;
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                using dst_t = scalar_t;
+                dst_t value = static_cast<dst_t>(src.ToFlatVector<src_t>()[0]);
+                dst_t* dst_ptr = dst.GetDataPtr<dst_t>();
+                CPULauncher::LaunchGeneralKernel(
+                        dst.NumElements(), [&](int64_t workload_idx) {
+                            dst_ptr[workload_idx] = value;
+                });
+            });
+        });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
         if (src.GetDtype().IsObject()) {
