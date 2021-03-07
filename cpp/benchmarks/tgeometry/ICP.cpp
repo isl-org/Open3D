@@ -73,8 +73,8 @@ std::tuple<t::geometry::PointCloud, t::geometry::PointCloud> LoadTPointCloud(
     return std::make_tuple(source_device, target_device);
 }
 
-void BenchmarkICPPointToPlane(benchmark::State &state,
-                              const core::Device &device) {
+void BenchmarkICPPointToPlane(benchmark::State& state,
+                              const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
 
     t::geometry::PointCloud source(device);
