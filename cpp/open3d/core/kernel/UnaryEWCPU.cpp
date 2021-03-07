@@ -131,7 +131,6 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                               src.GetDataPtr(), src.GetDevice(),
                               src_dtype.ByteSize() * shape.NumElements());
     } else if (dst.IsContiguous() && src.NumElements() == 1) {
-        utility::LogInfo(" Debug! ");
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
             using src_t = scalar_t;
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
@@ -141,7 +140,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                 CPULauncher::LaunchGeneralKernel(
                         dst.NumElements(), [&](int64_t workload_idx) {
                             dst_ptr[workload_idx] = value;
-                });
+                        });
             });
         });
     } else {
