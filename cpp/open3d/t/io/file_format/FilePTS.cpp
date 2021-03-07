@@ -52,10 +52,6 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         if ((line_buffer = file.ReadLine())) {
             sscanf(line_buffer, "%zu", &num_of_pts);
         }
-        if (num_of_pts <= 0) {
-            utility::LogWarning("Read PTS failed: unable to read header.");
-            return false;
-        }
         utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(num_of_pts);
 
