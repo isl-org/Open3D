@@ -32,11 +32,11 @@
 namespace open3d {
 
 std::tuple<t::geometry::PointCloud, t::geometry::PointCloud> LoadTPointCloud(
-        const std::string source_filename,
-        const std::string target_filename,
+        const std::string& source_filename,
+        const std::string& target_filename,
         const double voxel_downsample_factor,
-        const core::Dtype dtype,
-        const core::Device device) {
+        const core::Dtype& dtype,
+        const core::Device& device) {
     t::geometry::PointCloud source_(device);
     t::geometry::PointCloud target_(device);
 
