@@ -28,6 +28,8 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/io/PointCloudIO.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -387,6 +389,19 @@ TEST_P(PointCloudPermuteDevices, Has) {
     // Same size.
     pcd.SetPointColors(core::Tensor::Ones({10, 3}, dtype, device));
     EXPECT_TRUE(pcd.HasPointColors());
+}
+
+TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud pcd =
+            t::geometry::PointCloud::FromLegacyPointCloud(
+                    *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
+                                                  "/ICP/cloud_bin_2.pcd"))
+                    .To(device);
+    auto pcd_down = pcd.VoxelDownSample(0.1);
+    io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),
+                        pcd_down.ToLegacyPointCloud());
 }
 
 }  // namespace tests
