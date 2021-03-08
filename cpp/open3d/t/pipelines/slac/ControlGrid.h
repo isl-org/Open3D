@@ -123,6 +123,8 @@ public:
     std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
     int64_t Size() { return ctr_hashmap_->Size(); }
 
+    int64_t anchor_idx_ = 0;
+
 private:
     float grid_size_;
 

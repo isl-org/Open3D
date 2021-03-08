@@ -65,7 +65,8 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
                                const core::Tensor &positions_init,
                                const core::Tensor &positions_curr,
                                float weight,
-                               int n);
+                               int n,
+                               int anchor_idx);
 
 void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
                                  core::Tensor &Atb,
@@ -101,7 +102,8 @@ void FillInSLACRegularizerTermCPU(core::Tensor &AtA,
                                   const core::Tensor &positions_init,
                                   const core::Tensor &positions_curr,
                                   float weight,
-                                  int n);
+                                  int n,
+                                  int anchor_idx);
 
 #ifdef BUILD_CUDA_MODULE
 void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
@@ -138,7 +140,8 @@ void FillInSLACRegularizerTermCUDA(core::Tensor &AtA,
                                    const core::Tensor &positions_init,
                                    const core::Tensor &positions_curr,
                                    float weight,
-                                   int n);
+                                   int n,
+                                   int anchor_idx);
 
 #endif
 

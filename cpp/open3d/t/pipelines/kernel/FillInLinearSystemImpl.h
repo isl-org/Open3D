@@ -389,7 +389,8 @@ void FillInSLACRegularizerTermCPU
          const core::Tensor &positions_init,
          const core::Tensor &positions_curr,
          float weight,
-         int n_frags) {
+         int n_frags,
+         int anchor_idx) {
 
     int64_t n = grid_idx.GetLength();
     int64_t n_vars = Atb.GetLength();
@@ -522,7 +523,11 @@ void FillInSLACRegularizerTermCPU
 
         // Now we have R, we build Hessian and residuals
         // But first, we need to anchor a point
-        if (workload_idx == 0) {
+        if (idx_i == anchor_idx) {
+            printf("anchored at %d: (%f %f %f)\n", anchor_idx,
+                   positions_init_ptr[idx_i * 3 + 0],
+                   positions_init_ptr[idx_i * 3 + 1],
+                   positions_init_ptr[idx_i * 3 + 2]);
             R[0][0] = R[1][1] = R[2][2] = 1;
             R[0][1] = R[0][2] = R[1][0] = R[1][2] = R[2][0] = R[2][1] = 0;
         }

@@ -74,7 +74,11 @@ std::pair<core::Tensor, core::Tensor> GetCorrespondencesForPair(
                 tpcd_i.ToLegacyPointCloud(), tpcd_j.ToLegacyPointCloud(),
                 threshold,
                 core::eigen_converter::TensorToEigenMatrix<float>(T_ij)
-                        .cast<double>());
+                        .cast<double>(),
+                open3d::pipelines::registration::
+                        TransformationEstimationForColoredICP(),
+                open3d::pipelines::registration::ICPConvergenceCriteria(
+                        1e-8, 1e-8, 100));
 
         core::Tensor Tij = core::eigen_converter::EigenMatrixToTensor(
                                    result.transformation_)
@@ -160,7 +164,7 @@ void GetCorrespondencesForPointClouds(
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32);
         float dist_threshold =
-                option.voxel_size_ < 0 ? 0.01 : 1.5 * option.voxel_size_;
+                option.voxel_size_ < 0 ? 0.01 : 3 * option.voxel_size_;
 
         core::Tensor Tij_est, corres;
         std::tie(Tij_est, corres) =
@@ -370,6 +374,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
+        if ((i == 20 && j == 21) || (i == 10 && j == 13)) continue;
 
         // Load poses
         auto Ti = core::eigen_converter::EigenMatrixToTensor(
@@ -400,6 +405,8 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
                 AtA, Atb, residual, ctr_grid, tpcd_i, tpcd_j, Ti, Tj, Tij_est,
                 corres_ij, i, j, n_frags, device,
                 option.debug_enabled_ && i >= option.debug_start_idx_);
+        // && (i == option.debug_start_idx_ ||
+        //                           j == option.debug_start_idx_));
     }
     AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));
     Atb.Save(fmt::format("{}/residual.npy", option.GetSubfolderName()));
@@ -419,7 +426,7 @@ void FillInSLACRegularizerTerm(core::Tensor& AtA,
     kernel::FillInSLACRegularizerTerm(
             AtA, Atb, residual, active_addrs, nb_addrs, nb_masks,
             positions_init, positions_curr, n_frags * option.regularizor_coeff_,
-            n_frags);
+            n_frags, ctr_grid.anchor_idx_);
     AtA.Save(fmt::format("{}/hessian_regularized.npy",
                          option.GetSubfolderName()));
 }
@@ -521,6 +528,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
 
         UpdatePoses(pose_graph_update, delta_poses, option);
         UpdateControlGrid(ctr_grid, delta_cgrids, option);
+        VisualizeRegularizor(ctr_grid);
     }
     return std::make_pair(pose_graph_update, ctr_grid);
 }

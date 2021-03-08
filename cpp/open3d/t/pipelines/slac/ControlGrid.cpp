@@ -26,6 +26,8 @@
 
 #include "open3d/t/pipelines/slac/ControlGrid.h"
 
+#include "open3d/core/EigenConverter.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -97,6 +99,33 @@ void ControlGrid::Compactify() {
 
     core::Tensor active_addrs;
     ctr_hashmap_->GetActiveIndices(active_addrs);
+
+    // Select anchor point
+    core::Tensor active_keys = ctr_hashmap_->GetKeyTensor().IndexGet(
+            {active_addrs.To(core::Dtype::Int64)});
+
+    std::vector<Eigen::Vector3i> active_keys_vec =
+            core::eigen_converter::TensorToEigenVector3iVector(active_keys);
+
+    std::vector<Eigen::Vector4i> active_keys_indexed(active_keys_vec.size());
+    for (size_t i = 0; i < active_keys_vec.size(); ++i) {
+        active_keys_indexed[i](0) = active_keys_vec[i](0);
+        active_keys_indexed[i](1) = active_keys_vec[i](1);
+        active_keys_indexed[i](2) = active_keys_vec[i](2);
+        active_keys_indexed[i](3) = i;
+    }
+
+    std::sort(active_keys_indexed.begin(), active_keys_indexed.end(),
+              [=](const Eigen::Vector4i& a, const Eigen::Vector4i& b) -> bool {
+                  return (a(2) < b(2)) || (a(2) == b(2) && a(1) < b(1)) ||
+                         (a(2) == b(2) && a(1) == b(1) && a(0) < b(0));
+              });
+    anchor_idx_ =
+            active_addrs[active_keys_indexed[active_keys_indexed.size() / 2](3)]
+                    .Item<int>();
+    utility::LogInfo("{}",
+                     ctr_hashmap_->GetKeyTensor()[anchor_idx_].ToString());
+    std::cout << anchor_idx_ << "\n";
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
@@ -196,9 +225,9 @@ geometry::PointCloud ControlGrid::Parameterize(
     // (n, 8)
     point_ratios_nb = point_ratios_nb.T().Contiguous();
 
-    /// TODO: allow entries with less than 8 neighbors, probably in a kernel.
-    /// Now we simply discard them and only accepts points with all 8 neighbors
-    /// in the control grid map.
+    /// TODO: allow entries with less than 8 neighbors, probably in a
+    /// kernel. Now we simply discard them and only accepts points with all
+    /// 8 neighbors in the control grid map.
     core::Tensor valid_mask =
             masks_nb.View({8, n}).To(core::Dtype::Int64).Sum({0}).Eq(8);
 
