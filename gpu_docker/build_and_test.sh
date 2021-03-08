@@ -23,9 +23,8 @@ cmake -DBUILD_SHARED_LIBS=OFF \
 make -j$(nproc)
 make -j$(nproc) install-pip-package
 
-# Test, the filtered test is just to save time
-CUDA_VISIBLE_DEVICES=0 ./bin/tests --gtest_filter="-*Sum*"
-CUDA_VISIBLE_DEVICES=0 pytest ../python/test --ignore ../python/test/test_color_map.py
+CUDA_VISIBLE_DEVICES=0 ./bin/tests
+CUDA_VISIBLE_DEVICES=0 pytest ../python/test --ignore ../python/test/ml_ops/test_voxelize.py
 
 popd
 popd
