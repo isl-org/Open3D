@@ -68,9 +68,7 @@ gcloud-setup)
     # Build the Docker image
 docker-build)
     docker build -t "$DC_IMAGE_TAG" \
-        -f util/docker/open3d-gpu/Dockerfile \
-        --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
-        --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
+        -f gpu_docker/Dockerfile \
         .
     docker tag "$DC_IMAGE_TAG" "$DC_IMAGE_LATEST_TAG"
     ;;
@@ -138,16 +136,8 @@ create-vm)
 run-ci)
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
         "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
-            --env NPROC=$NPROC \
-            --env SHARED=${SHARED[$CI_CONFIG_ID]} \
-            --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \
-            --env BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE[$CI_CONFIG_ID]} \
-            --env BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS[$CI_CONFIG_ID]} \
-            --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
-            --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
             $DC_IMAGE_TAG; \
-            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh; \
-            sudo docker commit -m 'Debug' open3d_gpu_ci ${DC_IMAGE_TAG}_debug"
+            sudo docker exec --interactive  open3d_gpu_ci gpu_docker/build_and_test.sh
     ;;
 
 delete-image)

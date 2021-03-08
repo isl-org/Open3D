@@ -30,11 +30,6 @@ if ! which cmake || cmake -P CMakeLists.txt 2>&1 | grep -q "or higher is require
     $SUDO apt-get --yes --no-install-recommends install cmake
 fi
 
-if [ -n "${NVIDIA_DRIVER_VERSION}" ]; then
-    echo "Installing NVIDIA drivers."
-    $SUDO apt-get --yes --no-install-recommends install "nvidia-driver-${NVIDIA_DRIVER_VERSION}"
-fi
-
 # Cleanup apt cache (for docker)
 $SUDO apt-get clean
 $SUDO rm -rf /var/lib/apt/lists/*
