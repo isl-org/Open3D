@@ -135,7 +135,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
             using src_t = scalar_t;
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                 using dst_t = scalar_t;
-                dst_t value = static_cast<dst_t>(src.ToFlatVector<src_t>()[0]);
+                const dst_t value = static_cast<dst_t>(src.Item<src_t>());
                 dst_t* dst_ptr = dst.GetDataPtr<dst_t>();
                 CPULauncher::LaunchGeneralKernel(
                         dst.NumElements(), [&](int64_t workload_idx) {
