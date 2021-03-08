@@ -137,7 +137,7 @@ run-ci)
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
         "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
             $DC_IMAGE_TAG; \
-            sudo docker exec --interactive  open3d_gpu_ci gpu_docker/build_and_test.sh
+            sudo docker exec --interactive  open3d_gpu_ci gpu_docker/build_and_test.sh"
     ;;
 
 delete-image)
