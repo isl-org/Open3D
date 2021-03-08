@@ -44,6 +44,7 @@ set(BENCHMARK_SOURCE_FILES
     io/PointCloudIO.cpp
     t/geometry/PointCloud.cpp
     t/pipelines/registration/ICP.cpp
+    t/pipelines/registration/ComputeTransform.cpp
 )
 
 add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})

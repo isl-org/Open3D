@@ -26,8 +26,9 @@
 
 #include <benchmark/benchmark.h>
 
-// Remove after testing.
-#include "open3d/Open3D.h"
+#include "open3d/t/io/PointCloudIO.h"
+#include "open3d/t/pipelines/registration/Registration.h"
+#include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
 
@@ -125,10 +126,68 @@ void BenchmarkICPPointToPlane(benchmark::State& state,
     }
 }
 
+void BenchmarkICPPointToPoint(benchmark::State& state,
+                              const core::Device& device) {
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud source(device);
+    t::geometry::PointCloud target(device);
+
+    std::tie(source, target) = LoadTPointCloud(
+            TEST_DATA_DIR "/ICP/cloud_bin_0.pcd",
+            TEST_DATA_DIR "/ICP/cloud_bin_1.pcd", 0.001, dtype, device);
+
+    // core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
+    core::Tensor init_trans =
+            core::Tensor::Init<float>({{0.862, 0.011, -0.507, 0.5},
+                                       {-0.139, 0.967, -0.215, 0.7},
+                                       {0.487, 0.255, 0.835, -1.4},
+                                       {0.0, 0.0, 0.0, 1.0}},
+                                      device);
+
+    double max_correspondence_dist = 0.02;
+
+    // ICP ConvergenceCriteria:
+    double relative_fitness = 1e-6;
+    double relative_rmse = 1e-6;
+    int max_iterations = 30;
+
+    auto reg_p2plane = open3d::t::pipelines::registration::RegistrationICP(
+            source, target, max_correspondence_dist, init_trans,
+            open3d::t::pipelines::registration::
+                    TransformationEstimationPointToPoint(),
+            open3d::t::pipelines::registration::ICPConvergenceCriteria(
+                    relative_fitness, relative_rmse, max_iterations));
+    utility::LogInfo(" PointCloud Size: Source: {}  Target: {}",
+                     source.GetPoints().GetShape().ToString(),
+                     target.GetPoints().GetShape().ToString());
+    utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
+                     max_iterations, max_correspondence_dist);
+    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
+                     reg_p2plane.inlier_rmse_);
+
+    for (auto _ : state) {
+        auto reg_p2plane = open3d::t::pipelines::registration::RegistrationICP(
+                source, target, max_correspondence_dist, init_trans,
+                open3d::t::pipelines::registration::
+                        TransformationEstimationPointToPoint(),
+                open3d::t::pipelines::registration::ICPConvergenceCriteria(
+                        relative_fitness, relative_rmse, max_iterations));
+        utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
+                         reg_p2plane.inlier_rmse_);
+    }
+}
+
 BENCHMARK_CAPTURE(BenchmarkICPPointToPlane, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BenchmarkICPPointToPlane, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BenchmarkICPPointToPoint, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BenchmarkICPPointToPoint, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace open3d
