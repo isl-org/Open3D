@@ -107,8 +107,9 @@ def test_integration(device):
             vertexmap, _ = volume.raycast(intrinsic, extrinsic, depth.columns,
                                           depth.rows, 50, 0.1, 3.0,
                                           min(i * 1.0, 3.0))
-            vertexmap_gt = np.load(test_data_path +
-                                   "RGBD/raycast_vtx_{:03d}.npy".format(i))
+            vertexmap_gt = np.load(
+                test_data_path +
+                "open3d_downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
             discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
                                  1e-5).sum()
             # Be tolerant to numerical differences
