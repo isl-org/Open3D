@@ -33,7 +33,7 @@
 #include "open3d/utility/Console.h"
 namespace open3d {
 
-std::tuple<geometry::PointCloud, geometry::PointCloud> LoadTPointCloud(
+static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadTPointCloud(
         const std::string& source_filename,
         const std::string& target_filename,
         const double voxel_downsample_factor) {
@@ -49,7 +49,7 @@ std::tuple<geometry::PointCloud, geometry::PointCloud> LoadTPointCloud(
     return std::make_tuple(source_, target_);
 }
 
-void RegistrationICPPointToPlaneLegacy(benchmark::State& state) {
+static void RegistrationICPPointToPlaneLegacy(benchmark::State& state) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -92,7 +92,7 @@ void RegistrationICPPointToPlaneLegacy(benchmark::State& state) {
     }
 }
 
-void RegistrationICPPointToPointLegacy(benchmark::State& state) {
+static void RegistrationICPPointToPointLegacy(benchmark::State& state) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
