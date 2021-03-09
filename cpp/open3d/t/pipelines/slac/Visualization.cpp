@@ -223,17 +223,14 @@ void VisualizeRegularizor(ControlGrid& cgrid) {
     }
 
     {
-        auto lineset =
+        auto lineset_init =
                 open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
                         *pcd_init_grid, *pcd_init_grid, nb_lines);
-        visualization::DrawGeometries({pcd_init_grid, lineset});
-    }
-
-    {
-        auto lineset =
+        auto lineset_curr =
                 open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
                         *pcd_curr_grid, *pcd_curr_grid, nb_lines);
-        visualization::DrawGeometries({pcd_curr_grid, lineset});
+        visualization::DrawGeometries(
+                {pcd_init_grid, pcd_curr_grid, lineset_init, lineset_curr});
     }
 }
 }  // namespace slac
