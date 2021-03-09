@@ -138,5 +138,5 @@ if __name__ == '__main__':
         print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
             i, n_files, (end - start) * 1000.0))
 
-    mesh = volume.extract_surface_mesh().to_legacy_triangle_mesh()
+    mesh = volume.cpu().extract_surface_mesh().to_legacy_triangle_mesh()
     o3d.io.write_triangle_mesh(args.mesh_name, mesh, False, True)

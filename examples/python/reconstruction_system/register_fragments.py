@@ -153,7 +153,7 @@ def make_posegraph_for_scene(ply_file_names, config):
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(),
+        MAX_THREAD = min(multiprocessing.cpu_count()//2,
                          max(len(matching_results), 1))
         results = Parallel(n_jobs=MAX_THREAD)(delayed(
             register_point_cloud_pair)(ply_file_names, matching_results[r].s,

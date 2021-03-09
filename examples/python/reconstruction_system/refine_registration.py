@@ -8,7 +8,7 @@ import numpy as np
 import open3d as o3d
 import sys
 sys.path.append("../utility")
-from file import join, get_file_list
+from file import join, get_file_list, write_poses_to_log
 from visualization import draw_registration_result_original_color
 sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_refined_scene
@@ -151,7 +151,7 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(),
+        MAX_THREAD = min(multiprocessing.cpu_count()//2,
                          max(len(pose_graph.edges), 1))
         results = Parallel(n_jobs=MAX_THREAD)(
             delayed(register_point_cloud_pair)(
@@ -191,3 +191,28 @@ def run(config):
         join(config["path_dataset"], config["folder_fragment"]), ".ply")
     make_posegraph_for_refined_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)
+
+    path_dataset = config['path_dataset']
+    n_fragments = len(ply_file_names)
+
+    # Save to trajectory
+    poses = []
+    pose_graph_fragment = o3d.io.read_pose_graph(
+        join(path_dataset, config["template_refined_posegraph_optimized"]))
+    for fragment_id in range(len(pose_graph_fragment.nodes)):
+        pose_graph_rgbd = o3d.io.read_pose_graph(
+            join(path_dataset,
+                 config["template_fragment_posegraph_optimized"] % fragment_id))
+        for frame_id in range(len(pose_graph_rgbd.nodes)):
+            frame_id_abs = fragment_id * \
+                    config['n_frames_per_fragment'] + frame_id
+            print(
+                "Fragment %03d / %03d :: extracting pose %d (%d of %d)." %
+                (fragment_id, n_fragments - 1, frame_id_abs, frame_id + 1,
+                 len(pose_graph_rgbd.nodes)))
+            pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
+                          pose_graph_rgbd.nodes[frame_id].pose)
+            poses.append(pose)
+
+    traj_name = join(path_dataset, config["template_global_traj"])
+    write_poses_to_log(traj_name, poses)
