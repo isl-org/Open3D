@@ -8,7 +8,9 @@ set(KERNEL_SRC
     kernel/TransformationConverter.cpp
     kernel/ComputePosePointToPlane.cpp
     kernel/ComputePosePointToPlaneCPU.cpp
-)
+    kernel/ComputeRtPointToPoint.cpp
+    kernel/ComputeRtPointToPointCPU.cpp
+    )
 
 set(KERNEL_CUDA_SRC
     kernel/TransformationConverter.cu

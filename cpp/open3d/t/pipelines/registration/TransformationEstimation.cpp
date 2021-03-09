@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 #include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
+#include "open3d/t/pipelines/kernel/ComputeRtPointToPoint.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -75,31 +76,10 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    // TODO: Update to new scheme.
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first.Reshape({-1})});
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second.Reshape({-1})});
-
-    // https://ieeexplore.ieee.org/document/88573
-    core::Tensor mux = source_select.Mean({0}, true);
-    core::Tensor muy = target_select.Mean({0}, true);
-
-    core::Tensor Sxy =
-            ((target_select - muy)
-                     .T()
-                     .Matmul(source_select - mux)
-                     .Div_(static_cast<float>(corres.second.GetShape()[0])));
-    core::Tensor U, D, VT;
-    std::tie(U, D, VT) = Sxy.SVD();
-    core::Tensor S = core::Tensor::Eye(3, dtype, device);
-    if (U.Det() * (VT.T()).Det() < 0) {
-        S[-1][-1] = -1;
-    }
-
     core::Tensor R, t;
-    R = U.Matmul(S.Matmul(VT));
-    t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
+    std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
+            source.GetPoints(), target.GetPoints(), corres);
+
     return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
