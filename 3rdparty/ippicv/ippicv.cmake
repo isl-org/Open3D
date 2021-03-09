@@ -33,6 +33,12 @@ set_local_or_remote_url(
     REMOTE_URLS "https://raw.githubusercontent.com/opencv/opencv_3rdparty/${IPPICV_COMMIT}/ippicv/${OPENCV_ICV_NAME}"
     )
 
+if(WIN32)
+    set(lib_name ippicvmt)
+else()
+    set(lib_name ippicv)
+endif()
+
 ExternalProject_Add(ext_ippicv
     PREFIX ippicv
     URL "${IPPICV_URL}"
@@ -47,14 +53,13 @@ ExternalProject_Add(ext_ippicv
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+    BUILD_BYPRODUCTS
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}ippiw${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
 
 ExternalProject_Get_Property(ext_ippicv INSTALL_DIR)
 set(IPPICV_INCLUDE_DIR "${INSTALL_DIR}/include/icv/" "${INSTALL_DIR}/include/")
-if (WIN32)
-    set(IPPICV_LIBRARIES ippiw ippicvmt)
-else ()
-    set(IPPICV_LIBRARIES ippiw ippicv)
-endif ()
+set(IPPICV_LIBRARIES ippiw ${lib_name})
 set(IPPICV_LIB_DIR "${INSTALL_DIR}/lib")
 set(IPPICV_VERSION_STRING "2020.0.0 Gold")  # From icv/ippversion.h

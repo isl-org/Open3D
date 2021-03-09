@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/gui/Menu.h"
 
+#include <set>
+
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/WindowSystem.h"
 
@@ -35,6 +37,7 @@ namespace gui {
 
 struct Menu::Impl {
     std::shared_ptr<MenuBase> menu;
+    std::set<std::shared_ptr<MenuBase>> submenus;  // to keep shared_ptr alive
 };
 
 Menu::Menu() : impl_(new Menu::Impl()) {
@@ -54,6 +57,7 @@ void Menu::AddMenu(const char* name, std::shared_ptr<MenuBase> submenu) {
     auto menu_submenu = std::dynamic_pointer_cast<Menu>(submenu);
     if (menu_submenu) {
         impl_->menu->AddMenu(name, menu_submenu->impl_->menu);
+        impl_->submenus.insert(submenu);
     } else {
         impl_->menu->AddMenu(name, submenu);
     }
@@ -74,6 +78,7 @@ void Menu::InsertMenu(int index,
     auto menu_submenu = std::dynamic_pointer_cast<Menu>(submenu);
     if (menu_submenu) {
         impl_->menu->InsertMenu(index, name, menu_submenu->impl_->menu);
+        impl_->submenus.insert(submenu);
     } else {
         impl_->menu->InsertMenu(index, name, submenu);
     }
