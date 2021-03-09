@@ -30,8 +30,6 @@
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
 
 static std::tuple<t::geometry::PointCloud,
                   t::geometry::PointCloud,
@@ -80,8 +78,8 @@ LoadData(const std::string& source_points_filename,
     return std::make_tuple(source_device, target_device, corres);
 }
 
-void RegistrationComputePosePointToPlane(benchmark::State& state,
-                                         const core::Device& device) {
+static void RegistrationComputePosePointToPlane(benchmark::State& state,
+                                                const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
     t::pipelines::registration::CorrespondenceSet corres;
     t::geometry::PointCloud source_device(device);
@@ -110,8 +108,8 @@ void RegistrationComputePosePointToPlane(benchmark::State& state,
     }
 }
 
-void RegistrationComputePosePointToPoint(benchmark::State& state,
-                                         const core::Device& device) {
+static void RegistrationComputePosePointToPoint(benchmark::State& state,
+                                                const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
     t::pipelines::registration::CorrespondenceSet corres;
     t::geometry::PointCloud source_device(device);
@@ -145,23 +143,23 @@ BENCHMARK_CAPTURE(RegistrationComputePosePointToPlane,
                   core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(RegistrationComputePosePointToPlane,
+                  CUDA,
+                  core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
+
 BENCHMARK_CAPTURE(RegistrationComputePosePointToPoint,
                   CPU,
                   core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(RegistrationComputePosePointToPlane,
-                  CUDA,
-                  core::Device("CUDA:0"))
-        ->Unit(benchmark::kMillisecond);
-
 BENCHMARK_CAPTURE(RegistrationComputePosePointToPoint,
                   CUDA,
                   core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
-}  // namespace geometry
-}  // namespace t
 }  // namespace open3d

@@ -32,12 +32,12 @@
 
 namespace open3d {
 
-std::tuple<t::geometry::PointCloud, t::geometry::PointCloud> LoadTPointCloud(
-        const std::string& source_filename,
-        const std::string& target_filename,
-        const double voxel_downsample_factor,
-        const core::Dtype& dtype,
-        const core::Device& device) {
+static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
+LoadTPointCloud(const std::string& source_filename,
+                const std::string& target_filename,
+                const double voxel_downsample_factor,
+                const core::Dtype& dtype,
+                const core::Device& device) {
     t::geometry::PointCloud source_(device);
     t::geometry::PointCloud target_(device);
 
@@ -74,8 +74,8 @@ std::tuple<t::geometry::PointCloud, t::geometry::PointCloud> LoadTPointCloud(
     return std::make_tuple(source_device, target_device);
 }
 
-void RegistrationICPPointToPlane(benchmark::State& state,
-                                 const core::Device& device) {
+static void RegistrationICPPointToPlane(benchmark::State& state,
+                                        const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
 
     t::geometry::PointCloud source(device);
@@ -126,8 +126,8 @@ void RegistrationICPPointToPlane(benchmark::State& state,
     }
 }
 
-void RegistrationICPPointToPoint(benchmark::State& state,
-                                 const core::Device& device) {
+static void RegistrationICPPointToPoint(benchmark::State& state,
+                                        const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
 
     t::geometry::PointCloud source(device);
@@ -181,13 +181,15 @@ void RegistrationICPPointToPoint(benchmark::State& state,
 BENCHMARK_CAPTURE(RegistrationICPPointToPlane, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(RegistrationICPPointToPlane, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
+
 BENCHMARK_CAPTURE(RegistrationICPPointToPoint, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(RegistrationICPPointToPlane, CUDA, core::Device("CUDA:0"))
-        ->Unit(benchmark::kMillisecond);
-
 BENCHMARK_CAPTURE(RegistrationICPPointToPoint, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
