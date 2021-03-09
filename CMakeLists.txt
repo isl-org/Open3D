@@ -420,6 +420,8 @@ if(WIN32)
     if (STATIC_WINDOWS_RUNTIME)
         # This needs cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()
 
