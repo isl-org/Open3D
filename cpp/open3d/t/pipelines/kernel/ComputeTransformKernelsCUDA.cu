@@ -26,7 +26,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
-#include "open3d/t/pipelines/kernel/ComputePosePointToPlaneImp.h"
+#include "open3d/t/pipelines/kernel/ComputeTransformKernelsImp.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {

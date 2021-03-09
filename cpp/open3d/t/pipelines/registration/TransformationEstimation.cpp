@@ -26,8 +26,7 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-#include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
-#include "open3d/t/pipelines/kernel/ComputeRtPointToPoint.h"
+#include "open3d/t/pipelines/kernel/ComputeTransformKernels.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {

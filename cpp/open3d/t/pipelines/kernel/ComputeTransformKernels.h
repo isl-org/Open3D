@@ -34,6 +34,23 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
+/// \brief Computes pose for point to plane registration method.
+/// \param source_points source points indexed according to correspondences.
+/// \param target_points target points indexed according to correspondences.
+/// \param target_normals target normals indexed according to correspondences.
+/// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype float32.
+core::Tensor ComputePosePointToPlane(
+        const core::Tensor &source,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const pipelines::registration::CorrespondenceSet &corres);
+
+/// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
+/// for point to point registration method.
+/// \param source_points source points indexed according to correspondences.
+/// \param target_points target points indexed according to correspondences.
+/// \param target_normals target normals indexed according to correspondences.
+/// \return tuple of (R, t). [Dtype: Float32].
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,

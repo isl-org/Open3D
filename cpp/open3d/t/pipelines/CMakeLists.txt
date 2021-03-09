@@ -6,15 +6,13 @@ set(REGISTRATION_SRC
 
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
-    kernel/ComputePosePointToPlane.cpp
-    kernel/ComputePosePointToPlaneCPU.cpp
-    kernel/ComputeRtPointToPoint.cpp
-    kernel/ComputeRtPointToPointCPU.cpp
+    kernel/ComputeTransformKernels.cpp
+    kernel/ComputeTransformKernelsCPU.cpp
     )
 
 set(KERNEL_CUDA_SRC
     kernel/TransformationConverter.cu
-    kernel/ComputePosePointToPlaneCUDA.cu
+    kernel/ComputeTransformKernelsCUDA.cu
 )
 
 set(ALL_PIPELINE_SRC
