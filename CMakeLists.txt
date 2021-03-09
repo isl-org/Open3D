@@ -106,24 +106,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set OpenGL policy
-if (POLICY CMP0072)
-    cmake_policy(SET CMP0072 NEW)
-    set(CMP0072_VALUE NEW)
-    if (NOT USE_SYSTEM_GLFW)
-        cmake_policy(SET CMP0072 OLD)
-        set(CMP0072_VALUE OLD)
-    endif()
+if(NOT USE_SYSTEM_GLFW)
+    cmake_policy(SET CMP0072 OLD)
 endif()
-
-# Set policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
-
-# Set policy to enable MSVC_RUNTIME_LIBRARY property.
-if(POLICY CMP0091)
-    cmake_policy(SET CMP0091 NEW)
-endif()
+cmake_policy(GET CMP0072 CMP0072_VALUE)
 
 # Catch a few incompatible build options
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
@@ -418,7 +404,6 @@ if(WIN32)
         add_compile_options(/bigobj /Ob2)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
-        # This needs cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
