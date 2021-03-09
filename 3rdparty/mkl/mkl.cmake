@@ -89,7 +89,12 @@ if(WIN32)
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Library/lib ${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Library/lib ${STATIC_MKL_LIB_DIR}
+        BUILD_BYPRODUCTS
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_sequential${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
     # Generator expression can result in an empty string "", causing CMake to try to
     # locate ".lib". The workaround to first list all libs, and remove unneeded items
@@ -123,7 +128,11 @@ elseif(APPLE)
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/lib ${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/lib ${STATIC_MKL_LIB_DIR}
+        BUILD_BYPRODUCTS
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
     set(STATIC_MKL_LIBRARIES mkl_intel_ilp64 mkl_tbb_thread mkl_core tbb_static)
 else()
@@ -169,7 +178,8 @@ else()
             COMMAND bash -c "ar -qc lib/libmkl_merged.a *.o"
             COMMAND echo "Cleaning up *.o files..."
             COMMAND bash -c "rm *.o"
-            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy lib/libmkl_merged.a ${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}/libmkl_merged.a
+            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy lib/libmkl_merged.a ${STATIC_MKL_LIB_DIR}/libmkl_merged.a
+            BUILD_BYPRODUCTS ${STATIC_MKL_LIB_DIR}/libmkl_merged.a
         )
     else()
         # We also provide a direct download for libmkl_merged.a.
@@ -182,7 +192,8 @@ else()
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE ON
             BUILD_COMMAND ""
-            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy lib/libmkl_merged.a ${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}/libmkl_merged.a
+            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy lib/libmkl_merged.a ${STATIC_MKL_LIB_DIR}/libmkl_merged.a
+            BUILD_BYPRODUCTS ${STATIC_MKL_LIB_DIR}/libmkl_merged.a
         )
     endif()
     set(STATIC_MKL_LIBRARIES mkl_merged tbb_static)
