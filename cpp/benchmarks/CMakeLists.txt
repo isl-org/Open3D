@@ -42,6 +42,7 @@ set(BENCHMARK_SOURCE_FILES
     geometry/KDTreeFlann.cpp
     geometry/SamplePoints.cpp
     io/PointCloudIO.cpp
+    pipelines/registration/ICP.cpp
     t/geometry/PointCloud.cpp
     t/pipelines/registration/ICP.cpp
     t/pipelines/registration/ComputeTransform.cpp

@@ -52,8 +52,7 @@ LoadData(const std::string& source_points_filename,
             core::Tensor::Load(correspondence_second_filename);
 
     utility::LogInfo(
-            " Number of points in source pointcloud: {}, target pointcloud {}. "
-            " \n Number of good correspondences {} ",
+            " Source points: {}, Target points {}, Good correspondences {} ",
             source_points.GetShape()[0], target_points.GetShape()[0],
             corres_second.GetShape()[0]);
 
@@ -81,8 +80,8 @@ LoadData(const std::string& source_points_filename,
     return std::make_tuple(source_device, target_device, corres);
 }
 
-void BenchmarkComputePosePointToPlane(benchmark::State& state,
-                                      const core::Device& device) {
+void RegistrationComputePosePointToPlane(benchmark::State& state,
+                                         const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
     t::pipelines::registration::CorrespondenceSet corres;
     t::geometry::PointCloud source_device(device);
@@ -111,8 +110,8 @@ void BenchmarkComputePosePointToPlane(benchmark::State& state,
     }
 }
 
-void BenchmarkComputePosePointToPoint(benchmark::State& state,
-                                      const core::Device& device) {
+void RegistrationComputePosePointToPoint(benchmark::State& state,
+                                         const core::Device& device) {
     core::Dtype dtype = core::Dtype::Float32;
     t::pipelines::registration::CorrespondenceSet corres;
     t::geometry::PointCloud source_device(device);
@@ -141,21 +140,27 @@ void BenchmarkComputePosePointToPoint(benchmark::State& state,
     }
 }
 
-BENCHMARK_CAPTURE(BenchmarkComputePosePointToPlane, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(RegistrationComputePosePointToPlane,
+                  CPU,
+                  core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkComputePosePointToPlane,
+BENCHMARK_CAPTURE(RegistrationComputePosePointToPoint,
+                  CPU,
+                  core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(RegistrationComputePosePointToPlane,
                   CUDA,
                   core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkComputePosePointToPoint, CPU, core::Device("CPU:0"))
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(BenchmarkComputePosePointToPoint,
+BENCHMARK_CAPTURE(RegistrationComputePosePointToPoint,
                   CUDA,
                   core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
+#endif
 
 }  // namespace geometry
 }  // namespace t
