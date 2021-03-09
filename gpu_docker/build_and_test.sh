@@ -24,7 +24,7 @@ make -j$(nproc)
 make -j$(nproc) install-pip-package
 
 CUDA_VISIBLE_DEVICES=0 ./bin/tests
-CUDA_VISIBLE_DEVICES=0 pytest ../python/test --ignore ../python/test/ml_ops/test_voxelize.py
+CUDA_VISIBLE_DEVICES=0 pytest ../python/test
 
 popd
 popd
