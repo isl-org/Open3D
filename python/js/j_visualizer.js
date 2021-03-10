@@ -434,7 +434,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
     console.log("value_changed");
     this.webRtcServer = new WebRtcStreamer(
       "video",
-      "http://192.168.86.121:8888/"
+      "http://localhost:8888/"
     );
     this.webRtcServer.connect("image://Open3D");
 
