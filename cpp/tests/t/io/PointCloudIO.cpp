@@ -190,7 +190,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
 TEST(TPointCloudIO, ReadWritePTS) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(
-            std::string(TEST_DATA_DIR) + "/point_cloud_sample1.pts", pcd,
+            std::string(TEST_DATA_DIR) + "/open3d_downloads/point_cloud_sample1.pts", pcd,
             {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetLength(), 10);
@@ -216,7 +216,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
 TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(
-            std::string(TEST_DATA_DIR) + "/point_cloud_sample2.pts", pcd,
+            std::string(TEST_DATA_DIR) + "/open3d_downloads/point_cloud_sample2.pts", pcd,
             {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
@@ -225,7 +225,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
 // Reading bunny pts.
 TEST(TPointCloudIO, ReadPointCloudFromPTS2) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/bunnyData.pts", pcd,
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/open3d_downloads/bunnyData.pts", pcd,
                           {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetLength(), 30571);
 }
