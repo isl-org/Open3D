@@ -30,12 +30,10 @@ import * as adapter from "./adapter.min";
 
 var WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
-  /**
-   * Interface with WebRTC-streamer API
-   * @constructor
-   * @param {string} videoElement - id of the video element tag
-   * @param {string} srvurl -  url of webrtc-streamer (default is current location)
-   */
+  // Interface with WebRTC-streamer API
+  // @constructor
+  // @param {string} videoElement - id of the video element tag
+  // @param {string} srvurl -  url of webrtc-streamer (default is current location)
   var WebRtcStreamer = function WebRtcStreamer(videoElement, srvurl) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
@@ -70,13 +68,11 @@ var WebRtcStreamer = (function () {
     return response;
   };
 
-  /**
-   * Connect a WebRTC Stream to videoElement
-   * @param {string} videourl - id of WebRTC video stream
-   * @param {string} audiourl - id of WebRTC audio stream
-   * @param {string} options -  options of WebRTC call
-   * @param {string} stream  -  local stream to send
-   */
+  // Connect a WebRTC Stream to videoElement
+  // @param {string} videourl - id of WebRTC video stream
+  // @param {string} audiourl - id of WebRTC audio stream
+  // @param {string} options -  options of WebRTC call
+  // @param {string} stream  -  local stream to send
   WebRtcStreamer.prototype.connect = function (
     videourl,
     audiourl,
@@ -114,9 +110,7 @@ var WebRtcStreamer = (function () {
     }
   };
 
-  /**
-   * Disconnect a WebRTC Stream and clear videoElement source
-   */
+  // Disconnect a WebRTC Stream and clear videoElement source
   WebRtcStreamer.prototype.disconnect = function () {
     if (this.videoElement) {
       this.videoElement.src = "";
@@ -136,9 +130,7 @@ var WebRtcStreamer = (function () {
     }
   };
 
-  /*
-   * GetIceServers callback
-   */
+  // GetIceServers callback
   WebRtcStreamer.prototype.onReceiveGetIceServers = function (
     iceServers,
     videourl,
@@ -213,9 +205,7 @@ var WebRtcStreamer = (function () {
       .catch((error) => bind.onError("getIceCandidate " + error));
   };
 
-  /*
-   * create RTCPeerConnection
-   */
+  // create RTCPeerConnection
   WebRtcStreamer.prototype.createPeerConnection = function () {
     console.log(
       "createPeerConnection  config: " +
@@ -301,9 +291,7 @@ var WebRtcStreamer = (function () {
     return pc;
   };
 
-  /*
-   * RTCPeerConnection IceCandidate callback
-   */
+  // RTCPeerConnection IceCandidate callback
   WebRtcStreamer.prototype.onIceCandidate = function (event) {
     if (event.candidate) {
       if (this.pc.currentRemoteDescription) {
@@ -329,9 +317,7 @@ var WebRtcStreamer = (function () {
       .catch((error) => this.onError("addIceCandidate " + error));
   };
 
-  /*
-   * RTCPeerConnection AddTrack callback
-   */
+  // RTCPeerConnection AddTrack callback
   WebRtcStreamer.prototype.onAddStream = function (event) {
     console.log("Remote track added:" + JSON.stringify(event));
 
@@ -346,9 +332,7 @@ var WebRtcStreamer = (function () {
     }
   };
 
-  /*
-   * AJAX /call callback
-   */
+  // AJAX /call callback
   WebRtcStreamer.prototype.onReceiveCall = function (dataJson) {
     var bind = this;
     console.log("offer: " + JSON.stringify(dataJson));
@@ -370,9 +354,7 @@ var WebRtcStreamer = (function () {
     );
   };
 
-  /*
-   * AJAX /getIceCandidate callback
-   */
+  // AJAX /getIceCandidate callback
   WebRtcStreamer.prototype.onReceiveCandidate = function (dataJson) {
     console.log("candidate: " + JSON.stringify(dataJson));
     if (dataJson) {
@@ -394,9 +376,7 @@ var WebRtcStreamer = (function () {
     }
   };
 
-  /*
-   * AJAX callback for Error
-   */
+  // AJAX callback for Error
   WebRtcStreamer.prototype.onError = function (status) {
     console.log("onError:" + status);
   };
