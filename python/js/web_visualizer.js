@@ -43,7 +43,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     console.log("render");
 
     this.videoElt = document.createElement("video");
-    this.videoElt.id = "video";
+    this.videoElt.id = "video_tag";
     this.videoElt.muted = true;
     this.videoElt.controls = false;
     this.videoElt.playsinline = true;
@@ -58,7 +58,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   value_changed: function () {
     console.log("value_changed");
     this.webRtcServer = new WebRtcStreamer(
-      "video",
+      "video_tag",
       "http://localhost:8888/"
     );
     this.webRtcServer.connect("image://Open3D");
@@ -87,7 +87,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     }
 
     // Register callbacks for videoElt.
-    var videoElt = document.getElementById("video");
+    var videoElt = document.getElementById("video_tag");
     if (videoElt) {
       videoElt.addEventListener("mousedown", (event) => {
         var msg =
