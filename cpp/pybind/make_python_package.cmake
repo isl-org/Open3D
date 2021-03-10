@@ -60,8 +60,8 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/j_visualizer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/j_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
-file(COPY "${PYTHON_PACKAGE_DST_DIR}/../_build_config.py"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     # copy generated files

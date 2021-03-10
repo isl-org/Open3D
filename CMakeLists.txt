@@ -99,12 +99,6 @@ one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures
 set_property(CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
 set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
 
-# Default build type
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No CMAKE_BUILD_TYPE specified, default to RelWithDebInfo")
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-endif()
-
 # Set OpenGL policy
 if (POLICY CMP0072)
     cmake_policy(SET CMP0072 NEW)

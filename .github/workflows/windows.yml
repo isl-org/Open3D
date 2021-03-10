@@ -146,7 +146,6 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
-            -DCMAKE_BUILD_TYPE=Release `
             -DBUILD_AZURE_KINECT=ON `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=OFF `
