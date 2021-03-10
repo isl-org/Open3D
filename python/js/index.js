@@ -13,5 +13,5 @@ __webpack_public_path__ =
     "nbextensions/open3d/";
 
 // Export widget models and views, and the npm package version number.
-module.exports = require("./j_visualizer");
+module.exports = require("./web_visualizer");
 module.exports["version"] = require("./package.json").version;

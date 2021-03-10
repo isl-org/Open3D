@@ -32,8 +32,8 @@ import time
 
 
 @widgets.register
-class JVisualizer(widgets.DOMWidget):
-    _view_name = Unicode('JVisualizerView').tag(sync=True)
+class WebVisualizer(widgets.DOMWidget):
+    _view_name = Unicode('WebVisualizerView').tag(sync=True)
     _view_module = Unicode('open3d').tag(sync=True)
     _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)

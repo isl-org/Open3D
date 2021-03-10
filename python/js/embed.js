@@ -8,5 +8,5 @@
 // already be loaded by the notebook otherwise.
 
 // Export widget models and views, and the npm package version number.
-module.exports = require('./j_visualizer.js');
+module.exports = require('./web_visualizer.js');
 module.exports['version'] = require('./package.json').version;

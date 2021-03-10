@@ -84,7 +84,7 @@ if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
 if "@BUILD_JUPYTER_EXTENSION@" == "ON":
-    from .j_visualizer import *
+    from .web_visualizer import *
 
     # TODO: make this more robust, e.g. build gui, windows, macos
     try:

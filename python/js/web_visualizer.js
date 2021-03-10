@@ -384,15 +384,15 @@ var WebRtcStreamer = (function () {
   return WebRtcStreamer;
 })();
 
-var JVisualizerModel = widgets.DOMWidgetModel.extend({
+var WebVisualizerModel = widgets.DOMWidgetModel.extend({
   defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
-    _view_name: "JVisualizerView",
+    _view_name: "WebVisualizerView",
     _view_module: "open3d",
     _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
   }),
 });
 
-var JVisualizerView = widgets.DOMWidgetView.extend({
+var WebVisualizerView = widgets.DOMWidgetView.extend({
   // Render the view.
   render: function () {
     console.log("render");
@@ -503,4 +503,4 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
 });
 
 // Since we have `import`, cannot use common.js's module.exports, use ES6's way
-export { JVisualizerModel, JVisualizerView };
+export { WebVisualizerModel, WebVisualizerView };
