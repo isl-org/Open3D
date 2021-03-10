@@ -354,6 +354,8 @@ var WebRtcStreamer = (function () {
   return WebRtcStreamer;
 })();
 
-if (typeof module !== "undefined" && typeof module.exports !== "undefined")
+if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = WebRtcStreamer;
-else window.WebRtcStreamer = WebRtcStreamer;
+} else {
+  window.WebRtcStreamer = WebRtcStreamer;
+}
