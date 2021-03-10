@@ -50,6 +50,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 
     double error;
     // TODO: Revist to support Float32 and 64 without type conversion.
+    // TODO: Optimise using kernel.
     core::Tensor source_select =
             source.GetPoints().IndexGet({corres.first.Reshape({-1})});
     core::Tensor target_select =
@@ -97,7 +98,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     }
 
     if (!target.HasPointNormals()) return 0.0;
-    // TODO: Update to new scheme.
+    // TODO: Optimise using kernel.
     core::Tensor source_select =
             source.GetPoints().IndexGet({corres.first.Reshape({-1})});
     core::Tensor target_select =
