@@ -44,7 +44,6 @@
     "dependencies": {
         "@jupyter-widgets/base": "^1.2.2",
         "lodash": "^4.17.11",
-        "three": "^0.97.0",
-        "three-orbit-controls": "^82.1.0"
+        "webrtc-adapter": "^4.2.2"
     }
 }
