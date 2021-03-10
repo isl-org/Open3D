@@ -1,6 +1,7 @@
 var WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
   // Interface with WebRTC-streamer API
+
   // @constructor
   // @param {string} videoElement - id of the video element tag
   // @param {string} srvurl -  url of webrtc-streamer (default is current location)
