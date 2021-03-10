@@ -104,8 +104,6 @@ def local_refinement(source, target, transformation_init, config):
             source, target,
             [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
             config, transformation_init)
-    if config["debug_mode"]:
-        draw_registration_result_original_color(source, target, transformation)
     return (transformation, information)
 
 
@@ -115,9 +113,15 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
     source = o3d.io.read_point_cloud(ply_file_names[s])
     print("reading %s ..." % ply_file_names[t])
     target = o3d.io.read_point_cloud(ply_file_names[t])
+
+    if config["debug_mode"] and t == s + 1:
+        draw_registration_result_original_color(source, target, transformation_init)
+
     (transformation, information) = \
             local_refinement(source, target, transformation_init, config)
-    if config["debug_mode"]:
+
+    if config["debug_mode"] and t == s + 1:
+        draw_registration_result_original_color(source, target, transformation)
         print(transformation)
         print(information)
     return (transformation, information)
@@ -144,14 +148,31 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
     for edge in pose_graph.edges:
         s = edge.source_node_id
         t = edge.target_node_id
-        matching_results[s * n_files + t] = \
-                matching_result(s, t, edge.transformation)
+
+        if t != s + 1:
+            transformation_init = edge.transformation
+
+        # We trust the very original fragment pose graph for icp.
+        # 1. Optimized pose graph can be dragged / polluted by global optimization.
+        # 2. Pose graph itself can be corrupted due to unknown open3d issues in multiprocessing.
+        else:
+            pose_graph_frag = o3d.io.read_pose_graph(
+                join(config['path_dataset'],
+                     config["template_fragment_posegraph_optimized"] % s))
+            n_nodes = len(pose_graph_frag.nodes)
+            transformation_init = np.linalg.inv(pose_graph_frag.nodes[n_nodes -
+                                                                      1].pose)
+
+        # if t == s + 1 and t > 182: filter for debugging
+        if True:
+            matching_results[s * n_files + t] = \
+                matching_result(s, t, transformation_init)
 
     if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count()//2,
+        MAX_THREAD = min(multiprocessing.cpu_count() // 2,
                          max(len(pose_graph.edges), 1))
         results = Parallel(n_jobs=MAX_THREAD)(
             delayed(register_point_cloud_pair)(
@@ -206,10 +227,6 @@ def run(config):
         for frame_id in range(len(pose_graph_rgbd.nodes)):
             frame_id_abs = fragment_id * \
                     config['n_frames_per_fragment'] + frame_id
-            print(
-                "Fragment %03d / %03d :: extracting pose %d (%d of %d)." %
-                (fragment_id, n_fragments - 1, frame_id_abs, frame_id + 1,
-                 len(pose_graph_rgbd.nodes)))
             pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
                           pose_graph_rgbd.nodes[frame_id].pose)
             poses.append(pose)

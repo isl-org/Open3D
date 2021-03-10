@@ -63,47 +63,32 @@ std::shared_ptr<PointCloud> PreprocessPointCloud(
     }
 }
 
-std::pair<core::Tensor, core::Tensor> GetCorrespondencesForPair(
-        TPointCloud& tpcd_i,
-        TPointCloud& tpcd_j,
-        const core::Tensor& T_ij,
-        float threshold) {
+core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
+                                       TPointCloud& tpcd_j,
+                                       const core::Tensor& T_ij,
+                                       float threshold) {
     // Obtain correspondence via nns
-    try {
-        auto result = open3d::pipelines::registration::RegistrationColoredICP(
-                tpcd_i.ToLegacyPointCloud(), tpcd_j.ToLegacyPointCloud(),
-                threshold,
-                core::eigen_converter::TensorToEigenMatrix<float>(T_ij)
-                        .cast<double>(),
-                open3d::pipelines::registration::
-                        TransformationEstimationForColoredICP(),
-                open3d::pipelines::registration::ICPConvergenceCriteria(
-                        1e-8, 1e-8, 100));
+    auto result = open3d::pipelines::registration::EvaluateRegistration(
+            tpcd_i.ToLegacyPointCloud(), tpcd_j.ToLegacyPointCloud(), threshold,
+            core::eigen_converter::TensorToEigenMatrix<float>(T_ij)
+                    .cast<double>());
+    core::Tensor corres = core::eigen_converter::EigenVector2iVectorToTensor(
+            result.correspondence_set_, core::Dtype::Int64,
+            core::Device("CPU:0"));
+    return corres;
 
-        core::Tensor Tij = core::eigen_converter::EigenMatrixToTensor(
-                                   result.transformation_)
-                                   .To(core::Dtype::Float32);
-        core::Tensor corres =
-                core::eigen_converter::EigenVector2iVectorToTensor(
-                        result.correspondence_set_, core::Dtype::Int64,
-                        core::Device("CPU:0"));
-        return std::make_pair(Tij, corres);
-
-        // Make correspondence indices (N x 2)
-        // core::Tensor corres =
-        //         core::Tensor({2, result.correspondence_set_.GetLength()},
-        //                      core::Dtype::Int64);
-        // core::Tensor indices = core::Tensor::Arange(
-        //         0, result.correspondence_select_bool_.GetLength(), 1,
-        //         core::Dtype::Int64);
-        // corres.SetItem({core::TensorKey::Index(0)},
-        //                indices.IndexGet({result.correspondence_select_bool_}));
-        // corres.SetItem({core::TensorKey::Index(1)},
-        // result.correspondence_set_);
-        // return corres.T();
-    } catch (...) {
-        return std::make_pair(core::Tensor(), core::Tensor());
-    }
+    // Make correspondence indices (N x 2)
+    // core::Tensor corres =
+    //         core::Tensor({2, result.correspondence_set_.GetLength()},
+    //                      core::Dtype::Int64);
+    // core::Tensor indices = core::Tensor::Arange(
+    //         0, result.correspondence_select_bool_.GetLength(), 1,
+    //         core::Dtype::Int64);
+    // corres.SetItem({core::TensorKey::Index(0)},
+    //                indices.IndexGet({result.correspondence_select_bool_}));
+    // corres.SetItem({core::TensorKey::Index(1)},
+    // result.correspondence_set_);
+    // return corres.T();
 }
 
 /// Write point clouds after preprocessing (remove outliers, estimate normals,
@@ -150,29 +135,23 @@ void GetCorrespondencesForPointClouds(
 
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
-        std::string Tij_est_fname = fmt::format(
-                "{}/{:03d}_{:03d}_T.npy", option.GetSubfolderName(), i, j);
         if (utility::filesystem::FileExists(corres_fname)) continue;
 
         auto tpcd_i = CreateTPCDFromFile(fnames_processed[i]);
         auto tpcd_j = CreateTPCDFromFile(fnames_processed[j]);
 
-        auto pose_i = pose_graph.nodes_[i].pose_;
-        auto pose_j = pose_graph.nodes_[j].pose_;
-        auto pose_ij = (pose_j.inverse() * pose_i).eval();
+        auto pose_ij = edge.transformation_;
         core::Tensor T_ij =
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32);
         float dist_threshold =
                 option.voxel_size_ < 0 ? 0.01 : 3 * option.voxel_size_;
 
-        core::Tensor Tij_est, corres;
-        std::tie(Tij_est, corres) =
+        core::Tensor corres =
                 GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
 
         if (corres.GetLength() > 0) {
             corres.Save(corres_fname);
-            Tij_est.Save(Tij_est_fname);
             utility::LogInfo("Saving {} corres for {:02d} -> {:02d}",
                              corres.GetLength(), i, j);
         }
@@ -374,7 +353,6 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
-        if ((i == 20 && j == 21) || (i == 10 && j == 13)) continue;
 
         // Load poses
         auto Ti = core::eigen_converter::EigenMatrixToTensor(
@@ -383,6 +361,9 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         auto Tj = core::eigen_converter::EigenMatrixToTensor(
                           pose_graph.nodes_[j].pose_)
                           .To(device, core::Dtype::Float32);
+        auto Tij =
+                core::eigen_converter::EigenMatrixToTensor(edge.transformation_)
+                        .To(device, core::Dtype::Float32);
 
         // Load point clouds
         auto tpcd_i = CreateTPCDFromFile(fnames[i], device);
@@ -391,22 +372,17 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         // Load correspondences and select points and normals
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                option.GetSubfolderName(), i, j);
-        std::string Tij_est_fname = fmt::format(
-                "{}/{:03d}_{:03d}_T.npy", option.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
             utility::LogWarning("Correspondence {} {} not processed!", i, j);
             continue;
         }
         core::Tensor corres_ij = core::Tensor::Load(corres_fname).To(device);
-        core::Tensor Tij_est = core::Tensor::Load(Tij_est_fname).To(device);
 
         // Fill In
         FillInSLACAlignmentTerm(
-                AtA, Atb, residual, ctr_grid, tpcd_i, tpcd_j, Ti, Tj, Tij_est,
+                AtA, Atb, residual, ctr_grid, tpcd_i, tpcd_j, Ti, Tj, Tij,
                 corres_ij, i, j, n_frags, device,
                 option.debug_enabled_ && i >= option.debug_start_idx_);
-        // && (i == option.debug_start_idx_ ||
-        //                           j == option.debug_start_idx_));
     }
     AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));
     Atb.Save(fmt::format("{}/residual.npy", option.GetSubfolderName()));
