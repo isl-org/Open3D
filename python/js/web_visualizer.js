@@ -26,8 +26,8 @@
 
 var widgets = require("@jupyter-widgets/base");
 var path = require("path");
-require('webrtc-adapter');
-var WebRtcStreamer = require('./webrtcstreamer');
+require("webrtc-adapter");
+var WebRtcStreamer = require("./webrtcstreamer");
 
 function getModifiers(event) {
   // See open3d/visualization/gui/Events.h.
@@ -91,7 +91,8 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     if (videoElt) {
       videoElt.addEventListener("mousedown", (event) => {
         var msg =
-          "mousedown " + event.offsetX +
+          "mousedown " +
+          event.offsetX +
           " " +
           event.offsetY +
           " " +
@@ -149,5 +150,5 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
 module.exports = {
   WebVisualizerModel: WebVisualizerModel,
-  WebVisualizerView: WebVisualizerView
+  WebVisualizerView: WebVisualizerView,
 };
