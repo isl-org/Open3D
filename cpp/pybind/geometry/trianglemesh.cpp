@@ -359,8 +359,10 @@ void pybind_trianglemesh(py::module &m) {
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
-                        "front will be placed at (0, 0, 0).",
-                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0)
+                        "front will be placed at (0, 0, 0), and default UV "
+                        "map, maps the entire texture to each face.",
+                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0,
+                        "map_texture_to_each_face"_a = false)
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Factory function to create a tetrahedron. The "
                         "centroid of the mesh "

@@ -603,9 +603,11 @@ public:
     /// \param width is x-directional length.
     /// \param height is y-directional length.
     /// \param depth is z-directional length.
-    static std::shared_ptr<TriangleMesh> CreateBox(double width = 1.0,
-                                                   double height = 1.0,
-                                                   double depth = 1.0);
+    static std::shared_ptr<TriangleMesh> CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            bool map_texture_to_each_face = true);
 
     /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
     /// The sphere with radius will be centered at (0, 0, 0).
