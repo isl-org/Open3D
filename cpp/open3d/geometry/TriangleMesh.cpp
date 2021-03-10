@@ -92,11 +92,37 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() || HasTextures() || HasTriangleMaterialIds()) {
-        utility::LogError(
-                "[TriangleMesh] copy of uvs and texture and per-triangle "
-                "material ids is not implemented "
-                "yet");
+    if (HasTriangleUvs() && HasTextures() && HasTriangleMaterialIds() &&
+        mesh.HasTriangleUvs() && mesh.HasTextures() &&
+        mesh.HasTriangleMaterialIds()) {
+        size_t old_tri_uv_num = triangle_uvs_.size();
+        size_t add_tri_uv_num = mesh.triangle_uvs_.size();
+        size_t new_tri_uv_num = old_tri_uv_num + add_tri_uv_num;
+        triangle_uvs_.resize(new_tri_uv_num);
+        for (size_t i = 0; i < add_tri_uv_num; i++) {
+            triangle_uvs_[old_tri_uv_num + i] = mesh.triangle_uvs_[i];
+        }
+
+        size_t old_tex_num = textures_.size();
+        size_t add_tex_num = mesh.textures_.size();
+        size_t new_tex_num = old_tex_num + add_tex_num;
+        textures_.resize(new_tex_num);
+        for (size_t i = 0; i < add_tex_num; i++) {
+            textures_[old_tex_num + i] = mesh.textures_[i];
+        }
+
+        size_t old_mat_id_num = triangle_material_ids_.size();
+        size_t add_mat_id_num = mesh.triangle_material_ids_.size();
+        size_t new_mat_id_num = old_mat_id_num + add_mat_id_num;
+        triangle_material_ids_.resize(new_mat_id_num);
+        for (size_t i = 0; i < add_mat_id_num; i++) {
+            triangle_material_ids_[old_mat_id_num + i] =
+                    mesh.triangle_material_ids_[i] + old_tex_num;
+        }
+    } else {
+        triangle_uvs_.clear();
+        textures_.clear();
+        triangle_material_ids_.clear();
     }
     return (*this);
 }
