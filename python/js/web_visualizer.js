@@ -75,19 +75,20 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.el.appendChild(this.videoElt);
 
     // Python -> JavaScript update
-    this.model.on("change:value", this.value_changed, this);
+    // this.model.on("change:value", this.value_changed, this);
+    this.value_changed(this.videoElt);
   },
 
-  value_changed: function () {
+  value_changed: function (videoElt) {
     console.log("value_changed");
     this.webRtcServer = new WebRtcStreamer(
-      "video_tag",
+      videoElt,
       "http://localhost:8888/"
     );
     this.webRtcServer.connect("image://Open3D");
 
     // Register callbacks for videoElt.
-    var videoElt = document.getElementById("video_tag");
+    // var videoElt = document.getElementById("video_tag");
     if (videoElt) {
       videoElt.addEventListener("mousedown", (event) => {
         var msg =
