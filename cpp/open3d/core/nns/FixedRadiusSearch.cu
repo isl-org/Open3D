@@ -31,8 +31,10 @@
 #include "open3d/core/nns/FixedRadiusSearch.h"
 #include "open3d/core/nns/MemoryAllocation.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
+#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/MiniVec.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace core {
@@ -739,16 +741,20 @@ void BuildSpatialHashTableCUDA(void* temp,
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
+    utility::Timer timer;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
         temp_size = std::numeric_limits<int64_t>::max();
     }
 
+    timer.Start();
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
     std::pair<uint32_t*, size_t> count_tmp =
             mem_temp.Alloc<uint32_t>(hash_table_cell_splits_size);
+    timer.Stop();
+    utility::LogInfo("Temp Alloc Time: {}", timer.GetDuration());
 
     const int batch_size = points_row_splits_size - 1;
     const T voxel_size = 2 * radius;
@@ -756,6 +762,7 @@ void BuildSpatialHashTableCUDA(void* temp,
 
     // count number of points per hash entry
     if (!get_temp_size) {
+        timer.Start();
         cudaMemsetAsync(count_tmp.first, 0, sizeof(uint32_t) * count_tmp.second,
                         stream);
 
@@ -771,10 +778,13 @@ void BuildSpatialHashTableCUDA(void* temp,
                                   hash_table_size + 1, inv_voxel_size, points_i,
                                   num_points_i);
         }
+        timer.Stop();
+        utility::LogInfo("CountHashTable Time: {}", timer.GetDuration());
     }
 
     // compute prefix sum of the hash entry counts and store in
     // hash_table_cell_splits
+    timer.Start();
     {
         std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
         cub::DeviceScan::InclusiveSum(inclusive_scan_temp.first,
@@ -793,10 +803,13 @@ void BuildSpatialHashTableCUDA(void* temp,
 
         mem_temp.Free(inclusive_scan_temp);
     }
+    timer.Stop();
+    utility::LogInfo("InclusiveSum Time: {}", timer.GetDuration());
 
     // now compute the global indices which allows us to lookup the point index
     // for the entries in the hash cell
     if (!get_temp_size) {
+        timer.Start();
         for (int i = 0; i < batch_size; ++i) {
             const size_t hash_table_size =
                     hash_table_splits[i + 1] - hash_table_splits[i];
@@ -808,6 +821,9 @@ void BuildSpatialHashTableCUDA(void* temp,
                                    hash_table_size + 1, inv_voxel_size, points,
                                    points_start_idx, points_end_idx);
         }
+        timer.Stop();
+        utility::LogInfo("ComputePointIndexTable Time: {}",
+                         timer.GetDuration());
     }
 
     mem_temp.Free(count_tmp);
@@ -886,6 +902,7 @@ void FixedRadiusSearchCUDA(void* temp,
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
     const Metric metric = Metric::L2;
+    utility::Timer timer;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
@@ -904,7 +921,7 @@ void FixedRadiusSearchCUDA(void* temp,
 
         return;
     }
-
+    timer.Start();
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
     const int batch_size = points_row_splits_size - 1;
@@ -913,9 +930,12 @@ void FixedRadiusSearchCUDA(void* temp,
 
     std::pair<int64_t*, size_t> query_neighbors_count =
             mem_temp.Alloc<int64_t>(num_queries);
+    timer.Stop();
+    utility::LogInfo("Temp Alloc Time: {}", timer.GetDuration());
 
     // we need this value to compute the size of the index array
     if (!get_temp_size) {
+        timer.Start();
         for (int i = 0; i < batch_size; ++i) {
             const size_t hash_table_size =
                     hash_table_splits[i + 1] - hash_table_splits[i];
@@ -931,9 +951,12 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric);
         }
+        timer.Stop();
+        utility::LogInfo("COuntNeighbor Time: {}", timer.GetDuration());
     }
 
     // we need this value to compute the size of the index array
+    timer.Start();
     int64_t last_prefix_sum_entry = 0;
     {
         std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
@@ -964,6 +987,8 @@ void FixedRadiusSearchCUDA(void* temp,
         mem_temp.Free(inclusive_scan_temp);
     }
     mem_temp.Free(query_neighbors_count);
+    timer.Stop();
+    utility::LogInfo("InclusiveSum Time: {}", timer.GetDuration());
 
     if (get_temp_size) {
         // return the memory peak as the required temporary memory size.
@@ -977,9 +1002,13 @@ void FixedRadiusSearchCUDA(void* temp,
 
         int64_t* indices_ptr;
         T* distances_ptr;
-
+        timer.Start();
         output_allocator.AllocIndices(&indices_ptr, num_indices);
         output_allocator.AllocDistances(&distances_ptr, num_indices);
+        timer.Stop();
+        utility::LogInfo("Alloc Output Time: {}", timer.GetDuration());
+
+        timer.Start();
         for (int i = 0; i < batch_size; ++i) {
             const size_t hash_table_size =
                     hash_table_splits[i + 1] - hash_table_splits[i];
@@ -995,6 +1024,9 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric, true);
         }
+        timer.Stop();
+        utility::LogInfo("WriteNeighborsIndicesAndDistances Time: {}",
+                         timer.GetDuration());
     }
 }
 
@@ -1017,6 +1049,7 @@ void HybridSearchCUDA(size_t num_points,
                       NeighborSearchAllocator<T>& output_allocator) {
     const cudaStream_t stream = 0;
     const Metric metric = Metric::L2;
+    utility::Timer timer;
 
     // return empty output arrays if there are no points
     if (0 == num_points || 0 == num_queries) {
@@ -1034,6 +1067,7 @@ void HybridSearchCUDA(size_t num_points,
     const T inv_voxel_size = 1 / voxel_size;
 
     // Allocate output pointers.
+    timer.Start();
     const size_t num_indices = num_queries * max_knn;
 
     int64_t* indices_ptr;
@@ -1041,7 +1075,10 @@ void HybridSearchCUDA(size_t num_points,
 
     T* distances_ptr;
     output_allocator.AllocDistances(&distances_ptr, num_indices, -1);
+    timer.Stop();
+    utility::LogInfo("Alloc Output Time: {}", timer.GetDuration());
 
+    timer.Start();
     for (int i = 0; i < batch_size; ++i) {
         const size_t hash_table_size =
                 hash_table_splits[i + 1] - hash_table_splits[i];
@@ -1056,6 +1093,8 @@ void HybridSearchCUDA(size_t num_points,
                 queries_i, num_queries_i, points, num_points, inv_voxel_size,
                 radius, max_knn, metric, true);
     }
+    timer.Stop();
+    utility::LogInfo("WriteNeighborsHybrid Time: {}", timer.GetDuration());
 }
 ////
 

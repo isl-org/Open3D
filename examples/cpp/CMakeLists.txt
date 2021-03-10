@@ -5,7 +5,7 @@ set(EXAMPLE_BIN_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
 
 macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
-
+    target_compile_definitions(${EXAMPLE_CPP_NAME} PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
     # Don't use open3d_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
     # Unlike benchmarks, examples are intended as standalone apps that link
     # the main Open3D library, while the benchmarks executable needs 3rd-party
@@ -67,7 +67,9 @@ EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
-EXAMPLE_CPP(BenchmarkNNS              ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(BenchmarkFixedRadiusSearch              ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(BenchmarkHybridSearch              ${CMAKE_PROJECT_NAME})
+
 
 if(BUILD_LIBREALSENSE)
     EXAMPLE_CPP(RealSenseRecorder     ${CMAKE_PROJECT_NAME} ${LIBREALSENSE_TARGET})

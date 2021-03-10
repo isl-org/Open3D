@@ -52,13 +52,17 @@ inline void PrepareInput(t::geometry::PointCloud &input,
 int main(int argc, char *argv[]) {
     // Argument 1: Device: 'CPU:0' for CPU, 'CUDA:0' for GPU
     // Argument 2: Path to the test PointCloud
-    core::Device device = core::Device(argv[1]);
+    core::Device device = core::Device("CUDA:0");
     core::Dtype dtype = core::Dtype::Float32;
 
     // t::io::ReadPointCloud, changes the device to CPU and DType to Float64
     t::geometry::PointCloud input_;
     // t::geometry::PointCloud target(device);
-    t::io::ReadPointCloud(argv[2], input_, {"auto", false, false, true});
+    //     t::io::ReadPointCloud(argv[2], input_, {"auto", false, false, true});
+    t::io::ReadPointCloud(fmt::format("{}/open3d_downloads/ICP/Civil.pcd",
+                                      std::string(TEST_DATA_DIR)),
+                          input_, {"auto", false, false, true});
+
     utility::LogInfo(" Input Successful ");
 
     // Creating Tensor from manual transformation vector.
