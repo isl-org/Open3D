@@ -273,7 +273,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     return std::make_pair(indices, distances);
 }
 
-std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchSqueezedHybrid(
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid1NN(
         const Tensor &query_points, double radius) const {
     Device device = GetDevice();
     // Check dtype.

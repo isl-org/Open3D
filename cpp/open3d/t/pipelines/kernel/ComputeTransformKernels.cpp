@@ -53,7 +53,7 @@ core::Tensor ComputePosePointToPlane(
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, dtype, device);
     // Number of correspondences.
-    int n = corres.first.GetShape()[0];
+    int n = corres.first.GetLength();
 
     // Pointer to point cloud data - indexed according to correspondences.
     core::Tensor source_points_contiguous = source_points.Contiguous();
@@ -108,7 +108,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         // Number of correspondences.
-        int n = corres.first.GetShape()[0];
+        int n = corres.first.GetLength();
 
         // Pointer to point cloud data - indexed according to correspondences.
         core::Tensor source_points_contiguous = source_points.Contiguous();
@@ -133,11 +133,11 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         // https://ieeexplore.ieee.org/document/88573
         core::Tensor mean_s = source_select.Mean({0}, true);
         core::Tensor mean_t = target_select.Mean({0}, true);
-        core::Tensor Sxy = ((target_select - mean_t)
-                                    .T()
-                                    .Matmul(source_select - mean_s)
-                                    .Div_(static_cast<float>(
-                                            corres.second.GetShape()[0])));
+        core::Tensor Sxy =
+                ((target_select - mean_t)
+                         .T()
+                         .Matmul(source_select - mean_s)
+                         .Div_(static_cast<float>(corres.second.GetLength())));
 
         core::Tensor U, D, VT;
         std::tie(U, D, VT) = Sxy.SVD();

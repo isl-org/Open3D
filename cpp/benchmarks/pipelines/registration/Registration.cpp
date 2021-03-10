@@ -24,13 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/pipelines/registration/Registration.h"
+
 #include <benchmark/benchmark.h>
 
 #include "Eigen/Eigen"
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
+
+// Testing parameters:
+// Filename for pointcloud registration data.
+static const std::string source_pointcloud_filename =
+        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+static const std::string target_pointcloud_filename =
+        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+
+static const double voxel_downsampling_factor = 0.01;
+
+// ICP ConvergenceCriteria.
+static double relative_fitness = 1e-6;
+static double relative_rmse = 1e-6;
+static int max_iterations = 30;
+
+// NNS parameter.
+static double max_correspondence_dist = 0.015;
+
+// Eigen::Matrix4d init_trans = Eigen::Matrix4d::Identity();
+
 namespace open3d {
 
 static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadTPointCloud(
@@ -53,21 +74,13 @@ static void RegistrationICPPointToPlaneLegacy(benchmark::State& state) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
-    std::tie(source, target) =
-            LoadTPointCloud(TEST_DATA_DIR "/ICP/cloud_bin_0.pcd",
-                            TEST_DATA_DIR "/ICP/cloud_bin_1.pcd", 0.001);
+    std::tie(source, target) = LoadTPointCloud(source_pointcloud_filename,
+                                               target_pointcloud_filename,
+                                               voxel_downsampling_factor);
 
-    // Eigen::Matrix4d init_trans = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d init_trans;
     init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
             0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
-
-    double max_correspondence_dist = 0.02;
-
-    // ICP ConvergenceCriteria:
-    double relative_fitness = 1e-6;
-    double relative_rmse = 1e-6;
-    int max_iterations = 30;
 
     auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
             source, target, max_correspondence_dist, init_trans,
@@ -96,21 +109,13 @@ static void RegistrationICPPointToPointLegacy(benchmark::State& state) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
-    std::tie(source, target) =
-            LoadTPointCloud(TEST_DATA_DIR "/ICP/cloud_bin_0.pcd",
-                            TEST_DATA_DIR "/ICP/cloud_bin_1.pcd", 0.001);
+    std::tie(source, target) = LoadTPointCloud(source_pointcloud_filename,
+                                               target_pointcloud_filename,
+                                               voxel_downsampling_factor);
 
-    // Eigen::Matrix4d init_trans = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d init_trans;
     init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
             0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
-
-    double max_correspondence_dist = 0.02;
-
-    // ICP ConvergenceCriteria:
-    double relative_fitness = 1e-6;
-    double relative_rmse = 1e-6;
-    int max_iterations = 30;
 
     auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
             source, target, max_correspondence_dist, init_trans,

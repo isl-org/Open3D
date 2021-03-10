@@ -180,7 +180,7 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
     }
 }
 
-std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::SqueezedHybridSearch(
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::Hybrid1NNSearch(
         const Tensor& query_points, double radius) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
@@ -206,7 +206,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::SqueezedHybridSearch(
         }
     } else {
         if (nanoflann_index_) {
-            return nanoflann_index_->SearchSqueezedHybrid(query_points, radius);
+            return nanoflann_index_->SearchHybrid1NN(query_points, radius);
         } else {
             utility::LogError(
                     "[NearestNeighborSearch::HybridSearch] Index is not set.");

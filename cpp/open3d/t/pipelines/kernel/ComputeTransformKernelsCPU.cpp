@@ -211,16 +211,18 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
     for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
                     for (int i = 0; i < 9; i++) {
+                        int row = i % 3;
+                        int col = i / 3;
                         float s_ = source_points_ptr
                                            [3 * correspondence_first
                                                             [workload_idx] +
-                                            i % 3] -
-                                   mean_1x6[i % 3];
+                                            row] -
+                                   mean_1x6[row];
                         float t_ = target_points_ptr
                                            [3 * correspondence_second
                                                             [workload_idx] +
-                                            i / 3] -
-                                   mean_1x6[3 + i / 3];
+                                            col] -
+                                   mean_1x6[3 + col];
                         sxy_1x9_[i] += (t_) * (s_);
                     }
                 }

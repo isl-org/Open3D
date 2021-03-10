@@ -74,17 +74,17 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     core::Tensor distances;
     std::tie(result.correspondence_set.first, result.correspondence_set.second,
              distances) =
-            target_nns.SqueezedHybridSearch(source.GetPoints(),
-                                            max_correspondence_distance);
+            target_nns.Hybrid1NNSearch(source.GetPoints(),
+                                       max_correspondence_distance);
 
     // Number of good correspondences (C).
-    int num_correspondences = result.correspondence_set.first.GetShape()[0];
+    int num_correspondences = result.correspondence_set.first.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
             static_cast<double>(distances.Sum({0}).Item<float>());
     result.fitness_ = static_cast<double>(num_correspondences) /
-                      static_cast<double>(source.GetPoints().GetShape()[0]);
+                      static_cast<double>(source.GetPoints().GetLength());
     result.inlier_rmse_ =
             std::sqrt(squared_error / static_cast<double>(num_correspondences));
     result.transformation_ = transformation;

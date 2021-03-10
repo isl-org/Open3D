@@ -40,7 +40,7 @@ namespace kernel {
 /// \param target_normals target normals indexed according to correspondences.
 /// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype float32.
 core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source,
+        const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &target_normals,
         const pipelines::registration::CorrespondenceSet &corres);
