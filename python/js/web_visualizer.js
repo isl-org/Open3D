@@ -27,7 +27,6 @@
 var widgets = require("@jupyter-widgets/base");
 var path = require("path");
 require('webrtc-adapter');
-import * as adapter from "./adapter.min";
 
 var WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
