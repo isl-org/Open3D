@@ -502,5 +502,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 });
 
-// Since we have `import`, cannot use common.js's module.exports, use ES6's way
-export { WebVisualizerModel, WebVisualizerView };
+// // Since we have `import`, cannot use common.js's module.exports, use ES6's way
+// export { WebVisualizerModel, WebVisualizerView };
+
+module.exports = {
+  WebVisualizerModel: WebVisualizerModel,
+  WebVisualizerView: WebVisualizerView
+};
