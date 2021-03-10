@@ -29,6 +29,29 @@ var path = require("path");
 require('webrtc-adapter');
 var WebRtcStreamer = require('./webrtcstreamer');
 
+function getModifiers(event) {
+  // See open3d/visualization/gui/Events.h.
+  var modNone = 0;
+  var modShift = 1 << 0;
+  var modCtrl = 1 << 1;
+  var modAlt = 1 << 2;
+  var modMeta = 1 << 3;
+  var mod = modNone;
+  if (event.getModifierState("Shift")) {
+    mod = mod | modShift;
+  }
+  if (event.getModifierState("Control")) {
+    mod = mod | modCtrl;
+  }
+  if (event.getModifierState("Alt")) {
+    mod = mod | modAlt;
+  }
+  if (event.getModifierState("Meta")) {
+    mod = mod | modMeta;
+  }
+  return mod;
+}
+
 var WebVisualizerModel = widgets.DOMWidgetModel.extend({
   defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
     _view_name: "WebVisualizerView",
@@ -62,29 +85,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       "http://localhost:8888/"
     );
     this.webRtcServer.connect("image://Open3D");
-
-    function getModifiers(event) {
-      // See open3d/visualization/gui/Events.h.
-      var modNone = 0;
-      var modShift = 1 << 0;
-      var modCtrl = 1 << 1;
-      var modAlt = 1 << 2;
-      var modMeta = 1 << 3;
-      var mod = modNone;
-      if (event.getModifierState("Shift")) {
-        mod = mod | modShift;
-      }
-      if (event.getModifierState("Control")) {
-        mod = mod | modCtrl;
-      }
-      if (event.getModifierState("Alt")) {
-        mod = mod | modAlt;
-      }
-      if (event.getModifierState("Meta")) {
-        mod = mod | modMeta;
-      }
-      return mod;
-    }
 
     // Register callbacks for videoElt.
     var videoElt = document.getElementById("video_tag");
