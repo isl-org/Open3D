@@ -44,11 +44,3 @@ class WebVisualizer(widgets.DOMWidget):
 
     def show(self):
         display(self)
-
-        # TODO: Remove this hack. This is to trigger WebRtcStreamer connection
-        # AFTER the <video> tag has established.
-        time.sleep(2)
-        if self.value == "x@gmail.com":
-            self.value = "y@gmail.com"
-        else:
-            self.value = "x@gmail.com"

@@ -74,78 +74,69 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     // The `el` property is the DOM element associated with the view
     this.el.appendChild(this.videoElt);
 
-    // Python -> JavaScript update
-    // this.model.on("change:value", this.value_changed, this);
-    this.value_changed(this.videoElt);
-  },
-
-  value_changed: function (videoElt) {
-    console.log("value_changed");
-    this.webRtcServer = new WebRtcStreamer(
-      videoElt,
+    // Create WebRTC stream
+    this.webRtcClient = new WebRtcStreamer(
+      this.videoElt,
       "http://localhost:8888/"
     );
-    this.webRtcServer.connect("image://Open3D");
+    this.webRtcClient.connect("image://Open3D");
 
     // Register callbacks for videoElt.
-    // var videoElt = document.getElementById("video_tag");
-    if (videoElt) {
-      videoElt.addEventListener("mousedown", (event) => {
+    this.videoElt.addEventListener("mousedown", (event) => {
+      var msg =
+        "mousedown " +
+        event.offsetX +
+        " " +
+        event.offsetY +
+        " " +
+        getModifiers(event);
+      console.log(msg);
+      this.webRtcClient.dataChannel.send(msg);
+    });
+    this.videoElt.addEventListener("mouseup", (event) => {
+      var msg =
+        "mouseup " +
+        event.offsetX +
+        " " +
+        event.offsetY +
+        " " +
+        getModifiers(event);
+      console.log(msg);
+      this.webRtcClient.dataChannel.send(msg);
+    });
+    this.videoElt.addEventListener("mousemove", (event) => {
+      var msg =
+        "mousemove " +
+        event.offsetX +
+        " " +
+        event.offsetY +
+        " " +
+        getModifiers(event);
+      console.log(msg);
+      this.webRtcClient.dataChannel.send(msg);
+    });
+    this.videoElt.addEventListener(
+      "wheel",
+      (event) => {
+        // Prevent propagating the wheel event to the browser.
+        // https://stackoverflow.com/a/23606063/1255535
+        event.preventDefault();
         var msg =
-          "mousedown " +
+          "wheel " +
           event.offsetX +
           " " +
           event.offsetY +
           " " +
-          getModifiers(event);
+          getModifiers(event) +
+          " " +
+          event.deltaX +
+          " " +
+          event.deltaY;
         console.log(msg);
-        this.webRtcServer.dataChannel.send(msg);
-      });
-      videoElt.addEventListener("mouseup", (event) => {
-        var msg =
-          "mouseup " +
-          event.offsetX +
-          " " +
-          event.offsetY +
-          " " +
-          getModifiers(event);
-        console.log(msg);
-        this.webRtcServer.dataChannel.send(msg);
-      });
-      videoElt.addEventListener("mousemove", (event) => {
-        var msg =
-          "mousemove " +
-          event.offsetX +
-          " " +
-          event.offsetY +
-          " " +
-          getModifiers(event);
-        console.log(msg);
-        this.webRtcServer.dataChannel.send(msg);
-      });
-      videoElt.addEventListener(
-        "wheel",
-        (event) => {
-          // Prevent propagating the wheel event to the browser.
-          // https://stackoverflow.com/a/23606063/1255535
-          event.preventDefault();
-          var msg =
-            "wheel " +
-            event.offsetX +
-            " " +
-            event.offsetY +
-            " " +
-            getModifiers(event) +
-            " " +
-            event.deltaX +
-            " " +
-            event.deltaY;
-          console.log(msg);
-          this.webRtcServer.dataChannel.send(msg);
-        },
-        { passive: false }
-      );
-    }
+        this.webRtcClient.dataChannel.send(msg);
+      },
+      { passive: false }
+    );
   },
 });
 
