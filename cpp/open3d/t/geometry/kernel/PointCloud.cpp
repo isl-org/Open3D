@@ -38,14 +38,20 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 void Unproject(const core::Tensor& depth,
-               const core::Tensor& image_colors,
+               utility::optional<std::reference_wrapper<const core::Tensor>>
+                       image_colors,
                core::Tensor& points,
-               core::Tensor& colors,
+               utility::optional<std::reference_wrapper<core::Tensor>> colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
                float depth_max,
                int64_t stride) {
+    if (image_colors.has_value() != colors.has_value()) {
+        utility::LogError(
+                "[Unproject] Both or none of image_colors and colors must have "
+                "values.");
+    }
     core::Device device = depth.GetDevice();
 
     core::Tensor intrinsics_d = intrinsics.To(device);

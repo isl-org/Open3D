@@ -36,35 +36,40 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 void Unproject(const core::Tensor& depth,
-               const core::Tensor& image_colors,
+               utility::optional<std::reference_wrapper<const core::Tensor>>
+                       image_colors,
                core::Tensor& points,
-               core::Tensor& colors,
+               utility::optional<std::reference_wrapper<core::Tensor>> colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
                float depth_max,
                int64_t stride);
 
-void UnprojectCPU(const core::Tensor& depth,
-                  const core::Tensor& image_colors,
-                  core::Tensor& points,
-                  core::Tensor& colors,
-                  const core::Tensor& intrinsics,
-                  const core::Tensor& extrinsics,
-                  float depth_scale,
-                  float depth_max,
-                  int64_t stride);
+void UnprojectCPU(
+        const core::Tensor& depth,
+        utility::optional<std::reference_wrapper<const core::Tensor>>
+                image_colors,
+        core::Tensor& points,
+        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max,
+        int64_t stride);
 
 #ifdef BUILD_CUDA_MODULE
-void UnprojectCUDA(const core::Tensor& depth,
-                   const core::Tensor& image_colors,
-                   core::Tensor& points,
-                   core::Tensor& colors,
-                   const core::Tensor& intrinsics,
-                   const core::Tensor& extrinsics,
-                   float depth_scale,
-                   float depth_max,
-                   int64_t stride);
+void UnprojectCUDA(
+        const core::Tensor& depth,
+        utility::optional<std::reference_wrapper<const core::Tensor>>
+                image_colors,
+        core::Tensor& points,
+        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max,
+        int64_t stride);
 #endif
 }  // namespace pointcloud
 }  // namespace kernel

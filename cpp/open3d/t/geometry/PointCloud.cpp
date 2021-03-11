@@ -159,9 +159,8 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
     depth.AsTensor().AssertDtype(core::Dtype::UInt16);
 
     core::Tensor points;
-    core::Tensor empty_colors;
-    kernel::pointcloud::Unproject(depth.AsTensor(), empty_colors, points,
-                                  empty_colors, intrinsics, extrinsics,
+    kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt, points,
+                                  utility::nullopt, intrinsics, extrinsics,
                                   depth_scale, depth_max, stride);
     return PointCloud(points);
 }
@@ -173,12 +172,8 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            float depth_max,
                                            int stride) {
     rgbd_image.depth_.AsTensor().AssertDtype(core::Dtype::UInt16);
-    core::Tensor image_colors;
-    if (rgbd_image.color_.GetDtype() == core::Dtype::Float32) {
-        image_colors = rgbd_image.color_.AsTensor();
-    } else {
-        image_colors = rgbd_image.color_.To(core::Dtype::Float32).AsTensor();
-    }
+    core::Tensor image_colors = rgbd_image.color_.AsTensor().To(
+            core::Dtype::Float32, /*copy=*/false);
 
     core::Tensor points, colors;
     kernel::pointcloud::Unproject(rgbd_image.depth_.AsTensor(), image_colors,

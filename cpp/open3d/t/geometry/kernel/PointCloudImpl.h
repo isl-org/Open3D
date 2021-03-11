@@ -48,17 +48,18 @@ void UnprojectCUDA
 void UnprojectCPU
 #endif
         (const core::Tensor& depth,
-         const core::Tensor& image_colors,
+         utility::optional<std::reference_wrapper<const core::Tensor>>
+                 image_colors,
          core::Tensor& points,
-         core::Tensor& colors,
+         utility::optional<std::reference_wrapper<core::Tensor>> colors,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
          float depth_max,
          int64_t stride) {
-    const bool have_colors = (image_colors.NumElements() != 0);
+    const bool have_colors = image_colors.has_value();
     NDArrayIndexer depth_indexer(depth, 2);
-    NDArrayIndexer image_colors_indexer(image_colors, have_colors ? 2 : 0);
+    NDArrayIndexer image_colors_indexer;
     TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
 
     // Output
@@ -68,11 +69,15 @@ void UnprojectCPU
     points = core::Tensor({rows_strided * cols_strided, 3},
                           core::Dtype::Float32, depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
+    NDArrayIndexer colors_indexer;
     if (have_colors) {
-        colors = core::Tensor({rows_strided * cols_strided, 3},
-                              core::Dtype::Float32, image_colors.GetDevice());
+        const auto& imcol = image_colors.value().get();
+        image_colors_indexer = NDArrayIndexer{imcol, 2};
+        colors.value().get() =
+                core::Tensor({rows_strided * cols_strided, 3},
+                             core::Dtype::Float32, imcol.GetDevice());
+        colors_indexer = NDArrayIndexer(colors.value().get(), 1);
     }
-    NDArrayIndexer colors_indexer(colors, have_colors ? 1 : 0);
 
     // Counter
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -127,7 +132,8 @@ void UnprojectCPU
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {
-        colors = colors.Slice(0, 0, total_pts_count);
+        colors.value().get() =
+                colors.value().get().Slice(0, 0, total_pts_count);
     }
 }
 }  // namespace pointcloud
