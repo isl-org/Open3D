@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Blob.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LapackWrapper.h"
@@ -46,30 +47,30 @@ void SolveCUDA(void* A_data,
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;
-        int* dinfo =
-                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+        Blob dinfo(sizeof(int), device);
 
         OPEN3D_CUSOLVER_CHECK(
                 getrf_cuda_buffersize<scalar_t>(handle, n, n, n, &len),
                 "getrf_buffersize failed in SolveCUDA");
-        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
+        Blob workspace(len * sizeof(scalar_t), device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
-                getrf_cuda<scalar_t>(handle, n, n,
-                                     static_cast<scalar_t*>(A_data), n,
-                                     static_cast<scalar_t*>(workspace),
-                                     static_cast<int*>(ipiv_data), dinfo),
-                "getrf failed in SolveCUDA", dinfo, device);
+                getrf_cuda<scalar_t>(
+                        handle, n, n, static_cast<scalar_t*>(A_data), n,
+                        static_cast<scalar_t*>(workspace.GetDataPtr()),
+                        static_cast<int*>(ipiv_data),
+                        static_cast<int*>(dinfo.GetDataPtr())),
+                "getrf failed in SolveCUDA",
+                static_cast<int*>(dinfo.GetDataPtr()), device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                 getrs_cuda<scalar_t>(handle, CUBLAS_OP_N, n, k,
                                      static_cast<scalar_t*>(A_data), n,
                                      static_cast<int*>(ipiv_data),
-                                     static_cast<scalar_t*>(B_data), n, dinfo),
-                "getrs failed in SolveCUDA", dinfo, device);
-
-        MemoryManager::Free(workspace, device);
-        MemoryManager::Free(dinfo, device);
+                                     static_cast<scalar_t*>(B_data), n,
+                                     static_cast<int*>(dinfo.GetDataPtr())),
+                "getrs failed in SolveCUDA",
+                static_cast<int*>(dinfo.GetDataPtr()), device);
     });
 }
 

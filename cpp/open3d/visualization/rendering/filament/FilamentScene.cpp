@@ -276,8 +276,6 @@ void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
         found->second.is_active = true;
-        // NOTE: This value should match the value of render_count_ in
-        // FilamentRenderer::EnableCaching
         found->second.render_count = 1;
     }
 }

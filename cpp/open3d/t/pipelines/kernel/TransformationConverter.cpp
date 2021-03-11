@@ -28,8 +28,10 @@
 
 #include <cmath>
 
+#include "open3d/core/CoreUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace t {
@@ -37,8 +39,16 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
-    core::Dtype dtype = core::Dtype::Float32;
     core::Device device = R.GetDevice();
+    core::Dtype dtype = R.GetDtype();
+
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                " [RtToTransformation]: Only Float32 abd Float64 supported, "
+                "but got {} ",
+                dtype.ToString());
+    }
+
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     R.AssertShape({3, 3});
     R.AssertDtype(dtype);
@@ -59,30 +69,49 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     return transformation;
 }
 
-core::Tensor PoseToTransformation(const core::Tensor &pose) {
-    core::Dtype dtype = core::Dtype::Float32;
-    pose.AssertShape({6});
-    pose.AssertDtype(dtype);
-    core::Device device = pose.GetDevice();
-    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    transformation = transformation.Contiguous();
-    core::Tensor pose_ = pose.Contiguous();
-    float *transformation_ptr = transformation.GetDataPtr<float>();
-    const float *pose_ptr = pose_.GetDataPtr<float>();
+template <typename scalar_t>
+static void PoseToTransformationDevice(
+        core::Tensor &transformation,
+        const core::Tensor &pose,
+        const core::Device::DeviceType &device_type) {
+    scalar_t *transformation_ptr = transformation.GetDataPtr<scalar_t>();
+    const scalar_t *pose_ptr = pose.GetDataPtr<scalar_t>();
 
-    // Rotation from pose.
-    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        PoseToTransformationImpl(transformation_ptr, pose_ptr);
+        PoseToTransformationImpl<scalar_t>(transformation_ptr, pose_ptr);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        PoseToTransformationCUDA(transformation_ptr, pose_ptr);
+        PoseToTransformationCUDA<scalar_t>(transformation_ptr, pose_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");
     }
+}
+
+core::Tensor PoseToTransformation(const core::Tensor &pose) {
+    core::Device device = pose.GetDevice();
+    core::Dtype dtype = pose.GetDtype();
+
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                " [PoseToTransformation]: Only Float32 abd Float64 supported, "
+                "but got {} ",
+                dtype.ToString());
+    }
+
+    pose.AssertShape({6});
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+    transformation = transformation.Contiguous();
+    core::Tensor pose_ = pose.Contiguous();
+
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        core::Device::DeviceType device_type = device.GetType();
+        PoseToTransformationDevice<scalar_t>(transformation, pose_,
+                                             device_type);
+    });
+
     // Translation from pose.
     transformation.SetItem(
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
