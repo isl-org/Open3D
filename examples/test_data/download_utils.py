@@ -26,7 +26,9 @@
 
 from pathlib import Path
 import urllib.request
-import sys
+import json
+import hashlib
+import io
 
 # Typically "Open3D/examples/test_data", the test data dir.
 _test_data_dir = Path(__file__).parent.absolute().resolve()
@@ -34,38 +36,41 @@ _test_data_dir = Path(__file__).parent.absolute().resolve()
 # Typically "Open3D/examples/test_data/open3d_downloads", the test data download dir.
 _download_dir = _test_data_dir / "open3d_downloads"
 
-sys.path.append(str(_test_data_dir))
-from download_file_list import map_url_to_relative_path
+
+def _compute_sha256(path):
+    """calculate sha256 checksum for the file and return in hex"""
+    # http://stackoverflow.com/a/17782753 with fixed block size
+    algo = hashlib.sha256()
+    with io.open(str(path), 'br') as f:
+        for chunk in iter(lambda: f.read(4096), b''):
+            algo.update(chunk)
+    return algo.hexdigest()
 
 
-def _download_file(url, save_path, overwrite):
-    """
-    Args:
-        url: Direct download URL.
-        save_path: Absolute full path to save the downloaded file.
-        overwrite: If true, overwrite the existing file.
-    """
-    save_path = Path(save_path)
+def _download_file(url, path, sha256):
+    full_path = _download_dir / Path(path)
 
     # The saved file must be inside _test_data_dir.
-    if _download_dir not in save_path.parents:
-        raise AssertionError(f"{save_path} must be inside {_download_dir}.")
+    if _download_dir not in full_path.parents:
+        raise AssertionError(f"{full_path} must be inside {_download_dir}.")
 
     # Supports sub directory inside _test_data_dir, e.g.
     # Open3D/examples/test_data/open3d_downloads/foo/bar/my_file.txt
-    save_path.parent.mkdir(parents=True, exist_ok=True)
+    full_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if save_path.exists() and not overwrite:
-        print(f"[open3d_downloads] {str(save_path)} already exists, skipped.")
+    if full_path.exists() and _compute_sha256(full_path) == sha256:
+        print(f"[open3d_downloads] {str(full_path)} already exists, skipped.")
     else:
         try:
-            urllib.request.urlretrieve(url, save_path)
-            print(f"Downloaded {url}\n        to {str(save_path)}")
+            urllib.request.urlretrieve(url, full_path)
+            print(f"Downloaded {url}\n        to {str(full_path)}")
         except Exception as e:
             print(f"Failed to download {url}: {str(e)}")
 
 
-def download_all_files(overwrite=False):
-    for url, relative_path in map_url_to_relative_path.items():
-        save_path = _download_dir / relative_path
-        _download_file(url, save_path, overwrite)
+def download_all_files():
+    with open(_test_data_dir / "download_file_list.json") as f:
+        datasets = json.load(f)
+
+    for name, dataset in datasets.items():
+        _download_file(dataset["url"], dataset["path"], dataset["sha256"])
