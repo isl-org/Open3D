@@ -35,6 +35,76 @@ namespace core {
 namespace eigen_converter {
 
 template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrix(const core::Tensor &tensor) {
+    core::Dtype dtype;
+    if (std::is_same<T, double>::value) {
+        dtype = core::Dtype::Float64;
+    } else if (std::is_same<T, float>::value) {
+        dtype = core::Dtype::Float32;
+    } else if (std::is_same<T, int>::value) {
+        dtype = core::Dtype::Int32;
+    } else {
+        utility::LogError(
+                " [TensorToEigenMatrix]: Only supports double, float and int "
+                "(MatrixXd, MatrixXf, MatrixXi).");
+    }
+
+    core::SizeVector dim = tensor.GetShape();
+    if (dim.size() != 2) {
+        utility::LogError(
+                " [TensorToEigenMatrix]: Number of dimensions supported = 2, "
+                "but got {}",
+                dim.size());
+    }
+
+    core::Tensor tensor_copy =
+            tensor.Contiguous().To(core::Device("CPU:0"), dtype);
+    T *tensor_ptr = tensor_copy.GetDataPtr<T>();
+
+    Eigen::Map<
+            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+            EigenMatrixX(tensor_ptr, dim[0], dim[1]);
+    return EigenMatrixX;
+}
+
+Eigen::Matrix<double, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4d(
+        const core::Tensor &tensor) {
+    tensor.AssertShape({4, 4}, " - [TensorToEigenMatrix4d].");
+    return TensorToEigenMatrix<double>(tensor);
+}
+
+Eigen::Matrix<float, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4f(
+        const core::Tensor &tensor) {
+    tensor.AssertShape({4, 4}, " - [TensorToEigenMatrix4f].");
+    return TensorToEigenMatrix<float>(tensor);
+}
+
+Eigen::Matrix<int, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4i(
+        const core::Tensor &tensor) {
+    tensor.AssertShape({4, 4}, " - [TensorToEigenMatrix4i].");
+    return TensorToEigenMatrix<int>(tensor);
+}
+
+Eigen::Matrix<double, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6d(
+        const core::Tensor &tensor) {
+    tensor.AssertShape({6, 6}, " - [TensorToEigenMatrix6d].");
+    return TensorToEigenMatrix<double>(tensor);
+}
+
+Eigen::Matrix<float, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6f(
+        const core::Tensor &tensor) {
+    tensor.AssertShape({6, 6}, " - [TensorToEigenMatrix6f].");
+    return TensorToEigenMatrix<float>(tensor);
+}
+
+Eigen::Matrix<int, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6i(
+        const core::Tensor &tensor) {
+    tensor.AssertShape({6, 6}, " - [TensorToEigenMatrix6i].");
+    return TensorToEigenMatrix<int>(tensor);
+}
+
+template <typename T>
 static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
         const core::Tensor &tensor) {
     static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,

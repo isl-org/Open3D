@@ -50,6 +50,28 @@ core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
                         dtype);
 }
 
+template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrix(const core::Tensor &tensor);
+
+Eigen::Matrix<double, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4d(
+        const core::Tensor &tensor);
+
+Eigen::Matrix<float, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4f(
+        const core::Tensor &tensor);
+
+Eigen::Matrix<int, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4i(
+        const core::Tensor &tensor);
+
+Eigen::Matrix<double, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6d(
+        const core::Tensor &tensor);
+
+Eigen::Matrix<float, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6f(
+        const core::Tensor &tensor);
+
+Eigen::Matrix<int, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6i(
+        const core::Tensor &tensor);
+
 /// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
 /// the tensor dtype, the output will be converted to to double.
