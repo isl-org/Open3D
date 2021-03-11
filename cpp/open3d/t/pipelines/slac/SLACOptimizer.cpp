@@ -63,8 +63,11 @@ std::shared_ptr<PointCloud> PreprocessPointCloud(
     }
 }
 
+/// Aggressive pruning -- reject any suspicious pair
 core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
                                        TPointCloud& tpcd_j,
+                                       const core::Tensor& T_i,
+                                       const core::Tensor& T_j,
                                        const core::Tensor& T_ij,
                                        float threshold) {
     // Obtain correspondence via nns
@@ -75,6 +78,56 @@ core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
     core::Tensor corres = core::eigen_converter::EigenVector2iVectorToTensor(
             result.correspondence_set_, core::Dtype::Int64,
             core::Device("CPU:0"));
+
+    TPointCloud tpcd_i_cropped(tpcd_i.GetPoints().IndexGet({corres.T()[0]}));
+    TPointCloud tpcd_j_cropped(tpcd_j.GetPoints().IndexGet({corres.T()[1]}));
+    tpcd_i_cropped.Transform(T_i);
+    tpcd_j_cropped.Transform(T_j);
+
+    // N x 3
+    core::Tensor residual =
+            tpcd_i_cropped.GetPoints() - tpcd_j_cropped.GetPoints();
+    // utility::LogInfo("residual shape {}", residual.GetShape());
+
+    core::Tensor square_residual = (residual * residual).Sum({1});
+    // utility::LogInfo("square residual shape {}", square_residual.GetShape());
+
+    core::Tensor inliers = square_residual.Le(threshold * threshold);
+    // utility::LogInfo("inliers shape {}", inliers.GetShape());
+
+    int64_t num_inliers =
+            inliers.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
+    float inlier_ratio = float(num_inliers) / float(inliers.GetLength());
+    utility::LogInfo("Tij and (Ti, Tj) compatibility ratio = {}.",
+                     inlier_ratio);
+
+    if (inlier_ratio < 0.3) {
+        Eigen::Matrix4d flip;
+        flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
+        auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_i.Clone().Transform(T_i).ToLegacyPointCloud());
+        pcd_i_corres->PaintUniformColor({1, 0, 0});
+        pcd_i_corres->Transform(flip);
+        auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_j.Clone().Transform(T_j).ToLegacyPointCloud());
+        pcd_j_corres->PaintUniformColor({0, 1, 0});
+        pcd_j_corres->Transform(flip);
+        std::vector<std::pair<int, int>> corres_lines;
+        for (size_t i = 0; i < result.correspondence_set_.size(); ++i) {
+            corres_lines.push_back(
+                    std::make_pair(result.correspondence_set_[i](0),
+                                   result.correspondence_set_[i](1)));
+        }
+        auto lineset =
+                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                        *pcd_i_corres, *pcd_j_corres, corres_lines);
+        lineset->PaintUniformColor({0, 0, 1});
+
+        visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
+
+        return core::Tensor();
+    }
+
     return corres;
 
     // Make correspondence indices (N x 2)
@@ -140,7 +193,16 @@ void GetCorrespondencesForPointClouds(
         auto tpcd_i = CreateTPCDFromFile(fnames_processed[i]);
         auto tpcd_j = CreateTPCDFromFile(fnames_processed[j]);
 
+        auto pose_i = pose_graph.nodes_[i].pose_;
+        auto pose_j = pose_graph.nodes_[j].pose_;
         auto pose_ij = edge.transformation_;
+
+        core::Tensor T_i =
+                core::eigen_converter::EigenMatrixToTensor(pose_i).To(
+                        core::Dtype::Float32);
+        core::Tensor T_j =
+                core::eigen_converter::EigenMatrixToTensor(pose_j).To(
+                        core::Dtype::Float32);
         core::Tensor T_ij =
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32);
@@ -148,8 +210,8 @@ void GetCorrespondencesForPointClouds(
         float dist_threshold =
                 option.voxel_size_ < 0 ? 0.008 : 1.4 * option.voxel_size_;
 
-        core::Tensor corres =
-                GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
+        core::Tensor corres = GetCorrespondencesForPair(
+                tpcd_i, tpcd_j, T_i, T_j, T_ij, dist_threshold);
 
         if (corres.GetLength() > 0) {
             corres.Save(corres_fname);
