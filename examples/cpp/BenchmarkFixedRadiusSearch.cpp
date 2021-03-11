@@ -25,25 +25,20 @@
 // ----------------------------------------------------------------------------
 
 // To run, from Open3D directory:
-/* [CPU]: Open3D$ ./build/bin/examples/BenchmarkNNS CPU:0 \
-                    examples/test_data/ICP/cloud_bin_0.pcd \
-                    examples/test_data/ICP/cloud_bin_1.pcd
-  [CUDA]: Open3D$ ./build/bin/examples/BenchmarkNNS CUDA:0 \
-                    examples/test_data/ICP/cloud_bin_0.pcd \
-                    examples/test_data/ICP/cloud_bin_1.pcd
-*/
+/* Open3D$ ./build/bin/examples/BenchmarkFixedRadiusSearch
+ */
 
 #include "open3d/Open3D.h"
 using namespace open3d;
 
 // Parameters to adjust according to the test pointcloud.
-double voxel_downsample_factor = 1.0;
-double max_correspondence_dist = 0.2;
+double voxel_downsample_factor = 0.01;
+double max_correspondence_dist = 0.02;
 int iterations = 5;
 
 // Prepare source and target pointcloud on device, from a single input source.
-inline void PrepareInput(t::geometry::PointCloud &input,
-                         core::Tensor &transformation_,
+inline void PrepareInput(t::geometry::PointCloud &target,
+                         t::geometry::PointCloud &source,
                          t::geometry::PointCloud &target_device,
                          t::geometry::PointCloud &source_device,
                          core::Device device,
@@ -56,28 +51,30 @@ int main(int argc, char *argv[]) {
     core::Dtype dtype = core::Dtype::Float32;
 
     // t::io::ReadPointCloud, changes the device to CPU and DType to Float64
-    t::geometry::PointCloud input_;
-    // t::geometry::PointCloud target(device);
-    //     t::io::ReadPointCloud(argv[2], input_, {"auto", false, false, true});
-    t::io::ReadPointCloud(fmt::format("{}/open3d_downloads/ICP/Civil.pcd",
-                                      std::string(TEST_DATA_DIR)),
-                          input_, {"auto", false, false, true});
+    t::geometry::PointCloud source_;
+    t::geometry::PointCloud target_;
 
+    t::io::ReadPointCloud(
+            fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR)),
+            source_, {"auto", false, false, true});
+    t::io::ReadPointCloud(
+            fmt::format("{}/ICP/cloud_bin_1.pcd", std::string(TEST_DATA_DIR)),
+            target_, {"auto", false, false, true});
     utility::LogInfo(" Input Successful ");
 
     // Creating Tensor from manual transformation vector.
-    // target pointcloud = source.Transform(transformation_);
     core::Tensor transformation_ =
-            core::Tensor::Init<float>({{0.862, 0.011, -0.507, 0.5},
-                                       {-0.139, 0.967, -0.215, 0.7},
-                                       {0.487, 0.255, 0.835, -1.4},
-                                       {0.0, 0.0, 0.0, 1.0}},
-                                      core::Device("CPU:0"));
+            core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                        {-0.139, 0.967, -0.215, 0.7},
+                                        {0.487, 0.255, 0.835, -1.4},
+                                        {0.0, 0.0, 0.0, 1.0}},
+                                       core::Device("CPU:0"));
+    source_ = source_.Transform(transformation_);
 
     t::geometry::PointCloud target_device(device);
     t::geometry::PointCloud source_device(device);
-    PrepareInput(input_, transformation_, target_device, source_device, device,
-                 dtype);
+    PrepareInput(target_, source_, target_device, source_device, device, dtype);
+
     core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
     utility::LogInfo(" Processing Input on {} Success", device.ToString());
 
@@ -121,30 +118,24 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-inline void PrepareInput(t::geometry::PointCloud &input,
-                         core::Tensor &transformation_,
+inline void PrepareInput(t::geometry::PointCloud &target_,
+                         t::geometry::PointCloud &source_,
                          t::geometry::PointCloud &target_device,
                          t::geometry::PointCloud &source_device,
                          core::Device device,
                          core::Dtype dtype) {
-    // geometry::PointCloud legacy_s = source_.ToLegacyPointCloud();
-    geometry::PointCloud legacy_t = input.ToLegacyPointCloud();
+    geometry::PointCloud legacy_s = source_.ToLegacyPointCloud();
+    geometry::PointCloud legacy_t = target_.ToLegacyPointCloud();
 
-    // legacy_s.VoxelDownSample(voxel_downsample_factor);
-    legacy_t.VoxelDownSample(voxel_downsample_factor);
+    legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
+    legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
     utility::LogInfo(" Downsampling Successful ");
 
-    // legacy_t.EstimateNormals(open3d::geometry::KDTreeSearchParamKNN(),
-    // false); utility::LogInfo(" Normal Estimation Successful ");
-
     t::geometry::PointCloud source =
-            t::geometry::PointCloud::FromLegacyPointCloud(legacy_t);
+            t::geometry::PointCloud::FromLegacyPointCloud(legacy_s);
 
     t::geometry::PointCloud target =
             t::geometry::PointCloud::FromLegacyPointCloud(legacy_t);
-
-    target = target.Transform(transformation_);
-    utility::LogInfo(" Target transformation Successful ");
 
     core::Tensor source_points =
             source.GetPoints().To(device, dtype, /*copy=*/true);
@@ -153,9 +144,6 @@ inline void PrepareInput(t::geometry::PointCloud &input,
 
     core::Tensor target_points =
             target.GetPoints().To(device, dtype, /*copy=*/true);
-    // core::Tensor target_normals =
-    //         target.GetPointNormals().To(device, dtype, /*copy=*/true);
     target_device.SetPoints(target_points);
-    // target_device.SetPointNormals(target_normals);
     utility::LogInfo(" Creating Target Pointcloud on device Successful ");
 }
