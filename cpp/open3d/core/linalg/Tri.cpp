@@ -32,7 +32,7 @@
 namespace open3d {
 namespace core {
 
-inline void CheckInput(const Tensor& A, const int diagonal) {
+static void CheckInput(const Tensor& A, const int diagonal) {
     // Check dimensions.
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {

@@ -109,7 +109,7 @@ To install Open3D C++ library:
     make install
 
 To link a C++ project against the Open3D C++ library, please refer to
-:ref:`create_cplusplus_project`.
+:ref:`cplusplus_example_project`.
 
 
 To install Open3D Python library, build one of the following options:
@@ -182,7 +182,7 @@ in Visual Studio.
     cmake --build . --config Release --target INSTALL
 
 To link a C++ project against the Open3D C++ library, please refer to
-:ref:`create_cplusplus_project`.
+:ref:`cplusplus_example_project`.
 
 To install Open3D Python library, build the corresponding python installation
 targets in terminal or Visual Studio.

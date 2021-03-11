@@ -34,7 +34,7 @@ namespace open3d {
 namespace core {
 
 // Get column permutation tensor from ipiv (swaping index array).
-inline core::Tensor GetColPermutation(const Tensor& ipiv,
+static core::Tensor GetColPermutation(const Tensor& ipiv,
                                       int number_of_indices,
                                       int number_of_rows) {
     Tensor full_ipiv = Tensor::Arange(0, number_of_rows, 1, core::Dtype::Int32,
@@ -54,7 +54,7 @@ inline core::Tensor GetColPermutation(const Tensor& ipiv,
 }
 
 // Decompose output in P, L, U matrix form.
-inline void OutputToPLU(const Tensor& output,
+static void OutputToPLU(const Tensor& output,
                         Tensor& permutation,
                         Tensor& lower,
                         Tensor& upper,
