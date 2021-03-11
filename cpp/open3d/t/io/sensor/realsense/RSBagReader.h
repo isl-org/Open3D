@@ -66,7 +66,7 @@ namespace io {
 ///
 class RSBagReader : public RGBDVideoReader {
 public:
-    static const size_t DEFAULT_BUFFER_SIZE = 32;
+    static constexpr size_t DEFAULT_BUFFER_SIZE{32};
 
     /// Constructor
     ///

@@ -42,7 +42,7 @@ namespace open3d {
 namespace t {
 namespace io {
 
-const size_t RSBagReader::DEFAULT_BUFFER_SIZE;
+constexpr size_t RSBagReader::DEFAULT_BUFFER_SIZE;
 
 RSBagReader::RSBagReader(size_t buffer_size)
     : frame_buffer_(buffer_size),
