@@ -186,7 +186,8 @@ void VisualizeWarp(const geometry::PointCloud& tpcd_param,
             open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
                     *pcd_init_grid, *pcd_curr_grid, deform_lines);
 
-    visualization::DrawGeometries({pcd, pcd_warped});
+    visualization::DrawGeometries(
+            {pcd, pcd_warped, pcd_init_grid, pcd_curr_grid, lineset});
 }
 
 void VisualizeRegularizor(ControlGrid& cgrid) {

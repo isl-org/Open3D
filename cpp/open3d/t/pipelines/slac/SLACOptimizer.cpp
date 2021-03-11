@@ -144,8 +144,9 @@ void GetCorrespondencesForPointClouds(
         core::Tensor T_ij =
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32);
+        // 0.008 ~ 3.0 / 512 * 1.4
         float dist_threshold =
-                option.voxel_size_ < 0 ? 0.01 : 3 * option.voxel_size_;
+                option.voxel_size_ < 0 ? 0.008 : 1.4 * option.voxel_size_;
 
         core::Tensor corres =
                 GetCorrespondencesForPair(tpcd_i, tpcd_j, T_ij, dist_threshold);
@@ -202,18 +203,29 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
                                      Ri_normal_ps, i, j);
 
     if (visualize) {
-        // t::geometry::PointCloud tpcd_i_corres(Ti_ps);
-        // t::geometry::PointCloud tpcd_j_corres(Tj_qs);
-        // auto pcd_i_corres =
-        // std::make_shared<open3d::geometry::PointCloud>(
-        //         tpcd_i_corres.ToLegacyPointCloud());
-        // pcd_i_corres->PaintUniformColor({1, 0, 0});
-        // auto pcd_j_corres =
-        // std::make_shared<open3d::geometry::PointCloud>(
-        //         tpcd_j_corres.ToLegacyPointCloud());
-        // pcd_j_corres->PaintUniformColor({0, 1, 0});
+        utility::LogInfo("{} -> {}", i, j);
+        t::geometry::PointCloud tpcd_i_corres(Ti_ps);
+        t::geometry::PointCloud tpcd_j_corres(Tj_qs);
 
-        // visualization::DrawGeometries({pcd_i_corres, pcd_j_corres});
+        Eigen::Matrix4d flip;
+        flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
+        auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_i_corres.ToLegacyPointCloud());
+        pcd_i_corres->PaintUniformColor({1, 0, 0});
+        pcd_i_corres->Transform(flip);
+        auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+                tpcd_j_corres.ToLegacyPointCloud());
+        pcd_j_corres->PaintUniformColor({0, 1, 0});
+        pcd_j_corres->Transform(flip);
+        std::vector<std::pair<int, int>> corres_lines;
+        for (size_t i = 0; i < pcd_i_corres->points_.size(); ++i) {
+            corres_lines.push_back(std::make_pair(i, i));
+        }
+        auto lineset =
+                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+                        *pcd_i_corres, *pcd_j_corres, corres_lines);
+
+        visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
     }
 }
 
@@ -416,11 +428,11 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
         utility::LogError("Dimension Mismatch");
     }
     for (int64_t i = 0; i < delta_poses.GetLength(); ++i) {
+        core::Tensor pose_delta = kernel::PoseToTransformation(delta_poses[i]);
         core::Tensor pose_tensor =
-                kernel::PoseToTransformation(delta_poses[i])
-                        .Matmul(core::eigen_converter::EigenMatrixToTensor(
-                                        fragment_pose_graph.nodes_[i].pose_)
-                                        .To(core::Dtype::Float32));
+                pose_delta.Matmul(core::eigen_converter::EigenMatrixToTensor(
+                                          fragment_pose_graph.nodes_[i].pose_)
+                                          .To(core::Dtype::Float32));
 
         Eigen::Matrix<float, -1, -1, Eigen::RowMajor> pose_eigen =
                 core::eigen_converter::TensorToEigenMatrix<float>(pose_tensor);

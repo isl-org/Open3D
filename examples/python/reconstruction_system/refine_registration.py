@@ -91,9 +91,6 @@ def multiscale_icp(source,
                 source_down, target_down, voxel_size[scale] * 1.4,
                 result_icp.transformation)
 
-    if config["debug_mode"]:
-        draw_registration_result_original_color(source, target,
-                                                result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
@@ -114,13 +111,27 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
     print("reading %s ..." % ply_file_names[t])
     target = o3d.io.read_point_cloud(ply_file_names[t])
 
-    if config["debug_mode"] and t == s + 1:
+    if config["debug_mode"]:
         draw_registration_result_original_color(source, target, transformation_init)
 
-    (transformation, information) = \
+    # We trust RGBD odometry more -- they always give us reasonable results, although a little bit less accurate.
+    # In comparison, colored and point-to-plane icp sometimes converges to worse or wrong states,
+    # which is crucial to the performance since odometry edges won't be pruned.
+    if t == s + 1:
+        voxel_size_hd = config["voxel_size"] / 4
+        source_down = source.voxel_down_sample(voxel_size_hd)
+        target_down = target.voxel_down_sample(voxel_size_hd)
+
+        # Reuse init pose and compute information matrix.
+        transformation = transformation_init
+        information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
+                source_down, target_down, voxel_size_hd * 1.4,
+                transformation)
+    else:
+        (transformation, information) = \
             local_refinement(source, target, transformation_init, config)
 
-    if config["debug_mode"] and t == s + 1:
+    if config["debug_mode"]:
         draw_registration_result_original_color(source, target, transformation)
         print(transformation)
         print(information)
@@ -164,6 +175,8 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
                                                                       1].pose)
 
         # if t == s + 1 and t > 182: filter for debugging
+        # if (s, t) in [(19, 24), (208, 240), (224, 245), (224, 246), (224, 247), (160, 168), (195, 207), (195, 208), (198, 210), (199, 207), (201, 223), (205, 223)]:
+        # if (s, t) not in [(0, 14), (160, 168), (180, 186), (195,207), (198, 210), (199, 207), (205, 223), (207, 209), (220, 228), (224, 246), (224, 247)]:
         if True:
             matching_results[s * n_files + t] = \
                 matching_result(s, t, transformation_init)

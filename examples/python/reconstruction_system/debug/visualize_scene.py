@@ -59,7 +59,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     path_to_scene = args.scene
-    scene = o3d.io.read_triangle_mesh(path_to_scene)
+    scene = o3d.io.read_point_cloud(path_to_scene)
 
     geometries = [scene]
     if args.poses:
