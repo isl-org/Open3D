@@ -49,69 +49,29 @@ core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
                         dtype);
 }
 
-/// \brief Converts a 2D Tensor to Eigen Matrix of type T. This
-/// function also takes care of dtype conversion and device transfer if
-/// necessary.
+/// \brief Converts a 2D Tensor to Eigen::MatrixXd of same shape. Regardless of
+/// the tensor dtype, the output will be converted to double.
 ///
-/// \param tensor A tensor of shape (N, M).
-/// \return Eigen matrix of type T, and shape (N, M).
-template <typename T>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-TensorToEigenMatrix(const core::Tensor &tensor);
+/// \param tensor A 2D tensor.
+/// \return Eigen::MatrixXi.
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXd(const core::Tensor &tensor);
 
-/// \brief Converts a Tensor of shape (4, 4) and to Eigen::Matrix4d. An
-/// exception will be thrown if the tensor shape is not (4, 4). Regardless of
-/// the tensor dtype, the output will be converted to to double.
+/// \brief Converts a 2D Tensor to Eigen::MatrixXf of same shape. Regardless of
+/// the tensor dtype, the output will be converted to float.
 ///
-/// \param tensor A tensor of shape (4, 4).
-/// \return Eigen::Matrix4d.
-Eigen::Matrix<double, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4d(
-        const core::Tensor &tensor);
+/// \param tensor A 2D tensor.
+/// \return Eigen::MatrixXf.
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXf(const core::Tensor &tensor);
 
-/// \brief Converts a Tensor of shape (4, 4) and to Eigen::Matrix4f. An
-/// exception will be thrown if the tensor shape is not (4, 4). Regardless of
-/// the tensor dtype, the output will be converted to to float.
+/// \brief Converts a 2D Tensor to Eigen::MatrixXi of same shape. Regardless of
+/// the tensor dtype, the output will be converted to int.
 ///
-/// \param tensor A tensor of shape (4, 4).
-/// \return Eigen::Matrix4f.
-Eigen::Matrix<float, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4f(
-        const core::Tensor &tensor);
-
-/// \brief Converts a Tensor of shape (4, 4) and to Eigen::Matrix4i. An
-/// exception will be thrown if the tensor shape is not (4, 4). Regardless of
-/// the tensor dtype, the output will be converted to to int.
-///
-/// \param tensor A tensor of shape (4, 4).
-/// \return Eigen::Matrix4i.
-Eigen::Matrix<int, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4i(
-        const core::Tensor &tensor);
-
-/// \brief Converts a Tensor of shape (6, 6) and to Eigen::Matrix6d. An
-/// exception will be thrown if the tensor shape is not (6, 6). Regardless of
-/// the tensor dtype, the output will be converted to to double.
-///
-/// \param tensor A tensor of shape (6, 6).
-/// \return Eigen::Matrix6d.
-Eigen::Matrix<double, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6d(
-        const core::Tensor &tensor);
-
-/// \brief Converts a Tensor of shape (6, 6) and to Eigen::Matrix6f. An
-/// exception will be thrown if the tensor shape is not (6, 6). Regardless of
-/// the tensor dtype, the output will be converted to to float.
-///
-/// \param tensor A tensor of shape (6, 6).
-/// \return Eigen::Matrix6f.
-Eigen::Matrix<float, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6f(
-        const core::Tensor &tensor);
-
-/// \brief Converts a Tensor of shape (6, 6) and to Eigen::Matrix6i. An
-/// exception will be thrown if the tensor shape is not (6, 6). Regardless of
-/// the tensor dtype, the output will be converted to to int.
-///
-/// \param tensor A tensor of shape (6, 6).
-/// \return Eigen::Matrix6i.
-Eigen::Matrix<int, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6i(
-        const core::Tensor &tensor);
+/// \param tensor A 2D tensor.
+/// \return Eigen::MatrixXi.
+Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXi(const core::Tensor &tensor);
 
 /// \brief Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of

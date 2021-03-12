@@ -48,76 +48,40 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
     // Device transfer and dtype conversions are handled.
     for (core::Dtype dtype : {core::Dtype::Float32, core::Dtype::Float64,
                               core::Dtype::Int32, core::Dtype::Int64}) {
-        // TensorToEigenMatrix<T>(tensor).
-        core::Tensor tensor = core::Tensor::Ones({5, 6}, dtype, device);
-        Eigen::Matrix<double, 5, 6, 1> eigen =
-                core::eigen_converter::TensorToEigenMatrix<double>(tensor);
-        core::Tensor tensor_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen);
-        // Memory is not shared.
-        eigen(1, 1) = 0;
-        EXPECT_TRUE(tensor_converted.AllClose(
-                core::Tensor::Ones({5, 6}, core::Dtype::Float64, cpu_device)));
+        // Testing on shapes {i, j} : {0, 0}, {0, 1}, {1, 0}, {1, 1}.
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 2; col++) {
+                // TensorToEigenMatrixXd.
+                core::Tensor tensor_d =
+                        core::Tensor::Ones({row, col}, dtype, device);
+                auto eigen_d =
+                        core::eigen_converter::TensorToEigenMatrixXd(tensor_d);
+                core::Tensor tensor_converted_d =
+                        core::eigen_converter::EigenMatrixToTensor(eigen_d);
+                EXPECT_TRUE(tensor_converted_d.AllClose(core::Tensor::Ones(
+                        {row, col}, core::Dtype::Float64, cpu_device)));
 
-        // TensorToEigenMatrix4d.
-        core::Tensor tensor4d = core::Tensor::Ones({4, 4}, dtype, device);
-        Eigen::Matrix<double, 4, 4, 1> eigen4d =
-                core::eigen_converter::TensorToEigenMatrix4d(tensor4d);
-        core::Tensor tensor4d_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen4d);
-        eigen4d(1, 1) = 0;
-        EXPECT_TRUE(tensor4d_converted.AllClose(
-                core::Tensor::Ones({4, 4}, core::Dtype::Float64, cpu_device)));
+                // TensorToEigenMatrixXf.
+                core::Tensor tensor_f =
+                        core::Tensor::Ones({row, col}, dtype, device);
+                auto eigen_f =
+                        core::eigen_converter::TensorToEigenMatrixXf(tensor_f);
+                core::Tensor tensor_converted_f =
+                        core::eigen_converter::EigenMatrixToTensor(eigen_f);
+                EXPECT_TRUE(tensor_converted_f.AllClose(core::Tensor::Ones(
+                        {row, col}, core::Dtype::Float32, cpu_device)));
 
-        // TensorToEigenMatrix4f.
-        core::Tensor tensor4f = core::Tensor::Ones({4, 4}, dtype, device);
-        Eigen::Matrix<float, 4, 4, 1> eigen4f =
-                core::eigen_converter::TensorToEigenMatrix4f(tensor4f);
-        core::Tensor tensor4f_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen4f);
-        eigen4f(1, 1) = 0;
-        EXPECT_TRUE(tensor4f_converted.AllClose(
-                core::Tensor::Ones({4, 4}, core::Dtype::Float32, cpu_device)));
-
-        // TensorToEigenMatrix4i.
-        core::Tensor tensor4i = core::Tensor::Ones({4, 4}, dtype, device);
-        Eigen::Matrix<int, 4, 4, 1> eigen4i =
-                core::eigen_converter::TensorToEigenMatrix4i(tensor4i);
-        core::Tensor tensor4i_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen4i);
-        eigen4i(1, 1) = 0;
-        EXPECT_TRUE(tensor4i_converted.AllClose(
-                core::Tensor::Ones({4, 4}, core::Dtype::Int32, cpu_device)));
-
-        // TensorToEigenMatrix6d.
-        core::Tensor tensor6d = core::Tensor::Ones({6, 6}, dtype, device);
-        Eigen::Matrix<double, 6, 6, 1> eigen6d =
-                core::eigen_converter::TensorToEigenMatrix6d(tensor6d);
-        core::Tensor tensor6d_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen6d);
-        eigen6d(1, 1) = 0;
-        EXPECT_TRUE(tensor6d_converted.AllClose(
-                core::Tensor::Ones({6, 6}, core::Dtype::Float64, cpu_device)));
-
-        // TensorToEigenMatrix6f.
-        core::Tensor tensor6f = core::Tensor::Ones({6, 6}, dtype, device);
-        Eigen::Matrix<float, 6, 6, 1> eigen6f =
-                core::eigen_converter::TensorToEigenMatrix6f(tensor6f);
-        core::Tensor tensor6f_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen6f);
-        eigen6f(1, 1) = 0;
-        EXPECT_TRUE(tensor6f_converted.AllClose(
-                core::Tensor::Ones({6, 6}, core::Dtype::Float32, cpu_device)));
-
-        // TensorToEigenMatrix6i.
-        core::Tensor tensor6i = core::Tensor::Ones({6, 6}, dtype, device);
-        Eigen::Matrix<int, 6, 6, 1> eigen6i =
-                core::eigen_converter::TensorToEigenMatrix6i(tensor6i);
-        core::Tensor tensor6i_converted =
-                core::eigen_converter::EigenMatrixToTensor(eigen6i);
-        eigen6i(1, 1) = 0;
-        EXPECT_TRUE(tensor6i_converted.AllClose(
-                core::Tensor::Ones({6, 6}, core::Dtype::Int32, cpu_device)));
+                // TensorToEigenMatrixXi.
+                core::Tensor tensor_i =
+                        core::Tensor::Ones({row, col}, dtype, device);
+                auto eigen_i =
+                        core::eigen_converter::TensorToEigenMatrixXi(tensor_i);
+                core::Tensor tensor_converted_i =
+                        core::eigen_converter::EigenMatrixToTensor(eigen_i);
+                EXPECT_TRUE(tensor_converted_i.AllClose(core::Tensor::Ones(
+                        {row, col}, core::Dtype::Int32, cpu_device)));
+            }
+        }
     }
 }
 

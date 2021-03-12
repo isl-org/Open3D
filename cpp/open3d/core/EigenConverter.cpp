@@ -35,7 +35,7 @@ namespace core {
 namespace eigen_converter {
 
 template <typename T>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+static Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 TensorToEigenMatrix(const core::Tensor &tensor) {
     static_assert(std::is_same<T, double>::value ||
                           std::is_same<T, float>::value ||
@@ -48,53 +48,35 @@ TensorToEigenMatrix(const core::Tensor &tensor) {
     if (dim.size() != 2) {
         utility::LogError(
                 " [TensorToEigenMatrix]: Number of dimensions supported = 2, "
-                "but got {}",
+                "but got {}.",
                 dim.size());
     }
 
-    core::Tensor tensor_copy =
+    core::Tensor tensor_cpu_contiguous =
             tensor.Contiguous().To(core::Device("CPU:0"), dtype);
-    T *tensor_ptr = tensor_copy.GetDataPtr<T>();
+    T *data_ptr = tensor_cpu_contiguous.GetDataPtr<T>();
 
     Eigen::Map<
             Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-            EigenMatrixX(tensor_ptr, dim[0], dim[1]);
+            EigenMatrixX(data_ptr, dim[0], dim[1]);
+
+    // Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    //         eigen_matrix = EigenMatrixX;
     return EigenMatrixX;
 }
 
-Eigen::Matrix<double, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4d(
-        const core::Tensor &tensor) {
-    tensor.AssertShape({4, 4}, " - [TensorToEigenMatrix4d].");
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXd(const core::Tensor &tensor) {
     return TensorToEigenMatrix<double>(tensor);
 }
 
-Eigen::Matrix<float, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4f(
-        const core::Tensor &tensor) {
-    tensor.AssertShape({4, 4}, " - [TensorToEigenMatrix4f].");
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXf(const core::Tensor &tensor) {
     return TensorToEigenMatrix<float>(tensor);
 }
 
-Eigen::Matrix<int, 4, 4, Eigen::RowMajor> TensorToEigenMatrix4i(
-        const core::Tensor &tensor) {
-    tensor.AssertShape({4, 4}, " - [TensorToEigenMatrix4i].");
-    return TensorToEigenMatrix<int>(tensor);
-}
-
-Eigen::Matrix<double, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6d(
-        const core::Tensor &tensor) {
-    tensor.AssertShape({6, 6}, " - [TensorToEigenMatrix6d].");
-    return TensorToEigenMatrix<double>(tensor);
-}
-
-Eigen::Matrix<float, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6f(
-        const core::Tensor &tensor) {
-    tensor.AssertShape({6, 6}, " - [TensorToEigenMatrix6f].");
-    return TensorToEigenMatrix<float>(tensor);
-}
-
-Eigen::Matrix<int, 6, 6, Eigen::RowMajor> TensorToEigenMatrix6i(
-        const core::Tensor &tensor) {
-    tensor.AssertShape({6, 6}, " - [TensorToEigenMatrix6i].");
+Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXi(const core::Tensor &tensor) {
     return TensorToEigenMatrix<int>(tensor);
 }
 
