@@ -64,7 +64,9 @@ std::shared_ptr<PointCloud> PreprocessPointCloud(
 }
 
 /// Aggressive pruning -- reject any suspicious pair
-core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
+core::Tensor GetCorrespondencesForPair(int i,
+                                       int j,
+                                       TPointCloud& tpcd_i,
                                        TPointCloud& tpcd_j,
                                        const core::Tensor& T_i,
                                        const core::Tensor& T_j,
@@ -101,7 +103,7 @@ core::Tensor GetCorrespondencesForPair(TPointCloud& tpcd_i,
     utility::LogInfo("Tij and (Ti, Tj) compatibility ratio = {}.",
                      inlier_ratio);
 
-    if (inlier_ratio < 0.3) {
+    if (j != i + 1 && inlier_ratio < 0.3) {
         Eigen::Matrix4d flip;
         flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
         auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
@@ -211,7 +213,7 @@ void GetCorrespondencesForPointClouds(
                 option.voxel_size_ < 0 ? 0.008 : 1.4 * option.voxel_size_;
 
         core::Tensor corres = GetCorrespondencesForPair(
-                tpcd_i, tpcd_j, T_i, T_j, T_ij, dist_threshold);
+                i, j, tpcd_i, tpcd_j, T_i, T_j, T_ij, dist_threshold);
 
         if (corres.GetLength() > 0) {
             corres.Save(corres_fname);
