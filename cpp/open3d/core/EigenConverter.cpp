@@ -60,9 +60,9 @@ TensorToEigenMatrix(const core::Tensor &tensor) {
             Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
             EigenMatrixX(data_ptr, dim[0], dim[1]);
 
-    // Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-    //         eigen_matrix = EigenMatrixX;
-    return EigenMatrixX;
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+            eigen_matrix = EigenMatrixX;
+    return eigen_matrix;
 }
 
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
