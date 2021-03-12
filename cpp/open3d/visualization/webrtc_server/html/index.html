@@ -209,7 +209,7 @@
         var videoElt = document.getElementById(videoTag);
         if (videoElt) {
           // connect video element to webrtc stream
-          var webRtcServer = new WebRtcStreamer(videoTag, webrtcConfig.url);
+          var webRtcClient = new WebRtcStreamer(videoTag, webrtcConfig.url);
           console.log("videoTag: " + videoTag);
           console.log("webrtcConfig.url: " + webrtcConfig.url);
 
@@ -218,7 +218,7 @@
             options += webrtcConfig.layoutextraoptions;
           }
 
-          webRtcServer.connect(url.video, url.audio, options);
+          webRtcClient.connect(url.video, url.audio, options);
           console.log("url.video: " + url.video);
           console.log("url.audio: " + url.audio);
           console.log("options: " + options);
@@ -228,7 +228,20 @@
           navElt.className = "active";
 
           // register webrtc streamer connection
-          webRtcServerList[videoTag] = webRtcServer;
+          webRtcServerList[videoTag] = webRtcClient;
+
+          // var o3d_event = {
+          //   class: "MouseEvent",
+          //   type: "BUTTON_DOWN",
+          //   x: event.offsetX,
+          //   y: event.offsetY,
+          //   modifiers: getModifiers(event),
+          //   button: {
+          //     button: "LEFT",
+          //     count: 1,
+          //   },
+          // };
+          // this.webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
 
           // Register callbacks for videoElt.
           videoElt.addEventListener("mousedown", (event) => {
@@ -240,7 +253,7 @@
               " " +
               getModifiers(event);
             console.log(msg);
-            webRtcServer.dataChannel.send(msg);
+            webRtcClient.dataChannel.send(msg);
           });
           videoElt.addEventListener("mouseup", (event) => {
             var msg =
@@ -251,7 +264,7 @@
               " " +
               getModifiers(event);
             console.log(msg);
-            webRtcServer.dataChannel.send(msg);
+            webRtcClient.dataChannel.send(msg);
           });
           videoElt.addEventListener("mousemove", (event) => {
             var msg =
@@ -262,7 +275,7 @@
               " " +
               getModifiers(event);
             console.log(msg);
-            webRtcServer.dataChannel.send(msg);
+            webRtcClient.dataChannel.send(msg);
           });
           videoElt.addEventListener(
             "wheel",
@@ -282,7 +295,7 @@
                 " " +
                 event.deltaY;
               console.log(msg);
-              webRtcServer.dataChannel.send(msg);
+              webRtcClient.dataChannel.send(msg);
             },
             { passive: false }
           );
