@@ -113,7 +113,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
                                       mesh.triangle_material_ids_.size());
         for (size_t i = 0; i < mesh.triangle_material_ids_.size(); i++) {
             triangle_material_ids_[old_mat_id_num + i] =
-                    mesh.triangle_material_ids_[i] + old_tex_num;
+                    mesh.triangle_material_ids_[i] + (int)old_tex_num;
         }
     } else {
         triangle_uvs_.clear();
