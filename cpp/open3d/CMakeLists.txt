@@ -19,6 +19,7 @@ add_subdirectory(core)
 add_subdirectory(geometry)
 add_subdirectory(t/geometry)
 add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
 add_subdirectory(io)
 add_subdirectory(ml)
 add_subdirectory(pipelines)
@@ -38,6 +39,7 @@ add_source_group(io)
 add_source_group(tio)
 add_source_group(ml)
 add_source_group(pipelines)
+add_source_group(tpipelines)
 add_source_group(utility)
 add_source_group(visualization)
 
@@ -53,6 +55,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:tio>
     $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
+    $<TARGET_OBJECTS:tpipelines>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
     ${GUI_OBJECTS}

@@ -35,6 +35,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -180,6 +181,11 @@ public:
     /// Function to inform render needed to be updated.
     virtual void UpdateRender();
 
+    /// Functions to change between fullscreen and windowed modes
+    virtual void SetFullScreen(bool fullscreen);
+    virtual void ToggleFullScreen();
+    virtual bool IsFullScreen();
+
     virtual void PrintVisualizerHelp();
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
@@ -264,6 +270,8 @@ protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
+    Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
+    Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()

@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if defined(__APPLE__)
+// Include FileDialog here to get value of GUI_USE_NATIVE_FILE_DIALOG
+#include "open3d/visualization/gui/FileDialog.h"
+
+#if defined(__APPLE__) && GUI_USE_NATIVE_FILE_DIALOG
 
 #include <string>
 #include <vector>
 
-#include "open3d/visualization/gui/FileDialog.h"
 #include "open3d/visualization/gui/Native.h"
 
 namespace open3d {
@@ -83,4 +85,4 @@ void FileDialog::OnDone() {}
 }  // namespace visualization
 }  // namespace open3d
 
-#endif  // __APPLE__
+#endif  // __APPLE__ && GUI_USE_NATIVE_FILE_DIALOG

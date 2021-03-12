@@ -26,9 +26,12 @@
 
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
+#include <random>
+
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
@@ -65,6 +68,7 @@
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 #include "open3d/visualization/visualizer/GuiSettingsView.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/visualizer/Receiver.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -323,13 +327,15 @@ enum MenuId {
     HELP_KEYS,
     HELP_CAMERA,
     HELP_ABOUT,
-    HELP_CONTACT
+    HELP_CONTACT,
+    HELP_DEBUG
 };
 
 struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
+    std::shared_ptr<Receiver> receiver_;
 
     struct Settings {
         rendering::Material lit_material_;
@@ -350,6 +356,8 @@ struct GuiVisualizer::Impl {
 
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
+
+    bool sun_follows_camera_ = false;
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
@@ -403,7 +411,7 @@ struct GuiVisualizer::Impl {
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
-        scene_wgt_->GetScene()->SetBackgroundColor(
+        scene_wgt_->GetScene()->SetBackground(
                 {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
@@ -414,6 +422,9 @@ struct GuiVisualizer::Impl {
         scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
+        scene_wgt_->GetScene()->ShowGroundPlane(
+                settings_.model_.GetShowGround(),
+                rendering::Scene::GroundPlane::XZ);
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
@@ -485,12 +496,34 @@ private:
             this->SetIBL(renderer, "");
         }
 
+        if (sun_follows_camera_ != settings_.model_.GetSunFollowsCamera()) {
+            sun_follows_camera_ = settings_.model_.GetSunFollowsCamera();
+            if (sun_follows_camera_) {
+                scene_wgt_->SetOnCameraChanged([this](rendering::Camera *cam) {
+                    auto render_scene = scene_wgt_->GetScene()->GetScene();
+                    render_scene->SetSunLightDirection(cam->GetForwardVector());
+                });
+                render_scene->SetSunLightDirection(
+                        scene->GetCamera()->GetForwardVector());
+                settings_.wgt_mouse_sun->SetEnabled(false);
+                scene_wgt_->SetSunInteractorEnabled(false);
+            } else {
+                scene_wgt_->SetOnCameraChanged(
+                        std::function<void(rendering::Camera *)>());
+                settings_.wgt_mouse_sun->SetEnabled(true);
+                scene_wgt_->SetSunInteractorEnabled(true);
+            }
+        }
+
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
         render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
-        render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
-                                          float(lighting.sun_intensity));
-        render_scene->EnableDirectionalLight(lighting.sun_enabled);
+        render_scene->SetSunLightColor(lighting.sun_color);
+        render_scene->SetSunLightIntensity(float(lighting.sun_intensity));
+        if (!sun_follows_camera_) {
+            render_scene->SetSunLightDirection(lighting.sun_dir);
+        }
+        render_scene->EnableSunLight(lighting.sun_enabled);
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,
@@ -604,7 +637,7 @@ void GuiVisualizer::Init() {
         help_menu->AddSeparator();
         help_menu->AddItem("About", HELP_ABOUT);
         help_menu->AddItem("Contact", HELP_CONTACT);
-#if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
+#if defined(__APPLE__)
         // macOS adds a special search item to menus named "Help",
         // so add a space to avoid that.
         menu->AddMenu("Help ", help_menu);
@@ -785,7 +818,7 @@ void GuiVisualizer::SetGeometry(
                 loaded_material.shader = "defaultLit";
             }
 
-            scene3d->AddGeometry(MODEL_NAME, pcd, loaded_material);
+            scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
 
             impl_->settings_.model_.SetDisplayingPointClouds(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
@@ -853,6 +886,41 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);
+}
+
+void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
+#ifdef BUILD_RPC_INTERFACE
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        // Rather than duplicating the logic to figure out the correct material,
+        // just add with the default material and pretend the user changed the
+        // current material and update everyone's material.
+        impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
+                                                   rendering::Material());
+        impl_->UpdateFromModel(GetRenderer(), true);
+    };
+    impl_->receiver_ =
+            std::make_shared<Receiver>(address, timeout, this, on_geometry);
+    try {
+        utility::LogInfo("Starting to listen on {}", address);
+        impl_->receiver_->Start();
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to start RPC interface: {}", e.what());
+    }
+#else
+    utility::LogWarning(
+            "GuiVisualizer::StartRPCInterface: RPC interface not built");
+#endif
+}
+
+void GuiVisualizer::StopRPCInterface() {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_.reset();
+#else
+    utility::LogWarning(
+            "GuiVisualizer::StopRPCInterface: RPC interface not built");
+#endif
 }
 
 bool GuiVisualizer::SetIBL(const char *path) {
@@ -1072,6 +1140,9 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case HELP_CONTACT: {
             auto dlg = CreateContactDialog(this);
             ShowDialog(dlg);
+            break;
+        }
+        case HELP_DEBUG: {
             break;
         }
     }

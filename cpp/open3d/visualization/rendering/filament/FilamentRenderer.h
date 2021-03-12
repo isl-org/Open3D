@@ -69,13 +69,18 @@ public:
     void DestroyScene(const SceneHandle& id) override;
 
     virtual void SetClearColor(const Eigen::Vector4f& color) override;
-    void SetPreserveBuffer(bool preserve) override;
     void UpdateSwapChain() override;
+    void UpdateBitmapSwapChain(int width, int height) override;
 
-    void EnableCaching(bool enable) override;
     void BeginFrame() override;
     void Draw() override;
+    void RequestReadPixels(int width,
+                           int height,
+                           std::function<void(std::shared_ptr<geometry::Image>)>
+                                   callback) override;
     void EndFrame() override;
+
+    void SetOnAfterDraw(std::function<void()> callback) override;
 
     MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
     MaterialInstanceHandle AddMaterialInstance(
@@ -122,15 +127,12 @@ private:
     std::unique_ptr<FilamentMaterialModifier> materials_modifier_;
     FilamentResourceManager& resource_mgr_;
 
-    std::unordered_set<FilamentRenderToBuffer*> buffer_renderers_;
+    std::unordered_set<std::shared_ptr<FilamentRenderToBuffer>>
+            buffer_renderers_;
 
     bool frame_started_ = false;
-    bool render_caching_enabled_ = false;
-    int render_count_ = 0;
-    float clear_color_[4];
-    bool preserve_buffer_ = false;
-
-    void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
+    std::function<void()> on_after_draw_;
+    bool needs_wait_after_draw_ = false;
 };
 
 }  // namespace rendering

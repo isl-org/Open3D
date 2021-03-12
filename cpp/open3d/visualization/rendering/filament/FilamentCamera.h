@@ -58,6 +58,21 @@ public:
                        double near,
                        double far) override;
 
+    void SetProjection(const Eigen::Matrix3d& intrinsics,
+                       double near,
+                       double far,
+                       double width,
+                       double height) override;
+
+    void LookAt(const Eigen::Vector3f& center,
+                const Eigen::Vector3f& eye,
+                const Eigen::Vector3f& up) override;
+
+    void SetModelMatrix(const Transform& view) override;
+    void SetModelMatrix(const Eigen::Vector3f& forward,
+                        const Eigen::Vector3f& left,
+                        const Eigen::Vector3f& up) override;
+
     double GetNear() const override;
     double GetFar() const override;
     /// only valid if fov was passed to SetProjection()
@@ -65,30 +80,32 @@ public:
     /// only valid if fov was passed to SetProjection()
     FovType GetFieldOfViewType() const override;
 
-    void SetModelMatrix(const Transform& view) override;
-    void SetModelMatrix(const Eigen::Vector3f& forward,
-                        const Eigen::Vector3f& left,
-                        const Eigen::Vector3f& up) override;
-
-    void LookAt(const Eigen::Vector3f& center,
-                const Eigen::Vector3f& eye,
-                const Eigen::Vector3f& up) override;
-
     Eigen::Vector3f GetPosition() const override;
     Eigen::Vector3f GetForwardVector() const override;
     Eigen::Vector3f GetLeftVector() const override;
     Eigen::Vector3f GetUpVector() const override;
     Transform GetModelMatrix() const override;
     Transform GetViewMatrix() const override;
-    Transform GetProjectionMatrix() const override;
+    ProjectionMatrix GetProjectionMatrix() const override;
+    Transform GetCullingProjectionMatrix() const override;
+    const ProjectionInfo& GetProjection() const override;
+
+    Eigen::Vector3f Unproject(float x,
+                              float y,
+                              float z,
+                              float view_width,
+                              float view_height) const override;
+
+    Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const override;
+
+    void CopyFrom(const Camera* camera) override;
 
     filament::Camera* GetNativeCamera() const { return camera_; }
 
 private:
     filament::Camera* camera_ = nullptr;
     filament::Engine& engine_;
-    double fov_;
-    FovType fov_type_;
+    Camera::ProjectionInfo projection_;
 };
 
 }  // namespace rendering

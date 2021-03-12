@@ -57,6 +57,7 @@ public:
     ~AzureKinectSensor();
 
     bool Connect(size_t sensor_index) override;
+    void Disconnect();
     std::shared_ptr<geometry::RGBDImage> CaptureFrame(
             bool enable_align_depth_to_color) const override;
 

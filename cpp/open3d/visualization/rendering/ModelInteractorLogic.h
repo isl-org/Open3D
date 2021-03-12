@@ -54,7 +54,7 @@ public:
 
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType drag_type) override;
+    void Dolly(float dy, DragType drag_type) override;
     void Pan(int dx, int dy) override;
 
     void StartMouseDrag() override;

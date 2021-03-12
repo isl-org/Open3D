@@ -31,10 +31,21 @@ jobs:
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       BUILD_RPC_INTERFACE: ON
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -48,16 +59,19 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-ccache
+
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
+
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH
@@ -70,8 +84,17 @@ jobs:
     runs-on: Ubuntu-18.04
     strategy:
       fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     env:
       BUILD_CUDA_MODULE: ON
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -81,6 +104,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
@@ -102,7 +130,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v1
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
@@ -112,7 +140,7 @@ jobs:
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
           echo
           install_cuda_toolkit with-cudnn purge-cache
@@ -139,7 +167,7 @@ jobs:
           PATH=/usr/lib/ccache:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_conda_package
+          build_pip_conda_package build_azure_kinect
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -157,7 +185,7 @@ jobs:
 
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
@@ -183,6 +211,14 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -190,6 +226,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: false
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2

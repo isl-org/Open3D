@@ -75,7 +75,18 @@ public:
                      std::uint32_t h) override;
     std::array<int, 4> GetViewport() const override;
 
-    void SetSSAOEnabled(bool enabled) override;
+    void SetPostProcessing(bool enabled) override;
+    void SetAmbientOcclusion(bool enabled, bool ssct_enabled = false) override;
+    void SetAntiAliasing(bool enabled, bool temporal = false) override;
+    void SetShadowing(bool enabled, ShadowType type) override;
+
+    void SetColorGrading(const ColorGradingParams& color_grading) override;
+
+    void ConfigureForColorPicking() override;
+
+    void EnableViewCaching(bool enable) override;
+    bool IsCached() const override;
+    TextureHandle GetColorBuffer() override;
 
     Camera* GetCamera() const override;
 
@@ -90,9 +101,16 @@ public:
     void PostRender();
 
 private:
+    void SetRenderTarget(const RenderTargetHandle render_target);
+
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
+    bool caching_enabled_ = false;
+    bool configured_for_picking_ = false;
+    TextureHandle color_buffer_;
+    TextureHandle depth_buffer_;
+    RenderTargetHandle render_target_;
 
     filament::Engine& engine_;
     FilamentScene* scene_ = nullptr;

@@ -34,6 +34,7 @@ namespace io {
 
 void pybind_io(py::module& m);
 void pybind_class_io(py::module& m);
+void pybind_sensor(py::module& m);
 
 }  // namespace io
 }  // namespace t

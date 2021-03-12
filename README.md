@@ -53,7 +53,7 @@ Windows 10 (64-bit) with Python 3.6, 3.7 and 3.8.
 $ pip install open3d
 
 # Install Open3D stable release with Conda
-$ conda install -c open3d-admin open3d
+$ conda install -c open3d-admin -c conda-forge open3d
 
 # Test the installation
 $ python -c "import open3d as o3d; print(o3d)"
@@ -67,8 +67,15 @@ To compile Open3D from source, refer to
 
 ## C++ quick start
 
-Please refer to [compiling from source](http://www.open3d.org/docs/release/compilation.html)
-and [Open3D C++ interface](http://www.open3d.org/docs/release/cpp_api.html).
+Checkout the following links to get started with Open3D C++ API
+
+* [Compiling Open3D frrom source](http://www.open3d.org/docs/release/compilation.html)
+* [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
+
+To use Open3D in your C++ project, checkout the following examples
+
+* [Find Pre-Installed Open3D Package in CMake](https://github.com/intel-isl/open3d-cmake-find-package)
+* [Use Open3D as a CMake External Project](https://github.com/intel-isl/open3d-cmake-external-project)
 
 ## Open3D-Viewer app
 

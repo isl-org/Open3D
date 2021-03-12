@@ -4,6 +4,8 @@ import pytest
 from collections import namedtuple
 import importlib
 from types import SimpleNamespace
+import urllib.request
+import io
 
 # skip all tests if the ml ops were not built
 default_marks = [
@@ -185,4 +187,23 @@ parametrize = SimpleNamespace(
     ml_gpu_only=pytest.mark.parametrize(
         'ml',
         [v for k, v in _ml_modules.items() if is_gpu_device_name(v.device)]),
+    ml_torch_only=pytest.mark.parametrize(
+        'ml',
+        [v for k, v in _ml_modules.items() if v.module.__name__ == 'torch']),
+    ml_tf_only=pytest.mark.parametrize('ml', [
+        v for k, v in _ml_modules.items() if v.module.__name__ == 'tensorflow'
+    ]),
 )
+
+
+def fetch_numpy(url):
+    # prevents security issue
+    if url.lower().startswith('http'):
+        req = urllib.request.Request(url)
+    else:
+        raise ValueError from None
+
+    with urllib.request.urlopen(req) as response:  #nosec
+        np_file = response.read()
+        return np.load(io.BytesIO(np_file))
+    return None

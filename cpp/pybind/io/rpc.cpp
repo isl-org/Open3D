@@ -27,6 +27,7 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
+#include "open3d/io/rpc/ZMQContext.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
@@ -35,6 +36,12 @@ namespace io {
 
 void pybind_rpc(py::module& m_io) {
     py::module m = m_io.def_submodule("rpc");
+
+    // this is to cleanly shutdown the zeromq context on windows.
+    auto atexit = py::module::import("atexit");
+    atexit.attr("register")(
+            py::cpp_function([]() { rpc::DestroyZMQContext(); }));
+
     py::class_<rpc::ConnectionBase, std::shared_ptr<rpc::ConnectionBase>>(
             m, "_ConnectionBase");
 
@@ -67,6 +74,9 @@ void pybind_rpc(py::module& m_io) {
                  "Stops the receiver mainloop and joins the thread. This "
                  "function blocks until the mainloop is done with processing "
                  "messages that have already been received.");
+
+    m.def("destroy_zmq_context", &rpc::DestroyZMQContext,
+          "Destroys the ZMQ context.");
 
     m.def("set_point_cloud", &rpc::SetPointCloud, "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",

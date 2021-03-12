@@ -27,10 +27,9 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/Geometry.h"
-#include "open3d/t/geometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorMap.h"
 
 namespace open3d {
 namespace t {
@@ -41,7 +40,7 @@ namespace geometry {
 ///
 /// The TriangleMesh class stores the attribute data in key-value pairs for
 /// flexibility, where the key is a string representing the attribute name and
-/// value is a TensorList containing the attribute data.
+/// value is a Tensor containing the attribute data.
 ///
 /// By default, there are two sets of dictionaries, i.e. `vertex_attr_` and
 /// `triangle_attr_`. In most cases, the length of an attribute should be
@@ -54,36 +53,36 @@ namespace geometry {
 ///
 /// - Level 0: Default attribute {"vertices", "triangles"}.
 ///     - Created by default, required for all trianglemeshes.
-///     - The tensorlist must be of shape N x {3,}.
+///     - The tensor must be of shape N x {3,}.
 ///     - Convenience functions:
 ///         - TriangleMesh::GetVertices()
-///         - TriangleMesh::SetVertices(vertices_tensorlist)
+///         - TriangleMesh::SetVertices(vertices_tensor)
 ///         - TriangleMesh::HasVertices()
 ///         - TriangleMesh::GetTriangles()
-///         - TriangleMesh::SetTriangles(triangles_tensorlist)
+///         - TriangleMesh::SetTriangles(triangles_tensor)
 ///         - TriangleMesh::HasTriangles()
 ///     - The device of "vertices" and "triangles" must be consistent and they
 ///       determine the device of the trianglemesh.
 /// - Level 1: Commonly-used attributes: {"normals", "colors"} for vertices and
 ///            {"normals"} for triangles.
 ///     - Not created by default.
-///     - The tensorlist must be of shape N x {3,}.
+///     - The tensor must be of shape N x 3.
 ///     - Convenience functions:
 ///         - Vertex normals (stored at vertex_attr_["normals"])
 ///             - TriangleMesh::GetVertexNormals()
-///             - TriangleMesh::SetVertexNormals(vertex_normals_tensorlist)
+///             - TriangleMesh::SetVertexNormals(vertex_normals_tensor)
 ///             - TriangleMesh::HasVertexNormals()
 ///         - Vertex colors (stored at vertex_attr_["colors"])
 ///             - TriangleMesh::GetVertexColors()
-///             - TriangleMesh::SetVertexColors(vertex_colors_tensorlist)
+///             - TriangleMesh::SetVertexColors(vertex_colors_tensor)
 ///             - TriangleMesh::HasVertexColors()
 ///         - Triangle normals (stored at triangle_attr_["normals"])
 ///             - TriangleMesh::GetTriangleNormals()
-///             - TriangleMesh::SetTriangleNormals(triangle_normals_tensorlist)
+///             - TriangleMesh::SetTriangleNormals(triangle_normals_tensor)
 ///             - TriangleMesh::HasTriangleNormals()
 ///         - Triangle colors (stored at triangle_attr_["colors"])
 ///             - TriangleMesh::GetTriangleColors()
-///             - TriangleMesh::SetTriangleColors(triangle_colors_tensorlist)
+///             - TriangleMesh::SetTriangleColors(triangle_colors_tensor)
 ///             - TriangleMesh::HasTriangleColors()
 ///     - For all attributes, the device must be consistent with the device of
 ///       the trianglemesh. Dtype can be different.
@@ -93,11 +92,11 @@ namespace geometry {
 ///     - Use generalized helper functions. Examples:
 ///         - TriangleMesh::GetVertexAttr("labels")
 ///         - TriangleMesh::SetVertexAttr("labels",
-///                                       vertex_labels_tensorlist)
+///                                       vertex_labels_tensor)
 ///         - TriangleMesh::HasVertexAttr("labels")
 ///         - TriangleMesh::GetTriangleAttr("labels")
 ///         - TriangleMesh::SetTriangleAttr("labels",
-///                                         triangle_labels_tensorlist)
+///                                         triangle_labels_tensor)
 ///         - TriangleMesh::HasTriangleAttr("labels")
 ///     - For all attributes, the device must be consistent with the device of
 ///       the trianglemesh. Dtype can be different.
@@ -107,94 +106,118 @@ namespace geometry {
 class TriangleMesh : public Geometry {
 public:
     /// Construct an empty trianglemesh.
-    TriangleMesh(core::Dtype vertex_dtype = core::Dtype::Float32,
-                 core::Dtype triangle_dtype = core::Dtype::Int64,
-                 const core::Device &device = core::Device("CPU:0"));
+    TriangleMesh(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a trianglemesh from vertices and triangles.
     ///
-    /// The input tensorlists will be directly used as the underlying storage of
-    /// the trianglemsh (no memory copy). If the tensorlist is created in-place
-    /// from a pre-allocated buffer, the tensorlist has a fixed size and thus
+    /// The input tensors will be directly used as the underlying storage of
+    /// the trianglemsh (no memory copy). If the tensor is created in-place
+    /// from a pre-allocated buffer, the tensor has a fixed size and thus
     /// the resulting trianglemesh will have a fixed size and calling to
     /// functions like `SynchronizedPushBack` will raise an exception.
     ///
     /// The resulting trianglemesh will have the same dtype and device as the
-    /// tensorlist. The device for \p vertices must be consistent with
+    /// tensor. The device for \p vertices must be consistent with
     /// \p triangles.
     ///
-    /// \param vertices A tensorlist with element shape (3,).
-    /// \param triangles A tensorlist with element shape (3,).
-    TriangleMesh(const core::TensorList &vertices,
-                 const core::TensorList &triangles);
+    /// \param vertices A tensor with element shape (3,).
+    /// \param triangles A tensor with element shape (3,).
+    TriangleMesh(const core::Tensor &vertices, const core::Tensor &triangles);
 
     virtual ~TriangleMesh() override {}
 
 public:
+    /// Transfer the triangle mesh to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new triangle mesh is always created; if false,
+    /// the copy is avoided when the original triangle mesh is already on the
+    /// targeted device.
+    TriangleMesh To(const core::Device &device, bool copy = false) const;
+
+    /// Returns copy of the triangle mesh on the same device.
+    TriangleMesh Clone() const { return To(GetDevice()); }
+
+    /// Transfer the triangle mesh to CPU.
+    ///
+    /// If the triangle mesh is already on CPU, no copy will be performed.
+    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
+
+    /// Transfer the triangle mesh to a CUDA device.
+    ///
+    /// If the triangle mesh is already on the specified CUDA device, no copy
+    /// will be performed.
+    TriangleMesh CUDA(int device_id = 0) const {
+        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
+    };
+
+    /// Getter for vertex_attr_ TensorMap. Used in Pybind.
+    const TensorMap &GetVertexAttr() const { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
     /// \param key Attribute name.
-    core::TensorList &GetVertexAttr(const std::string &key) {
+    core::Tensor &GetVertexAttr(const std::string &key) {
         return vertex_attr_.at(key);
     }
 
     /// Get the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
-    core::TensorList &GetVertices() { return GetVertexAttr("vertices"); }
+    core::Tensor &GetVertices() { return GetVertexAttr("vertices"); }
 
     /// Get the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
-    core::TensorList &GetVertexColors() { return GetVertexAttr("colors"); }
+    core::Tensor &GetVertexColors() { return GetVertexAttr("colors"); }
 
     /// Get the value of the "normals" attribute in vertex_attr_.
     /// Convenience function.
-    core::TensorList &GetVertexNormals() { return GetVertexAttr("normals"); }
+    core::Tensor &GetVertexNormals() { return GetVertexAttr("normals"); }
+
+    /// Getter for triangle_attr_ TensorMap. Used in Pybind.
+    const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.
     ///
     /// \param key Attribute name.
-    core::TensorList &GetTriangleAttr(const std::string &key) {
+    core::Tensor &GetTriangleAttr(const std::string &key) {
         return triangle_attr_.at(key);
     }
 
     /// Get the value of the "triangles" attribute in triangle_attr_.
     /// Convenience function.
-    core::TensorList &GetTriangles() { return GetTriangleAttr("triangles"); }
+    core::Tensor &GetTriangles() { return GetTriangleAttr("triangles"); }
 
     /// Get the value of the "normals" attribute in triangle_attr_.
     /// Convenience function.
-    core::TensorList &GetTriangleNormals() {
-        return GetTriangleAttr("normals");
-    }
+    core::Tensor &GetTriangleNormals() { return GetTriangleAttr("normals"); }
 
     /// Get the value of the "colors" attribute in triangle_attr_.
     /// Convenience function.
-    core::TensorList &GetTriangleColors() { return GetTriangleAttr("colors"); }
+    core::Tensor &GetTriangleColors() { return GetTriangleAttr("colors"); }
 
     /// Get vertex attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
-    const core::TensorList &GetVertexAttr(const std::string &key) const {
+    const core::Tensor &GetVertexAttr(const std::string &key) const {
         return vertex_attr_.at(key);
     }
 
     /// Get the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
-    const core::TensorList &GetVertices() const {
+    const core::Tensor &GetVertices() const {
         return GetVertexAttr("vertices");
     }
 
     /// Get the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
-    const core::TensorList &GetVertexColors() const {
+    const core::Tensor &GetVertexColors() const {
         return GetVertexAttr("colors");
     }
 
     /// Get the value of the "normals" attribute in vertex_attr_.
     /// Convenience function.
-    const core::TensorList &GetVertexNormals() const {
+    const core::Tensor &GetVertexNormals() const {
         return GetVertexAttr("normals");
     }
 
@@ -202,25 +225,25 @@ public:
     /// attribute does not exist.
     ///
     /// \param key Attribute name.
-    const core::TensorList &GetTriangleAttr(const std::string &key) const {
+    const core::Tensor &GetTriangleAttr(const std::string &key) const {
         return triangle_attr_.at(key);
     }
 
     /// Get the value of the "triangles" attribute in triangle_attr_.
     /// Convenience function.
-    const core::TensorList &GetTriangles() const {
+    const core::Tensor &GetTriangles() const {
         return GetTriangleAttr("triangles");
     }
 
     /// Get the value of the "normals" attribute in triangle_attr_.
     /// Convenience function.
-    const core::TensorList &GetTriangleNormals() const {
+    const core::Tensor &GetTriangleNormals() const {
         return GetTriangleAttr("normals");
     }
 
     /// Get the value of the "colors" attribute in triangle_attr_.
     /// Convenience function.
-    const core::TensorList &GetTriangleColors() const {
+    const core::Tensor &GetTriangleColors() const {
         return GetTriangleAttr("colors");
     }
 
@@ -228,30 +251,30 @@ public:
     /// will be overwritten, otherwise, the new key will be created.
     ///
     /// \param key Attribute name.
-    /// \param value A tensorlist.
-    void SetVertexAttr(const std::string &key, const core::TensorList &value) {
+    /// \param value A tensor.
+    void SetVertexAttr(const std::string &key, const core::Tensor &value) {
         value.AssertDevice(device_);
         vertex_attr_[key] = value;
     }
 
     /// Set the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
-    void SetVertices(const core::TensorList &value) {
-        value.AssertElementShape({3});
+    void SetVertices(const core::Tensor &value) {
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetVertexAttr("vertices", value);
     }
 
     /// Set the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
-    void SetVertexColors(const core::TensorList &value) {
-        value.AssertElementShape({3});
+    void SetVertexColors(const core::Tensor &value) {
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetVertexAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute in vertex_attr_.
     /// This is a convenience function.
-    void SetVertexNormals(const core::TensorList &value) {
-        value.AssertElementShape({3});
+    void SetVertexNormals(const core::Tensor &value) {
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetVertexAttr("normals", value);
     }
 
@@ -259,30 +282,29 @@ public:
     /// will be overwritten, otherwise, the new key will be created.
     ///
     /// \param key Attribute name.
-    /// \param value A tensorlist.
-    void SetTriangleAttr(const std::string &key,
-                         const core::TensorList &value) {
+    /// \param value A tensor.
+    void SetTriangleAttr(const std::string &key, const core::Tensor &value) {
         value.AssertDevice(device_);
         triangle_attr_[key] = value;
     }
 
     /// Set the vlaue of the "triangles" attribute in triangle_attr_.
-    void SetTriangles(const core::TensorList &value) {
-        value.AssertElementShape({3});
+    void SetTriangles(const core::Tensor &value) {
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetTriangleAttr("triangles", value);
     }
 
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
-    void SetTriangleNormals(const core::TensorList &value) {
-        value.AssertElementShape({3});
+    void SetTriangleNormals(const core::Tensor &value) {
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetTriangleAttr("normals", value);
     }
 
     /// Set the value of the "colors" attribute in triangle_attr_.
     /// This is a convenience function.
-    void SetTriangleColors(const core::TensorList &value) {
-        value.AssertElementShape({3});
+    void SetTriangleColors(const core::Tensor &value) {
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetTriangleAttr("colors", value);
     }
 
@@ -291,8 +313,9 @@ public:
     /// 2) attribute's length as vertices' length
     /// 3) attribute's length > 0
     bool HasVertexAttr(const std::string &key) const {
-        return vertex_attr_.Contains(key) && GetVertexAttr(key).GetSize() > 0 &&
-               GetVertexAttr(key).GetSize() == GetVertices().GetSize();
+        return vertex_attr_.Contains(key) &&
+               GetVertexAttr(key).GetLength() > 0 &&
+               GetVertexAttr(key).GetLength() == GetVertices().GetLength();
     }
 
     /// Check if the "vertices" attribute's value in vertex_attr_ has length >
@@ -319,8 +342,8 @@ public:
     /// 3) attribute's length > 0
     bool HasTriangleAttr(const std::string &key) const {
         return triangle_attr_.Contains(key) &&
-               GetTriangleAttr(key).GetSize() > 0 &&
-               GetTriangleAttr(key).GetSize() == GetTriangles().GetSize();
+               GetTriangleAttr(key).GetLength() > 0 &&
+               GetTriangleAttr(key).GetLength() == GetTriangles().GetLength();
     }
 
     /// Check if the "triangles" attribute's value in triangle_attr_ has length
@@ -341,32 +364,6 @@ public:
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
-
-    /// Synchronized push back to the vertex_attr_, data will be
-    /// copied. Before push back, all existing tensorlists must have the same
-    /// length.
-    ///
-    /// \param map_keys_to_tensors The keys and values to be pushed back. It
-    /// must contain the same keys and each corresponding tensor must have the
-    /// same dtype and device.
-    void VertexSynchronizedPushBack(
-            const std::unordered_map<std::string, core::Tensor>
-                    &map_keys_to_tensors) {
-        vertex_attr_.SynchronizedPushBack(map_keys_to_tensors);
-    }
-
-    /// Synchronized push back to the triangle_attr_, data will be
-    /// copied. Before push back, all existing tensorlists must have the same
-    /// length.
-    ///
-    /// \param map_keys_to_tensors The keys and values to be pushed back. It
-    /// must contain the same keys and each corresponding tensor must have the
-    /// same dtype and device.
-    void TriangleSynchronizedPushBack(
-            const std::unordered_map<std::string, core::Tensor>
-                    &map_keys_to_tensors) {
-        triangle_attr_.SynchronizedPushBack(map_keys_to_tensors);
-    }
 
 public:
     /// Clear all data in the trianglemesh.
@@ -405,22 +402,25 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    static geometry::TriangleMesh FromLegacyTrangleMesh(
-            const geometry::TriangleMesh &mesh_legacy,
-            core::Dtype dtype = core::Dtype::Float32,
-            const core::Device &device = core::Device("CPU:0")) {
-        utility::LogError("Unimplemented");
-    }
+    /// \param mesh_legacy Legacy Open3D TriangleMesh.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static geometry::TriangleMesh FromLegacyTriangleMesh(
+            const open3d::geometry::TriangleMesh &mesh_legacy,
+            core::Dtype float_dtype = core::Dtype::Float32,
+            core::Dtype int_dtype = core::Dtype::Int64,
+            const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.
-    geometry::TriangleMesh ToLegacyTriangleMesh() const {
-        utility::LogError("Unimplemented");
-    }
+    open3d::geometry::TriangleMesh ToLegacyTriangleMesh() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
-    TensorListMap vertex_attr_;
-    TensorListMap triangle_attr_;
+    TensorMap vertex_attr_;
+    TensorMap triangle_attr_;
 };
 
 }  // namespace geometry

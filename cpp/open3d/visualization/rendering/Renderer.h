@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/MaterialModifier.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 
@@ -71,13 +70,19 @@ public:
     virtual void DestroyScene(const SceneHandle& id) = 0;
 
     virtual void SetClearColor(const Eigen::Vector4f& color) = 0;
-    virtual void SetPreserveBuffer(bool preserve) = 0;
     virtual void UpdateSwapChain() = 0;
+    virtual void UpdateBitmapSwapChain(int width, int height) = 0;
 
-    virtual void EnableCaching(bool enable) = 0;
     virtual void BeginFrame() = 0;
     virtual void Draw() = 0;
+    // If using the Filament renderer this must be called *before* EndFrame()!
+    virtual void RequestReadPixels(
+            int width,
+            int height,
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
     virtual void EndFrame() = 0;
+
+    virtual void SetOnAfterDraw(std::function<void()> callback) = 0;
 
     virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
     virtual MaterialInstanceHandle AddMaterialInstance(
@@ -104,6 +109,12 @@ public:
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
 
     void RenderToImage(
+            View* view,
+            Scene* scene,
+            std::function<void(std::shared_ptr<geometry::Image>)> cb);
+
+    // Returns a float image ranging from 0 (near plane) to 1 (far plane)
+    void RenderToDepthImage(
             View* view,
             Scene* scene,
             std::function<void(std::shared_ptr<geometry::Image>)> cb);

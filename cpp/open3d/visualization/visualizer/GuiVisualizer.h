@@ -70,6 +70,11 @@ public:
 
     void Layout(const gui::Theme& theme) override;
 
+    /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
+    void StartRPCInterface(const std::string& address, int timeout);
+
+    void StopRPCInterface();
+
 protected:
     // Add custom items to the application menu (only relevant on macOS)
     void AddItemsToAppMenu(

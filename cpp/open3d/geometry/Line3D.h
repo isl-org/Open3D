@@ -112,10 +112,7 @@ public:
     }
 
     /// \brief Transform the Line3D by the given matrix
-    virtual void Transform(
-            const Eigen::Transform<double, 3, Eigen::Affine>& t) {
-        this->transform(t);
-    }
+    virtual void Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t);
 
     /// \brief Returns a const reference to the underlying
     /// Eigen::ParametrizedLine object
@@ -370,10 +367,7 @@ public:
 
     /// \brief Transform the segment by the given matrix
     void Transform(
-            const Eigen::Transform<double, 3, Eigen::Affine>& t) override {
-        this->transform(t);
-        end_point_ = t * end_point_;
-    }
+            const Eigen::Transform<double, 3, Eigen::Affine>& t) override;
 
     /// \brief Get an axis-aligned bounding box representing the enclosed volume
     /// of the line segment.

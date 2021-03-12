@@ -11,7 +11,7 @@ System requirements
 * Ubuntu 18.04+: GCC 5+, Clang 7+
 * macOS 10.14+: XCode 8.0+
 * Windows 10 (64-bit): Visual Studio 2019+
-* CMake: 3.15+ for Ubuntu and macOS, 3.18+ for Windows
+* CMake: 3.17+ for Ubuntu and macOS, 3.18+ for Windows
 
   * Ubuntu (18.04):
 
@@ -56,9 +56,7 @@ Ubuntu/macOS
     # On Ubuntu
     util/install_deps_ubuntu.sh
 
-    # On macOS
-    # Install Homebrew first: https://brew.sh/
-    util/install_deps_macos.sh
+    # On macOS: skip this step
 
 .. _compilation_unix_python:
 
@@ -112,7 +110,7 @@ To install Open3D C++ library:
     make install
 
 To link a C++ project against the Open3D C++ library, please refer to
-:ref:`create_cplusplus_project`.
+:ref:`cplusplus_example_project`.
 
 
 To install Open3D Python library, build one of the following options:
@@ -185,7 +183,7 @@ in Visual Studio.
     cmake --build . --config Release --target INSTALL
 
 To link a C++ project against the Open3D C++ library, please refer to
-:ref:`create_cplusplus_project`.
+:ref:`cplusplus_example_project`.
 
 To install Open3D Python library, build the corresponding python installation
 targets in terminal or Visual Studio.

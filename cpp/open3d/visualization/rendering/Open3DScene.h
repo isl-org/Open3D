@@ -31,11 +31,14 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/Scene.h"
 
 namespace open3d {
 
 namespace geometry {
 class Geometry3D;
+class Image;
 }  // namespace geometry
 
 namespace t {
@@ -58,10 +61,26 @@ public:
 
     View* GetView() const;
     ViewHandle GetViewId() const { return view_; }
+    void SetViewport(std::int32_t x,
+                     std::int32_t y,
+                     std::uint32_t width,
+                     std::uint32_t height);
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
-    void SetBackgroundColor(const Eigen::Vector4f& color);
+    void SetBackground(const Eigen::Vector4f& color,
+                       std::shared_ptr<geometry::Image> image = nullptr);
+    void ShowGroundPlane(bool enable, Scene::GroundPlane plane);
+
+    enum class LightingProfile {
+        HARD_SHADOWS,
+        DARK_SHADOWS,
+        MED_SHADOWS,
+        SOFT_SHADOWS,
+        NO_SHADOWS
+    };
+
+    void SetLighting(LightingProfile profile, const Eigen::Vector3f& sun_dir);
 
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering
@@ -74,7 +93,7 @@ public:
     void ClearGeometry();
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
-                     std::shared_ptr<const geometry::Geometry3D> geom,
+                     const geometry::Geometry3D* geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something
@@ -84,9 +103,11 @@ public:
                      const t::geometry::PointCloud* geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
+    void ModifyGeometryMaterial(const std::string& name, const Material& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
@@ -123,13 +144,18 @@ private:
 
     void SetGeometryToLOD(const GeometryData&, LOD lod);
 
+    View* GetWindowView() const;
+
 private:
     Renderer& renderer_;
     SceneHandle scene_;
+    SceneHandle window_scene_;
     ViewHandle view_;
+    ViewHandle window_view_;
 
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
+    bool axis_dirty_ = true;
     std::map<std::string, GeometryData> geometries_;  // name -> data
     geometry::AxisAlignedBoundingBox bounds_;
     size_t downsample_threshold_ = 6000000;

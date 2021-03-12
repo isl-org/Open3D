@@ -7,6 +7,7 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
+
   push:
     branches:
       - master
@@ -24,10 +25,20 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
@@ -53,7 +64,7 @@ jobs:
         with:
           python-version: 3.6
       - name: GCloud CLI setup
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
@@ -64,98 +75,20 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # Install Kinect k4a package
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
-          # Accept EULA using a temporary workaround
-          # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
-          echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' \
-            | sudo debconf-set-selections
-          echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' \
-            | sudo debconf-set-selections
-          sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
-          # Install ubuntu dependencie
-          # Update cmake needed in Ubuntu 18.04
-          sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
-          sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
-          ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get install --yes cmake
-          sudo apt-get install --yes doxygen
-          sudo apt-get install --yes texlive
-          sudo apt-get install --yes texlive-latex-extra
-          sudo apt-get install --yes ghostscript
-          sudo apt-get install --yes pandoc
-          sudo apt-get install --yes ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
-          # Install Python dependencies for building docs
-          which python
-          python -V
-          python -m pip install -U -q wheel "sphinx==3.1.2" "sphinx-rtd-theme==0.5.0" "nbsphinx==0.7.1" "Pillow==7.2.0"
-          # m2r needs a patch for sphinx 3
-          # https://github.com/sphinx-doc/sphinx/issues/7420
-          python -m pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
-          # dependencies for building the ml ops
-          python -m pip install -U -q "yapf==0.30.0"
-          # Open3D-ML dependencies
-          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements.txt
-          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements-torch.txt
-          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements-tensorflow.txt
-          # the build system of the main repo expects a master branch. make sure master exists
-          pushd ${OPEN3D_ML_ROOT}
+          # the build system of the main repo expects a master branch. make sure
+          # master exists
+          pushd "${OPEN3D_ML_ROOT}"
           git checkout -b master || true
           popd
+          source util/ci_utils.sh
+          install_docs_dependencies "${OPEN3D_ML_ROOT}"
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           ccache -s
-          NPROC=$(nproc)
-          echo NPROC=$NPROC
-          mkdir build
-          cd build
-          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-            DEVELOPER_BUILD=ON
-            DOC_ARGS=""
-          else
-            DOC_ARGS="--is_release"
-            echo "Building docs for a new Open3D release"
-          echo
-          echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
-          echo
-          fi
-          cmakeOptions=(-DDEVELOPER_BUILD="$DEVELOPER_BUILD"
-                -DCMAKE_BUILD_TYPE=Release
-                -DBUILD_JUPYTER_EXTENSION=ON
-                -DWITH_OPENMP=ON
-                -DBUILD_AZURE_KINECT=ON
-                -DBUILD_TENSORFLOW_OPS=ON
-                -DBUILD_PYTORCH_OPS=ON
-                -DBUILD_RPC_INTERFACE=ON
-                -DBUNDLE_OPEN3D_ML=ON
-          )
-          cmake "${cmakeOptions[@]}" \
-                -DENABLE_HEADLESS_RENDERING=ON \
-                -DBUILD_GUI=OFF \
-                ..
-          make install-pip-package -j$NPROC
-          make -j$NPROC
-          bin/GLInfo
-          python -c "from open3d import *; import open3d; print(open3d)"
-          cd ../docs # To Open3D/docs
-          python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
-          cd ../build
-          echo
-          echo "Building Open3D with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
-          echo
-          cmake "${cmakeOptions[@]}" \
-                -DENABLE_HEADLESS_RENDERING=OFF \
-                -DBUILD_GUI=ON \
-                ..
-          make install-pip-package -j$NPROC
-          make -j$NPROC
-          bin/GLInfo || true  # Expect failure since HEADLESS_RENDERING=OFF
-          python -c "from open3d import *; import open3d; print(open3d)"
-          cd ../docs # To Open3D/docs
-          python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
+          source util/ci_utils.sh
+          build_docs "$DEVELOPER_BUILD"
           ccache -s
 
       - name: Upload docs

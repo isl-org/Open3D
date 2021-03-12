@@ -32,6 +32,11 @@ jobs:
       LOW_MEM_USAGE: ON
       BUILD_RPC_INTERFACE: ON
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -55,9 +60,8 @@ jobs:
           python-version: 3.6
       - name: Install dependencies
         run: |
-          ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
@@ -70,8 +74,17 @@ jobs:
     runs-on: macos-10.15
     strategy:
       fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -102,16 +115,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v1
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
           install_python_dependencies with-conda
@@ -149,7 +161,7 @@ jobs:
 
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
@@ -175,6 +187,14 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:

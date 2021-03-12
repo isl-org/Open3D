@@ -138,9 +138,17 @@ void LoadTextures(const std::string& filename,
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                  geometry::TriangleMesh& mesh,
+                                 bool enable_post_processing,
                                  bool print_progress) {
     Assimp::Importer importer;
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+
+    unsigned int post_process_flags = 0;
+
+    if (enable_post_processing) {
+        post_process_flags = kPostProcessFlags;
+    }
+
+    const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;

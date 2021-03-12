@@ -18,8 +18,12 @@ document.write('\
             <td><a href="http://www.open3d.org/docs/latest/cpp_api">latest C++</a></td>\
         </tr>\
         <tr>\
-            <td><a href="http://www.open3d.org/docs/release">0.11.1</a></td>\
-            <td><a href="http://www.open3d.org/docs/release/cpp_api">0.11.1 C++</a></td>\
+            <td><a href="http://www.open3d.org/docs/release">0.12.0</a></td>\
+            <td><a href="http://www.open3d.org/docs/release/cpp_api">0.12.0 C++</a></td>\
+        </tr>\
+        <tr>\
+            <td><a href="http://www.open3d.org/docs/0.11.1">0.11.1</a></td>\
+            <td><a href="http://www.open3d.org/docs/0.11.1/cpp_api">0.11.1 C++</a></td>\
         </tr>\
         <tr>\
             <td><a href="http://www.open3d.org/docs/0.11.0">0.11.0</a></td>\

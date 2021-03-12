@@ -33,6 +33,17 @@ set(TORCH_OPS_SOURCES
     "misc/ReduceSubarraysSumOpKernel.cpp"
     "misc/VoxelPoolingOps.cpp"
     "misc/FixedRadiusSearchOpKernel.cpp"
+    "misc/RaggedToDenseOps.cpp"
+    "misc/RaggedToDenseOpKernel.cpp"
+    "misc/VoxelizeOps.cpp"
+    "misc/VoxelizeOpKernel.cpp"
+    "misc/NmsOps.cpp"
+    "misc/RoiPoolOps.cpp"
+    "pointnet/BallQueryOps.cpp"
+    "pointnet/GroupPointsOps.cpp"
+    "pointnet/InterpolateOps.cpp"
+    "pointnet/SamplingOps.cpp"
+    "../contrib/Nms.cpp"
 )
 
 set(TORCH_OPS_CUDA_SOURCES
@@ -44,7 +55,19 @@ set(TORCH_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/RaggedToDenseOpKernel.cu"
+    "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "../contrib/Nms.cu"
+    "../contrib/RoiPoolKernel.cu"
+    "../contrib/BallQuery.cu"
+    "../contrib/GroupPoints.cu"
+    "../contrib/InterpolatePoints.cu"
+    "../contrib/PointSampling.cu"
+    "pointnet/BallQueryKernel.cu"
+    "pointnet/GroupPointsKernel.cu"
+    "pointnet/InterpolateKernel.cu"
+    "pointnet/SamplingKernel.cu"
 )
 
 if(BUILD_CUDA_MODULE)
@@ -96,6 +119,7 @@ target_link_libraries(open3d_torch_ops PRIVATE
     torch_cpu
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
+    ${CMAKE_PROJECT_NAME}
 )
 if( BUILD_CUDA_MODULE )
     target_link_libraries(open3d_torch_ops PRIVATE

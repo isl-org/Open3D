@@ -13,6 +13,7 @@ set -e
 # GITHUB_SHA
 ## CI test matrix:
 CI_CONFIG_ID=${CI_CONFIG_ID:=0}
+CI_CONFIG_ID=${CI_CONFIG_ID%%-*} # '3-ML-bionic' -> '3'
 
 # CI configuration specification
 SHARED=(OFF ON OFF ON OFF OFF)
@@ -30,14 +31,20 @@ GCE_INSTANCE_BASE_TYPE=n1-standard # GCE only allows n1-standard machines with G
 GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
 GCE_INSTANCE_BASENAME=ci-gpu-vm
 GCE_INSTANCE=${GCE_INSTANCE_BASENAME}-${GITHUB_SHA::8}-${CI_CONFIG_ID}
-GCE_INSTANCE_ZONE=(us-west1-a us-central1-a us-east1-b us-east4-a
-    us-west1-b us-central1-b us-east1-c us-east4-b
-    us-west1-c us-central1-c us-east1-d us-east4-c
-    us-central1-f)
+# See https://cloud.google.com/compute/docs/gpus for GCE zones supporting Tesla
+# T4 GPus
+GCE_INSTANCE_ZONE=(us-west1-a us-west1-b
+    us-central1-a us-central1-b us-central1-f
+    us-east1-c us-east1-d us-east4-b
+    southamerica-east1-c
+    europe-west2-b europe-west3-b europe-west4-b europe-west4-c europe-west2-a
+    asia-southeast1-b asia-southeast1-c australia-southeast1-a
+)
+
 GCE_ZID=${GCE_ZID:=0} # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
-GCE_BOOT_DISK_SIZE=32GB
+GCE_BOOT_DISK_SIZE=48GB
 NVIDIA_DRIVER_VERSION=440 # Must be present in Ubuntu repos 20.04: {390, 418, 430, 435, 440}
 GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
@@ -56,6 +63,11 @@ case "$1" in
 gcloud-setup)
     gcloud auth configure-docker
     gcloud info
+    # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
+    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+        echo "Removing ssh key"; \
+        gcloud compute os-login ssh-keys remove --key $i || true; \
+    done
     ;;
 
     # Build the Docker image
@@ -124,8 +136,9 @@ create-vm)
             --service-account="$GCE_GPU_CI_SA"; do
         ((GCE_ZID = GCE_ZID + 1))
     done
-    sleep 30                                      # wait for instance ssh service startup
-    echo "::set-env name=GCE_ZID::$GCE_ZID"       # Export environment variable for next step
+    sleep 30 # wait for instance ssh service startup
+    export GCE_ZID
+    echo "GCE_ZID=$GCE_ZID" >>"$GITHUB_ENV"       # Export environment variable for next step
     exit $((GCE_ZID >= ${#GCE_INSTANCE_ZONE[@]})) # 0 => success
     ;;
 

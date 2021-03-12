@@ -37,6 +37,7 @@ public:
     enum class FovType { Vertical, Horizontal };
     enum class Projection { Perspective, Ortho };
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
+    using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective>;
 
     virtual ~Camera() = default;
 
@@ -76,6 +77,21 @@ public:
                                double near,
                                double far) = 0;
 
+    virtual void SetProjection(const Eigen::Matrix3d& intrinsics,
+                               double near,
+                               double far,
+                               double width,
+                               double height) = 0;
+
+    virtual void LookAt(const Eigen::Vector3f& center,
+                        const Eigen::Vector3f& eye,
+                        const Eigen::Vector3f& up) = 0;
+
+    virtual void SetModelMatrix(const Transform& view) = 0;
+    virtual void SetModelMatrix(const Eigen::Vector3f& forward,
+                                const Eigen::Vector3f& left,
+                                const Eigen::Vector3f& up) = 0;
+
     virtual double GetNear() const = 0;
     virtual double GetFar() const = 0;
     /// only valid if fov was passed to SetProjection()
@@ -83,22 +99,62 @@ public:
     /// only valid if fov was passed to SetProjection()
     virtual FovType GetFieldOfViewType() const = 0;
 
-    virtual void SetModelMatrix(const Transform& view) = 0;
-    virtual void SetModelMatrix(const Eigen::Vector3f& forward,
-                                const Eigen::Vector3f& left,
-                                const Eigen::Vector3f& up) = 0;
-
-    virtual void LookAt(const Eigen::Vector3f& center,
-                        const Eigen::Vector3f& eye,
-                        const Eigen::Vector3f& up) = 0;
-
     virtual Eigen::Vector3f GetPosition() const = 0;
     virtual Eigen::Vector3f GetForwardVector() const = 0;
     virtual Eigen::Vector3f GetLeftVector() const = 0;
     virtual Eigen::Vector3f GetUpVector() const = 0;
     virtual Transform GetModelMatrix() const = 0;
     virtual Transform GetViewMatrix() const = 0;
-    virtual Transform GetProjectionMatrix() const = 0;
+    virtual ProjectionMatrix GetProjectionMatrix() const = 0;
+    virtual Transform GetCullingProjectionMatrix() const = 0;
+
+    virtual Eigen::Vector3f Unproject(float x,
+                                      float y,
+                                      float z,
+                                      float view_width,
+                                      float view_height) const = 0;
+
+    // Returns the normalized device coordinates (NDC) of the specified point
+    // given the view and projection matrices of the camera. The returned point
+    // is in the range [-1, 1] if the point is in view, or outside the range if
+    // the point is out of view.
+    virtual Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const = 0;
+
+    struct ProjectionInfo {
+        bool is_ortho;
+        bool is_intrinsic;
+        union {
+            struct {
+                Projection projection;
+                double left;
+                double right;
+                double bottom;
+                double top;
+                double near_plane;  // Windows #defines "near"
+                double far_plane;   // Windows #defines "far"
+            } ortho;
+            struct {
+                FovType fov_type;
+                double fov;
+                double aspect;
+                double near_plane;
+                double far_plane;
+            } perspective;
+            struct {
+                double fx;
+                double fy;
+                double cx;
+                double cy;
+                double near_plane;
+                double far_plane;
+                double width;
+                double height;
+            } intrinsics;
+        } proj;
+    };
+    virtual const ProjectionInfo& GetProjection() const = 0;
+
+    virtual void CopyFrom(const Camera* camera) = 0;
 };
 
 }  // namespace rendering

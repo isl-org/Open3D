@@ -34,10 +34,26 @@
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
 
+#if defined(__APPLE__) && defined(BUILD_GUI)
+namespace bluegl {
+int bind();
+void unbind();
+}  // namespace bluegl
+#endif
+
 namespace open3d {
 namespace visualization {
 
 bool Visualizer::InitOpenGL() {
+#if defined(__APPLE__) && defined(BUILD_GUI)
+    // On macOS, the Open3D shared library redirects OpenGL calls to BlueGL's
+    // forwarding functions. bluegl::bind() needs to be called before calling
+    // any OpenGL functions, otherwise the function addresses will be invalid.
+    if (bluegl::bind()) {
+        utility::LogWarning("Visualizer::InitOpenGL: bluegl::bind() error.");
+    }
+#endif
+
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
         utility::LogWarning("Failed to initialize GLEW.");

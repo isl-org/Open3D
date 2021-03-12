@@ -20,8 +20,11 @@ env:
   STOOLS_VER: "50.3.2"
   PYTEST_VER: "6.0.1"
   SCIPY_VER: "1.4.1"
+  JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   NPROC: 2
   CONDA_BUILD_VER: "3.20.0"
+  SRC_DIR: "D:\\a\\open3d\\open3d"
+  BUILD_DIR: "C:\\Open3D\\build"
 
 jobs:
   windows:
@@ -34,6 +37,14 @@ jobs:
         CONFIG: [Release, Debug]
 
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Disk space used
+        run: Get-PSDrive
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -43,26 +54,49 @@ jobs:
         with:
           python-version: 3.6
       - name: Config
+        # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
-          mkdir build
-          cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
+          cd ${{ env.BUILD_DIR }}
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DBUILD_EXAMPLES=OFF `
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
+            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            -DBUILD_RPC_INTERFACE=ON `
+            -DBUILD_LIBREALSENSE=ON `
+            ${{ env.SRC_DIR }}
       - name: Build
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
-          cd build
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target INSTALL
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target build-examples-iteratively
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target build-examples-iteratively
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target INSTALL
       - name: Linking to Open3D
         run: |
-          cd docs\_static\C++
+          $ErrorActionPreference = 'Stop'
+          git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+          cd open3d-cmake-find-package
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
-          cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            ..
+          cmake --build . --config ${{ matrix.CONFIG }}
+          .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
+          Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Python package
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
-          cd build
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+            wheel==${{ env.WHEEL_VER }} `
+            setuptools==${{ env.STOOLS_VER }} `
+            jedi==${{ env.JEDI_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
@@ -71,15 +105,24 @@ jobs:
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Disk space used
-        run: Get-PSDrive (get-location).Drive
+        run: Get-PSDrive
 
   build-wheel:
     name: Build wheel
     runs-on: windows-latest
     strategy:
       fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
@@ -89,7 +132,7 @@ jobs:
           submodules: true
 
       - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v1
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
@@ -97,18 +140,31 @@ jobs:
       - name: Config
         shell: pwsh
         run: |
-          mkdir build
-          cd build
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
+          cd ${{ env.BUILD_DIR }}
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" ..
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DBUILD_AZURE_KINECT=ON `
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DBUILD_SHARED_LIBS=OFF `
+            -DSTATIC_WINDOWS_RUNTIME=ON `
+            -DBUILD_RPC_INTERFACE=ON `
+            -DBUILD_LIBREALSENSE=ON `
+            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            ${{ env.SRC_DIR }}
 
       - name: Build Python package
         shell: pwsh
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
-          cd build
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+            wheel==${{ env.WHEEL_VER }} `
+            setuptools==${{ env.STOOLS_VER }}
           conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           conda-build --version
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-conda-package
@@ -125,14 +181,14 @@ jobs:
         with:
           name: open3d_win_amd64_wheels
           path: |
-            build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
-            build/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }}
+            ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+            ${{ env.BUILD_DIR }}/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }}
           if-no-files-found: error
 
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         env:
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         with:
@@ -147,14 +203,15 @@ jobs:
           python_version: ${{ matrix.python_version }}
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         run: |
+          $ErrorActionPreference = 'Stop'
           $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
-          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
+          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           if ($LastExitCode -eq 0) {
             echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
           } else {
             throw "Wheel upload failed"
           }
-          gsutil cp build/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/win-64/
+          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/win-64/
           if ($LastExitCode -eq 0) {
             echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/win-64/${{ env.CONDA_PKG_NAME }}"
           } else {
@@ -169,6 +226,14 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -189,11 +254,14 @@ jobs:
 
       - name: Test Python package
         run: |
+          $ErrorActionPreference = 'Stop'
           python -V
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
 
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+            wheel==${{ env.WHEEL_VER }} `
+            setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
@@ -207,8 +275,9 @@ jobs:
 
       - name: Run Python unit tests (benchmarks)
         run: |
+          $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/core/test_faiss.py
+          python -m pytest python/test/ --ignore python/test/ml_ops/
           deactivate

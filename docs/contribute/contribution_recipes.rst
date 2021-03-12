@@ -237,7 +237,7 @@ Case 2: When documenting Python bindings
                    ":meth:`open3d.Calculator.add` is "
                    "commutative.",
                                 "a"_a, "b"_a);
-    calculator.def("sub", &Calculator::Add, "Substracts ``b`` from ``a``", "a"_a,
+    calculator.def("sub", &Calculator::Add, "Subtracts ``b`` from ``a``", "a"_a,
                                 "b"_a);
     docstring::ClassMethodDocInject(m, "Calculator", "add",
                                     {{"a", "LHS operand for summation."},
@@ -256,14 +256,10 @@ Case 3: When documenting pure Python code (no bindings)
 Case 4: When adding a Python tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Place your tutorial within Open3D/docs/tutorial
-* There, create a new nblink file pointing to your ipynb notebook
-
-  * e.g.: TutorialPointcloud.nblink
-
-  .. note:: { "path": "../../../examples/TutorialPointcloud.ipynb" }
-
-* Update the `index.rst` file to include your new tutorial
+* Place your tutorial notebook within ``Open3D/examples/python``
+* Inside ``Open3D/docs/tutorial``, update the ``toctree`` directive within the
+  appropriate ``index.rst`` file
+* Update the ``index.rst`` file to include your new tutorial
 
 .. note::
    When you commit a ipynb notebook file make sure to remove the output cells

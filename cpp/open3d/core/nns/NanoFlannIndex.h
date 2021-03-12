@@ -29,6 +29,8 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NNSIndex.h"
+#include "open3d/utility/Console.h"
 
 // Forward declarations.
 namespace nanoflann {
@@ -120,7 +122,7 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 /// \class NanoFlann
 ///
 /// \brief KDTree with NanoFlann for nearest neighbor search.
-class NanoFlannIndex {
+class NanoFlannIndex : public NNSIndex {
 public:
     /// \brief Default Constructor.
     NanoFlannIndex();
@@ -135,63 +137,32 @@ public:
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
 
 public:
-    /// Set the data for the KDTree from a Tensor.
-    ///
-    /// \param dataset_points Dataset points for KDTree construction. Must be
-    /// 2D, with shape {n, d}.
-    /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const Tensor &dataset_points);
+    bool SetTensorData(const Tensor &dataset_points) override;
 
-    /// Perform K nearest neighbor search.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param knn Number of nearest neighbor to search.
-    /// \return Pair of Tensors: (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, same dtype with dataset_points.
-    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points, int knn);
+    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+        utility::LogError(
+                "NanoFlannIndex::SetTensorData with radius not implemented.");
+    }
 
-    /// Perform radius search with multiple radii.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radii list of radius. Must be 1D, with shape {n, }.
-    /// \return Tuple of Tensors: (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
-                                                    const Tensor &radii);
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
+                                        int knn) const override;
 
-    /// Perform radius search.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radius Radius.
-    /// \return Tuple of Tensors, (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
-                                                    double radius);
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points,
+            const Tensor &radii,
+            bool sort = true) const override;
 
-    /// Get dimension of the dataset points.
-    /// \return dimension of dataset points.
-    int GetDimension() const;
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points,
+            double radius,
+            bool sort = true) const override;
 
-    /// Get size of the dataset points.
-    /// \return number of points in dataset.
-    size_t GetDatasetSize() const;
-
-    /// Get dtype of the dataset points.
-    /// \return dtype of dataset points.
-    Dtype GetDtype() const;
+    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
+                                           double radius,
+                                           int max_knn) const override;
 
 protected:
-    Tensor dataset_points_;
+    // Tensor dataset_points_;
     std::unique_ptr<NanoFlannIndexHolderBase> holder_;
 };
 }  // namespace nns

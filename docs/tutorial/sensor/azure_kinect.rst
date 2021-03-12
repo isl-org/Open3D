@@ -21,11 +21,8 @@ On Ubuntu, you'll need to set up a udev rule to use the Kinect camera without
 After installation, you may run ``k4aviewer`` from the Linux terminal or
 ``k4aviewer.exe`` on Windows to make sure that the device is working.
 
-Currently, Open3D supports the Azure Kinect SDK version ``v1.2.0``, though future
+Currently, Open3D supports the Azure Kinect SDK version ``v1.4.1``, though future
 versions might also be compatible.
-
-If you're using Ubuntu 16.04, the Azure Kinect SDK is not officially supported.
-We have an unofficial workaround, see :ref:`azure_kinect_u1604_fix` for details.
 
 
 Using Open3D from Pip or Conda
@@ -40,8 +37,8 @@ On Ubuntu, the default search path
 follows the Linux `convention <https://unix.stackexchange.com/a/22999/130082>`_.
 
 On Windows, Open3D will try to load the shared library from the default
-installation path. For example, for K4A ``v1.2.0``, the default path is
-``C:\Program Files\Azure Kinect SDK v1.2.0``. If this doesn't work, copy
+installation path. For example, for K4A ``v1.4.1``, the default path is
+``C:\Program Files\Azure Kinect SDK v1.4.1``. If this doesn't work, copy
 ``depthengine_x_x.dll``, ``k4a.dll`` and ``k4arecord.dll`` to where Open3D
 Python module is installed if you're using Open3D with Python, or to the same
 directory as your C++ executable.
@@ -177,56 +174,3 @@ flag.
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_mkv_reader_extract.png
     :alt: azure_kinect_mkv_reader_extract.png
-
-.. _azure_kinect_u1604_fix:
-
-Unofficial Ubuntu 16.04 workaround
-==================================
-
-The Azure Kinect SDK is not officially supported on Ubuntu 16.04. We provide
-unofficial support for experimental purposes.
-
-Using Open3D Python packages
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For Python Open3D, run
-
-.. code-block:: sh
-
-    pip install open3d_azure_kinect_ubuntu1604_fix
-
-The ``open3d_azure_kinect_ubuntu1604_fix`` package contains 4 shared libs:
-
-- ``libstdc++.so``: copied from ubuntu 18.04, needed by ``libdepthengine.so``
-- ``libdepthengine.so``: copied from K4A installation on ubuntu 18.04
-- ``libk4a.so``: build from source on ubuntu 16.04
-- ``libk4arecord.so``: build from source on ubuntu 16.04
-
-The ``open3d_azure_kinect_ubuntu1604_fix`` will preload the shared libs and set
-``LD_LIBRARY_PATH`` which are then used by ``dlopen`` when the Kinect library
-is loaded from the compiled module.
-
-After installing ``open3d_azure_kinect_ubuntu1604_fix``, import Open3D as usual
-with ``import open3d``. Open3D will try to load the shared libraries at
-initialization time in ``__init__.py``.
-
-Compiling Open3D from source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-First, install ``open3d_azure_kinect_ubuntu1604_fix`` package in your Python
-environment. This package contains the headers that are required for compiling
-Open3D with Azure Kinect support.
-
-When building Open3D from source, set the flag ``-DBUILD_AZURE_KINECT=ON``
-at CMake configure time. CMake will then try to detect the location of the
-``open3d_azure_kinect_ubuntu1604_fix`` package using the ``Python`` executable
-available from the current ``PATH``. Therefore, when running CMake, make sure
-that the same Python environment where ``open3d_azure_kinect_ubuntu1604_fix``
-was installed is activated.
-
-If you build a C++ binary, you'll still need to ensure that
-``LD_LIBRARY_PATH`` contains the directory which contains ``libstdc++.so`` and
-``libdepthengine.so`` at runtime. If you build the compiled Open3D Python
-module, Open3D's ``__init__.py`` will try to import
-``open3d_azure_kinect_ubuntu1604_fix`` to append the ``LD_LIBRARY_PATH``
-automatically.

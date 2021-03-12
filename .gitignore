@@ -47,6 +47,7 @@ __pycache__
 node_modules/
 static/
 *.old*
+dist/
 compile_commands.json
 
 # Example resources

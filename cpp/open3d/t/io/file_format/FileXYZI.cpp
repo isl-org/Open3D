@@ -28,7 +28,6 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
@@ -55,19 +54,23 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
         }
         utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(file.GetFileSize());
+        int64_t num_points = file.GetNumLines();
 
         pointcloud.Clear();
-        core::TensorList points({3}, core::Dtype::Float64),
-                intensities({1}, core::Dtype::Float64);
+        core::Tensor points({num_points, 3}, core::Dtype::Float64);
+        core::Tensor intensities({num_points, 1}, core::Dtype::Float64);
+        double *points_ptr = points.GetDataPtr<double>();
+        double *intensities_ptr = intensities.GetDataPtr<double>();
+
         int i = 0;
         double x, y, z, I;
         const char *line_buffer;
         while ((line_buffer = file.ReadLine())) {
             if (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z, &I) == 4) {
-                points.PushBack(core::Tensor(std::vector<double>{x, y, z}, {3},
-                                             core::Dtype::Float64));
-                intensities.PushBack(core::Tensor(std::vector<double>{I}, {1},
-                                                  core::Dtype::Float64));
+                points_ptr[3 * i + 0] = x;
+                points_ptr[3 * i + 1] = y;
+                points_ptr[3 * i + 2] = z;
+                intensities_ptr[i] = I;
             }
             if (++i % 1000 == 0) {
                 reporter.Update(file.CurPos());
@@ -99,8 +102,8 @@ bool WritePointCloudToXYZI(const std::string &filename,
             return false;
         }
         utility::CountingProgressReporter reporter(params.update_progress);
-        const core::Tensor &points = pointcloud.GetPoints().AsTensor();
-        if (points.GetShape(1) != 3) {
+        const core::Tensor &points = pointcloud.GetPoints();
+        if (!points.GetShape().IsCompatible({utility::nullopt, 3})) {
             utility::LogWarning(
                     "Write XYZI failed: Shape of points is {}, but it should "
                     "be Nx3.",
@@ -108,7 +111,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
             return false;
         }
         const core::Tensor &intensities =
-                pointcloud.GetPointAttr("intensities").AsTensor();
+                pointcloud.GetPointAttr("intensities");
         if (points.GetShape(0) != intensities.GetShape(0)) {
             utility::LogWarning(
                     "Write XYZI failed: Points ({}) and intensities ({}) have "

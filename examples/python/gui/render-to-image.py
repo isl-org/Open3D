@@ -2,7 +2,6 @@
 
 import open3d as o3d
 import open3d.visualization.rendering as rendering
-import open3d.visualization.gui as gui
 
 
 def main():
@@ -44,9 +43,9 @@ def main():
     render.scene.add_geometry("box", box, grey)
     render.scene.add_geometry("solid", solid, white)
     render.scene.camera.look_at([0, 0, 0], [0, 10, 0], [0, 0, 1])
-    render.scene.scene.set_directional_light([0.707, 0.0, -.707],
-                                             [1.0, 1.0, 1.0], 75000)
-    render.scene.scene.enable_directional_light(True)
+    render.scene.scene.set_sun_light([0.707, 0.0, -.707], [1.0, 1.0, 1.0],
+                                     75000)
+    render.scene.scene.enable_sun_light(True)
     render.scene.show_axes(True)
 
     img = render.render_to_image()

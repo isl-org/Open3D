@@ -92,7 +92,9 @@ std::string GetFileParentDirectory(const std::string &filename) {
 }
 
 std::string GetRegularizedDirectoryName(const std::string &directory) {
-    if (directory.back() != '/' && directory.back() != '\\') {
+    if (directory.empty()) {
+        return "/";
+    } else if (directory.back() != '/' && directory.back() != '\\') {
         return directory + "/";
     } else {
         return directory;
@@ -153,16 +155,19 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     }
 
     std::vector<std::string> components;
-    if (!isWindowsPath) {
-        components.push_back("/");
-    }
     if (isRelative) {
         auto cwd = utility::filesystem::GetWorkingDirectory();
         auto cwdComponents = SplitByPathSeparators(cwd);
         components.insert(components.end(), cwdComponents.begin(),
                           cwdComponents.end());
+        if (cwd[0] != '/') {
+            isWindowsPath = true;
+        }
     } else {
         // absolute path, don't need any prefix
+    }
+    if (!isWindowsPath) {
+        components.insert(components.begin(), "/");
     }
 
     for (auto &dir : pathComponents) {
@@ -286,6 +291,29 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
         }
     }
     return true;
+}
+
+std::vector<std::string> FindFilesRecursively(
+        const std::string &directory,
+        std::function<bool(const std::string &)> is_match) {
+    std::vector<std::string> matches;
+
+    std::vector<std::string> subdirs;
+    std::vector<std::string> files;
+    ListDirectory(directory, subdirs, files);  // results are paths
+    for (auto &f : files) {
+        if (is_match(f)) {
+            matches.push_back(f);
+        }
+    }
+    for (auto &d : subdirs) {
+        auto submatches = FindFilesRecursively(d, is_match);
+        if (!submatches.empty()) {
+            matches.insert(matches.end(), submatches.begin(), submatches.end());
+        }
+    }
+
+    return matches;
 }
 
 FILE *FOpen(const std::string &filename, const std::string &mode) {
@@ -459,6 +487,33 @@ int64_t CFile::GetFileSize() {
         utility::LogError("fsetpos failed: {}", GetError());
     }
     return size;
+}
+
+int64_t CFile::GetNumLines() {
+    if (!file_) {
+        utility::LogError("CFile::GetNumLines() called on a closed file");
+    }
+    fpos_t prevpos;
+    if (fgetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fgetpos failed: {}", GetError());
+    }
+    if (fseek(file_, 0, SEEK_SET)) {
+        error_code_ = errno;
+        utility::LogError("fseek failed: {}", GetError());
+    }
+    int64_t num_lines = 0;
+    int c;
+    while (EOF != (c = getc(file_))) {
+        if (c == '\n') {
+            num_lines++;
+        }
+    }
+    if (fsetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fsetpos failed: {}", GetError());
+    }
+    return num_lines;
 }
 
 const char *CFile::ReadLine() {

@@ -73,6 +73,9 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
         static const std::vector<std::string> k4a_lib_path_hints = {
             env_lib_dir,
             "",
+            "C:\\Program Files\\Azure Kinect SDK v1.4.1\\sdk\\windows-desktop\\amd64\\release\\bin",
+            "C:\\Program Files\\Azure Kinect SDK v1.4.0\\sdk\\windows-desktop\\amd64\\release\\bin",
+            "C:\\Program Files\\Azure Kinect SDK v1.3.0\\sdk\\windows-desktop\\amd64\\release\\bin",
             "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\bin"
         };
         // clang-format on

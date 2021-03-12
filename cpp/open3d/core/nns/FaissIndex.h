@@ -28,6 +28,10 @@
 
 #include <vector>
 
+#include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NNSIndex.h"
+#include "open3d/utility/Console.h"
+
 // Forward declarations.
 namespace faiss {
 struct Index;
@@ -40,7 +44,57 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-void TestFaissIntegration();
+/// \class FaissIndex
+///
+/// \brief Faiss for nearest neighbor search.
+class FaissIndex : public NNSIndex {
+public:
+    /// \brief Default Constructor.
+    FaissIndex();
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param tensor Provides tensor from which Faiss Index is constructed.
+    FaissIndex(const Tensor &dataset_points);
+    ~FaissIndex();
+    FaissIndex(const FaissIndex &) = delete;
+    FaissIndex &operator=(const FaissIndex &) = delete;
+
+public:
+    // dataset_points must be float32.
+    bool SetTensorData(const Tensor &dataset_points) override;
+
+    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+        utility::LogError(
+                "FaissIndex::SetTensorData with radius not implemented.");
+    }
+
+    // query_points must be float32.
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
+                                        int knn) const override;
+
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
+                                                    const Tensor &radii,
+                                                    bool sort) const override {
+        utility::LogError("FaissIndex::SearchHybrid not implemented.");
+    }
+
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
+                                                    double radius,
+                                                    bool sort) const override {
+        utility::LogError("FaissIndex::SearchHybrid not implemented.");
+    }
+
+    // query_points must be float32.
+    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
+                                           double radius,
+                                           int max_knn) const override;
+
+protected:
+    std::unique_ptr<faiss::Index> index;
+#ifdef BUILD_CUDA_MODULE
+    std::unique_ptr<faiss::gpu::StandardGpuResources> res;
+#endif
+};
 
 }  // namespace nns
 }  // namespace core

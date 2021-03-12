@@ -32,18 +32,6 @@
 
 namespace open3d {
 namespace io {
-namespace rpc {
-
-std::shared_ptr<zmq::message_t> DummyReceiver::CreateStatusOKMsg() {
-    auto OK = messages::Status::OK();
-    msgpack::sbuffer sbuf;
-    messages::Reply reply{OK.MsgId()};
-    msgpack::pack(sbuf, reply);
-    msgpack::pack(sbuf, OK);
-    return std::shared_ptr<zmq::message_t>(
-            new zmq::message_t(sbuf.data(), sbuf.size()));
-}
-
-}  // namespace rpc
+namespace rpc {}  // namespace rpc
 }  // namespace io
 }  // namespace open3d

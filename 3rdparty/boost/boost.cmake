@@ -8,9 +8,6 @@
 
 include(ExternalProject)
 
-if(WIN32)
-    message(FATAL_ERROR "Win32 not supported.")
-endif()
 
 ExternalProject_Add(
     ext_boost
@@ -24,8 +21,8 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND echo "Running Boost build..."
     COMMAND python tools/boostdep/depinst/depinst.py predef
-    COMMAND ./bootstrap.sh
-    COMMAND ./b2 headers
+    COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
+    COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
     UPDATE_COMMAND ""
     INSTALL_COMMAND ""
 )

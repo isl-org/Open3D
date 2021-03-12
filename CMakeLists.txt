@@ -1,17 +1,14 @@
+cmake_minimum_required(VERSION 3.18)
+# If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
+# official repository https://apt.kitware.com/.  CMake 3.18+ is required to
+# allow linking with OBJECT libraries, to prevent erroneous -gencode option
+# deduplication with CUDA, and to simplify generator expressions for selecting
+# compile flags and setting global hardened link flags.
 
-if (WIN32)
-    cmake_minimum_required(VERSION 3.18)
-else()
-    # If you're using Ubuntu 18.04 or older, we suggest you install the latest
-    # CMake from the official repository https://apt.kitware.com/.
-    # CMake 3.15+ is required to allow linking with OBJECT libraries,
-    # to prevent erroneous -gencode option deduplication with CUDA,
-    # and to simplify generator expressions for selecting compile flags.
-    cmake_minimum_required(VERSION 3.15)
-endif()
-
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING
+if (APPLE)
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
     "Minimum OS X deployment version" FORCE)
+endif()
 
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
@@ -24,6 +21,7 @@ option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON 
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
+option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
@@ -50,22 +48,42 @@ option(WITH_FAISS                 "Enable Faiss"                             ON 
 
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
+option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"    OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
-option(DEVELOPER_BUILD  "Add -dev+commit_hash to the project version number" ON )
+option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
 
-# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
-# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
-# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
+# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
+# downloading it from the internet. The files inside OPEN3D_THIRD_PARTY_DOWNLOAD_DIR
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
-if(THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+
+find_program(CCACHE "ccache")
+if (CCACHE)
+    message(STATUS "ccache found at ${CCACHE}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+    if(BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_COMPILER_LAUNCHER ${CCACHE})
+    endif()
+endif()
+
+set(THIRD_PARTY_FROM "cmake options")
+if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
+        IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
+        NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
+    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+    set(THIRD_PARTY_FROM "the environment")
+endif()
+if(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
+    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is set to "
+    "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
 else()
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
+    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
 endif()
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
@@ -103,18 +121,11 @@ if(POLICY CMP0063)
 endif()
 
 # Set policy to enable MSVC_RUNTIME_LIBRARY property.
-# TODO: This requires CMake 3.15+ on Winndows. At this point, we're not updating
-# cmake_minimum_required to 3.15 since it may break existing systems. As Windows
-# users can typically download the latest CMake, the impact should be minimal.
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
 
 # Catch a few incompatible build options
-if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
-    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
-    set(BUILD_LIBREALSENSE OFF)
-endif()
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(STATUS "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
@@ -127,10 +138,6 @@ if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
-endif()
-if(BUILD_RPC_INTERFACE AND WIN32)
-    message(STATUS "The RPC interface is currently unsupported on Windows.")
-    set(BUILD_RPC_INTERFACE OFF)
 endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
@@ -145,8 +152,8 @@ foreach(ver ${OPEN3D_VERSION_READ})
 endforeach()
 set(OPEN3D_VERSION_DEVHASH "")
 if(DEVELOPER_BUILD)
-    execute_process(COMMAND git log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV ERROR_QUIET)
+    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV)
     if (GIT_REV)
         set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
     endif()
@@ -238,6 +245,107 @@ endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
+# Global Security options (including 3rd party code)
+# Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# -Wall -Wextra -Werror or /W4 /WX are enabled for Open3D code (not 3rd party)
+if (MSVC)
+    set(HARDENING_CFLAGS
+        /sdl            # SDL Checks
+        /GS             # Code Generation: Security Check
+        /guard:cf       # Code Generation: Control Flow Guard
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS
+        /INCREMENTAL:NO  # Disable incremental Linking
+        /NXCOMPAT        # Data Execution Prevention: On by default in VS2019
+        /DYNAMICBASE     # Randomized Base Address
+        /HIGHENTROPYVA   #
+        #/INTEGRITYCHECK # Signed binary: Disabled
+        CACHE STRING "Linker flags for security hardening")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
+    set(HARDENING_CFLAGS
+        -fstack-protector               # Stack-based buffer overrun detection
+        -Wformat -Wformat-security      # Format string vulnerability
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS
+        -fsanitize=safe-stack       # Stack execution protection
+        -Wl,-z,relro,-z,now         # Data relocation protection
+        -pie                        # Position independent executable
+        CACHE STRING "Linker flags for security hardening")
+    if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
+        list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
+        list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
+    endif()
+    if(NOT DEVELOPER_BUILD)
+        list(APPEND HARDENING_CFLAGS -O2)
+        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
+    set(HARDENING_CFLAGS
+        -fstack-protector               # Stack-based buffer overrun detection
+        -Wformat -Wformat-security      # Format string vulnerability
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS  ""
+        # -pie Position independent execution is default on macOSX 10.6+
+        CACHE STRING "Linker flags for security hardening")
+    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+        list(APPEND HARDENING_CFLAGS -O2)
+        list(APPEND HARDENING_LDFLAGS -S)
+    endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
+    set(HARDENING_CFLAGS
+        -fstack-protector-strong    # Stack-based buffer overrun detection
+        -Wformat -Wformat-security  # Format string vulnerability
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS
+        -Wl,-z,noexecstack   # Stack execution protection
+        -Wl,-z,relro,-z,now  # Data relocation protection
+        -pie                 # Position independent executable
+        CACHE STRING "Linker flags for security hardening")
+    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+        list(APPEND HARDENING_CFLAGS -O2)
+        list(APPEND HARDENING_LDFLAGS -strip-debug)
+    endif()
+else()
+    message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
+    "flags set")
+endif()
+include(CheckCXXCompilerFlag)
+foreach(FLAG ${HARDENING_CFLAGS})
+    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
+    check_cxx_compiler_flag("${FLAG}" FLAG${FLAGRESULT})
+    if (NOT FLAG${FLAGRESULT})
+        list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
+        message(WARNING "Compiler does not support security option ${FLAG}")
+    endif()
+endforeach()
+include(CheckLinkerFlag)
+foreach(FLAG ${HARDENING_LDFLAGS})
+    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
+    check_linker_flag(CXX "${FLAG}" FLAG${FLAGRESULT})              # cmake 3.18+
+    if (NOT FLAG${FLAGRESULT})
+        list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
+        message(WARNING "Linker does not support security option ${FLAG}")
+    endif()
+endforeach()
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
+linker flags: ${HARDENING_LDFLAGS}")
+list(TRANSFORM HARDENING_LDFLAGS REPLACE "-pie"
+    "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-pie>")
+string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
+string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
+add_compile_options(
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
+    )
+add_link_options(
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_LDFLAGS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
+    )
 
 # Build CUDA module by default if CUDA is available
 # Compatible with CMake 3.8+
@@ -363,6 +471,12 @@ function(open3d_set_global_properties target)
         cxx_trailing_return_types
         cxx_return_type_deduction
     )
+    # Colorize GCC/Clang terminal outputs
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fcolor-diagnostics>)
+    endif ()
     target_include_directories(${target} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
@@ -373,11 +487,14 @@ function(open3d_set_global_properties target)
             target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
         endif()
     endif()
+    if(BUILD_GUI)
+        target_compile_definitions(${target} PRIVATE BUILD_GUI)
+    endif()
     if(USE_BLAS)
         target_compile_definitions(${target} PRIVATE USE_BLAS)
     endif()
     if(BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE)
+        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if(GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -430,6 +547,9 @@ function(open3d_set_global_properties target)
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+    if(WITH_FAISS)
+        target_compile_definitions(${target} PRIVATE WITH_FAISS)
+    endif()
 endfunction()
 
 macro(add_source_group module_name)
@@ -501,6 +621,7 @@ message(STATUS "Enabled Features:")
 open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
+open3d_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
@@ -508,7 +629,7 @@ if(WIN32)
     open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
-open3d_aligned_print("Build Examples" "${BUILD_CPP_EXAMPLES}")
+open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
 open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
 if(BUILD_PYTHON_MODULE)
     open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
@@ -536,6 +657,7 @@ set(deps
     GLFW
     GOOGLETEST
     IMGUI
+    IPPICV
     JPEG
     JSONCPP
     LIBLZF

@@ -26,274 +26,298 @@
 
 #include "open3d/core/hashmap/Hashmap.h"
 
+#include <random>
 #include <unordered_map>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/utility/Optional.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {
 
+template <typename K, typename V>
+class HashData {
+public:
+    HashData(int count, int slots) {
+        keys_.resize(count);
+        vals_.resize(count);
+
+        std::vector<int> indices(count);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::shuffle(indices.begin(), indices.end(),
+                     std::default_random_engine(0));
+
+        // Ensure enough duplicates for harder tests
+        for (int i = 0; i < count; ++i) {
+            int v = indices[i] % slots;
+            keys_[i] = v * k_factor_;
+            vals_[i] = v;
+        }
+    }
+
+public:
+    const int k_factor_ = 100;
+    std::vector<K> keys_;
+    std::vector<V> vals_;
+};
+
 class HashmapPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Hashmap,
                          HashmapPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(HashmapPermuteDevices, Init) {
+TEST_P(HashmapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
 
     int n = 5;
     std::vector<int> keys_val = {100, 300, 500, 700, 900};
     std::vector<int> values_val = {1, 3, 5, 7, 9};
 
-    core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
-    core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
+    core::Tensor keys(keys_val, {n}, core::Dtype::Int32, device);
+    core::Tensor values(values_val, {n}, core::Dtype::Int32, device);
 
     int init_capacity = n * 2;
     core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
-                          device);
+                          {1}, {1}, device);
 
-    core::Tensor masks({n}, core::Dtype::Bool, device);
-    core::Tensor iterators({n},
-                           core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(core::iterator_t), "iterator_t"),
-                           device);
-    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
+    core::Tensor addrs, masks;
+    hashmap.Insert(keys, values, addrs, masks);
+
     EXPECT_TRUE(masks.All());
     EXPECT_EQ(hashmap.Size(), 5);
 }
 
 TEST_P(HashmapPermuteDevices, Find) {
     core::Device device = GetParam();
-
-    int n = 5;
-    std::vector<int> keys_val = {100, 300, 500, 700, 900};
-    std::vector<int> values_val = {1, 3, 5, 7, 9};
-
-    core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
-    core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
-
+    const int n = 1000000;
+    const int slots = 1023;
     int init_capacity = n * 2;
     core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
-                          device);
+                          {1}, {1}, device);
 
-    core::Tensor masks({n}, core::Dtype::Bool, device);
-    core::Tensor iterators({n},
-                           core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(core::iterator_t), "iterator_t"),
-                           device);
-    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
-    hashmap.Find(keys.GetDataPtr(),
-                 static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                 static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_TRUE(masks.All());
+    // Insert once, find twice
+    HashData<int, int> data(n, slots);
 
-    std::vector<int> keys_query_val = {100, 500, 800, 900, 1000};
-    core::Tensor keys_query(keys_query_val, {5}, core::Dtype::Int32, device);
-    hashmap.Find(keys_query.GetDataPtr(),
-                 static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                 static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(masks.ToFlatVector<bool>(),
-              std::vector<bool>({true, true, false, true, false}));
+    core::Tensor keys(data.keys_, {n}, core::Dtype::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
 
-    core::Tensor keys_valid({5}, core::Dtype::Int32, device);
-    core::Tensor values_valid({5}, core::Dtype::Int32, device);
-    hashmap.UnpackIterators(
-            static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-            static_cast<bool *>(masks.GetDataPtr()), keys_valid.GetDataPtr(),
-            values_valid.GetDataPtr(), n);
-    EXPECT_EQ(keys_valid[0].Item<int>(), 100);
-    EXPECT_EQ(keys_valid[1].Item<int>(), 500);
-    EXPECT_EQ(keys_valid[3].Item<int>(), 900);
-    EXPECT_EQ(values_valid[0].Item<int>(), 1);
-    EXPECT_EQ(values_valid[1].Item<int>(), 5);
-    EXPECT_EQ(values_valid[3].Item<int>(), 9);
+    core::Tensor addrs, masks;
+    hashmap.Insert(keys, values, addrs, masks);
+    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
+
+    hashmap.Find(keys, addrs, masks);
+    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), n);
+
+    // Check found results
+    core::Tensor valid_indices = addrs.IndexGet({masks}).To(core::Dtype::Int64);
+    std::vector<core::Tensor> ai({valid_indices});
+
+    core::Tensor buffer_keys = hashmap.GetKeyTensor();
+    core::Tensor buffer_values = hashmap.GetValueTensor();
+
+    core::Tensor valid_keys = buffer_keys.IndexGet(ai);
+    core::Tensor valid_values = buffer_values.IndexGet(ai);
+    EXPECT_TRUE(valid_keys.AllClose(valid_values * data.k_factor_));
 }
 
 TEST_P(HashmapPermuteDevices, Insert) {
     core::Device device = GetParam();
-
-    int n = 5;
-    std::vector<int> keys_val = {100, 300, 500, 700, 900};
-    std::vector<int> values_val = {1, 3, 5, 7, 9};
-
-    core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
-    core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
-
+    const int n = 1000000;
+    const int slots = 1023;
     int init_capacity = n * 2;
     core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
-                          device);
+                          {1}, {1}, device);
 
-    core::Tensor masks({n}, core::Dtype::Bool, device);
-    core::Tensor iterators({n},
-                           core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(core::iterator_t), "iterator_t"),
-                           device);
+    // Insert once, find twice
+    HashData<int, int> data(n, slots);
 
-    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
+    core::Tensor keys(data.keys_, {n}, core::Dtype::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
 
-    std::vector<int> keys_insert_val = {100, 500, 800, 900, 1000};
-    std::vector<int> values_insert_val = {1, 5, 8, 9, 10};
-    core::Tensor keys_insert(keys_insert_val, {5}, core::Dtype::Int32, device);
-    core::Tensor values_insert(values_insert_val, {5}, core::Dtype::Int32,
-                               device);
-    hashmap.Insert(keys_insert.GetDataPtr(), values_insert.GetDataPtr(),
-                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
+    core::Tensor addrs, masks;
+    hashmap.Insert(keys, values, addrs, masks);
+    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
 
-    EXPECT_EQ(hashmap.Size(), 7);
-    EXPECT_EQ(masks.ToFlatVector<bool>(),
-              std::vector<bool>({false, false, true, false, true}));
+    int64_t s = hashmap.Size();
+    EXPECT_EQ(s, slots);
+    core::Tensor active_addrs;
+    hashmap.GetActiveIndices(active_addrs);
 
-    n = hashmap.Size();
-    core::Tensor iterators_all(
-            {n},
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        sizeof(core::iterator_t), "iterator_t"),
-            device);
-    core::Tensor keys_all({n}, core::Dtype::Int32, device);
-    core::Tensor values_all({n}, core::Dtype::Int32, device);
-    hashmap.GetIterators(
-            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
-    hashmap.UnpackIterators(
-            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
-            nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
-    std::unordered_map<int, int> key_value_all = {
-            {100, 1}, {300, 3}, {500, 5},   {700, 7},
-            {800, 8}, {900, 9}, {1000, 10},
-    };
-    for (int64_t i = 0; i < n; ++i) {
-        int k = keys_all[i].Item<int>();
-        int v = values_all[i].Item<int>();
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    std::vector<core::Tensor> ai = {active_indices};
+    core::Tensor active_keys = hashmap.GetKeyTensor().IndexGet(ai);
+    core::Tensor active_values = hashmap.GetValueTensor().IndexGet(ai);
 
-        auto it = key_value_all.find(k);
-        EXPECT_TRUE(it != key_value_all.end());
-        EXPECT_EQ(it->first, k);
-        EXPECT_EQ(it->second, v);
+    std::vector<int> active_keys_vec = active_keys.ToFlatVector<int>();
+    std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
+
+    // Check matches
+    for (int i = 0; i < s; ++i) {
+        EXPECT_EQ(active_keys_vec[i], data.k_factor_ * active_values_vec[i]);
+    }
+    // Check existence
+    std::sort(active_values_vec.begin(), active_values_vec.end());
+    for (int i = 0; i < s; ++i) {
+        EXPECT_EQ(active_values_vec[i], i);
     }
 }
 
 TEST_P(HashmapPermuteDevices, Erase) {
     core::Device device = GetParam();
-
-    int n = 5;
-    std::vector<int> keys_val = {100, 300, 500, 700, 900};
-    std::vector<int> values_val = {1, 3, 5, 7, 9};
-
-    core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
-    core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
-
+    const int n = 1000000;
+    const int slots = 1023;
     int init_capacity = n * 2;
     core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
-                          device);
+                          {1}, {1}, device);
 
-    core::Tensor masks({n}, core::Dtype::Bool, device);
-    core::Tensor iterators({n},
-                           core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(core::iterator_t), "iterator_t"),
-                           device);
-    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
+    // Insert once, find twice
+    HashData<int, int> data_insert(n, slots);
 
-    std::vector<int> keys_erase_val = {100, 500, 800, 900, 1000};
-    core::Tensor keys_erase(keys_erase_val, {5}, core::Dtype::Int32, device);
-    hashmap.Erase(keys_erase.GetDataPtr(),
-                  static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(hashmap.Size(), 2);
-    EXPECT_EQ(masks.ToFlatVector<bool>(),
-              std::vector<bool>({true, true, false, true, false}));
+    core::Tensor keys_insert(data_insert.keys_, {n}, core::Dtype::Int32,
+                             device);
+    core::Tensor values_insert(data_insert.vals_, {n}, core::Dtype::Int32,
+                               device);
 
-    n = hashmap.Size();
-    core::Tensor iterators_all(
-            {n},
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        sizeof(core::iterator_t), "iterator_t"),
-            device);
-    core::Tensor keys_all({n}, core::Dtype::Int32, device);
-    core::Tensor values_all({n}, core::Dtype::Int32, device);
-    size_t n_ = hashmap.GetIterators(
-            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
-    EXPECT_EQ(n, n_);
-    hashmap.UnpackIterators(
-            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
-            nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
-    std::unordered_map<int, int> key_value_all = {
-            {300, 3},
-            {700, 7},
-    };
-    for (int64_t i = 0; i < n; ++i) {
-        int k = keys_all[i].Item<int>();
-        int v = values_all[i].Item<int>();
+    core::Tensor addrs_insert, masks_insert;
+    hashmap.Insert(keys_insert, values_insert, addrs_insert, masks_insert);
+    EXPECT_EQ(masks_insert.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(),
+              slots);
 
-        auto it = key_value_all.find(k);
-        EXPECT_TRUE(it != key_value_all.end());
-        EXPECT_EQ(it->first, k);
-        EXPECT_EQ(it->second, v);
+    HashData<int, int> data_erase(n, slots / 2);
+    core::Tensor keys_erase(data_erase.keys_, {n}, core::Dtype::Int32, device);
+    core::Tensor masks_erase;
+    hashmap.Erase(keys_erase, masks_erase);
+    EXPECT_EQ(masks_erase.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(),
+              slots / 2);
+
+    int64_t s = hashmap.Size();
+    EXPECT_EQ(s, slots - slots / 2);
+    core::Tensor active_addrs;
+    hashmap.GetActiveIndices(active_addrs);
+
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    std::vector<core::Tensor> ai = {active_indices};
+    core::Tensor active_keys = hashmap.GetKeyTensor().IndexGet(ai);
+    core::Tensor active_values = hashmap.GetValueTensor().IndexGet(ai);
+
+    std::vector<int> active_keys_vec = active_keys.ToFlatVector<int>();
+    std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
+
+    // Check matches
+    for (int i = 0; i < s; ++i) {
+        EXPECT_EQ(active_keys_vec[i],
+                  data_insert.k_factor_ * active_values_vec[i]);
+    }
+    // Check existence
+    std::sort(active_values_vec.begin(), active_values_vec.end());
+    for (int i = 0; i < s; ++i) {
+        EXPECT_EQ(active_values_vec[i], i + slots / 2);
     }
 }
 
 TEST_P(HashmapPermuteDevices, Rehash) {
     core::Device device = GetParam();
-
-    int n = 5;
-    std::vector<int> keys_val = {100, 300, 500, 700, 900};
-    std::vector<int> values_val = {1, 3, 5, 7, 9};
-
-    core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
-    core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
-
+    const int n = 1000000;
+    const int slots = 1023;
     int init_capacity = n * 2;
     core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
-                          device);
+                          {1}, {1}, device);
 
-    core::Tensor masks({n}, core::Dtype::Bool, device);
-    core::Tensor iterators({n},
-                           core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(core::iterator_t), "iterator_t"),
-                           device);
+    // Insert once, find twice
+    HashData<int, int> data(n, slots);
 
-    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
+    core::Tensor keys(data.keys_, {n}, core::Dtype::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
 
-    hashmap.Rehash(10);
-    n = hashmap.Size();
-    EXPECT_EQ(n, 5);
+    core::Tensor addrs, masks;
+    hashmap.Insert(keys, values, addrs, masks);
+    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
 
-    core::Tensor iterators_all(
-            {n},
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        sizeof(core::iterator_t), "iterator_t"),
-            device);
-    core::Tensor keys_all({n}, core::Dtype::Int32, device);
-    core::Tensor values_all({n}, core::Dtype::Int32, device);
-    hashmap.GetIterators(
-            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
-    hashmap.UnpackIterators(
-            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
-            nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
+    hashmap.Rehash(hashmap.GetBucketCount() * 2);
+    EXPECT_EQ(hashmap.Size(), slots);
 
-    std::unordered_map<int, int> key_value_all = {
-            {100, 1}, {300, 3}, {500, 5}, {700, 7}, {900, 9}};
-    for (int64_t i = 0; i < n; ++i) {
-        int k = keys_all[i].Item<int>();
-        int v = values_all[i].Item<int>();
+    core::Tensor active_addrs;
+    hashmap.GetActiveIndices(active_addrs);
 
-        auto it = key_value_all.find(k);
-        EXPECT_TRUE(it != key_value_all.end());
-        EXPECT_EQ(it->first, k);
-        EXPECT_EQ(it->second, v);
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    std::vector<core::Tensor> ai = {active_indices};
+    core::Tensor active_keys = hashmap.GetKeyTensor().IndexGet(ai);
+    core::Tensor active_values = hashmap.GetValueTensor().IndexGet(ai);
+
+    std::vector<int> active_keys_vec = active_keys.ToFlatVector<int>();
+    std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
+    // Check matches
+    for (int i = 0; i < slots; ++i) {
+        EXPECT_EQ(active_keys_vec[i], data.k_factor_ * active_values_vec[i]);
+    }
+    // Check existence
+    std::sort(active_values_vec.begin(), active_values_vec.end());
+    for (int i = 0; i < slots; ++i) {
+        EXPECT_EQ(active_values_vec[i], i);
+    }
+}
+
+class int3 {
+public:
+    int3() : x_(0), y_(0), z_(0){};
+    int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
+    bool operator==(const int3 &other) const {
+        return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
+    }
+    int x_;
+    int y_;
+    int z_;
+};
+
+TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
+    core::Device device = GetParam();
+    const int n = 1000000;
+    const int slots = 1023;
+    int init_capacity = n * 2;
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+                          {3}, {1}, device);
+
+    // Insert once, find twice
+    HashData<int3, int> data(n, slots);
+
+    std::vector<int> keys_int3;
+    keys_int3.assign(reinterpret_cast<int *>(data.keys_.data()),
+                     reinterpret_cast<int *>(data.keys_.data()) + 3 * n);
+    core::Tensor keys(keys_int3, {n, 3}, core::Dtype::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
+
+    core::Tensor addrs, masks;
+    hashmap.Insert(keys, values, addrs, masks);
+    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
+
+    int64_t s = hashmap.Size();
+    EXPECT_EQ(s, slots);
+
+    core::Tensor active_addrs;
+    hashmap.GetActiveIndices(active_addrs);
+    EXPECT_EQ(s, active_addrs.GetShape()[0]);
+
+    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+
+    std::vector<core::Tensor> ai = {active_indices};
+    core::Tensor active_keys = hashmap.GetKeyTensor().IndexGet(ai);
+    core::Tensor active_values = hashmap.GetValueTensor().IndexGet(ai);
+
+    EXPECT_TRUE(active_keys
+                        .GetItem({core::TensorKey::Slice(core::None, core::None,
+                                                         core::None),
+                                  core::TensorKey::Index(0)})
+                        .AllClose(active_values.View({s}) * data.k_factor_));
+    // Check existence
+    std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
+    std::sort(active_values_vec.begin(), active_values_vec.end());
+    for (int i = 0; i < s; ++i) {
+        EXPECT_EQ(active_values_vec[i], i);
     }
 }
 

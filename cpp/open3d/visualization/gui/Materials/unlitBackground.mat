@@ -1,0 +1,61 @@
+// Pass in a (triangulated) quad with vertices (-1, -1), (1, -1), (1, 1), (-1, 1)
+// which exactly covers the visible device coordinates. Skybox needs to be
+// disabled.
+material {
+    name : unlitBackground,
+    shadingModel : unlit,
+    vertexDomain : device,
+    depthWrite : false,
+
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : sampler2d, name : albedo },
+        { type : float,     name : aspectRatio }
+    ],
+    requires : [ color ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        // (This if should be fast, because is same branch for all pixels)
+        if (materialParams.aspectRatio == 0.0) {
+            material.baseColor = float4(materialParams.baseColor, 1.0f);
+        } else {
+            float4 resolution = getResolution();  // {w, h, 1/w, 1/h}
+            float bg_aspect_ratio = resolution[0] * resolution[3];
+            float2 xy = getNormalizedViewportCoord().xy;
+            //xy[1] = 1.0 - xy[1];  // flip y
+            // (This if should be fast because all pixels take same branch)
+            if (materialParams.aspectRatio < bg_aspect_ratio) {
+                float half_w = 0.5 / bg_aspect_ratio * materialParams.aspectRatio;
+                // (This if should have good coherence: nearby pixels are
+                // very likely to take the same branch)
+                if (xy[0] >= 0.5 - half_w && xy[0] <= 0.5 + half_w) {
+                    float2 uv = float2((xy[0] - (0.5 - half_w)) / (2.0 * half_w),
+                                       xy[1]);
+                    material.baseColor.rgb = texture(materialParams_albedo, uv).rgb;
+                } else {
+                    material.baseColor = float4(materialParams.baseColor, 1.0f);
+                }
+            } else {
+                float half_h = 0.5 / materialParams.aspectRatio * bg_aspect_ratio;
+                // (This if should have good coherence: nearby pixels are
+                // very likely to take the same branch)
+                if (xy[1] >= 0.5 - half_h && xy[1] <= 0.5 + half_h) {
+                    float2 uv = float2(xy[0],
+                                       (xy[1] - (0.5 - half_h)) / (2.0 * half_h));
+                    material.baseColor.rgb = texture(materialParams_albedo, uv).rgb;
+                } else {
+                    material.baseColor = float4(materialParams.baseColor, 1.0f);
+                }
+            }
+        }
+    }
+}

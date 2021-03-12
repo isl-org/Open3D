@@ -46,6 +46,7 @@ void pybind_visualization(py::module &m) {
 #ifdef BUILD_GUI
     rendering::pybind_rendering(m_visualization);
     gui::pybind_gui(m_visualization);
+    pybind_o3dvisualizer(m_visualization);
 #endif
 }
 

@@ -189,10 +189,7 @@ bool SetMeshData(const core::Tensor& vertices,
     }
 
     auto PrepareTensor = [](const core::Tensor& a) {
-        if (a.GetDevice().GetType() != core::Device::DeviceType::CPU) {
-            return a.Copy(core::Device("CPU:0"));
-        }
-        return a.Contiguous();
+        return a.To(core::Device("CPU:0")).Contiguous();
     };
 
     auto CreateArray = [](const core::Tensor& a) {
@@ -236,8 +233,8 @@ bool SetMeshData(const core::Tensor& vertices,
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());
-        } else if (faces.GetShape()[1] >= 3) {
-            LogError("SetMeshData: last dim of faces must be >3 but is {}",
+        } else if (faces.GetShape()[1] < 3) {
+            LogError("SetMeshData: last dim of faces must be >=3 but is {}",
                      faces.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(faces));
@@ -270,8 +267,8 @@ bool SetMeshData(const core::Tensor& vertices,
         } else if (lines.NumDims() != 2) {
             LogError("SetMeshData: lines must have rank 2 but is {}",
                      lines.NumDims());
-        } else if (lines.GetShape()[1] >= 2) {
-            LogError("SetMeshData: last dim of lines must be >2 but is {}",
+        } else if (lines.GetShape()[1] < 2) {
+            LogError("SetMeshData: last dim of lines must be >=2 but is {}",
                      lines.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(lines));

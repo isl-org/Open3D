@@ -91,6 +91,8 @@ public:
                   Renderer& renderer);
     ~FilamentScene();
 
+    Scene* Copy() override;
+
     // NOTE: Temporarily needed to support old View interface for ImGUI
     ViewHandle AddView(std::int32_t x,
                        std::int32_t y,
@@ -136,9 +138,14 @@ public:
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
                          bool receive_shadows) override;
+    void SetGeometryCulling(const std::string& object_name,
+                            bool enable) override;
+    void SetGeometryPriority(const std::string& object_name,
+                             uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
+
     void OverrideMaterialAll(const Material& material,
                              bool shader_only = true) override;
 
@@ -158,6 +165,11 @@ public:
                       float inner_cone_angle,
                       float outer_cone_angle,
                       bool cast_shadows) override;
+    bool AddDirectionalLight(const std::string& light_name,
+                             const Eigen::Vector3f& color,
+                             const Eigen::Vector3f& direction,
+                             float intensity,
+                             bool cast_shadows) override;
     Light& GetLight(const std::string& light_name) override;
     void RemoveLight(const std::string& light_name) override;
     void UpdateLight(const std::string& light_name,
@@ -178,14 +190,20 @@ public:
     void EnableLightShadow(const std::string& light_name,
                            bool cast_shadows) override;
 
-    void SetDirectionalLight(const Eigen::Vector3f& direction,
-                             const Eigen::Vector3f& color,
-                             float intensity) override;
-    void EnableDirectionalLight(bool enable) override;
-    void EnableDirectionalLightShadows(bool enable) override;
-    void SetDirectionalLightDirection(
-            const Eigen::Vector3f& direction) override;
-    Eigen::Vector3f GetDirectionalLightDirection() override;
+    void SetSunLight(const Eigen::Vector3f& direction,
+                     const Eigen::Vector3f& color,
+                     float intensity) override;
+    void EnableSunLight(bool enable) override;
+    void EnableSunLightShadows(bool enable) override;
+    void SetSunLightColor(const Eigen::Vector3f& color) override;
+    Eigen::Vector3f GetSunLightColor() override;
+    void SetSunLightIntensity(float intensity) override;
+    float GetSunLightIntensity() override;
+    void SetSunLightDirection(const Eigen::Vector3f& direction) override;
+    Eigen::Vector3f GetSunLightDirection() override;
+    void SetSunAngularRadius(float radius) override;
+    void SetSunHaloSize(float size) override;
+    void SetSunHaloFalloff(float falloff) override;
 
     bool SetIndirectLight(const std::string& ibl_name) override;
     const std::string& GetIndirectLight() override;
@@ -195,12 +213,18 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
-    void SetBackgroundColor(const Eigen::Vector4f& color) override;
+    void SetBackground(
+            const Eigen::Vector4f& color,
+            const std::shared_ptr<geometry::Image> image = nullptr) override;
+    void SetBackground(TextureHandle image) override;
+    void EnableGroundPlane(bool enable, GroundPlane plane) override;
+    void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
+
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }
 
@@ -251,12 +275,15 @@ private:
         std::string name;
         bool visible = true;
         bool cast_shadows = true;
-        bool receive_shadow = true;
+        bool receive_shadows = true;
+        bool culling_enabled = true;
+        int priority = -1;  // default priority
 
         GeometryMaterialInstance mat;
 
         // Filament resources
         utils::Entity filament_entity;
+        filament::RenderableManager::PrimitiveType primitive_type;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
         void ReleaseResources(filament::Engine& engine,
@@ -286,25 +313,34 @@ private:
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
+    void UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateDepthValueShader(GeometryMaterialInstance& geom_mi);
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
+    void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi);
+    void UpdateLineShader(GeometryMaterialInstance& geom_mi);
+    void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
+    void CreateBackgroundGeometry();
+    void CreateGroundPlaneGeometry();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;
     std::unordered_map<std::string, std::vector<std::string>> model_geometries_;
 
+    Eigen::Vector4f background_color_;
+    std::shared_ptr<geometry::Image> background_image_;
     std::string ibl_name_;
     bool ibl_enabled_ = false;
     bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
-    std::weak_ptr<filament::Skybox> color_skybox_;
     LightEntity sun_;
 };
 

@@ -26,8 +26,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "open3d/visualization/gui/Menu.h"
 
@@ -40,6 +43,7 @@ class Image;
 namespace visualization {
 
 namespace rendering {
+class Renderer;
 class View;
 class Scene;
 }  // namespace rendering
@@ -48,6 +52,7 @@ namespace gui {
 
 struct Theme;
 class Window;
+class WindowSystem;
 
 class Application {
 public:
@@ -65,6 +70,29 @@ public:
     void Initialize(int argc, const char *argv[]);
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
+
+    /// Sets the font for the character range in language specified two-letter
+    /// lowercase ISO 639-1 codes. The font can be a path to a TrueType (.ttf),
+    /// TrueType Collection (.ttc), or OpenType (.otf) file, or it can be the
+    /// name of the font, in which case the system font paths will be searched
+    /// from the file. Supported languages are:
+    ///   "en" (English)
+    ///   "ja" (Japanese)
+    ///   "ko" (Korean)
+    ///   "th" (Thai)
+    ///   "vi" (Vietnamese)
+    ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
+    ///   "zh_all" (Chinese, all characters, ~200 MB per window)
+    //  All other languages will be assumed to be Cyrillic.
+    void SetFontForLanguage(const char *font, const char *lang_code);
+
+    /// Sets the font for the specified code points. The font can be a path to
+    /// a TrueType (.ttf), TrueType Collection (.ttc), or OpenType (.otf) file,
+    /// or it can be the name of the font, in which case the system font paths
+    /// will be searched. The font is assumed to contain the code points;
+    /// if it does not no error will be produced.
+    void SetFontForCodePoints(const char *font,
+                              const std::vector<uint32_t> &code_points);
 
     /// Does not return until the UI is completely finished.
     void Run();
@@ -91,7 +119,9 @@ public:
 
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
-    /// Must be called on the same thread that calls Run()
+    /// Must be called on the same thread that calls Run(). This is normally
+    /// called from Window::Close() and should not need to be called in user
+    /// code.
     void RemoveWindow(Window *window);
 
     /// Creates a message box window the next time the event loop processes.
@@ -103,6 +133,8 @@ public:
     /// window it is better to use ShowNativeAlert(). If the platform does not
     /// have an alert (like Linux), then this can be used as a last resort.
     void ShowMessageBox(const char *title, const char *message);
+
+    WindowSystem &GetWindowSystem() const;
 
     // (std::string not good in interfaces for ABI reasons)
     const char *GetResourcePath() const;
@@ -145,14 +177,39 @@ public:
     /// atexit().
     bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
 
+    /// Sets the WindowSystem to given object. Can be used to override the
+    /// default GLFWWindowSystem (e.g. HeadlessWindowSystem). Must be called
+    /// before creating any Windows.
+    void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
+
+    /// Verifies that Initialize() has been called, printing out an error and
+    /// exiting if not.
+    void VerifyIsInitialized();
+
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
     /// need to render from a GUI, use Scene::RenderToImage().
-    std::shared_ptr<geometry::Image> RenderToImage(EnvUnlocker &unlocker,
-                                                   rendering::View *view,
-                                                   rendering::Scene *scene,
-                                                   int width,
-                                                   int height);
+    std::shared_ptr<geometry::Image> RenderToImage(
+            rendering::Renderer &renderer,
+            rendering::View *view,
+            rendering::Scene *scene,
+            int width,
+            int height);
+
+    // Same as RenderToImage(), but returns the depth values in a float image.
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            rendering::Renderer &renderer,
+            rendering::View *view,
+            rendering::Scene *scene,
+            int width,
+            int height);
+
+    struct UserFontInfo {
+        std::string path;
+        std::string lang;
+        std::vector<uint32_t> code_points;
+    };
+    const std::vector<UserFontInfo> &GetUserFontInfo() const;
 
 private:
     Application();

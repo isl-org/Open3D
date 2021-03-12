@@ -405,11 +405,6 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                                            normals.data()))
                                    .build();
         orientation->getQuats(float4v_tangents, n_vertices);
-    } else {
-        utility::LogWarning(
-                "Trying to create mesh without vertex normals. Shading will"
-                "not work correctly. Consider generating vertex normals "
-                "first.");
     }
 
     // NOTE: Both default lit and unlit material shaders require per-vertex

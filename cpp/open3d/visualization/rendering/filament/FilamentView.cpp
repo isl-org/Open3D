@@ -51,6 +51,7 @@
 #endif  // _MSC_VER
 
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -76,16 +77,14 @@ FilamentView::FilamentView(filament::Engine& engine,
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
     view_->setSampleCount(4);
-    view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
-    view_->setPostProcessingEnabled(true);
-    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
+    SetAntiAliasing(true, false);
+    SetPostProcessing(true);
+    SetAmbientOcclusion(true, false);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
-    color_grading_ =
-            filament::ColorGrading::Builder()
-                    .quality(filament::ColorGrading::QualityLevel::HIGH)
-                    .toneMapping(filament::ColorGrading::ToneMapping::UCHIMURA)
-                    .build(engine);
-    view_->setColorGrading(color_grading_);
+    SetShadowing(true, ShadowType::kPCF);
+    ColorGradingParams cp(ColorGradingParams::Quality::kHigh,
+                          ColorGradingParams::ToneMapping::kUchimura);
+    SetColorGrading(cp);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
@@ -167,10 +166,178 @@ std::array<int, 4> FilamentView::GetViewport() const {
     return {vp.left, vp.bottom, int(vp.width), int(vp.height)};
 }
 
-void FilamentView::SetSSAOEnabled(const bool enabled) {
-    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
-                                : filament::View::AmbientOcclusion::NONE;
-    view_->setAmbientOcclusion(option);
+void FilamentView::SetPostProcessing(bool enabled) {
+    view_->setPostProcessingEnabled(enabled);
+}
+
+void FilamentView::SetAmbientOcclusion(bool enabled,
+                                       bool ssct_enabled /* = false */) {
+    filament::View::AmbientOcclusionOptions options;
+    options.enabled = enabled;
+    options.ssct.enabled = ssct_enabled;
+    view_->setAmbientOcclusionOptions(options);
+}
+
+void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
+    if (enabled) {
+        filament::View::TemporalAntiAliasingOptions options;
+        options.enabled = temporal;
+        view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
+        view_->setTemporalAntiAliasingOptions(options);
+    } else {
+        view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
+    }
+}
+
+void FilamentView::SetShadowing(bool enabled, ShadowType type) {
+    if (enabled) {
+        filament::View::ShadowType stype =
+                (type == ShadowType::kPCF) ? filament::View::ShadowType::PCF
+                                           : filament::View::ShadowType::VSM;
+        view_->setShadowType(stype);
+        view_->setShadowingEnabled(true);
+    } else {
+        view_->setShadowingEnabled(false);
+    }
+}
+
+static inline filament::math::float3 eigen_to_float3(const Eigen::Vector3f& v) {
+    return filament::math::float3(v.x(), v.y(), v.z());
+}
+
+static inline filament::math::float4 eigen_to_float4(const Eigen::Vector4f& v) {
+    return filament::math::float4(v.x(), v.y(), v.z(), v.w());
+}
+
+void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
+    filament::ColorGrading::QualityLevel q =
+            filament::ColorGrading::QualityLevel::LOW;
+    switch (color_grading.GetQuality()) {
+        case ColorGradingParams::Quality::kMedium:
+            q = filament::ColorGrading::QualityLevel::MEDIUM;
+            break;
+        case ColorGradingParams::Quality::kHigh:
+            q = filament::ColorGrading::QualityLevel::HIGH;
+            break;
+        case ColorGradingParams::Quality::kUltra:
+            q = filament::ColorGrading::QualityLevel::ULTRA;
+            break;
+        default:
+            break;
+    }
+
+    filament::ColorGrading::ToneMapping tm =
+            filament::ColorGrading::ToneMapping::LINEAR;
+    switch (color_grading.GetToneMapping()) {
+        case ColorGradingParams::ToneMapping::kAcesLegacy:
+            tm = filament::ColorGrading::ToneMapping::ACES_LEGACY;
+            break;
+        case ColorGradingParams::ToneMapping::kAces:
+            tm = filament::ColorGrading::ToneMapping::ACES;
+            break;
+        case ColorGradingParams::ToneMapping::kFilmic:
+            tm = filament::ColorGrading::ToneMapping::FILMIC;
+            break;
+        case ColorGradingParams::ToneMapping::kUchimura:
+            tm = filament::ColorGrading::ToneMapping::UCHIMURA;
+            break;
+        case ColorGradingParams::ToneMapping::kReinhard:
+            tm = filament::ColorGrading::ToneMapping::REINHARD;
+            break;
+        case ColorGradingParams::ToneMapping::kDisplayRange:
+            tm = filament::ColorGrading::ToneMapping::DISPLAY_RANGE;
+            break;
+        default:
+            break;
+    }
+
+    if (color_grading_) {
+        engine_.destroy(color_grading_);
+    }
+    color_grading_ =
+            filament::ColorGrading::Builder()
+                    .quality(q)
+                    .toneMapping(tm)
+                    .whiteBalance(color_grading.GetTemperature(),
+                                  color_grading.GetTint())
+                    .channelMixer(
+                            eigen_to_float3(color_grading.GetMixerRed()),
+                            eigen_to_float3(color_grading.GetMixerGreen()),
+                            eigen_to_float3(color_grading.GetMixerBlue()))
+                    .shadowsMidtonesHighlights(
+                            eigen_to_float4(color_grading.GetShadows()),
+                            eigen_to_float4(color_grading.GetMidtones()),
+                            eigen_to_float4(color_grading.GetHighlights()),
+                            eigen_to_float4(color_grading.GetRanges()))
+                    .slopeOffsetPower(
+                            eigen_to_float3(color_grading.GetSlope()),
+                            eigen_to_float3(color_grading.GetOffset()),
+                            eigen_to_float3(color_grading.GetPower()))
+                    .contrast(color_grading.GetContrast())
+                    .vibrance(color_grading.GetVibrance())
+                    .saturation(color_grading.GetSaturation())
+                    .curves(eigen_to_float3(color_grading.GetShadowGamma()),
+                            eigen_to_float3(color_grading.GetMidpoint()),
+                            eigen_to_float3(color_grading.GetHighlightScale()))
+                    .build(engine_);
+    view_->setColorGrading(color_grading_);
+}
+
+void FilamentView::ConfigureForColorPicking() {
+    view_->setSampleCount(1);
+    SetPostProcessing(false);
+    SetAmbientOcclusion(false, false);
+    SetShadowing(false, ShadowType::kPCF);
+    configured_for_picking_ = true;
+}
+
+void FilamentView::EnableViewCaching(bool enable) {
+    caching_enabled_ = enable;
+
+    if (caching_enabled_) {
+        if (render_target_) {
+            resource_mgr_.Destroy(render_target_);
+            resource_mgr_.Destroy(color_buffer_);
+            resource_mgr_.Destroy(depth_buffer_);
+            render_target_ = RenderTargetHandle();
+            color_buffer_ = TextureHandle();
+            depth_buffer_ = TextureHandle();
+        }
+
+        // Create RenderTarget
+        auto vp = view_->getViewport();
+        color_buffer_ =
+                resource_mgr_.CreateColorAttachmentTexture(vp.width, vp.height);
+        depth_buffer_ =
+                resource_mgr_.CreateDepthAttachmentTexture(vp.width, vp.height);
+        render_target_ =
+                resource_mgr_.CreateRenderTarget(color_buffer_, depth_buffer_);
+        SetRenderTarget(render_target_);
+    }
+
+    if (!caching_enabled_) {
+        view_->setRenderTarget(nullptr);
+    }
+}
+
+bool FilamentView::IsCached() const { return caching_enabled_; }
+
+TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
+
+void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
+    if (!render_target) {
+        view_->setRenderTarget(nullptr);
+    } else {
+        auto rt_weak = resource_mgr_.GetRenderTarget(render_target);
+        auto rt = rt_weak.lock();
+        if (!rt) {
+            utility::LogWarning(
+                    "Invalid render target given to SetRenderTarget");
+            view_->setRenderTarget(nullptr);
+        } else {
+            view_->setRenderTarget(rt.get());
+        }
+    }
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
@@ -178,25 +345,12 @@ Camera* FilamentView::GetCamera() const { return camera_.get(); }
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
     SetMode(other.mode_);
     view_->setRenderTarget(nullptr);
-
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
-
-    // TODO: Consider moving this code to FilamentCamera
-    auto& camera = view_->getCamera();
-    auto& other_camera = other.GetNativeView()->getCamera();
-
-    // TODO: Code below could introduce problems with culling,
-    //        because Camera::setCustomProjection method
-    //        assigns both culling projection and projection matrices
-    //        to the same matrix. Which is good for ORTHO but
-    //        makes culling matrix with infinite far plane for PERSPECTIVE
-    //        See FCamera::setCustomProjection and FCamera::setProjection
-    //        There is no easy way to fix it currently (Filament 1.4.3)
-    camera.setCustomProjection(other_camera.getProjectionMatrix(),
-                               other_camera.getNear(),
-                               other_camera.getCullingFar());
-    camera.setModelMatrix(other_camera.getModelMatrix());
+    camera_->CopyFrom(other.camera_.get());
+    if (other.configured_for_picking_) {
+        ConfigureForColorPicking();
+    }
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {
