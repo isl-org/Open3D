@@ -230,21 +230,22 @@
           // register webrtc streamer connection
           webRtcServerList[videoTag] = webRtcClient;
 
-          // var o3d_event = {
-          //   class: "MouseEvent",
-          //   type: "BUTTON_DOWN",
-          //   x: event.offsetX,
-          //   y: event.offsetY,
-          //   modifiers: getModifiers(event),
-          //   button: {
-          //     button: "LEFT",
-          //     count: 1,
-          //   },
-          // };
-          // this.webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
-
           // Register callbacks for videoElt.
           videoElt.addEventListener("mousedown", (event) => {
+            // TODO: fix me, try sending a JSON message here
+            var o3d_event = {
+              class: "MouseEvent",
+              type: "BUTTON_DOWN",
+              x: event.offsetX,
+              y: event.offsetY,
+              modifiers: getModifiers(event),
+              button: {
+                button: "LEFT",
+                count: 1,
+              },
+            };
+            webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
+
             var msg =
               "mousedown " +
               event.offsetX +
