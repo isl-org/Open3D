@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     // Optimized fragment pose graph
     std::string slac_folder = std::string(argv[2]);
     std::string posegraph_path =
-            std::string(slac_folder + "/optimized_posegraph.json");
+            std::string(slac_folder + "/optimized_posegraph_slac.json");
     auto posegraph = *io::CreatePoseGraphFromFile(posegraph_path);
 
     // Intrinsics

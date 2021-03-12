@@ -160,26 +160,18 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         s = edge.source_node_id
         t = edge.target_node_id
 
-        if t != s + 1:
-            transformation_init = edge.transformation
+        transformation_init = edge.transformation
 
-        # We trust the very original fragment pose graph for icp.
+        # Optional: We instead trust the very original fragment pose graph for icp.
         # 1. Optimized pose graph can be dragged / polluted by global optimization.
         # 2. Pose graph itself can be corrupted due to unknown open3d issues in multiprocessing.
-        else:
-            pose_graph_frag = o3d.io.read_pose_graph(
-                join(config['path_dataset'],
-                     config["template_fragment_posegraph_optimized"] % s))
-            n_nodes = len(pose_graph_frag.nodes)
-            transformation_init = np.linalg.inv(pose_graph_frag.nodes[n_nodes -
-                                                                      1].pose)
-
-        # if t == s + 1 and t > 182: filter for debugging
-        # if (s, t) in [(19, 24), (208, 240), (224, 245), (224, 246), (224, 247), (160, 168), (195, 207), (195, 208), (198, 210), (199, 207), (201, 223), (205, 223)]:
-        # if (s, t) not in [(0, 14), (160, 168), (180, 186), (195,207), (198, 210), (199, 207), (205, 223), (207, 209), (220, 228), (224, 246), (224, 247)]:
-        if True:
-            matching_results[s * n_files + t] = \
-                matching_result(s, t, transformation_init)
+        # pose_graph_frag = o3d.io.read_pose_graph(
+        #     join(config['path_dataset'],
+        #          config["template_fragment_posegraph_optimized"] % s))
+        # n_nodes = len(pose_graph_frag.nodes)
+        # transformation_init = np.linalg.inv(pose_graph_frag.nodes[n_nodes - 1].pose)
+        matching_results[s * n_files + t] = \
+            matching_result(s, t, transformation_init)
 
     if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed

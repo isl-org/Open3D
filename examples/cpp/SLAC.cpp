@@ -111,7 +111,8 @@ int main(int argc, char** argv) {
     }
 
     // Write pose graph
-    io::WritePoseGraph(option.GetSubfolderName() + "/optimized_posegraph.json",
+    io::WritePoseGraph(option.GetSubfolderName() + "/optimized_posegraph_" +
+                               method + ".json",
                        pose_graph_updated);
 
     // Write trajectory
@@ -126,9 +127,10 @@ int main(int argc, char** argv) {
             trajectory.parameters_.push_back(param);
         }
     }
-    io::WritePinholeCameraTrajectory(
-            option.GetSubfolderName() + "/optimized_trajectory.log",
-            trajectory);
+    io::WritePinholeCameraTrajectory(option.GetSubfolderName() +
+                                             "/optimized_trajectory_" + method +
+                                             ".log",
+                                     trajectory);
 
     return 0;
 }
