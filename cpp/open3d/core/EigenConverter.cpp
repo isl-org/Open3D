@@ -37,18 +37,12 @@ namespace eigen_converter {
 template <typename T>
 Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 TensorToEigenMatrix(const core::Tensor &tensor) {
-    core::Dtype dtype;
-    if (std::is_same<T, double>::value) {
-        dtype = core::Dtype::Float64;
-    } else if (std::is_same<T, float>::value) {
-        dtype = core::Dtype::Float32;
-    } else if (std::is_same<T, int>::value) {
-        dtype = core::Dtype::Int32;
-    } else {
-        utility::LogError(
-                " [TensorToEigenMatrix]: Only supports double, float and int "
-                "(MatrixXd, MatrixXf, MatrixXi).");
-    }
+    static_assert(std::is_same<T, double>::value ||
+                          std::is_same<T, float>::value ||
+                          std::is_same<T, int>::value,
+                  "Only supports double, float and int (MatrixXd, MatrixXf and "
+                  "MatrixXi).");
+    core::Dtype dtype = core::Dtype::FromType<T>();
 
     core::SizeVector dim = tensor.GetShape();
     if (dim.size() != 2) {
