@@ -70,6 +70,9 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R,
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
+    bool add_textures = HasTriangleUvs() && HasTextures() &&
+                        HasTriangleMaterialIds() && mesh.HasTriangleUvs() &&
+                        mesh.HasTextures() && mesh.HasTriangleMaterialIds();
     size_t old_vert_num = vertices_.size();
     MeshBase::operator+=(mesh);
     size_t old_tri_num = triangles_.size();
@@ -92,9 +95,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() && HasTextures() && HasTriangleMaterialIds() &&
-        mesh.HasTriangleUvs() && mesh.HasTextures() &&
-        mesh.HasTriangleMaterialIds()) {
+    if (add_textures) {
         size_t old_tri_uv_num = triangle_uvs_.size();
         size_t add_tri_uv_num = mesh.triangle_uvs_.size();
         size_t new_tri_uv_num = old_tri_uv_num + add_tri_uv_num;
