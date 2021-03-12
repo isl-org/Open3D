@@ -51,7 +51,7 @@ def _compute_sha256(path):
     return algo.hexdigest()
 
 
-def _download_file(url, path, sha256, max_retry=5):
+def _download_file(url, path, sha256, max_retry=3):
     if max_retry == 0:
         raise OSError(f"max_retry reached, cannot download {url}.")
 
@@ -59,25 +59,31 @@ def _download_file(url, path, sha256, max_retry=5):
 
     # The saved file must be inside _test_data_dir.
     if _download_dir not in full_path.parents:
-        raise AssertionError(
-            f"[open3d_downloads] {full_path} must be inside {_download_dir}.")
+        raise AssertionError(f"{full_path} must be inside {_download_dir}.")
 
     # Supports sub directory inside _test_data_dir, e.g.
     # Open3D/examples/test_data/open3d_downloads/foo/bar/my_file.txt
     full_path.parent.mkdir(parents=True, exist_ok=True)
 
     if full_path.exists() and _compute_sha256(full_path) == sha256:
-        print(f"[open3d_downloads] {str(full_path)} already exists, skipped.")
-    else:
-        try:
-            urllib.request.urlretrieve(url, full_path)
-            print(f"Downloaded {url}\n        to {str(full_path)}")
-        except Exception as e:
-            sleep_time = 5
-            print(f"[open3d_downloads] Failed to download {url}: {str(e)}")
-            print(f"[open3d_downloads] Retrying in {sleep_time}s.")
-            time.sleep(sleep_time)
-            _download_file(url, path, sha256, max_retry=max_retry - 1)
+        print(f"[download_utils.py] {str(full_path)} already exists, skipped.")
+        return
+
+    try:
+        urllib.request.urlretrieve(url, full_path)
+        print(
+            f"[download_utils.py] Downloaded {url}\n        to {str(full_path)}"
+        )
+        if _compute_sha256(full_path) != sha256:
+            raise ValueError(f"{path}'s SHA256 checksum incorrect:\n"
+                             f"- Expected: {sha256}\n"
+                             f"- Actual  : {_compute_sha256(full_path)}")
+    except Exception as e:
+        sleep_time = 5
+        print(f"[download_utils.py] Failed to download {url}: {str(e)}")
+        print(f"[download_utils.py] Retrying in {sleep_time}s")
+        time.sleep(sleep_time)
+        _download_file(url, path, sha256, max_retry=max_retry - 1)
 
 
 def download_all_files():
