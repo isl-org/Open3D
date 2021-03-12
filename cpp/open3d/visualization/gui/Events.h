@@ -82,8 +82,8 @@ struct MouseEvent {
         } wheel;
     };
 
-    // bool ConvertToJsonValue(Json::Value &value) const override;
-    // bool ConvertFromJsonValue(const Json::Value &value) override;
+    bool ToJson(Json::Value &value) const;
+    bool FromJson(const Json::Value &value);
     std::string ToString() const;
 };
 

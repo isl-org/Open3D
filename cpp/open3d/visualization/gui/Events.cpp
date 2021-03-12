@@ -87,19 +87,19 @@ std::string MouseEvent::ToString() const {
     return ss.str();
 }
 
-// bool MouseEvent::ConvertToJsonValue(Json::Value &value) const {
-//     // Unimplemented.
-//     return true;
-// }
+bool MouseEvent::ToJson(Json::Value &value) const {
+    // Unimplemented.
+    return true;
+}
 
-// bool MouseEvent::ConvertFromJsonValue(const Json::Value &value) {
-//     if (!value.isObject()) {
-//         utility::LogWarning(
-//                 "MouseEvent::ConvertFromJsonValue failed: not an object.");
-//         return false;
-//     }
-//     return true;
-// }
+bool MouseEvent::FromJson(const Json::Value &value) {
+    if (!value.isObject()) {
+        utility::LogWarning(
+                "MouseEvent::ConvertFromJsonValue failed: not an object.");
+        return false;
+    }
+    return true;
+}
 
 }  // namespace gui
 }  // namespace visualization
