@@ -89,13 +89,8 @@ core::Tensor GetCorrespondencesForPair(int i,
     // N x 3
     core::Tensor residual =
             tpcd_i_cropped.GetPoints() - tpcd_j_cropped.GetPoints();
-    // utility::LogInfo("residual shape {}", residual.GetShape());
-
     core::Tensor square_residual = (residual * residual).Sum({1});
-    // utility::LogInfo("square residual shape {}", square_residual.GetShape());
-
     core::Tensor inliers = square_residual.Le(threshold * threshold);
-    // utility::LogInfo("inliers shape {}", inliers.GetShape());
 
     int64_t num_inliers =
             inliers.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
@@ -245,6 +240,7 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
                               core::Tensor& corres_ij,
                               int i,
                               int j,
+                              float threshold,
                               core::Device& device,
                               bool visualize = false) {
     auto ps = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
@@ -264,7 +260,7 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
     auto Ri_normal_ps = (Ri.Matmul(normal_ps.T())).T().Contiguous();
 
     kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, Ti_ps, Tj_qs,
-                                     Ri_normal_ps, i, j);
+                                     Ri_normal_ps, i, j, threshold);
 
     if (visualize) {
         utility::LogInfo("{} -> {}", i, j);
@@ -327,7 +323,8 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
 
         FillInRigidAlignmentTerm(
                 AtA, Atb, residual, tpcd_i, tpcd_j, Ti, Tj, corres_ij, i, j,
-                device, option.debug_enabled_ && i >= option.debug_start_idx_);
+                option.threshold_, device,
+                option.debug_enabled_ && i >= option.debug_start_idx_);
     }
 
     AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));
@@ -347,6 +344,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
                              int i,
                              int j,
                              int n_fragments,
+                             float threshold,
                              core::Device& device,
                              bool visualize = false) {
     auto Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
@@ -399,7 +397,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     kernel::FillInSLACAlignmentTerm(
             AtA, Atb, residual, Ti_Cps, Tj_Cqs, Cnormal_ps, Ri_Cnormal_ps,
             RjT_Ri_Cnormal_ps, cgrid_index_ps, cgrid_index_qs, cgrid_ratio_ps,
-            cgrid_ratio_qs, i, j, n_fragments);
+            cgrid_ratio_qs, i, j, n_fragments, threshold);
 
     if (visualize) {
         utility::LogInfo("edge {} -> {}", i, j);
@@ -457,7 +455,7 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         // Fill In
         FillInSLACAlignmentTerm(
                 AtA, Atb, residual, ctr_grid, tpcd_i, tpcd_j, Ti, Tj, Tij,
-                corres_ij, i, j, n_frags, device,
+                corres_ij, i, j, n_frags, option.threshold_, device,
                 option.debug_enabled_ && i >= option.debug_start_idx_);
     }
     AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));

@@ -38,7 +38,8 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               const core::Tensor &Tj_qs,
                               const core::Tensor &Ri_normal_ps,
                               int i,
-                              int j) {
+                              int j,
+                              float threshold) {
     AtA.AssertDtype(core::Dtype::Float32);
     Atb.AssertDtype(core::Dtype::Float32);
     residual.AssertDtype(core::Dtype::Float32);
@@ -66,12 +67,12 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         FillInRigidAlignmentTermCPU(AtA, Atb, residual, Ti_ps, Tj_qs,
-                                    Ri_normal_ps, i, j);
+                                    Ri_normal_ps, i, j, threshold);
 
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         FillInRigidAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs,
-                                     Ri_normal_ps, i, j);
+                                     Ri_normal_ps, i, j, threshold);
 
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
@@ -95,7 +96,8 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
                              const core::Tensor &cgrid_ratio_ps,
                              int i,
                              int j,
-                             int n) {
+                             int n,
+                             float threshold) {
     AtA.AssertDtype(core::Dtype::Float32);
     Atb.AssertDtype(core::Dtype::Float32);
     residual.AssertDtype(core::Dtype::Float32);
@@ -127,14 +129,14 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
         FillInSLACAlignmentTermCPU(AtA, Atb, residual, Ti_ps, Tj_qs, normal_ps,
                                    Ri_normal_ps, RjT_Ri_normal_ps, cgrid_idx_ps,
                                    cgrid_idx_qs, cgrid_ratio_ps, cgrid_ratio_qs,
-                                   i, j, n);
+                                   i, j, n, threshold);
 
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         FillInSLACAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs, normal_ps,
                                     Ri_normal_ps, RjT_Ri_normal_ps,
                                     cgrid_idx_ps, cgrid_idx_qs, cgrid_ratio_ps,
-                                    cgrid_ratio_qs, i, j, n);
+                                    cgrid_ratio_qs, i, j, n, threshold);
 
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");

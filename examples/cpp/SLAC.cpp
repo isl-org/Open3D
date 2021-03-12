@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
     option.regularizor_coeff_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--weight", 0.01);
+    option.regularizor_coeff_ = utility::GetProgramOptionAsDouble(
+            argc, argv, "--threshold", 1.4 * option.voxel_size_);
     option.max_iterations_ =
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", 10);
     option.debug_ = utility::ProgramOptionExists(argc, argv, "--debug");

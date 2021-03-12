@@ -38,7 +38,8 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               const core::Tensor &Tj_qs,
                               const core::Tensor &Ri_normal_ps,
                               int i,
-                              int j);
+                              int j,
+                              float threshold);
 
 void FillInSLACAlignmentTerm(core::Tensor &AtA,
                              core::Tensor &Atb,
@@ -54,7 +55,8 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
                              const core::Tensor &cgrid_ratio_ps,
                              int i,
                              int j,
-                             int n);
+                             int n,
+                             float threshold);
 
 void FillInSLACRegularizerTerm(core::Tensor &AtA,
                                core::Tensor &Atb,
@@ -75,7 +77,8 @@ void FillInRigidAlignmentTermCPU(core::Tensor &AtA,
                                  const core::Tensor &Tj_qs,
                                  const core::Tensor &Ri_normal_ps,
                                  int i,
-                                 int j);
+                                 int j,
+                                 float threshold);
 
 void FillInSLACAlignmentTermCPU(core::Tensor &AtA,
                                 core::Tensor &Atb,
@@ -91,7 +94,8 @@ void FillInSLACAlignmentTermCPU(core::Tensor &AtA,
                                 const core::Tensor &cgrid_ratio_ps,
                                 int i,
                                 int j,
-                                int n);
+                                int n,
+                                float threshold);
 
 void FillInSLACRegularizerTermCPU(core::Tensor &AtA,
                                   core::Tensor &Atb,
@@ -113,7 +117,8 @@ void FillInRigidAlignmentTermCUDA(core::Tensor &AtA,
                                   const core::Tensor &Tj_qs,
                                   const core::Tensor &Ri_normal_ps,
                                   int i,
-                                  int j);
+                                  int j,
+                                  float threshold);
 
 void FillInSLACAlignmentTermCUDA(core::Tensor &AtA,
                                  core::Tensor &Atb,
@@ -129,7 +134,8 @@ void FillInSLACAlignmentTermCUDA(core::Tensor &AtA,
                                  const core::Tensor &cgrid_ratio_ps,
                                  int i,
                                  int j,
-                                 int n);
+                                 int n,
+                                 float threshold);
 
 void FillInSLACRegularizerTermCUDA(core::Tensor &AtA,
                                    core::Tensor &Atb,

@@ -49,7 +49,8 @@ void FillInRigidAlignmentTermCPU
          const core::Tensor &Tj_qs,
          const core::Tensor &Ri_normal_ps,
          int i,
-         int j) {
+         int j,
+         float threshold) {
 
     core::Device device = AtA.GetDevice();
     int64_t n = Ti_ps.GetLength();
@@ -86,7 +87,7 @@ void FillInRigidAlignmentTermCPU
         float r = (p_prime[0] - q_prime[0]) * normal_p_prime[0] +
                   (p_prime[1] - q_prime[1]) * normal_p_prime[1] +
                   (p_prime[2] - q_prime[2]) * normal_p_prime[2];
-        if (abs(r) > 0.05) return;
+        if (abs(r) > threshold) return;
 
         float J_ij[12];
         J_ij[0] = -q_prime[2] * normal_p_prime[1] +
@@ -175,7 +176,8 @@ void FillInSLACAlignmentTermCPU
          const core::Tensor &cgrid_ratio_ps,
          int i,
          int j,
-         int n_frags) {
+         int n_frags,
+         float threshold) {
     int64_t n = Ti_Cps.GetLength();
     if (Tj_Cqs.GetLength() != n || Cnormal_ps.GetLength() != n ||
         Ri_Cnormal_ps.GetLength() != n || RjT_Ri_Cnormal_ps.GetLength() != n ||
@@ -230,7 +232,7 @@ void FillInSLACAlignmentTermCPU
         float r = (Ti_Cp[0] - Tj_Cq[0]) * Ri_Cnormal_p[0] +
                   (Ti_Cp[1] - Tj_Cq[1]) * Ri_Cnormal_p[1] +
                   (Ti_Cp[2] - Tj_Cq[2]) * Ri_Cnormal_p[2];
-        if (abs(r) > 0.05) return;
+        if (abs(r) > threshold) return;
 
         // Now we fill in a 60 x 60 sub-matrix: 2 x (6 + 8 x 3)
         float J[60];

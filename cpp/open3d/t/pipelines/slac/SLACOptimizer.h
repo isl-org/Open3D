@@ -42,7 +42,8 @@ struct SLACOptimizerOption {
     int max_iterations_ = 10;
 
     float voxel_size_ = 0.05;
-    float regularizor_coeff_ = 0.02;
+    float regularizor_coeff_ = 1;
+    float threshold_ = 0.07;
 
     bool debug_ = false;
     int debug_start_idx_ = 0;
