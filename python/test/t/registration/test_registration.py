@@ -55,7 +55,7 @@ def test_registration_result_constructor(device):
     assert registration_result.inlier_rmse == 0.0
     assert registration_result.fitness == 0.0
     assert registration_result.transformation.allclose(
-        o3c.Tensor.eye(4, dtype, device))
+        o3c.Tensor.eye(4, dtype, o3c.Device("CPU:0")))
 
 
 @pytest.mark.parametrize("device", list_devices())
