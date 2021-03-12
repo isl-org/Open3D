@@ -11,8 +11,15 @@ if(WIN32)
                        "-DCMAKE_C_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> /Zi /Ob0 /Od /RTC1"
                        "-DCMAKE_C_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> /O2 /Ob2 /DNDEBUG"
                        )
+    set(lib_name libzmq)
+    if(CMAKE_VS_PLATFORM_TOOLSET)
+        string(APPEND lib_name -${CMAKE_VS_PLATFORM_TOOLSET})
+    endif()
+    string(APPEND lib_name -mt-s)
+    set(lib_suffix -4_3_3)
 else()
     set(WIN_CMAKE_ARGS "")
+    set(lib_name zmq)
 endif()
 
 
@@ -41,6 +48,9 @@ ExternalProject_Add(
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         ${WIN_CMAKE_ARGS}
+    BUILD_BYPRODUCTS
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}gd${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 # cppzmq is header only. we just need to download
@@ -55,9 +65,9 @@ if(NOT ext_cppzmq_POPULATED)
     # do not add subdirectory here
 endif()
 
-if( WIN32 )
+if(WIN32)
     # On windows the lib name is more complicated
-    set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s$<$<CONFIG:Debug>:gd>-4_3_3 )
+    set(ZEROMQ_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:gd>${lib_suffix})
 
     # On windows we need to link some additional libs. We will use them
     # directly as targets in find_dependencies.cmake.
@@ -85,8 +95,8 @@ if( WIN32 )
     endif()
 
 else()
-    set(ZEROMQ_LIBRARIES zmq)
+    set(ZEROMQ_LIBRARIES ${lib_name}${lib_suffix})
 endif()
 ExternalProject_Get_Property( ext_zeromq INSTALL_DIR )
-set(ZEROMQ_LIB_DIR ${INSTALL_DIR}/lib)
+set(ZEROMQ_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(ZEROMQ_INCLUDE_DIRS "${INSTALL_DIR}/include/;${ext_cppzmq_SOURCE_DIR}/")
