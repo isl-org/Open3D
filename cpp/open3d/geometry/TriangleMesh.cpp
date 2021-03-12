@@ -97,26 +97,21 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     }
     if (add_textures) {
         size_t old_tri_uv_num = triangle_uvs_.size();
-        size_t add_tri_uv_num = mesh.triangle_uvs_.size();
-        size_t new_tri_uv_num = old_tri_uv_num + add_tri_uv_num;
-        triangle_uvs_.resize(new_tri_uv_num);
-        for (size_t i = 0; i < add_tri_uv_num; i++) {
+        triangle_uvs_.resize(old_tri_uv_num + mesh.triangle_uvs_.size());
+        for (size_t i = 0; i < mesh.triangle_uvs_.size(); i++) {
             triangle_uvs_[old_tri_uv_num + i] = mesh.triangle_uvs_[i];
         }
 
         size_t old_tex_num = textures_.size();
-        size_t add_tex_num = mesh.textures_.size();
-        size_t new_tex_num = old_tex_num + add_tex_num;
-        textures_.resize(new_tex_num);
-        for (size_t i = 0; i < add_tex_num; i++) {
+        textures_.resize(old_tex_num + mesh.textures_.size());
+        for (size_t i = 0; i < mesh.textures_.size(); i++) {
             textures_[old_tex_num + i] = mesh.textures_[i];
         }
 
         size_t old_mat_id_num = triangle_material_ids_.size();
-        size_t add_mat_id_num = mesh.triangle_material_ids_.size();
-        size_t new_mat_id_num = old_mat_id_num + add_mat_id_num;
-        triangle_material_ids_.resize(new_mat_id_num);
-        for (size_t i = 0; i < add_mat_id_num; i++) {
+        triangle_material_ids_.resize(old_mat_id_num +
+                                      mesh.triangle_material_ids_.size());
+        for (size_t i = 0; i < mesh.triangle_material_ids_.size(); i++) {
             triangle_material_ids_[old_mat_id_num + i] =
                     mesh.triangle_material_ids_[i] + old_tex_num;
         }
