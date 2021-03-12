@@ -26,20 +26,23 @@
 
 from pathlib import Path
 import urllib.request
+import concurrent.futures
 import json
 import hashlib
 import io
-import concurrent.futures
+import time
 
 # Typically "Open3D/examples/test_data", the test data dir.
 _test_data_dir = Path(__file__).parent.absolute().resolve()
 
-# Typically "Open3D/examples/test_data/open3d_downloads", the test data download dir.
+# Typically "Open3D/examples/test_data/open3d_downloads", the download dir.
 _download_dir = _test_data_dir / "open3d_downloads"
 
 
 def _compute_sha256(path):
-    """calculate sha256 checksum for the file and return in hex"""
+    """
+    Returns sha256 checksum as string.
+    """
     # http://stackoverflow.com/a/17782753 with fixed block size
     algo = hashlib.sha256()
     with io.open(str(path), 'br') as f:
@@ -48,12 +51,16 @@ def _compute_sha256(path):
     return algo.hexdigest()
 
 
-def _download_file(url, path, sha256):
+def _download_file(url, path, sha256, max_retry=5):
+    if max_retry == 0:
+        raise OSError(f"max_retry reached, cannot download {url}.")
+
     full_path = _download_dir / Path(path)
 
     # The saved file must be inside _test_data_dir.
     if _download_dir not in full_path.parents:
-        raise AssertionError(f"{full_path} must be inside {_download_dir}.")
+        raise AssertionError(
+            f"[open3d_downloads] {full_path} must be inside {_download_dir}.")
 
     # Supports sub directory inside _test_data_dir, e.g.
     # Open3D/examples/test_data/open3d_downloads/foo/bar/my_file.txt
@@ -66,7 +73,11 @@ def _download_file(url, path, sha256):
             urllib.request.urlretrieve(url, full_path)
             print(f"Downloaded {url}\n        to {str(full_path)}")
         except Exception as e:
-            print(f"Failed to download {url}: {str(e)}")
+            sleep_time = 5
+            print(f"[open3d_downloads] Failed to download {url}: {str(e)}")
+            print(f"[open3d_downloads] Retrying in {sleep_time}s.")
+            time.sleep(sleep_time)
+            _download_file(url, path, sha256, max_retry=max_retry - 1)
 
 
 def download_all_files():
