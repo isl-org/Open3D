@@ -29,6 +29,7 @@ import urllib.request
 import json
 import hashlib
 import io
+import concurrent.futures
 
 # Typically "Open3D/examples/test_data", the test data dir.
 _test_data_dir = Path(__file__).parent.absolute().resolve()
@@ -72,5 +73,7 @@ def download_all_files():
     with open(_test_data_dir / "download_file_list.json") as f:
         datasets = json.load(f)
 
-    for name, dataset in datasets.items():
-        _download_file(dataset["url"], dataset["path"], dataset["sha256"])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        for name, dataset in datasets.items():
+            executor.submit(_download_file, dataset["url"], dataset["path"],
+                            dataset["sha256"])
