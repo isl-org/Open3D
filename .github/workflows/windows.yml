@@ -36,8 +36,6 @@ jobs:
         STATIC_RUNTIME: [ON, OFF]
         CONFIG: [Release, Debug]
 
-    env:
-      BUILD_UNIT_TESTS: ${{ matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' }}
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -68,7 +66,7 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DBUILD_UNIT_TESTS=${{ env.BUILD_UNIT_TESTS }} `
+            -DBUILD_UNIT_TESTS=ON `
             ${{ env.SRC_DIR }}
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
@@ -79,7 +77,7 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
       - name: Run C++ unit tests
-        if: ${{ env.BUILD_UNIT_TESTS == 'true' }}
+        if: ${{ matrix.SHARED == 'OFF' || matrix.STATIC_RUNTIME == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
