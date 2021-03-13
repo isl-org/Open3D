@@ -64,7 +64,7 @@ EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
 
 if (BUILD_GUI)
     EXAMPLE_CPP(Draw                  ${CMAKE_PROJECT_NAME})
-    EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
 endif()
 
