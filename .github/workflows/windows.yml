@@ -37,7 +37,7 @@ jobs:
         CONFIG: [Release, Debug]
 
     env:
-      BUILD_UNIT_TESTS: ${{ matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' }}
+      BUILD_UNIT_TESTS: ${{ matrix.STATIC_RUNTIME == 'OFF' }}
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
