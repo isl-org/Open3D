@@ -1,6 +1,7 @@
 function(open3d_show_and_abort_on_warning trgt)
 
     set(DISABLE_MSVC_WARNINGS
+            /Wv:18         # ignore warnings introduced in Visual Studio 2015 and later.
             /wd4201        # non-standard extention nameless struct (filament includes)
             /wd4310        # cast truncates const value (filament)
             /wd4505        # unreferenced local function has been removed (dirent)
@@ -13,7 +14,7 @@ function(open3d_show_and_abort_on_warning trgt)
             /wd4244        # implicit data type conversion (many places in Open3D code)
             /wd4245        # signed/unsigned mismatch (visualization, PoissonRecon, ...)
             /wd4267        # conversion from size_t to smaller type (FixedRadiusSearchCUDA, tests)
-            /wd4305        # conversion to smaller type in initialization or constructor argument (tests)
+            /wd4305        # conversion to smaller type in initialization or constructor argument (examples, tests)
             )
 
     if (BUILD_CUDA_MODULE)
@@ -39,12 +40,6 @@ function(open3d_show_and_abort_on_warning trgt)
                     940            # missing return statement at end of non-void function (Eigen)
                     2809           # ignoring return value from routine declared with "nodiscard" attribute (Eigen)
                     )
-            if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
-                if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.2")
-                    list(APPEND CUDA_DISABLE_MSVC_WARNINGS /wd4834) # discarding return value of function with 'nodiscard' attribute (cub)
-                endif()
-                list(APPEND CUDA_DISABLE_MSVC_WARNINGS /wd4458) # declaration hides class member (cub)
-            endif()
             if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.1")
                 list(APPEND CUDA_DISABLE_MSVC_WARNINGS /wd4515) # namespace uses itself (thrust)
             endif()
@@ -65,10 +60,10 @@ function(open3d_show_and_abort_on_warning trgt)
     endif()
 
     target_compile_options(${trgt} PRIVATE
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
+        $<$<COMPILE_LANG_AND_ID:C,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
+        $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Werror>
+        $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Werror>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
     )
 endfunction()
