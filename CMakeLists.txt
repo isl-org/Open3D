@@ -510,13 +510,13 @@ function(open3d_set_global_properties target)
         )
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
-            target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/EHsc;/wd4522;/wd4190;/wd4819;/wd4996;/Wv:18;/WX>")
+            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc /wd4996>)
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/MP>")
+            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
             if(BUILD_GUI)
                 # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.
