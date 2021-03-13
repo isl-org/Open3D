@@ -383,15 +383,6 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # OS specific settings
-if(BUILD_GUI AND WIN32)
-    if(NOT COMMAND target_link_options)  # CMake 3.13+ required
-        # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-        # Filament needs to link through bluegl.lib.
-        # See https://github.com/google/filament/issues/652
-        string(APPEND CMAKE_EXE_LINKER_FLAGS " /force:multiple")
-        string(APPEND CMAKE_SHARED_LINKER_FLAGS " /force:multiple")
-    endif()
-endif()
 if(WIN32)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explictly export symbols.
@@ -514,17 +505,15 @@ function(open3d_set_global_properties target)
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             target_compile_options(${target} PRIVATE /MP)
-            if(COMMAND target_link_options) # target_link_options add in 3.13
-                if(BUILD_GUI)
-                    # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-                    # Filament needs to link through bluegl.lib.
-                    # See https://github.com/google/filament/issues/652
-                    target_link_options(${target} PRIVATE /force:multiple)
-                endif()
-                # The examples' .pdb files use up a lot of space and cause us to run
-                # out of space on Github Actions. Compressing gives us another couple of GB.
-                target_link_options(${target} PRIVATE /pdbcompress)
+            if(BUILD_GUI)
+                # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+                # Filament needs to link through bluegl.lib.
+                # See https://github.com/google/filament/issues/652
+                target_link_options(${target} PRIVATE /force:multiple)
             endif()
+            # The examples' .pdb files use up a lot of space and cause us to run
+            # out of space on Github Actions. Compressing gives us another couple of GB.
+            target_link_options(${target} PRIVATE /pdbcompress)
         endif()
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)
