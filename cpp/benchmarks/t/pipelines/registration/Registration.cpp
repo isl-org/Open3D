@@ -35,9 +35,9 @@
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+        TEST_DATA_DIR "/ICP/cloud_bin_0.pcd";
 static const std::string target_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+        TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
 
 static const double voxel_downsampling_factor = 0.01;
 
@@ -47,32 +47,13 @@ static double relative_rmse = 1e-6;
 static int max_iterations = 30;
 
 // NNS parameter.
-static double max_correspondence_dist = 0.015;
+static double max_correspondence_dist = 0.03;
 
 // Initial transformation guess for registation.
 // core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
 static std::vector<float> initial_transform_flat{
         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
-
-#define DISPATCH_TRANFORMATION_TYPE(TRANFORMATION_TYPE, ...)                   \
-    [&] {                                                                      \
-        if (TRANFORMATION_TYPE ==                                              \
-            open3d::t::pipelines::registration::TransformationEstimationType:: \
-                    PointToPoint) {                                            \
-            using scalar_t = open3d::t::pipelines::registration::              \
-                    TransformationEstimationPointToPoint;                      \
-            return __VA_ARGS__();                                              \
-        } else if (TRANFORMATION_TYPE ==                                       \
-                   open3d::t::pipelines::registration::                        \
-                           TransformationEstimationType::PointToPlane) {       \
-            using scalar_t = open3d::t::pipelines::registration::              \
-                    TransformationEstimationPointToPoint;                      \
-            return __VA_ARGS__();                                              \
-        } else {                                                               \
-            utility::LogError("Unsupported data type.");                       \
-        }                                                                      \
-    }()
 
 namespace open3d {
 namespace benchmarks {
@@ -85,39 +66,35 @@ LoadTensorPointCloud(const std::string& source_pointcloud_filename,
                      const double voxel_downsample_factor,
                      const core::Dtype& dtype,
                      const core::Device& device) {
-    t::geometry::PointCloud source_, target_;
+    t::geometry::PointCloud source, target;
 
-    t::io::ReadPointCloud(source_pointcloud_filename, source_,
+    t::io::ReadPointCloud(source_pointcloud_filename, source,
                           {"auto", false, false, true});
-    t::io::ReadPointCloud(target_pointcloud_filename, target_,
+    t::io::ReadPointCloud(target_pointcloud_filename, target,
                           {"auto", false, false, true});
 
     // Eliminates the case of impractical values (including negative).
-    t::geometry::PointCloud source, target;
     if (voxel_downsample_factor > 0.0001) {
-        geometry::PointCloud legacy_s = source_.ToLegacyPointCloud();
-        geometry::PointCloud legacy_t = target_.ToLegacyPointCloud();
+        geometry::PointCloud legacy_s = source.ToLegacyPointCloud();
+        geometry::PointCloud legacy_t = target.ToLegacyPointCloud();
         // TODO: Use to tensor VoxelDownSample.
         legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
         legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
 
         source = t::geometry::PointCloud::FromLegacyPointCloud(legacy_s);
         target = t::geometry::PointCloud::FromLegacyPointCloud(legacy_t);
-    } else {
-        source = source_.Clone();
-        target = target_.Clone();
     }
 
     t::geometry::PointCloud source_device(device), target_device(device);
 
     core::Tensor source_points =
-            source.GetPoints().To(device, dtype, /*copy=*/true);
+            source.GetPoints().To(device, dtype, /*copy=*/false);
     source_device.SetPoints(source_points);
 
     core::Tensor target_points =
-            target.GetPoints().To(device, dtype, /*copy=*/true);
+            target.GetPoints().To(device, dtype, /*copy=*/false);
     core::Tensor target_normals =
-            target.GetPointNormals().To(device, dtype, /*copy=*/true);
+            target.GetPointNormals().To(device, dtype, /*copy=*/false);
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);
 
@@ -147,30 +124,45 @@ static void BenchmarkRegistrationICP(
     utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
                      max_iterations, max_correspondence_dist);
 
-    DISPATCH_TRANFORMATION_TYPE(type_, [&]() {
-        scalar_t estimation;
-        auto reg_p2plane = open3d::t::pipelines::registration::RegistrationICP(
+    if (type_ == t::pipelines::registration::TransformationEstimationType::
+                         PointToPoint) {
+        t::pipelines::registration::TransformationEstimationPointToPoint
+                estimation;
+        auto reg_p2plane = t::pipelines::registration::RegistrationICP(
                 source, target, max_correspondence_dist, init_trans, estimation,
-                open3d::t::pipelines::registration::ICPConvergenceCriteria(
+                t::pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
 
         utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
                          reg_p2plane.inlier_rmse_);
 
         for (auto _ : state) {
-            auto reg_p2plane =
-                    open3d::t::pipelines::registration::RegistrationICP(
-                            source, target, max_correspondence_dist, init_trans,
-                            estimation,
-                            open3d::t::pipelines::registration::
-                                    ICPConvergenceCriteria(relative_fitness,
-                                                           relative_rmse,
-                                                           max_iterations));
-
-            utility::LogInfo(" Fitness: {}  Inlier RMSE: {}",
-                             reg_p2plane.fitness_, reg_p2plane.inlier_rmse_);
+            auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+                    source, target, max_correspondence_dist, init_trans,
+                    estimation,
+                    t::pipelines::registration::ICPConvergenceCriteria(
+                            relative_fitness, relative_rmse, max_iterations));
         }
-    });
+    } else if (type_ == t::pipelines::registration::
+                                TransformationEstimationType::PointToPlane) {
+        t::pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
+        auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+                source, target, max_correspondence_dist, init_trans, estimation,
+                t::pipelines::registration::ICPConvergenceCriteria(
+                        relative_fitness, relative_rmse, max_iterations));
+
+        utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
+                         reg_p2plane.inlier_rmse_);
+
+        for (auto _ : state) {
+            auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+                    source, target, max_correspondence_dist, init_trans,
+                    estimation,
+                    t::pipelines::registration::ICPConvergenceCriteria(
+                            relative_fitness, relative_rmse, max_iterations));
+        }
+    }
 }
 
 BENCHMARK_CAPTURE(
@@ -209,7 +201,7 @@ static t::pipelines::registration::RegistrationResult
 GetRegistrationResultAndCorrespondences(
         const t::geometry::PointCloud& source,
         const t::geometry::PointCloud& target,
-        open3d::core::nns::NearestNeighborSearch& target_nns,
+        core::nns::NearestNeighborSearch& target_nns,
         double max_correspondence_distance,
         const core::Tensor& transformation) {
     core::Device device = source.GetDevice();
@@ -242,13 +234,13 @@ GetRegistrationResultAndCorrespondences(
     }
 
     core::Tensor distances;
-    std::tie(result.correspondence_set.first, result.correspondence_set.second,
-             distances) =
+    std::tie(result.correspondence_set_.first,
+             result.correspondence_set_.second, distances) =
             target_nns.Hybrid1NNSearch(source.GetPoints(),
                                        max_correspondence_distance);
 
     // Number of good correspondences (C).
-    int num_correspondences = result.correspondence_set.first.GetLength();
+    int num_correspondences = result.correspondence_set_.first.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -271,7 +263,7 @@ static void BenchmarkGetRegistrationResultAndCorrespondences(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
 
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+    core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
     core::Tensor init_trans =
             core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
@@ -289,7 +281,7 @@ static void BenchmarkGetRegistrationResultAndCorrespondences(
             " Source points: {}, Target points {}, Good correspondences {} ",
             source_transformed.GetPoints().GetLength(),
             target.GetPoints().GetLength(),
-            result.correspondence_set.second.GetLength());
+            result.correspondence_set_.second.GetLength());
     utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", result.fitness_,
                      result.inlier_rmse_);
 
@@ -325,7 +317,7 @@ static void BenchmarkRegistrationComputeTransformation(
 
     t::pipelines::registration::CorrespondenceSet corres;
 
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+    core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
     core::Tensor init_trans =
             core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
@@ -339,10 +331,12 @@ static void BenchmarkRegistrationComputeTransformation(
             source_transformed, target, target_nns, max_correspondence_dist,
             init_trans);
 
-    corres = result.correspondence_set;
+    corres = result.correspondence_set_;
 
-    DISPATCH_TRANFORMATION_TYPE(type_, [&]() {
-        scalar_t estimation;
+    if (type_ == t::pipelines::registration::TransformationEstimationType::
+                         PointToPoint) {
+        t::pipelines::registration::TransformationEstimationPointToPoint
+                estimation;
         // Warm up.
         core::Tensor transformation =
                 estimation.ComputeTransformation(source, target, corres);
@@ -351,7 +345,19 @@ static void BenchmarkRegistrationComputeTransformation(
             core::Tensor transformation =
                     estimation.ComputeTransformation(source, target, corres);
         }
-    });
+    } else if (type_ == t::pipelines::registration::
+                                TransformationEstimationType::PointToPlane) {
+        t::pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
+        // Warm up.
+        core::Tensor transformation =
+                estimation.ComputeTransformation(source, target, corres);
+
+        for (auto _ : state) {
+            core::Tensor transformation =
+                    estimation.ComputeTransformation(source, target, corres);
+        }
+    }
 }
 
 BENCHMARK_CAPTURE(

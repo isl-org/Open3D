@@ -69,20 +69,20 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
 #pragma omp parallel for reduction(+ : A_[:27])
     for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
-                    const int64_t &source_index =
+                    const int64_t &source_idx =
                             3 * correspondence_first[workload_idx];
-                    const int64_t &target_index =
+                    const int64_t &target_idx =
                             3 * correspondence_second[workload_idx];
 
-                    const float &sx = (source_points_ptr[source_index + 0]);
-                    const float &sy = (source_points_ptr[source_index + 1]);
-                    const float &sz = (source_points_ptr[source_index + 2]);
-                    const float &tx = (target_points_ptr[target_index + 0]);
-                    const float &ty = (target_points_ptr[target_index + 1]);
-                    const float &tz = (target_points_ptr[target_index + 2]);
-                    const float &nx = (target_normals_ptr[target_index + 0]);
-                    const float &ny = (target_normals_ptr[target_index + 1]);
-                    const float &nz = (target_normals_ptr[target_index + 2]);
+                    const float &sx = (source_points_ptr[source_idx + 0]);
+                    const float &sy = (source_points_ptr[source_idx + 1]);
+                    const float &sz = (source_points_ptr[source_idx + 2]);
+                    const float &tx = (target_points_ptr[target_idx + 0]);
+                    const float &ty = (target_points_ptr[target_idx + 1]);
+                    const float &tz = (target_points_ptr[target_idx + 2]);
+                    const float &nx = (target_normals_ptr[target_idx + 0]);
+                    const float &ny = (target_normals_ptr[target_idx + 1]);
+                    const float &nz = (target_normals_ptr[target_idx + 2]);
 
                     const double bi_neg =
                             (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
@@ -213,13 +213,13 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                     for (int i = 0; i < 9; i++) {
                         const int row = i % 3;
                         const int col = i / 3;
-                        const int source_index =
+                        const int source_idx =
                                 3 * correspondence_first[workload_idx] + row;
-                        const int target_index =
+                        const int target_idx =
                                 3 * correspondence_second[workload_idx] + col;
-                        sxy_1x9_[i] += (source_points_ptr[source_index] -
+                        sxy_1x9_[i] += (source_points_ptr[source_idx] -
                                         mean_1x6[row]) *
-                                       (target_points_ptr[target_index] -
+                                       (target_points_ptr[target_idx] -
                                         mean_1x6[3 + col]);
                     }
                 }

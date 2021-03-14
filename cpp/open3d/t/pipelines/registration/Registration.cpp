@@ -72,13 +72,13 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     core::Tensor distances;
-    std::tie(result.correspondence_set.first, result.correspondence_set.second,
-             distances) =
+    std::tie(result.correspondence_set_.first,
+             result.correspondence_set_.second, distances) =
             target_nns.Hybrid1NNSearch(source.GetPoints(),
                                        max_correspondence_distance);
 
     // Number of good correspondences (C).
-    int num_correspondences = result.correspondence_set.first.GetLength();
+    int num_correspondences = result.correspondence_set_.first.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -147,7 +147,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
             transformation_device);
-    CorrespondenceSet corres = result.correspondence_set;
+    CorrespondenceSet corres = result.correspondence_set_;
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
@@ -169,7 +169,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
         result = GetRegistrationResultAndCorrespondences(
                 source_transformed, target, target_nns,
                 max_correspondence_distance, transformation_device);
-        corres = result.correspondence_set;
+        corres = result.correspondence_set_;
 
         // ICPConvergenceCriteria, to terminate iteration.
         if (std::abs(prev_fitness_ - result.fitness_) <
