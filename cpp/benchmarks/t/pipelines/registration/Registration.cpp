@@ -55,6 +55,10 @@ static std::vector<float> initial_transform_flat{
         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
 
+// To store final transformation obtained after `max_iterations` of ICP, to test
+// upper bound of `ComputeTransform`. open3d::core::Tensor
+// reg_p2point_transformation; open3d::core::Tensor reg_p2plane_transformation;
+
 namespace open3d {
 namespace benchmarks {
 
@@ -106,7 +110,7 @@ LoadTensorPointCloud(const std::string& source_pointcloud_filename,
 static void BenchmarkRegistrationICP(
         benchmark::State& state,
         const core::Device& device,
-        const t::pipelines::registration::TransformationEstimationType& type_) {
+        const t::pipelines::registration::TransformationEstimationType& type) {
     core::Dtype dtype = core::Dtype::Float32;
 
     t::geometry::PointCloud source(device), target(device);
@@ -118,33 +122,33 @@ static void BenchmarkRegistrationICP(
     core::Tensor init_trans =
             core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
 
-    utility::LogInfo(" PointCloud Size: Source: {}  Target: {}",
-                     source.GetPoints().GetShape().ToString(),
-                     target.GetPoints().GetShape().ToString());
-    utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
-                     max_iterations, max_correspondence_dist);
+    utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",
+                      source.GetPoints().GetShape().ToString(),
+                      target.GetPoints().GetShape().ToString());
+    utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
+                      max_iterations, max_correspondence_dist);
 
-    if (type_ == t::pipelines::registration::TransformationEstimationType::
-                         PointToPoint) {
+    if (type == t::pipelines::registration::TransformationEstimationType::
+                        PointToPoint) {
         t::pipelines::registration::TransformationEstimationPointToPoint
                 estimation;
-        auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+        auto reg_p2point = t::pipelines::registration::RegistrationICP(
                 source, target, max_correspondence_dist, init_trans, estimation,
                 t::pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
 
-        utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                         reg_p2plane.inlier_rmse_);
+        utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_p2point.fitness_,
+                          reg_p2point.inlier_rmse_);
 
         for (auto _ : state) {
-            auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+            auto reg_p2point = t::pipelines::registration::RegistrationICP(
                     source, target, max_correspondence_dist, init_trans,
                     estimation,
                     t::pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
         }
-    } else if (type_ == t::pipelines::registration::
-                                TransformationEstimationType::PointToPlane) {
+    } else if (type == t::pipelines::registration::
+                               TransformationEstimationType::PointToPlane) {
         t::pipelines::registration::TransformationEstimationPointToPlane
                 estimation;
         auto reg_p2plane = t::pipelines::registration::RegistrationICP(
@@ -152,8 +156,8 @@ static void BenchmarkRegistrationICP(
                 t::pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
 
-        utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                         reg_p2plane.inlier_rmse_);
+        utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
+                          reg_p2plane.inlier_rmse_);
 
         for (auto _ : state) {
             auto reg_p2plane = t::pipelines::registration::RegistrationICP(
@@ -269,7 +273,7 @@ static void BenchmarkGetRegistrationResultAndCorrespondences(
             core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
 
     t::geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(init_trans);
+    source_transformed = source_transformed.Transform(init_trans);
 
     t::pipelines::registration::RegistrationResult result(init_trans);
 
@@ -277,13 +281,13 @@ static void BenchmarkGetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_dist,
             init_trans);
 
-    utility::LogInfo(
+    utility::LogDebug(
             " Source points: {}, Target points {}, Good correspondences {} ",
             source_transformed.GetPoints().GetLength(),
             target.GetPoints().GetLength(),
             result.correspondence_set_.second.GetLength());
-    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", result.fitness_,
-                     result.inlier_rmse_);
+    utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", result.fitness_,
+                      result.inlier_rmse_);
 
     for (auto _ : state) {
         result = GetRegistrationResultAndCorrespondences(
@@ -304,10 +308,13 @@ BENCHMARK_CAPTURE(BenchmarkGetRegistrationResultAndCorrespondences,
         ->Unit(benchmark::kMillisecond);
 #endif
 
-static void BenchmarkRegistrationComputeTransformation(
-        benchmark::State& state,
+static std::tuple<t::geometry::PointCloud,
+                  t::geometry::PointCloud,
+                  t::pipelines::registration::CorrespondenceSet>
+ComputeTransformUtility(
         const core::Device& device,
-        const t::pipelines::registration::TransformationEstimationType& type_) {
+        const bool& compute_with_postICP_correspondences,
+        const t::pipelines::registration::TransformationEstimationType& type) {
     core::Dtype dtype = core::Dtype::Float32;
     t::geometry::PointCloud source(device), target(device);
 
@@ -315,26 +322,68 @@ static void BenchmarkRegistrationComputeTransformation(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
 
-    t::pipelines::registration::CorrespondenceSet corres;
-
-    core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-
     core::Tensor init_trans =
             core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
 
-    t::geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(init_trans);
+    core::Tensor final_transformation;
+    if (compute_with_postICP_correspondences) {
+        if (type == t::pipelines::registration::TransformationEstimationType::
+                            PointToPoint) {
+            t::pipelines::registration::TransformationEstimationPointToPoint
+                    estimation;
+            auto reg_p2point = t::pipelines::registration::RegistrationICP(
+                    source, target, max_correspondence_dist, init_trans,
+                    estimation,
+                    t::pipelines::registration::ICPConvergenceCriteria(
+                            relative_fitness, relative_rmse, max_iterations));
+            final_transformation = reg_p2point.transformation_.To(device);
+        } else if (type == t::pipelines::registration::
+                                   TransformationEstimationType::PointToPlane) {
+            t::pipelines::registration::TransformationEstimationPointToPlane
+                    estimation;
+            auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+                    source, target, max_correspondence_dist, init_trans,
+                    estimation,
+                    t::pipelines::registration::ICPConvergenceCriteria(
+                            relative_fitness, relative_rmse, max_iterations));
+            final_transformation = reg_p2plane.transformation_.To(device);
+        }
+    } else {
+        final_transformation =
+                core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
+    }
 
-    t::pipelines::registration::RegistrationResult result(init_trans);
+    t::pipelines::registration::CorrespondenceSet corres;
+    core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+
+    t::geometry::PointCloud source_transformed = source.Clone();
+    source_transformed = source_transformed.Transform(final_transformation);
+
+    t::pipelines::registration::RegistrationResult result(final_transformation);
 
     result = GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_dist,
-            init_trans);
+            final_transformation);
 
-    corres = result.correspondence_set_;
+    corres.first = result.correspondence_set_.first.To(device);
+    corres.second = result.correspondence_set_.second.To(device);
 
-    if (type_ == t::pipelines::registration::TransformationEstimationType::
-                         PointToPoint) {
+    return std::make_tuple(source_transformed, target, corres);
+}
+
+static void BenchmarkRegistrationComputeTransformation(
+        benchmark::State& state,
+        const core::Device& device,
+        const bool& compute_with_postICP_correspondences,
+        const t::pipelines::registration::TransformationEstimationType& type) {
+    t::geometry::PointCloud source(device), target(device);
+    t::pipelines::registration::CorrespondenceSet corres;
+
+    std::tie(source, target, corres) = ComputeTransformUtility(
+            device, compute_with_postICP_correspondences, type);
+
+    if (type == t::pipelines::registration::TransformationEstimationType::
+                        PointToPoint) {
         t::pipelines::registration::TransformationEstimationPointToPoint
                 estimation;
         // Warm up.
@@ -345,8 +394,8 @@ static void BenchmarkRegistrationComputeTransformation(
             core::Tensor transformation =
                     estimation.ComputeTransformation(source, target, corres);
         }
-    } else if (type_ == t::pipelines::registration::
-                                TransformationEstimationType::PointToPlane) {
+    } else if (type == t::pipelines::registration::
+                               TransformationEstimationType::PointToPlane) {
         t::pipelines::registration::TransformationEstimationPointToPlane
                 estimation;
         // Warm up.
@@ -362,32 +411,72 @@ static void BenchmarkRegistrationComputeTransformation(
 
 BENCHMARK_CAPTURE(
         BenchmarkRegistrationComputeTransformation,
-        PointToPlane / CPU,
+        PointToPlane[Iteration = First] / CPU,
         core::Device("CPU:0"),
+        false,
         t::pipelines::registration::TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(
         BenchmarkRegistrationComputeTransformation,
-        PointToPlane / CUDA,
+        PointToPlane[Iteration = First] / CUDA,
         core::Device("CUDA:0"),
+        false,
         t::pipelines::registration::TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(
         BenchmarkRegistrationComputeTransformation,
-        PointToPoint / CPU,
+        PointToPoint[Iteration = First] / CPU,
         core::Device("CPU:0"),
+        false,
         t::pipelines::registration::TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(
         BenchmarkRegistrationComputeTransformation,
-        PointToPoint / CUDA,
+        PointToPoint[Iteration = First] / CUDA,
         core::Device("CUDA:0"),
+        false,
+        t::pipelines::registration::TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationComputeTransformation,
+        PointToPlane[Iteration = Last] / CPU,
+        core::Device("CPU:0"),
+        true,
+        t::pipelines::registration::TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationComputeTransformation,
+        PointToPlane[Iteration = Last] / CUDA,
+        core::Device("CUDA:0"),
+        true,
+        t::pipelines::registration::TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationComputeTransformation,
+        PointToPoint[Iteration = Last] / CPU,
+        core::Device("CPU:0"),
+        true,
+        t::pipelines::registration::TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationComputeTransformation,
+        PointToPoint[Iteration = Last] / CUDA,
+        core::Device("CUDA:0"),
+        true,
         t::pipelines::registration::TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 #endif
