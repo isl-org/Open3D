@@ -39,8 +39,10 @@ namespace core {
 namespace eigen_converter {
 
 /// \brief Converts a Eigen matrix of shape (M, N) with alignment A and type T
-/// to a Tensor. \param matrix A templated Eigen matrix. \return A tensor
-/// converted from the eigen matrix.
+/// to a Tensor.
+///
+/// \param matrix A templated Eigen matrix.
+/// \return A tensor converted from the eigen matrix.
 template <class T, int M, int N, int A>
 core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
     core::Dtype dtype = core::Dtype::FromType<T>();
@@ -53,7 +55,7 @@ core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
 /// the tensor dtype, the output will be converted to double.
 ///
 /// \param tensor A 2D tensor.
-/// \return Eigen::MatrixXi.
+/// \return Eigen::MatrixXd.
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 TensorToEigenMatrixXd(const core::Tensor &tensor);
 
