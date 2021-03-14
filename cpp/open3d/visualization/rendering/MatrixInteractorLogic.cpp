@@ -52,6 +52,10 @@ void MatrixInteractorLogic::SetBoundingBox(
     model_bounds_ = bounds;
 }
 
+Eigen::Vector3f MatrixInteractorLogic::GetCenterOfRotation() const {
+    return center_of_rotation_;
+}
+
 void MatrixInteractorLogic::SetMouseDownInfo(
         const Camera::Transform& matrix,
         const Eigen::Vector3f& center_of_rotation) {

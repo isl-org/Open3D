@@ -78,15 +78,16 @@ jobs:
       - name: Linking to Open3D
         run: |
           $ErrorActionPreference = 'Stop'
-          cd docs\_static\C++
+          git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+          cd open3d-cmake-find-package
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 `
-          -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-          -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
-          ..
-          cmake --build . --config ${{ matrix.CONFIG }} `
-          && .\${{ matrix.CONFIG }}\TestVisualizer.exe
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            ..
+          cmake --build . --config ${{ matrix.CONFIG }}
+          .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
