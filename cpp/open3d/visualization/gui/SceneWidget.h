@@ -98,9 +98,13 @@ public:
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up);
+
     void SetOnCameraChanged(
             std::function<void(visualization::rendering::Camera*)>
                     on_cam_changed);
+
+    Eigen::Vector3f GetCenterOfRotation() const;
+    void SetCenterOfRotation(const Eigen::Vector3f& center);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is

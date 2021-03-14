@@ -313,6 +313,10 @@ public:
         return *interactor_;
     }
 
+    Eigen::Vector3f GetCenterOfRotation() const {
+        return interactor_->GetCenterOfRotation();
+    }
+
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         interactor_->SetCenterOfRotation(center);
     }
@@ -595,6 +599,14 @@ public:
         pick_->GetMatrixInteractor().SetBoundingBox(bounds);
     }
 
+    Eigen::Vector3f GetCenterOfRotation() const {
+        if (GetControls() == SceneWidget::Controls::ROTATE_CAMERA_SPHERE) {
+            return rotate_sphere_->GetCenterOfRotation();
+        } else {
+            return rotate_->GetCenterOfRotation();
+        }
+    }
+
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         rotate_->SetCenterOfRotation(center);
         rotate_sphere_->SetCenterOfRotation(center);
@@ -803,6 +815,14 @@ void SceneWidget::LookAt(const Eigen::Vector3f& center,
     GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
     impl_->UpdateFarPlane(GetFrame(), GetCamera()->GetFieldOfView());
+}
+
+Eigen::Vector3f SceneWidget::GetCenterOfRotation() const {
+    return impl_->controls_->GetCenterOfRotation();
+}
+
+void SceneWidget::SetCenterOfRotation(const Eigen::Vector3f& center) {
+    impl_->controls_->SetCenterOfRotation(center);
 }
 
 void SceneWidget::SetOnCameraChanged(

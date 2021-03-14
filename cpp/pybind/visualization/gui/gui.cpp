@@ -994,6 +994,11 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "scene", &PySceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
+            .def_property("center_of_rotation",
+                          &SceneWidget::GetCenterOfRotation,
+                          &SceneWidget::SetCenterOfRotation,
+                          "Current center of rotation (for ROTATE_CAMERA and "
+                          "ROTATE_CAMERA_SPHERE)")
             .def("enable_scene_caching", &PySceneWidget::EnableSceneCaching,
                  "Enable/Disable caching of scene content when the view or "
                  "model is not changing. Scene caching can help improve UI "
