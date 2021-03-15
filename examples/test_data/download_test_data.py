@@ -44,8 +44,6 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from download_utils import download_all_files
 
-import argparse
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download Open3d test data.")
     parser.add_argument("--overwrite",
