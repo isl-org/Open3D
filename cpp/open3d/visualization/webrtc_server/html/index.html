@@ -232,7 +232,7 @@
 
           // Register callbacks for videoElt.
           videoElt.addEventListener("mousedown", (event) => {
-            var o3d_event = {
+            var open3dMouseEvent = {
               class_name: "MouseEvent",
               type: "BUTTON_DOWN",
               x: event.offsetX,
@@ -243,10 +243,10 @@
                 count: 1,
               },
             };
-            webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
+            webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
           });
           videoElt.addEventListener("mouseup", (event) => {
-            var o3d_event = {
+            var open3dMouseEvent = {
               class_name: "MouseEvent",
               type: "BUTTON_UP",
               x: event.offsetX,
@@ -257,7 +257,7 @@
                 count: 1,
               },
             };
-            webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
+            webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
           });
           videoElt.addEventListener("mousemove", (event) => {
             var msg =
