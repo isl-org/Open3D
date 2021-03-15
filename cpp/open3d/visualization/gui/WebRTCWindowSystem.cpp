@@ -96,6 +96,11 @@ void WebRTCWindowSystem::SetMouseWheelCallback(
     impl_->webrtc_server_->SetMouseWheelCallback(f);
 }
 
+void WebRTCWindowSystem::SetMouseEventCallback(
+        std::function<void(const MouseEvent &)> f) {
+    impl_->webrtc_server_->SetMouseEventCallback(f);
+}
+
 void WebRTCWindowSystem::StartWebRTCServer() {
     auto start_webrtc_thread = [this]() { this->impl_->webrtc_server_->Run(); };
     impl_->webrtc_thread_ = std::thread(start_webrtc_thread);

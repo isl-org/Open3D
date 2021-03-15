@@ -534,6 +534,8 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
                     me.button.button =
                             gui::MouseButton(MouseButtonFromGLFW(button));
 
+                    utility::LogInfo("mouse_button_callback to call {}",
+                                     me.ToString());
                     webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
                                                          me);
                 };
@@ -571,9 +573,17 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
                                                          me);
                 };
 
+        // Handles down/up/move/wheel.
+        std::function<void(const MouseEvent &)> mouse_event_callback =
+                [webrtc_window_system, window](const MouseEvent &me) -> void {
+            utility::LogInfo("mouse_event_callback to call {}", me.ToString());
+            webrtc_window_system->PostMouseEvent(window->GetOSWindow(), me);
+        };
+
         webrtc_window_system->SetMouseButtonCallback(mouse_button_callback);
         webrtc_window_system->SetMouseMoveCallback(mouse_move_callback);
         webrtc_window_system->SetMouseWheelCallback(mouse_wheel_callback);
+        webrtc_window_system->SetMouseEventCallback(mouse_event_callback);
 
         // TODO: only start the sever once. Can you add new streams while the
         // sever is running?

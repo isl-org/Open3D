@@ -119,7 +119,7 @@ bool MouseEvent::FromJson(const Json::Value& value) {
         return false;
     }
     this->x = value.get("x", 0).asInt();
-    this->y = value.get("x", 0).asInt();
+    this->y = value.get("y", 0).asInt();
     this->modifiers = value.get("modifiers", 0).asInt();
 
     if (this->type == Type::MOVE || this->type == Type::DRAG) {

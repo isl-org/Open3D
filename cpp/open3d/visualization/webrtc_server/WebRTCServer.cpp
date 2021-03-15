@@ -81,6 +81,8 @@ struct WebRTCServer::Impl {
             nullptr;
     std::function<void(double, double, int, double, double)>
             mouse_wheel_callback_ = nullptr;
+    std::function<void(const gui::MouseEvent&)> mouse_event_callback_ = nullptr;
+
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
@@ -126,6 +128,14 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
         gui::MouseEvent me;
         if (me.FromJson(StringToJson(message))) {
             utility::LogInfo("Parsed mouse event: {},", me.ToString());
+            if (mouse_event_callback_) {
+                mouse_event_callback_(me);
+                if (me.type == gui::MouseEvent::BUTTON_DOWN) {
+                    // TODO: Simplify me, send mouse button status directly
+                    // from js.
+                    mouse_button_status_ = 1;
+                }
+            }
         }
     } catch (...) {
     }
@@ -143,15 +153,15 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             if (mouse_move_callback_) {
                 mouse_move_callback_(mouse_button_status_, x, y, mods);
             }
-        } else if (type == "mousedown") {
-            mouse_button_status_ = 1;
-            int action = 1;
-            double x = static_cast<double>(std::stoi(tokens[1]));
-            double y = static_cast<double>(std::stoi(tokens[2]));
-            int mods = std::stoi(tokens[3]);
-            if (mouse_button_callback_) {
-                mouse_button_callback_(action, x, y, mods);
-            }
+            // } else if (type == "mousedown") {
+            //     mouse_button_status_ = 1;
+            //     int action = 1;
+            //     double x = static_cast<double>(std::stoi(tokens[1]));
+            //     double y = static_cast<double>(std::stoi(tokens[2]));
+            //     int mods = std::stoi(tokens[3]);
+            //     if (mouse_button_callback_) {
+            //         mouse_button_callback_(action, x, y, mods);
+            //     }
         } else if (type == "mouseup") {
             mouse_button_status_ = 0;
             int action = 0;
@@ -191,6 +201,11 @@ void WebRTCServer::SetMouseMoveCallback(
 void WebRTCServer::SetMouseWheelCallback(
         std::function<void(double, double, int, double, double)> f) {
     impl_->mouse_wheel_callback_ = f;
+}
+
+void WebRTCServer::SetMouseEventCallback(
+        std::function<void(const gui::MouseEvent&)> f) {
+    impl_->mouse_event_callback_ = f;
 }
 
 void WebRTCServer::OnDataChannelMessage(const std::string& message) {
