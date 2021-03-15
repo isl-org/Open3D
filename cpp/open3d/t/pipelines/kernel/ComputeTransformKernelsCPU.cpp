@@ -41,6 +41,9 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
+#ifdef _WIN32
+
+#else
 static void ComputePosePointToPlaneCPU_OPENMP(
         const float *source_points_ptr,
         const float *target_points_ptr,
@@ -114,6 +117,7 @@ static void ComputePosePointToPlaneCPU_OPENMP(
     // ATA(6,6) . Pose(6,1) = -ATB(6,1).
     pose = ATA.Solve(ATB_neg).Reshape({-1}).To(dtype);
 }
+#endif
 
 static void ComputePosePointToPlaneCPU_TBB(const float *source_points_ptr,
                                            const float *target_points_ptr,
@@ -234,6 +238,9 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     }
 }
 
+#ifdef _WIN32
+
+#else
 static void ComputeRtPointToPointCPU_OPENMP(
         const float *source_points_ptr,
         const float *target_points_ptr,
@@ -317,6 +324,7 @@ static void ComputeRtPointToPointCPU_OPENMP(
     R = U.Matmul(S.Matmul(VT));
     t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
 }
+#endif
 
 static void ComputeRtPointToPointCPU_TBB(const float *source_points_ptr,
                                          const float *target_points_ptr,
