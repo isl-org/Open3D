@@ -179,12 +179,12 @@ void pybind_registration_classes(py::module &m) {
     registration_result
             .def_readwrite("transformation",
                            &RegistrationResult::transformation_,
-                           "``4 x 4`` float64 numpy array: The estimated "
+                           "``4 x 4`` float32 tensor: The estimated "
                            "transformation matrix.")
             .def_readwrite(
                     "correspondence_set",
                     &RegistrationResult::correspondence_set_,
-                    "``n x 2`` int numpy array: Correspondence set between "
+                    "pair of ``C x 1`` int tensor: Correspondence set between "
                     "source and target point cloud.")
             .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
                            "float: RMSE of all inlier correspondences. Lower "
