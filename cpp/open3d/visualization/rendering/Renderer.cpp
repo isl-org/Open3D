@@ -126,6 +126,16 @@ void Renderer::RenderToDepthImage(
                                     image->num_of_channels_ *
                                     image->bytes_per_channel_);
                 memcpy(image->data_.data(), buffer.bytes, buffer.size);
+                // Filament's shaders calculate depth ranging from 1 (near)
+                // to 0 (far), which is reversed from what is normally done,
+                // so convert here so that users do not need to rediscover
+                // Filament internals. (And so we can change it back if Filament
+                // decides to swap how they do it again.)
+                float* pixels = (float*)image->data_.data();
+                int n_pixels = image->width_ * image->height_;
+                for (int i = 0; i < n_pixels; ++i) {
+                    pixels[i] = 1.0f - pixels[i];
+                }
                 cb(image);
                 render = nullptr;
             });

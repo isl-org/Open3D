@@ -706,8 +706,8 @@ Widget::DrawResult DrawChild(DrawContext& dc,
     }
     auto frame = child->GetFrame();
     bool bg_color_not_default = !child->IsDefaultBackgroundColor();
-    auto is_container = !child->GetChildren().empty();
-    if (is_container) {
+    auto is_3d = (std::dynamic_pointer_cast<SceneWidget>(child) != nullptr);
+    if (!is_3d) {
         dc.uiOffsetX = frame.x;
         dc.uiOffsetY = frame.y;
         ImGui::SetNextWindowPos(ImVec2(float(frame.x), float(frame.y)));
@@ -726,7 +726,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
     Widget::DrawResult result;
     result = child->Draw(dc);
 
-    if (is_container) {
+    if (!is_3d) {
         ImGui::End();
         if (bg_color_not_default) {
             ImGui::PopStyleColor();
