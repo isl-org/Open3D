@@ -28,7 +28,10 @@
 
 #include <benchmark/benchmark.h>
 
-#include "Eigen/Eigen"
+#include <Eigen/Eigen>
+
+#include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
@@ -36,9 +39,9 @@
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+        TEST_DATA_DIR "/ICP/cloud_bin_0.pcd";
 static const std::string target_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+        TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
 
 static const double voxel_downsampling_factor = 0.01;
 
@@ -48,100 +51,101 @@ static double relative_rmse = 1e-6;
 static int max_iterations = 30;
 
 // NNS parameter.
-static double max_correspondence_dist = 0.015;
-
-// Eigen::Matrix4d init_trans = Eigen::Matrix4d::Identity();
+static double max_correspondence_distance = 0.03;
 
 namespace open3d {
+namespace benchmarks {
 
-static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadTPointCloud(
+static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         const std::string& source_filename,
         const std::string& target_filename,
         const double voxel_downsample_factor) {
-    geometry::PointCloud source_;
-    geometry::PointCloud target_;
-
-    io::ReadPointCloud(source_filename, source_, {"auto", false, false, true});
-    io::ReadPointCloud(target_filename, target_, {"auto", false, false, true});
-
-    source_ = *source_.VoxelDownSample(voxel_downsample_factor);
-    target_ = *target_.VoxelDownSample(voxel_downsample_factor);
-
-    return std::make_tuple(source_, target_);
-}
-
-static void RegistrationICPPointToPlaneLegacy(benchmark::State& state) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
-    std::tie(source, target) = LoadTPointCloud(source_pointcloud_filename,
-                                               target_pointcloud_filename,
-                                               voxel_downsampling_factor);
+    io::ReadPointCloud(source_filename, source, {"auto", false, false, true});
+    io::ReadPointCloud(target_filename, target, {"auto", false, false, true});
+
+    // Eliminates the case of impractical values (including negative).
+    if (voxel_downsample_factor > 0.0001) {
+        source = *source.VoxelDownSample(voxel_downsample_factor);
+        target = *target.VoxelDownSample(voxel_downsample_factor);
+    }
+
+    return std::make_tuple(source, target);
+}
+
+static void BenchmarkRegistrationICPLegacy(
+        benchmark::State& state,
+        const pipelines::registration::TransformationEstimationType& type) {
+    geometry::PointCloud source;
+    geometry::PointCloud target;
+
+    std::tie(source, target) = LoadPointCloud(source_pointcloud_filename,
+                                              target_pointcloud_filename,
+                                              voxel_downsampling_factor);
 
     Eigen::Matrix4d init_trans;
     init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
             0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
 
-    auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
-            source, target, max_correspondence_dist, init_trans,
-            open3d::pipelines::registration::
-                    TransformationEstimationPointToPlane(),
-            open3d::pipelines::registration::ICPConvergenceCriteria(
-                    relative_fitness, relative_rmse, max_iterations));
-    utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
-                     max_iterations, max_correspondence_dist);
-    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                     reg_p2plane.inlier_rmse_);
+    pipelines::registration::RegistrationResult reg_result(init_trans);
 
-    for (auto _ : state) {
-        auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
-                source, target, max_correspondence_dist, init_trans,
-                open3d::pipelines::registration::
-                        TransformationEstimationPointToPlane(),
-                open3d::pipelines::registration::ICPConvergenceCriteria(
+    if (type ==
+        pipelines::registration::TransformationEstimationType::PointToPlane) {
+        pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
+        // Warm up.
+        reg_result = pipelines::registration::RegistrationICP(
+                source, target, max_correspondence_distance, init_trans,
+                estimation,
+                pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
-        utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                         reg_p2plane.inlier_rmse_);
+        // Benchmarking.
+        for (auto _ : state) {
+            reg_result = pipelines::registration::RegistrationICP(
+                    source, target, max_correspondence_distance, init_trans,
+                    estimation,
+                    pipelines::registration::ICPConvergenceCriteria(
+                            relative_fitness, relative_rmse, max_iterations));
+        }
+    } else if (type == pipelines::registration::TransformationEstimationType::
+                               PointToPoint) {
+        pipelines::registration::TransformationEstimationPointToPoint
+                estimation;
+        // Warm up.
+        reg_result = pipelines::registration::RegistrationICP(
+                source, target, max_correspondence_distance, init_trans,
+                estimation,
+                pipelines::registration::ICPConvergenceCriteria(
+                        relative_fitness, relative_rmse, max_iterations));
+        // Benchmarking.
+        for (auto _ : state) {
+            reg_result = pipelines::registration::RegistrationICP(
+                    source, target, max_correspondence_distance, init_trans,
+                    estimation,
+                    pipelines::registration::ICPConvergenceCriteria(
+                            relative_fitness, relative_rmse, max_iterations));
+        }
     }
+
+    utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
+                      max_iterations, max_correspondence_distance);
+    utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_result.fitness_,
+                      reg_result.inlier_rmse_);
 }
 
-static void RegistrationICPPointToPointLegacy(benchmark::State& state) {
-    geometry::PointCloud source;
-    geometry::PointCloud target;
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationICPLegacy,
+        PointToPlane / CPU,
+        pipelines::registration::TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
 
-    std::tie(source, target) = LoadTPointCloud(source_pointcloud_filename,
-                                               target_pointcloud_filename,
-                                               voxel_downsampling_factor);
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationICPLegacy,
+        PointToPoint / CPU,
+        pipelines::registration::TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
 
-    Eigen::Matrix4d init_trans;
-    init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
-            0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
-
-    auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
-            source, target, max_correspondence_dist, init_trans,
-            open3d::pipelines::registration::
-                    TransformationEstimationPointToPoint(),
-            open3d::pipelines::registration::ICPConvergenceCriteria(
-                    relative_fitness, relative_rmse, max_iterations));
-    utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
-                     max_iterations, max_correspondence_dist);
-    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                     reg_p2plane.inlier_rmse_);
-
-    for (auto _ : state) {
-        auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
-                source, target, max_correspondence_dist, init_trans,
-                open3d::pipelines::registration::
-                        TransformationEstimationPointToPoint(),
-                open3d::pipelines::registration::ICPConvergenceCriteria(
-                        relative_fitness, relative_rmse, max_iterations));
-        utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                         reg_p2plane.inlier_rmse_);
-    }
-}
-
-BENCHMARK(RegistrationICPPointToPlaneLegacy)->Unit(benchmark::kMillisecond);
-
-BENCHMARK(RegistrationICPPointToPointLegacy)->Unit(benchmark::kMillisecond);
-
+}  // namespace benchmarks
 }  // namespace open3d

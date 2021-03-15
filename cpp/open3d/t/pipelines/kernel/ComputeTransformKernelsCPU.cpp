@@ -54,7 +54,6 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
     std::vector<double> A_1x27(27, 0.0);
-#ifdef _WIN32
     // Identity element for running_total reduction variable: zeros_27.
     std::vector<double> zeros_27(27, 0.0);
     // For TBB reduction, A_ is a reduction variable of type vector<double>.
@@ -63,26 +62,20 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             [&](tbb::blocked_range<int> r, std::vector<double> A_) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    // For OpenMP reduction, A_ is a double pointer to A_1x27.
-    double *A_ = A_1x27.data();
-#pragma omp parallel for reduction(+ : A_[:27])
-    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
-                    const int64_t &source_index =
+                    const int64_t &source_idx =
                             3 * correspondence_first[workload_idx];
-                    const int64_t &target_index =
+                    const int64_t &target_idx =
                             3 * correspondence_second[workload_idx];
 
-                    const float &sx = (source_points_ptr[source_index + 0]);
-                    const float &sy = (source_points_ptr[source_index + 1]);
-                    const float &sz = (source_points_ptr[source_index + 2]);
-                    const float &tx = (target_points_ptr[target_index + 0]);
-                    const float &ty = (target_points_ptr[target_index + 1]);
-                    const float &tz = (target_points_ptr[target_index + 2]);
-                    const float &nx = (target_normals_ptr[target_index + 0]);
-                    const float &ny = (target_normals_ptr[target_index + 1]);
-                    const float &nz = (target_normals_ptr[target_index + 2]);
+                    const float &sx = (source_points_ptr[source_idx + 0]);
+                    const float &sy = (source_points_ptr[source_idx + 1]);
+                    const float &sz = (source_points_ptr[source_idx + 2]);
+                    const float &tx = (target_points_ptr[target_idx + 0]);
+                    const float &ty = (target_points_ptr[target_idx + 1]);
+                    const float &tz = (target_points_ptr[target_idx + 2]);
+                    const float &nx = (target_normals_ptr[target_idx + 0]);
+                    const float &ny = (target_normals_ptr[target_idx + 1]);
+                    const float &nz = (target_normals_ptr[target_idx + 2]);
 
                     const double bi_neg =
                             (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
@@ -103,7 +96,6 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                         A_[21 + j] += ai[j] * bi_neg;
                     }
                 }
-#ifdef _WIN32
                 return A_;
             },
             // TBB: Defining reduction operation.
@@ -114,7 +106,6 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                 }
                 return result;
             });
-#endif
 
     core::Tensor ATA =
             core::Tensor::Empty({6, 6}, core::Dtype::Float64, device);
@@ -152,7 +143,6 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
     // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
     // target points respectively.
     std::vector<double> mean_1x6(6, 0.0);
-#ifdef _WIN32
     // Identity element for running_total reduction variable: zeros_6.
     std::vector<double> zeros_6(6, 0.0);
     // For TBB reduction, mean_ is a reduction variable of type vector<double>.
@@ -161,12 +151,6 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
             [&](tbb::blocked_range<int> r, std::vector<double> mean_) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    // For OpenMP reduction, mean_ is a double pointer to mean_1x6.
-    double *mean_ = mean_1x6.data();
-#pragma omp parallel for reduction(+ : mean_[:6])
-    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
                     for (int i = 0; i < 3; i++) {
                         mean_[i] += source_points_ptr
                                 [3 * correspondence_first[workload_idx] + i];
@@ -174,7 +158,6 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                                 [3 * correspondence_second[workload_idx] + i];
                     }
                 }
-#ifdef _WIN32
                 return mean_;
             },
             // TBB: Defining reduction operation.
@@ -185,7 +168,6 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                 }
                 return result;
             });
-#endif
 
     double num_correspondences = static_cast<double>(n);
     for (int i = 0; i < 6; i++) {
@@ -194,8 +176,7 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
 
     // Calculating the Sxy for SVD.
     std::vector<double> sxy_1x9(9, 0.0);
-#ifdef _WIN32
-    // Identity element for running_total reduction variable: zeros_9.
+    // Identity element for running total reduction variable: zeros_9.
     std::vector<double> zeros_9(9, 0.0);
     // For TBB reduction, sxy_1x9_ is a reduction variable of type
     // vector<double>.
@@ -204,26 +185,19 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
             [&](tbb::blocked_range<int> r, std::vector<double> sxy_1x9_) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    // For OpenMP reduction, sxy_1x9_ is a double pointer to sxy_1x9.
-    double *sxy_1x9_ = sxy_1x9.data();
-#pragma omp parallel for reduction(+ : sxy_1x9_[:9])
-    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
                     for (int i = 0; i < 9; i++) {
                         const int row = i % 3;
                         const int col = i / 3;
-                        const int source_index =
+                        const int source_idx =
                                 3 * correspondence_first[workload_idx] + row;
-                        const int target_index =
+                        const int target_idx =
                                 3 * correspondence_second[workload_idx] + col;
-                        sxy_1x9_[i] += (source_points_ptr[source_index] -
+                        sxy_1x9_[i] += (source_points_ptr[source_idx] -
                                         mean_1x6[row]) *
-                                       (target_points_ptr[target_index] -
+                                       (target_points_ptr[target_idx] -
                                         mean_1x6[3 + col]);
                     }
                 }
-#ifdef _WIN32
                 return sxy_1x9_;
             },
             // TBB: Defining reduction operation.
@@ -234,7 +208,6 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                 }
                 return result;
             });
-#endif
 
     core::Tensor mean_s =
             core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
