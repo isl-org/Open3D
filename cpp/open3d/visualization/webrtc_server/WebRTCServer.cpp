@@ -48,6 +48,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
@@ -56,6 +57,19 @@
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
+
+static Json::Value StringToJson(const std::string& json_str) {
+    Json::Value json;
+    std::string err;
+    Json::CharReaderBuilder builder;
+    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+    if (!reader->parse(json_str.c_str(), json_str.c_str() + json_str.length(),
+                       &json, &err)) {
+        throw std::runtime_error("Failed to parse string to json, error: " +
+                                 err);
+    }
+    return json;
+}
 
 struct WebRTCServer::Impl {
     WebRTCServer* webrtc_server_;  // Parent.
@@ -106,6 +120,18 @@ void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
 void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
     // TODO: use Json message.
     utility::LogInfo("WebRTCServer::Impl::OnDataChannelMessage: {}", message);
+
+    try {
+        // First: try to parse as Json message.
+        gui::MouseEvent me;
+        if (me.FromJson(StringToJson(message))) {
+            utility::LogInfo("Parsed mouse event: {},", me.ToString());
+        }
+    } catch (...) {
+    }
+
+    // TODO: remove me.
+    // Legacy: process as string tokens.
     std::vector<std::string> tokens;
     utility::SplitString(tokens, message);
     if (tokens.size() > 0) {
