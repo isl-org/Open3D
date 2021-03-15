@@ -82,7 +82,6 @@ struct MouseEvent {
         } wheel;
     };
 
-    bool ToJson(Json::Value &value) const;
     bool FromJson(const Json::Value &value);
     std::string ToString() const;
 };

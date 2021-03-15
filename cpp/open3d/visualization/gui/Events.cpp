@@ -87,17 +87,72 @@ std::string MouseEvent::ToString() const {
     return ss.str();
 }
 
-bool MouseEvent::ToJson(Json::Value &value) const {
-    // Unimplemented.
-    return true;
-}
-
-bool MouseEvent::FromJson(const Json::Value &value) {
+bool MouseEvent::FromJson(const Json::Value& value) {
     if (!value.isObject()) {
-        utility::LogWarning(
-                "MouseEvent::ConvertFromJsonValue failed: not an object.");
+        utility::LogWarning("MouseEvent::FromJson failed: Not an object.");
         return false;
     }
+
+    std::string class_name = value.get("class_name", "").asString();
+    if (class_name != "MouseEvent") {
+        utility::LogWarning(
+                "MouseEvent::FromJson failed: Incorrect class name {}.",
+                class_name);
+        return false;
+    }
+
+    std::string type_name = value.get("type", "").asString();
+    if (type_name == "MOVE") {
+        this->type = MouseEvent::Type::MOVE;
+    } else if (type_name == "BUTTON_DOWN") {
+        this->type = MouseEvent::Type::BUTTON_DOWN;
+    } else if (type_name == "BUTTON_UP") {
+        this->type = MouseEvent::Type::BUTTON_UP;
+    } else if (type_name == "DRAG") {
+        this->type = MouseEvent::Type::DRAG;
+    } else if (type_name == "WHEEL") {
+        this->type = MouseEvent::Type::WHEEL;
+    } else {
+        utility::LogWarning(
+                "MouseEvent::FromJson failed: Incorrect type name {}.",
+                type_name);
+        return false;
+    }
+    this->x = value.get("x", 0).asInt();
+    this->y = value.get("x", 0).asInt();
+    this->modifiers = value.get("modifiers", 0).asInt();
+
+    if (this->type == Type::MOVE || this->type == Type::DRAG) {
+        this->move.buttons = value["move"].get("buttons", 0).asInt();
+    } else if (this->type == Type::BUTTON_DOWN ||
+               this->type == Type::BUTTON_UP) {
+        std::string button_name = value["button"].get("button", "").asString();
+        if (button_name == "NONE") {
+            this->button.button = MouseButton::NONE;
+        } else if (button_name == "LEFT") {
+            this->button.button = MouseButton::LEFT;
+        } else if (button_name == "MIDDLE") {
+            this->button.button = MouseButton::MIDDLE;
+        } else if (button_name == "RIGHT") {
+            this->button.button = MouseButton::RIGHT;
+        } else if (button_name == "BUTTON4") {
+            this->button.button = MouseButton::BUTTON4;
+        } else if (button_name == "BUTTON5") {
+            this->button.button = MouseButton::BUTTON5;
+        } else {
+            utility::LogWarning(
+                    "MouseEvent::FromJson failed: Incorrect button name {}.",
+                    button_name);
+            return false;
+        }
+        this->button.count = value["button"].get("count", 1).asInt();
+    } else if (this->type == Type::WHEEL) {
+        this->wheel.dx = value["wheel"].get("dx", 0.f).asFloat();
+        this->wheel.dy = value["wheel"].get("dy", 0.f).asFloat();
+        this->wheel.isTrackpad =
+                value["wheel"].get("isTrackpad", false).asBool();
+    }
+
     return true;
 }
 
