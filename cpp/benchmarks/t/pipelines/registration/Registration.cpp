@@ -35,9 +35,9 @@
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_0.pcd";
+        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
 static const std::string target_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
+        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
 
 static const double voxel_downsampling_factor = 0.01;
 
@@ -50,26 +50,19 @@ static int max_iterations = 30;
 static double max_correspondence_dist = 0.03;
 
 // Initial transformation guess for registation.
-// core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
 static std::vector<float> initial_transform_flat{
         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
 
-// To store final transformation obtained after `max_iterations` of ICP, to test
-// upper bound of `ComputeTransform`. open3d::core::Tensor
-// reg_p2point_transformation; open3d::core::Tensor reg_p2plane_transformation;
-
 namespace open3d {
 namespace benchmarks {
 
-namespace tregistration_utility {
-
-std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
-LoadTensorPointCloud(const std::string& source_pointcloud_filename,
-                     const std::string& target_pointcloud_filename,
-                     const double voxel_downsample_factor,
-                     const core::Dtype& dtype,
-                     const core::Device& device) {
+static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
+LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
+                             const std::string& target_pointcloud_filename,
+                             const double voxel_downsample_factor,
+                             const core::Dtype& dtype,
+                             const core::Device& device) {
     t::geometry::PointCloud source, target;
 
     t::io::ReadPointCloud(source_pointcloud_filename, source,
@@ -91,21 +84,16 @@ LoadTensorPointCloud(const std::string& source_pointcloud_filename,
 
     t::geometry::PointCloud source_device(device), target_device(device);
 
-    core::Tensor source_points =
-            source.GetPoints().To(device, dtype, /*copy=*/false);
+    core::Tensor source_points = source.GetPoints().To(device, dtype);
     source_device.SetPoints(source_points);
 
-    core::Tensor target_points =
-            target.GetPoints().To(device, dtype, /*copy=*/false);
-    core::Tensor target_normals =
-            target.GetPointNormals().To(device, dtype, /*copy=*/false);
+    core::Tensor target_points = target.GetPoints().To(device, dtype);
+    core::Tensor target_normals = target.GetPointNormals().To(device, dtype);
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);
 
     return std::make_tuple(source_device, target_device);
 }
-
-}  // namespace tregistration_utility
 
 static void BenchmarkRegistrationICP(
         benchmark::State& state,
@@ -115,58 +103,57 @@ static void BenchmarkRegistrationICP(
 
     t::geometry::PointCloud source(device), target(device);
 
-    std::tie(source, target) = tregistration_utility::LoadTensorPointCloud(
+    std::tie(source, target) = LoadTensorPointCloudFromFile(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
 
     core::Tensor init_trans =
             core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
 
-    utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",
-                      source.GetPoints().GetShape().ToString(),
-                      target.GetPoints().GetShape().ToString());
-    utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
-                      max_iterations, max_correspondence_dist);
+    t::pipelines::registration::RegistrationResult reg_result(init_trans);
 
     if (type == t::pipelines::registration::TransformationEstimationType::
-                        PointToPoint) {
-        t::pipelines::registration::TransformationEstimationPointToPoint
+                        PointToPlane) {
+        t::pipelines::registration::TransformationEstimationPointToPlane
                 estimation;
-        auto reg_p2point = t::pipelines::registration::RegistrationICP(
+        // Warm up.
+        reg_result = t::pipelines::registration::RegistrationICP(
                 source, target, max_correspondence_dist, init_trans, estimation,
-                t::pipelines::registration::ICPConvergenceCriteria(
+                open3d::t::pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
-
-        utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_p2point.fitness_,
-                          reg_p2point.inlier_rmse_);
-
+        // Benchmarking.
         for (auto _ : state) {
-            auto reg_p2point = t::pipelines::registration::RegistrationICP(
+            reg_result = t::pipelines::registration::RegistrationICP(
                     source, target, max_correspondence_dist, init_trans,
                     estimation,
                     t::pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
         }
     } else if (type == t::pipelines::registration::
-                               TransformationEstimationType::PointToPlane) {
-        t::pipelines::registration::TransformationEstimationPointToPlane
+                               TransformationEstimationType::PointToPoint) {
+        t::pipelines::registration::TransformationEstimationPointToPoint
                 estimation;
-        auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+        // Warm up.
+        reg_result = t::pipelines::registration::RegistrationICP(
                 source, target, max_correspondence_dist, init_trans, estimation,
                 t::pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
-
-        utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                          reg_p2plane.inlier_rmse_);
-
+        // Benchmarking.
         for (auto _ : state) {
-            auto reg_p2plane = t::pipelines::registration::RegistrationICP(
+            reg_result = t::pipelines::registration::RegistrationICP(
                     source, target, max_correspondence_dist, init_trans,
                     estimation,
                     t::pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
         }
     }
+    utility::LogInfo(" PointCloud Size: Source: {}  Target: {}",
+                     source.GetPoints().GetShape().ToString(),
+                     target.GetPoints().GetShape().ToString());
+    utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
+                     max_iterations, max_correspondence_dist);
+    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_result.fitness_,
+                     reg_result.inlier_rmse_);
 }
 
 BENCHMARK_CAPTURE(
@@ -263,7 +250,7 @@ static void BenchmarkGetRegistrationResultAndCorrespondences(
     core::Dtype dtype = core::Dtype::Float32;
     t::geometry::PointCloud source(device), target(device);
 
-    std::tie(source, target) = tregistration_utility::LoadTensorPointCloud(
+    std::tie(source, target) = LoadTensorPointCloudFromFile(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
 
@@ -318,7 +305,7 @@ ComputeTransformUtility(
     core::Dtype dtype = core::Dtype::Float32;
     t::geometry::PointCloud source(device), target(device);
 
-    std::tie(source, target) = tregistration_utility::LoadTensorPointCloud(
+    std::tie(source, target) = LoadTensorPointCloudFromFile(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
 

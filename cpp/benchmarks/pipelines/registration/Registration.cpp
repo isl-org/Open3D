@@ -54,6 +54,7 @@ static int max_iterations = 30;
 static double max_correspondence_distance = 0.03;
 
 namespace open3d {
+namespace benchmarks {
 
 static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         const std::string& source_filename,
@@ -65,8 +66,11 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
     io::ReadPointCloud(source_filename, source, {"auto", false, false, true});
     io::ReadPointCloud(target_filename, target, {"auto", false, false, true});
 
-    source = *source.VoxelDownSample(voxel_downsample_factor);
-    target = *target.VoxelDownSample(voxel_downsample_factor);
+    // Eliminates the case of impractical values (including negative).
+    if (voxel_downsample_factor > 0.0001) {
+        source = *source.VoxelDownSample(voxel_downsample_factor);
+        target = *target.VoxelDownSample(voxel_downsample_factor);
+    }
 
     return std::make_tuple(source, target);
 }
@@ -85,51 +89,50 @@ static void BenchmarkRegistrationICPLegacy(
     init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
             0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
 
+    pipelines::registration::RegistrationResult reg_result(init_trans);
+
     if (type ==
-        pipelines::registration::TransformationEstimationType::PointToPoint) {
+        pipelines::registration::TransformationEstimationType::PointToPlane) {
+        pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
         // Warm up.
-        auto reg_p2point = pipelines::registration::RegistrationICP(
+        reg_result = pipelines::registration::RegistrationICP(
                 source, target, max_correspondence_distance, init_trans,
-                pipelines::registration::TransformationEstimationPointToPoint(),
+                estimation,
                 pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
-        utility::LogDebug(
-                " Max iterations: {}, Max_correspondence_distance : {}",
-                max_iterations, max_correspondence_distance);
-        utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_p2point.fitness_,
-                          reg_p2point.inlier_rmse_);
-
+        // Benchmarking.
         for (auto _ : state) {
-            auto reg_p2point = pipelines::registration::RegistrationICP(
+            reg_result = pipelines::registration::RegistrationICP(
                     source, target, max_correspondence_distance, init_trans,
-                    pipelines::registration::
-                            TransformationEstimationPointToPoint(),
+                    estimation,
                     pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
         }
     } else if (type == pipelines::registration::TransformationEstimationType::
-                               PointToPlane) {
+                               PointToPoint) {
+        pipelines::registration::TransformationEstimationPointToPoint
+                estimation;
         // Warm up.
-        auto reg_p2plane = pipelines::registration::RegistrationICP(
+        reg_result = pipelines::registration::RegistrationICP(
                 source, target, max_correspondence_distance, init_trans,
-                pipelines::registration::TransformationEstimationPointToPlane(),
+                estimation,
                 pipelines::registration::ICPConvergenceCriteria(
                         relative_fitness, relative_rmse, max_iterations));
-        utility::LogDebug(
-                " Max iterations: {}, Max_correspondence_distance : {}",
-                max_iterations, max_correspondence_distance);
-        utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", reg_p2plane.fitness_,
-                          reg_p2plane.inlier_rmse_);
-
+        // Benchmarking.
         for (auto _ : state) {
-            auto reg_p2plane = pipelines::registration::RegistrationICP(
+            reg_result = pipelines::registration::RegistrationICP(
                     source, target, max_correspondence_distance, init_trans,
-                    pipelines::registration::
-                            TransformationEstimationPointToPlane(),
+                    estimation,
                     pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
         }
     }
+
+    utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
+                     max_iterations, max_correspondence_distance);
+    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_result.fitness_,
+                     reg_result.inlier_rmse_);
 }
 
 BENCHMARK_CAPTURE(
@@ -260,4 +263,5 @@ BENCHMARK_CAPTURE(
         pipelines::registration::TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
+}  // namespace benchmarks
 }  // namespace open3d
