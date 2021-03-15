@@ -196,7 +196,7 @@ Window::Window(const std::string& title,
     // is the scaling factor. On Linux, there is no scaling of pixels (just
     // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
     // the appropriate scale factor for text and icons and such.
-    float scaling = ws.GetWindowScaleFactor(impl_->window_);
+    float scaling = ws.GetUIScaleFactor(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
     impl_->theme_.font_size =
             int(std::round(impl_->theme_.font_size * scaling));
@@ -500,19 +500,8 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
-// macOS unit of measurement is 72 dpi pixels, which on newer displays
-// is a factor of 2 or 3 smaller than the real number of pixels per inch.
-// This means that you can keep your hard-coded 12 pixel font and N pixel
-// sizes and it will be the same size on any disply.
-// On X Windows a pixel is a device pixel, so glfwGetWindowContentScale()
-// returns the scale factor needed so that your fonts and icons and sizes
-// are correct. This is not the same thing as Apple does.
-#if __APPLE__
     return Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
             impl_->window_);
-#else
-    return 1.0f;
-#endif  // __APPLE__
 }
 
 Point Window::GlobalToWindowCoord(int global_x, int global_y) {
