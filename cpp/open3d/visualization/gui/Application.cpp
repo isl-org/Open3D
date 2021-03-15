@@ -534,8 +534,6 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
                     me.button.button =
                             gui::MouseButton(MouseButtonFromGLFW(button));
 
-                    utility::LogInfo("mouse_button_callback to call {}",
-                                     me.ToString());
                     webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
                                                          me);
                 };
@@ -569,8 +567,10 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
                     me.wheel.dx = static_cast<float>(dx);
                     me.wheel.dy = static_cast<float>(dy);
 
-                    webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
-                                                         me);
+                    utility::LogInfo("mouse_wheel_callback to call {}",
+                                     me.ToString());
+                    // webrtc_window_system->PostMouseEvent(window->GetOSWindow(),
+                    //                                      me);
                 };
 
         // Handles down/up/move/wheel.

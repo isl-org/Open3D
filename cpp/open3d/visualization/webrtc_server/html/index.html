@@ -290,6 +290,33 @@
               // Prevent propagating the wheel event to the browser.
               // https://stackoverflow.com/a/23606063/1255535
               event.preventDefault();
+
+              // https://stackoverflow.com/a/56948026/1255535.
+              var isTrackpad = event.wheelDeltaY
+                ? event.wheelDeltaY === -3 * event.deltaY
+                : event.deltaMode === 0;
+
+              // TODO: set better scaling.
+              // Flip the sign and set abaolute value to 1.
+              var dx = event.deltaX;
+              var dy = event.deltaY;
+              dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;
+              dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
+
+              var open3dMouseEvent = {
+                class_name: "MouseEvent",
+                type: "WHEEL",
+                x: event.offsetX,
+                y: event.offsetY,
+                modifiers: getModifiers(event),
+                wheel: {
+                  dx: dx,
+                  dy: dy,
+                  isTrackpad: isTrackpad ? 1 : 0,
+                },
+              };
+              webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
+
               var msg =
                 "wheel " +
                 event.offsetX +
