@@ -216,10 +216,16 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                                 const core::Device &device) {
     bool use_openmp = true;
     if (use_openmp) {
+#ifdef _WIN32
+        utility::LogError(
+                " Optimisation not allowed: OpenMP 4.0 constructs are not "
+                "supported on Windows.");
+#else
         ComputePosePointToPlaneCPU_OPENMP(
                 source_points_ptr, target_points_ptr, target_normals_ptr,
                 correspondence_first, correspondence_second, n, pose, dtype,
                 device);
+#endif
     } else {
         ComputePosePointToPlaneCPU_TBB(source_points_ptr, target_points_ptr,
                                        target_normals_ptr, correspondence_first,
@@ -436,17 +442,20 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                               const core::Device device) {
     bool use_openmp = true;
     if (use_openmp) {
+#ifdef _WIN32
+        utility::LogError(
+                " Optimisation not allowed: OpenMP 4.0 constructs are not "
+                "supported on Windows.");
+#else
         ComputeRtPointToPointCPU_OPENMP(
                 source_points_ptr, target_points_ptr, correspondence_first,
                 correspondence_second, n, R, t, dtype, device);
+#endif
     } else {
         ComputeRtPointToPointCPU_TBB(
                 source_points_ptr, target_points_ptr, correspondence_first,
                 correspondence_second, n, R, t, dtype, device);
     }
-    // #ifdef _WIN32
-    // #else
-    // #endif
 }
 
 }  // namespace kernel
