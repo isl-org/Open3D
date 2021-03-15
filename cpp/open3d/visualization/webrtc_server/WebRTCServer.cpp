@@ -88,7 +88,6 @@ struct WebRTCServer::Impl {
     void OnDataChannelMessage(const std::string& message);
     void OnFrame(const std::shared_ptr<core::Tensor>& im);
     void Run();
-    int mouse_button_status_ = 0;
 };
 
 void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
@@ -112,22 +111,17 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
     utility::LogInfo("WebRTCServer::Impl::OnDataChannelMessage: {}", message);
 
     try {
-        // First: try to parse as Json message.
         gui::MouseEvent me;
-        if (me.FromJson(StringToJson(message))) {
+        Json::Value value = StringToJson(message);
+        if (value.get("class_name", "").asString() == "MouseEvent" &&
+            me.FromJson(value)) {
             utility::LogInfo("Parsed mouse event: {},", me.ToString());
             if (mouse_event_callback_) {
                 mouse_event_callback_(me);
-                // TODO: Simplify me, send mouse button status directly from js.
-                if (me.type == gui::MouseEvent::BUTTON_DOWN) {
-                    mouse_button_status_ = 1;
-                }
-                if (me.type == gui::MouseEvent::BUTTON_UP) {
-                    mouse_button_status_ = 0;
-                }
             }
         }
     } catch (...) {
+        utility::LogInfo("OnDataChannelMessage cannot parse: {}.", message);
     }
 }
 
