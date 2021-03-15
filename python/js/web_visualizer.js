@@ -83,37 +83,62 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
     // Register callbacks for videoElt.
     this.videoElt.addEventListener("mousedown", (event) => {
-      var msg =
-        "mousedown " +
-        event.offsetX +
-        " " +
-        event.offsetY +
-        " " +
-        getModifiers(event);
-      console.log(msg);
-      this.webRtcClient.dataChannel.send(msg);
+      var open3dMouseEvent = {
+        class_name: "MouseEvent",
+        type: "BUTTON_DOWN",
+        x: event.offsetX,
+        y: event.offsetY,
+        modifiers: getModifiers(event),
+        button: {
+          button: "LEFT", // Fix me.
+          count: 1,
+        },
+      };
+      this.webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
     });
     this.videoElt.addEventListener("mouseup", (event) => {
-      var msg =
-        "mouseup " +
-        event.offsetX +
-        " " +
-        event.offsetY +
-        " " +
-        getModifiers(event);
-      console.log(msg);
-      this.webRtcClient.dataChannel.send(msg);
+      var open3dMouseEvent = {
+        class_name: "MouseEvent",
+        type: "BUTTON_UP",
+        x: event.offsetX,
+        y: event.offsetY,
+        modifiers: getModifiers(event),
+        button: {
+          button: "LEFT", // Fix me.
+          count: 1,
+        },
+      };
+      this.webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
     });
     this.videoElt.addEventListener("mousemove", (event) => {
-      var msg =
-        "mousemove " +
-        event.offsetX +
-        " " +
-        event.offsetY +
-        " " +
-        getModifiers(event);
-      console.log(msg);
-      this.webRtcClient.dataChannel.send(msg);
+      // TODO: Known differences. Currently only left-key drag works.
+      // - Open3D: L=1, M=2, R=4
+      // - JavaScript: L=1, R=2, M=4
+      var open3dMouseEvent = {
+        class_name: "MouseEvent",
+        type: event.buttons == 0 ? "MOVE" : "DRAG",
+        x: event.offsetX,
+        y: event.offsetY,
+        modifiers: getModifiers(event),
+        move: {
+          buttons: event.buttons, // MouseButtons ORed together
+        },
+      };
+      this.webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
+    });
+    this.videoElt.addEventListener("mouseleave", (event) => {
+      var open3dMouseEvent = {
+        class_name: "MouseEvent",
+        type: "BUTTON_UP",
+        x: event.offsetX,
+        y: event.offsetY,
+        modifiers: getModifiers(event),
+        button: {
+          button: "LEFT", // Fix me.
+          count: 1,
+        },
+      };
+      this.webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
     });
     this.videoElt.addEventListener(
       "wheel",
@@ -121,19 +146,32 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
         // Prevent propagating the wheel event to the browser.
         // https://stackoverflow.com/a/23606063/1255535
         event.preventDefault();
-        var msg =
-          "wheel " +
-          event.offsetX +
-          " " +
-          event.offsetY +
-          " " +
-          getModifiers(event) +
-          " " +
-          event.deltaX +
-          " " +
-          event.deltaY;
-        console.log(msg);
-        this.webRtcClient.dataChannel.send(msg);
+
+        // https://stackoverflow.com/a/56948026/1255535.
+        var isTrackpad = event.wheelDeltaY
+          ? event.wheelDeltaY === -3 * event.deltaY
+          : event.deltaMode === 0;
+
+        // TODO: set better scaling.
+        // Flip the sign and set abaolute value to 1.
+        var dx = event.deltaX;
+        var dy = event.deltaY;
+        dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;
+        dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
+
+        var open3dMouseEvent = {
+          class_name: "MouseEvent",
+          type: "WHEEL",
+          x: event.offsetX,
+          y: event.offsetY,
+          modifiers: getModifiers(event),
+          wheel: {
+            dx: dx,
+            dy: dy,
+            isTrackpad: isTrackpad ? 1 : 0,
+          },
+        };
+        this.webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
       },
       { passive: false }
     );
