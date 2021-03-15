@@ -148,32 +148,34 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
     utility::SplitString(tokens, message);
     if (tokens.size() > 0) {
         std::string type = tokens[0];
-        if (type == "mousemove") {
-            double x = static_cast<double>(std::stoi(tokens[1]));
-            double y = static_cast<double>(std::stoi(tokens[2]));
-            int mods = std::stoi(tokens[3]);
-            if (mouse_move_callback_) {
-                mouse_move_callback_(mouse_button_status_, x, y, mods);
-            }
-            // } else if (type == "mousedown") {
-            //     mouse_button_status_ = 1;
-            //     int action = 1;
-            //     double x = static_cast<double>(std::stoi(tokens[1]));
-            //     double y = static_cast<double>(std::stoi(tokens[2]));
-            //     int mods = std::stoi(tokens[3]);
-            //     if (mouse_button_callback_) {
-            //         mouse_button_callback_(action, x, y, mods);
-            //     }
-            // } else if (type == "mouseup") {
-            //     mouse_button_status_ = 0;
-            //     int action = 0;
-            //     double x = static_cast<double>(std::stoi(tokens[1]));
-            //     double y = static_cast<double>(std::stoi(tokens[2]));
-            //     int mods = std::stoi(tokens[3]);
-            //     if (mouse_button_callback_) {
-            //         mouse_button_callback_(action, x, y, mods);
-            //     }
-        } else if (type == "wheel") {
+        // if (type == "mousemove") {
+        //     double x = static_cast<double>(std::stoi(tokens[1]));
+        //     double y = static_cast<double>(std::stoi(tokens[2]));
+        //     int mods = std::stoi(tokens[3]);
+        //     if (mouse_move_callback_) {
+        //         mouse_move_callback_(mouse_button_status_, x, y, mods);
+        //     }
+        //     // } else if (type == "mousedown") {
+        //     //     mouse_button_status_ = 1;
+        //     //     int action = 1;
+        //     //     double x = static_cast<double>(std::stoi(tokens[1]));
+        //     //     double y = static_cast<double>(std::stoi(tokens[2]));
+        //     //     int mods = std::stoi(tokens[3]);
+        //     //     if (mouse_button_callback_) {
+        //     //         mouse_button_callback_(action, x, y, mods);
+        //     //     }
+        //     // } else if (type == "mouseup") {
+        //     //     mouse_button_status_ = 0;
+        //     //     int action = 0;
+        //     //     double x = static_cast<double>(std::stoi(tokens[1]));
+        //     //     double y = static_cast<double>(std::stoi(tokens[2]));
+        //     //     int mods = std::stoi(tokens[3]);
+        //     //     if (mouse_button_callback_) {
+        //     //         mouse_button_callback_(action, x, y, mods);
+        //     //     }
+        // } else
+
+        if (type == "wheel") {
             double x = static_cast<double>(std::stoi(tokens[1]));
             double y = static_cast<double>(std::stoi(tokens[2]));
             int mods = std::stoi(tokens[3]);
