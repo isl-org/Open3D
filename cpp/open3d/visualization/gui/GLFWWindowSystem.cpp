@@ -276,7 +276,7 @@ float GLFWWindowSystem::GetWindowScaleFactor(OSWindow w) const {
     // in converting to/from OS coordinates (e.g. mouse events), but not for
     // sizing user interface elements like fonts.
 #if __APPLE__
-    return CallGLFWWindowContentScale((GLFWwindow*)w);
+    return CallGLFWGetWindowContentScale((GLFWwindow*)w);
 #else
     return 1.0f;
 #endif  // __APPLE__
