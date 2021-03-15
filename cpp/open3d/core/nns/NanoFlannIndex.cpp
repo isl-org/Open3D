@@ -276,9 +276,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid1NN(
         const Tensor &query_points, double radius) const {
     Device device = GetDevice();
-    // Check dtype.
     query_points.AssertDtype(GetDtype());
-    // Check shapes.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
     if (radius <= 0) {
