@@ -48,6 +48,7 @@ class MultiWinApp:
             self.n_snapshots) + ")"
         new_vis = o3d.visualization.O3DVisualizer(title)
         mat = o3d.visualization.rendering.Material()
+        mat.shader = "defaultUnlit"
         new_vis.add_geometry(CLOUD_NAME + " #" + str(self.n_snapshots),
                              self.cloud, mat)
         new_vis.reset_camera_to_default()
@@ -76,6 +77,7 @@ class MultiWinApp:
 
         def add_first_cloud():
             mat = o3d.visualization.rendering.Material()
+            mat.shader = "defaultUnlit"
             self.main_vis.add_geometry(CLOUD_NAME, self.cloud, mat)
             self.main_vis.reset_camera_to_default()
             self.main_vis.setup_camera(60, bounds.get_center(),
@@ -103,6 +105,7 @@ class MultiWinApp:
                 #       Requires that the point cloud be a t.PointCloud.
                 self.main_vis.remove_geometry(CLOUD_NAME)
                 mat = o3d.visualization.rendering.Material()
+                mat.shader = "defaultUnlit"
                 self.main_vis.add_geometry(CLOUD_NAME, self.cloud, mat)
 
             if self.is_done:  # might have changed while sleeping

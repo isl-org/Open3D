@@ -78,8 +78,10 @@ private:
         geometry::AxisAlignedBoundingBox bounds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
+            auto mat = rendering::Material();
+            mat.shader = "defaultUnlit";
             new_vis->AddGeometry(
-                    CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_);
+                CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_, &mat);
             bounds = cloud_->GetAxisAlignedBoundingBox();
         }
 
@@ -102,7 +104,7 @@ private:
 
 private:
     void ReadThreadMain() {
-        // This is NOT the UI thread, need to call post_to_main_thread() to
+        // This is NOT the UI thread, need to call PostToMainThread() to
         // update the scene or any part of the UI.
 
         geometry::AxisAlignedBoundingBox bounds;
@@ -154,11 +156,10 @@ private:
                     main_vis_.get(), [this, mat]() {
                         std::lock_guard<std::mutex> lock(cloud_lock_);
                         // Note: if the number of points is less than or equal
-                        // to the
-                        //       number of points in the original object that
-                        //       was added, using Scene::UpdateGeometry() will
-                        //       be faster. Requires that the point cloud be a
-                        //       t::PointCloud.
+                        // to the number of points in the original object that
+                        // was added, using Scene::UpdateGeometry() will be
+                        // faster. Requires that the point cloud be a
+                        // t::PointCloud.
                         main_vis_->RemoveGeometry(CLOUD_NAME);
                         main_vis_->AddGeometry(CLOUD_NAME, cloud_, &mat);
                     });
