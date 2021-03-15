@@ -72,8 +72,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     core::Tensor distances;
-    std::tie(result.correspondence_set_.first, result.correspondence_set_.second,
-             distances) =
+    std::tie(result.correspondence_set_.first,
+             result.correspondence_set_.second, distances) =
             target_nns.Hybrid1NNSearch(source.GetPoints(),
                                        max_correspondence_distance);
 
