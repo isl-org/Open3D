@@ -81,7 +81,8 @@ private:
             auto mat = rendering::Material();
             mat.shader = "defaultUnlit";
             new_vis->AddGeometry(
-                CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_, &mat);
+                    CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_,
+                    &mat);
             bounds = cloud_->GetAxisAlignedBoundingBox();
         }
 
