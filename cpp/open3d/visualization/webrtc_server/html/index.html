@@ -263,6 +263,8 @@
             // TODO: Known differences. Currently only left-key drag works.
             // - Open3D: L=1, M=2, R=4
             // - JavaScript: L=1, R=2, M=4
+            //
+            // TODO: If not button pressed, can we skip the event?
             var open3dMouseEvent = {
               class_name: "MouseEvent",
               type: event.buttons == 0 ? "MOVE" : "DRAG",
@@ -271,6 +273,20 @@
               modifiers: getModifiers(event),
               move: {
                 buttons: event.buttons, // MouseButtons ORed together
+              },
+            };
+            webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          });
+          videoElt.addEventListener("mouseleave", (event) => {
+            var open3dMouseEvent = {
+              class_name: "MouseEvent",
+              type: "BUTTON_UP",
+              x: event.offsetX,
+              y: event.offsetY,
+              modifiers: getModifiers(event),
+              button: {
+                button: "LEFT", // Fix me.
+                count: 1,
               },
             };
             webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
