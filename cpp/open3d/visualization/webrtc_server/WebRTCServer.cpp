@@ -131,21 +131,6 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
     }
 }
 
-void WebRTCServer::SetMouseButtonCallback(
-        std::function<void(int, double, double, int)> f) {
-    impl_->mouse_button_callback_ = f;
-}
-
-void WebRTCServer::SetMouseMoveCallback(
-        std::function<void(int, double, double, int)> f) {
-    impl_->mouse_move_callback_ = f;
-}
-
-void WebRTCServer::SetMouseWheelCallback(
-        std::function<void(double, double, int, double, double)> f) {
-    impl_->mouse_wheel_callback_ = f;
-}
-
 void WebRTCServer::SetMouseEventCallback(
         std::function<void(const gui::MouseEvent&)> f) {
     impl_->mouse_event_callback_ = f;

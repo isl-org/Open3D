@@ -80,11 +80,6 @@ public:
     // Server -> client frame.
     void OnFrame(const std::shared_ptr<core::Tensor>& im);
 
-    void SetMouseButtonCallback(
-            std::function<void(int, double, double, int)> f);
-    void SetMouseMoveCallback(std::function<void(int, double, double, int)> f);
-    void SetMouseWheelCallback(
-            std::function<void(double, double, int, double, double)> f);
     void SetMouseEventCallback(std::function<void(const gui::MouseEvent&)> f);
 
 private:

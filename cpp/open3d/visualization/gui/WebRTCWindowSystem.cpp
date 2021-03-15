@@ -69,7 +69,6 @@ WebRTCWindowSystem::WebRTCWindowSystem()
     impl_->webrtc_server_ = std::make_shared<webrtc_server::WebRTCServer>();
 
     // Set draw() callback.
-    // TODO: when draw(), send frame via WebRTC server.
     // TODO: handle multiple instances of windows, that is, the WebRTC server
     //       shall monitor and close connection to certain peerid.
     auto draw_callback = [this](gui::Window *window,
@@ -80,21 +79,6 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 }
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
-
-void WebRTCWindowSystem::SetMouseButtonCallback(
-        std::function<void(int, double, double, int)> f) {
-    impl_->webrtc_server_->SetMouseButtonCallback(f);
-}
-
-void WebRTCWindowSystem::SetMouseMoveCallback(
-        std::function<void(int, double, double, int)> f) {
-    impl_->webrtc_server_->SetMouseMoveCallback(f);
-}
-
-void WebRTCWindowSystem::SetMouseWheelCallback(
-        std::function<void(double, double, int, double, double)> f) {
-    impl_->webrtc_server_->SetMouseWheelCallback(f);
-}
 
 void WebRTCWindowSystem::SetMouseEventCallback(
         std::function<void(const MouseEvent &)> f) {
