@@ -45,10 +45,4 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from download_utils import download_all_files
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Download Open3d test data.")
-    parser.add_argument("--overwrite",
-                        action="store_true",
-                        default=False,
-                        help="Overwrite existing file.")
-    args = parser.parse_args()
-    download_all_files(overwrite=args.overwrite)
+    download_all_files()
