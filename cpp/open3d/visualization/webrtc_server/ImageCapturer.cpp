@@ -119,9 +119,7 @@ bool ImageCapturer::IsRunning() { return is_running_; }
 // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
 void ImageCapturer::OnCaptureResult(
         const std::shared_ptr<core::Tensor>& frame) {
-    utility::LogInfo(
-            "ImageCapturer:OnCaptureResult callback <<<<<<<<< Good "
-            ">>>>>>>>>");
+    utility::LogInfo("ImageCapturer::OnCaptureResult: New frame");
     int height = (int)frame->GetShape(0);
     int width = (int)frame->GetShape(1);
 

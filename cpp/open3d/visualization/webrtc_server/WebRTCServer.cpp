@@ -98,30 +98,28 @@ void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
     // connected.
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_track_source =
             peer_connection_manager_->GetVideoTrackSource("imageOpen3D");
-    utility::LogInfo("WebRTCServer::Impl::OnFrame");
     if (video_track_source != nullptr) {
-        utility::LogInfo(
-                "WebRTCServer::Impl::OnFrame, video_track_source != nullptr");
         GlobalBuffer::GetInstance().Write(im);
     }
 }
 
 void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
-    // TODO: use Json message.
-    utility::LogInfo("WebRTCServer::Impl::OnDataChannelMessage: {}", message);
-
     try {
         gui::MouseEvent me;
         Json::Value value = StringToJson(message);
         if (value.get("class_name", "").asString() == "MouseEvent" &&
             me.FromJson(value)) {
-            utility::LogInfo("Parsed mouse event: {},", me.ToString());
+            utility::LogInfo(
+                    "WebRTCServer::Impl::OnDataChannelMessage: MouseEvent {}",
+                    me.ToString());
             if (mouse_event_callback_) {
                 mouse_event_callback_(me);
             }
         }
     } catch (...) {
-        utility::LogInfo("OnDataChannelMessage cannot parse: {}.", message);
+        utility::LogInfo(
+                "WebRTCServer::Impl::OnDataChannelMessage: cannot parse {}.",
+                message);
     }
 }
 

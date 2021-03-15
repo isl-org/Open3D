@@ -473,7 +473,6 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
                         impl_->window_system_)) {
         std::function<void(const MouseEvent &)> mouse_event_callback =
                 [webrtc_window_system, window](const MouseEvent &me) -> void {
-            utility::LogInfo("mouse_event_callback to call {}", me.ToString());
             webrtc_window_system->PostMouseEvent(window->GetOSWindow(), me);
         };
         webrtc_window_system->SetMouseEventCallback(mouse_event_callback);
