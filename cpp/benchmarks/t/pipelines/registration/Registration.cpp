@@ -152,8 +152,9 @@ static void BenchmarkRegistrationICP(
                      target.GetPoints().GetShape().ToString());
     utility::LogInfo(" Max iterations: {}, Max_correspondence_distance : {}",
                      max_iterations, max_correspondence_dist);
-    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", reg_result.fitness_,
-                     reg_result.inlier_rmse_);
+    utility::LogInfo(" Correspondences: {}, Fitness: {}, Inlier RMSE: {}",
+                     reg_result.correspondence_set_.first.GetLength(),
+                     reg_result.fitness_, reg_result.inlier_rmse_);
 }
 
 BENCHMARK_CAPTURE(
@@ -268,19 +269,19 @@ static void BenchmarkGetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_dist,
             init_trans);
 
-    utility::LogDebug(
-            " Source points: {}, Target points {}, Good correspondences {} ",
-            source_transformed.GetPoints().GetLength(),
-            target.GetPoints().GetLength(),
-            result.correspondence_set_.second.GetLength());
-    utility::LogDebug(" Fitness: {}  Inlier RMSE: {}", result.fitness_,
-                      result.inlier_rmse_);
-
     for (auto _ : state) {
         result = GetRegistrationResultAndCorrespondences(
                 source_transformed, target, target_nns, max_correspondence_dist,
                 init_trans);
     }
+
+    utility::LogInfo(
+            " Source points: {}, Target points {}, Initial Correspondences {}",
+            source_transformed.GetPoints().GetLength(),
+            target.GetPoints().GetLength(),
+            result.correspondence_set_.second.GetLength());
+    utility::LogInfo(" Fitness: {}  Inlier RMSE: {}", result.fitness_,
+                     result.inlier_rmse_);
 }
 
 BENCHMARK_CAPTURE(BenchmarkGetRegistrationResultAndCorrespondences,
