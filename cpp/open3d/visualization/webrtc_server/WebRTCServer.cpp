@@ -103,19 +103,7 @@ void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
     if (video_track_source != nullptr) {
         utility::LogInfo(
                 "WebRTCServer::Impl::OnFrame, video_track_source != nullptr");
-
-        // auto image_capturer =
-        //         reinterpret_cast<ImageCapturer*>(video_track_source.get());
-
-        // t::geometry::Image t_im = t::geometry::Image::FromLegacyImage(im);
-        // core::Tensor rgb_frame = t_im.AsTensor();
         GlobalBuffer::GetInstance().Write(im);
-
-        // utility::LogInfo("To call
-        // image_capturer->OnCaptureResult(im_frame);");
-        // image_capturer->OnFrame(im_frame);
-        // utility::LogInfo("Called
-        // image_capturer->OnCaptureResult(im_frame);");
     }
 }
 
@@ -140,55 +128,6 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             }
         }
     } catch (...) {
-    }
-
-    // TODO: remove me.
-    // Legacy: process as string tokens.
-    std::vector<std::string> tokens;
-    utility::SplitString(tokens, message);
-    if (tokens.size() > 0) {
-        std::string type = tokens[0];
-        // if (type == "mousemove") {
-        //     double x = static_cast<double>(std::stoi(tokens[1]));
-        //     double y = static_cast<double>(std::stoi(tokens[2]));
-        //     int mods = std::stoi(tokens[3]);
-        //     if (mouse_move_callback_) {
-        //         mouse_move_callback_(mouse_button_status_, x, y, mods);
-        //     }
-        //     // } else if (type == "mousedown") {
-        //     //     mouse_button_status_ = 1;
-        //     //     int action = 1;
-        //     //     double x = static_cast<double>(std::stoi(tokens[1]));
-        //     //     double y = static_cast<double>(std::stoi(tokens[2]));
-        //     //     int mods = std::stoi(tokens[3]);
-        //     //     if (mouse_button_callback_) {
-        //     //         mouse_button_callback_(action, x, y, mods);
-        //     //     }
-        //     // } else if (type == "mouseup") {
-        //     //     mouse_button_status_ = 0;
-        //     //     int action = 0;
-        //     //     double x = static_cast<double>(std::stoi(tokens[1]));
-        //     //     double y = static_cast<double>(std::stoi(tokens[2]));
-        //     //     int mods = std::stoi(tokens[3]);
-        //     //     if (mouse_button_callback_) {
-        //     //         mouse_button_callback_(action, x, y, mods);
-        //     //     }
-        // } else
-
-        if (type == "wheel") {
-            double x = static_cast<double>(std::stoi(tokens[1]));
-            double y = static_cast<double>(std::stoi(tokens[2]));
-            int mods = std::stoi(tokens[3]);
-            double dx = static_cast<double>(std::stoi(tokens[4]));
-            double dy = static_cast<double>(std::stoi(tokens[5]));
-            // Flip the sign and set abaolute value to 5.
-            // TODO: better scaling.
-            dx = dx == 0 ? dx : -dx / std::abs(dx) * 5;
-            dy = dy == 0 ? dy : -dy / std::abs(dy) * 5;
-            if (mouse_wheel_callback_) {
-                mouse_wheel_callback_(x, y, mods, dx, dy);
-            }
-        }
     }
 }
 

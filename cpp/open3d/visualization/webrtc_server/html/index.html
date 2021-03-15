@@ -274,15 +274,6 @@
               },
             };
             webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
-            // var msg =
-            //   "mousemove " +
-            //   event.offsetX +
-            //   " " +
-            //   event.offsetY +
-            //   " " +
-            //   getModifiers(event);
-            // console.log(msg);
-            // webRtcClient.dataChannel.send(msg);
           });
           videoElt.addEventListener(
             "wheel",
@@ -316,20 +307,6 @@
                 },
               };
               webRtcClient.dataChannel.send(JSON.stringify(open3dMouseEvent));
-
-              var msg =
-                "wheel " +
-                event.offsetX +
-                " " +
-                event.offsetY +
-                " " +
-                getModifiers(event) +
-                " " +
-                event.deltaX +
-                " " +
-                event.deltaY;
-              console.log(msg);
-              webRtcClient.dataChannel.send(msg);
             },
             { passive: false }
           );
