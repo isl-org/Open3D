@@ -130,10 +130,12 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             utility::LogInfo("Parsed mouse event: {},", me.ToString());
             if (mouse_event_callback_) {
                 mouse_event_callback_(me);
+                // TODO: Simplify me, send mouse button status directly from js.
                 if (me.type == gui::MouseEvent::BUTTON_DOWN) {
-                    // TODO: Simplify me, send mouse button status directly
-                    // from js.
                     mouse_button_status_ = 1;
+                }
+                if (me.type == gui::MouseEvent::BUTTON_UP) {
+                    mouse_button_status_ = 0;
                 }
             }
         }
@@ -162,15 +164,15 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
             //     if (mouse_button_callback_) {
             //         mouse_button_callback_(action, x, y, mods);
             //     }
-        } else if (type == "mouseup") {
-            mouse_button_status_ = 0;
-            int action = 0;
-            double x = static_cast<double>(std::stoi(tokens[1]));
-            double y = static_cast<double>(std::stoi(tokens[2]));
-            int mods = std::stoi(tokens[3]);
-            if (mouse_button_callback_) {
-                mouse_button_callback_(action, x, y, mods);
-            }
+            // } else if (type == "mouseup") {
+            //     mouse_button_status_ = 0;
+            //     int action = 0;
+            //     double x = static_cast<double>(std::stoi(tokens[1]));
+            //     double y = static_cast<double>(std::stoi(tokens[2]));
+            //     int mods = std::stoi(tokens[3]);
+            //     if (mouse_button_callback_) {
+            //         mouse_button_callback_(action, x, y, mods);
+            //     }
         } else if (type == "wheel") {
             double x = static_cast<double>(std::stoi(tokens[1]));
             double y = static_cast<double>(std::stoi(tokens[2]));

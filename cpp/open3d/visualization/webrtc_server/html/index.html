@@ -232,7 +232,6 @@
 
           // Register callbacks for videoElt.
           videoElt.addEventListener("mousedown", (event) => {
-            // TODO: fix me, try sending a JSON message here
             var o3d_event = {
               class_name: "MouseEvent",
               type: "BUTTON_DOWN",
@@ -245,27 +244,20 @@
               },
             };
             webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
-
-            var msg =
-              "mousedown " +
-              event.offsetX +
-              " " +
-              event.offsetY +
-              " " +
-              getModifiers(event);
-            console.log(msg);
-            webRtcClient.dataChannel.send(msg);
           });
           videoElt.addEventListener("mouseup", (event) => {
-            var msg =
-              "mouseup " +
-              event.offsetX +
-              " " +
-              event.offsetY +
-              " " +
-              getModifiers(event);
-            console.log(msg);
-            webRtcClient.dataChannel.send(msg);
+            var o3d_event = {
+              class_name: "MouseEvent",
+              type: "BUTTON_UP",
+              x: event.offsetX,
+              y: event.offsetY,
+              modifiers: getModifiers(event),
+              button: {
+                button: "LEFT",
+                count: 1,
+              },
+            };
+            webRtcClient.dataChannel.send(JSON.stringify(o3d_event));
           });
           videoElt.addEventListener("mousemove", (event) => {
             var msg =
