@@ -235,9 +235,7 @@ float BitmapWindowSystem::GetWindowScaleFactor(OSWindow w) const {
     return 1.0f;
 }
 
-float BitmapWindowSystem::GetUIScaleFactor(OSWindow w) const {
-    return 1.0f;
-}
+float BitmapWindowSystem::GetUIScaleFactor(OSWindow w) const { return 1.0f; }
 
 void BitmapWindowSystem::SetWindowTitle(OSWindow w, const char *title) {}
 

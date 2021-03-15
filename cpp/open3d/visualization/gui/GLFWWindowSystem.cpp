@@ -297,7 +297,6 @@ Point GLFWWindowSystem::GetMousePosInWindow(OSWindow w) const {
     glfwGetCursorPos((GLFWwindow*)w, &mx, &my);
     auto scaling = GetWindowScaleFactor((GLFWwindow*)w);
     return Point(int(float(mx) * scaling), int(float(my) * scaling));
-//    return Point(int(mx), int(my));
 }
 
 int GLFWWindowSystem::GetMouseButtons(OSWindow w) const {
@@ -360,7 +359,9 @@ void GLFWWindowSystem::MouseMoveCallback(GLFWwindow* window,
             buttons |= MouseButtonFromGLFW(b);
         }
     }
-    float scaling = Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(window);
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(x * scaling));
     int iy = int(std::ceil(y * scaling));
 
@@ -381,7 +382,9 @@ void GLFWWindowSystem::MouseButtonCallback(GLFWwindow* window,
                                       : MouseEvent::BUTTON_UP);
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    float scaling = Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(window);
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
@@ -410,7 +413,9 @@ void GLFWWindowSystem::MouseScrollCallback(GLFWwindow* window,
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    float scaling = Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(window);
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
