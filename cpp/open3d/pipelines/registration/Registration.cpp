@@ -165,11 +165,8 @@ RegistrationResult RegistrationICP(
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug(
-                "ICP Iteration #{:d}: Correspondences {:d}, Fitness {:.4f}, "
-                "RMSE {:.4f}",
-                i, result.correspondence_set_.size(), result.fitness_,
-                result.inlier_rmse_);
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                          result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
