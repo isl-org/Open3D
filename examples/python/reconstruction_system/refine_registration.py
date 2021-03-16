@@ -77,7 +77,7 @@ def multiscale_icp(source,
                         max_iteration=iter))
             if config["icp_method"] == "color":
                 result_icp = o3d.pipelines.registration.registration_colored_icp(
-                    source_down, target_down, voxel_size[scale],
+                    source_down, target_down, distance_threshold,
                     current_transformation,
                     o3d.pipelines.registration.
                     TransformationEstimationForColoredICP(),
@@ -112,24 +112,11 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
     target = o3d.io.read_point_cloud(ply_file_names[t])
 
     if config["debug_mode"]:
-        draw_registration_result_original_color(source, target, transformation_init)
+        draw_registration_result_original_color(source, target,
+                                                transformation_init)
 
-    # We trust RGBD odometry more -- they always give us reasonable results, although a little bit less accurate.
-    # In comparison, colored and point-to-plane icp sometimes converges to worse or wrong states,
-    # which is crucial to the performance since odometry edges won't be pruned.
-    if t == s + 1:
-        voxel_size_hd = config["voxel_size"] / 4
-        source_down = source.voxel_down_sample(voxel_size_hd)
-        target_down = target.voxel_down_sample(voxel_size_hd)
-
-        # Reuse init pose and compute information matrix.
-        transformation = transformation_init
-        information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
-                source_down, target_down, voxel_size_hd * 1.4,
-                transformation)
-    else:
-        (transformation, information) = \
-            local_refinement(source, target, transformation_init, config)
+    (transformation, information) = \
+        local_refinement(source, target, transformation_init, config)
 
     if config["debug_mode"]:
         draw_registration_result_original_color(source, target, transformation)
@@ -161,15 +148,6 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         t = edge.target_node_id
 
         transformation_init = edge.transformation
-
-        # Optional: We instead trust the very original fragment pose graph for icp.
-        # 1. Optimized pose graph can be dragged / polluted by global optimization.
-        # 2. Pose graph itself can be corrupted due to unknown open3d issues in multiprocessing.
-        # pose_graph_frag = o3d.io.read_pose_graph(
-        #     join(config['path_dataset'],
-        #          config["template_fragment_posegraph_optimized"] % s))
-        # n_nodes = len(pose_graph_frag.nodes)
-        # transformation_init = np.linalg.inv(pose_graph_frag.nodes[n_nodes - 1].pose)
         matching_results[s * n_files + t] = \
             matching_result(s, t, transformation_init)
 

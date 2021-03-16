@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<geometry::PointCloud> target =
             open3d::io::CreatePointCloudFromFile(argv[2]);
 
-    std::vector<float> voxel_sizes = {0.05, 0.05 / 2, 0.05 / 4};
+    std::vector<double> voxel_sizes = {0.05, 0.05 / 2, 0.05 / 4};
     std::vector<int> iterations = {50, 30, 14};
 
     Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();

@@ -32,7 +32,7 @@ def multiscale_icp(source,
                                                  2.0,
                                                  max_nn=30))
         result_icp = o3d.pipelines.registration.registration_colored_icp(
-            source_down, target_down, voxel_size[scale],
+            source_down, target_down, distance_threshold,
             current_transformation,
             o3d.pipelines.registration.
             TransformationEstimationForColoredICP(),
@@ -42,6 +42,7 @@ def multiscale_icp(source,
                 max_iteration=iter))
 
         current_transformation = result_icp.transformation
+        draw_registration_result_original_color(source, target, current_transformation)
         print(current_transformation)
 
     return result_icp.transformation
@@ -62,10 +63,8 @@ if __name__ == '__main__':
     trans = np.array([0.60949996, 0.49802465, -0.61683162, 0.15081973, -0.57239243,
             0.81477382, 0.09225254, -0.21454357, 0.5485223, 0.29684183,
                       0.78167015, -0.05018587, 0, 0, 0, 1]).reshape((4, 4));
-    draw_registration_result_original_color(source, target, trans)
+
     trans = multiscale_icp(
             source, target,
             [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
             trans)
-    draw_registration_result_original_color(source, target, trans)
-
