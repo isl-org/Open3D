@@ -3,16 +3,23 @@
     <title>WebRTC Streamer</title>
     <link rel="stylesheet" type="text/css" href="styles.css" />
     <script src="libs/adapter.min.js"></script>
-    <script src="webrtcstreamer.json"></script>
     <script src="webrtcstreamer.js"></script>
     <script>
+      // WebRTC configs
+      var webrtcConfig = {
+        url: "",
+        options: "rtptransport=tcp&timeout=60",
+        layoutextraoptions: "&width=320&height=0",
+        defaultvideostream: "Bunny",
+      };
+
       // ------------------------------------------
       // WebRTC connections
       // ------------------------------------------
       var webRtcServerList = {};
 
       // ------------------------------------------
-      // decode URL arguments
+      // Decode URL arguments
       // ------------------------------------------
       var argurl = { video: location.search.slice(1) };
       var argoptions = null;
@@ -32,7 +39,7 @@
       }
 
       // ------------------------------------------
-      // get text from url object (video,audio)
+      // Get text from url object (video,audio)
       // ------------------------------------------
       function getText(url) {
         var text;
@@ -46,7 +53,7 @@
       }
 
       // ------------------------------------------
-      // get the div where to insert a video
+      // Get the div where to insert a video
       // ------------------------------------------
       function getContentDiv() {
         var contentDiv = null;
@@ -65,7 +72,7 @@
       }
 
       // ------------------------------------------
-      // init device list
+      // Init device list
       // ------------------------------------------
       function onGetDeviceList(remoteDeviceList) {
         var deviceList = [];
@@ -115,15 +122,7 @@
       }
 
       // ------------------------------------------
-      // Fill version
-      // ------------------------------------------
-      function onVersion(version) {
-        document.getElementById("footer").innerHTML =
-          "<p><a href='https://github.com/intel-isl/Open3D'>Open3D WebRTC Streamer</a></p>";
-      }
-
-      // ------------------------------------------
-      // add a webrtc client connection
+      // Add a webrtc client connection
       // ------------------------------------------
       function del(url) {
         var videoTag = "video_" + JSON.stringify(url);
