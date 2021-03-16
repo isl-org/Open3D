@@ -294,7 +294,7 @@ public:
         if (cloud.HasCovariances()) {
             covariance_ += cloud.covariances_[index];
         }
-        point_cubic_id new_id{};
+        point_cubic_id new_id;
         new_id.point_id = index;
         new_id.cubic_id = cubic_index;
         original_id.push_back(new_id);
@@ -351,7 +351,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
     bool has_covariances = HasCovariances();
-    for (const auto &accpoint : voxelindex_to_accpoint) {
+    for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
             output->normals_.push_back(accpoint.second.GetAverageNormal());
