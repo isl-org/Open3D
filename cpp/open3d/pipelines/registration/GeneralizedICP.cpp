@@ -179,9 +179,6 @@ RegistrationResult RegistrationGeneralizedICP(
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    if (max_correspondence_distance <= 0.0) {
-        utility::LogError("Invalid max_correspondence_distance.");
-    }
     return RegistrationICP(*InitializePointCloudForGeneralizedICP(source),
                            *InitializePointCloudForGeneralizedICP(target),
                            max_correspondence_distance, init, estimation,
