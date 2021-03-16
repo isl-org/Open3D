@@ -32,6 +32,7 @@
 * Updated Open3D.h.in to add certain missing header files
 * Add Open3D-ML to Open3D wheel
 * Fix a bug in PointCloud file format, use `float` instead of `float_t`
+* Add per-point covariance member for geometry::PointCloud class.
 * Add Generalized ICP implementation.
 
 ## 0.9.0

@@ -64,7 +64,7 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 /// doing (again) the SVD decomposition, re-use the normals given in the
 /// input PointCloud
 std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
-        const geometry::PointCloud &pcd) {
+        const geometry::PointCloud &pcd, double epsilon) {
     auto output = std::make_shared<geometry::PointCloud>(pcd);
     if (output->HasCovariances()) {
         utility::LogDebug("GeneralizedICP: Using pre-computed covariances.");
@@ -72,7 +72,7 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
     }
 
     output->covariances_.resize(output->points_.size());
-    const Eigen::Matrix3d C = Eigen::Vector3d(epsilon_, 1, 1).asDiagonal();
+    const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
     if (output->HasNormals()) {
         utility::LogDebug("GeneralizedICP: Computing covariances from normals");
 #pragma omp parallel for
@@ -178,10 +178,12 @@ RegistrationResult RegistrationGeneralizedICP(
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    return RegistrationICP(*InitializePointCloudForGeneralizedICP(source),
-                           *InitializePointCloudForGeneralizedICP(target),
-                           max_correspondence_distance, init, estimation,
-                           criteria);
+    auto source_c =
+            InitializePointCloudForGeneralizedICP(source, estimation.epsilon_);
+    auto target_c =
+            InitializePointCloudForGeneralizedICP(target, estimation.epsilon_);
+    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
+                           init, estimation, criteria);
 }
 
 }  // namespace registration

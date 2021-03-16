@@ -53,7 +53,8 @@ public:
     /// \brief Constructor that takes as input a RobustKernel \params kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
     explicit TransformationEstimationForGeneralizedICP(
-            double epsilon = 1e-3, std::shared_ptr<RobustKernel> kernel)
+            double epsilon = 1e-3,
+            std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
         : epsilon_(epsilon), kernel_(std::move(kernel)) {}
 
 public:
