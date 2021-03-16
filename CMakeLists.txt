@@ -423,6 +423,18 @@ if(WIN32)
     endif()
 endif()
 
+# Downloads files from https://github.com/intel-isl/open3d_downloads to
+# Open3D/examples/test_data/open3d_downloads.
+include(ExternalProject)
+ExternalProject_Add(
+    open3d_downloads
+    DOWNLOAD_COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
+    UPDATE_COMMAND   ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
+
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -550,6 +562,8 @@ function(open3d_set_global_properties target)
     if(WITH_FAISS)
         target_compile_definitions(${target} PRIVATE WITH_FAISS)
     endif()
+    # Download test data files from open3d_downloads repo.
+    add_dependencies(${target} open3d_downloads)
 endfunction()
 
 macro(add_source_group module_name)
