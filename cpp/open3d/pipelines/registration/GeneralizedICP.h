@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 // @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
 //
-// Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
+// Copyright (c) 2021 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
 #pragma once
