@@ -62,7 +62,7 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 
 /// Compute the covariance matrix according to the original paper. Instead of
 /// doing (again) the SVD decomposition, re-use the normals given in the
-/// PointCloud.e
+/// input PointCloud
 std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd) {
     auto output = std::make_shared<geometry::PointCloud>(pcd);
@@ -74,7 +74,6 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
     output->covariances_.resize(output->points_.size());
     const double epsilon = 1e-3;
     const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
-    // Compute covariances the same way is done in the original GICP paper.
     if (output->HasNormals()) {
         utility::LogDebug("GeneralizedICP: Computing covariances from normals");
 #pragma omp parallel for
@@ -83,6 +82,7 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
             output->covariances_[i] = Rx * C * Rx.transpose();
         }
     } else {
+        // Compute covariances the same way is done in the original GICP paper.
         utility::LogDebug("GeneralizedICP: Computing covariances from points.");
         output->EstimateCovariances(open3d::geometry::KDTreeSearchParamKNN(20));
 #pragma omp parallel for
