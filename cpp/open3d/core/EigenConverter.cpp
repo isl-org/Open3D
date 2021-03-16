@@ -61,7 +61,7 @@ TensorToEigenMatrix(const core::Tensor &tensor) {
             eigen_matrix(data_ptr, dim[0], dim[1]);
 
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-            eigen_matrix_copy = eigen_matrix;
+            eigen_matrix_copy(eigen_matrix);
     return eigen_matrix_copy;
 }
 
