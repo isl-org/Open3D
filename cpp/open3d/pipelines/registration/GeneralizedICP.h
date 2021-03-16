@@ -46,10 +46,12 @@ class RegistrationResult;
 class TransformationEstimationForGeneralizedICP
     : public TransformationEstimation {
 public:
-    /// \brief Default Constructor.
-    TransformationEstimationForGeneralizedICP() = default;
     ~TransformationEstimationForGeneralizedICP() override = default;
 
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
     /// \brief Constructor that takes as input a RobustKernel \params kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
     explicit TransformationEstimationForGeneralizedICP(
@@ -66,11 +68,6 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
-
-    TransformationEstimationType GetTransformationEstimationType()
-            const override {
-        return type_;
-    };
 
 public:
     // Small constant representing covariance along the normal.
