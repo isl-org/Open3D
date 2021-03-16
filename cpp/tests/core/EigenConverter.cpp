@@ -80,13 +80,13 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
         }
     }
 
-	core::Tensor tensor =
-			core::Tensor::Full({5, 4}, 1.5, core::Dtype::Float32, device);
-	auto eigen = core::eigen_converter::TensorToEigenMatrixXi(tensor);
-	core::Tensor tensor_converted =
-			core::eigen_converter::EigenMatrixToTensor(eigen);
-	EXPECT_TRUE(tensor_converted.AllClose(
-			core::Tensor::Ones({5, 4}, core::Dtype::Int32, cpu_device)));
+    core::Tensor tensor =
+            core::Tensor::Full({5, 4}, 1.5, core::Dtype::Float32, device);
+    auto eigen = core::eigen_converter::TensorToEigenMatrixXi(tensor);
+    core::Tensor tensor_converted =
+            core::eigen_converter::EigenMatrixToTensor(eigen);
+    EXPECT_TRUE(tensor_converted.AllClose(
+            core::Tensor::Ones({5, 4}, core::Dtype::Int32, cpu_device)));
 }
 
 }  // namespace tests
