@@ -297,22 +297,38 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                        TransformationEstimationForGeneralizedICP>,
                TransformationEstimation>
             te_gicp(m, "TransformationEstimationForGeneralizedICP",
-                    "Class to estimate a transformation for point to plane "
-                    "distance.");
+                    "Class to estimate a transformation for Generalized ICP.");
     py::detail::bind_default_constructor<
             TransformationEstimationForGeneralizedICP>(te_gicp);
     py::detail::bind_copy_functions<TransformationEstimationForGeneralizedICP>(
             te_gicp);
-    te_gicp.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+    te_gicp.def(py::init([](double epsilon,
+                            std::shared_ptr<RobustKernel> kernel) {
                     return new TransformationEstimationForGeneralizedICP(
-                            std::move(kernel));
+                            epsilon, std::move(kernel));
                 }),
-                "kernel"_a)
+                "epsilon"_a, "kernel"_a)
+            .def(py::init([](double epsilon) {
+                     return new TransformationEstimationForGeneralizedICP(
+                             epsilon);
+                 }),
+                 "epsilon"_a)
+            .def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                     auto te = TransformationEstimationForGeneralizedICP();
+                     te.kernel_ = std::move(kernel);
+                     return te;
+                 }),
+                 "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationForGeneralizedICP &te) {
                      return std::string(
-                             "TransformationEstimationForGeneralizedICP");
+                                    "TransformationEstimationForGeneralizedICP "
+                                    "with epsilon:") +
+                            std::to_string(te.epsilon_);
                  })
+            .def_readwrite("epsilon",
+                           &TransformationEstimationForGeneralizedICP::epsilon_,
+                           "epsilon")
             .def_readwrite("kernel",
                            &TransformationEstimationForGeneralizedICP::kernel_,
                            "Robust Kernel used in the Optimization");
@@ -569,9 +585,12 @@ static const std::unordered_map<std::string, std::string>
                  "``"
                  "TransformationEstimationPointToPlane``, "
                  "``"
+                 "TransformationEstimationForGeneralizedICP``, "
+                 "``"
                  "TransformationEstimationForColoredICP``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
+                {"epsilon", "epsilon value"},
                 {"kernel", "Robust Kernel used in the Optimization"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},

@@ -72,8 +72,7 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
     }
 
     output->covariances_.resize(output->points_.size());
-    const double epsilon = 1e-3;
-    const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
+    const Eigen::Matrix3d C = Eigen::Vector3d(epsilon_, 1, 1).asDiagonal();
     if (output->HasNormals()) {
         utility::LogDebug("GeneralizedICP: Computing covariances from normals");
 #pragma omp parallel for

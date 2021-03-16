@@ -53,12 +53,10 @@ public:
     /// \brief Constructor that takes as input a RobustKernel \params kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
     explicit TransformationEstimationForGeneralizedICP(
-            std::shared_ptr<RobustKernel> kernel)
-        : kernel_(std::move(kernel)) {}
+            double epsilon = 1e-3, std::shared_ptr<RobustKernel> kernel)
+        : epsilon_(epsilon), kernel_(std::move(kernel)) {}
 
 public:
-    using Matrix4dVector =
-            std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator>;
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
@@ -74,6 +72,9 @@ public:
     };
 
 public:
+    // Small constant representing covariance along the normal.
+    double epsilon_ = 1e-3;
+
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
     std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
 
