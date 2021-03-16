@@ -211,16 +211,21 @@ TEST(PointCloud, Transform) {
     };
 
     std::vector<Eigen::Matrix3d> covariances = {
-            Eigen::Matrix3d::Zero(),
-            Eigen::Matrix3d::Zero(),
+            Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Identity(),
     };
 
-    Eigen::Matrix4d transformation;
     // clang-format off
-    transformation <<  0.0, 0.0, 0.0, 1.0,
-                       0.0, 0.0, 0.0, 0.0,
-                       0.0, 0.0, 0.0, 0.0,
-                       0.0, 0.0, 0.0, 1.0;
+    Eigen::Matrix4d transformation;
+    transformation << 0.0, 0.5, 1.0, 1.5,
+                      2.0, 2.5, 3.0, 3.5,
+                      4.0, 4.5, 5.0, 5.5,
+                      6.0, 6.5, 7.0, 7.5;
+
+    Eigen::Matrix3d gt_covariance_transformed;
+    gt_covariance_transformed << 1.25,  4.25,  7.25,
+                                 4.25, 19.25, 34.25,
+                                 7.25, 34.25, 61.25;
     // clang-format on
 
     std::vector<Eigen::Vector3d> points_transformed = {
@@ -232,8 +237,8 @@ TEST(PointCloud, Transform) {
             {0, 0, 0},
     };
     std::vector<Eigen::Matrix3d> covariances_transformed = {
-            Eigen::Matrix3d::Zero(),
-            Eigen::Matrix3d::Zero(),
+            gt_covariance_transformed,
+            gt_covariance_transformed,
     };
 
     geometry::PointCloud pcd;
@@ -320,23 +325,27 @@ TEST(PointCloud, Rotate) {
             Eigen::Matrix3d::Zero(),
     };
     ExpectEQ(pcd.points_, points_rotated, 1e-4);
-    ExpectEQ(pcd.normals_, points_rotated, 1e-4);
+    ExpectEQ(pcd.normals_, normals_transformed, 1e-4);
     ExpectEQ(pcd.covariances_, covariances_rotated, 1e-4);
     // Rotate relative to the original center
     ExpectEQ(pcd.GetCenter(), center);
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, OperatorPlusEqual) {
     std::vector<Eigen::Vector3d> points_a = {{0, 1, 2}, {3, 4, 5}};
     std::vector<Eigen::Vector3d> normals_a = {{0, 1, 2}, {3, 4, 5}};
     std::vector<Eigen::Vector3d> colors_a = {{0, 1, 2}, {3, 4, 5}};
+    std::vector<Eigen::Matrix3d> covariances_a = {Eigen::Matrix3d::Zero(),
+                                                  Eigen::Matrix3d::Zero()};
 
     std::vector<Eigen::Vector3d> points_b = {{6, 7, 8}, {9, 10, 11}};
     std::vector<Eigen::Vector3d> normals_b = {{6, 7, 8}, {9, 10, 11}};
     std::vector<Eigen::Vector3d> colors_b = {{6, 7, 8}, {9, 10, 11}};
+    std::vector<Eigen::Matrix3d> covariances_b = {Eigen::Matrix3d::Identity(),
+                                                  Eigen::Matrix3d::Identity()};
 
     std::vector<Eigen::Vector3d> empty(0);
+    std::vector<Eigen::Matrix3d> empty_m(0);
 
     std::vector<Eigen::Vector3d> points_a_b = {
             {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}};
@@ -344,15 +353,20 @@ TEST(PointCloud, OperatorPlusEqual) {
             {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}};
     std::vector<Eigen::Vector3d> colors_a_b = {
             {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}};
+    std::vector<Eigen::Matrix3d> covariances_a_b = {
+            Eigen::Matrix3d::Zero(), Eigen::Matrix3d::Zero(),
+            Eigen::Matrix3d::Identity(), Eigen::Matrix3d::Identity()};
 
     geometry::PointCloud pc_a_full;
     geometry::PointCloud pc_b_full;
     pc_a_full.points_ = points_a;
     pc_a_full.normals_ = normals_a;
     pc_a_full.colors_ = colors_a;
+    pc_a_full.covariances_ = covariances_a;
     pc_b_full.points_ = points_b;
     pc_b_full.normals_ = normals_b;
     pc_b_full.colors_ = colors_b;
+    pc_b_full.covariances_ = covariances_b;
 
     geometry::PointCloud pc_a = pc_a_full;
     geometry::PointCloud pc_b = pc_b_full;
@@ -360,7 +374,7 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.points_, points_a_b);
     ExpectEQ(pc_a.normals_, normals_a_b);
     ExpectEQ(pc_a.colors_, colors_a_b);
-
+    ExpectEQ(pc_a.covariances_, covariances_a_b);
     pc_a = pc_a_full;
     pc_b = pc_b_full;
     pc_a.normals_.clear();
@@ -368,6 +382,7 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.points_, points_a_b);
     ExpectEQ(pc_a.normals_, empty);
     ExpectEQ(pc_a.colors_, colors_a_b);
+    ExpectEQ(pc_a.covariances_, covariances_a_b);
 
     pc_a = pc_a_full;
     pc_b = pc_b_full;
@@ -376,6 +391,7 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.points_, points_a_b);
     ExpectEQ(pc_a.normals_, empty);
     ExpectEQ(pc_a.colors_, colors_a_b);
+    ExpectEQ(pc_a.covariances_, covariances_a_b);
 
     pc_a = pc_a_full;
     pc_b = pc_b_full;
@@ -384,6 +400,7 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.points_, points_a_b);
     ExpectEQ(pc_a.normals_, normals_a_b);
     ExpectEQ(pc_a.colors_, empty);
+    ExpectEQ(pc_a.covariances_, covariances_a_b);
 
     pc_a = pc_a_full;
     pc_b = pc_b_full;
@@ -392,12 +409,32 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.points_, points_a_b);
     ExpectEQ(pc_a.normals_, normals_a_b);
     ExpectEQ(pc_a.colors_, empty);
+    ExpectEQ(pc_a.covariances_, covariances_a_b);
+
+    pc_a = pc_a_full;
+    pc_b = pc_b_full;
+    pc_a.covariances_.clear();
+    pc_a += pc_b;
+    ExpectEQ(pc_a.points_, points_a_b);
+    ExpectEQ(pc_a.normals_, normals_a_b);
+    ExpectEQ(pc_a.colors_, colors_a_b);
+    ExpectEQ(pc_a.covariances_, empty_m);
+
+    pc_a = pc_a_full;
+    pc_b = pc_b_full;
+    pc_b.covariances_.clear();
+    pc_a += pc_b;
+    ExpectEQ(pc_a.points_, points_a_b);
+    ExpectEQ(pc_a.normals_, normals_a_b);
+    ExpectEQ(pc_a.colors_, colors_a_b);
+    ExpectEQ(pc_a.covariances_, empty_m);
 
     pc_a.Clear();
     pc_a += pc_b_full;
     ExpectEQ(pc_a.points_, pc_b_full.points_);
     ExpectEQ(pc_a.normals_, pc_b_full.normals_);
     ExpectEQ(pc_a.colors_, pc_b_full.colors_);
+    ExpectEQ(pc_a.covariances_, pc_b_full.covariances_);
 
     pc_a = pc_a_full;
     pc_b.Clear();
@@ -405,25 +442,29 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.points_, pc_a_full.points_);
     ExpectEQ(pc_a.normals_, pc_a_full.normals_);
     ExpectEQ(pc_a.colors_, pc_a_full.colors_);
+    ExpectEQ(pc_a.covariances_, pc_a_full.covariances_);
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, OperatorPlus) {
     std::vector<Eigen::Vector3d> points_a = {{0, 1, 2}};
     std::vector<Eigen::Vector3d> normals_a = {{0, 1, 2}};
     std::vector<Eigen::Vector3d> colors_a = {{0, 1, 2}};
+    std::vector<Eigen::Matrix3d> covariances_a = {Eigen::Matrix3d::Zero()};
     std::vector<Eigen::Vector3d> points_b = {{3, 4, 5}};
     std::vector<Eigen::Vector3d> normals_b = {{3, 4, 5}};
     std::vector<Eigen::Vector3d> colors_b = {{3, 4, 5}};
+    std::vector<Eigen::Matrix3d> covariances_b = {Eigen::Matrix3d::Identity()};
 
     geometry::PointCloud pc_a;
     geometry::PointCloud pc_b;
     pc_a.points_ = points_a;
     pc_a.normals_ = normals_a;
     pc_a.colors_ = colors_a;
+    pc_a.covariances_ = covariances_a;
     pc_b.points_ = points_b;
     pc_b.normals_ = normals_b;
     pc_b.colors_ = colors_b;
+    pc_b.covariances_ = covariances_b;
 
     geometry::PointCloud pc_c = pc_a + pc_b;
     ExpectEQ(pc_c.points_,
@@ -432,6 +473,9 @@ TEST(PointCloud, OperatorPlus) {
              std::vector<Eigen::Vector3d>({{0, 1, 2}, {3, 4, 5}}));
     ExpectEQ(pc_c.colors_,
              std::vector<Eigen::Vector3d>({{0, 1, 2}, {3, 4, 5}}));
+    ExpectEQ(pc_c.covariances_,
+             std::vector<Eigen::Matrix3d>(
+                     {Eigen::Matrix3d::Zero(), Eigen::Matrix3d::Identity()}));
 }
 
 TEST(PointCloud, HasPoints) {
@@ -481,8 +525,25 @@ TEST(PointCloud, HasColors) {
     EXPECT_TRUE(pcd.HasColors());
 }
 
-// TODO(Nacho): Add covariances unit tests
-TEST(PointCloud, HasCovariances) { NotImplemented(); }
+TEST(PointCloud, HasCovariances) {
+    geometry::PointCloud pcd;
+    EXPECT_FALSE(pcd.HasCovariances());
+
+    // False if #points == 0
+    pcd.points_.resize(0);
+    pcd.covariances_.resize(5);
+    EXPECT_FALSE(pcd.HasCovariances());
+
+    // False if not consistant
+    pcd.points_.resize(4);
+    pcd.covariances_.resize(5);
+    EXPECT_FALSE(pcd.HasCovariances());
+
+    // True if non-zero and consistant
+    pcd.points_.resize(5);
+    pcd.covariances_.resize(5);
+    EXPECT_TRUE(pcd.HasCovariances());
+}
 
 TEST(PointCloud, NormalizeNormals) {
     geometry::PointCloud pcd;
@@ -513,7 +574,6 @@ TEST(PointCloud, PaintUniformColor) {
     EXPECT_EQ(pcd.colors_, std::vector<Eigen::Vector3d>({color, color}));
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, SelectByIndex) {
     std::vector<Eigen::Vector3d> points({
             {0, 0, 0},
@@ -533,6 +593,12 @@ TEST(PointCloud, SelectByIndex) {
             {12, 12, 12},
             {13, 13, 13},
     });
+    std::vector<Eigen::Matrix3d> covariances({
+            1.0 * Eigen::Matrix3d::Identity(),
+            2.0 * Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Zero(),
+            3.0 * Eigen::Matrix3d::Identity(),
+    });
 
     std::vector<size_t> indices{0, 1, 3};
 
@@ -540,6 +606,7 @@ TEST(PointCloud, SelectByIndex) {
     pcd.points_ = points;
     pcd.colors_ = colors;
     pcd.normals_ = normals;
+    pcd.covariances_ = covariances;
 
     std::shared_ptr<geometry::PointCloud> pc0 = pcd.SelectByIndex(indices);
     ExpectEQ(pc0->points_, std::vector<Eigen::Vector3d>({
@@ -557,6 +624,11 @@ TEST(PointCloud, SelectByIndex) {
                                     {11, 11, 11},
                                     {13, 13, 13},
                             }));
+    ExpectEQ(pc0->covariances_, std::vector<Eigen::Matrix3d>({
+                                        1.0 * Eigen::Matrix3d::Identity(),
+                                        2.0 * Eigen::Matrix3d::Identity(),
+                                        3.0 * Eigen::Matrix3d::Identity(),
+                                }));
 
     std::shared_ptr<geometry::PointCloud> pc1 =
             pcd.SelectByIndex(indices, /*invert=*/true);
@@ -569,9 +641,11 @@ TEST(PointCloud, SelectByIndex) {
     ExpectEQ(pc1->normals_, std::vector<Eigen::Vector3d>({
                                     {12, 12, 12},
                             }));
+    ExpectEQ(pc1->covariances_, std::vector<Eigen::Matrix3d>({
+                                        Eigen::Matrix3d::Zero(),
+                                }));
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, VoxelDownSample) {
     // voxel_size: 1
     // points_min_bound: (0.5, 0.5, 0.5)
@@ -608,10 +682,21 @@ TEST(PointCloud, VoxelDownSample) {
             {0.1, 0.0, 0.1},
             {0.1, 0.2, 0.3},
     };
+    std::vector<Eigen::Matrix3d> covariances{
+            // voxel_{0, 0, 0}
+            Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Identity(),
+            // voxel_{0, 1, 2}
+            Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Identity(),
+    };
     geometry::PointCloud pcd;
     pcd.points_ = points;
     pcd.normals_ = normals;
     pcd.colors_ = colors;
+    pcd.covariances_ = covariances;
 
     // Ground-truth reference
     std::vector<Eigen::Vector3d> points_down{
@@ -626,6 +711,10 @@ TEST(PointCloud, VoxelDownSample) {
             {0.0, 0.3, 0.4},
             {0.1, 0.1, 0.2},
     };
+    std::vector<Eigen::Matrix3d> covariances_down{
+            Eigen::Matrix3d::Identity(),
+            Eigen::Matrix3d::Identity(),
+    };
 
     std::shared_ptr<geometry::PointCloud> pc_down = pcd.VoxelDownSample(1.0);
     std::vector<size_t> sort_indices =
@@ -634,9 +723,10 @@ TEST(PointCloud, VoxelDownSample) {
     ExpectEQ(ApplyIndices(pc_down->points_, sort_indices), points_down);
     ExpectEQ(ApplyIndices(pc_down->normals_, sort_indices), normals_down);
     ExpectEQ(ApplyIndices(pc_down->colors_, sort_indices), colors_down);
+    ExpectEQ(ApplyIndices(pc_down->covariances_, sort_indices),
+             covariances_down);
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, UniformDownSample) {
     std::vector<Eigen::Vector3d> points({
             {0, 0, 0},
@@ -668,10 +758,21 @@ TEST(PointCloud, UniformDownSample) {
             {0.0, 0.0, 0.6},
             {0.0, 0.0, 0.7},
     });
+    std::vector<Eigen::Matrix3d> covariances({
+            0.0 * Eigen::Matrix3d::Identity(),
+            1.0 * Eigen::Matrix3d::Identity(),
+            2.0 * Eigen::Matrix3d::Identity(),
+            3.0 * Eigen::Matrix3d::Identity(),
+            4.0 * Eigen::Matrix3d::Identity(),
+            5.0 * Eigen::Matrix3d::Identity(),
+            6.0 * Eigen::Matrix3d::Identity(),
+            7.0 * Eigen::Matrix3d::Identity(),
+    });
     geometry::PointCloud pcd;
     pcd.points_ = points;
     pcd.normals_ = normals;
     pcd.colors_ = colors;
+    pcd.covariances_ = covariances;
 
     std::shared_ptr<geometry::PointCloud> pc_down = pcd.UniformDownSample(3);
     ExpectEQ(pc_down->points_, std::vector<Eigen::Vector3d>({
@@ -690,9 +791,13 @@ TEST(PointCloud, UniformDownSample) {
                                        {0.0, 0.0, 0.3},
                                        {0.0, 0.0, 0.6},
                                }));
+    ExpectEQ(pc_down->covariances_, std::vector<Eigen::Matrix3d>({
+                                            0.0 * Eigen::Matrix3d::Identity(),
+                                            3.0 * Eigen::Matrix3d::Identity(),
+                                            6.0 * Eigen::Matrix3d::Identity(),
+                                    }));
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     geometry::PointCloud pcd({{0, 0, 0},
@@ -705,7 +810,14 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
                     {3, 0, 0}, {4, 0, 0}, {5, 0, 0}};
     pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
                    {0.3, 0.0, 0.0}, {0.4, 0.0, 0.0}, {0.5, 0.0, 0.0}};
-
+    pcd.covariances_ = {
+            {0.0 * Eigen::Matrix3d::Identity()},
+            {1.0 * Eigen::Matrix3d::Identity()},
+            {2.0 * Eigen::Matrix3d::Identity()},
+            {3.0 * Eigen::Matrix3d::Identity()},
+            {4.0 * Eigen::Matrix3d::Identity()},
+            {5.0 * Eigen::Matrix3d::Identity()},
+    };
     std::shared_ptr<geometry::PointCloud> pc_crop = pcd.Crop(aabb);
     ExpectEQ(pc_crop->points_, std::vector<Eigen::Vector3d>({
                                        {0, 0, 0},
@@ -725,9 +837,14 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
                                        {0.2, 0.0, 0.0},
                                        {0.3, 0.0, 0.0},
                                }));
+    ExpectEQ(pc_crop->covariances_, std::vector<Eigen::Matrix3d>({
+                                            {0.0 * Eigen::Matrix3d::Identity()},
+                                            {1.0 * Eigen::Matrix3d::Identity()},
+                                            {2.0 * Eigen::Matrix3d::Identity()},
+                                            {3.0 * Eigen::Matrix3d::Identity()},
+                                    }));
 }
 
-// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, Crop_OrientedBoundingBox) {
     geometry::OrientedBoundingBox obb(Eigen::Vector3d{1, 1, 1},
                                       Eigen::Matrix3d::Identity(),
@@ -744,7 +861,14 @@ TEST(PointCloud, Crop_OrientedBoundingBox) {
                     {3, 0, 0}, {4, 0, 0}, {5, 0, 0}};
     pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
                    {0.3, 0.0, 0.0}, {0.4, 0.0, 0.0}, {0.5, 0.0, 0.0}};
-
+    pcd.covariances_ = {
+            {0.0 * Eigen::Matrix3d::Identity()},
+            {1.0 * Eigen::Matrix3d::Identity()},
+            {2.0 * Eigen::Matrix3d::Identity()},
+            {3.0 * Eigen::Matrix3d::Identity()},
+            {4.0 * Eigen::Matrix3d::Identity()},
+            {5.0 * Eigen::Matrix3d::Identity()},
+    };
     std::shared_ptr<geometry::PointCloud> pc_crop = pcd.Crop(obb);
     ExpectEQ(pc_crop->points_, std::vector<Eigen::Vector3d>({
                                        {0, 0, 0},
@@ -764,6 +888,12 @@ TEST(PointCloud, Crop_OrientedBoundingBox) {
                                        {0.2, 0.0, 0.0},
                                        {0.3, 0.0, 0.0},
                                }));
+    ExpectEQ(pc_crop->covariances_, std::vector<Eigen::Matrix3d>({
+                                            {0.0 * Eigen::Matrix3d::Identity()},
+                                            {1.0 * Eigen::Matrix3d::Identity()},
+                                            {2.0 * Eigen::Matrix3d::Identity()},
+                                            {3.0 * Eigen::Matrix3d::Identity()},
+                                    }));
 }
 
 TEST(PointCloud, EstimateNormals) {
@@ -910,7 +1040,7 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
 }
 
 // TODO(Nacho): Add covariances unit tests
-TEST(PointCloud, EstimateCovariances) { NotImplemented(); }
+TEST(PointCloud, DISABLED_EstimateCovariances) { NotImplemented(); }
 
 TEST(PointCloud, ComputeMeanAndCovariance) {
     geometry::PointCloud pcd({
