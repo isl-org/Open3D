@@ -578,28 +578,36 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     return std::make_tuple(SelectByIndex(indices), indices);
 }
 
-void PointCloud::EstimateCovariances(
+std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
+        const PointCloud &input,
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
-    bool has_covariance = HasCovariances();
+    const auto &points = input.points_;
+    std::vector<Eigen::Matrix3d> covariances;
+    bool has_covariance = input.HasCovariances();
     if (!has_covariance) {
-        covariances_.resize(points_.size());
+        covariances.resize(points.size());
     }
     KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
+    kdtree.SetGeometry(input);
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < (int)points_.size(); i++) {
+    for (int i = 0; i < (int)points.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
-        if (kdtree.Search(points_[i], search_param, indices, distance2) >= 3) {
-            auto covariance = utility::ComputeCovariance(points_, indices);
-            if (has_covariance && !covariance.isIdentity(1e-4)) {
-                covariance = covariances_[i];
+        if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
+            auto covariance = utility::ComputeCovariance(points, indices);
+            if (has_covariance && covariance.isIdentity(1e-4)) {
+                covariance = covariances[i];
             }
-            covariances_[i] = covariance;
+            covariances[i] = covariance;
         } else {
-            covariances_[i] = Eigen::Matrix3d::Identity();
+            covariances[i] = Eigen::Matrix3d::Identity();
         }
     }
+    return covariances;
+}
+void PointCloud::EstimateCovariances(
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+    this->covariances_ = EstimatePerPointCovariances(*this, search_param);
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>

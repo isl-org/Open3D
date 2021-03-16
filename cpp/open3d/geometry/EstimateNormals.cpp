@@ -310,15 +310,15 @@ void PointCloud::EstimateNormals(
     if (!has_normal) {
         normals_.resize(points_.size());
     }
-    bool has_covariance = HasCovariances();
-    if (!has_covariance) {
-        // Use the PointCloud::covariances_ as buffer to carry on the normal
-        // computation. Clear it later.
-        EstimateCovariances(search_param);
+    std::vector<Eigen::Matrix3d> covariances;
+    if (!HasCovariances()) {
+        covariances = EstimatePerPointCovariances(*this, search_param);
+    } else {
+        covariances = covariances_;
     }
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < (int)covariances_.size(); i++) {
-        auto normal = ComputeNormal(covariances_[i], fast_normal_computation);
+    for (int i = 0; i < (int)covariances.size(); i++) {
+        auto normal = ComputeNormal(covariances[i], fast_normal_computation);
         if (normal.norm() == 0.0) {
             if (has_normal) {
                 normal = normals_[i];
@@ -330,9 +330,6 @@ void PointCloud::EstimateNormals(
             normal *= -1.0;
         }
         normals_[i] = normal;
-    }
-    if (!has_covariance) {
-        covariances_.clear();
     }
 }
 
