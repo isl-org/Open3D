@@ -326,7 +326,7 @@ TEST(PointCloud, Rotate) {
     ExpectEQ(pcd.GetCenter(), center);
 }
 
-// TODO: Nacho Add Unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, OperatorPlusEqual) {
     std::vector<Eigen::Vector3d> points_a = {{0, 1, 2}, {3, 4, 5}};
     std::vector<Eigen::Vector3d> normals_a = {{0, 1, 2}, {3, 4, 5}};
@@ -407,7 +407,7 @@ TEST(PointCloud, OperatorPlusEqual) {
     ExpectEQ(pc_a.colors_, pc_a_full.colors_);
 }
 
-// TODO: Nacho Add Unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, OperatorPlus) {
     std::vector<Eigen::Vector3d> points_a = {{0, 1, 2}};
     std::vector<Eigen::Vector3d> normals_a = {{0, 1, 2}};
@@ -481,9 +481,8 @@ TEST(PointCloud, HasColors) {
     EXPECT_TRUE(pcd.HasColors());
 }
 
-// TODO(Nacho): Add unit tests
-TEST(PointCloud, HasCovariances) {
-}
+// TODO(Nacho): Add covariances unit tests
+TEST(PointCloud, HasCovariances) { NotImplemented(); }
 
 TEST(PointCloud, NormalizeNormals) {
     geometry::PointCloud pcd;
@@ -514,7 +513,7 @@ TEST(PointCloud, PaintUniformColor) {
     EXPECT_EQ(pcd.colors_, std::vector<Eigen::Vector3d>({color, color}));
 }
 
-// TODO(Nacho): Add unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, SelectByIndex) {
     std::vector<Eigen::Vector3d> points({
             {0, 0, 0},
@@ -572,7 +571,7 @@ TEST(PointCloud, SelectByIndex) {
                             }));
 }
 
-// TODO(Nacho): Add unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, VoxelDownSample) {
     // voxel_size: 1
     // points_min_bound: (0.5, 0.5, 0.5)
@@ -637,7 +636,7 @@ TEST(PointCloud, VoxelDownSample) {
     ExpectEQ(ApplyIndices(pc_down->colors_, sort_indices), colors_down);
 }
 
-// TODO(Nacho): Add unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, UniformDownSample) {
     std::vector<Eigen::Vector3d> points({
             {0, 0, 0},
@@ -693,7 +692,7 @@ TEST(PointCloud, UniformDownSample) {
                                }));
 }
 
-// TODO(Nacho): Add unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     geometry::PointCloud pcd({{0, 0, 0},
@@ -728,7 +727,7 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
                                }));
 }
 
-// TODO(Nacho): Add unit tests
+// TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, Crop_OrientedBoundingBox) {
     geometry::OrientedBoundingBox obb(Eigen::Vector3d{1, 1, 1},
                                       Eigen::Matrix3d::Identity(),
@@ -910,9 +909,8 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
              std::vector<double>({1, 2, 3}));
 }
 
-// TODO(Nacho): Add unit tests
-TEST(PointCloud, EstimateCovariances) {
-}
+// TODO(Nacho): Add covariances unit tests
+TEST(PointCloud, EstimateCovariances) { NotImplemented(); }
 
 TEST(PointCloud, ComputeMeanAndCovariance) {
     geometry::PointCloud pcd({
