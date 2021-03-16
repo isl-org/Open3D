@@ -256,7 +256,7 @@ public:
     /// \param target The target point cloud.
     std::vector<double> ComputePointCloudDistance(const PointCloud &target);
 
-    /// \brief Static function to compute the covariance matrices for each point
+    /// \brief Static function to compute the covariance matrix for each point
     /// of a point cloud. Doesn't change the input PointCloud, just outputs the
     /// covariance matrices.
     ///
@@ -267,7 +267,7 @@ public:
             const PointCloud &input,
             const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
-    /// \brief Function to compute the covariance matrices for each point of a
+    /// \brief Function to compute the covariance matrix for each point of a
     /// point cloud.
     ///
     ///

@@ -151,12 +151,12 @@ void pybind_pointcloud(py::module &m) {
             .def_static(
                     "estimate_point_covariances",
                     &PointCloud::EstimatePerPointCovariances,
-                    "Static function to compute the covariance matrices for "
+                    "Static function to compute the covariance matrix for "
                     "each "
                     "point in the given point cloud, doesn't change the input",
                     "input"_a, "search_param"_a = KDTreeSearchParamKNN())
             .def("estimate_covariances", &PointCloud::EstimateCovariances,
-                 "Function to compute the covariance matrices for each point "
+                 "Function to compute the covariance matrix for each point "
                  "in the point cloud",
                  "search_param"_a = KDTreeSearchParamKNN())
             .def("compute_mean_and_covariance",
