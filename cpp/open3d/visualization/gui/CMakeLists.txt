@@ -1,6 +1,7 @@
 # build
 set(GUI_SOURCE_FILES
     Application.cpp
+    BitmapWindowSystem.cpp
     Button.cpp
     Checkbox.cpp
     Color.cpp
@@ -9,6 +10,7 @@ set(GUI_SOURCE_FILES
     Dialog.cpp
     FileDialog.cpp
     FileDialogNative.cpp
+    GLFWWindowSystem.cpp
     Gui.cpp
     ImageLabel.cpp
     ImguiFilamentBridge.cpp
@@ -17,6 +19,7 @@ set(GUI_SOURCE_FILES
     Layout.cpp
     ListView.cpp
     Menu.cpp
+    MenuImgui.cpp
     NumberEdit.cpp
     PickPointsInteractor.cpp
     ProgressBar.cpp
@@ -34,53 +37,19 @@ set(GUI_SOURCE_FILES
     Widget.cpp
     Window.cpp
     )
-set(GUI_HEADER_FILES
-    Application.h
-    Button.h
-    Checkbox.h
-    Color.h
-    ColorEdit.h
-    Combobox.h
-    Dialog.h
-    Events.h
-    FileDialog.h
-    Gui.h
-    ImageLabel.h
-    ImguiFilamentBridge.h
-    Label.h
-    Label3D.h
-    Layout.h
-    ListView.h
-    Menu.h
-    NumberEdit.h
-    PickPointsInteractor.h
-    ProgressBar.h
-    SceneWidget.h
-    Slider.h
-    StackedWidget.h
-    TabControl.h
-    Task.h
-    TextEdit.h
-    Theme.h
-    TreeView.h
-    UIImage.h
-    Util.h
-    VectorEdit.h
-    Widget.h
-    Window.h
-    )
 
 if (WIN32)
     list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)
 elseif (APPLE)
     list(APPEND GUI_SOURCE_FILES NativeMacOS.mm)
+    list(APPEND GUI_HEADER_FILES MenuMacOS.h)
     list(APPEND GUI_SOURCE_FILES MenuMacOS.mm)
 else ()
     list(APPEND GUI_SOURCE_FILES NativeLinux.cpp)
 endif()
 
 # create object library
-add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
+add_library(GUI OBJECT ${GUI_SOURCE_FILES})
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)
 open3d_link_3rdparty_libraries(GUI)

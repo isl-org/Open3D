@@ -41,6 +41,7 @@
 #pragma warning(disable : 4068 4146 4293 4305)
 #endif  // _MSC_VER
 
+#include <backend/PixelBufferDescriptor.h>
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
@@ -126,6 +127,10 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     renderer_->setClearOptions(co);
 }
 
+void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
+    on_after_draw_ = callback;
+}
+
 void FilamentRenderer::UpdateSwapChain() {
     void* native_win = swap_chain_->getNativeWindow();
     engine_.destroy(swap_chain_);
@@ -158,6 +163,12 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
+void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
+    engine_.destroy(swap_chain_);
+    swap_chain_ = engine_.createSwapChain(width, height,
+                                          filament::SwapChain::CONFIG_READABLE);
+}
+
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
     if (!buffer_renderers_.empty()) {
@@ -188,13 +199,64 @@ void FilamentRenderer::Draw() {
         if (gui_scene_) {
             gui_scene_->Draw(*renderer_);
         }
+
+        if (on_after_draw_) {
+            on_after_draw_();
+        }
     }
 }
 
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
+        if (needs_wait_after_draw_) {
+            engine_.flushAndWait();
+            needs_wait_after_draw_ = false;
+        }
     }
+}
+
+namespace {
+
+struct UserData {
+    std::function<void(std::shared_ptr<geometry::Image>)> callback;
+    std::shared_ptr<geometry::Image> image;
+
+    UserData(std::function<void(std::shared_ptr<geometry::Image>)> cb,
+             std::shared_ptr<geometry::Image> img)
+        : callback(cb), image(img) {}
+};
+
+void ReadPixelsCallback(void*, size_t, void* user) {
+    auto* user_data = static_cast<UserData*>(user);
+    user_data->callback(user_data->image);
+    delete user_data;
+}
+
+}  // namespace
+
+void FilamentRenderer::RequestReadPixels(
+        int width,
+        int height,
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto image = std::make_shared<geometry::Image>();
+    image->width_ = width;
+    image->height_ = height;
+    image->num_of_channels_ = 3;
+    image->bytes_per_channel_ = 1;
+    size_t nbytes = image->width_ * image->height_ * image->num_of_channels_ *
+                    image->bytes_per_channel_;
+    image->data_.resize(nbytes, 0);
+    auto* user_data = new UserData(callback, image);
+
+    using namespace filament;
+    using namespace backend;
+
+    PixelBufferDescriptor pd(image->data_.data(), nbytes, PixelDataFormat::RGB,
+                             PixelDataType::UBYTE, ReadPixelsCallback,
+                             user_data);
+    renderer_->readPixels(0, 0, width, height, std::move(pd));
+    needs_wait_after_draw_ = true;
 }
 
 MaterialHandle FilamentRenderer::AddMaterial(

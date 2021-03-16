@@ -294,7 +294,16 @@ void FilamentView::ConfigureForColorPicking() {
 void FilamentView::EnableViewCaching(bool enable) {
     caching_enabled_ = enable;
 
-    if (caching_enabled_ && !render_target_) {
+    if (caching_enabled_) {
+        if (render_target_) {
+            resource_mgr_.Destroy(render_target_);
+            resource_mgr_.Destroy(color_buffer_);
+            resource_mgr_.Destroy(depth_buffer_);
+            render_target_ = RenderTargetHandle();
+            color_buffer_ = TextureHandle();
+            depth_buffer_ = TextureHandle();
+        }
+
         // Create RenderTarget
         auto vp = view_->getViewport();
         color_buffer_ =

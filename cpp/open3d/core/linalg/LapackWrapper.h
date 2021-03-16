@@ -108,6 +108,7 @@ inline OPEN3D_CPU_LINALG_INT getrf_cpu<float>(
         OPEN3D_CPU_LINALG_INT* ipiv_data) {
     return LAPACKE_sgetrf(layout, m, n, A_data, lda, ipiv_data);
 }
+
 template <>
 inline OPEN3D_CPU_LINALG_INT getrf_cpu<double>(
         int layout,

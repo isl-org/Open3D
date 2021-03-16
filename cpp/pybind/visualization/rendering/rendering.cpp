@@ -175,6 +175,9 @@ void pybind_rendering_classes(py::module &m) {
                  "(x, y, z) location in the view, where x, y are the number of "
                  "pixels from the upper left of the view, and z is the depth "
                  "value. Returns the world coordinate (x', y', z').")
+            .def("copy_from", &Camera::CopyFrom,
+                 "Copies the settings from the camera passed as the argument "
+                 "into this camera")
             .def("get_near", &Camera::GetNear,
                  "Returns the distance from the camera to the near plane")
             .def("get_far", &Camera::GetFar,

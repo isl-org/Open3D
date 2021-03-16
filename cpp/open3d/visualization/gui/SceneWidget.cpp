@@ -312,6 +312,10 @@ public:
         return *interactor_;
     }
 
+    Eigen::Vector3f GetCenterOfRotation() const {
+        return interactor_->GetCenterOfRotation();
+    }
+
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         interactor_->SetCenterOfRotation(center);
     }
@@ -594,6 +598,14 @@ public:
         pick_->GetMatrixInteractor().SetBoundingBox(bounds);
     }
 
+    Eigen::Vector3f GetCenterOfRotation() const {
+        if (GetControls() == SceneWidget::Controls::ROTATE_CAMERA_SPHERE) {
+            return rotate_sphere_->GetCenterOfRotation();
+        } else {
+            return rotate_->GetCenterOfRotation();
+        }
+    }
+
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         rotate_->SetCenterOfRotation(center);
         rotate_sphere_->SetCenterOfRotation(center);
@@ -768,6 +780,11 @@ SceneWidget::~SceneWidget() {
 }
 
 void SceneWidget::SetFrame(const Rect& f) {
+    // Early exit if frame hasn't changed because changing frame size causes GPU
+    // memory re-allocations that are best avoided if unecessary
+    auto old_frame = GetFrame();
+    if (f.width == old_frame.width && f.height == old_frame.height) return;
+
     Super::SetFrame(f);
 
     impl_->controls_->SetViewSize(Size(f.width, f.height));
@@ -797,6 +814,14 @@ void SceneWidget::LookAt(const Eigen::Vector3f& center,
     GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
     impl_->UpdateFarPlane(GetFrame(), GetCamera()->GetFieldOfView());
+}
+
+Eigen::Vector3f SceneWidget::GetCenterOfRotation() const {
+    return impl_->controls_->GetCenterOfRotation();
+}
+
+void SceneWidget::SetCenterOfRotation(const Eigen::Vector3f& center) {
+    impl_->controls_->SetCenterOfRotation(center);
 }
 
 void SceneWidget::SetOnCameraChanged(
@@ -998,13 +1023,7 @@ void SceneWidget::RemoveLabel(std::shared_ptr<Label3D> label) {
     }
 }
 
-void SceneWidget::Layout(const Theme& theme) {
-    Super::Layout(theme);
-    // The UI may have changed size such that the scene has been exposed. Need
-    // to force a redraw in that case.
-
-    ForceRedraw();
-}
+void SceneWidget::Layout(const Theme& theme) { Super::Layout(theme); }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // If the widget has changed size we need to update the viewport and the
@@ -1019,9 +1038,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        // auto view = impl_->scene_->GetView();
         impl_->scene_->SetViewport(f.x, y, f.width, f.height);
-        // view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
         float aspect = 1.0f;
