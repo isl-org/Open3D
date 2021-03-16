@@ -16,6 +16,7 @@ set(ALL_SOURCE_FILES
     registration/TransformationEstimation.cpp
     registration/CorrespondenceChecker.cpp
     registration/Feature.cpp
+    registration/GeneralizedICP.cpp
     )
 add_library(pipelines OBJECT ${ALL_SOURCE_FILES})
 open3d_show_and_abort_on_warning(pipelines)
