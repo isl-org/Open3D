@@ -77,8 +77,8 @@ TEST_P(OdometryPermuteDevices, CreateVertexMap) {
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
             depth, intrinsic_t.To(device));
-    core::Tensor vertex_map_gt =
-            core::Tensor::Load(std::string(TEST_DATA_DIR) + "/vertex_map.npy");
+    core::Tensor vertex_map_gt = core::Tensor::Load(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/vertex_map.npy");
 
     // AllClose doesn't work for inf, but two vtx maps are strictly equivalent.
     int64_t sum = vertex_map.Eq(vertex_map_gt.To(device))
@@ -104,8 +104,8 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
             depth, intrinsic_t.To(device));
     core::Tensor normal_map =
             t::pipelines::odometry::CreateNormalMap(vertex_map);
-    core::Tensor normal_map_gt =
-            core::Tensor::Load(std::string(TEST_DATA_DIR) + "/normal_map.npy");
+    core::Tensor normal_map_gt = core::Tensor::Load(std::string(TEST_DATA_DIR) +
+                                                    "/RGBD/normal_map.npy");
 
     // AllClose doesn't work for inf, so we ignore the 1st dimension.
     EXPECT_TRUE(normal_map.Slice(2, 1, 3).AllClose(
