@@ -153,6 +153,14 @@ RegistrationResult RegistrationICP(
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors for target PointCloud.");
     }
+    if ((estimation.GetTransformationEstimationType() ==
+         TransformationEstimationType::GeneralizedICP) &&
+        (!target.HasCovariances() || !source.HasCovariances())) {
+        utility::LogError(
+                "TransformationEstimationForGeneralizedICP require "
+                "pre-computed per point covariances matrices for source and "
+                "target PointCloud.");
+    }
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
