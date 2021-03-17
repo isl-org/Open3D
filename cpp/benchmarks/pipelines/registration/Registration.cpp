@@ -43,15 +43,15 @@ static const std::string source_pointcloud_filename =
 static const std::string target_pointcloud_filename =
         TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
 
-static const double voxel_downsampling_factor = 0.01;
+static const double voxel_downsampling_factor = 0.05;
 
 // ICP ConvergenceCriteria.
 static double relative_fitness = 1e-6;
 static double relative_rmse = 1e-6;
-static int max_iterations = 30;
+static int max_iterations = 1;
 
 // NNS parameter.
-static double max_correspondence_distance = 0.03;
+static double max_correspondence_distance = 0.15;
 
 namespace open3d {
 namespace benchmarks {
@@ -67,9 +67,13 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
     io::ReadPointCloud(target_filename, target, {"auto", false, false, true});
 
     // Eliminates the case of impractical values (including negative).
-    if (voxel_downsample_factor > 0.0001) {
+    if (voxel_downsample_factor > 0.001) {
         source = *source.VoxelDownSample(voxel_downsample_factor);
         target = *target.VoxelDownSample(voxel_downsample_factor);
+    } else {
+        utility::LogWarning(
+                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "downsampling.");
     }
 
     return std::make_tuple(source, target);
