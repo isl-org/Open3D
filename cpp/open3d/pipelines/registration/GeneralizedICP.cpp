@@ -124,7 +124,8 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals() || !source.HasNormals()) {
+    if (corres.empty() || !target.HasCovariances() ||
+        !source.HasCovariances()) {
         return Eigen::Matrix4d::Identity();
     }
 
