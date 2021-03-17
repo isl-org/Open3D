@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,25 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import os as _os
-from open3d import _build_config
+# Download Open3D test data files. The default download path is
+# Open3D/examples/test_data/open3d_downloads
+#
+# See https://github.com/intel-isl/open3d_downloads for details on how to
+# manage the test data files.
+#
+# We have to put the version check here and the rest of the Python 3.6+
+# compatible code in a separate file. Otherwise, Python 2 complains about syntax
+# errors before the version check. In addition, please keep this file simple and
+# Python 2&3 compatible. See https://stackoverflow.com/a/3760194/1255535.
+import sys
+if sys.version_info < (3, 6):
+    raise RuntimeError(
+        "Python version must be >= 3.6, however, Python {}.{} is used.".format(
+            sys.version_info[0], sys.version_info[1]))
 
-if _build_config['BUNDLE_OPEN3D_ML']:
-    if 'OPEN3D_ML_ROOT' in _os.environ:
-        from ml3d.tf.modules.losses import *
-    else:
-        from open3d._ml3d.tf.modules.losses import *
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from download_utils import download_all_files
+
+if __name__ == "__main__":
+    download_all_files()

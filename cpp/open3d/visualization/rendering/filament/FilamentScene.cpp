@@ -276,8 +276,6 @@ void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
         found->second.is_active = true;
-        // NOTE: This value should match the value of render_count_ in
-        // FilamentRenderer::EnableCaching
         found->second.render_count = 1;
     }
 }
@@ -387,11 +385,16 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
             max_pt[2] = std::max(max_pt[2], pts[i + 2]);
         }
 
-        const filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
-        const filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
+        filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
+        filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
 
         filament::Box aabb;
         aabb.set(min, max);
+        if (aabb.isEmpty()) {
+            min -= 1.f;
+            max += 1.f;
+            aabb.set(min, max);
+        }
         return aabb;
     };
 

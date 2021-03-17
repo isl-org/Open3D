@@ -83,6 +83,8 @@ void pybind_sensor(py::module &m) {
     azure_kinect_sensor
             .def("connect", &AzureKinectSensor::Connect, "sensor_index"_a,
                  "Connect to specified device.")
+            .def("disconnect", &AzureKinectSensor::Disconnect,
+                 "Disconnect from the connected device.")
             .def("capture_frame", &AzureKinectSensor::CaptureFrame,
                  "enable_align_depth_to_color"_a, "Capture an RGBD frame.")
             .def_static("list_devices", &AzureKinectSensor::ListDevices,

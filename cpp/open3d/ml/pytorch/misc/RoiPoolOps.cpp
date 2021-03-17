@@ -25,11 +25,11 @@
 //
 //***************************************************************************************/
 
-#include "open3d/ml/contrib/RoIPoolKernel.h"
+#include "open3d/ml/contrib/RoiPoolKernel.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 
 #ifdef BUILD_CUDA_MODULE
-std::tuple<torch::Tensor, torch::Tensor> roipool3d(
+std::tuple<torch::Tensor, torch::Tensor> roi_pool(
         torch::Tensor xyz,
         torch::Tensor boxes3d,
         torch::Tensor pts_feature,
@@ -63,8 +63,8 @@ std::tuple<torch::Tensor, torch::Tensor> roipool3d(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::roipool3d(Tensor xyz, Tensor boxes3d,"
+        "open3d::roi_pool(Tensor xyz, Tensor boxes3d,"
         "Tensor pts_feature, int sampled_pts_num)"
         " -> (Tensor features, Tensor flags)",
-        &roipool3d);
+        &roi_pool);
 #endif

@@ -106,7 +106,7 @@ TEST_P(TensorPermuteDevices, WithInitList) {
 
     core::Tensor t;
 
-    // 0-D tesnor with given value.
+    // 0-D tensor with given value.
     t = core::Tensor::Init<float>(1, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
@@ -1189,21 +1189,29 @@ TEST_P(TensorPermuteDevices, T) {
 
 TEST_P(TensorPermuteDevices, Det) {
     core::Device device = GetParam();
+    // Det supports both Float32 and Float64.
+    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
-    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
-    double t_t = t.Det();
-    EXPECT_DOUBLE_EQ(t_t, -40.0);
+    // Float32 test.
+    core::Tensor A_3x3f = core::Tensor::Init<float>(
+            {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
 
-    // Current implementation does not support any shape other than {3,3}.
-    std::vector<float> vals_4x4{-5, 0, -1, 1, 2, -1, -3, 4,
-                                1,  1, 1,  1, 1, 2,  2,  2};
-    core::Tensor t_4x4(vals_4x4, {4, 4}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x4.Det());
+    double A_3x3f_det = A_3x3f.Det();
+    EXPECT_DOUBLE_EQ(A_3x3f_det, -40.0);
 
-    std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
-    core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x3.Det());
+    // Float64 test.
+    core::Tensor A_3x3d = core::Tensor::Init<double>(
+            {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
+    double A_3x3d_det = A_3x3d.Det();
+    EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
+
+    // Singular test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
+
+    // Det expects a 2D square matrix [shape test].
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());
 }
 
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {

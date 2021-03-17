@@ -92,7 +92,9 @@ std::string GetFileParentDirectory(const std::string &filename) {
 }
 
 std::string GetRegularizedDirectoryName(const std::string &directory) {
-    if (directory.back() != '/' && directory.back() != '\\') {
+    if (directory.empty()) {
+        return "/";
+    } else if (directory.back() != '/' && directory.back() != '\\') {
         return directory + "/";
     } else {
         return directory;
@@ -153,16 +155,19 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     }
 
     std::vector<std::string> components;
-    if (!isWindowsPath) {
-        components.push_back("/");
-    }
     if (isRelative) {
         auto cwd = utility::filesystem::GetWorkingDirectory();
         auto cwdComponents = SplitByPathSeparators(cwd);
         components.insert(components.end(), cwdComponents.begin(),
                           cwdComponents.end());
+        if (cwd[0] != '/') {
+            isWindowsPath = true;
+        }
     } else {
         // absolute path, don't need any prefix
+    }
+    if (!isWindowsPath) {
+        components.insert(components.begin(), "/");
     }
 
     for (auto &dir : pathComponents) {

@@ -288,12 +288,22 @@ void FilamentView::ConfigureForColorPicking() {
     SetPostProcessing(false);
     SetAmbientOcclusion(false, false);
     SetShadowing(false, ShadowType::kPCF);
+    configured_for_picking_ = true;
 }
 
 void FilamentView::EnableViewCaching(bool enable) {
     caching_enabled_ = enable;
 
-    if (caching_enabled_ && !render_target_) {
+    if (caching_enabled_) {
+        if (render_target_) {
+            resource_mgr_.Destroy(render_target_);
+            resource_mgr_.Destroy(color_buffer_);
+            resource_mgr_.Destroy(depth_buffer_);
+            render_target_ = RenderTargetHandle();
+            color_buffer_ = TextureHandle();
+            depth_buffer_ = TextureHandle();
+        }
+
         // Create RenderTarget
         auto vp = view_->getViewport();
         color_buffer_ =
@@ -335,10 +345,12 @@ Camera* FilamentView::GetCamera() const { return camera_.get(); }
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
     SetMode(other.mode_);
     view_->setRenderTarget(nullptr);
-
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
     camera_->CopyFrom(other.camera_.get());
+    if (other.configured_for_picking_) {
+        ConfigureForColorPicking();
+    }
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {

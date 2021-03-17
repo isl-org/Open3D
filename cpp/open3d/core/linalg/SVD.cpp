@@ -47,7 +47,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     // Check dimensions
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+        utility::LogError("Tensor must be 2D, but got {}D", A_shape.size());
     }
 
     int64_t m = A_shape[0], n = A_shape[1];

@@ -35,6 +35,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
         with:

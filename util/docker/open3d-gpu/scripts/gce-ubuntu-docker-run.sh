@@ -44,7 +44,7 @@ GCE_INSTANCE_ZONE=(us-west1-a us-west1-b
 GCE_ZID=${GCE_ZID:=0} # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
-GCE_BOOT_DISK_SIZE=32GB
+GCE_BOOT_DISK_SIZE=48GB
 NVIDIA_DRIVER_VERSION=440 # Must be present in Ubuntu repos 20.04: {390, 418, 430, 435, 440}
 GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
@@ -63,6 +63,11 @@ case "$1" in
 gcloud-setup)
     gcloud auth configure-docker
     gcloud info
+    # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
+    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+        echo "Removing ssh key"; \
+        gcloud compute os-login ssh-keys remove --key $i || true; \
+    done
     ;;
 
     # Build the Docker image
