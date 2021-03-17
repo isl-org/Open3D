@@ -50,6 +50,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/ToggleSwitch.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
@@ -1138,6 +1139,24 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_value_changed", &TextEdit::SetOnValueChanged,
                  "Sets f(new_text) which is called with the new text when the "
                  "user completes text editing");
+
+    // ---- ToggleSwitch ----
+    py::class_<ToggleSwitch, UnownedPointer<ToggleSwitch>, Widget> toggle(
+            m, "ToggleSwitch", "ToggleSwitch");
+    toggle.def(py::init<const char *>(),
+               "Creates a toggle switch with the given text")
+            .def("__repr__",
+                 [](const ToggleSwitch &ts) {
+                     std::stringstream s;
+                     s << "ToggleSwitch (" << ts.GetFrame().x << ", "
+                       << ts.GetFrame().y << "), " << ts.GetFrame().width
+                       << " x " << ts.GetFrame().height;
+                     return s.str();
+                 })
+            .def_property("is_on", &ToggleSwitch::GetIsOn, &ToggleSwitch::SetOn,
+                          "True if is one, False otherwise")
+            .def("set_on_clicked", &ToggleSwitch::SetOnClicked,
+                 "Calls passed function when the switch changes state");
 
     // ---- TreeView ----
     py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(

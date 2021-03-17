@@ -26,72 +26,36 @@
 
 #pragma once
 
-#include <string>
+#include <functional>
 
-#include "open3d/visualization/gui/Color.h"
-#include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-struct Theme {
-    Color background_color;
+class ToggleSwitch : public Widget {
+public:
+    explicit ToggleSwitch(const char* title);
+    ~ToggleSwitch();
 
-    std::string font_path;
-    int font_size;
-    int default_margin;
-    int default_layout_spacing;
-    Color text_color;
+    /// Returns the text of the toggle slider.
+    const char* GetText() const;
+    /// Sets the text of the toggle slider.
+    void SetText(const char* text);
 
-    int border_width;
-    int border_radius;
-    Color border_color;
+    bool GetIsOn() const;
+    void SetOn(bool is_on);
 
-    Color menubar_border_color;
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    Color button_color;
-    Color button_hover_color;
-    Color button_active_color;
-    Color button_on_color;
-    Color button_on_hover_color;
-    Color button_on_active_color;
-    Color button_on_text_color;
+    DrawResult Draw(const DrawContext& context) override;
 
-    Color checkbox_background_off_color;
-    Color checkbox_background_on_color;
-    Color checkbox_background_hover_off_color;
-    Color checkbox_background_hover_on_color;
-    Color checkbox_check_color;
+    void SetOnClicked(std::function<void(bool)> on_clicked);
 
-    Color toggle_background_off_color;
-    Color toggle_background_on_color;
-    Color toggle_background_hover_off_color;
-    Color toggle_background_hover_on_color;
-    Color toggle_thumb_color;
-
-    Color combobox_background_color;
-    Color combobox_hover_color;
-    Color combobox_arrow_background_color;
-
-    Color slider_grab_color;
-
-    Color text_edit_background_color;
-
-    Color list_background_color;
-    Color list_hover_color;
-    Color list_selected_color;
-
-    Color tree_background_color;
-    Color tree_selected_color;
-
-    Color tab_inactive_color;
-    Color tab_hover_color;
-    Color tab_active_color;
-
-    int dialog_border_width;
-    int dialog_border_radius;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace gui
