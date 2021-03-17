@@ -75,6 +75,7 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
     if (output->HasNormals()) {
         utility::LogDebug("GeneralizedICP: Computing covariances from normals");
     } else {
+        // Compute covariances the same way is done in the original GICP paper.
         utility::LogDebug("GeneralizedICP: Computing covariances from points.");
         output->EstimateNormals(open3d::geometry::KDTreeSearchParamKNN(20));
     }
