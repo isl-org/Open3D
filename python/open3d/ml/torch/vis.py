@@ -23,6 +23,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
+"""
+Visualizer for 3D ML.
+"""
 
 import os as _os
 from open3d import _build_config
