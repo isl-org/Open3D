@@ -775,7 +775,7 @@ struct O3DVisualizer::Impl {
     void AddGeometry(const std::string &name,
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     rendering::Material *material,
+                     const rendering::Material *material,
                      const std::string &group,
                      double time,
                      bool is_visible) {
@@ -1806,21 +1806,23 @@ void O3DVisualizer::SetBackground(
 
 void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 
-void O3DVisualizer::AddGeometry(const std::string &name,
-                                std::shared_ptr<geometry::Geometry3D> geom,
-                                rendering::Material *material /*= nullptr*/,
-                                const std::string &group /*= ""*/,
-                                double time /*= 0.0*/,
-                                bool is_visible /*= true*/) {
+void O3DVisualizer::AddGeometry(
+        const std::string &name,
+        std::shared_ptr<geometry::Geometry3D> geom,
+        const rendering::Material *material /*=nullptr*/,
+        const std::string &group /*= ""*/,
+        double time /*= 0.0*/,
+        bool is_visible /*= true*/) {
     impl_->AddGeometry(name, geom, nullptr, material, group, time, is_visible);
 }
 
-void O3DVisualizer::AddGeometry(const std::string &name,
-                                std::shared_ptr<t::geometry::Geometry> tgeom,
-                                rendering::Material *material /*= nullptr*/,
-                                const std::string &group /*= ""*/,
-                                double time /*= 0.0*/,
-                                bool is_visible /*= true*/) {
+void O3DVisualizer::AddGeometry(
+        const std::string &name,
+        std::shared_ptr<t::geometry::Geometry> tgeom,
+        const rendering::Material *material /*=nullptr*/,
+        const std::string &group /*= ""*/,
+        double time /*= 0.0*/,
+        bool is_visible /*= true*/) {
     impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
 }
 
