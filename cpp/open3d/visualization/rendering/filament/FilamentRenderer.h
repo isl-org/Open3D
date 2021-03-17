@@ -70,10 +70,17 @@ public:
 
     virtual void SetClearColor(const Eigen::Vector4f& color) override;
     void UpdateSwapChain() override;
+    void UpdateBitmapSwapChain(int width, int height) override;
 
     void BeginFrame() override;
     void Draw() override;
+    void RequestReadPixels(int width,
+                           int height,
+                           std::function<void(std::shared_ptr<geometry::Image>)>
+                                   callback) override;
     void EndFrame() override;
+
+    void SetOnAfterDraw(std::function<void()> callback) override;
 
     MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
     MaterialInstanceHandle AddMaterialInstance(
@@ -124,6 +131,8 @@ private:
             buffer_renderers_;
 
     bool frame_started_ = false;
+    std::function<void()> on_after_draw_;
+    bool needs_wait_after_draw_ = false;
 };
 
 }  // namespace rendering

@@ -247,6 +247,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Global Security options (including 3rd party code)
+# Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # -Wall -Wextra -Werror or /W4 /WX are enabled for Open3D code (not 3rd party)
 if (MSVC)
     set(HARDENING_CFLAGS
@@ -256,33 +258,34 @@ if (MSVC)
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
         /INCREMENTAL:NO  # Disable incremental Linking
-        #/NXCOMPAT       # Data Execution Prevention: On by default in VS2019
+        /NXCOMPAT        # Data Execution Prevention: On by default in VS2019
         /DYNAMICBASE     # Randomized Base Address
         /HIGHENTROPYVA   #
         #/INTEGRITYCHECK # Signed binary: Disabled
         CACHE STRING "Linker flags for security hardening")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
-        -fsanitize=safe-stack           # Stack execution protection
         -fstack-protector               # Stack-based buffer overrun detection
-        -fpie -fPIC                     # Position independent execution
-        -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security      # Format string vulnerability
-        -fsanitize=cfi                  # Control flow integrity
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
+        -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
-        -pie                        # Position independent execution
+        -pie                        # Position independent executable
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+    if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
+        list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
+        list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
+    endif()
+    if(NOT DEVELOPER_BUILD)
         list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)
+        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
         -fstack-protector               # Stack-based buffer overrun detection
-        -fpie -fPIC                     # Position independent execution
-        -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security      # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS  ""
@@ -293,16 +296,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         list(APPEND HARDENING_LDFLAGS -S)
     endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
         -fstack-protector-strong    # Stack-based buffer overrun detection
-        -fPIE -fPIC                 # Position independent
-        -D_FORTIFY_SOURCE=2
         -Wformat -Wformat-security  # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
-        -pie                 # Position independent
+        -pie                 # Position independent executable
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
         list(APPEND HARDENING_CFLAGS -O2)
@@ -314,24 +316,28 @@ else()
 endif()
 include(CheckCXXCompilerFlag)
 foreach(FLAG ${HARDENING_CFLAGS})
-    check_cxx_compiler_flag(${FLAG} FLAG${FLAG})
-    if (NOT FLAG${FLAG})
+    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
+    check_cxx_compiler_flag("${FLAG}" FLAG${FLAGRESULT})
+    if (NOT FLAG${FLAGRESULT})
         list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
         message(WARNING "Compiler does not support security option ${FLAG}")
     endif()
 endforeach()
 include(CheckLinkerFlag)
 foreach(FLAG ${HARDENING_LDFLAGS})
-    check_linker_flag(CXX ${FLAG} FLAG${FLAG})              # cmake 3.18+
-    if (NOT FLAG${FLAG})
+    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
+    check_linker_flag(CXX "${FLAG}" FLAG${FLAGRESULT})              # cmake 3.18+
+    if (NOT FLAG${FLAGRESULT})
         list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
         message(WARNING "Linker does not support security option ${FLAG}")
     endif()
 endforeach()
-string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
-string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
 message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
 linker flags: ${HARDENING_LDFLAGS}")
+list(TRANSFORM HARDENING_LDFLAGS REPLACE "-pie"
+    "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-pie>")
+string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
+string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
 add_compile_options(
     "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
     "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
@@ -417,6 +423,18 @@ if(WIN32)
     endif()
 endif()
 
+# Downloads files from https://github.com/intel-isl/open3d_downloads to
+# Open3D/examples/test_data/open3d_downloads.
+include(ExternalProject)
+ExternalProject_Add(
+    open3d_downloads
+    DOWNLOAD_COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
+    UPDATE_COMMAND   ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
+
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -465,6 +483,12 @@ function(open3d_set_global_properties target)
         cxx_trailing_return_types
         cxx_return_type_deduction
     )
+    # Colorize GCC/Clang terminal outputs
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fcolor-diagnostics>)
+    endif ()
     target_include_directories(${target} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
@@ -538,6 +562,8 @@ function(open3d_set_global_properties target)
     if(WITH_FAISS)
         target_compile_definitions(${target} PRIVATE WITH_FAISS)
     endif()
+    # Download test data files from open3d_downloads repo.
+    add_dependencies(${target} open3d_downloads)
 endfunction()
 
 macro(add_source_group module_name)
@@ -617,7 +643,7 @@ if(WIN32)
     open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
-open3d_aligned_print("Build Examples" "${BUILD_CPP_EXAMPLES}")
+open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
 open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
 if(BUILD_PYTHON_MODULE)
     open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")

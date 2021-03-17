@@ -691,6 +691,10 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
         case EntityType::IndirectLight:
             DestroyResource(id, ibls_);
             break;
+        case EntityType::RenderTarget:
+            DestroyResource(id, render_targets_);
+            break;
+
         default:
             utility::LogWarning(
                     "Resource {} is not suited for destruction by "

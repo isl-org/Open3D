@@ -270,7 +270,7 @@ public:
     PointCloud &Transform(const core::Tensor &transformation);
 
     /// \brief Translates the points of the PointCloud.
-    /// \param translation translation tensor of dimention {3}
+    /// \param translation translation tensor of dimension {3}
     /// Should be on the same device as the PointCloud
     /// \param relative if true (default): translates relative to Center
     /// \return Translated pointcloud
@@ -278,7 +278,7 @@ public:
                           bool relative = true);
 
     /// \brief Scales the points of the PointCloud.
-    /// \param scale Scale [double] of dimention
+    /// \param scale Scale [double] of dimension
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
     /// \return Scaled pointcloud

@@ -42,6 +42,7 @@ struct Label3D::Impl {
 
 Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
     : impl_(new Label3D::Impl()) {
+    SetPosition(pos);
     if (text) {
         SetText(text);
     }

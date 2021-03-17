@@ -237,7 +237,7 @@ Case 2: When documenting Python bindings
                    ":meth:`open3d.Calculator.add` is "
                    "commutative.",
                                 "a"_a, "b"_a);
-    calculator.def("sub", &Calculator::Add, "Substracts ``b`` from ``a``", "a"_a,
+    calculator.def("sub", &Calculator::Add, "Subtracts ``b`` from ``a``", "a"_a,
                                 "b"_a);
     docstring::ClassMethodDocInject(m, "Calculator", "add",
                                     {{"a", "LHS operand for summation."},

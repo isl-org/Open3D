@@ -102,9 +102,9 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
             // There are CPU/CUDA numerical differences around edges, so we need
             // to be tolerant.
-            core::Tensor vertex_map_gt = core::Tensor::Load(
-                    fmt::format("{}/RGBD/raycast_vtx_{:03d}.npy",
-                                std::string(TEST_DATA_DIR), i));
+            core::Tensor vertex_map_gt = core::Tensor::Load(fmt::format(
+                    "{}/open3d_downloads/RGBD/raycast_vtx_{:03d}.npy",
+                    std::string(TEST_DATA_DIR), i));
             int64_t discrepancy_count =
                     ((vertex_map.To(core::Device("CPU:0")) - vertex_map_gt)
                              .Abs()

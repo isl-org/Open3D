@@ -107,6 +107,7 @@ private:
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
     bool caching_enabled_ = false;
+    bool configured_for_picking_ = false;
     TextureHandle color_buffer_;
     TextureHandle depth_buffer_;
     RenderTargetHandle render_target_;
