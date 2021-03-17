@@ -811,12 +811,12 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
                    {0.3, 0.0, 0.0}, {0.4, 0.0, 0.0}, {0.5, 0.0, 0.0}};
     pcd.covariances_ = {
-            {0.0 * Eigen::Matrix3d::Identity()},
-            {1.0 * Eigen::Matrix3d::Identity()},
-            {2.0 * Eigen::Matrix3d::Identity()},
-            {3.0 * Eigen::Matrix3d::Identity()},
-            {4.0 * Eigen::Matrix3d::Identity()},
-            {5.0 * Eigen::Matrix3d::Identity()},
+            0.0 * Eigen::Matrix3d::Identity(),
+            1.0 * Eigen::Matrix3d::Identity(),
+            2.0 * Eigen::Matrix3d::Identity(),
+            3.0 * Eigen::Matrix3d::Identity(),
+            4.0 * Eigen::Matrix3d::Identity(),
+            5.0 * Eigen::Matrix3d::Identity(),
     };
     std::shared_ptr<geometry::PointCloud> pc_crop = pcd.Crop(aabb);
     ExpectEQ(pc_crop->points_, std::vector<Eigen::Vector3d>({
@@ -838,10 +838,10 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
                                        {0.3, 0.0, 0.0},
                                }));
     ExpectEQ(pc_crop->covariances_, std::vector<Eigen::Matrix3d>({
-                                            {0.0 * Eigen::Matrix3d::Identity()},
-                                            {1.0 * Eigen::Matrix3d::Identity()},
-                                            {2.0 * Eigen::Matrix3d::Identity()},
-                                            {3.0 * Eigen::Matrix3d::Identity()},
+                                            0.0 * Eigen::Matrix3d::Identity(),
+                                            1.0 * Eigen::Matrix3d::Identity(),
+                                            2.0 * Eigen::Matrix3d::Identity(),
+                                            3.0 * Eigen::Matrix3d::Identity(),
                                     }));
 }
 
@@ -862,12 +862,12 @@ TEST(PointCloud, Crop_OrientedBoundingBox) {
     pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
                    {0.3, 0.0, 0.0}, {0.4, 0.0, 0.0}, {0.5, 0.0, 0.0}};
     pcd.covariances_ = {
-            {0.0 * Eigen::Matrix3d::Identity()},
-            {1.0 * Eigen::Matrix3d::Identity()},
-            {2.0 * Eigen::Matrix3d::Identity()},
-            {3.0 * Eigen::Matrix3d::Identity()},
-            {4.0 * Eigen::Matrix3d::Identity()},
-            {5.0 * Eigen::Matrix3d::Identity()},
+            0.0 * Eigen::Matrix3d::Identity(),
+            1.0 * Eigen::Matrix3d::Identity(),
+            2.0 * Eigen::Matrix3d::Identity(),
+            3.0 * Eigen::Matrix3d::Identity(),
+            4.0 * Eigen::Matrix3d::Identity(),
+            5.0 * Eigen::Matrix3d::Identity(),
     };
     std::shared_ptr<geometry::PointCloud> pc_crop = pcd.Crop(obb);
     ExpectEQ(pc_crop->points_, std::vector<Eigen::Vector3d>({
@@ -889,10 +889,10 @@ TEST(PointCloud, Crop_OrientedBoundingBox) {
                                        {0.3, 0.0, 0.0},
                                }));
     ExpectEQ(pc_crop->covariances_, std::vector<Eigen::Matrix3d>({
-                                            {0.0 * Eigen::Matrix3d::Identity()},
-                                            {1.0 * Eigen::Matrix3d::Identity()},
-                                            {2.0 * Eigen::Matrix3d::Identity()},
-                                            {3.0 * Eigen::Matrix3d::Identity()},
+                                            0.0 * Eigen::Matrix3d::Identity(),
+                                            1.0 * Eigen::Matrix3d::Identity(),
+                                            2.0 * Eigen::Matrix3d::Identity(),
+                                            3.0 * Eigen::Matrix3d::Identity(),
                                     }));
 }
 
