@@ -48,25 +48,9 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-ImageReader::ImageReader() {}
-
-ImageReader::~ImageReader() {}
-
-void ImageReader::Start(Callback* callback) {
-    utility::LogInfo("ImageReader::Start");
-    callback_ = callback;
-}
-
-void ImageReader::CaptureFrame() {
-    // This will block until a new frame is read.
-    callback_->OnCaptureResult(GlobalBuffer::GetInstance().Read());
-}
-
 ImageCapturer::ImageCapturer(const std::string& url_,
                              const std::map<std::string, std::string>& opts)
-    : ImageCapturer(opts) {
-    image_reader_ = std::unique_ptr<ImageReader>(new ImageReader());
-}
+    : ImageCapturer(opts) {}
 
 ImageCapturer::~ImageCapturer() { this->Stop(); }
 
@@ -95,13 +79,13 @@ bool ImageCapturer::Init() { return this->Start(); }
 void ImageCapturer::CaptureThread() {
     RTC_LOG(INFO) << "ImageCapturer:Run start";
     while (IsRunning()) {
-        image_reader_->CaptureFrame();
+        // Read() will block until a new frame is read.
+        OnCaptureResult(GlobalBuffer::GetInstance().Read());
     }
     RTC_LOG(INFO) << "ImageCapturer:Run exit";
 }
 
 bool ImageCapturer::Start() {
-    image_reader_->Start(this);
     is_running_ = true;
     capture_thread_ = std::thread(&ImageCapturer::CaptureThread, this);
     return true;

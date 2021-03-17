@@ -49,28 +49,7 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-class ImageReader {
-public:
-    class Callback {
-    public:
-        virtual void OnCaptureResult(const std::shared_ptr<core::Tensor>&) = 0;
-
-    protected:
-        virtual ~Callback() {}
-    };
-
-    ImageReader();
-    virtual ~ImageReader();
-
-    void Start(Callback* callback);
-
-    void CaptureFrame();
-
-    Callback* callback_ = nullptr;
-};
-
-class ImageCapturer : public rtc::VideoSourceInterface<webrtc::VideoFrame>,
-                      public ImageReader::Callback {
+class ImageCapturer : public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
     ImageCapturer(const std::string& url_,
                   const std::map<std::string, std::string>& opts);
@@ -95,8 +74,7 @@ public:
     // Overide webrtc::DesktopCapturer::Callback.
     // See: WindowCapturerX11::CaptureFrame
     // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
-    virtual void OnCaptureResult(
-            const std::shared_ptr<core::Tensor>& frame) override;
+    void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
 
     // Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
     virtual void AddOrUpdateSink(
@@ -108,7 +86,6 @@ public:
 
 protected:
     std::thread capture_thread_;
-    std::unique_ptr<ImageReader> image_reader_;
     int width_;
     int height_;
     bool is_running_;
