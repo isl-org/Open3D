@@ -55,13 +55,12 @@ core::Tensor CreateIntrisicTensor() {
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    return core::Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, core::Dtype::Float32);
+    return core::Tensor::Init<float>(
+            {{static_cast<float>(focal_length.first), 0,
+              static_cast<float>(principal_point.first)},
+             {0, static_cast<float>(focal_length.second),
+              static_cast<float>(principal_point.second)},
+             {0, 0, 1}});
 }
 
 TEST_P(OdometryPermuteDevices, CreateVertexMap) {
@@ -71,12 +70,9 @@ TEST_P(OdometryPermuteDevices, CreateVertexMap) {
         return;
     }
 
-    auto depth_legacy =
-            io::CreateImageFromFile(std::string(TEST_DATA_DIR) + "/depth.png");
-
-    t::geometry::Image depth =
-            t::geometry::Image::FromLegacyImage(*depth_legacy, device);
-    depth = depth.To(core::Dtype::Float32, false, 1.0);
+    t::geometry::Image depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/depth.png");
+    depth = depth.To(device).To(core::Dtype::Float32, false, 1.0);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
@@ -99,12 +95,9 @@ TEST_P(OdometryPermuteDevices, CreateNormalMap) {
         return;
     }
 
-    auto depth_legacy =
-            io::CreateImageFromFile(std::string(TEST_DATA_DIR) + "/depth.png");
-
-    t::geometry::Image depth =
-            t::geometry::Image::FromLegacyImage(*depth_legacy, device);
-    depth = depth.To(core::Dtype::Float32, false, 1.0);
+    t::geometry::Image depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/depth.png");
+    depth = depth.To(device).To(core::Dtype::Float32, false, 1.0);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
@@ -129,17 +122,13 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     float depth_factor = 1000.0;
     float depth_diff = 0.07;
 
-    auto src_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                    "/RGBD/depth/00000.png");
-    auto dst_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                    "/RGBD/depth/00002.png");
+    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
 
-    t::geometry::Image src_depth =
-            t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
-    src_depth = src_depth.To(core::Dtype::Float32, false, 1.0);
-    t::geometry::Image dst_depth =
-            t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
-    dst_depth = dst_depth.To(core::Dtype::Float32, false, 1.0);
+    src_depth = src_depth.To(device).To(core::Dtype::Float32, false, 1.0);
+    dst_depth = dst_depth.To(device).To(core::Dtype::Float32, false, 1.0);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
@@ -151,7 +140,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
             dst_depth, intrinsic_t.To(device), depth_factor);
 
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     for (int i = 0; i < 20; ++i) {
         core::Tensor delta_src_to_dst =
                 t::pipelines::odometry::ComputePosePointToPlane(
@@ -161,24 +150,24 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     }
 
     core::Device host("CPU:0");
-    core::Tensor T0(
-            std::vector<double>{-0.2739592186924325, 0.021819345900466677,
-                                -0.9614937663021573, -0.31057997014702826,
-                                8.33962904204855e-19, -0.9997426093226981,
-                                -0.02268733357278151, 0.5730122438481298,
-                                -0.9617413095492113, -0.006215404179813816,
-                                0.27388870414358013, 2.1264800183565487, 0.0,
-                                0.0, 0.0, 1.0},
-            {4, 4}, core::Dtype::Float64, host);
-    core::Tensor T2(
-            std::vector<double>{-0.26535185454036697, 0.04522708142999141,
-                                -0.9630902888085378, -0.3097373196756845,
-                                1.6706953334814538e-18, -0.9988991819470762,
-                                -0.046908680491589354, 0.6204495589484211,
-                                -0.9641516443443884, -0.012447305362484767,
-                                0.2650597504285121, 2.1247894438735306, 0.0,
-                                0.0, 0.0, 1.0},
-            {4, 4}, core::Dtype::Float64, host);
+    core::Tensor T0 = core::Tensor::Init<double>(
+            {{-0.2739592186924325, 0.021819345900466677, -0.9614937663021573,
+              -0.31057997014702826},
+             {8.33962904204855e-19, -0.9997426093226981, -0.02268733357278151,
+              0.5730122438481298},
+             {-0.9617413095492113, -0.006215404179813816, 0.27388870414358013,
+              2.1264800183565487},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
+    core::Tensor T2 = core::Tensor::Init<double>(
+            {{-0.26535185454036697, 0.04522708142999141, -0.9630902888085378,
+              -0.3097373196756845},
+             {1.6706953334814538e-18, -0.9988991819470762,
+              -0.046908680491589354, 0.6204495589484211},
+             {-0.9641516443443884, -0.012447305362484767, 0.2650597504285121,
+              2.1247894438735306},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
             trans.To(host, core::Dtype::Float64).Inverse());
@@ -196,42 +185,40 @@ TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
     float depth_factor = 1000.0;
     float depth_diff = 0.07;
 
-    auto src_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                    "/RGBD/depth/00000.png");
-    auto dst_depth_legacy = io::CreateImageFromFile(std::string(TEST_DATA_DIR) +
-                                                    "/RGBD/depth/00002.png");
+    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
 
     t::geometry::RGBDImage src, dst;
-    src.depth_ = t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
-    src.depth_ = src.depth_.To(core::Dtype::Float32, false, 1.0);
-    dst.depth_ = t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
-    dst.depth_ = dst.depth_.To(core::Dtype::Float32, false, 1.0);
+    src.depth_ = src_depth.To(device).To(core::Dtype::Float32, false, 1.0);
+    dst.depth_ = dst_depth.To(device).To(core::Dtype::Float32, false, 1.0);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_factor, depth_diff, {10, 5, 3});
 
     core::Device host("CPU:0");
-    core::Tensor T0(
-            std::vector<double>{-0.2739592186924325, 0.021819345900466677,
-                                -0.9614937663021573, -0.31057997014702826,
-                                8.33962904204855e-19, -0.9997426093226981,
-                                -0.02268733357278151, 0.5730122438481298,
-                                -0.9617413095492113, -0.006215404179813816,
-                                0.27388870414358013, 2.1264800183565487, 0.0,
-                                0.0, 0.0, 1.0},
-            {4, 4}, core::Dtype::Float64, host);
-    core::Tensor T2(
-            std::vector<double>{-0.26535185454036697, 0.04522708142999141,
-                                -0.9630902888085378, -0.3097373196756845,
-                                1.6706953334814538e-18, -0.9988991819470762,
-                                -0.046908680491589354, 0.6204495589484211,
-                                -0.9641516443443884, -0.012447305362484767,
-                                0.2650597504285121, 2.1247894438735306, 0.0,
-                                0.0, 0.0, 1.0},
-            {4, 4}, core::Dtype::Float64, host);
+    core::Tensor T0 = core::Tensor::Init<double>(
+            {{-0.2739592186924325, 0.021819345900466677, -0.9614937663021573,
+              -0.31057997014702826},
+             {8.33962904204855e-19, -0.9997426093226981, -0.02268733357278151,
+              0.5730122438481298},
+             {-0.9617413095492113, -0.006215404179813816, 0.27388870414358013,
+              2.1264800183565487},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
+    core::Tensor T2 = core::Tensor::Init<double>(
+            {{-0.26535185454036697, 0.04522708142999141, -0.9630902888085378,
+              -0.3097373196756845},
+             {1.6706953334814538e-18, -0.9988991819470762,
+              -0.046908680491589354, 0.6204495589484211},
+             {-0.9641516443443884, -0.012447305362484767, 0.2650597504285121,
+              2.1247894438735306},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
             trans.To(host, core::Dtype::Float64).Inverse());

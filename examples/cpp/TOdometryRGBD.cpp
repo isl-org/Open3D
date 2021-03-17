@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     dst.depth_ = t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
     dst.depth_ = dst.depth_.To(core::Dtype::Float32, false, 1.0);
 
-    core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float32, device);
+    core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float64, device);
 
     // Visualize before odometry
     auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(

@@ -168,8 +168,9 @@ void ComputePosePointToPlaneCPU
     t::geometry::kernel::NDArrayIndexer source_normal_indexer(source_normal_map,
                                                               2);
 
-    t::geometry::kernel::TransformIndexer ti(intrinsics,
-                                             init_source_to_target.Inverse());
+    core::Tensor trans = init_source_to_target.Inverse().To(
+            source_vertex_map.GetDevice(), core::Dtype::Float32);
+    t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     // Output
     int64_t rows = source_vertex_indexer.GetShape(0);
@@ -183,10 +184,10 @@ void ComputePosePointToPlaneCPU
     core::Tensor count = core::Tensor::Zeros({}, core::Dtype::Int32, device);
     residual = core::Tensor::Zeros({}, core::Dtype::Float32, device);
 
-    float* AtA_local_ptr = static_cast<float*>(AtA.GetDataPtr());
-    float* Atb_local_ptr = static_cast<float*>(Atb.GetDataPtr());
-    float* residual_ptr = static_cast<float*>(residual.GetDataPtr());
-    int* count_ptr = static_cast<int*>(count.GetDataPtr());
+    float* AtA_local_ptr = AtA.GetDataPtr<float>();
+    float* Atb_local_ptr = Atb.GetDataPtr<float>();
+    float* residual_ptr = residual.GetDataPtr<float>();
+    int* count_ptr = count.GetDataPtr<int>();
 
     int64_t n = rows * cols;
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)

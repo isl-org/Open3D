@@ -46,8 +46,8 @@ void Unproject(const core::Tensor& depth,
                int64_t stride) {
     core::Device device = depth.GetDevice();
 
-    core::Tensor intrinsics_d = intrinsics.To(device);
-    core::Tensor extrinsics_d = extrinsics.To(device);
+    core::Tensor intrinsics_d = intrinsics.To(device, core::Dtype::Float32);
+    core::Tensor extrinsics_d = extrinsics.To(device, core::Dtype::Float32);
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

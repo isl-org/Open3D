@@ -41,6 +41,9 @@ enum class LossType {
     DirectHybrid,
 };
 
+/// Note: all the 4x4 transformation in this file, from params to returns, are
+/// Float64. Only convert to Float32 in kernel calls.
+
 /// Create an RGBD image pyramid given the original source and target and
 /// perform hierarchical odometry.
 /// Used for offline odometry where we do not care performance (too much) and
@@ -50,19 +53,21 @@ core::Tensor RGBDOdometryMultiScale(
         const t::geometry::RGBDImage& target,
         const core::Tensor& intrinsics,
         const core::Tensor& init_source_to_target = core::Tensor::Eye(
-                4, core::Dtype::Float32, core::Device("CPU:0")),
+                4, core::Dtype::Float64, core::Device("CPU:0")),
         float depth_factor = 1000.0f,
         float depth_diff = 0.07f,
         const std::vector<int>& iterations = {10, 5, 3},
         const LossType method = LossType::PointToPlane);
 
-/// Create a vertex map (image) from a depth image.
+/// Create a vertex map (image) from a depth image. Useful for point-to-plane
+/// odometry and point-to-point.
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
                              const core::Tensor& intrinsics,
                              float depth_factor = 1000.0,
                              float depth_max = 3.0);
 
-/// Create a normal map (image) from a vertex map (image).
+/// Create a normal map (image) from a vertex map (image). Useful for
+/// point-to-plane odometry.
 core::Tensor CreateNormalMap(const core::Tensor& vertex_map);
 
 /// Perform single scale odometry using loss function

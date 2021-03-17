@@ -111,7 +111,7 @@ void UnprojectCPU
     int total_pts_count = (*count_ptr).load();
 #endif
     points = points.Slice(0, 0, total_pts_count);
-}  // namespace pointcloud
+}
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

@@ -41,7 +41,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                                     const t::geometry::RGBDImage& target,
                                     const core::Tensor& intrinsics,
                                     const core::Tensor& init_source_to_target,
-                                    float depth_factor,
+                                    float depth_scale,
                                     float depth_diff,
                                     const std::vector<int>& iterations,
                                     const LossType method) {
@@ -55,7 +55,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     core::Tensor intrinsics_d = intrinsics.To(device, true);
 
     core::Device host("CPU:0");
-    core::Tensor trans_d = init_source_to_target.To(host);
+    core::Tensor trans_d = init_source_to_target.To(host, core::Dtype::Float64);
 
     if (method == LossType::PointToPlane) {
         int64_t n = int64_t(iterations.size());
@@ -71,11 +71,11 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         // Create image pyramid
         for (int64_t i = 0; i < n; ++i) {
             core::Tensor src_vertex_map =
-                    CreateVertexMap(src_depth, intrinsics_d, depth_factor);
+                    CreateVertexMap(src_depth, intrinsics_d, depth_scale);
             core::Tensor src_normal_map = CreateNormalMap(src_vertex_map);
 
             core::Tensor dst_vertex_map =
-                    CreateVertexMap(dst_depth, intrinsics_d, depth_factor);
+                    CreateVertexMap(dst_depth, intrinsics_d, depth_scale);
 
             src_vertex_maps[n - 1 - i] = src_vertex_map;
             src_normal_maps[n - 1 - i] = src_normal_map;
@@ -97,8 +97,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             for (int iter = 0; iter < iterations[i]; ++iter) {
                 core::Tensor delta_src_to_dst = ComputePosePointToPlane(
                         src_vertex_maps[i], dst_vertex_maps[i],
-                        src_normal_maps[i], intrinsic_matrices[i],
-                        trans_d.To(device), depth_diff);
+                        src_normal_maps[i], intrinsic_matrices[i], trans_d,
+                        depth_diff);
                 trans_d = delta_src_to_dst.Matmul(trans_d);
             }
         }
@@ -111,11 +111,11 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
                              const core::Tensor& intrinsics,
-                             float depth_factor,
+                             float depth_scale,
                              float depth_max) {
     core::Tensor vertex_map;
     kernel::odometry::CreateVertexMap(depth.AsTensor(), intrinsics, vertex_map,
-                                      depth_factor, depth_max);
+                                      depth_scale, depth_max);
     return vertex_map;
 }
 
@@ -138,13 +138,14 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vtx_map,
             source_vtx_map, target_vtx_map, source_normal_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
 
-    core::Tensor T_delta_inv = pipelines::kernel::PoseToTransformation(
-            se3_delta.To(core::Dtype::Float32));
+    core::Tensor T_delta_inv =
+            pipelines::kernel::PoseToTransformation(se3_delta);
 
     // T.inv = [R.T | -R.T @ t]
     core::Tensor R_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor t_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 3, 4);
-    core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float32);
+
+    core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float64);
     T_delta.Slice(0, 0, 3).Slice(1, 0, 3) = R_inv.T();
     T_delta.Slice(0, 0, 3).Slice(1, 3, 4) = R_inv.T().Matmul(t_inv).Neg();
     T_delta[-1][-1] = 1;
