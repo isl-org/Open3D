@@ -583,10 +583,8 @@ std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
     const auto &points = input.points_;
     std::vector<Eigen::Matrix3d> covariances;
-    bool has_covariance = input.HasCovariances();
-    if (!has_covariance) {
-        covariances.resize(points.size());
-    }
+    covariances.resize(points.size());
+
     KDTreeFlann kdtree;
     kdtree.SetGeometry(input);
 #pragma omp parallel for schedule(static)
@@ -595,10 +593,11 @@ std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
         std::vector<double> distance2;
         if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
             auto covariance = utility::ComputeCovariance(points, indices);
-            if (has_covariance && covariance.isIdentity(1e-4)) {
-                covariance = covariances[i];
+            if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
+                covariances[i] = input.covariances_[i];
+            } else {
+                covariances[i] = covariance;
             }
-            covariances[i] = covariance;
         } else {
             covariances[i] = Eigen::Matrix3d::Identity();
         }
