@@ -51,7 +51,7 @@ Hashmap::Hashmap(int64_t init_capacity,
       element_shape_key_(element_shape_key),
       element_shape_value_(element_shape_value) {
     if (dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined ||
-        dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
+        dtype_value_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
         utility::LogError(
                 "[Hashmap] DtypeCore::Undefined is not supported for input "
                 "key/value.");
