@@ -1040,6 +1040,7 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
 }
 
 // TODO(Nacho): Add covariances unit tests
+TEST(PointCloud, DISABLED_EstimatePerPointCovariances) { NotImplemented(); }
 TEST(PointCloud, DISABLED_EstimateCovariances) { NotImplemented(); }
 
 TEST(PointCloud, ComputeMeanAndCovariance) {
