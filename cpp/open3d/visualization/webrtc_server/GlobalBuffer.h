@@ -61,6 +61,10 @@ public:
         //
         // TODO: (important) do not use the test pattern for the initial frames.
         // Instead, pro-actively get the rendered image from the renderer.
+
+        // TODO: this fixes the restart problem. But it shouldn't be used.
+        // num_initial_frames_ = 0;
+
         if (num_initial_frames_ < s_max_initial_frames_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             std::unique_lock<std::mutex> ul(frame_mutex_);
