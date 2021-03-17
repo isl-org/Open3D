@@ -394,6 +394,7 @@ TEST_P(PointCloudPermuteDevices, Has) {
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
 
+    // Sanity test to visualize
     t::geometry::PointCloud pcd =
             t::geometry::PointCloud::FromLegacyPointCloud(
                     *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
@@ -402,6 +403,17 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     auto pcd_down = pcd.VoxelDownSample(0.1);
     io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),
                         pcd_down.ToLegacyPointCloud());
+
+    // Value test
+    t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                       {0.9, 0.2, 0.4},
+                                       {0.3, 0.6, 0.8},
+                                       {0.2, 0.4, 0.2}},
+                                      device));
+    auto pcd_small_down = pcd_small.VoxelDownSample(1);
+    EXPECT_TRUE(pcd_small_down.GetPoints().AllClose(
+            core::Tensor::Init<float>({{0, 0, 0}}, device)));
 }
 
 }  // namespace tests
