@@ -108,7 +108,7 @@ public:
 
 protected:
     std::thread capture_thread_;
-    std::unique_ptr<ImageReader> capturer_;
+    std::unique_ptr<ImageReader> image_reader_;
     int width_;
     int height_;
     bool is_running_;

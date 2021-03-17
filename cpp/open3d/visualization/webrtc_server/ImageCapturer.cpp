@@ -65,7 +65,7 @@ void ImageReader::CaptureFrame() {
 ImageCapturer::ImageCapturer(const std::string& url_,
                              const std::map<std::string, std::string>& opts)
     : ImageCapturer(opts) {
-    capturer_ = std::unique_ptr<ImageReader>(new ImageReader());
+    image_reader_ = std::unique_ptr<ImageReader>(new ImageReader());
 }
 
 ImageCapturer::~ImageCapturer() { this->Stop(); }
@@ -73,12 +73,12 @@ ImageCapturer::~ImageCapturer() { this->Stop(); }
 ImageCapturer* ImageCapturer::Create(
         const std::string& url,
         const std::map<std::string, std::string>& opts) {
-    std::unique_ptr<ImageCapturer> capturer(new ImageCapturer(url, opts));
-    if (!capturer->Init()) {
+    std::unique_ptr<ImageCapturer> image_capturer(new ImageCapturer(url, opts));
+    if (!image_capturer->Init()) {
         RTC_LOG(LS_WARNING) << "Failed to create ImageCapturer";
         return nullptr;
     }
-    return capturer.release();
+    return image_capturer.release();
 }
 
 ImageCapturer::ImageCapturer(const std::map<std::string, std::string>& opts)
@@ -95,13 +95,13 @@ bool ImageCapturer::Init() { return this->Start(); }
 void ImageCapturer::CaptureThread() {
     RTC_LOG(INFO) << "ImageCapturer:Run start";
     while (IsRunning()) {
-        capturer_->CaptureFrame();
+        image_reader_->CaptureFrame();
     }
     RTC_LOG(INFO) << "ImageCapturer:Run exit";
 }
 
 bool ImageCapturer::Start() {
-    capturer_->Start(this);
+    image_reader_->Start(this);
     is_running_ = true;
     capture_thread_ = std::thread(&ImageCapturer::CaptureThread, this);
     return true;
