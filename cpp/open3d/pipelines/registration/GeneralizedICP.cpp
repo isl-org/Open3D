@@ -60,9 +60,11 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
     return Eigen::Matrix3d::Identity() + sv + (sv * sv) * factor;
 }
 
-/// Compute the covariance matrix according to the original paper. Instead of
-/// doing (again) the SVD decomposition, re-use the normals given in the
-/// input PointCloud
+/// Compute the covariance matrix according to the original paper. If the input
+/// has already pre-computed covariances returns inmediatly. If the input has
+/// pre-computed normals but no covariances, compute the covariances from those
+/// normals. If there is no covariances nor normals, compute each covariance
+/// matrix following the original implementation of GICP using 20 NN.
 std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd, double epsilon) {
     auto output = std::make_shared<geometry::PointCloud>(pcd);
