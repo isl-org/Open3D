@@ -181,12 +181,10 @@ RegistrationResult RegistrationGeneralizedICP(
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    auto source_c =
-            InitializePointCloudForGeneralizedICP(source, estimation.epsilon_);
-    auto target_c =
-            InitializePointCloudForGeneralizedICP(target, estimation.epsilon_);
-    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
-                           init, estimation, criteria);
+    return RegistrationICP(
+            *InitializePointCloudForGeneralizedICP(source, estimation.epsilon_),
+            *InitializePointCloudForGeneralizedICP(target, estimation.epsilon_),
+            max_correspondence_distance, init, estimation, criteria);
 }
 
 }  // namespace registration
