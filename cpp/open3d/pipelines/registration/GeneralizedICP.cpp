@@ -72,27 +72,19 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         utility::LogDebug("GeneralizedICP: Using pre-computed covariances.");
         return output;
     }
+    if (output->HasNormals()) {
+        utility::LogDebug("GeneralizedICP: Computing covariances from normals");
+    } else {
+        utility::LogDebug("GeneralizedICP: Computing covariances from points.");
+        output->EstimateNormals(open3d::geometry::KDTreeSearchParamKNN(20));
+    }
 
     output->covariances_.resize(output->points_.size());
     const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
-    if (output->HasNormals()) {
-        utility::LogDebug("GeneralizedICP: Computing covariances from normals");
 #pragma omp parallel for schedule(static)
-        for (int i = 0; i < (int)output->normals_.size(); i++) {
-            const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
-            output->covariances_[i] = Rx * C * Rx.transpose();
-        }
-    } else {
-        // Compute covariances the same way is done in the original GICP paper.
-        utility::LogDebug("GeneralizedICP: Computing covariances from points.");
-        output->EstimateCovariances(open3d::geometry::KDTreeSearchParamKNN(20));
-#pragma omp parallel for schedule(static)
-        for (int i = 0; i < (int)output->covariances_.size(); i++) {
-            Eigen::JacobiSVD<Eigen::Matrix3d> svd(output->covariances_[i],
-                                                  Eigen::ComputeFullU);
-            const auto Rx = svd.matrixU();
-            output->covariances_[i] = Rx * C * Rx.transpose();
-        }
+    for (int i = 0; i < (int)output->normals_.size(); i++) {
+        const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
+        output->covariances_[i] = Rx * C * Rx.transpose();
     }
     return output;
 }
