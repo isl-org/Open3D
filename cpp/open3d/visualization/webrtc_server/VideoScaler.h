@@ -37,7 +37,7 @@
 #include <api/media_stream_interface.h>
 #include <media/base/video_broadcaster.h>
 
-#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
+#include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 
 namespace open3d {
 namespace visualization {
@@ -46,7 +46,7 @@ namespace webrtc_server {
 class VideoScaler : public rtc::VideoSinkInterface<webrtc::VideoFrame>,
                     public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
-    VideoScaler(rtc::scoped_refptr<CustomTrackSourceInterface> video_source,
+    VideoScaler(rtc::scoped_refptr<BitmapTrackSourceInterface> video_source,
                 const std::map<std::string, std::string> &opts)
         : video_source_(video_source),
           width_(0),
@@ -197,7 +197,7 @@ public:
     int height() { return roi_height_; }
 
 private:
-    rtc::scoped_refptr<CustomTrackSourceInterface> video_source_;
+    rtc::scoped_refptr<BitmapTrackSourceInterface> video_source_;
     rtc::VideoBroadcaster broadcaster_;
 
     int width_;

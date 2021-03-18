@@ -44,7 +44,7 @@
 #include <string>
 #include <thread>
 
-#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
+#include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
@@ -377,7 +377,7 @@ public:
     const Json::Value SetAnswer(const std::string& peerid,
                                 const Json::Value& jmessage);
 
-    rtc::scoped_refptr<CustomTrackSourceInterface> GetVideoTrackSource(
+    rtc::scoped_refptr<BitmapTrackSourceInterface> GetVideoTrackSource(
             const std::string& video_url);
 
 protected:
@@ -385,7 +385,7 @@ protected:
     bool AddStreams(webrtc::PeerConnectionInterface* peer_connection,
                     const std::string& video_url,
                     const std::string& options);
-    rtc::scoped_refptr<CustomTrackSourceInterface> CreateVideoSource(
+    rtc::scoped_refptr<BitmapTrackSourceInterface> CreateVideoSource(
             const std::string& video_url,
             const std::map<std::string, std::string>& opts);
     bool StreamStillUsed(const std::string& stream_label);
@@ -400,7 +400,7 @@ protected:
             peer_connection_factory_;
     std::mutex peer_map_mutex_;
     std::map<std::string, PeerConnectionObserver*> peer_connectionobs_map_;
-    std::map<std::string, rtc::scoped_refptr<CustomTrackSourceInterface>>
+    std::map<std::string, rtc::scoped_refptr<BitmapTrackSourceInterface>>
             stream_map_;
     std::mutex stream_map_mutex_;
     std::list<std::string> ice_server_list_;

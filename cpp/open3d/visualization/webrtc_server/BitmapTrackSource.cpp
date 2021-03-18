@@ -34,7 +34,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
+#include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 
 #include <pc/video_track_source.h>
 #include <rtc_base/checks.h>
@@ -43,12 +43,12 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-CustomTrackSource::CustomTrackSource(bool remote)
+BitmapTrackSource::BitmapTrackSource(bool remote)
     : state_(kInitializing), remote_(remote) {
     worker_thread_checker_.Detach();
 }
 
-void CustomTrackSource::SetState(
+void BitmapTrackSource::SetState(
         webrtc::MediaSourceInterface::SourceState new_state) {
     if (state_ != new_state) {
         state_ = new_state;
@@ -56,14 +56,14 @@ void CustomTrackSource::SetState(
     }
 }
 
-void CustomTrackSource::AddOrUpdateSink(
+void BitmapTrackSource::AddOrUpdateSink(
         rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
         const rtc::VideoSinkWants& wants) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     source()->AddOrUpdateSink(sink, wants);
 }
 
-void CustomTrackSource::RemoveSink(
+void BitmapTrackSource::RemoveSink(
         rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     source()->RemoveSink(sink);

@@ -49,7 +49,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/visualization/gui/Events.h"
-#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
+#include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
@@ -97,7 +97,7 @@ void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
 
     // video_track_source is nullptr if the server is running but no client is
     // connected.
-    rtc::scoped_refptr<CustomTrackSourceInterface> video_track_source =
+    rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
             peer_connection_manager_->GetVideoTrackSource("imageOpen3D");
     if (video_track_source != nullptr) {
         GlobalBuffer::GetInstance().Write(im);

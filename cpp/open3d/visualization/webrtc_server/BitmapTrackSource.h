@@ -50,13 +50,13 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-class CustomTrackSourceInterface : public webrtc::VideoTrackSourceInterface {};
+class BitmapTrackSourceInterface : public webrtc::VideoTrackSourceInterface {};
 
-// CustomTrackSource is a convenience base class for implementations of
+// BitmapTrackSource is a convenience base class for implementations of
 // VideoTrackSourceInterface.
-class CustomTrackSource : public webrtc::Notifier<CustomTrackSourceInterface> {
+class BitmapTrackSource : public webrtc::Notifier<BitmapTrackSourceInterface> {
 public:
-    explicit CustomTrackSource(bool remote);
+    explicit BitmapTrackSource(bool remote);
     void SetState(webrtc::MediaSourceInterface::SourceState new_state);
 
     webrtc::MediaSourceInterface::SourceState state() const override {

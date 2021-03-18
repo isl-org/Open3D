@@ -44,7 +44,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
+#include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 
 namespace open3d {
@@ -85,9 +85,9 @@ protected:
     rtc::VideoBroadcaster broadcaster_;
 };
 
-class ImageCapturerTrackSource : public CustomTrackSource {
+class ImageCapturerTrackSource : public BitmapTrackSource {
 public:
-    static rtc::scoped_refptr<CustomTrackSourceInterface> Create(
+    static rtc::scoped_refptr<BitmapTrackSourceInterface> Create(
             const std::string& video_url,
             const std::map<std::string, std::string>& opts) {
         // TODO: remove this check after standarizing the track names.
@@ -101,7 +101,7 @@ public:
         if (!capturer) {
             return nullptr;
         }
-        rtc::scoped_refptr<CustomTrackSourceInterface> video_source =
+        rtc::scoped_refptr<BitmapTrackSourceInterface> video_source =
                 new rtc::RefCountedObject<ImageCapturerTrackSource>(
                         std::move(capturer));
         return video_source;
@@ -109,7 +109,7 @@ public:
 
 protected:
     explicit ImageCapturerTrackSource(std::unique_ptr<ImageCapturer> capturer)
-        : CustomTrackSource(/*remote=*/false), capturer_(std::move(capturer)) {}
+        : BitmapTrackSource(/*remote=*/false), capturer_(std::move(capturer)) {}
 
 private:
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
