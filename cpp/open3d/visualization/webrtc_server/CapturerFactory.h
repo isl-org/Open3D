@@ -44,22 +44,22 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-template <class T>
-class TrackSource : public webrtc::VideoTrackSource {
+class ImageCapturerTrackSource : public webrtc::VideoTrackSource {
 public:
-    static rtc::scoped_refptr<TrackSource> Create(
+    static rtc::scoped_refptr<ImageCapturerTrackSource> Create(
             const std::string& video_url,
             const std::map<std::string, std::string>& opts) {
-        std::unique_ptr<T> capturer =
-                absl::WrapUnique(T::Create(video_url, opts));
+        std::unique_ptr<ImageCapturer> capturer =
+                absl::WrapUnique(ImageCapturer::Create(video_url, opts));
         if (!capturer) {
             return nullptr;
         }
-        return new rtc::RefCountedObject<TrackSource>(std::move(capturer));
+        return new rtc::RefCountedObject<ImageCapturerTrackSource>(
+                std::move(capturer));
     }
 
 protected:
-    explicit TrackSource(std::unique_ptr<T> capturer)
+    explicit ImageCapturerTrackSource(std::unique_ptr<ImageCapturer> capturer)
         : webrtc::VideoTrackSource(/*remote=*/false),
           capturer_(std::move(capturer)) {}
 
@@ -67,18 +67,11 @@ private:
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
         return capturer_.get();
     }
-    std::unique_ptr<T> capturer_;
+    std::unique_ptr<ImageCapturer> capturer_;
 };
 
 class CapturerFactory {
 public:
-    static const std::list<std::string> GetVideoSourceList(
-            const std::regex& publish_filter) {
-        std::list<std::string> videoList;
-
-        return videoList;
-    }
-
     static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
     CreateVideoSource(const std::string& video_url,
                       const std::map<std::string, std::string>& opts,
@@ -87,7 +80,7 @@ public:
                               peer_connection_factory) {
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
         if (video_url.find("image://") == 0) {
-            video_source = TrackSource<ImageCapturer>::Create(video_url, opts);
+            video_source = ImageCapturerTrackSource::Create(video_url, opts);
         } else {
             utility::LogError("CreateVideoSource failed for video_url: {}",
                               video_url);
