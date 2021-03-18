@@ -587,10 +587,12 @@ void pybind_gui_classes(py::module &m) {
                    "functionality")
             .export_values();
 
-    py::class_<Widget::Constraints> constraints(widget, "Constraints", "Constraints object for Widget.calc_preferred_size()");
+    py::class_<Widget::Constraints> constraints(
+            widget, "Constraints",
+            "Constraints object for Widget.calc_preferred_size()");
     constraints.def(py::init<>())
-               .def_readwrite("width", &Widget::Constraints::width)
-               .def_readwrite("height", &Widget::Constraints::height);
+            .def_readwrite("width", &Widget::Constraints::width)
+            .def_readwrite("height", &Widget::Constraints::height);
 
     widget.def(py::init<>())
             .def("__repr__",

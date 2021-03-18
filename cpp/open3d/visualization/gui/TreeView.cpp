@@ -73,8 +73,8 @@ std::shared_ptr<Label> CheckableTextTreeCell::GetLabel() {
     return impl_->label_;
 }
 
-Size CheckableTextTreeCell::CalcPreferredSize(const Theme& theme,
-                                          const Constraints& constraints) const {
+Size CheckableTextTreeCell::CalcPreferredSize(
+        const Theme &theme, const Constraints &constraints) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme, constraints);
     auto label_pref = impl_->label_->CalcPreferredSize(theme, constraints);
     return Size(check_pref.width + label_pref.width,
@@ -83,7 +83,8 @@ Size CheckableTextTreeCell::CalcPreferredSize(const Theme& theme,
 
 void CheckableTextTreeCell::Layout(const Theme &theme) {
     auto &frame = GetFrame();
-    auto check_width = impl_->checkbox_->CalcPreferredSize(theme, Constraints()).width;
+    auto check_width =
+            impl_->checkbox_->CalcPreferredSize(theme, Constraints()).width;
     impl_->checkbox_->SetFrame(
             Rect(frame.x, frame.y, check_width, frame.height));
     auto x = impl_->checkbox_->GetFrame().GetRight();
@@ -130,8 +131,8 @@ std::shared_ptr<Label> LUTTreeCell::GetLabel() { return impl_->label_; }
 
 std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() { return impl_->color_; }
 
-Size LUTTreeCell::CalcPreferredSize(const Theme& theme,
-                                    const Constraints& constraints) const {
+Size LUTTreeCell::CalcPreferredSize(const Theme &theme,
+                                    const Constraints &constraints) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme, constraints);
     auto label_pref = impl_->label_->CalcPreferredSize(theme, constraints);
     auto color_pref = impl_->color_->CalcPreferredSize(theme, constraints);
@@ -143,7 +144,8 @@ Size LUTTreeCell::CalcPreferredSize(const Theme& theme,
 void LUTTreeCell::Layout(const Theme &theme) {
     auto em = theme.font_size;
     auto &frame = GetFrame();
-    auto check_width = impl_->checkbox_->CalcPreferredSize(theme, Constraints()).width;
+    auto check_width =
+            impl_->checkbox_->CalcPreferredSize(theme, Constraints()).width;
     auto color_width =
             int(std::ceil(impl_->color_width_percent * float(frame.width)));
     auto min_color_width = 8 * theme.font_size;
@@ -194,8 +196,8 @@ std::shared_ptr<ColorEdit> ColormapTreeCell::GetColorEdit() {
     return impl_->color_;
 }
 
-Size ColormapTreeCell::CalcPreferredSize(const Theme& theme,
-                                 const Constraints& constraints) const {
+Size ColormapTreeCell::CalcPreferredSize(const Theme &theme,
+                                         const Constraints &constraints) const {
     auto number_pref = impl_->value_->CalcPreferredSize(theme, constraints);
     auto color_pref = impl_->color_->CalcPreferredSize(theme, constraints);
     return Size(number_pref.width + color_pref.width,
@@ -363,8 +365,8 @@ void TreeView::SetOnSelectionChanged(
     impl_->on_selection_changed_ = on_selection_changed;
 }
 
-Size TreeView::CalcPreferredSize(const Theme& theme,
-                                 const Constraints& constraints) const {
+Size TreeView::CalcPreferredSize(const Theme &theme,
+                                 const Constraints &constraints) const {
     return Size(constraints.width, Widget::DIM_GROW);
 }
 
@@ -408,8 +410,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     std::function<void(Impl::Item &)> DrawItem;
     DrawItem = [&DrawItem, this, &frame, &context, &new_selection,
                 &result](Impl::Item &item) {
-        int height = item.cell->CalcPreferredSize(context.theme,
-                                                  Constraints()).height;
+        int height = item.cell->CalcPreferredSize(context.theme, Constraints())
+                             .height;
 
         // ImGUI's tree doesn't seem to support selected items,
         // so we have to draw our own selection.

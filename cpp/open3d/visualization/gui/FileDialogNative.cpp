@@ -69,7 +69,7 @@ void FileDialog::SetOnDone(std::function<void(const char *)> on_done) {
 }
 
 Size FileDialog::CalcPreferredSize(const Theme &theme,
-                                   const Constraints& constraints) const {
+                                   const Constraints &constraints) const {
     return Size(0, 0);
 }
 

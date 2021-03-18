@@ -135,8 +135,8 @@ Size NumberEdit::CalcPreferredSize(const Theme& theme,
     return Size(width, height);
 }
 
-Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
-    auto &frame = GetFrame();
+Widget::DrawResult NumberEdit::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
     ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,

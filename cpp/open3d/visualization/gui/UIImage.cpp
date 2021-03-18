@@ -149,7 +149,9 @@ UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
 Size UIImage::CalcPreferredSize(const Theme& theme,
                                 const Widget::Constraints& constraints) const {
     if (impl_->image_width_ != 0.0f && impl_->image_height_ != 0.0f) {
-        if (impl_->scaling_ == Scaling::ASPECT && (constraints.width < impl_->image_width_ || constraints.height < impl_->image_height_)) {
+        if (impl_->scaling_ == Scaling::ASPECT &&
+            (constraints.width < impl_->image_width_ ||
+             constraints.height < impl_->image_height_)) {
             float aspect = impl_->image_width_ / impl_->image_height_;
             float w_at_height = float(constraints.height) * aspect;
             float h_at_width = float(constraints.width) / aspect;

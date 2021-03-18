@@ -91,8 +91,8 @@ Size Label::CalcPreferredSize(const Theme& theme,
         ImVec2 size(0, 0);
         size_t line_start = 0;
         auto line_end = impl_->text_.find('\n');
-        float wrap_width = float(std::min(constraints.width,
-                                          PREFERRED_WRAP_WIDTH_EM * em));
+        float wrap_width = float(
+                std::min(constraints.width, PREFERRED_WRAP_WIDTH_EM * em));
         float spacing = ImGui::GetTextLineHeightWithSpacing() -
                         ImGui::GetTextLineHeight();
         do {

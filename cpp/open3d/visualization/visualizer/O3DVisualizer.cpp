@@ -100,7 +100,7 @@ public:
     void SetWidth(int width) { width_ = width; }
 
     Size CalcPreferredSize(const Theme &theme,
-                           const Constraints& constraints) const override {
+                           const Constraints &constraints) const override {
         auto frames = CalcFrames(theme, constraints);
         if (!frames.empty()) {
             // Add spacing on the bottom to look like the start of a new row
@@ -126,7 +126,7 @@ private:
     int width_ = 10000;
 
     std::vector<Rect> CalcFrames(const Theme &theme,
-                                 const Widget::Constraints& constraints) const {
+                                 const Widget::Constraints &constraints) const {
         auto &f = GetFrame();
         std::vector<Rect> frames;
         int x = f.x;
@@ -164,7 +164,7 @@ public:
     }
 
     Size CalcPreferredSize(const Theme &theme,
-                           const Constraints& constraints) const override {
+                           const Constraints &constraints) const override {
         if (IsVisible()) {
             return Super::CalcPreferredSize(theme, constraints);
         } else {
@@ -232,7 +232,7 @@ public:
     std::shared_ptr<Label> GetName() { return name_; }
 
     Size CalcPreferredSize(const Theme &theme,
-                           const Constraints& constraints) const override {
+                           const Constraints &constraints) const override {
         auto check_pref = checkbox_->CalcPreferredSize(theme, constraints);
         auto name_pref = name_->CalcPreferredSize(theme, constraints);
         int w = check_pref.width + name_pref.width + GroupWidth(theme) +
@@ -242,7 +242,8 @@ public:
 
     void Layout(const Theme &theme) override {
         auto &frame = GetFrame();
-        auto check_width = checkbox_->CalcPreferredSize(theme, Constraints()).width;
+        auto check_width =
+                checkbox_->CalcPreferredSize(theme, Constraints()).width;
         checkbox_->SetFrame(Rect(frame.x, frame.y, check_width, frame.height));
         auto group_width = GroupWidth(theme);
         auto time_width = TimeWidth(theme);

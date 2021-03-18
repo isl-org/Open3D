@@ -607,8 +607,7 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     w = std::min(w, int(std::round(0.8 * content_rect.width)));
     h = std::min(h, int(std::round(0.8 * content_rect.height)));
     dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
-                            (content_rect.height - h) / 2,
-                            w, h));
+                            (content_rect.height - h) / 2, w, h));
     dlg->Layout(GetTheme());
 }
 

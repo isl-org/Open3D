@@ -105,7 +105,8 @@ std::vector<std::vector<std::shared_ptr<Widget>>> CalcColumns(
 
 std::vector<Size> CalcColumnSizes(
         const std::vector<std::vector<std::shared_ptr<Widget>>>& columns,
-        const Theme& theme, const Widget::Constraints& constraints) {
+        const Theme& theme,
+        const Widget::Constraints& constraints) {
     std::vector<Size> sizes;
     sizes.reserve(columns.size());
 
@@ -201,8 +202,8 @@ Size Layout1D::Fixed::CalcPreferredSize(const Theme& theme,
     return {size_, 0};
 }
 
-Size Layout1D::Stretch::CalcPreferredSize(const Theme& theme,
-                                          const Constraints& constraints) const {
+Size Layout1D::Stretch::CalcPreferredSize(
+        const Theme& theme, const Constraints& constraints) const {
     return Size(0, 0);
 }
 
@@ -256,13 +257,15 @@ void Layout1D::Layout(const Theme& theme) {
     auto frame = GetFrame();
     Constraints constraints;
     if (impl_->dir_ == VERT) {
-        constraints.width = frame.width - impl_->margins_.left - impl_->margins_.right;
+        constraints.width =
+                frame.width - impl_->margins_.left - impl_->margins_.right;
     } else {
-        constraints.height = frame.height - impl_->margins_.top - impl_->margins_.bottom;
+        constraints.height =
+                frame.height - impl_->margins_.top - impl_->margins_.bottom;
     }
     auto& children = GetChildren();
-    std::vector<int> major = CalcMajor(theme, constraints, impl_->dir_,
-                                       children, nullptr);
+    std::vector<int> major =
+            CalcMajor(theme, constraints, impl_->dir_, children, nullptr);
     int total = 0, num_stretch = 0, num_grow = 0;
     for (auto& mj : major) {
         total += mj;
