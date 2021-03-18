@@ -101,8 +101,10 @@ public:
         if (!capturer) {
             return nullptr;
         }
-        return new rtc::RefCountedObject<ImageCapturerTrackSource>(
-                std::move(capturer));
+        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+                new rtc::RefCountedObject<ImageCapturerTrackSource>(
+                        std::move(capturer));
+        return video_source;
     }
 
 protected:
