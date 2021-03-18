@@ -62,6 +62,16 @@ class VideoWindow:
         self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d)
 
+        lit = rendering.Material()
+        lit.shader = "defaultLit"
+        tet = o3d.geometry.TriangleMesh.create_tetrahedron()
+        tet.compute_vertex_normals()
+        tet.paint_uniform_color([0.5, 0.75, 1.0])
+        self.widget3d.scene.add_geometry("tetrahedron", tet, lit)
+        bounds = self.widget3d.scene.bounding_box
+        self.widget3d.setup_camera(60.0, bounds, bounds.get_center())
+        self.widget3d.scene.show_axes(True)
+
         em = self.window.theme.font_size
         margin = 0.5 * em
         self.panel = gui.Vert(0.5 * em, gui.Margins(margin))
