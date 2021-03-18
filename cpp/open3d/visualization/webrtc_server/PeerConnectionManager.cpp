@@ -857,8 +857,7 @@ PeerConnectionManager::CreateVideoSource(
         video = config_[video]["video"].asString();
     }
 
-    return CapturerFactory::CreateVideoSource(video, opts, publish_filter_,
-                                              peer_connection_factory_);
+    return CapturerFactory::CreateVideoSource(video, opts);
 }
 
 const std::string PeerConnectionManager::SanitizeLabel(

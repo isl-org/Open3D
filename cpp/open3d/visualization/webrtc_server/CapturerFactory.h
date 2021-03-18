@@ -74,10 +74,7 @@ class CapturerFactory {
 public:
     static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
     CreateVideoSource(const std::string& video_url,
-                      const std::map<std::string, std::string>& opts,
-                      const std::regex& publish_filter,
-                      rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-                              peer_connection_factory) {
+                      const std::map<std::string, std::string>& opts) {
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
         if (video_url.find("image://") == 0) {
             video_source = ImageCapturerTrackSource::Create(video_url, opts);
