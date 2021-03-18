@@ -107,6 +107,10 @@ public:
         return video_source;
     }
 
+    void OnFrame(const std::shared_ptr<core::Tensor>& frame) final override {
+        utility::LogInfo("ImageCapturerTrackSource::OnFrame called");
+    }
+
 protected:
     explicit ImageCapturerTrackSource(std::unique_ptr<ImageCapturer> capturer)
         : BitmapTrackSource(/*remote=*/false), capturer_(std::move(capturer)) {}
