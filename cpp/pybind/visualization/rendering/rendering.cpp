@@ -444,7 +444,12 @@ void pybind_rendering_classes(py::module &m) {
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_image");
+                 "Application.render_to_image")
+            .def("render_to_depth_image", &Scene::RenderToDepthImage,
+                 "Renders the scene to a depth image. This can only be used in "
+                 "GUI app. To render without a window, use "
+                 "Application.render_to_depth_image. Pixels range from "
+                 "0.0 (near plane) to 1.0 (far plane)");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);

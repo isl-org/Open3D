@@ -1786,6 +1786,12 @@ void FilamentScene::RenderToImage(
     renderer_.RenderToImage(view, this, callback);
 }
 
+void FilamentScene::RenderToDepthImage(
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto view = views_.begin()->second.view.get();
+    renderer_.RenderToDepthImage(view, this, callback);
+}
+
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(
         const std::string& object_name, bool warn_if_not_found) {
     std::vector<RenderableGeometry*> geoms;
