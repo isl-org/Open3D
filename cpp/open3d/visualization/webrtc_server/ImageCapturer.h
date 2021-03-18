@@ -73,15 +73,8 @@ public:
     void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
 
 protected:
-    bool Init();
-    void CaptureThread();
-    bool Start();
-    void Stop();
-    bool IsRunning();
-    std::thread capture_thread_;
     int width_;
     int height_;
-    bool is_running_;
     rtc::VideoBroadcaster broadcaster_;
 };
 

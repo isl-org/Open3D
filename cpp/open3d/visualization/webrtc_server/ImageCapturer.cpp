@@ -52,16 +52,12 @@ ImageCapturer::ImageCapturer(const std::string& url_,
                              const std::map<std::string, std::string>& opts)
     : ImageCapturer(opts) {}
 
-ImageCapturer::~ImageCapturer() { this->Stop(); }
+ImageCapturer::~ImageCapturer() {}
 
 ImageCapturer* ImageCapturer::Create(
         const std::string& url,
         const std::map<std::string, std::string>& opts) {
     std::unique_ptr<ImageCapturer> image_capturer(new ImageCapturer(url, opts));
-    if (!image_capturer->Init()) {
-        RTC_LOG(LS_WARNING) << "Failed to create ImageCapturer";
-        return nullptr;
-    }
     return image_capturer.release();
 }
 
@@ -74,31 +70,6 @@ ImageCapturer::ImageCapturer(const std::map<std::string, std::string>& opts)
         height_ = std::stoi(opts.at("height"));
     }
 }
-bool ImageCapturer::Init() { return this->Start(); }
-
-void ImageCapturer::CaptureThread() {
-    RTC_LOG(INFO) << "ImageCapturer:Run start";
-    // while (IsRunning()) {
-    // Read() will block until a new frame is read.
-    // OnCaptureResult(GlobalBuffer::GetInstance().Read());
-    // }
-    RTC_LOG(INFO) << "ImageCapturer:Run exit";
-}
-
-bool ImageCapturer::Start() {
-    utility::LogInfo("ImageCapturer::Start()");
-    is_running_ = true;
-    capture_thread_ = std::thread(&ImageCapturer::CaptureThread, this);
-    return true;
-}
-
-void ImageCapturer::Stop() {
-    utility::LogInfo("ImageCapturer::Stop()");
-    is_running_ = false;
-    capture_thread_.join();
-}
-
-bool ImageCapturer::IsRunning() { return is_running_; }
 
 void ImageCapturer::OnCaptureResult(
         const std::shared_ptr<core::Tensor>& frame) {
