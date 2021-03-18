@@ -63,7 +63,6 @@ public:
 
     ImageCapturer(const std::map<std::string, std::string>& opts);
 
-    // Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
     virtual void AddOrUpdateSink(
             rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
             const rtc::VideoSinkWants& wants) override;

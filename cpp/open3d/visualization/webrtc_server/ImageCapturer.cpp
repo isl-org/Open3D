@@ -100,9 +100,6 @@ void ImageCapturer::Stop() {
 
 bool ImageCapturer::IsRunning() { return is_running_; }
 
-// Overide webrtc::DesktopCapturer::Callback.
-// See: WindowCapturerX11::CaptureFrame
-// build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
 void ImageCapturer::OnCaptureResult(
         const std::shared_ptr<core::Tensor>& frame) {
     utility::LogInfo("ImageCapturer::OnCaptureResult: New frame");
