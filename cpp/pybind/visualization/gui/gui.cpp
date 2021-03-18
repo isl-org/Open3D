@@ -611,6 +611,9 @@ void pybind_gui_classes(py::module &m) {
                           "True if widget is visible, False otherwise")
             .def_property("enabled", &Widget::IsEnabled, &Widget::SetEnabled,
                           "True if widget is enabled, False if disabled")
+            .def_property("background_color", &Widget::GetBackgroundColor,
+                          &Widget::SetBackgroundColor,
+                          "Background color of the widget")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
                  "Returns the preferred size of the widget. This is intended "
                  "to be called only during layout, although it will also work "
