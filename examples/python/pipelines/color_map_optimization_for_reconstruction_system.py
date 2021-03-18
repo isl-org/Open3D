@@ -8,9 +8,8 @@ import argparse
 import os
 import sys
 import json
-from trajectory_io import *
 import open3d as o3d
-
+import copy
 sys.path.append('../reconstruction_system')
 sys.path.append("../utility")
 from initialize_config import *
@@ -107,9 +106,12 @@ def main(config, keys):
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    mesh_optimized = o3d.pipelines.color_map.run_rigid_optimizer(
-        mesh, rgbd_images, camera,
-        o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
+    mesh_optimized = copy.deepcopy(mesh)
+    option = o3d.pipelines.color_map.ColorMapOptimizationOption()
+    option.maximum_iteration = 0
+    # `color_map_optimization` returns None. It mutates given mesh.
+    o3d.pipelines.color_map.color_map_optimization(mesh_optimized, rgbd_images,
+                                                   camera, option)
     o3d.visualization.draw_geometries([mesh_optimized])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
@@ -120,10 +122,13 @@ def main(config, keys):
     # Q.-Y. Zhou and V. Koltun,
     # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     # SIGGRAPH 2014
-    mesh_optimized = o3d.pipelines.color_map.run_non_rigid_optimizer(
-        mesh, rgbd_images, camera,
-        o3d.pipelines.color_map.NonRigidOptimizerOption(
-            maximum_iteration=300, maximum_allowable_depth=config["max_depth"]))
+    mesh_optimized = np.copy(mesh)
+    option = o3d.pipelines.color_map.ColorMapOptimizationOption()
+    option.maximum_iteration = 300
+    option.maximum_allowable_depth = config["max_depth"]
+    o3d.pipelines.color_map.color_map_optimization(mesh_optimized, rgbd_images,
+                                                   camera, option)
+
     o3d.visualization.draw_geometries([mesh_optimized])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
