@@ -101,7 +101,9 @@ void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
             peer_connection_manager_->GetVideoTrackSource("imageOpen3D");
 
     if (video_track_source != nullptr) {
-        // GlobalBuffer::GetInstance().Write(im);
+        // TODO: this OnFrame(im); is a blocking call. Do we need to handle
+        // OnFrame in a separte thread? e.g. attach to a queue of frames, even
+        // if the queue size is just 1.
         video_track_source->OnFrame(im);
     }
 }
