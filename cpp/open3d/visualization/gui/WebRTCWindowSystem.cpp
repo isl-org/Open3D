@@ -65,7 +65,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
     //
     // O3DVisualizer is a gui::Window.
 
-    // Initialize WebRTC server.
+    // Initialize WebRTC server. Not starting yet.
     impl_->webrtc_server_ = std::make_shared<webrtc_server::WebRTCServer>();
 
     // Set draw() callback.
