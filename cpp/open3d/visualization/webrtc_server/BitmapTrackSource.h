@@ -46,11 +46,16 @@
 #include <api/video/video_source_interface.h>
 #include <media/base/media_channel.h>
 
+#include "open3d/core/Tensor.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-class BitmapTrackSourceInterface : public webrtc::VideoTrackSourceInterface {};
+class BitmapTrackSourceInterface : public webrtc::VideoTrackSourceInterface {
+public:
+    virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) = 0;
+};
 
 // BitmapTrackSource is a convenience base class for implementations of
 // VideoTrackSourceInterface.
@@ -82,6 +87,11 @@ public:
     void RemoveEncodedSink(
             rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink)
             override {}
+
+    // By default it does nothing (e.g. for VideoFilter).
+    // ImageCapturerTrackSource overrides this and this will be called by the
+    // BitmapWindowSystem when there's a new frame.
+    virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) override {}
 
 protected:
     virtual rtc::VideoSourceInterface<webrtc::VideoFrame>* source() = 0;

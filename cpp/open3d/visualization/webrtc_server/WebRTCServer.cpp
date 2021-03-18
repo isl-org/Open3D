@@ -99,8 +99,10 @@ void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
     // connected.
     rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
             peer_connection_manager_->GetVideoTrackSource("imageOpen3D");
+
     if (video_track_source != nullptr) {
         GlobalBuffer::GetInstance().Write(im);
+        video_track_source->OnFrame(im);
     }
 }
 
