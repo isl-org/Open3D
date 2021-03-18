@@ -36,6 +36,8 @@
 
 #include <pc/video_track_source.h>
 
+#include "open3d/visualization/webrtc_server/CustomVideoTrackSourceInterface.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {

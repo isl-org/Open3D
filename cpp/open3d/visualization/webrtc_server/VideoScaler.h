@@ -37,6 +37,8 @@
 #include <api/media_stream_interface.h>
 #include <media/base/video_broadcaster.h>
 
+#include "open3d/visualization/webrtc_server/CustomVideoTrackSourceInterface.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {

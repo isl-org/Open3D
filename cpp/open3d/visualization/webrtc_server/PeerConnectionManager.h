@@ -44,6 +44,7 @@
 #include <string>
 #include <thread>
 
+#include "open3d/visualization/webrtc_server/CustomVideoTrackSourceInterface.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
