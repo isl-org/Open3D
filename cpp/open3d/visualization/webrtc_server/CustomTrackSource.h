@@ -32,8 +32,7 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-class CustomVideoTrackSourceInterface
-    : public webrtc::VideoTrackSourceInterface {};
+class CustomTrackSource : public webrtc::VideoTrackSourceInterface {};
 
 }  // namespace webrtc_server
 

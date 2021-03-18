@@ -44,7 +44,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/webrtc_server/CustomVideoTrackSourceInterface.h"
+#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
 #include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 
 namespace open3d {

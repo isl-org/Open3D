@@ -49,7 +49,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/visualization/gui/Events.h"
-#include "open3d/visualization/webrtc_server/CustomVideoTrackSourceInterface.h"
+#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
 #include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"

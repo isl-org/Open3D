@@ -49,7 +49,7 @@
 #include <iostream>
 #include <utility>
 
-#include "open3d/visualization/webrtc_server/CustomVideoTrackSourceInterface.h"
+#include "open3d/visualization/webrtc_server/CustomTrackSource.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/VideoFilter.h"
 #include "open3d/visualization/webrtc_server/VideoScaler.h"
