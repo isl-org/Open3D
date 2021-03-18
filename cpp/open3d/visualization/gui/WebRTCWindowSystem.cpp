@@ -50,7 +50,6 @@ WebRTCWindowSystem::WebRTCWindowSystem()
     : BitmapWindowSystem(
 #if !defined(__APPLE__) && !defined(_WIN32) && !defined(_WIN64)
               BitmapWindowSystem::Rendering::HEADLESS
-
 #else
               BitmapWindowSystem::Rendering::NORMAL
 #endif
