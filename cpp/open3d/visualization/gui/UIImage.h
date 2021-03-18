@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
@@ -68,7 +69,8 @@ public:
     void SetScaling(Scaling scaling);
     Scaling GetScaling() const;
 
-    Size CalcPreferredSize(const Theme& theme) const;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Widget::Constraints& constraints) const;
 
     struct DrawParams {
         // Default values are to make GCC happy and contented,

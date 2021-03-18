@@ -72,10 +72,11 @@ void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
 
-Size TabControl::CalcPreferredSize(const Theme& theme) const {
+Size TabControl::CalcPreferredSize(const Theme& theme,
+                                   const Constraints& constraints) const {
     int width = 0, height = 0;
     for (auto& child : GetChildren()) {
-        auto size = child->CalcPreferredSize(theme);
+        auto size = child->CalcPreferredSize(theme, constraints);
         width = std::max(width, size.width);
         height = std::max(height, size.height);
     }

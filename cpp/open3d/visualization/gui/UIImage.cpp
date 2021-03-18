@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ImageLabel.h"
+#include "open3d/visualization/gui/UIImage.h"
 
 // 4293:  Filament's utils/algorithm.h utils::details::clz() does strange
 //        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
@@ -47,8 +47,6 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/io/ImageIO.h"
-#include "open3d/visualization/gui/ImageLabel.h"
-#include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -148,10 +146,22 @@ void UIImage::SetScaling(Scaling scaling) { impl_->scaling_ = scaling; }
 
 UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
 
-Size UIImage::CalcPreferredSize(const Theme& theme) const {
+Size UIImage::CalcPreferredSize(const Theme& theme,
+                                const Widget::Constraints& constraints) const {
     if (impl_->image_width_ != 0.0f && impl_->image_height_ != 0.0f) {
-        return Size(int(std::round(impl_->image_width_)),
-                    int(std::round(impl_->image_height_)));
+        if (impl_->scaling_ == Scaling::ASPECT && (constraints.width < impl_->image_width_ || constraints.height < impl_->image_height_)) {
+            float aspect = impl_->image_width_ / impl_->image_height_;
+            float w_at_height = float(constraints.height) * aspect;
+            float h_at_width = float(constraints.width) / aspect;
+            if (w_at_height <= constraints.width) {
+                return Size(int(std::round(w_at_height)), constraints.height);
+            } else {
+                return Size(constraints.width, int(std::round(h_at_width)));
+            }
+        } else {
+            return Size(int(std::round(impl_->image_width_)),
+                        int(std::round(impl_->image_height_)));
+        }
     } else {
         return Size(0, 0);
     }

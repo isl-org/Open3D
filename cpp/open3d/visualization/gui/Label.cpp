@@ -75,13 +75,15 @@ Color Label::GetTextColor() const { return impl_->color_; }
 
 void Label::SetTextColor(const Color& color) { impl_->color_ = color; }
 
-Size Label::CalcPreferredSize(const Theme& theme) const {
+Size Label::CalcPreferredSize(const Theme& theme,
+                              const Constraints& constraints) const {
     auto em = theme.font_size;
     auto padding = ImGui::GetStyle().FramePadding;
     auto* font = ImGui::GetFont();
 
     if (impl_->is_single_line) {
-        auto size = font->CalcTextSizeA(float(theme.font_size), 10000, 0.0,
+        auto size = font->CalcTextSizeA(float(theme.font_size),
+                                        float(constraints.width), 0.0,
                                         impl_->text_.c_str());
         return Size(int(std::ceil(size.x + 2.0f * padding.x)),
                     int(std::ceil(em + 2.0f * padding.y)));
@@ -89,7 +91,8 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
         ImVec2 size(0, 0);
         size_t line_start = 0;
         auto line_end = impl_->text_.find('\n');
-        float wrap_width = float(PREFERRED_WRAP_WIDTH_EM * em);
+        float wrap_width = float(std::min(constraints.width,
+                                          PREFERRED_WRAP_WIDTH_EM * em));
         float spacing = ImGui::GetTextLineHeightWithSpacing() -
                         ImGui::GetTextLineHeight();
         do {

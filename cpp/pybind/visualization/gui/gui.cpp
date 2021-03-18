@@ -37,7 +37,7 @@
 #include "open3d/visualization/gui/Dialog.h"
 #include "open3d/visualization/gui/FileDialog.h"
 #include "open3d/visualization/gui/Gui.h"
-#include "open3d/visualization/gui/ImageLabel.h"
+#include "open3d/visualization/gui/ImageWidget.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/Layout.h"
@@ -52,13 +52,11 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
-#include "open3d/visualization/gui/VideoWidget.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
-#include "open3d/visualization/rendering/VideoProvider.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
@@ -86,36 +84,6 @@ public:
 
 private:
     py::gil_scoped_release *unlocker_;
-};
-
-class PyVideoProvider : public rendering::VideoProvider {
-public:
-    PyVideoProvider(std::function<bool(double)> set_time,
-                    std::function<std::shared_ptr<geometry::Image>()> get_frame,
-                    std::function<double()> get_run_time)
-        : set_time_(set_time),
-          get_frame_(get_frame),
-          get_run_time_(get_run_time) {}
-
-    UpdateResult SetTime(double t) override {
-        if (set_time_(t)) {
-            return UpdateResult::NEEDS_REDRAW;
-        }
-        return UpdateResult::NONE;
-    }
-
-    /// Returns the frame at the current time
-    std::shared_ptr<geometry::Image> GetFrame() const override {
-        return get_frame_();
-    }
-
-    /// Returns the run time of the video, specified in seconds
-    double GetRunTime() const override { return get_run_time_(); }
-
-private:
-    std::function<bool(double)> set_time_;
-    std::function<std::shared_ptr<geometry::Image>()> get_frame_;
-    std::function<double()> get_run_time_;
 };
 
 class PyWindow : public Window {
@@ -619,6 +587,11 @@ void pybind_gui_classes(py::module &m) {
                    "functionality")
             .export_values();
 
+    py::class_<Widget::Constraints> constraints(widget, "Constraints", "Constraints object for Widget.calc_preferred_size()");
+    constraints.def(py::init<>())
+               .def_readwrite("width", &Widget::Constraints::width)
+               .def_readwrite("height", &Widget::Constraints::height);
+
     widget.def(py::init<>())
             .def("__repr__",
                  [](const Widget &w) {
@@ -786,25 +759,64 @@ void pybind_gui_classes(py::module &m) {
                  "Arguments are the selected text and selected index, "
                  "respectively");
 
-    // ---- ImageLabel ----
-    py::class_<ImageLabel, UnownedPointer<ImageLabel>, Widget> imagelabel(
-            m, "ImageLabel", "Displays a bitmap");
-    imagelabel
-            .def(py::init<>(
-                         [](const char *path) { return new ImageLabel(path); }),
-                 "Creates an ImageLabel from the image at the specified path")
+    // ---- ImageWidget ----
+    py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
+            m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
+
+    py::enum_<UIImage::Scaling> uiimage_scaling(uiimage, "Scaling",
+                                                py::arithmetic());
+    uiimage_scaling.value("NONE", UIImage::Scaling::NONE)
+            .value("ANY", UIImage::Scaling::ANY)
+            .value("ASPECT", UIImage::Scaling::ASPECT);
+
+    uiimage.def(py::init<>([](const char *path) { return new UIImage(path); }),
+                "Creates a UIImage from the image at the specified path")
             .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
-                     return new ImageLabel(image);
+                     return new UIImage(image);
                  }),
-                 "Creates an ImageLabel from the provided image")
-            .def("__repr__", [](const ImageLabel &il) {
-                std::stringstream s;
-                s << "ImageLabel (" << il.GetFrame().x << ", "
-                  << il.GetFrame().y << "), " << il.GetFrame().width << " x "
-                  << il.GetFrame().height;
-                return s.str();
-            });
-    // TODO: add the other functions and UIImage?
+                 "Creates a UIImage from the provided image")
+            .def("__repr__", [](const UIImage &il) { return "UIImage"; })
+            .def_property("scaling", &UIImage::GetScaling, &UIImage::SetScaling,
+                          "Sets how the image is scaled:\n"
+                          "gui.UIImage.Scaling.NONE: no scaling\n"
+                          "gui.UIImage.Scaling.ANY: scaled to fit\n"
+                          "gui.UIImage.Scaling.ASPECT: scaled to fit but "
+                          "keeping the image's aspect ratio");
+
+    py::class_<ImageWidget, UnownedPointer<ImageWidget>, Widget> imagewidget(
+            m, "ImageWidget", "Displays a bitmap");
+    imagewidget
+            .def(py::init<>([](const char *path) {
+                     return new ImageWidget(path);
+                 }),
+                 "Creates an ImageWidget from the image at the specified path")
+            .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
+                     return new ImageWidget(image);
+                 }),
+                 "Creates an ImageWidget from the provided image")
+            .def("__repr__",
+                 [](const ImageWidget &il) {
+                     std::stringstream s;
+                     s << "ImageLabel (" << il.GetFrame().x << ", "
+                       << il.GetFrame().y << "), " << il.GetFrame().width
+                       << " x " << il.GetFrame().height;
+                     return s.str();
+                 })
+            .def("update_image", &ImageWidget::UpdateImage,
+                 "Mostly a convenience function for ui_image.update_image(). "
+                 "If 'image' is the same size as the current image, will "
+                 "update the texture with the contents of 'image'. This is "
+                 "the fastest path for setting an image, and is recommended "
+                 "if you are displaying video. If 'image' is a different size, "
+                 "it will allocate a new texture, which is essentially the "
+                 "same as creating a new UIImage and calling SetUIImage(). "
+                 "This is the slow path, and may eventually exhaust internal "
+                 "texture resources.")
+            .def_property("ui_image", &ImageWidget::GetUIImage,
+                          &ImageWidget::SetUIImage,
+                          "Replaces the texture with a new texture. This is "
+                          "not a fast path, and is not recommended for video "
+                          "as you will exhaust internal texture resources.");
 
     // ---- Label ----
     py::class_<Label, UnownedPointer<Label>, Widget> label(m, "Label",
@@ -1312,28 +1324,6 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_value_changed", &VectorEdit::SetOnValueChanged,
                  "Sets f([x, y, z]) which is called whenever the user "
                  "changes the value of a component");
-
-    // ---- VideoWidget ----
-    py::class_<VideoWidget, UnownedPointer<VideoWidget>, Widget> video(
-            m, "VideoWidget", "Displays video");
-    video.def(py::init<>([](std::function<bool(double)> set_time,
-                            std::function<std::shared_ptr<geometry::Image>()>
-                                    get_frame,
-                            std::function<double()> get_run_time) {
-                  auto video = std::make_shared<PyVideoProvider>(
-                          set_time, get_frame, get_run_time);
-                  return new VideoWidget(video);
-              }),
-              "Creates a VideoWidget: "
-              "VideoWidget(set_time, get_frame, get_run_time). "
-              "set_time: takes time in seconds as a double and returns True if "
-              "the frame has changed, False otherwise. get_frame: takes no "
-              "arguments, returns an open3d.geometry.Image of the current "
-              "frame. get_run_time: takes no arguments, returns the length of "
-              "the video in seconds as a double.")
-            .def_property("is_playing", &VideoWidget::GetIsPlaying,
-                          &VideoWidget::SetIsPlaying,
-                          "Gets/sets if the video is playing or paused");
 
     // ---- Margins ----
     py::class_<Margins, UnownedPointer<Margins>> margins(m, "Margins",

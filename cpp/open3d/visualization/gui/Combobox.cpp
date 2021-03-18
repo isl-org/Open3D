@@ -152,13 +152,15 @@ void Combobox::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size Combobox::CalcPreferredSize(const Theme& theme) const {
+Size Combobox::CalcPreferredSize(const Theme& theme,
+                                 const Constraints& constraints) const {
     auto button_width = ImGui::GetFrameHeight();  // button is square
     auto padding = ImGui::GetStyle().FramePadding;
     int width = 0;
     for (auto& item : impl_->items_) {
         auto size = ImGui::GetFont()->CalcTextSizeA(float(theme.font_size),
-                                                    10000, 10000, item.c_str());
+                                            float(constraints.width), 10000.0f,
+                                            item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
     return Size(width + int(std::round(button_width + 2.0 * padding.x)),

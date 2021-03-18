@@ -57,7 +57,8 @@ public:
 
     void SetOnValueChanged(std::function<void(double)> on_changed);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:

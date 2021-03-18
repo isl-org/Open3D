@@ -42,7 +42,8 @@ public:
     explicit Dialog(const char* title);
     virtual ~Dialog();
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
     DrawResult Draw(const DrawContext& context) override;
 

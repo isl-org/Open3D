@@ -91,7 +91,7 @@ public:
 
     TextureHandle AddTexture(const ResourceLoadRequest& request,
                              bool srgb = false) override;
-    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image> image,
                              bool srgb = false) override;
     bool UpdateTexture(TextureHandle texture,
                        const std::shared_ptr<geometry::Image> image,

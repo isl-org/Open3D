@@ -381,7 +381,7 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+        const std::shared_ptr<geometry::Image> image, bool srgb) {
     return resource_mgr_.CreateTexture(image, srgb);
 }
 

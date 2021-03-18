@@ -113,7 +113,7 @@ class ExampleWindow:
         collapse.add_child(combo)
 
         # Add a simple image
-        logo = gui.ImageLabel(basedir + "/icon-32.png")
+        logo = gui.ImageWidget(basedir + "/icon-32.png")
         collapse.add_child(logo)
 
         # Add a list of items

@@ -100,7 +100,7 @@
 #include "open3d/visualization/gui/Combobox.h"
 #include "open3d/visualization/gui/Dialog.h"
 #include "open3d/visualization/gui/Gui.h"
-#include "open3d/visualization/gui/ImageLabel.h"
+#include "open3d/visualization/gui/ImageWidget.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Menu.h"

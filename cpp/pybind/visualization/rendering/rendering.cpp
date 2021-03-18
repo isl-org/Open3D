@@ -93,11 +93,37 @@ void pybind_rendering_classes(py::module &m) {
     renderer.def("set_clear_color", &Renderer::SetClearColor,
                  "Sets the background color for the renderer, [r, g, b, a]. "
                  "Applies to everything being rendered, so it essentially acts "
-                 "as the background color of the window");
+                 "as the background color of the window")
+            .def("add_texture",
+                 (TextureHandle(Renderer::*)(
+                         const std::shared_ptr<geometry::Image>, bool)) &
+                         Renderer::AddTexture,
+                 "image"_a, "is_sRGB"_a = false,
+                 "Adds a texture: add_texture(geometry.Image, bool). The first "
+                 "parameter is the image, the second parameter is optional and "
+                 "is True if the image is in the sRGB colorspace and False "
+                 "otherwise")
+            .def("update_texture",
+                 (TextureHandle(Renderer::*)(
+                         const std::shared_ptr<geometry::Image>, bool)) &
+                         Renderer::UpdateTexture,
+                 "image"_a, "is_sRGB"_a = false,
+                 "Updates the contents of the texture to be the new image, or "
+                 "returns False and does nothing if the image is a different "
+                 "size. It is more efficient to call update_texture() rather "
+                 "than removing and adding a new texture, especially when "
+                 "changes happen frequently, such as when implmenting video. "
+                 "add_texture(geometry.Image, bool). The first parameter is "
+                 "the image, the second parameter is optional and is True "
+                 "if the image is in the sRGB colorspace and False otherwise")
+            .def("remove_texture", &Renderer::RemoveTexture,
+                 "Deletes the texture. This does not remove the texture from "
+                 "any existing materials or GUI widgets, and must be done "
+                 "prior to this call.");
 
     // It would be nice to have this inherit from Renderer, but the problem is
     // that Python needs to own this class and Python needs to not own Renderer,
-    // and pybind does not let us mix the two styls of ownership.
+    // and pybind does not let us mix the two styles of ownership.
     py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
             offscreen(m, "OffscreenRenderer",
                       "Renderer instance that can be used for rendering to an "

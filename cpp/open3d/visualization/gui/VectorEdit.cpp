@@ -70,7 +70,8 @@ void VectorEdit::SetOnValueChanged(
     impl_->on_changed_ = on_changed;
 }
 
-Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
+Size VectorEdit::CalcPreferredSize(const Theme& theme,
+                                   const Constraints& constraints) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
     return Size(Widget::DIM_GROW, int(std::ceil(em + 2.0f * padding.y)));

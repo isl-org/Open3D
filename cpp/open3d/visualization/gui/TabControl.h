@@ -43,7 +43,8 @@ public:
 
     void AddTab(const char* name, std::shared_ptr<Widget> panel);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
 
     DrawResult Draw(const DrawContext& context) override;

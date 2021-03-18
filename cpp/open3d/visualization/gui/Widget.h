@@ -91,7 +91,12 @@ public:
     virtual void SetEnabled(bool enabled);
 
     static constexpr int DIM_GROW = 10000;
-    virtual Size CalcPreferredSize(const Theme& theme) const;
+    struct Constraints {
+        int width = DIM_GROW;
+        int height = DIM_GROW;
+    };
+    virtual Size CalcPreferredSize(const Theme& theme,
+                                   const Constraints& constraints) const;
 
     virtual void Layout(const Theme& theme);
 

@@ -46,7 +46,8 @@ public:
     /// Returns the index of the selected child.
     int GetSelectedIndex() const;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
 
     void Layout(const Theme& theme) override;
 
