@@ -49,6 +49,12 @@ public:
     static rtc::scoped_refptr<ImageCapturerTrackSource> Create(
             const std::string& video_url,
             const std::map<std::string, std::string>& opts) {
+        // TODO: remove this check after standarizing the track names.
+        if (video_url.find("image://") != 0) {
+            utility::LogError(
+                    "ImageCapturerTrackSource::Create failed for video_url: {}",
+                    video_url);
+        }
         std::unique_ptr<ImageCapturer> capturer =
                 absl::WrapUnique(ImageCapturer::Create(video_url, opts));
         if (!capturer) {
@@ -70,22 +76,23 @@ private:
     std::unique_ptr<ImageCapturer> capturer_;
 };
 
-class CapturerFactory {
-public:
-    static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
-    CreateVideoSource(const std::string& video_url,
-                      const std::map<std::string, std::string>& opts) {
-        // TODO: remove this check later
-        if (video_url.find("image://") != 0) {
-            utility::LogError("CreateVideoSource failed for video_url: {}",
-                              video_url);
-        }
+// class CapturerFactory {
+// public:
+//     static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
+//     CreateVideoSource(const std::string& video_url,
+//                       const std::map<std::string, std::string>& opts) {
+//         // TODO: remove this check later
+//         if (video_url.find("image://") != 0) {
+//             utility::LogError("CreateVideoSource failed for video_url: {}",
+//                               video_url);
+//         }
 
-        // rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-        //         ImageCapturerTrackSource::Create(video_url, opts);
-        return ImageCapturerTrackSource::Create(video_url, opts);
-    }
-};
+//         // rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source
+//         =
+//         //         ImageCapturerTrackSource::Create(video_url, opts);
+//         return ImageCapturerTrackSource::Create(video_url, opts);
+//     }
+// };
 
 }  // namespace webrtc_server
 }  // namespace visualization

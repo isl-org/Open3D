@@ -50,6 +50,7 @@
 #include <utility>
 
 #include "open3d/visualization/webrtc_server/CapturerFactory.h"
+#include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/VideoFilter.h"
 #include "open3d/visualization/webrtc_server/VideoScaler.h"
 
@@ -857,7 +858,7 @@ PeerConnectionManager::CreateVideoSource(
         video = config_[video]["video"].asString();
     }
 
-    return CapturerFactory::CreateVideoSource(video, opts);
+    return ImageCapturerTrackSource::Create(video, opts);
 }
 
 const std::string PeerConnectionManager::SanitizeLabel(
