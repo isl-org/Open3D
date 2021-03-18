@@ -42,6 +42,7 @@ namespace visualization {
 namespace gui {
 
 struct WebRTCWindowSystem::Impl {
+    // TODO: can this be unique?
     std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
     std::thread webrtc_thread_;
 };
