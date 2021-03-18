@@ -62,21 +62,6 @@ public:
 
     ImageCapturer(const std::map<std::string, std::string>& opts);
 
-    bool Init();
-
-    void CaptureThread();
-
-    bool Start();
-
-    void Stop();
-
-    bool IsRunning();
-
-    // Overide webrtc::DesktopCapturer::Callback.
-    // See: WindowCapturerX11::CaptureFrame
-    // build/webrtc/src/ext_webrtc/src/modules/desktop_capture/linux/window_capturer_x11.cc
-    void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
-
     // Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
     virtual void AddOrUpdateSink(
             rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
@@ -86,6 +71,12 @@ public:
             rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
 protected:
+    bool Init();
+    void CaptureThread();
+    bool Start();
+    void Stop();
+    bool IsRunning();
+    void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
     std::thread capture_thread_;
     int width_;
     int height_;
