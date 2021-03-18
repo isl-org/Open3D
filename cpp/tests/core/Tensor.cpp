@@ -2820,6 +2820,7 @@ TEST_P(TensorPermuteDevices, RValueScalar) {
     EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
 
+    // Check with shape {1, 1}.
     t = core::Tensor::Init<uint8_t>({{20}}, device);
     t1 = core::Tensor::Init<uint8_t>({{10}}, device);
     t[0][0] = 10;
@@ -2827,6 +2828,7 @@ TEST_P(TensorPermuteDevices, RValueScalar) {
     EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
 
+    // Check with shape {1}.
     t = core::Tensor::Init<int32_t>({20}, device);
     t1 = core::Tensor::Init<int32_t>({-10}, device);
     t[0] = -10;
@@ -2834,6 +2836,7 @@ TEST_P(TensorPermuteDevices, RValueScalar) {
     EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<int32_t>(), t1.ToFlatVector<int32_t>());
 
+    // Check with shape {}.
     t = core::Tensor::Init<int32_t>(0, device);
     t1 = core::Tensor::Init<int32_t>(1000, device);
     t.AsRvalue() = 1000;
