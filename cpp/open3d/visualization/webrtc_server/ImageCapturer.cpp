@@ -78,10 +78,10 @@ bool ImageCapturer::Init() { return this->Start(); }
 
 void ImageCapturer::CaptureThread() {
     RTC_LOG(INFO) << "ImageCapturer:Run start";
-    while (IsRunning()) {
-        // Read() will block until a new frame is read.
-        OnCaptureResult(GlobalBuffer::GetInstance().Read());
-    }
+    // while (IsRunning()) {
+    // Read() will block until a new frame is read.
+    // OnCaptureResult(GlobalBuffer::GetInstance().Read());
+    // }
     RTC_LOG(INFO) << "ImageCapturer:Run exit";
 }
 

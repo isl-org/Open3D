@@ -71,13 +71,14 @@ public:
     virtual void RemoveSink(
             rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
+    void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
+
 protected:
     bool Init();
     void CaptureThread();
     bool Start();
     void Stop();
     bool IsRunning();
-    void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
     std::thread capture_thread_;
     int width_;
     int height_;
@@ -109,6 +110,7 @@ public:
 
     void OnFrame(const std::shared_ptr<core::Tensor>& frame) final override {
         utility::LogInfo("ImageCapturerTrackSource::OnFrame called");
+        capturer_->OnCaptureResult(frame);
     }
 
 protected:
