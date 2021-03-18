@@ -75,13 +75,14 @@ public:
     static rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
     CreateVideoSource(const std::string& video_url,
                       const std::map<std::string, std::string>& opts) {
-        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
-        if (video_url.find("image://") == 0) {
-            video_source = ImageCapturerTrackSource::Create(video_url, opts);
-        } else {
+        // TODO: remove this check later
+        if (video_url.find("image://") != 0) {
             utility::LogError("CreateVideoSource failed for video_url: {}",
                               video_url);
         }
+
+        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+                ImageCapturerTrackSource::Create(video_url, opts);
         return video_source;
     }
 };
