@@ -1156,7 +1156,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("is_on", &ToggleSwitch::GetIsOn, &ToggleSwitch::SetOn,
                           "True if is one, False otherwise")
             .def("set_on_clicked", &ToggleSwitch::SetOnClicked,
-                 "Calls passed function when the switch changes state");
+                 "Sets f(is_on) which is called when the switch changes "
+                 "state.");
 
     // ---- TreeView ----
     py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(

@@ -51,6 +51,9 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
+    /// Sets a function that will be called when the switch is clicked on to
+    /// change state. The boolean argument is true if the switch is now on
+    /// and false otherwise.
     void SetOnClicked(std::function<void(bool)> on_clicked);
 
 private:

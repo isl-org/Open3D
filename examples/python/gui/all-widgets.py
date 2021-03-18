@@ -272,9 +272,9 @@ class ExampleWindow:
 
     def _on_switch(self, is_on):
         if is_on:
-            print("Camera is would now be running")
+            print("Camera would now be running")
         else:
-            print("Camera is would now be off")
+            print("Camera would now be off")
 
     # This function is essentially the same as window.show_message_box(),
     # so for something this simple just use that, but it illustrates making a
