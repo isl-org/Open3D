@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Refrence: WebRTC src/pc/video_track_source.cc
+// Modified from: WebRTC src/pc/video_track_source.cc
 //
 // Copyright 2016 The WebRTC project authors. All Rights Reserved.
 //
