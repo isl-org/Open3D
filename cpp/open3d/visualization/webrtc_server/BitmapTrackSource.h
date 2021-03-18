@@ -47,6 +47,7 @@
 #include <media/base/media_channel.h>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace visualization {
@@ -91,7 +92,9 @@ public:
     // By default it does nothing (e.g. for VideoFilter).
     // ImageCapturerTrackSource overrides this and this will be called by the
     // BitmapWindowSystem when there's a new frame.
-    virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) override {}
+    virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) override {
+        utility::LogInfo("BitmapTrackSource::OnFrame called");
+    }
 
 protected:
     virtual rtc::VideoSourceInterface<webrtc::VideoFrame>* source() = 0;
