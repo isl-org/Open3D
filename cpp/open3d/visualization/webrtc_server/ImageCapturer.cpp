@@ -86,12 +86,14 @@ void ImageCapturer::CaptureThread() {
 }
 
 bool ImageCapturer::Start() {
+    utility::LogInfo("ImageCapturer::Start()");
     is_running_ = true;
     capture_thread_ = std::thread(&ImageCapturer::CaptureThread, this);
     return true;
 }
 
 void ImageCapturer::Stop() {
+    utility::LogInfo("ImageCapturer::Stop()");
     is_running_ = false;
     capture_thread_.join();
 }
