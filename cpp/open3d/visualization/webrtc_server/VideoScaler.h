@@ -46,9 +46,8 @@ namespace webrtc_server {
 class VideoScaler : public rtc::VideoSinkInterface<webrtc::VideoFrame>,
                     public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
-    VideoScaler(
-            rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source,
-            const std::map<std::string, std::string> &opts)
+    VideoScaler(rtc::scoped_refptr<CustomTrackSourceInterface> video_source,
+                const std::map<std::string, std::string> &opts)
         : video_source_(video_source),
           width_(0),
           height_(0),
@@ -198,7 +197,7 @@ public:
     int height() { return roi_height_; }
 
 private:
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
+    rtc::scoped_refptr<CustomTrackSourceInterface> video_source_;
     rtc::VideoBroadcaster broadcaster_;
 
     int width_;

@@ -43,10 +43,10 @@ namespace visualization {
 namespace webrtc_server {
 
 template <class T>
-class VideoFilter : public webrtc::VideoTrackSource {
+class VideoFilter : public CustomTrackSource {
 public:
     static rtc::scoped_refptr<VideoFilter> Create(
-            rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source,
+            rtc::scoped_refptr<CustomTrackSourceInterface> video_source,
             const std::map<std::string, std::string>& opts) {
         std::unique_ptr<T> source = absl::WrapUnique(new T(video_source, opts));
         if (!source) {
@@ -57,8 +57,7 @@ public:
 
 protected:
     explicit VideoFilter(std::unique_ptr<T> source)
-        : webrtc::VideoTrackSource(/*remote=*/false),
-          source_(std::move(source)) {}
+        : CustomTrackSource(/*remote=*/false), source_(std::move(source)) {}
 
     SourceState state() const override { return kLive; }
     bool GetStats(Stats* stats) override {

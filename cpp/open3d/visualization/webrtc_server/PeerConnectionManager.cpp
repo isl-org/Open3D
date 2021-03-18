@@ -760,7 +760,7 @@ const Json::Value PeerConnectionManager::GetPeerConnectionList() {
                             auto videoTrack = videoTracks.at(j);
                             Json::Value track;
                             track["kind"] = videoTrack->kind();
-                            webrtc::VideoTrackSourceInterface::Stats stats;
+                            CustomTrackSourceInterface::Stats stats;
                             if (videoTrack->GetSource()) {
                                 track["state"] =
                                         videoTrack->GetSource()->state();
@@ -847,7 +847,7 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
 }
 
 // Get the capturer from its URL.
-rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
+rtc::scoped_refptr<CustomTrackSourceInterface>
 PeerConnectionManager::CreateVideoSource(
         const std::string &video_url,
         const std::map<std::string, std::string> &opts) {
@@ -933,7 +933,7 @@ bool PeerConnectionManager::AddStreams(
 
     if (!existing_stream) {
         // Create a new stream and add to stream_map_;
-        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source(
+        rtc::scoped_refptr<CustomTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
@@ -951,16 +951,16 @@ bool PeerConnectionManager::AddStreams(
             if (!stream.get()) {
                 RTC_LOG(LS_ERROR) << "Cannot create stream";
             } else {
-                rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
-                        video_source = it->second;
+                rtc::scoped_refptr<CustomTrackSourceInterface> video_source =
+                        it->second;
                 rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
                 if (!video_source) {
                     RTC_LOG(LS_ERROR)
                             << "Cannot create capturer video:" << video_url;
                 } else {
-                    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
-                            videoScaled = VideoFilter<VideoScaler>::Create(
-                                    video_source, opts);
+                    rtc::scoped_refptr<CustomTrackSourceInterface> videoScaled =
+                            VideoFilter<VideoScaler>::Create(video_source,
+                                                             opts);
                     video_track = peer_connection_factory_->CreateVideoTrack(
                             stream_label + "_video", videoScaled);
                 }
@@ -1006,7 +1006,7 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
     }
 }
 
-rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
+rtc::scoped_refptr<CustomTrackSourceInterface>
 PeerConnectionManager::GetVideoTrackSource(const std::string &video_url) {
     {
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
