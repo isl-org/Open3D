@@ -17,12 +17,12 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-VideoTrackSource::VideoTrackSource(bool remote)
+CustomTrackSource::CustomTrackSource(bool remote)
     : state_(kInitializing), remote_(remote) {
     worker_thread_checker_.Detach();
 }
 
-void VideoTrackSource::SetState(
+void CustomTrackSource::SetState(
         webrtc::MediaSourceInterface::SourceState new_state) {
     if (state_ != new_state) {
         state_ = new_state;
@@ -30,14 +30,14 @@ void VideoTrackSource::SetState(
     }
 }
 
-void VideoTrackSource::AddOrUpdateSink(
+void CustomTrackSource::AddOrUpdateSink(
         rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
         const rtc::VideoSinkWants& wants) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     source()->AddOrUpdateSink(sink, wants);
 }
 
-void VideoTrackSource::RemoveSink(
+void CustomTrackSource::RemoveSink(
         rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     source()->RemoveSink(sink);

@@ -42,11 +42,11 @@ namespace webrtc_server {
 
 class CustomTrackSourceInterface : public webrtc::VideoTrackSourceInterface {};
 
-// VideoTrackSource is a convenience base class for implementations of
+// CustomTrackSource is a convenience base class for implementations of
 // VideoTrackSourceInterface.
-class VideoTrackSource : public webrtc::Notifier<CustomTrackSourceInterface> {
+class CustomTrackSource : public webrtc::Notifier<CustomTrackSourceInterface> {
 public:
-    explicit VideoTrackSource(bool remote);
+    explicit CustomTrackSource(bool remote);
     void SetState(webrtc::MediaSourceInterface::SourceState new_state);
 
     webrtc::MediaSourceInterface::SourceState state() const override {
