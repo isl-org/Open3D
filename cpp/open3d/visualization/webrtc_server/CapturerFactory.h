@@ -81,9 +81,9 @@ public:
                               video_url);
         }
 
-        rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-                ImageCapturerTrackSource::Create(video_url, opts);
-        return video_source;
+        // rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+        //         ImageCapturerTrackSource::Create(video_url, opts);
+        return ImageCapturerTrackSource::Create(video_url, opts);
     }
 };
 
