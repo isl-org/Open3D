@@ -33,6 +33,7 @@
 #include <media/base/video_common.h>
 #include <modules/desktop_capture/desktop_capture_options.h>
 #include <modules/desktop_capture/desktop_capturer.h>
+#include <pc/video_track_source.h>
 #include <rtc_base/logging.h>
 
 #include <chrono>
@@ -90,6 +91,38 @@ protected:
     int height_;
     bool is_running_;
     rtc::VideoBroadcaster broadcaster_;
+};
+
+class ImageCapturerTrackSource : public webrtc::VideoTrackSource {
+public:
+    static rtc::scoped_refptr<ImageCapturerTrackSource> Create(
+            const std::string& video_url,
+            const std::map<std::string, std::string>& opts) {
+        // TODO: remove this check after standarizing the track names.
+        if (video_url.find("image://") != 0) {
+            utility::LogError(
+                    "ImageCapturerTrackSource::Create failed for video_url: {}",
+                    video_url);
+        }
+        std::unique_ptr<ImageCapturer> capturer =
+                absl::WrapUnique(ImageCapturer::Create(video_url, opts));
+        if (!capturer) {
+            return nullptr;
+        }
+        return new rtc::RefCountedObject<ImageCapturerTrackSource>(
+                std::move(capturer));
+    }
+
+protected:
+    explicit ImageCapturerTrackSource(std::unique_ptr<ImageCapturer> capturer)
+        : webrtc::VideoTrackSource(/*remote=*/false),
+          capturer_(std::move(capturer)) {}
+
+private:
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
+        return capturer_.get();
+    }
+    std::unique_ptr<ImageCapturer> capturer_;
 };
 
 }  // namespace webrtc_server
