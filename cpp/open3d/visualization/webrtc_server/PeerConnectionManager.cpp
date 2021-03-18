@@ -932,7 +932,7 @@ bool PeerConnectionManager::AddStreams(
     }
 
     if (!existing_stream) {
-        // Need to create the stream.
+        // Create a new stream and add to stream_map_;
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
@@ -940,7 +940,7 @@ bool PeerConnectionManager::AddStreams(
         stream_map_[stream_label] = video_source;
     }
 
-    // Create a new webrtc stream.
+    // AddTrack and AddStream to peer_connection
     {
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
         auto it = stream_map_.find(stream_label);

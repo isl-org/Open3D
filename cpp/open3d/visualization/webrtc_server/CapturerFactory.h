@@ -86,9 +86,7 @@ public:
                       rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
                               peer_connection_factory) {
         rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
-        if ((video_url.find("window://") == 0) &&
-            (std::regex_match("window://", publish_filter))) {
-        } else if (video_url.find("image://") == 0) {
+        if (video_url.find("image://") == 0) {
             video_source = TrackSource<ImageCapturer>::Create(video_url, opts);
         } else {
             utility::LogError("CreateVideoSource failed for video_url: {}",
