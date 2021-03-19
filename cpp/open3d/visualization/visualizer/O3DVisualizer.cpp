@@ -1114,8 +1114,7 @@ struct O3DVisualizer::Impl {
     void OverrideMaterial(const std::string &name,
                           const Material &original_material,
                           O3DVisualizer::Shader shader) {
-        bool is_lines = (original_material.shader == "unlitLine" ||
-                         original_material.shader == "lines");
+        bool is_lines = (original_material.shader == "unlitLine");
         auto scene = scene_->GetScene();
         // Lines are already unlit, so keep using the original shader when in
         // unlit mode so that we can keep the wide lines.
