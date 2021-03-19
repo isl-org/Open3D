@@ -34,6 +34,7 @@ using namespace open3d;
 // TODO: remove hard-coded path.
 const std::string TEST_DIR =
         utility::filesystem::GetUnixHome() + "/repo/Open3D/examples/test_data";
+const std::string DATA_PATH = TEST_DIR + "/knot.ply";
 
 // Create and add a window to gui::Application, but do not run it yet.
 void DrawInWindow(
@@ -79,7 +80,17 @@ void EmptyBox() {
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
 
-    DrawInWindow({big_bbox}, "Open3D EmptyBox", 640, 480);
+    auto new_window_action =
+            [](visualization::visualizer::O3DVisualizer &o3dvis) {
+                utility::LogInfo("new_window_action called");
+                auto mesh = std::make_shared<geometry::TriangleMesh>();
+                io::ReadTriangleMesh(DATA_PATH, *mesh);
+                mesh->ComputeVertexNormals();
+                DrawInWindow({mesh}, "Open3D pcd", 640, 480);
+            };
+
+    DrawInWindow({big_bbox}, "Open3D EmptyBox", 640, 480,
+                 {{"Load example mesh", new_window_action}});
 }
 
 void BoxWithOjects() {
@@ -119,8 +130,8 @@ void BoxWithOjects() {
 int main(int argc, char **argv) {
     if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
         utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory, test_dir: {}",
+                "This example needs to be run from the build directory, "
+                "test_dir: {}",
                 TEST_DIR);
     }
     visualization::gui::Application::GetInstance().EnableWebRTC();
