@@ -124,6 +124,12 @@ public:
     /// code.
     void RemoveWindow(Window *window);
 
+    /// Returns UIDs of all windows.
+    std::vector<std::string> ListWindowUIDs() const;
+
+    /// Returns a specific window by its UID.
+    std::shared_ptr<Window> GetWindowByUID(const std::string &uid) const;
+
     /// Creates a message box window the next time the event loop processes.
     /// This message box will be a separate window and not associated with any
     /// of the other windows shown with AddWindow().

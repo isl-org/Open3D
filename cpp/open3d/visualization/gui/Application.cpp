@@ -506,6 +506,26 @@ void Application::RemoveWindow(Window *window) {
     }
 }
 
+std::vector<std::string> Application::ListWindowUIDs() const {
+    std::vector<std::string> uids;
+    for (const std::shared_ptr<Window> &window : impl_->windows_) {
+        uids.push_back(window->GetUID());
+    }
+    return uids;
+}
+
+std::shared_ptr<Window> Application::GetWindowByUID(
+        const std::string &uid) const {
+    // This can be opimized by adding a map_uid_to_window, but it may not be
+    // worth it since we typically don't have lots of windows.
+    for (const std::shared_ptr<Window> &window : impl_->windows_) {
+        if (window->GetUID() == uid) {
+            return window;
+        }
+    }
+    return nullptr;
+}
+
 void Application::Quit() {
     while (!impl_->windows_.empty()) {
         RemoveWindow(impl_->windows_.begin()->get());
