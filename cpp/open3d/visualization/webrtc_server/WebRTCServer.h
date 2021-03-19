@@ -83,7 +83,7 @@ public:
     void OnFrame(const std::shared_ptr<core::Tensor>& im);
 
     // List available windows.
-    std::vector<std::string> ListWindowUIDs() const;
+    std::vector<std::string> GetWindowUIDs() const;
 
     void SetMouseEventCallback(std::function<void(const gui::MouseEvent&)> f);
 

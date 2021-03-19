@@ -319,6 +319,12 @@ const Json::Value PeerConnectionManager::GetMediaList() {
     media["video"] = "image://Open3D";
     value.append(media);
 
+    // for (const std::string &window_uid : webrtc_server_->GetWindowUIDs()) {
+    //     Json::Value media;
+    //     media["video"] = window_uid;
+    //     value.append(media);
+    // }
+
     return value;
 }
 

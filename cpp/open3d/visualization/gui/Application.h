@@ -125,7 +125,7 @@ public:
     void RemoveWindow(Window *window);
 
     /// Returns UIDs of all windows.
-    std::vector<std::string> ListWindowUIDs() const;
+    std::vector<std::string> GetWindowUIDs() const;
 
     /// Returns a specific window by its UID.
     std::shared_ptr<Window> GetWindowByUID(const std::string &uid) const;
