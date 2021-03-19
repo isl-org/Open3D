@@ -411,7 +411,7 @@ void Application::EnableWebRTC() {
     // TODO: WebRTCWindowSystem should be a global singleton. Consider returning
     // a shared pointer with singleton, to keep everything constant.
     // https://stackoverflow.com/a/33380514/1255535.
-    SetWindowSystem(std::make_shared<gui::WebRTCWindowSystem>());
+    SetWindowSystem(gui::WebRTCWindowSystem::GetInstance());
 }
 
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {

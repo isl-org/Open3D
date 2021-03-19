@@ -47,6 +47,11 @@ struct WebRTCWindowSystem::Impl {
     std::thread webrtc_thread_;
 };
 
+std::shared_ptr<WebRTCWindowSystem> WebRTCWindowSystem::GetInstance() {
+    static std::shared_ptr<WebRTCWindowSystem> instance(new WebRTCWindowSystem);
+    return instance;
+}
+
 WebRTCWindowSystem::WebRTCWindowSystem()
     : BitmapWindowSystem(
 #if !defined(__APPLE__) && !defined(_WIN32) && !defined(_WIN64)
