@@ -90,7 +90,7 @@ public:
             override {}
 
     // By default it does nothing (e.g. for VideoFilter).
-    // ImageCapturerTrackSource overrides this and this will be called by the
+    // ImageTrackSource overrides this and this will be called by the
     // BitmapWindowSystem when there's a new frame.
     virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) override {
         utility::LogInfo("BitmapTrackSource::OnFrame called");

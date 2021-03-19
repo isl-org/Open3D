@@ -78,7 +78,7 @@ protected:
     rtc::VideoBroadcaster broadcaster_;
 };
 
-class ImageCapturerTrackSource : public BitmapTrackSource {
+class ImageTrackSource : public BitmapTrackSource {
 public:
     static rtc::scoped_refptr<BitmapTrackSourceInterface> Create(
             const std::string& video_url,
@@ -86,7 +86,7 @@ public:
         // TODO: remove this check after standarizing the track names.
         if (video_url.find("image://") != 0) {
             utility::LogError(
-                    "ImageCapturerTrackSource::Create failed for video_url: {}",
+                    "ImageTrackSource::Create failed for video_url: {}",
                     video_url);
         }
         std::unique_ptr<ImageCapturer> capturer =
@@ -95,18 +95,18 @@ public:
             return nullptr;
         }
         rtc::scoped_refptr<BitmapTrackSourceInterface> video_source =
-                new rtc::RefCountedObject<ImageCapturerTrackSource>(
+                new rtc::RefCountedObject<ImageTrackSource>(
                         std::move(capturer));
         return video_source;
     }
 
     void OnFrame(const std::shared_ptr<core::Tensor>& frame) final override {
-        utility::LogInfo("ImageCapturerTrackSource::OnFrame called");
+        utility::LogInfo("ImageTrackSource::OnFrame called");
         capturer_->OnCaptureResult(frame);
     }
 
 protected:
-    explicit ImageCapturerTrackSource(std::unique_ptr<ImageCapturer> capturer)
+    explicit ImageTrackSource(std::unique_ptr<ImageCapturer> capturer)
         : BitmapTrackSource(/*remote=*/false), capturer_(std::move(capturer)) {}
 
 private:

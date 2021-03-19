@@ -858,7 +858,7 @@ PeerConnectionManager::CreateVideoSource(
         video = config_[video]["video"].asString();
     }
 
-    return ImageCapturerTrackSource::Create(video, opts);
+    return ImageTrackSource::Create(video, opts);
 }
 
 const std::string PeerConnectionManager::SanitizeLabel(

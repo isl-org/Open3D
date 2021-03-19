@@ -469,7 +469,7 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
-    // TODO: move this elsewhere.
+    // TODO: move this elsewhere?
     // TODO: better way to check window system type.
     if (std::shared_ptr<gui::WebRTCWindowSystem> webrtc_window_system =
                 std::dynamic_pointer_cast<gui::WebRTCWindowSystem>(
@@ -480,9 +480,7 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
         };
         webrtc_window_system->SetMouseEventCallback(mouse_event_callback);
 
-        // TODO:
-        // 1. Only start the sever once.
-        // 2. Add new streams while the sever is running?
+        // No-op of the server is already started.
         webrtc_window_system->StartWebRTCServer();
     }
 
