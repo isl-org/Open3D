@@ -45,6 +45,7 @@ struct WebRTCWindowSystem::Impl {
     // TODO: can this be unique?
     std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
     std::thread webrtc_thread_;
+    bool sever_started_ = false;
 };
 
 std::shared_ptr<WebRTCWindowSystem> WebRTCWindowSystem::GetInstance() {
@@ -91,8 +92,13 @@ void WebRTCWindowSystem::SetMouseEventCallback(
 }
 
 void WebRTCWindowSystem::StartWebRTCServer() {
-    auto start_webrtc_thread = [this]() { this->impl_->webrtc_server_->Run(); };
-    impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
+    if (!impl_->sever_started_) {
+        auto start_webrtc_thread = [this]() {
+            this->impl_->webrtc_server_->Run();
+        };
+        impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
+        impl_->sever_started_ = true;
+    }
 }
 
 }  // namespace gui
