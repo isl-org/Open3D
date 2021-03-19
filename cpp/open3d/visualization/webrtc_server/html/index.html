@@ -189,8 +189,7 @@
             divElt.id = "div_" + videoTag;
             var nameElt = document.createElement("h2");
             nameElt.id = "title_" + videoTag;
-            nameElt.innerHTML =
-              "<a href='" + webStreamUrl + "' >" + getText(url) + "</a>";
+            nameElt.innerHTML = "<div>" + getText(url) + "</div>";
             divElt.appendChild(nameElt);
             var videoElt = document.createElement("video");
             videoElt.id = videoTag;
