@@ -10,6 +10,8 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
+      - apt-utils
+      - build-essential
       - xorg-dev
       - libglu1-mesa-dev
       - python3-dev
@@ -18,13 +20,40 @@ addons:
       - libc++abi-7-dev
       - ninja-build
       - libxi-dev
-      - libtbb-dev
       - libosmesa6-dev
       - libudev-dev
       - autoconf
       - libtool
+      - clang-7
+      - wget
+install:
+  - update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
+  - update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
+  - update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+  - update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+  - wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
+  - tar -xvf cmake-3.18-aarch64.tar.gz
+  - cp -ar cmake-3.18-aarch64 ${HOME}
 script:
-  - pwd
-  - ls -alh
+  - PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+  - which cmake
   - cmake --version
-  - uname -p
+  - pwd
+  - mkdir build
+  - cd build
+  - |
+    cmake
+    -DCMAKE_BUILD_TYPE=Release
+    -DBUILD_SHARED_LIBS=ON
+    -DBUILD_GUI=ON
+    -DBUILD_LIBREALSENSE=ON
+    -DCMAKE_C_COMPILER=gcc
+    -DCMAKE_CXX_COMPILER=g++
+    -DBUILD_TENSORFLOW_OPS=OFF
+    -DBUILD_PYTORCH_OPS=OFF
+    -DBUILD_UNIT_TESTS=ON
+    -DCMAKE_INSTALL_PREFIX=~/open3d_install
+    -DPYTHON_EXECUTABLE=$(which python)
+    ..
+  - echo "cmake config done"
+
