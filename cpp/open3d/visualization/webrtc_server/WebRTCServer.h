@@ -94,6 +94,8 @@ public:
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
 
+    // Force a redraw and sned a server -> client frame. This essentially calls
+    // the callback function set by SetMouseEventCallback();
     void ReDraw(const std::string& window_uid);
 
     // List available windows.

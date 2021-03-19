@@ -632,7 +632,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                 RTC_LOG(LERROR) << "Failed to create answer";
             }
 
-            // video_url is the window_uid
+            // Send an initial frame before any mouse events.
+            // video_url is the window_uid.
+            webrtc_server_->ReDraw(video_url);
         }
     }
     return answer;

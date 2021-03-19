@@ -154,7 +154,9 @@ void WebRTCServer::OnFrame(const std::string& window_uid,
     impl_->OnFrame(window_uid, im);
 }
 
-void WebRTCServer::ReDraw(const std::string& window_uid) {}
+void WebRTCServer::ReDraw(const std::string& window_uid) {
+    impl_->redraw_callback_(window_uid);
+}
 
 std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
     return gui::Application::GetInstance().GetWindowUIDs();
