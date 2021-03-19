@@ -2805,37 +2805,6 @@ TEST_P(TensorPermuteDevices, RValueScalar) {
     const core::Device &device = GetParam();
     core::Tensor t, t1;
 
-    // Assign scalars basic tests.
-    t = core::Tensor::Init<uint8_t>({{1, 2, 3, 4}, {5, 6, 7, 8}}, device);
-    t1 = core::Tensor::Init<uint8_t>({{1, 10, 3, 4}, {5, 6, 7, 8}}, device);
-    t[0][1] = 10;
-    EXPECT_EQ(t.GetShape(), t1.GetShape());
-    EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
-
-    t = core::Tensor::Init<uint8_t>({{1}, {2}}, device);
-    t1 = core::Tensor::Init<uint8_t>({{0}, {4}}, device);
-    t[0][0] = 0;
-    t[1][0] = 4;
-    EXPECT_EQ(t.GetShape(), t1.GetShape());
-    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
-    EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
-
-    // Check with shape {1, 1}.
-    t = core::Tensor::Init<uint8_t>({{20}}, device);
-    t1 = core::Tensor::Init<uint8_t>({{10}}, device);
-    t[0][0] = 10;
-    EXPECT_EQ(t.GetShape(), t1.GetShape());
-    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
-    EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
-
-    // Check with shape {1}.
-    t = core::Tensor::Init<int32_t>({20}, device);
-    t1 = core::Tensor::Init<int32_t>({-10}, device);
-    t[0] = -10;
-    EXPECT_EQ(t.GetShape(), t1.GetShape());
-    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
-    EXPECT_EQ(t.ToFlatVector<int32_t>(), t1.ToFlatVector<int32_t>());
-
     // Check with shape {}.
     t = core::Tensor::Init<int32_t>(0, device);
     t1 = core::Tensor::Init<int32_t>(1000, device);
@@ -2844,25 +2813,76 @@ TEST_P(TensorPermuteDevices, RValueScalar) {
     EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<int32_t>(), t1.ToFlatVector<int32_t>());
 
-    // Check with boolean.
-    t = core::Tensor::Init<bool>({false}, device);
-    t1 = core::Tensor::Init<bool>({true}, device);
-    t[0] = true;
+    // Check with shape {0}.
+    t = core::Tensor::Init<bool>({}, device);
+    t1 = core::Tensor::Init<bool>({}, device);
+    t.AsRvalue() = 0;
     EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<bool>(), t1.ToFlatVector<bool>());
+
+    // Check with shape {1, 0}.
+    t = core::Tensor::Init<int32_t>({{}}, device);
+    t1 = core::Tensor::Init<int32_t>({{}}, device);
+    t.AsRvalue() = 10;
+    EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
+    EXPECT_EQ(t.ToFlatVector<int32_t>(), t1.ToFlatVector<int32_t>());
+
+    // Check with shape {1}.
+    t = core::Tensor::Init<float>({20.30}, device);
+    t1 = core::Tensor::Init<float>({-10.10}, device);
+    t.AsRvalue() = -10.10;
+    EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
+    EXPECT_EQ(t.ToFlatVector<float>(), t1.ToFlatVector<float>());
+
+    // Check with shape {1, 1}.
+    t = core::Tensor::Init<uint8_t>({{20}}, device);
+    t1 = core::Tensor::Init<uint8_t>({{10}}, device);
+    t.AsRvalue() = 10;
+    EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
+
+    // Check with shape {1, 2}.
+    t = core::Tensor::Init<uint8_t>({{20, 10}}, device);
+    t1 = core::Tensor::Init<uint8_t>({{0, 0}}, device);
+    t.AsRvalue() = 0;
+    EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
+    EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
+
+    // Check with indexing.
+    t = core::Tensor::Init<bool>({{true, true}, {true, true}}, device);
+    t1 = core::Tensor::Init<bool>({{false, false}, {true, true}}, device);
+    t[0] = 0;
+    EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
+    EXPECT_EQ(t.ToFlatVector<bool>(), t1.ToFlatVector<bool>());
+
+    // Check with implicit conversion.
+    t = core::Tensor::Init<int32_t>({{5, 6}, {7, 8}}, device);
+    t1 = core::Tensor::Init<int32_t>({{10, 10}, {10, 10}}, device);
+    t.AsRvalue() = 10.2f;
+    EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
+    EXPECT_EQ(t.ToFlatVector<int32_t>(), t1.ToFlatVector<int32_t>());
 
     // Check with Slice.
     t = core::Tensor::Init<uint8_t>({1}, device);
     t1 = core::Tensor::Init<uint8_t>({255}, device);
     t.Slice(0, 0, 1) = 255;
     EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<uint8_t>(), t1.ToFlatVector<uint8_t>());
 
     // Datatype implicit conversion with Slice.
-    t = core::Tensor::Init<bool>({{false}}, device);
-    t1 = core::Tensor::Init<bool>({{true}}, device);
-    t.Slice(1, 0, 1) = 1;
+    t = core::Tensor::Init<bool>({{false, false}}, device);
+    t1 = core::Tensor::Init<bool>({{true, true}}, device);
+    t.Slice(1, 0, 2) = 1.0f;
     EXPECT_EQ(t.GetShape(), t1.GetShape());
+    EXPECT_EQ(t.GetDtype(), t1.GetDtype());
     EXPECT_EQ(t.ToFlatVector<bool>(), t1.ToFlatVector<bool>());
 }
 
