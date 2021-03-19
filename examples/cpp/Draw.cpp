@@ -35,38 +35,51 @@ using namespace open3d;
 const std::string TEST_DIR =
         utility::filesystem::GetUnixHome() + "/repo/Open3D/examples/test_data";
 
+// Create and add a window to gui::Application, but do not run it yet.
+void DrawInWindow(
+        const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
+        const std::string &window_name = "Open3D",
+        int width = 1024,
+        int height = 768,
+        const std::vector<visualization::DrawAction> &actions = {}) {
+    std::vector<visualization::DrawObject> objects;
+    objects.reserve(geometries.size());
+    for (size_t i = 0; i < geometries.size(); ++i) {
+        std::stringstream name;
+        name << "Object " << (i + 1);
+        objects.emplace_back(name.str(), geometries[i]);
+    }
+
+    auto &o3d_app = visualization::gui::Application::GetInstance();
+    o3d_app.Initialize();
+
+    auto draw = std::make_shared<visualization::visualizer::O3DVisualizer>(
+            window_name, width, height);
+    for (auto &o : objects) {
+        if (o.geometry) {
+            draw->AddGeometry(o.name, o.geometry);
+        } else {
+            draw->AddGeometry(o.name, o.tgeometry);
+        }
+        draw->ShowGeometry(o.name, o.is_visible);
+    }
+    for (auto &act : actions) {
+        draw->AddAction(act.name, act.callback);
+    }
+    draw->ResetCameraToDefault();
+    visualization::gui::Application::GetInstance().AddWindow(draw);
+    draw.reset();  // so we don't hold onto the pointer after Run() cleans up
+}
+
 void EmptyBox() {
     const double pc_rad = 1.0;
     const double r = 0.4;
-    auto sphere_unlit = geometry::TriangleMesh::CreateSphere(r);
-    sphere_unlit->Translate({0.0, 1.0, 0.0});
-    auto sphere_colored_unlit = geometry::TriangleMesh::CreateSphere(r);
-    sphere_colored_unlit->PaintUniformColor({1.0, 0.0, 0.0});
-    sphere_colored_unlit->Translate({2.0, 1.0, 0.0});
-    auto sphere_lit = geometry::TriangleMesh::CreateSphere(r);
-    sphere_lit->ComputeVertexNormals();
-    sphere_lit->Translate({4, 1, 0});
-    auto sphere_colored_lit = geometry::TriangleMesh::CreateSphere(r);
-    sphere_colored_lit->ComputeVertexNormals();
-    sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
-    sphere_colored_lit->Translate({6, 1, 0});
+
     auto big_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
-    auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
-    auto sphere_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
-            bbox.min_bound_, bbox.max_bound_);
-    sphere_bbox->color_ = {1.0, 0.5, 0.0};
-    auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_lit->GetAxisAlignedBoundingBox());
-    auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_colored_lit->GetAxisAlignedBoundingBox());
-    lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
-    visualization::Draw(
-            {sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
-             big_bbox, sphere_bbox, lines, lines_colored},
-            "Open3D", 640, 480);
+    DrawInWindow({big_bbox}, "Open3D EmptyBox", 640, 480);
 }
 
 void BoxWithOjects() {
@@ -100,7 +113,7 @@ void BoxWithOjects() {
     visualization::Draw(
             {sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
              big_bbox, sphere_bbox, lines, lines_colored},
-            "Open3D", 640, 480);
+            "Open3D BoxWithOjects", 640, 480);
 }
 
 int main(int argc, char **argv) {
@@ -110,7 +123,9 @@ int main(int argc, char **argv) {
                 "directory, test_dir: {}",
                 TEST_DIR);
     }
-    open3d::visualization::gui::Application::GetInstance().EnableWebRTC();
+    visualization::gui::Application::GetInstance().EnableWebRTC();
 
+    EmptyBox();
     BoxWithOjects();
+    visualization::gui::Application::GetInstance().Run();
 }
