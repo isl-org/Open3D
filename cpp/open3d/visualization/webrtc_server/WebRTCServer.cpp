@@ -89,7 +89,6 @@ struct WebRTCServer::Impl {
 
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
-    void OnDataChannelMessage(const std::string& message);
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
     void Run();
@@ -111,7 +110,17 @@ void WebRTCServer::Impl::OnFrame(const std::string& window_uid,
     }
 }
 
-void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
+void WebRTCServer::SetMouseEventCallback(
+        std::function<void(const std::string&, const gui::MouseEvent&)> f) {
+    impl_->mouse_event_callback_ = f;
+}
+
+void WebRTCServer::SetRedrawCallback(
+        std::function<void(const std::string&)> f) {
+    impl_->redraw_callback_ = f;
+}
+
+void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     try {
         gui::MouseEvent me;
         Json::Value value = StringToJson(message);
@@ -124,8 +133,8 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
                     "WebRTCServer::Impl::OnDataChannelMessage: window_uid: {}, "
                     "MouseEvent: {}",
                     window_uid, me.ToString());
-            if (mouse_event_callback_) {
-                mouse_event_callback_(window_uid, me);
+            if (impl_->mouse_event_callback_) {
+                impl_->mouse_event_callback_(window_uid, me);
             }
         }
     } catch (...) {
@@ -133,20 +142,6 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
                 "WebRTCServer::Impl::OnDataChannelMessage: cannot parse {}.",
                 message);
     }
-}
-
-void WebRTCServer::SetMouseEventCallback(
-        std::function<void(const std::string&, const gui::MouseEvent&)> f) {
-    impl_->mouse_event_callback_ = f;
-}
-
-void WebRTCServer::SetRedrawCallback(
-        std::function<void(const std::string&)> f) {
-    impl_->redraw_callback_ = f;
-}
-
-void WebRTCServer::OnDataChannelMessage(const std::string& message) {
-    impl_->OnDataChannelMessage(message);
 }
 
 void WebRTCServer::OnFrame(const std::string& window_uid,
