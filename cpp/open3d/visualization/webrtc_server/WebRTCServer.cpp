@@ -49,6 +49,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
@@ -139,6 +140,10 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
 
 void WebRTCServer::OnFrame(const std::shared_ptr<core::Tensor>& im) {
     impl_->OnFrame(im);
+}
+
+std::vector<std::string> WebRTCServer::ListWindowUIDs() const {
+    return gui::Application::GetInstance().ListWindowUIDs();
 }
 
 WebRTCServer::WebRTCServer(const std::string& http_address,

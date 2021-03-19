@@ -29,6 +29,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "open3d/utility/FileSystem.h"
 
@@ -77,8 +78,12 @@ public:
 
     // Client -> server message.
     void OnDataChannelMessage(const std::string& message);
+
     // Server -> client frame.
     void OnFrame(const std::shared_ptr<core::Tensor>& im);
+
+    // List available windows.
+    std::vector<std::string> ListWindowUIDs() const;
 
     void SetMouseEventCallback(std::function<void(const gui::MouseEvent&)> f);
 
