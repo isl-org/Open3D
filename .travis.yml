@@ -1,0 +1,30 @@
+language: cpp
+arch: arm64
+os: linux
+dist: focal
+sudo: true
+language: python
+python: "3.8"
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - xorg-dev
+      - libglu1-mesa-dev
+      - python3-dev
+      - libsdl2-dev
+      - libc++-7-dev
+      - libc++abi-7-dev
+      - ninja-build
+      - libxi-dev
+      - libtbb-dev
+      - libosmesa6-dev
+      - libudev-dev
+      - autoconf
+      - libtool
+install:
+  - ./util/scripts/install-deps-ubuntu.sh assume-yes
+script:
+  - cmake --version
+  - uname -p
