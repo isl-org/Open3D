@@ -86,9 +86,15 @@ public:
     void SetMouseEventCallback(
             std::function<void(const std::string&, const gui::MouseEvent&)> f);
 
+    // Set redraw callback function. Server can force a redraw. Then redraw then
+    // triggers OnFrame(), where a server -> client frame will be sent.
+    void SetRedrawCallback(std::function<void(const std::string&)> f);
+
     // Server -> client frame.
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
+
+    void ReDraw(const std::string& window_uid);
 
     // List available windows.
     std::vector<std::string> GetWindowUIDs() const;

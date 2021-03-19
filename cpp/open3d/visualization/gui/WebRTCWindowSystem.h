@@ -41,6 +41,7 @@ public:
     virtual ~WebRTCWindowSystem();
     void SetMouseEventCallback(
             std::function<void(const std::string&, const MouseEvent&)> f);
+    void SetRedrawCallback(std::function<void(const std::string&)> f);
     void StartWebRTCServer();
 
 private:

@@ -85,6 +85,7 @@ struct WebRTCServer::Impl {
             mouse_wheel_callback_ = nullptr;
     std::function<void(const std::string&, const gui::MouseEvent&)>
             mouse_event_callback_ = nullptr;
+    std::function<void(const std::string&)> redraw_callback_ = nullptr;
 
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
@@ -139,6 +140,11 @@ void WebRTCServer::SetMouseEventCallback(
     impl_->mouse_event_callback_ = f;
 }
 
+void WebRTCServer::SetRedrawCallback(
+        std::function<void(const std::string&)> f) {
+    impl_->redraw_callback_ = f;
+}
+
 void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     impl_->OnDataChannelMessage(message);
 }
@@ -147,6 +153,8 @@ void WebRTCServer::OnFrame(const std::string& window_uid,
                            const std::shared_ptr<core::Tensor>& im) {
     impl_->OnFrame(window_uid, im);
 }
+
+void WebRTCServer::ReDraw(const std::string& window_uid) {}
 
 std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
     return gui::Application::GetInstance().GetWindowUIDs();

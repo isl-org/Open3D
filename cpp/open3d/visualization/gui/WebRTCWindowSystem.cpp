@@ -90,6 +90,11 @@ void WebRTCWindowSystem::SetMouseEventCallback(
     impl_->webrtc_server_->SetMouseEventCallback(f);
 }
 
+void WebRTCWindowSystem::SetRedrawCallback(
+        std::function<void(const std::string &)> f) {
+    impl_->webrtc_server_->SetRedrawCallback(f);
+}
+
 void WebRTCWindowSystem::StartWebRTCServer() {
     if (!impl_->sever_started_) {
         auto start_webrtc_thread = [this]() {

@@ -631,6 +631,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             } else {
                 RTC_LOG(LERROR) << "Failed to create answer";
             }
+
+            // video_url is the window_uid
         }
     }
     return answer;
