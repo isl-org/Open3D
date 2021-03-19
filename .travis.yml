@@ -23,8 +23,8 @@ addons:
       - libudev-dev
       - autoconf
       - libtool
-install:
-  - ./util/scripts/install-deps-ubuntu.sh assume-yes
 script:
+  - pwd
+  - ls -alh
   - cmake --version
   - uname -p
