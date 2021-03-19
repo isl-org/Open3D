@@ -1117,7 +1117,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
-    } else if (props.shader != "") {
+    } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }
@@ -1754,6 +1754,12 @@ void FilamentScene::RenderToImage(
         std::function<void(std::shared_ptr<geometry::Image>)> callback) {
     auto view = views_.begin()->second.view.get();
     renderer_.RenderToImage(view, this, callback);
+}
+
+void FilamentScene::RenderToDepthImage(
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto view = views_.begin()->second.view.get();
+    renderer_.RenderToDepthImage(view, this, callback);
 }
 
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(
