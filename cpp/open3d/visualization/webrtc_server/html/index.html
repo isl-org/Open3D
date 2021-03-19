@@ -38,20 +38,6 @@
       }
 
       // ------------------------------------------
-      // Get text from url object (video,audio)
-      // ------------------------------------------
-      function getText(url) {
-        var text;
-        if (url.video) {
-          text = url.video + " ";
-        }
-        if (url.audio && url.audio != url.video) {
-          text += url.audio + " ";
-        }
-        return text;
-      }
-
-      // ------------------------------------------
       // Get the div where to insert a video
       // ------------------------------------------
       function getContentDiv() {
@@ -89,7 +75,7 @@
           var option = document.createElement("a");
           var videoTag = "video_" + JSON.stringify(url);
           option.url = url;
-          option.text = getText(url);
+          option.text = url.video;
           option.id = "nav_" + videoTag;
           option.onclick = function () {
             if (this.className === "active") {
@@ -169,7 +155,9 @@
       // add a webrtc client connection
       // ------------------------------------------
       function add(url) {
+        // url = {video: "window_1"}
         var videoTag = "video_" + JSON.stringify(url);
+        var windowUID = url.video;
 
         // add a video element to display webrtc stream
         if (document.getElementById(videoTag) === null) {
@@ -189,11 +177,11 @@
             divElt.id = "div_" + videoTag;
             var nameElt = document.createElement("h2");
             nameElt.id = "title_" + videoTag;
-            nameElt.innerHTML = "<div>" + getText(url) + "</div>";
+            nameElt.innerHTML = "<div>" + windowUID + "</div>";
             divElt.appendChild(nameElt);
             var videoElt = document.createElement("video");
             videoElt.id = videoTag;
-            videoElt.title = getText(url);
+            videoElt.title = windowUID;
             videoElt.muted = true;
             videoElt.controls = false;
             videoElt.playsinline = true;
@@ -229,6 +217,7 @@
           // Register callbacks for videoElt.
           videoElt.addEventListener("mousedown", (event) => {
             var open3dMouseEvent = {
+              window_uid: windowUID,
               class_name: "MouseEvent",
               type: "BUTTON_DOWN",
               x: event.offsetX,
@@ -243,6 +232,7 @@
           });
           videoElt.addEventListener("mouseup", (event) => {
             var open3dMouseEvent = {
+              window_uid: windowUID,
               class_name: "MouseEvent",
               type: "BUTTON_UP",
               x: event.offsetX,
@@ -260,6 +250,7 @@
             // - Open3D: L=1, M=2, R=4
             // - JavaScript: L=1, R=2, M=4
             var open3dMouseEvent = {
+              window_uid: windowUID,
               class_name: "MouseEvent",
               type: event.buttons == 0 ? "MOVE" : "DRAG",
               x: event.offsetX,
@@ -273,6 +264,7 @@
           });
           videoElt.addEventListener("mouseleave", (event) => {
             var open3dMouseEvent = {
+              window_uid: windowUID,
               class_name: "MouseEvent",
               type: "BUTTON_UP",
               x: event.offsetX,
@@ -305,6 +297,7 @@
               dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
 
               var open3dMouseEvent = {
+                window_uid: windowUID,
                 class_name: "MouseEvent",
                 type: "WHEEL",
                 x: event.offsetX,

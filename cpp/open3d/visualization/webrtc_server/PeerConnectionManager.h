@@ -205,6 +205,9 @@ class PeerConnectionManager {
                     << __PRETTY_FUNCTION__
                     << " channel:" << data_channel_->label() << " msg:" << msg;
 
+            utility::LogInfo("{}: label {}; message {}", __PRETTY_FUNCTION__,
+                             data_channel_->label(), msg);
+
             webrtc_server_->OnDataChannelMessage(msg);
         }
 
