@@ -167,9 +167,6 @@
             if (url.video) {
               webStreamUrl += "video=" + encodeURIComponent(url.video) + "&";
             }
-            if (url.audio) {
-              webStreamUrl += "audio=" + encodeURIComponent(url.audio) + "&";
-            }
             if (argoptions) {
               webStreamUrl += "options=" + encodeURIComponent(argoptions) + "&";
             }
@@ -204,7 +201,6 @@
 
           webRtcClient.connect(url.video, url.audio, options);
           console.log("url.video: " + url.video);
-          console.log("url.audio: " + url.audio);
           console.log("options: " + options);
 
           // highlight the navigation
