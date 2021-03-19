@@ -61,7 +61,7 @@
       // ------------------------------------------
       function onGetDeviceList(remoteDeviceList) {
         var deviceList = [];
-        if (argurl.video || argurl.audio) {
+        if (argurl.video) {
           deviceList.push(argurl);
         }
         if (remoteDeviceList) {
@@ -87,7 +87,7 @@
           urllist.appendChild(option);
         }
 
-        if (argurl.video || argurl.audio) {
+        if (argurl.video) {
           add(argurl);
         } else {
           var nbVideos = 1;
