@@ -114,10 +114,14 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
         gui::MouseEvent me;
         Json::Value value = StringToJson(message);
         if (value.get("class_name", "").asString() == "MouseEvent" &&
+            value.get("window_uid", "").asString() != "" &&
             me.FromJson(value)) {
+            const std::string window_uid =
+                    value.get("window_uid", "").asString();
             utility::LogInfo(
-                    "WebRTCServer::Impl::OnDataChannelMessage: MouseEvent {}",
-                    me.ToString());
+                    "WebRTCServer::Impl::OnDataChannelMessage: window_uid: {}, "
+                    "MouseEvent: {}",
+                    window_uid, me.ToString());
             if (mouse_event_callback_) {
                 mouse_event_callback_(me);
             }
