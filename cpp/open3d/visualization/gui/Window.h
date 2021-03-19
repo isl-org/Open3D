@@ -171,6 +171,9 @@ public:
 
     int GetMouseMods() const;  // internal, for WindowSystem
 
+    /// Returns the unique identifier of the window.
+    std::string GetUID() const;
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window
