@@ -86,7 +86,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
 
 void WebRTCWindowSystem::SetMouseEventCallback(
-        std::function<void(const MouseEvent &)> f) {
+        std::function<void(const std::string &, const MouseEvent &)> f) {
     impl_->webrtc_server_->SetMouseEventCallback(f);
 }
 

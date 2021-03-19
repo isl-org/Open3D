@@ -83,7 +83,8 @@ struct WebRTCServer::Impl {
             nullptr;
     std::function<void(double, double, int, double, double)>
             mouse_wheel_callback_ = nullptr;
-    std::function<void(const gui::MouseEvent&)> mouse_event_callback_ = nullptr;
+    std::function<void(const std::string&, const gui::MouseEvent&)>
+            mouse_event_callback_ = nullptr;
 
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
@@ -101,7 +102,7 @@ void WebRTCServer::Impl::OnFrame(const std::string& window_uid,
 
     // video_track_source is nullptr if the server is running but no client is
     // connected.
-    if (video_track_source != nullptr) {
+    if (video_track_source) {
         // TODO: this OnFrame(im); is a blocking call. Do we need to handle
         // OnFrame in a separte thread? e.g. attach to a queue of frames, even
         // if the queue size is just 1.
@@ -123,7 +124,7 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
                     "MouseEvent: {}",
                     window_uid, me.ToString());
             if (mouse_event_callback_) {
-                mouse_event_callback_(me);
+                mouse_event_callback_(window_uid, me);
             }
         }
     } catch (...) {
@@ -134,7 +135,7 @@ void WebRTCServer::Impl::OnDataChannelMessage(const std::string& message) {
 }
 
 void WebRTCServer::SetMouseEventCallback(
-        std::function<void(const gui::MouseEvent&)> f) {
+        std::function<void(const std::string&, const gui::MouseEvent&)> f) {
     impl_->mouse_event_callback_ = f;
 }
 

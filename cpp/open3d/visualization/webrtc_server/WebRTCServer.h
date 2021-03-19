@@ -80,14 +80,18 @@ public:
     // Client -> server message.
     void OnDataChannelMessage(const std::string& message);
 
+    // Set MouseEvent callback function. If a client -> server message is of
+    // MouseEvent type, the callback funciton will be triggered. The client
+    // message shall also contain the corresponding window_uid.
+    void SetMouseEventCallback(
+            std::function<void(const std::string&, const gui::MouseEvent&)> f);
+
     // Server -> client frame.
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
 
     // List available windows.
     std::vector<std::string> GetWindowUIDs() const;
-
-    void SetMouseEventCallback(std::function<void(const gui::MouseEvent&)> f);
 
 private:
     struct Impl;

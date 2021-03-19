@@ -27,6 +27,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "open3d/visualization/gui/BitmapWindowSystem.h"
 
@@ -38,7 +39,8 @@ class WebRTCWindowSystem : public BitmapWindowSystem {
 public:
     static std::shared_ptr<WebRTCWindowSystem> GetInstance();
     virtual ~WebRTCWindowSystem();
-    void SetMouseEventCallback(std::function<void(const MouseEvent&)> f);
+    void SetMouseEventCallback(
+            std::function<void(const std::string&, const MouseEvent&)> f);
     void StartWebRTCServer();
 
 private:
