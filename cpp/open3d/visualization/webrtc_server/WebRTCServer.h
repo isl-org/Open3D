@@ -46,7 +46,8 @@ class Tensor;
 namespace visualization {
 namespace gui {
 struct MouseEvent;
-}
+class Window;
+}  // namespace gui
 
 namespace webrtc_server {
 
@@ -80,7 +81,8 @@ public:
     void OnDataChannelMessage(const std::string& message);
 
     // Server -> client frame.
-    void OnFrame(const std::shared_ptr<core::Tensor>& im);
+    void OnFrame(const std::string& window_uid,
+                 const std::shared_ptr<core::Tensor>& im);
 
     // List available windows.
     std::vector<std::string> GetWindowUIDs() const;

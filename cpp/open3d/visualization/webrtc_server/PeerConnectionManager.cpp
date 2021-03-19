@@ -315,15 +315,15 @@ PeerConnectionManager::~PeerConnectionManager() {}
 const Json::Value PeerConnectionManager::GetMediaList() {
     Json::Value value(Json::arrayValue);
 
-    Json::Value media;
-    media["video"] = "image://Open3D";
-    value.append(media);
+    // Json::Value media;
+    // media["video"] = "image://Open3D";
+    // value.append(media);
 
-    // for (const std::string &window_uid : webrtc_server_->GetWindowUIDs()) {
-    //     Json::Value media;
-    //     media["video"] = window_uid;
-    //     value.append(media);
-    // }
+    for (const std::string &window_uid : webrtc_server_->GetWindowUIDs()) {
+        Json::Value media;
+        media["video"] = window_uid;
+        value.append(media);
+    }
 
     return value;
 }

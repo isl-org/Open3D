@@ -76,9 +76,9 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 
     // Server->client send frame.
     // TODO: multiple windows.
-    auto draw_callback = [this](gui::Window *window,
+    auto draw_callback = [this](const gui::Window *window,
                                 std::shared_ptr<core::Tensor> im) -> void {
-        this->impl_->webrtc_server_->OnFrame(im);
+        this->impl_->webrtc_server_->OnFrame(window->GetUID(), im);
     };
     SetOnWindowDraw(draw_callback);
 }

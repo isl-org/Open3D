@@ -88,19 +88,18 @@ struct WebRTCServer::Impl {
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
     void OnDataChannelMessage(const std::string& message);
-    void OnFrame(const std::shared_ptr<core::Tensor>& im);
+    void OnFrame(const std::string& window_uid,
+                 const std::shared_ptr<core::Tensor>& im);
     void Run();
 };
 
-void WebRTCServer::Impl::OnFrame(const std::shared_ptr<core::Tensor>& im) {
-    // TODO: name this differently and handle multiple instances.
-    // dynamic_cast is better but "-fno-rtti" is required for WebRTC.
+void WebRTCServer::Impl::OnFrame(const std::string& window_uid,
+                                 const std::shared_ptr<core::Tensor>& im) {
+    rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
+            peer_connection_manager_->GetVideoTrackSource(window_uid);
 
     // video_track_source is nullptr if the server is running but no client is
     // connected.
-    rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
-            peer_connection_manager_->GetVideoTrackSource("imageOpen3D");
-
     if (video_track_source != nullptr) {
         // TODO: this OnFrame(im); is a blocking call. Do we need to handle
         // OnFrame in a separte thread? e.g. attach to a queue of frames, even
@@ -138,8 +137,9 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     impl_->OnDataChannelMessage(message);
 }
 
-void WebRTCServer::OnFrame(const std::shared_ptr<core::Tensor>& im) {
-    impl_->OnFrame(im);
+void WebRTCServer::OnFrame(const std::string& window_uid,
+                           const std::shared_ptr<core::Tensor>& im) {
+    impl_->OnFrame(window_uid, im);
 }
 
 std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
