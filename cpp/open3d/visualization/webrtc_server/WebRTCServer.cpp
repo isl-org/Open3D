@@ -95,6 +95,7 @@ struct WebRTCServer::Impl {
 
 void WebRTCServer::Impl::OnFrame(const std::string& window_uid,
                                  const std::shared_ptr<core::Tensor>& im) {
+    // Get the WebRTC stream that corresponds to the window_uid.
     rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
             peer_connection_manager_->GetVideoTrackSource(window_uid);
 
