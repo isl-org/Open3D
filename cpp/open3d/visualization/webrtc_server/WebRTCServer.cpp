@@ -154,8 +154,19 @@ void WebRTCServer::OnFrame(const std::string& window_uid,
     impl_->OnFrame(window_uid, im);
 }
 
-void WebRTCServer::ReDraw(const std::string& window_uid) {
-    impl_->redraw_callback_(window_uid);
+void WebRTCServer::SendInitFrames(const std::string& window_uid) {
+    auto sender = [this, &window_uid]() {
+        static const int s_max_initial_frames = 10;
+        static const int s_sleep_between_frames_ms = 100;
+        for (int i = 0; i < s_max_initial_frames; ++i) {
+            this->impl_->redraw_callback_(window_uid);
+            std::this_thread::sleep_for(
+                    std::chrono::milliseconds(s_sleep_between_frames_ms));
+            utility::LogInfo("Sent init frames {}", i);
+        }
+    };
+    std::thread thread(sender);
+    thread.join();
 }
 
 std::vector<std::string> WebRTCServer::GetWindowUIDs() const {

@@ -94,9 +94,9 @@ public:
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
 
-    // Force a redraw and sned a server -> client frame. This essentially calls
-    // the callback function set by SetMouseEventCallback();
-    void ReDraw(const std::string& window_uid);
+    // Send initial frames. This flushs the WebRTC vidoe stream. After the
+    // initial frames, new frames will only be sent at redraw events.
+    void SendInitFrames(const std::string& window_uid);
 
     // List available windows.
     std::vector<std::string> GetWindowUIDs() const;
