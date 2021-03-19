@@ -171,7 +171,8 @@ public:
 
     int GetMouseMods() const;  // internal, for WindowSystem
 
-    /// Returns the unique identifier of the window.
+    /// Returns the unique identifier of the window. The UID can be used
+    /// internally as the global unique name for a window.
     std::string GetUID() const;
 
 protected:
