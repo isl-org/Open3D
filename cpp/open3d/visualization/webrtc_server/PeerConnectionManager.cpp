@@ -67,11 +67,6 @@ const char k_candidate_sdp_name[] = "candidate";
 const char k_session_description_type_name[] = "type";
 const char k_session_description_sdp_name[] = "sdp";
 
-// Character to remove from url to make webrtc label.
-static bool IgnoreInLabel(char c) {
-    return c == ' ' || c == ':' || c == '.' || c == '/' || c == '&';
-}
-
 // Helpers that should be moved somewhere else,
 #ifdef WIN32
 std::string GetServerIpFromClientIp(int client_ip) { return "127.0.0.1"; }
@@ -876,15 +871,15 @@ PeerConnectionManager::CreateVideoSource(
 const std::string PeerConnectionManager::SanitizeLabel(
         const std::string &label) {
     std::string out(label);
-
-    // Conceal labels that contain rtsp URL to prevent sensitive data leaks.
-    if (label.find("rtsp:") != std::string::npos) {
-        std::hash<std::string> hash_fn;
-        size_t hash = hash_fn(out);
-        return std::to_string(hash);
+    out.erase(std::remove_if(out.begin(), out.end(),
+                             [](char c) -> bool {
+                                 return c == ' ' || c == ':' || c == '.' ||
+                                        c == '/' || c == '&';
+                             }),
+              out.end());
+    if (out != label) {
+        utility::LogInfo("Invalid video label {}.", label);
     }
-
-    out.erase(std::remove_if(out.begin(), out.end(), IgnoreInLabel), out.end());
     return out;
 }
 
