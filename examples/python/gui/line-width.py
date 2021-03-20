@@ -4,8 +4,10 @@ import random
 
 NUM_LINES = 10
 
+
 def random_point():
     return [5 * random.random(), 5 * random.random(), 5 * random.random()]
+
 
 def main():
     pts = [random_point() for _ in range(0, 2 * NUM_LINES)]
@@ -27,11 +29,14 @@ def main():
     mat = o3d.visualization.rendering.Material()
     mat.shader = "unlitLine"
     mat.line_width = 10  # note that this is scaled with respect to pixels,
-                         # so will give different results depending on the
-                         # scaling values of your system
-    o3d.visualization.draw({"name": "lines",
-                            "geometry": lines,
-                            "material": mat})
- 
+    # so will give different results depending on the
+    # scaling values of your system
+    o3d.visualization.draw({
+        "name": "lines",
+        "geometry": lines,
+        "material": mat
+    })
+
+
 if __name__ == "__main__":
     main()
