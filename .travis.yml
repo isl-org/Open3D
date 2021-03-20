@@ -27,10 +27,10 @@ addons:
       - clang-7
       - wget
 install:
-  - update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
-  - update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
-  - update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
-  - update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+  - sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
+  - sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
+  - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+  - sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
   - wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
   - tar -xvf cmake-3.18-aarch64.tar.gz
   - cp -ar cmake-3.18-aarch64 ${HOME}
