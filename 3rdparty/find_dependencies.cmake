@@ -960,8 +960,14 @@ if(BUILD_GUI)
                          REQUIRED)
             get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
         endif()
+        execute_process(COMMAND ls -a ${CLANG_LIBDIR} OUTPUT_VARIABLE output)
+        message(STATUS "output: ${output}")
         # Find clang libraries at the exact path ${CLANG_LIBDIR}.
-        find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        find_library(CPP_LIBRARY c++ PATH_SUFFIXES
+            llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
+            REQUIRED
+        )
+        # find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
         find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
         if(CPP_LIBRARY-NOTFOUND)
             message(FATAL_ERROR "CPP_LIBRARY-NOTFOUND")
