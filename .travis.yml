@@ -31,6 +31,15 @@ install:
   - sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
   - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
   - sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+  - >
+    python -m pip install -U
+    pip=="20.2.4"
+    wheel=="0.35.1"
+    setuptools=="50.3.2"
+    yapf=="0.30.0"
+    pytest=="6.0.1"
+    scipy=="1.6.1"
+    wheel=="0.35.1"
   - wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
   - tar -xvf cmake-3.18-aarch64.tar.gz
   - cp -ar cmake-3.18-aarch64 ${HOME}
