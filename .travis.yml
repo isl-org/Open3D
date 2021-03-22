@@ -1,5 +1,5 @@
 language: cpp
-arch: arm64-graviton2
+arch: arm64
 os: linux
 dist: focal
 sudo: true
@@ -11,21 +11,27 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - apt-utils
+      - autoconf
       - build-essential
-      - xorg-dev
-      - libglu1-mesa-dev
-      - python3-dev
-      - libsdl2-dev
+      - ccache
+      - clang-7
+      - git
+      - libblas-dev
       - libc++-7-dev
       - libc++abi-7-dev
-      - ninja-build
-      - libxi-dev
+      - libglu1-mesa-dev
+      - liblapack-dev
+      - liblapacke-dev
       - libosmesa6-dev
-      - libudev-dev
-      - autoconf
+      - libsdl2-dev
+      - libtbb-dev
       - libtool
-      - clang-7
+      - libudev-dev
+      - libxi-dev
+      - ninja-build
+      - python3-dev
       - wget
+      - xorg-dev
 install:
   - sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
   - sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
