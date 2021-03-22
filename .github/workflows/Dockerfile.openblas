@@ -1,5 +1,3 @@
-# docker build -t open3d-openblas-ci:latest -f .github/workflows/Dockerfile.ope$blas .
-
 FROM ubuntu:20.04
 
 # Non-interactive dpkg
