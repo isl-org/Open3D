@@ -58,7 +58,7 @@ jobs:
             sudo apt-get install -y xorg-dev libglu1-mesa-dev ccache
             sudo apt-get install -y libblas-dev liblapack-dev liblapacke-dev
             python -m pip install -U pytest==6.0.1
-            python -m pip install -U scipy==1.6.1
+            python -m pip install -U scipy==1.5.4
             python -m pip install -U wheel==0.35.1
 
       - name: Build and test
