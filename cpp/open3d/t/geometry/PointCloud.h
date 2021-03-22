@@ -329,7 +329,7 @@ public:
     /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
     /// / fy\n
     ///
-    /// \param image The input RGBD image should have a uint16_t depth image and
+    /// \param rgbd_image The input RGBD image should have a uint16_t depth image and
     /// RGB image with any DType and the same size.
     /// \param intrinsic Intrinsic parameters of the camera.
     /// \param extrinsic Extrinsic parameters of the camera.
