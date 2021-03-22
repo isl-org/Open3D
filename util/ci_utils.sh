@@ -39,6 +39,8 @@ STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
+# CMake
+CMAKE_ARM64_VER="cmake-3.19.7-Linux-aarch64"
 
 # Documentation
 SPHINX_VER=3.1.2
@@ -543,10 +545,10 @@ install_arm64_dependencies() {
     pip install pytest=="$PYTEST_VER" -U
     pip install wheel=="$WHEEL_VER" -U
     # Get pre-compiled CMake
-    wget https://github.com/Kitware/CMake/releases/download/v3.19.7/cmake-3.19.7-Linux-aarch64.tar.gz
-    tar -xvf cmake-3.19.7-Linux-aarch64.tar.gz
-    cp -ar cmake-3.19.7-Linux-aarch64 ${HOME}
-    PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
+    wget https://github.com/Kitware/CMake/releases/download/v3.19.7/${CMAKE_ARM64_VER}.tar.gz
+    tar -xvf ${CMAKE_ARM64_VER}.tar.gz
+    cp -ar ${CMAKE_ARM64_VER} ${HOME}
+    PATH=${HOME}/${CMAKE_ARM64_VER}/bin:$PATH
     which cmake
     cmake --version
 }
