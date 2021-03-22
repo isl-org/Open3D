@@ -1,5 +1,5 @@
 language: cpp
-arch: arm64
+arch: arm64-graviton2
 os: linux
 dist: focal
 sudo: true
@@ -46,11 +46,11 @@ install:
     pytest=="6.0.1"
     scipy=="1.6.1"
     wheel=="0.35.1"
-  - wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
-  - tar -xvf cmake-3.18-aarch64.tar.gz
-  - cp -ar cmake-3.18-aarch64 ${HOME}
+  - wget https://github.com/Kitware/CMake/releases/download/v3.19.7/cmake-3.19.7-Linux-aarch64.tar.gz
+  - tar -xvf cmake-3.19.7-Linux-aarch64.tar.gz
+  - cp -ar cmake-3.19.7-Linux-aarch64 ${HOME}
 script:
-  - PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+  - PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
   - which cmake
   - cmake --version
   - pwd
