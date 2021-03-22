@@ -62,7 +62,8 @@ COPY . /root/Open3D
 # `docker build` will build Open3D. The unit tests will be executed later in
 # during `docker run`
 WORKDIR /root/Open3D
-RUN mkdir build \
+RUN PATH=${HOME}/cmake-3.18-aarch64/bin:${PATH} \
+ && mkdir build \
  && cd build \
  && cmake \
     -DUSE_BLAS=ON \
