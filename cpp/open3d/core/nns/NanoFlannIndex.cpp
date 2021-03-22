@@ -27,6 +27,7 @@
 #include "open3d/core/nns/NanoFlannIndex.h"
 
 #include <tbb/parallel_for.h>
+#include <tbb/blocked_range2d.h>
 
 #include <nanoflann.hpp>
 
@@ -230,7 +231,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     });
     return result;
 };
-
+/*
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
@@ -269,6 +270,93 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
         distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
     });
+
+    return std::make_pair(indices, distances);
+}
+*/
+
+std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
+    // Check dtype.
+    query_points.AssertDtype(GetDtype());
+
+    // Check shapes.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
+    if (max_knn <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] max_knn should be larger than "
+                "0.");
+    }
+    if (radius <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] radius should be larger than "
+                "0.");
+    }
+
+    //     double radius_squared = radius * radius;
+
+    core::Tensor neighbors_indices, neighbors_distances, neighbors_row_splits;
+    std::tie(neighbors_indices, neighbors_distances, neighbors_row_splits) =
+            SearchRadius(query_points, radius);
+
+    // TODO: Support Float64, and remove auto.
+    //     Dtype dtype = GetDtype();
+    //     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    neighbors_distances = neighbors_distances.To(core::Dtype::Float32);
+    int64_t n = query_points.GetLength();
+
+    auto neighbors_indices_ptr =
+            static_cast<int64_t *>(neighbors_indices.GetDataPtr());
+    auto neighbors_distances_ptr = neighbors_distances.GetDataPtr<float>();
+    auto neighbors_row_splits_ptr =
+            static_cast<int *>(neighbors_row_splits.GetDataPtr());
+
+    core::Tensor indices = core::Tensor::Empty({n, max_knn}, core::Dtype::Int64,
+                                               query_points.GetDevice());
+    core::Tensor distances = core::Tensor::Empty(
+            {n, max_knn}, query_points.GetDtype(), query_points.GetDevice());
+
+    auto indices_ptr = static_cast<int64_t *>(indices.GetDataPtr());
+    auto distances_ptr = distances.GetDataPtr<float>();
+
+    tbb::parallel_for(
+            tbb::blocked_range2d<int>(0, n, 0, max_knn),
+            [&](const tbb::blocked_range2d<int> &r) {
+                for (int workload_idx = r.rows().begin(),
+                         workload_idx_end = r.rows().end();
+                     workload_idx < workload_idx_end; workload_idx++) {
+                    for (int local_neighbors_idx = r.cols().begin(),
+                             local_neighbors_idx_end = r.cols().end();
+                         local_neighbors_idx < local_neighbors_idx_end;
+                         local_neighbors_idx++) {
+                        int start_idx =
+                                neighbors_row_splits_ptr[workload_idx * 2];
+                        int end_idx =
+                                neighbors_row_splits_ptr[(workload_idx + 1) *
+                                                         2];
+                        // local_neighbors_idx < number of correspondences.
+                        if ((end_idx - start_idx) > local_neighbors_idx) {
+                            indices_ptr[workload_idx * max_knn +
+                                        local_neighbors_idx] =
+                                    neighbors_indices_ptr[start_idx +
+                                                          local_neighbors_idx];
+                            distances_ptr[workload_idx * max_knn +
+                                          local_neighbors_idx] =
+                                    neighbors_distances_ptr
+                                            [start_idx + local_neighbors_idx];
+                        } else {
+                            // Setting rest of the
+                            // [max_knn - number of correspondences] elements
+                            // as -1.
+                            indices_ptr[workload_idx * max_knn +
+                                        local_neighbors_idx] = -1;
+                            distances_ptr[workload_idx * max_knn +
+                                          local_neighbors_idx] = -1;
+                        }
+                    }
+                }
+            });
 
     return std::make_pair(indices, distances);
 }
