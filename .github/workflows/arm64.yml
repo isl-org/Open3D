@@ -35,14 +35,6 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
 
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-openblas-x86_64-ccache
-
       - name: Docker build
         run: |
           docker build -t open3d-openblas-ci:latest -f .github/workflows/Dockerfile.openblas .
