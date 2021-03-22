@@ -543,10 +543,10 @@ install_arm64_dependencies() {
     pip install pytest=="$PYTEST_VER" -U
     pip install wheel=="$WHEEL_VER" -U
     # Get pre-compiled CMake
-    wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
-    tar -xvf cmake-3.18-aarch64.tar.gz
-    cp -ar cmake-3.18-aarch64 ${HOME}
-    PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+    wget https://github.com/Kitware/CMake/releases/download/v3.19.7/cmake-3.19.7-Linux-aarch64.tar.gz
+    tar -xvf cmake-3.19.7-Linux-aarch64.tar.gz
+    cp -ar cmake-3.19.7-Linux-aarch64 ${HOME}
+    PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
     which cmake
     cmake --version
 }

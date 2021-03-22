@@ -146,7 +146,7 @@ jobs:
             install_arm64_dependencies
             source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+            PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
             mkdir build
@@ -256,7 +256,7 @@ jobs:
             install_arm64_dependencies
             source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+            PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
             cd build
