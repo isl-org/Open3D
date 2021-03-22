@@ -13,6 +13,10 @@ on:
 
 env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
+  PYTEST_VER: "6.0.1"
+  SCIPY_VER: "1.5.4"
+  WHEEL_VER: "0.35.1"
+  CMAKE_ARM64_VER: "cmake-3.19.7-Linux-aarch64"
 
 jobs:
   x86_64:
@@ -57,9 +61,9 @@ jobs:
             sudo apt-get install -y python3-dev
             sudo apt-get install -y xorg-dev libglu1-mesa-dev ccache
             sudo apt-get install -y libblas-dev liblapack-dev liblapacke-dev
-            python -m pip install -U pytest==6.0.1
-            python -m pip install -U scipy==1.5.4
-            python -m pip install -U wheel==0.35.1
+            python -m pip install -U pytest==${{ env.PYTEST_VER }}
+            python -m pip install -U scipy==${{ env.SCIPY_VER }}
+            python -m pip install -U wheel==${{ env.WHEEL_VER }}
 
       - name: Build and test
         run: |
@@ -146,7 +150,7 @@ jobs:
             install_arm64_dependencies
             source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
+            PATH=${HOME}/${{ env.CMAKE_ARM64_VER }}/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
             mkdir build
@@ -256,7 +260,7 @@ jobs:
             install_arm64_dependencies
             source ${HOME}/venv/bin/activate
             PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:$PATH
+            PATH=${HOME}/${{ env.CMAKE_ARM64_VER }}/bin:$PATH
             ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
             ccache -s
             cd build
