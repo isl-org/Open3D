@@ -62,7 +62,7 @@ RUN python -m pip install -U \
     setuptools=="50.3.2" \
     yapf=="0.30.0" \
     pytest=="6.0.1" \
-    scipy=="1.4.1" \
+    scipy=="1.5.4" \
     wheel=="0.35.1"
 
 # `docker build` should be executed in the Open3D root dir
