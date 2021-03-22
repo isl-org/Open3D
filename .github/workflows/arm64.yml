@@ -50,10 +50,10 @@ jobs:
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
   # ARM64 build can be slow, so it is spilt into multiple steps.
-  # - arm64-step-1: compiles all 3rd-party libraries and upload the Open3D repo
-  #   directory (including the build directory) as GitHub artifacts.
-  # - arm64-step-2: downloads the Open3D directory from arm64-step-1, builds the
-  #   rest of the library and runs the unit tests.
+  # - arm64-step-1: compiles all 3rd-party libraries and upload the Docker image
+  #                 as a artifact.
+  # - arm64-step-2: downloads the Docker image from arm64-step-1, builds the
+  #                 rest of the library and runs the unit tests.
   arm64-step-1:
     runs-on: ubuntu-20.04
     strategy:
@@ -106,6 +106,17 @@ jobs:
         uses: fkirc/skip-duplicate-actions@master
         with:
           github_token: ${{ github.token }}
+
+      # Just used for util/ci_utils.sh
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: Download Docker image
         uses: actions/download-artifact@v2
