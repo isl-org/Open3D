@@ -960,6 +960,7 @@ void FilamentResourceManager::LoadDefaults() {
                                 {1.0f, 1.0f, 1.0f});
     bg_mat->setDefaultParameter("albedo", texture, default_sampler);
     bg_mat->setDefaultParameter("aspectRatio", 0.0f);
+    bg_mat->setDefaultParameter("flipY", 0.0f);
     materials_[kDefaultUnlitBackgroundShader] = BoxResource(bg_mat, engine_);
 
     const auto inf_path = resource_root + "/infiniteGroundPlane.filamat";

@@ -931,6 +931,7 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
+            .SetParameter("flipY", 1.0f)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
@@ -1711,6 +1712,7 @@ void FilamentScene::SetBackground(TextureHandle image) {
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetParameter("aspectRatio", aspect)
+            .SetParameter("flipY", 0.0f)
             .SetTexture("albedo", image,
                         rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
