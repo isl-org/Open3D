@@ -47,3 +47,13 @@ jobs:
         run: |
           docker build -t open3d-openblas-ci:latest -f .github/workflows/Dockerfile.openblas .
 
+      - name: C++ tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest \
+            build/bin/tests --gtest_filter="-*Reduce*Sum*"
+
+      - name: Python tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest \
+            pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
+
