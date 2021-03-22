@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 # CMake
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
     | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null \
- && apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
+ && apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ focal main'
 RUN apt-get update && apt-get install -y \
     cmake \
  && rm -rf /var/lib/apt/lists/*
@@ -60,6 +60,6 @@ RUN ln -s /usr/bin/python3 /usr/local/bin/python \
 RUN python -m pip install -U pip=="20.2.4" wheel=="0.35.1" setuptools=="50.3.2" yapf=="0.30.0"
 RUN python -m pip install -U pytest=="6.0.1" scipy=="1.4.1" wheel=="0.35.1"
 
-# `docker build` should be executed in Open3D root dir
+# `docker build` should be executed in the Open3D root dir
 COPY . /root/Open3D
 WORKDIR /root/Open3D
