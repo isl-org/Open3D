@@ -1,5 +1,5 @@
 language: cpp
-arch: arm64
+arch: arm64-graviton2
 os: linux
 dist: focal
 sudo: true
