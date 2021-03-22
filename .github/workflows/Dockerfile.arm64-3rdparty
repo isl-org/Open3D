@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     apt-utils  \
     autoconf \
     build-essential \
-    ccache \
     clang-7 \
     git  \
     libblas-dev  \
@@ -79,5 +78,4 @@ RUN PATH=${HOME}/cmake-3.19.7-Linux-aarch64/bin:${PATH} \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DPYTHON_EXECUTABLE="$(which python3)" \
     .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc)
+ && make camera -j$(nproc) # triggers all 3rd-party builds
