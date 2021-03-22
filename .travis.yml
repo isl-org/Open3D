@@ -43,17 +43,23 @@ script:
   - cd build
   - >
     cmake
+    -DUSE_BLAS=ON
     -DCMAKE_BUILD_TYPE=Release
     -DBUILD_SHARED_LIBS=ON
     -DBUILD_GUI=ON
-    -DBUILD_LIBREALSENSE=ON
     -DCMAKE_C_COMPILER=gcc
     -DCMAKE_CXX_COMPILER=g++
+    -DBUILD_FILAMENT_FROM_SOURCE=ON
     -DBUILD_TENSORFLOW_OPS=OFF
     -DBUILD_PYTORCH_OPS=OFF
     -DBUILD_UNIT_TESTS=ON
     -DCMAKE_INSTALL_PREFIX=~/open3d_install
-    -DPYTHON_EXECUTABLE=$(which python)
+    -DPYTHON_EXECUTABLE="$(which python3)"
     ..
   - echo "cmake config done"
+  - make -j$(nproc)
+  - make tests -j$(nproc)
+  - make install-pip-package -j$(nproc)
+  - ./bin/tests --gtest_filter="-*Reduce*Sum*"
+  - pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/t/io/test_realsense.py
 
