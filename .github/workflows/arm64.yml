@@ -15,7 +15,7 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  x86_64:
+  arm64-qemu:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -35,17 +35,23 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
 
+      # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
+      - name: Setup Docker with QEMU
+        run: |
+          sudo apt-get --yes install qemu binfmt-support qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
       - name: Docker build
         run: |
-          docker build -t open3d-openblas-ci:latest -f .github/workflows/Dockerfile.openblas .
+          docker build -t open3d-arm64-ci:latest -f .github/workflows/Dockerfile.arm64 .
 
       - name: C++ tests
         run: |
-          docker run --rm open3d-openblas-ci:latest \
+          docker run --rm open3d-arm64-ci:latest \
             build/bin/tests --gtest_filter="-*Reduce*Sum*"
 
       - name: Python tests
         run: |
-          docker run --rm open3d-openblas-ci:latest \
+          docker run --rm open3d-arm64-ci:latest \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
