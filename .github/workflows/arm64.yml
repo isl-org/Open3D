@@ -35,58 +35,19 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
 
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-openblas-x86_64-ccache
-
-      - name: Set up Python version
-        uses: actions/setup-python@v2
-        with:
-            python-version: 3.6
-
-      - name: Install dependencies
+      - name: Docker build
         run: |
-            sudo apt-get --yes install ccache
-            ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
-            sudo apt-get update -q -y
-            sudo apt-get install -y apt-utils build-essential git cmake
-            sudo apt-get install -y python3-dev
-            sudo apt-get install -y xorg-dev libglu1-mesa-dev ccache
-            sudo apt-get install -y libblas-dev liblapack-dev liblapacke-dev
-            python -m pip install -U pytest==6.0.1
-            python -m pip install -U scipy==1.4.1
-            python -m pip install -U wheel==0.35.1
+          docker build -t open3d-openblas-ci:latest -f .github/workflows/Dockerfile.openblas .
 
-      - name: Build and test
+      - name: C++ tests
         run: |
-            PATH=/usr/lib/ccache:$PATH
-            ccache -s
-            mkdir build
-            cd build
-            cmake \
-              -DUSE_BLAS=ON \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_FILAMENT_FROM_SOURCE=ON \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE="$(which python3)" \
-              ..
-            make -j$(nproc)
-            make tests -j$(nproc)
-            make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
-            ccache -s
+          docker run --rm open3d-openblas-ci:latest \
+            build/bin/tests --gtest_filter="-*Reduce*Sum*"
+
+      - name: Python tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest \
+            pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
   # ARM64 build can be slow, so it is spilt into multiple steps.
   # - arm64-step-1: compiles all 3rd-party libraries and upload the Open3D repo
