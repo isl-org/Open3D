@@ -44,7 +44,7 @@ install:
     setuptools=="50.3.2"
     yapf=="0.30.0"
     pytest=="6.0.1"
-    scipy=="1.6.1"
+    scipy=="1.5.4"
     wheel=="0.35.1"
   - wget https://github.com/Kitware/CMake/releases/download/v3.19.7/cmake-3.19.7-Linux-aarch64.tar.gz
   - tar -xvf cmake-3.19.7-Linux-aarch64.tar.gz
