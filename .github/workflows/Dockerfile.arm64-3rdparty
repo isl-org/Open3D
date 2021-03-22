@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     apt-utils  \
     autoconf \
     build-essential \
+    ccache \
     clang-7 \
     git  \
     libblas-dev  \
