@@ -56,8 +56,14 @@ RUN ln -s /usr/bin/python3 /usr/local/bin/python \
  && ln -s /usr/bin/pip3 /usr/local/bin/pip
 
 # Python dependencies
-RUN python -m pip install -U pip=="20.2.4" wheel=="0.35.1" setuptools=="50.3.2" yapf=="0.30.0"
-RUN python -m pip install -U pytest=="6.0.1" scipy=="1.4.1" wheel=="0.35.1"
+RUN python -m pip install -U \
+    pip=="20.2.4" \
+    wheel=="0.35.1" \
+    setuptools=="50.3.2" \
+    yapf=="0.30.0" \
+    pytest=="6.0.1" \
+    scipy=="1.4.1" \
+    wheel=="0.35.1"
 
 # `docker build` should be executed in the Open3D root dir
 COPY . /root/Open3D
