@@ -1,5 +1,6 @@
 FROM open3d-arm64-ci:3rdparty
 
 WORKDIR /root/Open3D
-RUN make -j$(nproc) \
+RUN cd build \
+ && make -j$(nproc) \
  && make install-pip-package -j$(nproc)
