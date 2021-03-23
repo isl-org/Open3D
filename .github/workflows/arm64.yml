@@ -118,7 +118,7 @@ jobs:
       - name: C++ tests
         run: |
           docker run --rm ${{ env.DOCKER_IMAGE_TAG }} build/bin/tests \
-            --gtest_filter="-*RGBDImage.CreateFromNYUFormat*"
+            --gtest_filter="-*RGBDImage.CreateFrom*"
 
       - name: Python tests
         run: |
