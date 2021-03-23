@@ -77,8 +77,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateOctahedron(
     mesh->vertices_.push_back(radius * Eigen::Vector3d(0, -1, 0));
     mesh->vertices_.push_back(radius * Eigen::Vector3d(0, 0, -1));
     // Triangles.
-    mesh->triangles_ = {{0, 1, 2}, {3, 4, 2}, {4, 0, 2}, {0, 5, 1},
-                        {1, 5, 3}, {3, 5, 4}, {4, 5, 0}};
+    mesh->triangles_ = {{0, 1, 2}, {1, 3, 2}, {3, 4, 2}, {4, 0, 2},
+                        {0, 5, 1}, {1, 5, 3}, {3, 5, 4}, {4, 5, 0}};
     // UV Map.
     if (create_uv_map) {
         mesh->triangle_uvs_ = {
