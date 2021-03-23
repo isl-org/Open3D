@@ -262,7 +262,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("absorption_distance",
                            &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width)
+            .def_readwrite("line_width", &Material::line_width,
+                           "Requires 'shader' to be 'unlitLine'")
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
