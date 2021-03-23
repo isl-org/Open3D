@@ -19,6 +19,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+    env:
+      BASE_IMAGE: ubuntu:20.04
+      CMAKE_VER: cmake-3.19.7-Linux-x86_64
+      CCACHE_TAR_NAME: open3d-x86_64-ci-ccache
+      DOCKER_IMAGE_TAG: open3d-x86_64-ci:latest
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -37,21 +42,50 @@ jobs:
 
       - name: Docker build
         run: |
-          docker build -t open3d-openblas-ci:latest -f .github/workflows/Dockerfile.openblas .
+          docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
+                       --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
+                       --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
+                       -t ${{ env.DOCKER_IMAGE_TAG }} \
+                       -f .github/workflows/Dockerfile.openblas .
 
       - name: C++ tests
         run: |
-          docker run --rm open3d-openblas-ci:latest build/bin/tests
+          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} build/bin/tests
 
       - name: Python tests
         run: |
-          docker run --rm open3d-openblas-ci:latest \
+          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
+
+      # https://stackoverflow.com/a/34093828/1255535
+      - name: Copy ccache out from the container
+        run: |
+          docker run --rm --entrypoint \
+            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ CCACHE_TAR_NAME }}.tar.gz \
+            > ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz
+
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+
+      - name: Upload ccache to GCS
+        run: |
+          gsutil cp ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
+
 
   openblas_arm64:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+    env:
+      BASE_IMAGE: arm64v8/ubuntu:20.04
+      CMAKE_VER: cmake-3.19.7-Linux-aarch64
+      CCACHE_TAR_NAME: open3d-arm64-ci-ccache
+      DOCKER_IMAGE_TAG: open3d-arm64-ci:latest
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -73,24 +107,30 @@ jobs:
           sudo apt-get --yes install qemu binfmt-support qemu-user-static
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-      - name: Docker build (open3d-arm64-ci:latest)
+      - name: Docker build
         run: |
-          docker build -t open3d-arm64-ci:latest -f .github/workflows/Dockerfile.arm64 .
+          docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
+                       --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
+                       --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
+                       -t ${{ env.DOCKER_IMAGE_TAG }} \
+                       -f .github/workflows/Dockerfile.openblas .
 
       - name: C++ tests
         run: |
-          docker run --rm open3d-arm64-ci:latest build/bin/tests \
+          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} build/bin/tests \
             --gtest_filter="-*RGBDImage.CreateFromNYUFormat*"
 
       - name: Python tests
         run: |
-          docker run --rm open3d-arm64-ci:latest \
+          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
       # https://stackoverflow.com/a/34093828/1255535
       - name: Copy ccache out from the container
         run: |
-          docker run --rm --entrypoint cat open3d-arm64-ci:latest /open3d-arm64-ci-ccache.tar.gz > ${GITHUB_WORKSPACE}/open3d-arm64-ci-ccache.tar.gz
+          docker run --rm --entrypoint \
+            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ CCACHE_TAR_NAME }}.tar.gz \
+            > ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -102,4 +142,4 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-arm64-ci-ccache.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
