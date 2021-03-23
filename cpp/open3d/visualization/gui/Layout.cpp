@@ -540,7 +540,8 @@ void VGrid::Layout(const Theme& theme) {
     if (wanted_width > layout_width && num_growing > 0) {
         int total_spacing = (int(columns.size()) - 1) * impl_->spacing_;
         int growing_size =
-                (layout_width - total_spacing - total_not_growing_width) / num_growing;
+                (layout_width - total_spacing - total_not_growing_width) /
+                num_growing;
         if (growing_size < 0) {
             growing_size = layout_width / num_growing;
         }
