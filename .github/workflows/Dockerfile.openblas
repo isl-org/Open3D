@@ -13,12 +13,6 @@
 #                --build-arg CMAKE_VER=cmake-3.19.7-Linux-aarch64 \
 #                --build-arg CCACHE_TAR_NAME=open3d-arm64-ci-ccache
 
-# Default values for X86_64
-
-
-# To run ARM64 with QEMU, you'll need to run
-# sudo apt-get --yes install qemu binfmt-support qemu-user-static
-# docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 ARG BASE_IMAGE=ubuntu:20.04
 FROM ${BASE_IMAGE}
 

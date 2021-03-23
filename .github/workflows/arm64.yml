@@ -23,7 +23,6 @@ jobs:
       BASE_IMAGE: ubuntu:20.04
       CMAKE_VER: cmake-3.19.7-Linux-x86_64
       CCACHE_TAR_NAME: open3d-x86_64-ci-ccache
-      DOCKER_IMAGE_TAG: open3d-x86_64-ci:latest
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -45,23 +44,23 @@ jobs:
           docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
                        --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
                        --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
-                       -t ${{ env.DOCKER_IMAGE_TAG }} \
+                       -t open3d-openblas-ci:latest \
                        -f .github/workflows/Dockerfile.openblas .
 
       - name: C++ tests
         run: |
-          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} build/bin/tests
+          docker run --rm open3d-openblas-ci:latest build/bin/tests
 
       - name: Python tests
         run: |
-          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} \
+          docker run --rm open3d-openblas-ci:latest \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
       # https://stackoverflow.com/a/34093828/1255535
       - name: Copy ccache out from the container
         run: |
           docker run --rm --entrypoint \
-            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ env.CCACHE_TAR_NAME }}.tar.gz \
+            cat open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz \
             > ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
@@ -85,7 +84,6 @@ jobs:
       BASE_IMAGE: arm64v8/ubuntu:20.04
       CMAKE_VER: cmake-3.19.7-Linux-aarch64
       CCACHE_TAR_NAME: open3d-arm64-ci-ccache
-      DOCKER_IMAGE_TAG: open3d-arm64-ci:latest
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -102,6 +100,7 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
 
+      # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
       - name: Setup Docker with QEMU
         run: |
           sudo apt-get --yes install qemu binfmt-support qemu-user-static
@@ -112,24 +111,24 @@ jobs:
           docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
                        --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
                        --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
-                       -t ${{ env.DOCKER_IMAGE_TAG }} \
+                       -t open3d-openblas-ci:latest \
                        -f .github/workflows/Dockerfile.openblas .
 
       - name: C++ tests
         run: |
-          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} build/bin/tests \
+          docker run --rm open3d-openblas-ci:latest build/bin/tests \
             --gtest_filter="-*RGBDImage.CreateFrom*"
 
       - name: Python tests
         run: |
-          docker run --rm ${{ env.DOCKER_IMAGE_TAG }} \
+          docker run --rm open3d-openblas-ci:latest \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
       # https://stackoverflow.com/a/34093828/1255535
       - name: Copy ccache out from the container
         run: |
           docker run --rm --entrypoint \
-            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ env.CCACHE_TAR_NAME }}.tar.gz \
+            cat open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz \
             > ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
