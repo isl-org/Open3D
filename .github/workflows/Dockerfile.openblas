@@ -79,7 +79,8 @@ RUN python -m pip install -U \
 
 # CMake
 # PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.19.7/${CMAKE_VER}.tar.gz \
+RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VER}" | cut -d"-" -f2) \
+ && wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VER}.tar.gz \
  && tar -xvf ${CMAKE_VER}.tar.gz \
  && cp -ar ${CMAKE_VER} ${HOME}
 ENV PATH=${HOME}/${CMAKE_VER}/bin:${PATH}
