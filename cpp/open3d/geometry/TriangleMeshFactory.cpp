@@ -31,7 +31,7 @@ namespace open3d {
 namespace geometry {
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
-        double radius /* = 1.0*/) {
+        double radius /* = 1.0*/, bool create_uv_map /* = false*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateTetrahedron] radius <= 0");
@@ -45,31 +45,26 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
     mesh->vertices_.push_back(radius * Eigen::Vector3d(-std::sqrt(2. / 9.),
                                                        -std::sqrt(2. / 3.),
                                                        -1. / 3.));
-    // Triangles.
     mesh->vertices_.push_back(radius * Eigen::Vector3d(0., 0., 1.));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 2, 1));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 3, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 3));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 2, 3));
+    // Triangles.
+    mesh->triangles_ = {
+            {0, 3, 2},
+            {0, 3, 2},
+            {0, 1, 3},
+            {1, 2, 3},
+    };
     // UV Map.
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.866, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.866, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.866, 1.0));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.866, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.866, 0.0));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.5));
-
+    if (create_uv_map) {
+        mesh->triangle_uvs_ = {{0.866, 0.5},  {0.433, 0.75}, {0.433, 0.25},
+                               {0.866, 0.5},  {0.866, 1.0},  {0.433, 0.75},
+                               {0.866, 0.5},  {0.433, 0.25}, {0.866, 0.0},
+                               {0.433, 0.25}, {0.433, 0.75}, {0.0, 0.5}};
+    }
     return mesh;
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateOctahedron(
-        double radius /* = 1.0*/) {
+        double radius /* = 1.0*/, bool create_uv_map /* = false*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateOctahedron] radius <= 0");
@@ -82,45 +77,24 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateOctahedron(
     mesh->vertices_.push_back(radius * Eigen::Vector3d(0, -1, 0));
     mesh->vertices_.push_back(radius * Eigen::Vector3d(0, 0, -1));
     // Triangles.
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 3, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 4, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(4, 0, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 5, 1));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 5, 3));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 5, 4));
-    mesh->triangles_.push_back(Eigen::Vector3i(4, 5, 0));
+    mesh->triangles_ = {{0, 1, 2}, {3, 4, 2}, {4, 0, 2}, {0, 5, 1},
+                        {1, 5, 3}, {3, 5, 4}, {4, 5, 0}};
     // UV Map.
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1444, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1444, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5773, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5773, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 1.0));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.75));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1444, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1444, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.5));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5773, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5773, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.2887, 0.25));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.433, 0.0));
+    if (create_uv_map) {
+        mesh->triangle_uvs_ = {
+                {0.0, 0.75},    {0.1444, 0.5},  {0.2887, 0.75}, {0.1444, 0.5},
+                {0.433, 0.5},   {0.2887, 0.75}, {0.433, 0.5},   {0.5773, 0.75},
+                {0.2887, 0.75}, {0.5773, 0.75}, {0.433, 1.0},   {0.2887, 0.75},
+                {0.0, 0.25},    {0.2887, 0.25}, {0.1444, 0.5},  {0.1444, 0.5},
+                {0.2887, 0.25}, {0.433, 0.5},   {0.433, 0.5},   {0.2887, 0.25},
+                {0.5773, 0.25}, {0.5773, 0.25}, {0.2887, 0.25}, {0.433, 0.0}};
+    }
 
     return mesh;
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
-        double radius /* = 1.0*/) {
+        double radius /* = 1.0*/, bool create_uv_map /* = false*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateIcosahedron] radius <= 0");
@@ -140,88 +114,35 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
     mesh->vertices_.push_back(radius * Eigen::Vector3d(p, 1, 0));
     mesh->vertices_.push_back(radius * Eigen::Vector3d(-p, 1, 0));
     // Triangles.
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 4, 1));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 5));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 4, 9));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 9, 10));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 10, 5));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 8, 4));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 11, 8));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 5, 11));
-    mesh->triangles_.push_back(Eigen::Vector3i(5, 6, 11));
-    mesh->triangles_.push_back(Eigen::Vector3i(5, 10, 6));
-    mesh->triangles_.push_back(Eigen::Vector3i(4, 8, 7));
-    mesh->triangles_.push_back(Eigen::Vector3i(4, 7, 9));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 6, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 2, 7));
-    mesh->triangles_.push_back(Eigen::Vector3i(2, 6, 10));
-    mesh->triangles_.push_back(Eigen::Vector3i(2, 10, 9));
-    mesh->triangles_.push_back(Eigen::Vector3i(2, 9, 7));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 11, 6));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 8, 11));
-    mesh->triangles_.push_back(Eigen::Vector3i(3, 7, 8));
+    mesh->triangles_ = {{0, 4, 1},  {0, 1, 5},  {1, 4, 9},  {1, 9, 10},
+                        {1, 10, 5}, {0, 8, 4},  {0, 11, 8}, {0, 5, 11},
+                        {5, 6, 11}, {5, 10, 6}, {4, 8, 7},  {4, 7, 9},
+                        {3, 6, 2},  {3, 2, 7},  {2, 6, 10}, {2, 10, 9},
+                        {2, 9, 7},  {3, 11, 6}, {3, 8, 11}, {3, 7, 8}};
     // UV Map.
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0001, 0.1819));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.091));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.2728));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0001, 0.3637));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.2728));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.4546));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.2728));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.091));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.1819));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.2728));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.1819));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.3637));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.2728));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.3637));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.4546));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0001, 0.909));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.9999));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0001, 0.7272));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.6363));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0001, 0.5454));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.4546));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.6363));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.4546));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.5454));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.6363));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.4546));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.3637));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.5454));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.9999));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.909));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.091));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.0001));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.1819));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.5454));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.4724, 0.6363));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.4724, 0.8181));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.909));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.4724, 0.4546));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.5454));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.3637));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.4724, 0.2728));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.3637));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.1819));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.4724, 0.091));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.1819));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.0001));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.6363));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.5454));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.6363));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.7272));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.3149, 0.909));
-    mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.1575, 0.8181));
-
+    if (create_uv_map) {
+        mesh->triangle_uvs_ = {
+                {0.0001, 0.1819}, {0.1575, 0.091},  {0.1575, 0.2728},
+                {0.0001, 0.3637}, {0.1575, 0.2728}, {0.1575, 0.4546},
+                {0.1575, 0.2728}, {0.1575, 0.091},  {0.3149, 0.1819},
+                {0.1575, 0.2728}, {0.3149, 0.1819}, {0.3149, 0.3637},
+                {0.1575, 0.2728}, {0.3149, 0.3637}, {0.1575, 0.4546},
+                {0.0001, 0.909},  {0.1575, 0.8181}, {0.1575, 0.9999},
+                {0.0001, 0.7272}, {0.1575, 0.6363}, {0.1575, 0.8181},
+                {0.0001, 0.5454}, {0.1575, 0.4546}, {0.1575, 0.6363},
+                {0.1575, 0.4546}, {0.3149, 0.5454}, {0.1575, 0.6363},
+                {0.1575, 0.4546}, {0.3149, 0.3637}, {0.3149, 0.5454},
+                {0.1575, 0.9999}, {0.1575, 0.8181}, {0.3149, 0.909},
+                {0.1575, 0.091},  {0.3149, 0.0001}, {0.3149, 0.1819},
+                {0.3149, 0.7272}, {0.3149, 0.5454}, {0.4724, 0.6363},
+                {0.3149, 0.7272}, {0.4724, 0.8181}, {0.3149, 0.909},
+                {0.4724, 0.4546}, {0.3149, 0.5454}, {0.3149, 0.3637},
+                {0.4724, 0.2728}, {0.3149, 0.3637}, {0.3149, 0.1819},
+                {0.4724, 0.091},  {0.3149, 0.1819}, {0.3149, 0.0001},
+                {0.3149, 0.7272}, {0.1575, 0.6363}, {0.3149, 0.5454},
+                {0.3149, 0.7272}, {0.1575, 0.8181}, {0.1575, 0.6363},
+                {0.3149, 0.7272}, {0.3149, 0.909},  {0.1575, 0.8181}};
+    }
     return mesh;
 }
 
@@ -229,7 +150,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(
         double width /* = 1.0*/,
         double height /* = 1.0*/,
         double depth /* = 1.0*/,
-        bool map_texture_to_each_face /*= true*/) {
+        bool create_uv_map /* = false*/,
+        bool map_texture_to_each_face /*= false*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (width <= 0) {
         utility::LogError("[CreateBox] width <= 0");
@@ -251,93 +173,33 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(
     mesh->vertices_[6] = Eigen::Vector3d(0.0, height, depth);
     mesh->vertices_[7] = Eigen::Vector3d(width, height, depth);
     // Triangles.
-    mesh->triangles_.push_back(Eigen::Vector3i(4, 7, 5));
-    mesh->triangles_.push_back(Eigen::Vector3i(4, 6, 7));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 2, 4));
-    mesh->triangles_.push_back(Eigen::Vector3i(2, 6, 4));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 3, 2));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 5, 7));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 7, 3));
-    mesh->triangles_.push_back(Eigen::Vector3i(2, 3, 7));
-    mesh->triangles_.push_back(Eigen::Vector3i(2, 7, 6));
-    mesh->triangles_.push_back(Eigen::Vector3i(0, 4, 1));
-    mesh->triangles_.push_back(Eigen::Vector3i(1, 4, 5));
+    mesh->triangles_ = {{4, 7, 5}, {4, 6, 7}, {0, 2, 4}, {2, 6, 4},
+                        {0, 1, 2}, {1, 3, 2}, {1, 5, 7}, {1, 7, 3},
+                        {2, 3, 7}, {2, 7, 6}, {0, 4, 1}, {1, 4, 5}};
     // UV Map.
-    if (map_texture_to_each_face) {
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, 1.0));
-    } else {
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.75, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.75, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.75, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.25));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.25));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.25));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 1.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.25));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.25));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.0));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.25));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.25, 0.75));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.5));
-        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.5, 0.75));
+    if (create_uv_map) {
+        if (map_texture_to_each_face) {
+            mesh->triangle_uvs_ = {
+                    {0.0, 0.0}, {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0}, {0.0, 1.0},
+                    {1.0, 1.0}, {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {0.0, 1.0},
+                    {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
+                    {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0},
+                    {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0},
+                    {1.0, 0.0}, {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0},
+                    {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
+                    {1.0, 1.0}};
+        } else {
+            mesh->triangle_uvs_ = {
+                    {0.5, 0.5},   {0.75, 0.75}, {0.5, 0.75},  {0.5, 0.5},
+                    {0.75, 0.5},  {0.75, 0.75}, {0.25, 0.5},  {0.25, 0.25},
+                    {0.5, 0.5},   {0.25, 0.25}, {0.5, 0.25},  {0.5, 0.5},
+                    {0.25, 0.5},  {0.25, 0.75}, {0.0, 0.5},   {0.25, 0.75},
+                    {0.0, 0.75},  {0.0, 0.5},   {0.25, 0.75}, {0.5, 0.75},
+                    {0.5, 1.0},   {0.25, 0.75}, {0.5, 1.0},   {0.25, 1.0},
+                    {0.25, 0.25}, {0.25, 0.0},  {0.5, 0.0},   {0.25, 0.25},
+                    {0.5, 0.0},   {0.5, 0.25},  {0.25, 0.5},  {0.5, 0.5},
+                    {0.25, 0.75}, {0.25, 0.75}, {0.5, 0.5},   {0.5, 0.75}};
+        }
     }
     return mesh;
 }
