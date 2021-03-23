@@ -117,7 +117,7 @@ jobs:
       - name: C++ tests
         run: |
           docker run --rm open3d-openblas-ci:latest build/bin/tests \
-            --gtest_filter="-*RGBDImage.CreateFrom*"
+            --gtest_filter="-*CreateFromRGBDImage*"
 
       - name: Python tests
         run: |
