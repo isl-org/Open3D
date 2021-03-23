@@ -35,10 +35,10 @@ from open3d_test import list_devices
 @pytest.mark.parametrize("device", list_devices())
 def test_icp_convergence_criteria_constructor(device):
 
-    #Constructor.
+    # Constructor.
     convergence_criteria = o3d.t.pipelines.registration.ICPConvergenceCriteria()
 
-    #Checking default values.
+    # Checking default values.
     assert convergence_criteria.max_iteration == 30
     assert convergence_criteria.relative_fitness == 1e-06
     assert convergence_criteria.relative_rmse == 1e-06
@@ -48,10 +48,10 @@ def test_icp_convergence_criteria_constructor(device):
 def test_registration_result_constructor(device):
     dtype = o3c.Dtype.Float32
 
-    #Constructor.
+    # Constructor.
     registration_result = o3d.t.pipelines.registration.RegistrationResult()
 
-    #Checking default values.
+    # Checking default values.
     assert registration_result.inlier_rmse == 0.0
     assert registration_result.fitness == 0.0
     assert registration_result.transformation.allclose(
@@ -108,10 +108,10 @@ def test_evaluate_registration(device):
         source_legacy, target_legacy, max_correspondence_distance,
         init_trans_legacy)
 
-    np.testing.assert_almost_equal(evaluation_t.inlier_rmse,
-                                   evaluation_legacy.inlier_rmse, 4)
-    np.testing.assert_almost_equal(evaluation_t.fitness,
-                                   evaluation_legacy.fitness, 4)
+    np.testing.assert_allclose(evaluation_t.inlier_rmse,
+                               evaluation_legacy.inlier_rmse, 0.0001)
+    np.testing.assert_allclose(evaluation_t.fitness, evaluation_legacy.fitness,
+                               0.0001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -161,9 +161,10 @@ def test_registration_icp_point_to_point(device):
         o3d.pipelines.registration.TransformationEstimationPointToPoint(),
         o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
-    np.testing.assert_almost_equal(reg_p2p_t.inlier_rmse,
-                                   reg_p2p_legacy.inlier_rmse, 4)
-    np.testing.assert_almost_equal(reg_p2p_t.fitness, reg_p2p_legacy.fitness, 4)
+    np.testing.assert_allclose(reg_p2p_t.inlier_rmse,
+                               reg_p2p_legacy.inlier_rmse, 0.0001)
+    np.testing.assert_allclose(reg_p2p_t.fitness, reg_p2p_legacy.fitness,
+                               0.0001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -226,7 +227,7 @@ def test_test_registration_icp_point_to_plane(device):
         o3d.pipelines.registration.TransformationEstimationPointToPlane(),
         o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
-    np.testing.assert_almost_equal(reg_p2plane_t.inlier_rmse,
-                                   reg_p2plane_legacy.inlier_rmse, 4)
-    np.testing.assert_almost_equal(reg_p2plane_t.fitness,
-                                   reg_p2plane_legacy.fitness, 4)
+    np.testing.assert_allclose(reg_p2plane_t.inlier_rmse,
+                               reg_p2plane_legacy.inlier_rmse, 0.0001)
+    np.testing.assert_allclose(reg_p2plane_t.fitness,
+                               reg_p2plane_legacy.fitness, 0.0001)

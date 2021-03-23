@@ -66,12 +66,10 @@ void pybind_registration_classes(py::module &m) {
     // open3d.t.pipelines.registration.ICPConvergenceCriteria
     py::class_<ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria",
-            "Class that defines the convergence criteria of ICP. ICP "
-            "algorithm "
-            "stops if the relative change of fitness and rmse hit "
-            "``relative_fitness`` and ``relative_rmse`` individually, "
-            "or the "
-            "iteration number exceeds ``max_iteration``.");
+            "Class that defines the convergence criteria of ICP. "
+            "ICP algorithm stops if the relative change of fitness and rmse "
+            "hit ``relative_fitness`` and ``relative_rmse`` individually, "
+            "or the iteration number exceeds ``max_iteration``.");
     py::detail::bind_copy_functions<ICPConvergenceCriteria>(
             convergence_criteria);
     convergence_criteria
