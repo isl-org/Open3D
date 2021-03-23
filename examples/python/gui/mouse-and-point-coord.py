@@ -7,6 +7,7 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+
 # This example displays a point cloud and if you Ctrl-click on a point
 # (Cmd-click on macOS) it will show the coordinates of the point.
 # This example illustrates:
@@ -52,8 +53,7 @@ class ExampleApp:
         self.widget3d.frame = r
         pref = self.info.calc_preferred_size(theme, gui.Widget.Constraints())
         self.info.frame = gui.Rect(r.x,
-                                   r.get_bottom() - pref.height,
-                                   pref.width,
+                                   r.get_bottom() - pref.height, pref.width,
                                    pref.height)
 
     def _on_mouse_widget3d(self, event):
@@ -79,7 +79,8 @@ class ExampleApp:
                     world = self.widget3d.scene.camera.unproject(
                         event.x, event.y, depth, self.widget3d.frame.width,
                         self.widget3d.frame.height)
-                    text = "({:.3f}, {:.3f}, {:.3f})".format(world[0], world[1], world[2])
+                    text = "({:.3f}, {:.3f}, {:.3f})".format(
+                        world[0], world[1], world[2])
 
                 # This is not called on the main thread, so we need to
                 # post to the main thread to safely access UI items.
