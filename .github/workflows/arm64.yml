@@ -61,8 +61,8 @@ jobs:
       - name: Copy ccache out from the container
         run: |
           docker run --rm --entrypoint \
-            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ CCACHE_TAR_NAME }}.tar.gz \
-            > ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz
+            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ env.CCACHE_TAR_NAME }}.tar.gz \
+            > ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
 
 
   openblas_arm64:
@@ -129,8 +129,8 @@ jobs:
       - name: Copy ccache out from the container
         run: |
           docker run --rm --entrypoint \
-            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ CCACHE_TAR_NAME }}.tar.gz \
-            > ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz
+            cat ${{ env.DOCKER_IMAGE_TAG }} /${{ env.CCACHE_TAR_NAME }}.tar.gz \
+            > ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -142,4 +142,4 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
