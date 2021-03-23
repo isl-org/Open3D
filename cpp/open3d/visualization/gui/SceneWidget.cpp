@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -479,12 +479,12 @@ private:
                                 int y) {
         const int radius_px = 2;  // should be even;  total size is 2*r+1
         float far_z = 0.999999f;  // 1.0 - epsilon
-        float win_z = (1.0 - *depth_img->PointerAt<float>(x, y));
+        float win_z = *depth_img->PointerAt<float>(x, y);
         if (win_z >= far_z) {
             for (int v = y - radius_px; v < y + radius_px; ++v) {
                 for (int u = x - radius_px; u < x + radius_px; ++u) {
                     float z = *depth_img->PointerAt<float>(x, y);
-                    win_z = (1.0 - std::min(win_z, z));
+                    win_z = std::min(win_z, z);
                 }
             }
         }

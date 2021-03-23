@@ -26,31 +26,35 @@
 
 #pragma once
 
+#include <functional>
+
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-/// Stacks its children on top of each other, with only the selected child
-/// showing. It is like a tab control without the tabs.
-class StackedWidget : public Widget {
-    using Super = Widget;
-
+class ToggleSwitch : public Widget {
 public:
-    StackedWidget();
-    virtual ~StackedWidget();
+    explicit ToggleSwitch(const char* title);
+    ~ToggleSwitch();
 
-    /// Sets the index of the child to draw.
-    void SetSelectedIndex(int index);
-    /// Returns the index of the selected child.
-    int GetSelectedIndex() const;
+    /// Returns the text of the toggle slider.
+    const char* GetText() const;
+    /// Sets the text of the toggle slider.
+    void SetText(const char* text);
+
+    bool GetIsOn() const;
+    void SetOn(bool is_on);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
-    void Layout(const Theme& theme) override;
+    DrawResult Draw(const DrawContext& context) override;
 
-    Widget::DrawResult Draw(const DrawContext& context) override;
+    /// Sets a function that will be called when the switch is clicked on to
+    /// change state. The boolean argument is true if the switch is now on
+    /// and false otherwise.
+    void SetOnClicked(std::function<void(bool)> on_clicked);
 
 private:
     struct Impl;
