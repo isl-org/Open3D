@@ -223,7 +223,7 @@ jobs:
             make -j$(nproc)
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*CreateFromRGBDImage*"
+            ./bin/tests
             pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s
 
