@@ -84,6 +84,7 @@ public:
         float u1 = 1.0f;
         float v1 = 1.0f;
         visualization::rendering::TextureHandle texture;
+        bool image_size_changed = false;
     };
     DrawParams CalcDrawParams(visualization::rendering::Renderer& renderer,
                               const Rect& frame) const;

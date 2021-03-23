@@ -12,14 +12,6 @@ RGB_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/color")
 DEPTH_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/depth")
 
 
-def convert_to_8bit(img16):
-    data16 = np.asarray(img16)
-    dataFloat = data16.astype(np.float64)
-    dataFloat *= 255.0 / np.iinfo(data16.dtype).max
-    data8 = dataFloat.astype(np.uint8)
-    return o3d.geometry.Image(data8)
-
-
 def rescale_greyscale(img):
     data = np.asarray(img)
     assert (len(data.shape) == 2)  # requires 1 channel image

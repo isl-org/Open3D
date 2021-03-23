@@ -792,6 +792,8 @@ void pybind_gui_classes(py::module &m) {
     py::class_<ImageWidget, UnownedPointer<ImageWidget>, Widget> imagewidget(
             m, "ImageWidget", "Displays a bitmap");
     imagewidget
+            .def(py::init<>([]() { return new ImageWidget(); }),
+                 "Creates an ImageWidget with no image")
             .def(py::init<>([](const char *path) {
                      return new ImageWidget(path);
                  }),

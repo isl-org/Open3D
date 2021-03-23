@@ -171,22 +171,32 @@ Size UIImage::CalcPreferredSize(const Theme& theme,
 
 UIImage::DrawParams UIImage::CalcDrawParams(
         visualization::rendering::Renderer& renderer, const Rect& frame) const {
+    DrawParams params;
+
     if (impl_->image_data_) {
         if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
             impl_->texture_ = renderer.AddTexture(impl_->image_data_);
             if (impl_->texture_ !=
                 visualization::rendering::TextureHandle::kBad) {
                 impl_->renderer_ = &renderer;
+                impl_->image_width_ = float(impl_->image_data_->width_);
+                impl_->image_height_ = float(impl_->image_data_->height_);
+                params.image_size_changed = true;
             } else {
                 impl_->texture_ = visualization::rendering::TextureHandle();
             }
         } else {
-            renderer.UpdateTexture(impl_->texture_, impl_->image_data_, false);
+            if (!renderer.UpdateTexture(impl_->texture_, impl_->image_data_,
+                                        false)) {
+                impl_->texture_ = renderer.AddTexture(impl_->image_data_);
+                impl_->image_width_ = float(impl_->image_data_->width_);
+                impl_->image_height_ = float(impl_->image_data_->height_);
+                params.image_size_changed = true;
+            }
         }
         impl_->image_data_.reset();
     }
 
-    DrawParams params;
     params.texture = impl_->texture_;
 
     float width_px = impl_->image_width_;

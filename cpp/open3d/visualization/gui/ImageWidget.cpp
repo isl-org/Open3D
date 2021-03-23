@@ -28,6 +28,7 @@
 
 #include <imgui.h>
 
+#include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -38,6 +39,11 @@ namespace gui {
 struct ImageWidget::Impl {
     std::shared_ptr<UIImage> image_;
 };
+
+ImageWidget::ImageWidget() : impl_(new ImageWidget::Impl()) {
+    impl_->image_ =
+            std::make_shared<UIImage>(std::make_shared<geometry::Image>());
+}
 
 ImageWidget::ImageWidget(const char* image_path)
     : impl_(new ImageWidget::Impl()) {
@@ -140,6 +146,9 @@ Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
         ImGui::PopStyleColor();
     }
 
+    if (params.image_size_changed) {
+        return Widget::DrawResult::RELAYOUT;
+    }
     return Widget::DrawResult::NONE;
 }
 
