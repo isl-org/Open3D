@@ -588,6 +588,9 @@ if(USE_SYSTEM_PNG)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "PNG")
         endif()
         set(PNG_TARGET "PNG::PNG")
+        set(ZLIB_TARGET "ZLIB::ZLIB")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
     else()
         message(STATUS "Unable to find installed third-party library libpng")
         set(USE_SYSTEM_PNG OFF)
@@ -609,12 +612,12 @@ if(NOT USE_SYSTEM_PNG)
         LIB_DIR      ${LIBPNG_LIB_DIR}
         LIBRARIES    ${LIBPNG_LIBRARIES}
     )
-    set(LIBPNG_TARGET "3rdparty_libpng")
+    set(PNG_TARGET "3rdparty_libpng")
     add_dependencies(3rdparty_libpng ext_libpng)
     add_dependencies(ext_libpng ext_zlib)
 
     # Putting zlib after libpng somehow works for Ubuntu.
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
 
@@ -1147,7 +1150,10 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    foreach(NPPLIB nppc nppi npp nppicc nppif nppig nppim nppial)
+    foreach(NPPLIB nppc nppicc nppif nppig nppim nppial)
+        if (NOT CUDA_${NPPLIB}_LIBRARY)
+            message(FATAL_ERROR "NPP library ${NPPLIB} not found!: ${CUDA_${NPPLIB}_LIBRARY}")
+        endif()
         list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
     endforeach()
     add_library(3rdparty_CUDA_NPP INTERFACE)

@@ -43,6 +43,26 @@
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
+// Compiler-specific function macro.
+// Ref: https://stackoverflow.com/a/4384825
+#ifdef _WIN32
+#define __FN__ __FUNCSIG__
+#else
+#define __FN__ __PRETTY_FUNCTION__
+#endif
+
+// Mimic 'macro in namespace' by concatenating utility:: and _LogError.
+// Ref: https://stackoverflow.com/a/11791202
+// We avoid using (format, ...) since in this case __VA_ARGS__ can be
+// empty, and the behavior of pruning trailing comma with ##__VA_ARGS__ is not
+// officially standard.
+// Ref: https://stackoverflow.com/a/28074198
+// __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
+// will be triggered.
+// Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
+#define LogError(...) \
+    _LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+
 namespace open3d {
 namespace utility {
 
@@ -192,26 +212,6 @@ inline void _LogError [[noreturn]] (const char *fname,
     Logger::i().VError(fname, linenum, fn_name, format,
                        fmt::make_format_args(args...));
 }
-
-// Compiler-specific function macro.
-// Ref: https://stackoverflow.com/a/4384825
-#ifdef _WIN32
-#define __FN__ __FUNCSIG__
-#else
-#define __FN__ __PRETTY_FUNCTION__
-#endif
-
-// Mimic 'macro in namespace' by concatenating utility:: and _LogError.
-// Ref: https://stackoverflow.com/a/11791202
-// We avoid using (format, ...) since in this case __VA_ARGS__ can be
-// empty, and the behavior of pruning trailing comma with ##__VA_ARGS__ is not
-// officially standard.
-// Ref: https://stackoverflow.com/a/28074198
-// __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
-// will be triggered.
-// Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
-#define LogError(...) \
-    _LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {

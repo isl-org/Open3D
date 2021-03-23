@@ -276,8 +276,6 @@ void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
         found->second.is_active = true;
-        // NOTE: This value should match the value of render_count_ in
-        // FilamentRenderer::EnableCaching
         found->second.render_count = 1;
     }
 }
@@ -316,6 +314,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     if (geometries_.count(object_name) > 0) {
         utility::LogWarning(
                 "Geometry {} has already been added to scene graph.",
+                object_name);
+        return false;
+    }
+
+    // Basic sanity checks
+    if (geometry.IsEmpty()) {
+        utility::LogDebug(
+                "Geometry for object {} is empty. Not adding geometry to scene",
                 object_name);
         return false;
     }
@@ -1119,7 +1125,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
-    } else if (props.shader != "") {
+    } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }
@@ -1756,6 +1762,12 @@ void FilamentScene::RenderToImage(
         std::function<void(std::shared_ptr<geometry::Image>)> callback) {
     auto view = views_.begin()->second.view.get();
     renderer_.RenderToImage(view, this, callback);
+}
+
+void FilamentScene::RenderToDepthImage(
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto view = views_.begin()->second.view.get();
+    renderer_.RenderToDepthImage(view, this, callback);
 }
 
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(

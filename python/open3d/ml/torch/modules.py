@@ -23,12 +23,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
+"""
+Loss and Metric modules for PyTorch
+"""
 
 import os as _os
 from open3d import _build_config
 
 if _build_config['BUNDLE_OPEN3D_ML']:
     if 'OPEN3D_ML_ROOT' in _os.environ:
-        from ml3d.tf.modules.metrics import *
+        from ml3d.torch.modules import losses
+        from ml3d.torch.modules import metrics
     else:
-        from open3d._ml3d.tf.modules.metrics import *
+        from open3d._ml3d.torch.modules import losses
+        from open3d._ml3d.torch.modules import metrics

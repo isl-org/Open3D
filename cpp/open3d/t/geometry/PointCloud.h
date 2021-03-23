@@ -35,6 +35,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/utility/Console.h"
 
@@ -270,7 +271,7 @@ public:
     PointCloud &Transform(const core::Tensor &transformation);
 
     /// \brief Translates the points of the PointCloud.
-    /// \param translation translation tensor of dimention {3}
+    /// \param translation translation tensor of dimension {3}
     /// Should be on the same device as the PointCloud
     /// \param relative if true (default): translates relative to Center
     /// \return Translated pointcloud
@@ -278,7 +279,7 @@ public:
                           bool relative = true);
 
     /// \brief Scales the points of the PointCloud.
-    /// \param scale Scale [double] of dimention
+    /// \param scale Scale [double] of dimension
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
     /// \return Scaled pointcloud
@@ -306,16 +307,41 @@ public:
     /// \param intrinsic Intrinsic parameters of the camera.
     /// \param extrinsic Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
-    /// \param depth_trunc Truncated at \p depth_trunc distance.
+    /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
+    /// There is no low pass filtering, so aliasing is possible for stride>1.
     ///
-    /// \return An empty pointcloud if the conversion fails.
-    /// If \param project_valid_depth_only is true, return point cloud, which
-    /// doesn't
-    /// have nan point. If the value is false, return point cloud, which has
-    /// a point for each pixel, whereas invalid depth results in NaN points.
+    /// \return Created pointcloud with the 'points' property set. Thus is empty
+    /// if the conversion fails.
     static PointCloud CreateFromDepthImage(
             const Image &depth,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f,
+            int stride = 1);
+
+    /// \brief Factory function to create a pointcloud from an RGB-D image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
+    /// / fy\n
+    ///
+    /// \param rgbd_image The input RGBD image should have a uint16_t depth
+    /// image and RGB image with any DType and the same size.
+    /// \param intrinsic Intrinsic parameters of the camera.
+    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
+    /// \param depth_max Truncated at \p depth_max distance.
+    /// \param stride Sampling factor to support coarse point cloud extraction.
+    /// There is no low pass filtering, so aliasing is possible for stride>1.
+    ///
+    /// \return Created pointcloud with the 'points' and 'colors' properties
+    /// set. This is empty if the conversion fails.
+    static PointCloud CreateFromRGBDImage(
+            const RGBDImage &rgbd_image,
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics = core::Tensor::Eye(
                     4, core::Dtype::Float32, core::Device("CPU:0")),
