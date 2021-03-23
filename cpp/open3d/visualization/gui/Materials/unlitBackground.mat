@@ -11,7 +11,10 @@ material {
         { type : float3,    name : baseColor },
         { type : sampler2d, name : albedo },
         { type : float,     name : aspectRatio },
-        { type : float,     name : flipY }
+        // Acceptable values of yOrigin are 0.0 and 1.0. 0.0 is for images with
+        // lower left origin (e.g., framebuffer when using a render target as a
+        // texture) and 1.0 is for images with upper left origin.
+        { type : float,     name : yOrigin }
     ],
     requires : [ color ]
 }
@@ -32,8 +35,8 @@ fragment {
             float4 resolution = getResolution();  // {w, h, 1/w, 1/h}
             float bg_aspect_ratio = resolution[0] * resolution[3];
             float2 xy = getNormalizedViewportCoord().xy;
-            // Flip Y if necessary
-            xy[1] = abs(materialParams.flipY - xy[1]);
+            // Flip Y for images with upper left origin
+            xy[1] = abs(materialParams.yOrigin - xy[1]);
             // (This if should be fast because all pixels take same branch)
             if (materialParams.aspectRatio < bg_aspect_ratio) {
                 float half_w = 0.5 / bg_aspect_ratio * materialParams.aspectRatio;
