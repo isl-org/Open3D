@@ -82,11 +82,12 @@ Size Label::CalcPreferredSize(const Theme& theme,
     auto* font = ImGui::GetFont();
 
     if (impl_->is_single_line) {
+        float wrap_width = float(constraints.width);
         auto size = font->CalcTextSizeA(float(theme.font_size),
-                                        float(constraints.width), 0.0,
+                                        float(constraints.width), wrap_width,
                                         impl_->text_.c_str());
         return Size(int(std::ceil(size.x + 2.0f * padding.x)),
-                    int(std::ceil(em + 2.0f * padding.y)));
+                    int(std::ceil(size.y + 2.0f * padding.y)));
     } else {
         ImVec2 size(0, 0);
         size_t line_start = 0;
@@ -128,16 +129,13 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
-    if (impl_->is_single_line) {
-        ImGui::TextUnformatted(impl_->text_.c_str());
-    } else {
-        auto padding = ImGui::GetStyle().FramePadding;
-        float wrapX = ImGui::GetCursorPos().x + frame.width -
-                      std::ceil(2.0f * padding.x);
-        ImGui::PushTextWrapPos(wrapX);
-        ImGui::TextWrapped("%s", impl_->text_.c_str());
-        ImGui::PopTextWrapPos();
-    }
+
+    auto padding = ImGui::GetStyle().FramePadding;
+    float wrapX = ImGui::GetCursorPos().x + frame.width - padding.x;
+    ImGui::PushTextWrapPos(wrapX);
+    ImGui::TextWrapped("%s", impl_->text_.c_str());
+    ImGui::PopTextWrapPos();
+
     if (!is_default_color) {
         ImGui::PopStyleColor();
     }

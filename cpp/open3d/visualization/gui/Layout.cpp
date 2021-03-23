@@ -538,8 +538,9 @@ void VGrid::Layout(const Theme& theme) {
         }
     }
     if (wanted_width > layout_width && num_growing > 0) {
+        int total_spacing = (int(columns.size()) - 1) * impl_->spacing_;
         int growing_size =
-                (layout_width - total_not_growing_width) / num_growing;
+                (layout_width - total_spacing - total_not_growing_width) / num_growing;
         if (growing_size < 0) {
             growing_size = layout_width / num_growing;
         }
@@ -548,15 +549,14 @@ void VGrid::Layout(const Theme& theme) {
                 sz.width = growing_size;
             }
         }
-    }
-
-    // Adjust the columns for spacing. The code above adjusted width
-    // without taking intra-element spacing, so do that here.
-    int leftHalf = int(std::floor(float(impl_->spacing_) / 2.0));
-    int rightHalf = int(std::ceil(float(impl_->spacing_) / 2.0));
-    for (size_t i = 0; i < column_sizes.size() - 1; ++i) {
-        column_sizes[i].width -= leftHalf;
-        column_sizes[i + 1].width -= rightHalf;
+    } else {
+        // Just adjust the columns for spacing.
+        int leftHalf = int(std::floor(float(impl_->spacing_) / 2.0));
+        int rightHalf = int(std::ceil(float(impl_->spacing_) / 2.0));
+        for (size_t i = 0; i < column_sizes.size() - 1; ++i) {
+            column_sizes[i].width -= leftHalf;
+            column_sizes[i + 1].width -= rightHalf;
+        }
     }
 
     // Do the layout
