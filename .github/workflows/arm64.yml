@@ -41,8 +41,7 @@ jobs:
 
       - name: C++ tests
         run: |
-          docker run --rm open3d-openblas-ci:latest \
-            build/bin/tests --gtest_filter="-*Reduce*Sum*"
+          docker run --rm open3d-openblas-ci:latest build/bin/tests
 
       - name: Python tests
         run: |
@@ -224,7 +223,7 @@ jobs:
             make -j$(nproc)
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
+            ./bin/tests --gtest_filter="-*CreateFromRGBDImage*"
             pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s
 
