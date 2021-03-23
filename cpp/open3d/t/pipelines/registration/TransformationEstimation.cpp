@@ -26,7 +26,7 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-#include "open3d/t/pipelines/kernel/ComputeTransformKernels.h"
+#include "open3d/t/pipelines/kernel/ComputeTransform.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {

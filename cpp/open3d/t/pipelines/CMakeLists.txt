@@ -6,13 +6,13 @@ set(REGISTRATION_SRC
 
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
-    kernel/ComputeTransformKernels.cpp
-    kernel/ComputeTransformKernelsCPU.cpp
+    kernel/ComputeTransform.cpp
+    kernel/ComputeTransformCPU.cpp
     )
 
 set(KERNEL_CUDA_SRC
     kernel/TransformationConverter.cu
-    kernel/ComputeTransformKernelsCUDA.cu
+    kernel/ComputeTransformCUDA.cu
 )
 
 set(ALL_PIPELINE_SRC

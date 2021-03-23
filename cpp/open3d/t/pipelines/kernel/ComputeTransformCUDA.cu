@@ -26,7 +26,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
-#include "open3d/t/pipelines/kernel/ComputeTransformKernelsImp.h"
+#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -37,13 +37,12 @@ namespace kernel {
 void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
                                  const float *target_points_ptr,
                                  const float *target_normals_ptr,
-                                 const int64_t *correspondence_first,
-                                 const int64_t *correspondence_second,
+                                 const int64_t *correspondences_first,
+                                 const int64_t *correspondences_second,
                                  const int n,
                                  core::Tensor &pose,
                                  const core::Dtype &dtype,
                                  const core::Device &device) {
-    // Float64 is used for solving for higher precision.
     core::Dtype solve_dtype = core::Dtype::Float32;
 
     // atai: {n, 21} Stores local sum for ATA stacked vertically
@@ -58,23 +57,23 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
     // and {n,6} shape atbi tensor.
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                const int64_t &source_index =
-                        3 * correspondence_first[workload_idx];
-                const int64_t &target_index =
-                        3 * correspondence_second[workload_idx];
+                const int64_t &source_idx =
+                        3 * correspondences_first[workload_idx];
+                const int64_t &target_idx =
+                        3 * correspondences_second[workload_idx];
 
                 const int64_t atai_stride = 21 * workload_idx;
                 const int64_t atbi_stride = 6 * workload_idx;
 
-                const float &sx = (source_points_ptr[source_index + 0]);
-                const float &sy = (source_points_ptr[source_index + 1]);
-                const float &sz = (source_points_ptr[source_index + 2]);
-                const float &tx = (target_points_ptr[target_index + 0]);
-                const float &ty = (target_points_ptr[target_index + 1]);
-                const float &tz = (target_points_ptr[target_index + 2]);
-                const float &nx = (target_normals_ptr[target_index + 0]);
-                const float &ny = (target_normals_ptr[target_index + 1]);
-                const float &nz = (target_normals_ptr[target_index + 2]);
+                const float &sx = source_points_ptr[source_idx + 0];
+                const float &sy = source_points_ptr[source_idx + 1];
+                const float &sz = source_points_ptr[source_idx + 2];
+                const float &tx = target_points_ptr[target_idx + 0];
+                const float &ty = target_points_ptr[target_idx + 1];
+                const float &tz = target_points_ptr[target_idx + 2];
+                const float &nx = target_normals_ptr[target_idx + 0];
+                const float &ny = target_normals_ptr[target_idx + 1];
+                const float &nz = target_normals_ptr[target_idx + 2];
 
                 const float bi =
                         (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
@@ -106,11 +105,10 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
     //     6   7   8   9
     //     10  11  12  13  14
     //     15  16  17  18  19  20
-    //     Since, ATA is a symmertric matrix, it can be regenerated from this
+    //     Since, ATA is a symmertric matrix, it can be regenerated from this.
     core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
-    float *ATA_ptr = static_cast<float *>(ATA.GetDataPtr());
-    const float *ata_1x21_ptr =
-            static_cast<const float *>(ata_1x21.GetDataPtr());
+    float *ATA_ptr = ATA.GetDataPtr<float>();
+    float *ata_1x21_ptr = ata_1x21.GetDataPtr<float>();
 
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             1, [=] OPEN3D_DEVICE(int64_t workload_idx) {

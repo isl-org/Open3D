@@ -38,23 +38,26 @@ namespace kernel {
 /// \param source_points source points indexed according to correspondences.
 /// \param target_points target points indexed according to correspondences.
 /// \param target_normals target normals indexed according to correspondences.
-/// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype float32.
+/// \param correspondences CorrespondenceSet. [refer to definition in
+/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
+/// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype Float32.
 core::Tensor ComputePosePointToPlane(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &target_normals,
-        const pipelines::registration::CorrespondenceSet &corres);
+        const pipelines::registration::CorrespondenceSet &correspondences);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.
 /// \param source_points source points indexed according to correspondences.
 /// \param target_points target points indexed according to correspondences.
-/// \param target_normals target normals indexed according to correspondences.
+/// \param correspondences CorrespondenceSet. [refer to definition in
+/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
 /// \return tuple of (R, t). [Dtype: Float32].
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const pipelines::registration::CorrespondenceSet &corres);
+        const pipelines::registration::CorrespondenceSet &correspondences);
 
 }  // namespace kernel
 }  // namespace pipelines

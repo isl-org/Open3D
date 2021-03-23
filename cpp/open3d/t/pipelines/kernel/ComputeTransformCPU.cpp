@@ -33,7 +33,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/t/pipelines/kernel/ComputeTransformKernelsImp.h"
+#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -44,8 +44,8 @@ namespace kernel {
 void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                                 const float *target_points_ptr,
                                 const float *target_normals_ptr,
-                                const int64_t *correspondence_first,
-                                const int64_t *correspondence_second,
+                                const int64_t *correspondences_first,
+                                const int64_t *correspondences_second,
                                 const int n,
                                 core::Tensor &pose,
                                 const core::Dtype &dtype,
@@ -56,26 +56,26 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     std::vector<double> A_1x27(27, 0.0);
     // Identity element for running_total reduction variable: zeros_27.
     std::vector<double> zeros_27(27, 0.0);
-    // For TBB reduction, A_ is a reduction variable of type vector<double>.
+
     A_1x27 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_27,
-            [&](tbb::blocked_range<int> r, std::vector<double> A_) {
+            [&](tbb::blocked_range<int> r, std::vector<double> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
                     const int64_t &source_idx =
-                            3 * correspondence_first[workload_idx];
+                            3 * correspondences_first[workload_idx];
                     const int64_t &target_idx =
-                            3 * correspondence_second[workload_idx];
+                            3 * correspondences_second[workload_idx];
 
-                    const float &sx = (source_points_ptr[source_idx + 0]);
-                    const float &sy = (source_points_ptr[source_idx + 1]);
-                    const float &sz = (source_points_ptr[source_idx + 2]);
-                    const float &tx = (target_points_ptr[target_idx + 0]);
-                    const float &ty = (target_points_ptr[target_idx + 1]);
-                    const float &tz = (target_points_ptr[target_idx + 2]);
-                    const float &nx = (target_normals_ptr[target_idx + 0]);
-                    const float &ny = (target_normals_ptr[target_idx + 1]);
-                    const float &nz = (target_normals_ptr[target_idx + 2]);
+                    const float &sx = source_points_ptr[source_idx + 0];
+                    const float &sy = source_points_ptr[source_idx + 1];
+                    const float &sz = source_points_ptr[source_idx + 2];
+                    const float &tx = target_points_ptr[target_idx + 0];
+                    const float &ty = target_points_ptr[target_idx + 1];
+                    const float &tz = target_points_ptr[target_idx + 2];
+                    const float &nx = target_normals_ptr[target_idx + 0];
+                    const float &ny = target_normals_ptr[target_idx + 1];
+                    const float &nz = target_normals_ptr[target_idx + 2];
 
                     const double bi_neg =
                             (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
@@ -89,14 +89,14 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                     for (int i = 0, j = 0; j < 6; j++) {
                         for (int k = 0; k <= j; k++) {
                             // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
-                            A_[i] += ai[j] * ai[k];
+                            A_reduction[i] += ai[j] * ai[k];
                             i++;
                         }
                         // ATB {6,1}.
-                        A_[21 + j] += ai[j] * bi_neg;
+                        A_reduction[21 + j] += ai[j] * bi_neg;
                     }
                 }
-                return A_;
+                return A_reduction;
             },
             // TBB: Defining reduction operation.
             [&](std::vector<double> a, std::vector<double> b) {
@@ -108,14 +108,14 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             });
 
     core::Tensor ATA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float64, device);
-    double *ata_ptr = ATA.GetDataPtr<double>();
+            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
+    float *ata_ptr = ATA.GetDataPtr<float>();
 
     // ATB_neg is -(ATB), as bi_neg is used in kernel instead of bi,
     // where  bi = [source_points - target_points].(target_normals).
     core::Tensor ATB_neg =
-            core::Tensor::Empty({6, 1}, core::Dtype::Float64, device);
-    double *atb_ptr = ATB_neg.GetDataPtr<double>();
+            core::Tensor::Empty({6, 1}, core::Dtype::Float32, device);
+    float *atb_ptr = ATB_neg.GetDataPtr<float>();
 
     // ATA_ {1,21} to ATA {6,6}.
     for (int i = 0, j = 0; j < 6; j++) {
@@ -133,8 +133,8 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
 
 void ComputeRtPointToPointCPU(const float *source_points_ptr,
                               const float *target_points_ptr,
-                              const int64_t *correspondence_first,
-                              const int64_t *correspondence_second,
+                              const int64_t *correspondences_first,
+                              const int64_t *correspondences_second,
                               const int n,
                               core::Tensor &R,
                               core::Tensor &t,
@@ -145,20 +145,20 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
     std::vector<double> mean_1x6(6, 0.0);
     // Identity element for running_total reduction variable: zeros_6.
     std::vector<double> zeros_6(6, 0.0);
-    // For TBB reduction, mean_ is a reduction variable of type vector<double>.
+
     mean_1x6 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_6,
-            [&](tbb::blocked_range<int> r, std::vector<double> mean_) {
+            [&](tbb::blocked_range<int> r, std::vector<double> mean_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
                     for (int i = 0; i < 3; i++) {
-                        mean_[i] += source_points_ptr
-                                [3 * correspondence_first[workload_idx] + i];
-                        mean_[i + 3] += target_points_ptr
-                                [3 * correspondence_second[workload_idx] + i];
+                        mean_reduction[i] += source_points_ptr
+                                [3 * correspondences_first[workload_idx] + i];
+                        mean_reduction[i + 3] += target_points_ptr
+                                [3 * correspondences_second[workload_idx] + i];
                     }
                 }
-                return mean_;
+                return mean_reduction;
             },
             // TBB: Defining reduction operation.
             [&](std::vector<double> a, std::vector<double> b) {
@@ -178,27 +178,27 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
     std::vector<double> sxy_1x9(9, 0.0);
     // Identity element for running total reduction variable: zeros_9.
     std::vector<double> zeros_9(9, 0.0);
-    // For TBB reduction, sxy_1x9_ is a reduction variable of type
-    // vector<double>.
+
     sxy_1x9 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_9,
-            [&](tbb::blocked_range<int> r, std::vector<double> sxy_1x9_) {
+            [&](tbb::blocked_range<int> r,
+                std::vector<double> sxy_1x9_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
                     for (int i = 0; i < 9; i++) {
                         const int row = i % 3;
                         const int col = i / 3;
                         const int source_idx =
-                                3 * correspondence_first[workload_idx] + row;
+                                3 * correspondences_first[workload_idx] + row;
                         const int target_idx =
-                                3 * correspondence_second[workload_idx] + col;
-                        sxy_1x9_[i] += (source_points_ptr[source_idx] -
-                                        mean_1x6[row]) *
-                                       (target_points_ptr[target_idx] -
-                                        mean_1x6[3 + col]);
+                                3 * correspondences_second[workload_idx] + col;
+                        sxy_1x9_reduction[i] += (source_points_ptr[source_idx] -
+                                                 mean_1x6[row]) *
+                                                (target_points_ptr[target_idx] -
+                                                 mean_1x6[3 + col]);
                     }
                 }
-                return sxy_1x9_;
+                return sxy_1x9_reduction;
             },
             // TBB: Defining reduction operation.
             [&](std::vector<double> a, std::vector<double> b) {
