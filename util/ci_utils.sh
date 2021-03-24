@@ -37,8 +37,10 @@ PIP_VER="20.2.4"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
-SCIPY_VER="1.4.1"
+SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
+# CMake
+CMAKE_ARM64_VER="cmake-3.19.7-Linux-aarch64"
 
 # Documentation
 SPHINX_VER=3.1.2
@@ -400,17 +402,20 @@ run_cpp_unit_tests() {
 # test_cpp_example runExample
 # Need variable OPEN3D_INSTALL_DIR
 test_cpp_example() {
-
-    cd ../docs/_static/C++
-    mkdir -p build
+    # Now I am in Open3D/build/
+    cd ..
+    git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+    cd open3d-cmake-find-package
+    mkdir build
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
     make -j"$NPROC" VERBOSE=1
     runExample="$1"
     if [ "$runExample" == ON ]; then
-        ./TestVisualizer
+        ./Draw --skip-for-unit-test
     fi
-    cd ../../../../build
+    # Now I am in Open3D/open3d-cmake-find-package/build/
+    cd ../../build
 }
 
 # Install dependencies needed for building documentation (on Ubuntu 18.04)
@@ -540,10 +545,10 @@ install_arm64_dependencies() {
     pip install pytest=="$PYTEST_VER" -U
     pip install wheel=="$WHEEL_VER" -U
     # Get pre-compiled CMake
-    wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
-    tar -xvf cmake-3.18-aarch64.tar.gz
-    cp -ar cmake-3.18-aarch64 ${HOME}
-    PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
+    wget https://github.com/Kitware/CMake/releases/download/v3.19.7/${CMAKE_ARM64_VER}.tar.gz
+    tar -xvf ${CMAKE_ARM64_VER}.tar.gz
+    cp -ar ${CMAKE_ARM64_VER} ${HOME}
+    PATH=${HOME}/${CMAKE_ARM64_VER}/bin:$PATH
     which cmake
     cmake --version
 }
