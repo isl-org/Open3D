@@ -1,0 +1,355 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <stdgpu/iterator.h>  // device_begin, device_end
+#include <stdgpu/memory.h>    // createDeviceArray, destroyDeviceArray
+#include <stdgpu/platform.h>  // STDGPU_HOST_DEVICE
+#include <thrust/for_each.h>
+#include <thrust/transform.h>
+
+#include <limits>
+#include <stdgpu/unordered_map.cuh>  // stdgpu::unordered_map
+#include <unordered_map>
+
+#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
+#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/kernel/CUDALauncher.cuh"
+
+namespace open3d {
+namespace core {
+template <typename Key, typename Hash>
+
+class STDGPUHashmap : public DeviceHashmap {
+public:
+    STDGPUHashmap(int64_t init_capacity,
+                  int64_t dsize_key,
+                  int64_t dsize_value,
+                  const Device& device);
+    ~STDGPUHashmap();
+
+    void Rehash(int64_t buckets) override;
+
+    void Insert(const void* input_keys,
+                const void* input_values,
+                addr_t* output_addrs,
+                bool* output_masks,
+                int64_t count) override;
+
+    void Activate(const void* input_keys,
+                  addr_t* output_addrs,
+                  bool* output_masks,
+                  int64_t count) override;
+
+    void Find(const void* input_keys,
+              addr_t* output_addrs,
+              bool* output_masks,
+              int64_t count) override;
+
+    void Erase(const void* input_keys,
+               bool* output_masks,
+               int64_t count) override;
+
+    int64_t GetActiveIndices(addr_t* output_indices) override;
+
+    int64_t Size() const override;
+
+    std::vector<int64_t> BucketSizes() const override;
+    float LoadFactor() const override;
+
+    stdgpu::unordered_map<Key, addr_t, Hash> GetContext() const {
+        return impl_;
+    }
+
+protected:
+    stdgpu::unordered_map<Key, addr_t, Hash> impl_;
+
+    CUDAHashmapBufferAccessor buffer_ctx_;
+
+    void InsertImpl(const void* input_keys,
+                    const void* input_values,
+                    addr_t* output_addrs,
+                    bool* output_masks,
+                    int64_t count);
+
+    void Allocate(int64_t capacity, int64_t buckets);
+    void Free();
+};
+
+template <typename Key, typename Hash>
+STDGPUHashmap<Key, Hash>::STDGPUHashmap(int64_t init_capacity,
+                                        int64_t dsize_key,
+                                        int64_t dsize_value,
+                                        const Device& device)
+    : DeviceHashmap(init_capacity, dsize_key, dsize_value, device) {
+    // TODO: better init
+    int64_t init_buckets = init_capacity * 2;
+    Allocate(init_capacity, init_buckets);
+}
+
+template <typename Key, typename Hash>
+STDGPUHashmap<Key, Hash>::~STDGPUHashmap() {
+    stdgpu::unordered_map<Key, addr_t, Hash>::destroyDeviceObject(impl_);
+}
+
+template <typename Key, typename Hash>
+int64_t STDGPUHashmap<Key, Hash>::Size() const {
+    return impl_.size();
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Insert(const void* input_keys,
+                                      const void* input_values,
+                                      addr_t* output_addrs,
+                                      bool* output_masks,
+                                      int64_t count) {
+    int64_t new_size = Size() + count;
+    if (new_size > this->capacity_) {
+        float avg_capacity_per_bucket =
+                float(this->capacity_) / float(this->bucket_count_);
+        int64_t expected_buckets = std::max(
+                this->bucket_count_ * 2,
+                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+        Rehash(expected_buckets);
+    }
+    InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Activate(const void* input_keys,
+                                        addr_t* output_addrs,
+                                        bool* output_masks,
+                                        int64_t count) {
+    int64_t new_size = Size() + count;
+    if (new_size > this->capacity_) {
+        float avg_capacity_per_bucket =
+                float(this->capacity_) / float(this->bucket_count_);
+        int64_t expected_buckets = std::max(
+                this->bucket_count_ * 2,
+                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+        Rehash(expected_buckets);
+    }
+    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Find(const void* input_keys,
+                                    addr_t* output_addrs,
+                                    bool* output_masks,
+                                    int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
+
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            count, [=] OPEN3D_DEVICE(int64_t i) {
+                auto iter = impl_.find(input_keys_templated[i]);
+                bool flag = (iter != impl_.end());
+                output_masks[i] = flag;
+                output_addrs[i] = flag ? iter.second : 0;
+            });
+}
+
+// Member function is forbidding in a lambda, have to wrap up with a kernel.
+template <typename Key, typename Hash>
+__global__ void STDGPUEraseKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
+                                  CUDAHashmapBufferAccessor buffer_accessor,
+                                  const Key* input_keys,
+                                  bool* output_masks,
+                                  int64_t count) {
+    uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= count) return;
+
+    Key key = input_keys[tid];
+    auto iter = map.find(key);
+    bool flag = (iter != map.end());
+    if (flag) {
+        buffer_accessor.DeviceFree(iter->second);
+        map.erase(iter);
+    }
+    output_masks[tid] = flag;
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Erase(const void* input_keys,
+                                     bool* output_masks,
+                                     int64_t count) {
+    stdgpu::index_t threads = 32;
+    stdgpu::index_t blocks = (count + threads - 1) / threads;
+
+    STDGPUInsertKernel<<<threads, blocks>>>(impl_, buffer_ctx_,
+                                            static_cast<Key*>(input_keys),
+                                            output_masks, count);
+
+    this->bucket_count_ = impl_.bucket_count();
+}
+
+template <typename Key, typename Hash>
+int64_t STDGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
+    auto range = impl_.device_range();
+
+    struct collect {
+        OPEN3D_HOST_DEVICE addr_t
+        operator()(const thrust::pair<Key, addr_t>& x) const {
+            return x.second;
+        };
+    };
+
+    thrust::transform(range.begin(), range.end(), output_indices, collect());
+
+    return impl_.size();
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
+    int64_t iterator_count = Size();
+
+    Tensor active_keys;
+    Tensor active_values;
+
+    if (iterator_count > 0) {
+        Tensor active_addrs({iterator_count}, Dtype::Int32, this->device_);
+        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
+
+        Tensor active_indices = active_addrs.To(Dtype::Int64);
+        active_keys = this->GetKeyBuffer().IndexGet({active_indices});
+        active_values = this->GetValueBuffer().IndexGet({active_indices});
+    }
+
+    float avg_capacity_per_bucket =
+            float(this->capacity_) / float(this->bucket_count_);
+    stdgpu::unordered_map<Key, int, Hash>::destroyDeviceObject(impl_);
+
+    int64_t new_capacity =
+            int64_t(std::ceil(buckets * avg_capacity_per_bucket));
+    Allocate(new_capacity, buckets);
+
+    if (iterator_count > 0) {
+        Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
+        Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
+
+        InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
+                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                   output_masks.GetDataPtr<bool>(), iterator_count);
+    }
+
+    this->bucket_count_ = impl_.bucket_count();
+}
+
+template <typename Key, typename Hash>
+std::vector<int64_t> STDGPUHashmap<Key, Hash>::BucketSizes() const {
+    utility::LogError("Unimplemented");
+}
+
+template <typename Key, typename Hash>
+float STDGPUHashmap<Key, Hash>::LoadFactor() const {
+    return impl_.load_factor();
+}
+
+// Member function is forbidding in a lambda, have to wrap up with a kernel.
+template <typename Key, typename Hash>
+__global__ void STDGPUInsertKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
+                                   CUDAHashmapBufferAccessor buffer_accessor,
+                                   const Key* input_keys,
+                                   const void* input_values,
+                                   int64_t dsize_value,
+                                   addr_t* output_addrs,
+                                   bool* output_masks,
+                                   int64_t count) {
+    uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= count) return;
+
+    Key key = input_keys[tid];
+    auto res = map.emplace(key, 0);
+    if (res.second) {
+        addr_t dst_kv_addr = buffer_accessor.DeviceAllocate();
+        auto dst_kv_iter = buffer_accessor.ExtractIterator(dst_kv_addr);
+
+        // Copy templated key to buffer (duplicate)
+        // TODO: hack stdgpu inside and take out the buffer
+        *static_cast<Key*>(dst_kv_iter.first) = key;
+
+        // Copy/reset non-templated value in buffer
+        uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
+        if (input_values != nullptr) {
+            const uint8_t* src_value =
+                    static_cast<const uint8_t*>(input_values) +
+                    dsize_value * tid;
+
+            for (int byte = 0; byte < dsize_value; ++byte) {
+                dst_value[byte] = src_value[byte];
+            }
+        }
+
+        // Update from dummy uint32::max
+        res.first->second = dst_kv_addr;
+
+        // Write to return variables
+        output_addrs[tid] = dst_kv_addr;
+        output_masks[tid] = true;
+    }
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
+                                          const void* input_values,
+                                          addr_t* output_addrs,
+                                          bool* output_masks,
+                                          int64_t count) {
+    stdgpu::index_t threads = 32;
+    stdgpu::index_t blocks = (count + threads - 1) / threads;
+
+    STDGPUInsertKernel<<<threads, blocks>>>(
+            impl_, buffer_ctx_, static_cast<Key*>(input_keys), input_values,
+            this->dsize_value_, output_addrs, output_masks, count);
+
+    this->bucket_count_ = impl_.bucket_count();
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Allocate(int64_t capacity, int64_t buckets) {
+    this->capacity_ = capacity;
+
+    // Allocate buffer for key values.
+    this->buffer_ =
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+                                            this->dsize_value_, this->device_);
+    buffer_ctx_.HostAllocate(this->device_);
+    buffer_ctx_.Setup(this->capacity_, this->dsize_key_, this->dsize_value_,
+                      this->buffer_->GetKeyBuffer(),
+                      this->buffer_->GetValueBuffer(),
+                      this->buffer_->GetHeap());
+    buffer_ctx_.Reset(this->device_);
+
+    impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
+            this->capcaity_);
+}
+
+template <typename Key, typename Hash>
+void STDGPUHashmap<Key, Hash>::Free() {
+    buffer_ctx_.HostFree(this->device_);
+}
+}  // namespace core
+}  // namespace open3d

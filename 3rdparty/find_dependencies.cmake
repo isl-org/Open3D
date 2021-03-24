@@ -1190,3 +1190,14 @@ if (WITH_IPPICV)
         endif()
     endif()
 endif ()
+
+# Stdgpu
+include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+import_3rdparty_library(3rdparty_stdgpu
+    INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+    LIB_DIR      ${STDGPU_LIB_DIR}
+    LIBRARIES    ${STDGPU_LIBRARIES}
+)
+set(STDGPU_TARGET "3rdparty_stdgpu")
+add_dependencies(3rdparty_stdgpu ext_stdgpu)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${STDGPU_TARGET}")

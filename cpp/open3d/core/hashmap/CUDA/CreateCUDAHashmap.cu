@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/hashmap/CUDA/STDGPUHashmap.h"
 #include "open3d/core/hashmap/CUDA/SlabHashmap.h"
 #include "open3d/core/hashmap/Dispatch.h"
 
