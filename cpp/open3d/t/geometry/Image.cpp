@@ -93,6 +93,9 @@ Image Image::To(core::Dtype dtype,
                 bool copy /*= false*/,
                 utility::optional<double> scale_ /* = utility::nullopt */,
                 double offset /* = 0.0 */) const {
+    if (dtype == GetDtype() && !scale_.has_value() && offset == 0.0) {
+        return copy ? Image(data_.Clone()) : *this;
+    }
     // Check IPP datatype support for each function in IPP documentation:
     // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
     // IPP supports all pairs of conversions for these data types

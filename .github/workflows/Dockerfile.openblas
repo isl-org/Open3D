@@ -1,24 +1,29 @@
-FROM ubuntu:20.04
+# The following arguments are required for docker build
+# - BASE_IMAGE
+# - CMAKE_VER
+# - CCACHE_TAR_NAME
+#
+# For example, you can run docker build with the following arguments
+# - OpenBLAS X86_64
+#   docker build --build-arg BASE_IMAGE=ubuntu:20.04 \
+#                --build-arg CMAKE_VER=cmake-3.19.7-Linux-x86_64 \
+#                --build-arg CCACHE_TAR_NAME=open3d-x86_64-ci-ccache
+# - OpenBLAS ARM64
+#   docker build --build-arg BASE_IMAGE=arm64v8/ubuntu:20.04 \
+#                --build-arg CMAKE_VER=cmake-3.19.7-Linux-aarch64 \
+#                --build-arg CCACHE_TAR_NAME=open3d-arm64-ci-ccache
+
+ARG BASE_IMAGE=ubuntu:20.04
+FROM ${BASE_IMAGE}
+
+# Export ARG to ENV
+ARG CMAKE_VER=cmake-3.19.7-Linux-x86_64
+ARG CCACHE_TAR_NAME=open3d-x86_64-ci-ccache
+ENV CMAKE_VER=${CMAKE_VER}
+ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 
 # Non-interactive dpkg
 ARG DEBIAN_FRONTEND=noninteractive
-
-# CMake dependencies
-RUN apt-get update && apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    software-properties-common \
-    wget \
- && rm -rf /var/lib/apt/lists/*
-
-# CMake
-RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
-    | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null \
- && apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ focal main'
-RUN apt-get update && apt-get install -y \
-    cmake \
- && rm -rf /var/lib/apt/lists/*
 
 # Open3D dependencies
 RUN apt-get update && apt-get install -y \
@@ -41,6 +46,7 @@ RUN apt-get update && apt-get install -y \
     libudev-dev \
     libxi-dev \
     ninja-build \
+    wget \
     xorg-dev \
  && rm -rf /var/lib/apt/lists/*
 
@@ -64,6 +70,30 @@ RUN python -m pip install -U \
     pytest=="6.0.1" \
     scipy=="1.5.4" \
     wheel=="0.35.1"
+
+# CMake
+# PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
+RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VER}" | cut -d"-" -f2) \
+ && wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VER}.tar.gz \
+ && tar -xvf ${CMAKE_VER}.tar.gz \
+ && cp -ar ${CMAKE_VER} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VER}/bin:${PATH}
+
+# Download ccache from GCS bucket (optional)
+# Example directory structure:
+# CCACHE_DIR        = ~/.cache/ccache
+# CCACHE_DIR_NAME   = ccache
+# CCACHE_DIR_PARENT = ~/.cache
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz \
+ && tar -xvf ${CCACHE_TAR_NAME}.tar.gz \
+ && ccache -s
+ENV PATH=/usr/lib/ccache:${PATH}
 
 # `docker build` should be executed in the Open3D root dir
 COPY . /root/Open3D
@@ -89,3 +119,12 @@ RUN mkdir build \
     .. \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc)
+
+# Compress ccache folder, move to / directory (optional)
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czvf ${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
+ && mv ${CCACHE_TAR_NAME}.tar.gz /
