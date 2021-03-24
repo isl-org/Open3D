@@ -153,9 +153,14 @@ void Open3DScene::SetViewport(std::int32_t x,
                               std::int32_t y,
                               std::uint32_t width,
                               std::uint32_t height) {
+    // Setup the view in which we render to a texture. Since this is just a
+    // texture, we want our viewport to be the entire texture.
     auto view = GetView();
-    view->SetViewport(x, y, width, height);
+    view->SetViewport(0, 0, width, height);
     view->EnableViewCaching(true);
+
+    // Now setup the view that actually draws to the window, so the viewport
+    // is the one passed by the user.
     auto window_view = GetWindowView();
     window_view->SetViewport(x, y, width, height);
     window_view->ConfigureForColorPicking();
