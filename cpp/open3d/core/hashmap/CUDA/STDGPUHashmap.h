@@ -43,7 +43,6 @@
 namespace open3d {
 namespace core {
 template <typename Key, typename Hash>
-
 class STDGPUHashmap : public DeviceHashmap {
 public:
     STDGPUHashmap(int64_t init_capacity,
@@ -157,19 +156,34 @@ void STDGPUHashmap<Key, Hash>::Activate(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
+__global__ void STDGPUFindKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
+                                 CUDAHashmapBufferAccessor buffer_accessor,
+                                 const Key* input_keys,
+                                 addr_t* output_addrs,
+                                 bool* output_masks,
+                                 int64_t count) {
+    uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= count) return;
+
+    Key key = input_keys[tid];
+    auto iter = map.find(key);
+    bool flag = (iter != map.end());
+    output_masks[tid] = flag;
+    output_addrs[tid] = flag ? iter->second : 0;
+}
+
+template <typename Key, typename Hash>
 void STDGPUHashmap<Key, Hash>::Find(const void* input_keys,
                                     addr_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
-    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
+    int threads = 32;
+    int blocks = (count + threads - 1) / threads;
 
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            count, [=] OPEN3D_DEVICE(int64_t i) {
-                auto iter = impl_.find(input_keys_templated[i]);
-                bool flag = (iter != impl_.end());
-                output_masks[i] = flag;
-                output_addrs[i] = flag ? iter.second : 0;
-            });
+    STDGPUFindKernel<<<blocks, threads>>>(impl_, buffer_ctx_,
+                                          static_cast<const Key*>(input_keys),
+                                          output_addrs, output_masks, count);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 // Member function is forbidding in a lambda, have to wrap up with a kernel.
@@ -177,19 +191,17 @@ template <typename Key, typename Hash>
 __global__ void STDGPUEraseKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
                                   CUDAHashmapBufferAccessor buffer_accessor,
                                   const Key* input_keys,
+                                  addr_t* output_addrs,
                                   bool* output_masks,
                                   int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= count) return;
 
     Key key = input_keys[tid];
-    auto iter = map.find(key);
-    bool flag = (iter != map.end());
-    if (flag) {
-        buffer_accessor.DeviceFree(iter->second);
-        map.erase(iter);
+    if (output_masks[tid]) {
+        output_masks[tid] = map.erase(key);
+        buffer_accessor.DeviceFree(output_addrs[tid]);
     }
-    output_masks[tid] = flag;
 }
 
 template <typename Key, typename Hash>
@@ -199,25 +211,35 @@ void STDGPUHashmap<Key, Hash>::Erase(const void* input_keys,
     stdgpu::index_t threads = 32;
     stdgpu::index_t blocks = (count + threads - 1) / threads;
 
-    STDGPUInsertKernel<<<threads, blocks>>>(impl_, buffer_ctx_,
-                                            static_cast<Key*>(input_keys),
-                                            output_masks, count);
+    // Erase has to go in two passes -- find, then erase
+    core::Tensor toutput_addrs =
+            core::Tensor({count}, Dtype::Int32, this->device_);
+    addr_t* output_addrs = static_cast<addr_t*>(toutput_addrs.GetDataPtr());
 
+    STDGPUFindKernel<<<blocks, threads>>>(impl_, buffer_ctx_,
+                                          static_cast<const Key*>(input_keys),
+                                          output_addrs, output_masks, count);
+    STDGPUEraseKernel<<<blocks, threads>>>(impl_, buffer_ctx_,
+                                           static_cast<const Key*>(input_keys),
+                                           output_addrs, output_masks, count);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     this->bucket_count_ = impl_.bucket_count();
 }
+
+template <typename Key>
+struct collect {
+    OPEN3D_HOST_DEVICE addr_t
+    operator()(const thrust::pair<Key, addr_t>& x) const {
+        return x.second;
+    }
+};
 
 template <typename Key, typename Hash>
 int64_t STDGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
     auto range = impl_.device_range();
 
-    struct collect {
-        OPEN3D_HOST_DEVICE addr_t
-        operator()(const thrust::pair<Key, addr_t>& x) const {
-            return x.second;
-        };
-    };
-
-    thrust::transform(range.begin(), range.end(), output_indices, collect());
+    thrust::transform(range.begin(), range.end(), output_indices,
+                      collect<Key>());
 
     return impl_.size();
 }
@@ -240,7 +262,6 @@ void STDGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
     float avg_capacity_per_bucket =
             float(this->capacity_) / float(this->bucket_count_);
-    stdgpu::unordered_map<Key, int, Hash>::destroyDeviceObject(impl_);
 
     int64_t new_capacity =
             int64_t(std::ceil(buckets * avg_capacity_per_bucket));
@@ -283,6 +304,12 @@ __global__ void STDGPUInsertKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
 
     Key key = input_keys[tid];
     auto res = map.emplace(key, 0);
+    // printf("tid=%d, key=%d, success=%d\n", tid,
+    // *reinterpret_cast<int*>(&key),
+    //        res.second);
+
+    output_addrs[tid] = 0;
+    output_masks[tid] = false;
     if (res.second) {
         addr_t dst_kv_addr = buffer_accessor.DeviceAllocate();
         auto dst_kv_iter = buffer_accessor.ExtractIterator(dst_kv_addr);
@@ -321,10 +348,11 @@ void STDGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
     stdgpu::index_t threads = 32;
     stdgpu::index_t blocks = (count + threads - 1) / threads;
 
-    STDGPUInsertKernel<<<threads, blocks>>>(
-            impl_, buffer_ctx_, static_cast<Key*>(input_keys), input_values,
-            this->dsize_value_, output_addrs, output_masks, count);
-
+    STDGPUInsertKernel<<<blocks, threads>>>(impl_, buffer_ctx_,
+                                            static_cast<const Key*>(input_keys),
+                                            input_values, this->dsize_value_,
+                                            output_addrs, output_masks, count);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     this->bucket_count_ = impl_.bucket_count();
 }
 
@@ -344,11 +372,12 @@ void STDGPUHashmap<Key, Hash>::Allocate(int64_t capacity, int64_t buckets) {
     buffer_ctx_.Reset(this->device_);
 
     impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
-            this->capcaity_);
+            this->capacity_);
 }
 
 template <typename Key, typename Hash>
 void STDGPUHashmap<Key, Hash>::Free() {
+    stdgpu::unordered_map<Key, addr_t, Hash>::destroyDeviceObject(impl_);
     buffer_ctx_.HostFree(this->device_);
 }
 }  // namespace core

@@ -29,7 +29,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/CUDA/SlabHashmap.h"
+#include "open3d/core/hashmap/CUDA/STDGPUHashmap.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/Hashmap.h"
@@ -136,7 +136,7 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
     using Key = core::Block<int, 3>;
     using Hash = core::BlockHash<int, 3>;
     auto cuda_hashmap =
-            std::dynamic_pointer_cast<core::SlabHashmap<Key, Hash>>(hashmap);
+            std::dynamic_pointer_cast<core::STDGPUHashmap<Key, Hash>>(hashmap);
     auto hashmap_ctx = cuda_hashmap->GetContext();
 
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
@@ -157,7 +157,6 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
 
                             int64_t y = workload_idx / cols;
                             int64_t x = workload_idx % cols;
-                            uint32_t lane_id = workload_idx & 0x1F;
 
                             float t = depth_min;
 
@@ -211,21 +210,17 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                 key(1) = y_b;
                                 key(2) = z_b;
 
-                                uint32_t bucket_id =
-                                        hashmap_ctx.ComputeBucket(key);
-                                core::Pair<core::addr_t, bool> result =
-                                        hashmap_ctx_instance.Find(
-                                                active, lane_id, bucket_id,
-                                                key);
-
-                                bool flag = active && result.second;
+                                auto iter = hashmap_ctx_instance.find(key);
+                                bool flag =
+                                        active &&
+                                        (iter != hashmap_ctx_instance.end());
                                 if (!flag) {
                                     t_prev = t;
                                     t += block_size;
                                     continue;
                                 }
 
-                                core::addr_t block_addr = result.first;
+                                core::addr_t block_addr = iter->second;
                                 x_v = int((x_g - x_b * block_size) /
                                           voxel_size);
                                 y_v = int((y_g - y_b * block_size) /

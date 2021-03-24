@@ -47,7 +47,7 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
 
     std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
     DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-        device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
+        device_hashmap_ptr = std::make_shared<STDGPUHashmap<key_t, hash_t>>(
                 init_capacity, dsize_key, dsize_value, device);
     });
     return device_hashmap_ptr;
