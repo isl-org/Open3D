@@ -41,10 +41,6 @@ class VideoWindow:
                 self.depth_images.append(img)
         assert (len(self.rgb_images) == len(self.depth_images))
 
-        first_img = np.asarray(self.rgb_images[0])
-        width = first_img.shape[0]
-        height = first_img.shape[1]
-
         self.window = gui.Application.instance.create_window(
             "Open3D - Video Example", 1000, 500)
         self.window.set_on_layout(self._on_layout)
@@ -74,7 +70,6 @@ class VideoWindow:
         self.depth_widget = gui.ImageWidget(self.depth_images[0])
         self.panel.add_child(self.depth_widget)
         self.window.add_child(self.panel)
-        self.panel.add_child
 
         self.is_done = False
         threading.Thread(target=self._update_thread).start()
