@@ -24,20 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CPU/TemplateHashmapCPU.hpp"
+#include "open3d/core/hashmap/CPU/TBBHashmap.h"
+#include "open3d/core/hashmap/Dispatch.h"
 
 namespace open3d {
 namespace core {
 
 /// Non-templated factory.
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
-        int64_t init_buckets,
+std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
+        const Dtype& dtype_key,
+        const Dtype& dtype_value,
+        const SizeVector& element_shape_key,
+        const SizeVector& element_shape_value,
         const Device& device) {
-    return std::make_shared<CPUHashmap<DefaultHash, DefaultKeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+    int64_t dim = element_shape_key.NumElements();
+
+    int64_t dsize_key = dim * dtype_key.ByteSize();
+    int64_t dsize_value =
+            element_shape_value.NumElements() * dtype_value.ByteSize();
+
+    std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
+    DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
+        device_hashmap_ptr = std::make_shared<TBBHashmap<key_t, hash_t>>(
+                init_capacity, dsize_key, dsize_value, device);
+    });
+    return device_hashmap_ptr;
 }
 
 }  // namespace core

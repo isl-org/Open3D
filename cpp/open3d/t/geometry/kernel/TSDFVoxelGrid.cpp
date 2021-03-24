@@ -108,7 +108,7 @@ void Integrate(const core::Tensor& depth,
     }
 }
 
-void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& block_values,
              core::Tensor& vertex_map,
              core::Tensor& color_map,

@@ -56,7 +56,7 @@ void Integrate(const core::Tensor& depth,
                float depth_scale,
                float depth_max);
 
-void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& block_values,
              core::Tensor& vertex_map,
              core::Tensor& color_map,
@@ -115,7 +115,7 @@ void IntegrateCPU(const core::Tensor& depth,
                   float depth_scale,
                   float depth_max);
 
-void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+void RayCastCPU(std::shared_ptr<core::DeviceHashmap>& hashmap,
                 core::Tensor& block_values,
                 core::Tensor& vertex_map,
                 core::Tensor& color_map,
@@ -175,7 +175,7 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float depth_scale,
                    float depth_max);
 
-void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                  core::Tensor& block_values,
                  core::Tensor& vertex_map,
                  core::Tensor& color_map,

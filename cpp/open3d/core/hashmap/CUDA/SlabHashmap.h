@@ -24,20 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Copyright 2019 Saman Ashkiani
-// Rewritten by Wei Dong 2019 - 2020
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// implied. See the License for the specific language governing permissions
-// and limitations under the License.
-
 #pragma once
 
 #include <cassert>
@@ -49,16 +35,16 @@
 
 namespace open3d {
 namespace core {
-template <typename Hash, typename KeyEq>
-class CUDAHashmap : public DeviceHashmap<Hash, KeyEq> {
+template <typename Key, typename Value, typename Hash, typename Eq>
+class SlabHashmap : public DeviceHashmap {
 public:
-    CUDAHashmap(int64_t init_buckets,
+    SlabHashmap(int64_t init_buckets,
                 int64_t init_capacity,
                 int64_t dsize_key,
                 int64_t dsize_value,
                 const Device& device);
 
-    ~CUDAHashmap();
+    ~SlabHashmap();
 
     void Rehash(int64_t buckets) override;
 
@@ -89,14 +75,14 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    CUDAHashmapImplContext<Hash, KeyEq> GetContext() { return gpu_context_; }
+    SlabHashmapImplContext<Hash, KeyEq> GetContext() { return gpu_context_; }
 
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a shared
     /// pointer.
-    CUDAHashmapImplContext<Hash, KeyEq> gpu_context_;
+    SlabHashmapImplContext<Hash, KeyEq> gpu_context_;
 
-    CUDAHashmapBufferContext buffer_ctx_;
+    SlabHashmapBufferContext buffer_ctx_;
     std::shared_ptr<InternalNodeManager> node_mgr_;
 
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
@@ -112,7 +98,7 @@ protected:
 };
 
 template <typename Hash, typename KeyEq>
-CUDAHashmap<Hash, KeyEq>::CUDAHashmap(int64_t init_buckets,
+SlabHashmap<Hash, KeyEq>::SlabHashmap(int64_t init_buckets,
                                       int64_t init_capacity,
                                       int64_t dsize_key,
                                       int64_t dsize_value,
@@ -123,12 +109,12 @@ CUDAHashmap<Hash, KeyEq>::CUDAHashmap(int64_t init_buckets,
 }
 
 template <typename Hash, typename KeyEq>
-CUDAHashmap<Hash, KeyEq>::~CUDAHashmap() {
+SlabHashmap<Hash, KeyEq>::~SlabHashmap() {
     Free();
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
+void SlabHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
@@ -165,7 +151,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
+void SlabHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                                       const void* input_values,
                                       addr_t* output_addrs,
                                       bool* output_masks,
@@ -184,7 +170,7 @@ void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
+void SlabHashmap<Hash, KeyEq>::Activate(const void* input_keys,
                                         addr_t* output_addrs,
                                         bool* output_masks,
                                         int64_t count) {
@@ -202,7 +188,7 @@ void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Find(const void* input_keys,
+void SlabHashmap<Hash, KeyEq>::Find(const void* input_keys,
                                     addr_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
@@ -219,7 +205,7 @@ void CUDAHashmap<Hash, KeyEq>::Find(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Erase(const void* input_keys,
+void SlabHashmap<Hash, KeyEq>::Erase(const void* input_keys,
                                      bool* output_masks,
                                      int64_t count) {
     if (count == 0) return;
@@ -241,7 +227,7 @@ void CUDAHashmap<Hash, KeyEq>::Erase(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-int64_t CUDAHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
+int64_t SlabHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
     uint32_t* iterator_count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
     cudaMemset(iterator_count, 0, sizeof(uint32_t));
@@ -263,12 +249,12 @@ int64_t CUDAHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
 }
 
 template <typename Hash, typename KeyEq>
-int64_t CUDAHashmap<Hash, KeyEq>::Size() const {
+int64_t SlabHashmap<Hash, KeyEq>::Size() const {
     return buffer_ctx_.HeapCounter(this->device_);
 }
 
 template <typename Hash, typename KeyEq>
-std::vector<int64_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() const {
+std::vector<int64_t> SlabHashmap<Hash, KeyEq>::BucketSizes() const {
     thrust::device_vector<int64_t> elems_per_bucket(gpu_context_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
@@ -286,12 +272,12 @@ std::vector<int64_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() const {
 }
 
 template <typename Hash, typename KeyEq>
-float CUDAHashmap<Hash, KeyEq>::LoadFactor() const {
+float SlabHashmap<Hash, KeyEq>::LoadFactor() const {
     return float(Size()) / float(this->bucket_count_);
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
+void SlabHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                                           const void* input_values,
                                           addr_t* output_addrs,
                                           bool* output_masks,
@@ -317,7 +303,7 @@ void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
+void SlabHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
                                         int64_t capacity) {
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
@@ -348,7 +334,7 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
 }
 
 template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::Free() {
+void SlabHashmap<Hash, KeyEq>::Free() {
     buffer_ctx_.HostFree(this->device_);
     MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
 }

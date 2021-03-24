@@ -75,11 +75,11 @@ set(CORE_CUDA_SRC
 set(HASHMAP_SRC
   hashmap/Hashmap.cpp
   hashmap/DeviceHashmap.cpp
-  hashmap/CPU/DefaultHashmapCPU.cpp
+  hashmap/CPU/CreateCPUHashmap.cpp
 )
 
 set(HASHMAP_CUDA_SRC
-  hashmap/CUDA/DefaultHashmapCUDA.cu
+  hashmap/CUDA/CreateCUDAHashmap.cu
   hashmap/CUDA/HashmapBufferCUDA.cu
   hashmap/CUDA/InternalNodeManager.cu
 )
