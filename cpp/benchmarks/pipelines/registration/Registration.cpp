@@ -89,20 +89,19 @@ static void BenchmarkRegistrationICPLegacy(
                                               target_pointcloud_filename,
                                               voxel_downsampling_factor);
 
+    std::shared_ptr<TransformationEstimation> estimation;
+    if (type == TransformationEstimationType::PointToPlane) {
+        estimation = std::make_shared<TransformationEstimationPointToPlane>();
+    } else if (type == TransformationEstimationType::PointToPoint) {
+        estimation = std::make_shared<TransformationEstimationPointToPoint>();
+    }
+
     Eigen::Matrix4d init_trans;
     init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
             0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
 
     RegistrationResult reg_result(init_trans);
-
-    std::shared_ptr<TransformationEstimation> estimation;
-    if (type == TransformationEstimationType::PointToPlane) {
-        estimation = std::make_shared<TransformationEstimationPointToPlane>();
-
-    } else if (type == TransformationEstimationType::PointToPoint) {
-        estimation = std::make_shared<TransformationEstimationPointToPoint>();
-    }
-
+    // Warm up.
     reg_result = RegistrationICP(
             source, target, max_correspondence_distance, init_trans,
             *estimation,

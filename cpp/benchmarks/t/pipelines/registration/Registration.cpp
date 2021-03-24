@@ -113,19 +113,18 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
 
-    core::Tensor init_trans =
-            core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
-
-    RegistrationResult reg_result(init_trans);
-
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
         estimation = std::make_shared<TransformationEstimationPointToPlane>();
-
     } else if (type == TransformationEstimationType::PointToPoint) {
         estimation = std::make_shared<TransformationEstimationPointToPoint>();
     }
 
+    core::Tensor init_trans =
+            core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
+
+    RegistrationResult reg_result(init_trans);
+    // Warm up.
     reg_result = RegistrationICP(
             source, target, max_correspondence_distance, init_trans,
             *estimation,
