@@ -86,6 +86,7 @@
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"

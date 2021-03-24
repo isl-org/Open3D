@@ -288,7 +288,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("absorption_distance",
                            &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width)
+            .def_readwrite("line_width", &Material::line_width,
+                           "Requires 'shader' to be 'unlitLine'")
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -334,6 +335,27 @@ void pybind_rendering_classes(py::module &m) {
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(
             m, "ColorGrading", "Parameters to control color grading options");
+
+    py::enum_<ColorGradingParams::Quality> cgp_quality(
+            color_grading, "Quality",
+            "Quality level of color grading operations");
+    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+            .value("MEDIUM", ColorGradingParams::Quality::kMedium)
+            .value("HIGH", ColorGradingParams::Quality::kHigh)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra);
+
+    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
+            color_grading, "ToneMapping",
+            "Specifies the tone-mapping algorithm");
+    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
+            .value("ACES", ColorGradingParams::ToneMapping::kAces)
+            .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
+            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
+            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
+            .value("DISPLAY_RANGE",
+                   ColorGradingParams::ToneMapping::kDisplayRange);
+
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
                              ColorGradingParams::ToneMapping algorithm) {
@@ -542,7 +564,7 @@ void pybind_rendering_classes(py::module &m) {
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(
-                    "get_view", &Open3DScene::GetView,
+                    "view", &Open3DScene::GetView,
                     "The low level view associated with the scene")
             .def_property_readonly("background_color",
                                    &Open3DScene::GetBackgroundColor,
