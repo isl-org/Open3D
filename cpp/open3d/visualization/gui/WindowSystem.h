@@ -85,6 +85,7 @@ public:
     virtual void SetWindowSizePixels(OSWindow w, const Size& size) = 0;
 
     virtual float GetWindowScaleFactor(OSWindow w) const = 0;
+    virtual float GetUIScaleFactor(OSWindow w) const = 0;
 
     virtual void SetWindowTitle(OSWindow w, const char* title) = 0;
 

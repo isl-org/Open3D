@@ -26,6 +26,8 @@
 
 #include "open3d/t/geometry/PointCloud.h"
 
+#include <gmock/gmock.h>
+
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
@@ -389,6 +391,50 @@ TEST_P(PointCloudPermuteDevices, Has) {
     // Same size.
     pcd.SetPointColors(core::Tensor::Ones({10, 3}, dtype, device));
     EXPECT_TRUE(pcd.HasPointColors());
+}
+
+TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
+    using ::testing::ElementsAre;
+    using ::testing::UnorderedElementsAreArray;
+
+    core::Device device = GetParam();
+    float depth_scale = 1000.f, depth_max = 3.f;
+    int stride = 1;
+    core::Tensor im_depth =
+            core::Tensor::Init<uint16_t>({{1000, 0}, {1000, 1000}}, device);
+    core::Tensor im_color =
+            core::Tensor::Init<float>({{{0.0, 0.0, 0.0}, {0.2, 0.2, 0.2}},
+                                       {{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}},
+                                      device);
+    core::Tensor intrinsics = core::Tensor::Init<float>(
+            {{10, 0, 1}, {0, 10, 1}, {0, 0, 1}}, device);
+    core::Tensor extrinsics =
+            core::Tensor::Eye(4, core::Dtype::Float32, device);
+    t::geometry::PointCloud pcd_ref(
+            {{"points",
+              core::Tensor::Init<float>(
+                      {{-0.1, -0.1, 1.0}, {0.0, -0.1, 1.0}, {0.0, 0.0, 1.0}},
+                      device)},
+             {"colors",
+              core::Tensor::Init<float>(
+                      {{0.0, 0.0, 0.0}, {0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}},
+                      device)}});
+
+    t::geometry::PointCloud pcd_out =
+            t::geometry::PointCloud::CreateFromRGBDImage(
+                    t::geometry::RGBDImage(im_color, im_depth), intrinsics,
+                    extrinsics, depth_scale, depth_max, stride);
+
+    EXPECT_THAT(pcd_out.GetPoints().GetShape(), ElementsAre(3, 3));
+    // Unordered check since output point cloud order is non-deterministic
+    EXPECT_THAT(pcd_out.GetPoints().ToFlatVector<float>(),
+                UnorderedElementsAreArray(
+                        pcd_ref.GetPoints().ToFlatVector<float>()));
+    EXPECT_TRUE(pcd_out.HasPointColors());
+    EXPECT_THAT(pcd_out.GetPointColors().GetShape(), ElementsAre(3, 3));
+    EXPECT_THAT(pcd_out.GetPointColors().ToFlatVector<float>(),
+                UnorderedElementsAreArray(
+                        pcd_ref.GetPointColors().ToFlatVector<float>()));
 }
 
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
