@@ -30,16 +30,15 @@
 #include <memory>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.h"
+#include "open3d/core/hashmap/CUDA/SlabHashmapImpl.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
 namespace core {
-template <typename Key, typename Value, typename Hash, typename Eq>
+template <typename Key, typename Hash>
 class SlabHashmap : public DeviceHashmap {
 public:
-    SlabHashmap(int64_t init_buckets,
-                int64_t init_capacity,
+    SlabHashmap(int64_t init_capacity,
                 int64_t dsize_key,
                 int64_t dsize_value,
                 const Device& device);
@@ -75,15 +74,15 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    SlabHashmapImplContext<Hash, KeyEq> GetContext() { return gpu_context_; }
+    SlabHashmapImplContext<Key, Hash> GetContext() { return gpu_context_; }
 
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a shared
     /// pointer.
-    SlabHashmapImplContext<Hash, KeyEq> gpu_context_;
+    SlabHashmapImplContext<Key, Hash> gpu_context_;
 
-    SlabHashmapBufferContext buffer_ctx_;
-    std::shared_ptr<InternalNodeManager> node_mgr_;
+    CUDAHashmapBufferAccessor buffer_ctx_;
+    std::shared_ptr<SlabNodeManager> node_mgr_;
 
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
     /// separate this implementation and avoid shared checks.
@@ -97,24 +96,23 @@ protected:
     void Free();
 };
 
-template <typename Hash, typename KeyEq>
-SlabHashmap<Hash, KeyEq>::SlabHashmap(int64_t init_buckets,
-                                      int64_t init_capacity,
-                                      int64_t dsize_key,
-                                      int64_t dsize_value,
-                                      const Device& device)
-    : DeviceHashmap<Hash, KeyEq>(
-              init_buckets, init_capacity, dsize_key, dsize_value, device) {
+template <typename Key, typename Hash>
+SlabHashmap<Key, Hash>::SlabHashmap(int64_t init_capacity,
+                                    int64_t dsize_key,
+                                    int64_t dsize_value,
+                                    const Device& device)
+    : DeviceHashmap(init_capacity, dsize_key, dsize_value, device) {
+    int64_t init_buckets = init_capacity * 2;
     Allocate(init_buckets, init_capacity);
 }
 
-template <typename Hash, typename KeyEq>
-SlabHashmap<Hash, KeyEq>::~SlabHashmap() {
+template <typename Key, typename Hash>
+SlabHashmap<Key, Hash>::~SlabHashmap() {
     Free();
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
@@ -150,12 +148,12 @@ void SlabHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     CUDACachedMemoryManager::ReleaseCache();
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Insert(const void* input_keys,
-                                      const void* input_values,
-                                      addr_t* output_addrs,
-                                      bool* output_masks,
-                                      int64_t count) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
+                                    const void* input_values,
+                                    addr_t* output_addrs,
+                                    bool* output_masks,
+                                    int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
         float avg_capacity_per_bucket =
@@ -169,11 +167,11 @@ void SlabHashmap<Hash, KeyEq>::Insert(const void* input_keys,
     InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Activate(const void* input_keys,
-                                        addr_t* output_addrs,
-                                        bool* output_masks,
-                                        int64_t count) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Activate(const void* input_keys,
+                                      addr_t* output_addrs,
+                                      bool* output_masks,
+                                      int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
         float avg_capacity_per_bucket =
@@ -187,11 +185,11 @@ void SlabHashmap<Hash, KeyEq>::Activate(const void* input_keys,
     InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Find(const void* input_keys,
-                                    addr_t* output_addrs,
-                                    bool* output_masks,
-                                    int64_t count) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Find(const void* input_keys,
+                                  addr_t* output_addrs,
+                                  bool* output_masks,
+                                  int64_t count) {
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -204,10 +202,10 @@ void SlabHashmap<Hash, KeyEq>::Find(const void* input_keys,
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Erase(const void* input_keys,
-                                     bool* output_masks,
-                                     int64_t count) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
+                                   bool* output_masks,
+                                   int64_t count) {
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -226,8 +224,8 @@ void SlabHashmap<Hash, KeyEq>::Erase(const void* input_keys,
     MemoryManager::Free(iterator_addrs, this->device_);
 }
 
-template <typename Hash, typename KeyEq>
-int64_t SlabHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
+template <typename Key, typename Hash>
+int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
     uint32_t* iterator_count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
     cudaMemset(iterator_count, 0, sizeof(uint32_t));
@@ -248,13 +246,13 @@ int64_t SlabHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
     return static_cast<int64_t>(ret);
 }
 
-template <typename Hash, typename KeyEq>
-int64_t SlabHashmap<Hash, KeyEq>::Size() const {
+template <typename Key, typename Hash>
+int64_t SlabHashmap<Key, Hash>::Size() const {
     return buffer_ctx_.HeapCounter(this->device_);
 }
 
-template <typename Hash, typename KeyEq>
-std::vector<int64_t> SlabHashmap<Hash, KeyEq>::BucketSizes() const {
+template <typename Key, typename Hash>
+std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
     thrust::device_vector<int64_t> elems_per_bucket(gpu_context_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
@@ -271,17 +269,17 @@ std::vector<int64_t> SlabHashmap<Hash, KeyEq>::BucketSizes() const {
     return std::move(result);
 }
 
-template <typename Hash, typename KeyEq>
-float SlabHashmap<Hash, KeyEq>::LoadFactor() const {
+template <typename Key, typename Hash>
+float SlabHashmap<Key, Hash>::LoadFactor() const {
     return float(Size()) / float(this->bucket_count_);
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
-                                          const void* input_values,
-                                          addr_t* output_addrs,
-                                          bool* output_masks,
-                                          int64_t count) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::InsertImpl(const void* input_keys,
+                                        const void* input_values,
+                                        addr_t* output_addrs,
+                                        bool* output_masks,
+                                        int64_t count) {
     if (count == 0) return;
 
     /// Increase heap_counter to pre-allocate potential memory increment and
@@ -302,9 +300,8 @@ void SlabHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
-                                        int64_t capacity) {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
 
@@ -320,7 +317,7 @@ void SlabHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
     buffer_ctx_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.
-    node_mgr_ = std::make_shared<InternalNodeManager>(this->device_);
+    node_mgr_ = std::make_shared<SlabNodeManager>(this->device_);
 
     // Allocate linked list heads.
     gpu_context_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
@@ -333,8 +330,8 @@ void SlabHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
                        buffer_ctx_);
 }
 
-template <typename Hash, typename KeyEq>
-void SlabHashmap<Hash, KeyEq>::Free() {
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Free() {
     buffer_ctx_.HostFree(this->device_);
     MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
 }

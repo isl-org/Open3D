@@ -29,8 +29,9 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
+#include "open3d/core/hashmap/CUDA/SlabHashmap.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
@@ -119,7 +120,7 @@ void TouchCUDA(const core::Tensor& points,
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
 
-void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                  core::Tensor& block_values,
                  core::Tensor& vertex_map,
                  core::Tensor& color_map,
@@ -132,8 +133,10 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                  float depth_min,
                  float depth_max,
                  float weight_threshold) {
-    auto cuda_hashmap = std::dynamic_pointer_cast<
-            core::CUDAHashmap<core::DefaultHash, core::DefaultKeyEq>>(hashmap);
+    using Key = core::Block<int, 3>;
+    using Hash = core::BlockHash<int, 3>;
+    auto cuda_hashmap =
+            std::dynamic_pointer_cast<core::SlabHashmap<Key, Hash>>(hashmap);
     auto hashmap_ctx = cuda_hashmap->GetContext();
 
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
@@ -164,7 +167,7 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                             float x_o = 0, y_o = 0, z_o = 0;
 
                             // Coordinates in voxel blocks and voxels
-                            int key[3] = {0};
+                            Key key;
                             int x_b = 0, y_b = 0, z_b = 0;
                             int x_v = 0, y_v = 0, z_v = 0;
 
@@ -204,16 +207,16 @@ void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
                                 y_b = static_cast<int>(floor(y_g / block_size));
                                 z_b = static_cast<int>(floor(z_g / block_size));
 
-                                key[0] = x_b;
-                                key[1] = y_b;
-                                key[2] = z_b;
+                                key(0) = x_b;
+                                key(1) = y_b;
+                                key(2) = z_b;
 
                                 uint32_t bucket_id =
                                         hashmap_ctx.ComputeBucket(key);
                                 core::Pair<core::addr_t, bool> result =
                                         hashmap_ctx_instance.Find(
                                                 active, lane_id, bucket_id,
-                                                static_cast<const void*>(key));
+                                                key);
 
                                 bool flag = active && result.second;
                                 if (!flag) {

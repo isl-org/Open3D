@@ -48,7 +48,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
-#include "open3d/core/hashmap/CUDA/Macros.h"
+#include "open3d/core/hashmap/CUDA/SlabMacros.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
 namespace open3d {
@@ -65,9 +65,9 @@ public:
     addr_t next_slab_ptr;
 };
 
-class InternalNodeManagerContext {
+class SlabNodeManagerContext {
 public:
-    InternalNodeManagerContext()
+    SlabNodeManagerContext()
         : super_blocks_(nullptr),
           hash_coef_(0),
           num_attempts_(0),
@@ -232,12 +232,12 @@ private:
     uint32_t super_block_index_;
 };
 
-__global__ void CountSlabsPerSuperblockKernel(
-        InternalNodeManagerContext context, uint32_t* slabs_per_superblock);
+__global__ void CountSlabsPerSuperblockKernel(SlabNodeManagerContext context,
+                                              uint32_t* slabs_per_superblock);
 
-class InternalNodeManager {
+class SlabNodeManager {
 public:
-    InternalNodeManager(const Device& device) : device_(device) {
+    SlabNodeManager(const Device& device) : device_(device) {
         /// Random coefficients for allocator's hash function.
         std::mt19937 rng(time(0));
         gpu_context_.hash_coef_ = rng();
@@ -261,7 +261,7 @@ public:
         }
     }
 
-    ~InternalNodeManager() {
+    ~SlabNodeManager() {
         MemoryManager::Free(gpu_context_.super_blocks_, device_);
     }
 
@@ -290,7 +290,7 @@ public:
     }
 
 public:
-    InternalNodeManagerContext gpu_context_;
+    SlabNodeManagerContext gpu_context_;
     Device device_;
 };
 }  // namespace core

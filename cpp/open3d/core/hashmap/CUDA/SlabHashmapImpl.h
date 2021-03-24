@@ -40,53 +40,52 @@
 
 #pragma once
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
-#include "open3d/core/hashmap/CUDA/InternalNodeManager.h"
-#include "open3d/core/hashmap/CUDA/Macros.h"
-#include "open3d/core/hashmap/CUDA/Traits.h"
+#include "open3d/core/hashmap/CUDA/SlabMacros.h"
+#include "open3d/core/hashmap/CUDA/SlabNodeManager.h"
+#include "open3d/core/hashmap/CUDA/SlabTraits.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
 namespace core {
 
-template <typename Hash, typename KeyEq>
-class CUDAHashmapImplContext {
+template <typename Key, typename Hash>
+class SlabHashmapImplContext {
 public:
-    CUDAHashmapImplContext();
+    SlabHashmapImplContext();
 
     __host__ void Setup(int64_t init_buckets,
                         int64_t init_capacity,
                         int64_t dsize_key,
                         int64_t dsize_value,
-                        const InternalNodeManagerContext& node_mgr_ctx,
-                        const CUDAHashmapBufferContext& kv_mgr_ctx);
+                        const SlabNodeManagerContext& node_mgr_ctx,
+                        const CUDAHashmapBufferAccessor& kv_mgr_ctx);
 
     __device__ bool Insert(bool lane_active,
                            uint32_t lane_id,
                            uint32_t bucket_id,
-                           const void* key_ptr,
+                           const Key& key,
                            addr_t iterator_addr);
 
     __device__ Pair<addr_t, bool> Find(bool lane_active,
                                        uint32_t lane_id,
                                        uint32_t bucket_id,
-                                       const void* key_ptr);
+                                       const Key& key);
 
     __device__ Pair<addr_t, bool> Erase(bool lane_active,
                                         uint32_t lane_id,
                                         uint32_t bucket_id,
-                                        const void* key_ptr);
+                                        const Key& key);
 
-    __device__ void WarpSyncKey(const void* key_ptr,
-                                uint32_t lane_id,
-                                void* ret_key_ptr);
-    __device__ int32_t WarpFindKey(const void* src_key_ptr,
+    __device__ void WarpSyncKey(const Key& key, uint32_t lane_id, Key& ret_key);
+    __device__ int32_t WarpFindKey(const Key& src_key,
                                    uint32_t lane_id,
                                    addr_t ptr);
     __device__ int32_t WarpFindEmpty(addr_t unit_data);
 
     // Hash function.
-    __device__ int64_t ComputeBucket(const void* key_ptr) const;
+    __device__ int64_t ComputeBucket(const Key& key) const;
 
     // Node manager.
     __device__ addr_t AllocateSlab(uint32_t lane_id);
@@ -105,7 +104,6 @@ public:
 
 public:
     Hash hash_fn_;
-    KeyEq cmp_fn_;
 
     int64_t bucket_count_;
     int64_t capacity_;
@@ -113,75 +111,78 @@ public:
     int64_t dsize_value_;
 
     Slab* bucket_list_head_;
-    InternalNodeManagerContext node_mgr_ctx_;
-    SlabHashmapBufferContext kv_mgr_ctx_;
+    SlabNodeManagerContext node_mgr_ctx_;
+    CUDAHashmapBufferAccessor kv_mgr_ctx_;
+
+    // TODO: verify size with alignment
+    int key_size_in_int_ = sizeof(Key) / sizeof(int);
 };
 
 /// Kernels
-template <typename Hash, typename KeyEq>
-__global__ void InsertKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void InsertKernelPass0(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                   const void* input_keys,
                                   addr_t* output_addrs,
                                   int heap_counter_prev,
                                   int64_t count);
 
-template <typename Hash, typename KeyEq>
-__global__ void InsertKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void InsertKernelPass1(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                   const void* input_keys,
                                   addr_t* output_addrs,
                                   bool* output_masks,
                                   int64_t count);
 
-template <typename Hash, typename KeyEq>
-__global__ void InsertKernelPass2(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void InsertKernelPass2(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                   const void* input_values,
                                   addr_t* output_addrs,
                                   bool* output_masks,
                                   int64_t count);
 
-template <typename Hash, typename KeyEq>
-__global__ void FindKernel(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void FindKernel(SlabHashmapImplContext<Key, Hash> hash_ctx,
                            const void* input_keys,
                            addr_t* output_addrs,
                            bool* output_masks,
                            int64_t count);
 
-template <typename Hash, typename KeyEq>
-__global__ void EraseKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void EraseKernelPass0(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                  const void* input_keys,
                                  addr_t* output_addrs,
                                  bool* output_masks,
                                  int64_t count);
 
-template <typename Hash, typename KeyEq>
-__global__ void EraseKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void EraseKernelPass1(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                  addr_t* output_addrs,
                                  bool* output_masks,
                                  int64_t count);
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __global__ void GetActiveIndicesKernel(
-        SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+        SlabHashmapImplContext<Key, Hash> hash_ctx,
         addr_t* output_addrs,
         uint32_t* output_iterator_count);
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __global__ void CountElemsPerBucketKernel(
-        SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+        SlabHashmapImplContext<Key, Hash> hash_ctx,
         int64_t* bucket_elem_counts);
 
-template <typename Hash, typename KeyEq>
-SlabHashmapImplContext<Hash, KeyEq>::SlabHashmapImplContext()
+template <typename Key, typename Hash>
+SlabHashmapImplContext<Key, Hash>::SlabHashmapImplContext()
     : bucket_count_(0), bucket_list_head_(nullptr) {}
 
-template <typename Hash, typename KeyEq>
-void SlabHashmapImplContext<Hash, KeyEq>::Setup(
+template <typename Key, typename Hash>
+void SlabHashmapImplContext<Key, Hash>::Setup(
         int64_t init_buckets,
         int64_t init_capacity,
         int64_t dsize_key,
         int64_t dsize_value,
-        const InternalNodeManagerContext& allocator_ctx,
-        const SlabHashmapBufferContext& pair_allocator_ctx) {
+        const SlabNodeManagerContext& allocator_ctx,
+        const CUDAHashmapBufferAccessor& pair_allocator_ctx) {
     bucket_count_ = init_buckets;
     capacity_ = init_capacity;
     dsize_key_ = dsize_key;
@@ -189,22 +190,19 @@ void SlabHashmapImplContext<Hash, KeyEq>::Setup(
 
     node_mgr_ctx_ = allocator_ctx;
     kv_mgr_ctx_ = pair_allocator_ctx;
-
-    hash_fn_.key_size_in_int_ = dsize_key / sizeof(int);
-    cmp_fn_.key_size_in_int_ = dsize_key / sizeof(int);
 }
 
-template <typename Hash, typename KeyEq>
-__device__ bool SlabHashmapImplContext<Hash, KeyEq>::Insert(
+template <typename Key, typename Hash>
+__device__ bool SlabHashmapImplContext<Key, Hash>::Insert(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
-        const void* key,
+        const Key& key,
         addr_t iterator_addr) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = 0;
     uint32_t curr_slab_ptr = kHeadSlabAddr;
-    uint8_t src_key[kMaxKeyByteSize];
+    Key src_key;
 
     bool mask = false;
 
@@ -216,7 +214,6 @@ __device__ bool SlabHashmapImplContext<Hash, KeyEq>::Insert(
         uint32_t src_lane = __ffs(work_queue) - 1;
         uint32_t src_bucket =
                 __shfl_sync(kSyncLanesMask, bucket_id, src_lane, kWarpSize);
-
         WarpSyncKey(key, src_lane, src_key);
 
         // Each lane in the warp reads a unit in the slab
@@ -312,12 +309,12 @@ __device__ bool SlabHashmapImplContext<Hash, KeyEq>::Insert(
     return mask;
 }
 
-template <typename Hash, typename KeyEq>
-__device__ Pair<addr_t, bool> SlabHashmapImplContext<Hash, KeyEq>::Find(
+template <typename Key, typename Hash>
+__device__ Pair<addr_t, bool> SlabHashmapImplContext<Key, Hash>::Find(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
-        const void* query_key) {
+        const Key& query_key) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = work_queue;
     uint32_t curr_slab_ptr = kHeadSlabAddr;
@@ -334,7 +331,7 @@ __device__ Pair<addr_t, bool> SlabHashmapImplContext<Hash, KeyEq>::Find(
         uint32_t src_bucket =
                 __shfl_sync(kSyncLanesMask, bucket_id, src_lane, kWarpSize);
 
-        uint8_t src_key[kMaxKeyByteSize];
+        Key src_key;
         WarpSyncKey(query_key, src_lane, src_key);
 
         // Each lane in the warp reads a unit in the slab in parallel.
@@ -385,16 +382,16 @@ __device__ Pair<addr_t, bool> SlabHashmapImplContext<Hash, KeyEq>::Find(
     return make_pair(iterator, mask);
 }
 
-template <typename Hash, typename KeyEq>
-__device__ Pair<addr_t, bool> SlabHashmapImplContext<Hash, KeyEq>::Erase(
+template <typename Key, typename Hash>
+__device__ Pair<addr_t, bool> SlabHashmapImplContext<Key, Hash>::Erase(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
-        const void* key) {
+        const Key& key) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = 0;
     uint32_t curr_slab_ptr = kHeadSlabAddr;
-    uint8_t src_key[kMaxKeyByteSize];
+    Key src_key;
 
     addr_t iterator_addr = 0;
     bool mask = false;
@@ -452,62 +449,65 @@ __device__ Pair<addr_t, bool> SlabHashmapImplContext<Hash, KeyEq>::Erase(
     return make_pair(iterator_addr, mask);
 }
 
-template <typename Hash, typename KeyEq>
-__device__ void SlabHashmapImplContext<Hash, KeyEq>::WarpSyncKey(
-        const void* key_ptr, uint32_t lane_id, void* ret_key_ptr) {
-    auto dst_key_ptr = static_cast<int*>(ret_key_ptr);
-    auto src_key_ptr = static_cast<const int*>(key_ptr);
-    for (int i = 0; i < hash_fn_.key_size_in_int_; ++i) {
+template <typename Key, typename Hash>
+__device__ void SlabHashmapImplContext<Key, Hash>::WarpSyncKey(const Key& key,
+                                                               uint32_t lane_id,
+                                                               Key& ret_key) {
+    auto dst_key_ptr = reinterpret_cast<int*>(&ret_key);
+    auto src_key_ptr = reinterpret_cast<const int*>(&key);
+    for (int i = 0; i < key_size_in_int_; ++i) {
         dst_key_ptr[i] =
                 __shfl_sync(kSyncLanesMask, src_key_ptr[i], lane_id, kWarpSize);
     }
 }
 
-template <typename Hash, typename KeyEq>
-__device__ int32_t SlabHashmapImplContext<Hash, KeyEq>::WarpFindKey(
-        const void* key_ptr, uint32_t lane_id, addr_t ptr) {
+template <typename Key, typename Hash>
+__device__ int32_t SlabHashmapImplContext<Key, Hash>::WarpFindKey(
+        const Key& key, uint32_t lane_id, addr_t ptr) {
     bool is_lane_found =
             // Select key lanes.
             ((1 << lane_id) & kNodePtrLanesMask)
             // Validate key addrs.
             && (ptr != kEmptyNodeAddr)
             // Find keys in memory heap.
-            && cmp_fn_(kv_mgr_ctx_.ExtractIterator(ptr).first, key_ptr);
+            &&
+            *static_cast<Key*>(kv_mgr_ctx_.ExtractIterator(ptr).first) == key;
 
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_found)) - 1;
 }
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __device__ int32_t
-SlabHashmapImplContext<Hash, KeyEq>::WarpFindEmpty(addr_t ptr) {
+SlabHashmapImplContext<Key, Hash>::WarpFindEmpty(addr_t ptr) {
     bool is_lane_empty = (ptr == kEmptyNodeAddr);
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_empty)) - 1;
 }
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __device__ int64_t
-SlabHashmapImplContext<Hash, KeyEq>::ComputeBucket(const void* key) const {
+SlabHashmapImplContext<Key, Hash>::ComputeBucket(const Key& key) const {
     return hash_fn_(key) % bucket_count_;
 }
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __device__ addr_t
-SlabHashmapImplContext<Hash, KeyEq>::AllocateSlab(uint32_t lane_id) {
+SlabHashmapImplContext<Key, Hash>::AllocateSlab(uint32_t lane_id) {
     return node_mgr_ctx_.WarpAllocate(lane_id);
 }
 
-template <typename Hash, typename KeyEq>
-__device__ __forceinline__ void SlabHashmapImplContext<Hash, KeyEq>::FreeSlab(
+template <typename Key, typename Hash>
+__device__ __forceinline__ void SlabHashmapImplContext<Key, Hash>::FreeSlab(
         addr_t slab_ptr) {
     node_mgr_ctx_.FreeUntouched(slab_ptr);
 }
 
-template <typename Hash, typename KeyEq>
-__global__ void InsertKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void InsertKernelPass0(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                   const void* input_keys,
                                   addr_t* output_addrs,
                                   int heap_counter_prev,
                                   int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
@@ -517,20 +517,18 @@ __global__ void InsertKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
         iterator_t iterator =
                 hash_ctx.kv_mgr_ctx_.ExtractIterator(iterator_addr);
 
-        MEMCPY_AS_INTS(iterator.first,
-                       static_cast<const uint8_t*>(input_keys) +
-                               tid * hash_ctx.dsize_key_,
-                       hash_ctx.dsize_key_);
+        *static_cast<Key*>(iterator.first) = input_keys_templated[tid];
         output_addrs[tid] = iterator_addr;
     }
 }
 
-template <typename Hash, typename KeyEq>
-__global__ void InsertKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void InsertKernelPass1(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                   const void* input_keys,
                                   addr_t* output_addrs,
                                   bool* output_masks,
                                   int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = tid & 0x1F;
 
@@ -545,13 +543,10 @@ __global__ void InsertKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     addr_t iterator_addr = 0;
 
     // Dummy.
-    uint8_t dummy_key[kMaxKeyByteSize];
-    const void* key = reinterpret_cast<const void*>(dummy_key);
-
+    Key key;
     if (tid < count) {
         lane_active = true;
-        key = static_cast<const uint8_t*>(input_keys) +
-              tid * hash_ctx.dsize_key_;
+        key = input_keys_templated[tid];
         iterator_addr = output_addrs[tid];
         bucket_id = hash_ctx.ComputeBucket(key);
     }
@@ -565,8 +560,8 @@ __global__ void InsertKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
-template <typename Hash, typename KeyEq>
-__global__ void InsertKernelPass2(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void InsertKernelPass2(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                   const void* input_values,
                                   addr_t* output_addrs,
                                   bool* output_masks,
@@ -587,19 +582,19 @@ __global__ void InsertKernelPass2(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
                                        tid * hash_ctx.dsize_value_,
                                hash_ctx.dsize_value_);
             }
-
         } else {
             hash_ctx.kv_mgr_ctx_.DeviceFree(iterator_addr);
         }
     }
 }
 
-template <typename Hash, typename KeyEq>
-__global__ void FindKernel(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void FindKernel(SlabHashmapImplContext<Key, Hash> hash_ctx,
                            const void* input_keys,
                            addr_t* output_addrs,
                            bool* output_masks,
                            int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -615,14 +610,12 @@ __global__ void FindKernel(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t bucket_id = 0;
 
     // Dummy.
-    uint8_t dummy_key[kMaxKeyByteSize];
-    const void* key = reinterpret_cast<const void*>(dummy_key);
+    Key key;
     Pair<addr_t, bool> result;
 
     if (tid < count) {
         lane_active = true;
-        key = static_cast<const uint8_t*>(input_keys) +
-              tid * hash_ctx.dsize_key_;
+        key = input_keys_templated[tid];
         bucket_id = hash_ctx.ComputeBucket(key);
     }
 
@@ -634,12 +627,13 @@ __global__ void FindKernel(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
-template <typename Hash, typename KeyEq>
-__global__ void EraseKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void EraseKernelPass0(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                  const void* input_keys,
                                  addr_t* output_addrs,
                                  bool* output_masks,
                                  int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -652,13 +646,10 @@ __global__ void EraseKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     bool lane_active = false;
     uint32_t bucket_id = 0;
 
-    uint8_t dummy_key[kMaxKeyByteSize];
-    const void* key = reinterpret_cast<const void*>(dummy_key);
-
+    Key key;
     if (tid < count) {
         lane_active = true;
-        key = static_cast<const uint8_t*>(input_keys) +
-              tid * hash_ctx.dsize_key_;
+        key = input_keys_templated[tid];
         bucket_id = hash_ctx.ComputeBucket(key);
     }
 
@@ -670,8 +661,8 @@ __global__ void EraseKernelPass0(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
-template <typename Hash, typename KeyEq>
-__global__ void EraseKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+template <typename Key, typename Hash>
+__global__ void EraseKernelPass1(SlabHashmapImplContext<Key, Hash> hash_ctx,
                                  addr_t* output_addrs,
                                  bool* output_masks,
                                  int64_t count) {
@@ -681,9 +672,9 @@ __global__ void EraseKernelPass1(SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __global__ void GetActiveIndicesKernel(
-        SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+        SlabHashmapImplContext<Key, Hash> hash_ctx,
         addr_t* output_addrs,
         uint32_t* output_iterator_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -723,9 +714,9 @@ __global__ void GetActiveIndicesKernel(
     }
 }
 
-template <typename Hash, typename KeyEq>
+template <typename Key, typename Hash>
 __global__ void CountElemsPerBucketKernel(
-        SlabHashmapImplContext<Hash, KeyEq> hash_ctx,
+        SlabHashmapImplContext<Key, Hash> hash_ctx,
         int64_t* bucket_elem_counts) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;

@@ -38,13 +38,13 @@
 // implied. See the License for the specific language governing permissions
 // and limitations under the License.
 
-#include "open3d/core/hashmap/CUDA/InternalNodeManager.h"
+#include "open3d/core/hashmap/CUDA/SlabNodeManager.h"
 
 namespace open3d {
 namespace core {
 
 __global__ void CountSlabsPerSuperblockKernel(
-        InternalNodeManagerContext context, uint32_t* slabs_per_superblock) {
+        SlabNodeManagerContext context, uint32_t* slabs_per_superblock) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     int num_bitmaps = kBlocksPerSuperBlock * 32;

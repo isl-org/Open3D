@@ -81,7 +81,7 @@ set(HASHMAP_SRC
 set(HASHMAP_CUDA_SRC
   hashmap/CUDA/CreateCUDAHashmap.cu
   hashmap/CUDA/HashmapBufferCUDA.cu
-  hashmap/CUDA/InternalNodeManager.cu
+  hashmap/CUDA/SlabNodeManager.cu
 )
 
 set(CORE_NNS_SRC
