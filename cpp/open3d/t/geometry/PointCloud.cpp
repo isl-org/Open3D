@@ -156,7 +156,13 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             float depth_scale,
                                             float depth_max,
                                             int stride) {
-    depth.AsTensor().AssertDtype(core::Dtype::UInt16);
+    core::Dtype dtype = depth.AsTensor().GetDtype();
+    if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
+        utility::LogError(
+                "Unsupported dtype for CreateFromDepthImage, expected UInt16 "
+                "or Float32, but got {}.",
+                dtype.ToString());
+    }
 
     core::Tensor points;
     kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt, points,
