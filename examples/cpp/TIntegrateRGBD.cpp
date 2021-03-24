@@ -153,9 +153,15 @@ int main(int argc, char** argv) {
 
         if (enable_raycast && i % 100 == 0) {
             core::Tensor vertex_map, color_map;
+
+            utility::Timer ray_timer;
+            ray_timer.Start();
             std::tie(vertex_map, color_map) = voxel_grid.RayCast(
                     intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
                     50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+            ray_timer.Stop();
+            utility::LogInfo("{}: Raycast takes {}", i,
+                             ray_timer.GetDuration());
 
             t::geometry::Image vertex_im(vertex_map);
             visualization::DrawGeometries(

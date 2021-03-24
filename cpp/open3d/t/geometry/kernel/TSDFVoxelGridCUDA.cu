@@ -153,8 +153,6 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 core::kernel::CUDALauncher::LaunchGeneralKernel(
                         rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                            auto hashmap_ctx_instance = hashmap_ctx;
-
                             int64_t y = workload_idx / cols;
                             int64_t x = workload_idx % cols;
 
@@ -173,7 +171,6 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                             // Iterative ray intersection check
                             float t_prev = t;
                             float tsdf_prev = 1.0f;
-                            bool active = true;
 
                             // Camera origin
                             transform_indexer.RigidTransform(0, 0, 0, &x_o,
@@ -192,12 +189,6 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                             for (int step = 0; step < max_steps; ++step) {
                                 // Release a warp if all of the threads are
                                 // inactive.
-                                int all_inactive = __all_sync(
-                                        core::kSyncLanesMask, !active);
-                                if (all_inactive) {
-                                    break;
-                                }
-
                                 x_g = x_o + t * x_d;
                                 y_g = y_o + t * y_d;
                                 z_g = z_o + t * z_d;
@@ -210,10 +201,8 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                 key(1) = y_b;
                                 key(2) = z_b;
 
-                                auto iter = hashmap_ctx_instance.find(key);
-                                bool flag =
-                                        active &&
-                                        (iter != hashmap_ctx_instance.end());
+                                auto iter = hashmap_ctx.find(key);
+                                bool flag = iter != hashmap_ctx.end();
                                 if (!flag) {
                                     t_prev = t;
                                     t += block_size;
@@ -261,8 +250,7 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                     color[1] = voxel_ptr->GetG() / 255.0f;
                                     color[2] = voxel_ptr->GetB() / 255.0f;
 
-                                    active = false;
-                                    continue;
+                                    break;
                                 }
 
                                 tsdf_prev = tsdf;
