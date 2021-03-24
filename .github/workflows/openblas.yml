@@ -56,12 +56,13 @@ jobs:
           docker run --rm open3d-openblas-ci:latest \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
-      # https://stackoverflow.com/a/34093828/1255535
+      # https://stackoverflow.com/a/49357803/1255535
       - name: Copy ccache out from the container
         run: |
-          docker run --rm --entrypoint \
-            cat open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz \
-            > ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz
+          docker run -v ${GITHUB_WORKSPACE}:/opt/mount \
+            --rm --entrypoint \
+            cp open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz /opt/mount/${{ env.CCACHE_TAR_NAME }}.tar.gz
+          sudo chown $(id -u):$(id -g) ${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -124,12 +125,13 @@ jobs:
           docker run --rm open3d-openblas-ci:latest \
             pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
 
-      # https://stackoverflow.com/a/34093828/1255535
+      # https://stackoverflow.com/a/49357803/1255535
       - name: Copy ccache out from the container
         run: |
-          docker run --rm --entrypoint \
-            cat open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz \
-            > ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz
+          docker run -v ${GITHUB_WORKSPACE}:/opt/mount \
+            --rm --entrypoint \
+            cp open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz /opt/mount/${{ env.CCACHE_TAR_NAME }}.tar.gz
+          sudo chown $(id -u):$(id -g) ${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
