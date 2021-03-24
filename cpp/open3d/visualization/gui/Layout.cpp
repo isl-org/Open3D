@@ -276,7 +276,12 @@ void Layout1D::Layout(const Theme& theme) {
             num_grow += 1;
         }
     }
-    int frame_size = (impl_->dir_ == VERT ? frame.height : frame.width);
+    int frame_size;
+    if (impl_->dir_ == VERT) {
+        frame_size = frame.height - impl_->margins_.GetVert();
+    } else {
+        frame_size = frame.width - impl_->margins_.GetHoriz();
+    }
     int total_spacing = impl_->spacing_ * std::max(0, int(major.size()) - 1);
     auto total_extra = frame_size - total - total_spacing;
     if (num_stretch > 0 && frame_size > total) {
