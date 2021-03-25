@@ -34,7 +34,7 @@ using namespace open3d;
 // Parameters to adjust according to the test pointcloud.
 double voxel_downsample_factor = 0.01;
 double max_correspondence_dist = 0.02;
-int iterations = 5;
+int iterations = 1;
 
 // Prepare source and target pointcloud on device, from a single input source.
 inline void PrepareInput(t::geometry::PointCloud &target,
@@ -45,8 +45,6 @@ inline void PrepareInput(t::geometry::PointCloud &target,
                          core::Dtype dtype);
 
 int main(int argc, char *argv[]) {
-    // Argument 1: Device: 'CPU:0' for CPU, 'CUDA:0' for GPU
-    // Argument 2: Path to the test PointCloud
     core::Device device = core::Device("CUDA:0");
     core::Dtype dtype = core::Dtype::Float32;
 
@@ -54,12 +52,8 @@ int main(int argc, char *argv[]) {
     t::geometry::PointCloud source_;
     t::geometry::PointCloud target_;
 
-    t::io::ReadPointCloud(
-            fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR)),
-            source_, {"auto", false, false, true});
-    t::io::ReadPointCloud(
-            fmt::format("{}/ICP/cloud_bin_1.pcd", std::string(TEST_DATA_DIR)),
-            target_, {"auto", false, false, true});
+    t::io::ReadPointCloud(argv[1], source_, {"auto", false, false, true});
+    t::io::ReadPointCloud(argv[2], target_, {"auto", false, false, true});
     utility::LogInfo(" Input Successful ");
 
     // Creating Tensor from manual transformation vector.
@@ -129,9 +123,9 @@ inline void PrepareInput(t::geometry::PointCloud &target_,
     geometry::PointCloud legacy_s = source_.ToLegacyPointCloud();
     geometry::PointCloud legacy_t = target_.ToLegacyPointCloud();
 
-    legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
-    legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
-    utility::LogInfo(" Downsampling Successful ");
+    //     legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
+    //     legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
+    //     utility::LogInfo(" Downsampling Successful ");
 
     t::geometry::PointCloud source =
             t::geometry::PointCloud::FromLegacyPointCloud(legacy_s);
