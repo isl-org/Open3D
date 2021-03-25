@@ -1370,7 +1370,10 @@ void pybind_gui_classes(py::module &m) {
                  "Creates a layout that arranges widgets vertically, top to "
                  "bottom, making their width equal to the layout's width. "
                  "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.");
+                 "is the margins. Both default to 0.")
+            .def_property("preferred_width", &Vert::GetPreferredWidth,
+                          &Vert::SetPreferredWidth,
+                          "Sets the preferred width of the layout");
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, UnownedPointer<CollapsableVert>, Vert>
@@ -1424,7 +1427,10 @@ void pybind_gui_classes(py::module &m) {
                  "right, making their height equal to the layout's height "
                  "(which will generally be the largest height of the items). "
                  "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.");
+                 "is the margins. Both default to 0.")
+            .def_property("preferred_height", &Horiz::GetPreferredHeight,
+                          &Horiz::SetPreferredHeight,
+                          "Sets the preferred height of the layout");
 
     // ---- VGrid ----
     py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m, "VGrid",
@@ -1456,7 +1462,10 @@ void pybind_gui_classes(py::module &m) {
                     "spacing", &VGrid::GetSpacing,
                     "Returns the spacing between rows and columns")
             .def_property_readonly("margins", &VGrid::GetMargins,
-                                   "Returns the margins");
+                                   "Returns the margins")
+            .def_property("preferred_width", &VGrid::GetPreferredWidth,
+                          &VGrid::SetPreferredWidth,
+                          "Sets the preferred width of the layout");
 
     // ---- Dialog ----
     py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m, "Dialog",
