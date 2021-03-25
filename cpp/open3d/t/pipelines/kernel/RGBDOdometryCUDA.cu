@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/CoreUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/CoreUtil.h"
 
 namespace open3d {
 namespace t {
@@ -166,10 +166,11 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                 const int64_t a_stride = 29 * workload_idx;
                 float J_ij[6];
                 float r;
-                
+
                 bool valid = GetJacobianLocal(
                         workload_idx, cols, depth_diff, source_vertex_indexer,
-                        target_vertex_indexer, source_normal_indexer, ti, J_ij, r);
+                        target_vertex_indexer, source_normal_indexer, ti, J_ij,
+                        r);
 
                 if (valid) {
                     for (int i = 0, j = 0; j < 6; j++) {
@@ -181,9 +182,8 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                     }
                     A_reduction[a_stride + 27] = r * r;
                     A_reduction[a_stride + 28] = 1;
-                }
-                else {
-                    for(int i = 0; i < 29; i++) {
+                } else {
+                    for (int i = 0; i < 29; i++) {
                         A_reduction[a_stride + i] = 0;
                     }
                 }
