@@ -41,8 +41,7 @@ public:
                   int64_t dsize_key,
                   int64_t dsize_value,
                   const Device& device)
-        : bucket_count_(init_capacity * 2),
-          capacity_(init_capacity),
+        : capacity_(init_capacity),
           dsize_key_(dsize_key),
           dsize_value_(dsize_value),
           device_(device) {}
@@ -86,12 +85,13 @@ public:
     virtual int64_t GetActiveIndices(addr_t* output_indices) = 0;
 
     virtual int64_t Size() const = 0;
+    virtual int64_t GetBucketCount() const = 0;
+    virtual float LoadFactor() const = 0;
 
     int64_t GetCapacity() const { return capacity_; }
-    int64_t GetBucketCount() const { return bucket_count_; }
-    Device GetDevice() const { return device_; }
     int64_t GetKeyBytesize() const { return dsize_key_; }
     int64_t GetValueBytesize() const { return dsize_value_; }
+    Device GetDevice() const { return device_; }
 
     Tensor& GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
     Tensor& GetValueBuffer() { return buffer_->GetValueBuffer(); }
@@ -100,16 +100,7 @@ public:
     /// High performance not required, so directly returns a vector.
     virtual std::vector<int64_t> BucketSizes() const = 0;
 
-    /// Return size / bucket_count.
-    virtual float LoadFactor() const = 0;
-
-    float avg_capacity_bucket_ratio() {
-        return float(capacity_) / float(bucket_count_);
-    }
-
 public:
-    int64_t bucket_count_;
-
     int64_t capacity_;
     int64_t dsize_key_;
     int64_t dsize_value_;

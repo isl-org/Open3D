@@ -70,7 +70,7 @@ public:
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
     int64_t Size() const override;
-
+    int64_t GetBucketCount() const override;
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
@@ -94,6 +94,8 @@ protected:
 
     void Allocate(int64_t bucket_count, int64_t capacity);
     void Free();
+
+    int64_t bucket_count_;
 };
 
 template <typename Key, typename Hash>
@@ -249,6 +251,11 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
 template <typename Key, typename Hash>
 int64_t SlabHashmap<Key, Hash>::Size() const {
     return buffer_ctx_.HeapCounter(this->device_);
+}
+
+template <typename Key, typename Hash>
+int64_t SlabHashmap<Key, Hash>::GetBucketCount() const {
+    return bucket_count_;
 }
 
 template <typename Key, typename Hash>

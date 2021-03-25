@@ -70,7 +70,7 @@ public:
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
     int64_t Size() const override;
-
+    int64_t GetBucketCount() const override;
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
@@ -90,7 +90,7 @@ protected:
                     bool* output_masks,
                     int64_t count);
 
-    void Allocate(int64_t capacity, int64_t buckets);
+    void Allocate(int64_t capacity);
 };
 
 template <typename Key, typename Hash>
@@ -99,9 +99,7 @@ TBBHashmap<Key, Hash>::TBBHashmap(int64_t init_capacity,
                                   int64_t dsize_value,
                                   const Device& device)
     : DeviceHashmap(init_capacity, dsize_key, dsize_value, device) {
-    // TODO: better init
-    int64_t init_buckets = init_capacity * 2;
-    Allocate(init_capacity, init_buckets);
+    Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash>
@@ -120,11 +118,14 @@ void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
                                    int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
+        int64_t bucket_count = GetBucketCount();
         float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
+                float(this->capacity_) / float(bucket_count);
+
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                bucket_count * 2,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+
         Rehash(expected_buckets);
     }
     InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
@@ -137,11 +138,14 @@ void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
                                      int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
+        int64_t bucket_count = GetBucketCount();
         float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
+                float(this->capacity_) / float(bucket_count);
+
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                bucket_count * 2,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+
         Rehash(expected_buckets);
     }
     InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
@@ -182,7 +186,6 @@ void TBBHashmap<Key, Hash>::Erase(const void* input_keys,
             impl_->unsafe_erase(iter);
         }
     }
-    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 template <typename Key, typename Hash>
@@ -213,11 +216,11 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
     }
 
     float avg_capacity_per_bucket =
-            float(this->capacity_) / float(this->bucket_count_);
-
+            float(this->capacity_) / float(GetBucketCount());
     int64_t new_capacity =
             int64_t(std::ceil(buckets * avg_capacity_per_bucket));
-    Allocate(new_capacity, buckets);
+
+    Allocate(new_capacity);
 
     if (iterator_count > 0) {
         Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
@@ -229,7 +232,11 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
     }
 
     impl_->rehash(buckets);
-    this->bucket_count_ = impl_->unsafe_bucket_count();
+}
+
+template <typename Key, typename Hash>
+int64_t TBBHashmap<Key, Hash>::GetBucketCount() const {
+    return impl_->unsafe_bucket_count();
 }
 
 template <typename Key, typename Hash>
@@ -292,12 +299,10 @@ void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
             output_masks[i] = true;
         }
     }
-
-    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Allocate(int64_t capacity, int64_t buckets) {
+void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ =
@@ -311,7 +316,7 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity, int64_t buckets) {
     buffer_ctx_->Reset();
 
     impl_ = std::make_shared<tbb::concurrent_unordered_map<Key, addr_t, Hash>>(
-            buckets, Hash());
+            capacity, Hash());
 }
 
 }  // namespace core

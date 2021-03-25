@@ -77,6 +77,7 @@ public:
 
     int64_t Size() const override;
 
+    int64_t GetBucketCount() const override;
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
@@ -128,10 +129,11 @@ void STDGPUHashmap<Key, Hash>::Insert(const void* input_keys,
                                       int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
+        int64_t bucket_count = GetBucketCount();
         float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
+                float(this->capacity_) / float(bucket_count);
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                bucket_count * 2,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
@@ -145,10 +147,11 @@ void STDGPUHashmap<Key, Hash>::Activate(const void* input_keys,
                                         int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
+        int64_t bucket_count = GetBucketCount();
         float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
+                float(this->capacity_) / float(bucket_count);
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                bucket_count * 2,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
@@ -223,7 +226,6 @@ void STDGPUHashmap<Key, Hash>::Erase(const void* input_keys,
                                            static_cast<const Key*>(input_keys),
                                            output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    this->bucket_count_ = impl_.bucket_count();
 }
 
 template <typename Key>
@@ -261,7 +263,7 @@ void STDGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
     }
 
     float avg_capacity_per_bucket =
-            float(this->capacity_) / float(this->bucket_count_);
+            float(this->capacity_) / float(GetBucketCount());
 
     int64_t new_capacity =
             int64_t(std::ceil(buckets * avg_capacity_per_bucket));
@@ -275,8 +277,11 @@ void STDGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
+}
 
-    this->bucket_count_ = impl_.bucket_count();
+template <typename Key, typename Hash>
+int64_t STDGPUHashmap<Key, Hash>::GetBucketCount() const {
+    return impl_.bucket_count();
 }
 
 template <typename Key, typename Hash>
@@ -353,7 +358,6 @@ void STDGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
                                             input_values, this->dsize_value_,
                                             output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    this->bucket_count_ = impl_.bucket_count();
 }
 
 template <typename Key, typename Hash>
