@@ -305,6 +305,10 @@
         }
       }
 
+      function pipeCall(url) {
+        return fetch(url);
+      }
+
       // ------------------------------------------
       // load/unload callbacks
       // ------------------------------------------
@@ -324,7 +328,7 @@
           document.getElementById("content").appendChild(tableelt);
         }
 
-        fetch(webrtcConfig.url + "/api/getMediaList")
+        pipeCall(webrtcConfig.url + "/api/getMediaList")
           .then((response) => response.json())
           .then((response) => onGetDeviceList(response));
       };
