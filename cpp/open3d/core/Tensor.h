@@ -146,23 +146,14 @@ public:
     /// An actual copy of the data will be performed.
     Tensor& operator=(Tensor&& other) &&;
 
-    /// Tensor assignment rvalue = rvalue_scalar, e.g. `tensor_a[0] = 100`
+    /// Tensor assignment rvalue = scalar, e.g. `tensor_a[0] = 100`
     /// Implicit casting is performed to the underlying dtype.
     ///
-    /// Note that we don't have lvalue = rvalue_scalar, e.g. we don't support
+    /// Note that we don't have lvalue = scalar, e.g. we don't support
     /// Tensor a_slice = tensor_a[0]; a_slice = 100;
     template <typename T>
-    Tensor& operator=(const T& v) && {
-        if (shape_.size() != 0) {
-            utility::LogError(
-                    "Assignment with scalar only works for scalar Tensor of "
-                    "shape ()");
-        }
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
-            scalar_t casted_v = static_cast<scalar_t>(v);
-            MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
-                                          sizeof(scalar_t));
-        });
+    Tensor& operator=(const T v) && {
+        this->Fill(v);
         return *this;
     }
 

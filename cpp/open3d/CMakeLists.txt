@@ -4,6 +4,9 @@
 # In comparison, open3d_set_global_properties() sets properties for the Open3D
 # lib, and targets that links to the Open3D lib, e.g pybind, unit tests, etc.
 function(open3d_set_open3d_lib_properties target)
+    if(NOT BUILD_SHARED_LIBS)
+        target_compile_definitions(${target} PUBLIC OPEN3D_STATIC)
+    endif()
     target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
 endfunction()
 

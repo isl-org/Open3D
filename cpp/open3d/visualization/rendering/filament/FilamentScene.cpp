@@ -318,6 +318,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
 
+    // Basic sanity checks
+    if (geometry.IsEmpty()) {
+        utility::LogDebug(
+                "Geometry for object {} is empty. Not adding geometry to scene",
+                object_name);
+        return false;
+    }
+
     auto tris = dynamic_cast<const geometry::TriangleMesh*>(&geometry);
     if (tris && tris->vertex_normals_.empty() &&
         tris->triangle_normals_.empty() &&
@@ -1117,7 +1125,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
-    } else if (props.shader != "") {
+    } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }

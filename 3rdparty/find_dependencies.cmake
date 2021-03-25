@@ -1150,7 +1150,10 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    foreach(NPPLIB nppc nppi npp nppicc nppif nppig nppim nppial)
+    foreach(NPPLIB nppc nppicc nppif nppig nppim nppial)
+        if (NOT CUDA_${NPPLIB}_LIBRARY)
+            message(FATAL_ERROR "NPP library ${NPPLIB} not found!: ${CUDA_${NPPLIB}_LIBRARY}")
+        endif()
         list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
     endforeach()
     add_library(3rdparty_CUDA_NPP INTERFACE)
