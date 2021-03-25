@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// Private header. Do not include in Open3d.h.
+
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -51,7 +53,7 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 core::Tensor& delta,
                                 core::Tensor& residual,
                                 float depth_diff);
-
+#ifdef BUILD_CUDA_MODULE
 void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          const core::Tensor& intrinsics,
                          core::Tensor& vertex_map,
@@ -69,6 +71,60 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  core::Tensor& delta,
                                  core::Tensor& residual,
                                  float depth_diff);
+#endif
+
+OPEN3D_HOST_DEVICE inline bool GetJacobianLocal(
+        int64_t workload_idx,
+        int64_t cols,
+        float depth_diff,
+        const t::geometry::kernel::NDArrayIndexer& source_vertex_indexer,
+        const t::geometry::kernel::NDArrayIndexer& target_vertex_indexer,
+        const t::geometry::kernel::NDArrayIndexer& source_normal_indexer,
+        const t::geometry::kernel::TransformIndexer& ti,
+        float* J_ij,
+        float& r) {
+    int64_t y = workload_idx / cols;
+    int64_t x = workload_idx % cols;
+
+    float* dst_v = target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    if (dst_v[0] == INFINITY) {
+        return false;
+    }
+
+    float T_dst_v[3], u, v;
+    ti.RigidTransform(dst_v[0], dst_v[1], dst_v[2], &T_dst_v[0], &T_dst_v[1],
+                      &T_dst_v[2]);
+    ti.Project(T_dst_v[0], T_dst_v[1], T_dst_v[2], &u, &v);
+    u = round(u);
+    v = round(v);
+
+    if (T_dst_v[2] < 0 || !source_vertex_indexer.InBoundary(u, v)) {
+        return false;
+    }
+
+    int64_t ui = static_cast<int64_t>(u);
+    int64_t vi = static_cast<int64_t>(v);
+    float* src_v = source_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
+    float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
+    if (src_v[0] == INFINITY || src_n[0] == INFINITY) {
+        return false;
+    }
+
+    r = (T_dst_v[0] - src_v[0]) * src_n[0] +
+        (T_dst_v[1] - src_v[1]) * src_n[1] + (T_dst_v[2] - src_v[2]) * src_n[2];
+    if (abs(r) > depth_diff) {
+        return false;
+    }
+
+    J_ij[0] = -T_dst_v[2] * src_n[1] + T_dst_v[1] * src_n[2];
+    J_ij[1] = T_dst_v[2] * src_n[0] - T_dst_v[0] * src_n[2];
+    J_ij[2] = -T_dst_v[1] * src_n[0] + T_dst_v[0] * src_n[1];
+    J_ij[3] = src_n[0];
+    J_ij[4] = src_n[1];
+    J_ij[5] = src_n[2];
+
+    return true;
+}
 
 }  // namespace odometry
 }  // namespace kernel

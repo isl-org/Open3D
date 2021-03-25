@@ -161,57 +161,27 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
     int64_t n = rows * cols;
 
     std::vector<float> A_1x29(29, 0.0);
-    float *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29])
+    float* A_reduction = A_1x29.data();
+
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(dynamic)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-        int64_t y = workload_idx / cols;
-        int64_t x = workload_idx % cols;
-
-        float* dst_v =
-                target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-        if (dst_v[0] != INFINITY) {
-
-            float T_dst_v[3], u, v;
-            ti.RigidTransform(dst_v[0], dst_v[1], dst_v[2], &T_dst_v[0],
-                                &T_dst_v[1], &T_dst_v[2]);
-            ti.Project(T_dst_v[0], T_dst_v[1], T_dst_v[2], &u, &v);
-            u = round(u);
-            v = round(v);
-            if (!(T_dst_v[2] < 0 || !source_vertex_indexer.InBoundary(u, v))) {
-
-                int64_t ui = static_cast<int64_t>(u);
-                int64_t vi = static_cast<int64_t>(v);
-                float* src_v = source_vertex_indexer.GetDataPtrFromCoord<float>(
-                        ui, vi);
-                float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(
-                        ui, vi);
-                if (!(src_v[0] == INFINITY || src_n[0] == INFINITY)) {
-
-                    float r = (T_dst_v[0] - src_v[0]) * src_n[0] +
-                                (T_dst_v[1] - src_v[1]) * src_n[1] +
-                                (T_dst_v[2] - src_v[2]) * src_n[2];
-                    if (abs(r) <= depth_diff) {
-
-                        float J_ij[6];
-                        J_ij[0] = -T_dst_v[2] * src_n[1] + T_dst_v[1] * src_n[2];
-                        J_ij[1] = T_dst_v[2] * src_n[0] - T_dst_v[0] * src_n[2];
-                        J_ij[2] = -T_dst_v[1] * src_n[0] + T_dst_v[0] * src_n[1];
-                        J_ij[3] = src_n[0];
-                        J_ij[4] = src_n[1];
-                        J_ij[5] = src_n[2];
-
-                        for (int i = 0, j = 0; j < 6; j++) {
-                            for (int k = 0; k <= j; k++) {
-                                A_reduction[i] += J_ij[j] * J_ij[k];
-                                i++;
-                            }
-                            A_reduction[21 + j] += J_ij[j] * r;
-                        }
-                        A_reduction[27] += r * r;
-                        A_reduction[28] += 1;
-                    }
+        float J_ij[6];
+        float r;
+        
+        bool valid = GetJacobianLocal(
+                workload_idx, cols, depth_diff, source_vertex_indexer,
+                target_vertex_indexer, source_normal_indexer, ti, J_ij, r);
+        
+        if (valid) {
+            for (int i = 0, j = 0; j < 6; j++) {
+                for (int k = 0; k <= j; k++) {
+                    A_reduction[i] += J_ij[j] * J_ij[k];
+                    i++;
                 }
+                A_reduction[21 + j] += J_ij[j] * r;
             }
+            A_reduction[27] += r * r;
+            A_reduction[28] += 1;
         }
     }
 
@@ -221,7 +191,6 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
 
     float* AtA_local_ptr = AtA.GetDataPtr<float>();
     float* Atb_local_ptr = Atb.GetDataPtr<float>();
-
 
     for (int i = 0, j = 0; j < 6; j++) {
         for (int k = 0; k <= j; k++) {
@@ -233,12 +202,12 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
     }
 
     residual = core::Tensor::Init<float>({A_1x29[27]}, device);
-    
+
     int count = static_cast<int>(A_1x29[28]);
 
     utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<float>() / count,
-                      residual.Item<float>(), count);
+                      residual.Item<float>() / count, residual.Item<float>(),
+                      count);
 
     // Solve on CPU with double to ensure precision.
     core::Device host(core::Device("CPU:0"));
