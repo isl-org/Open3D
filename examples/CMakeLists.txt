@@ -1,2 +1,6 @@
 add_subdirectory(cpp)
-add_subdirectory(hashmap)
+
+if (BUILD_CUDA_MODULE)
+    # TODO: remove
+    add_subdirectory(hashmap)
+endif()
