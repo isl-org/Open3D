@@ -12,14 +12,14 @@
         layoutextraoptions: "&width=320&height=0",
       };
 
-      // ------------------------------------------
-      // WebRTC connections
-      // ------------------------------------------
+      /**
+       * WebRTC connections
+       */
       var webRtcServerList = {};
 
-      // ------------------------------------------
-      // Decode URL arguments
-      // ------------------------------------------
+      /**
+       * Decode URL arguments
+       */
       var argurl = { video: location.search.slice(1) };
       var argoptions = null;
       var layout = null;
@@ -37,9 +37,9 @@
         );
       }
 
-      // ------------------------------------------
-      // Get the div where to insert a video
-      // ------------------------------------------
+      /**
+       * Get the div where to insert a video
+       */
       function getContentDiv() {
         var contentDiv = null;
         if (document.getElementById("layout")) {
@@ -56,9 +56,9 @@
         return contentDiv;
       }
 
-      // ------------------------------------------
-      // Init device list
-      // ------------------------------------------
+      /**
+       * Init device list
+       */
       function onGetDeviceList(remoteDeviceList) {
         var deviceList = [];
         if (argurl.video) {
@@ -106,9 +106,9 @@
         }
       }
 
-      // ------------------------------------------
-      // Add a webrtc client connection
-      // ------------------------------------------
+      /**
+       * Add a webrtc client connection
+       */
       function del(url) {
         var videoTag = "video_" + JSON.stringify(url);
 
@@ -151,9 +151,9 @@
         return mod;
       }
 
-      // ------------------------------------------
-      // add a webrtc client connection
-      // ------------------------------------------
+      /**
+       * add a webrtc client connection
+       */
       function add(url) {
         // url = {video: "window_1"}
         var videoTag = "video_" + JSON.stringify(url);
@@ -319,9 +319,9 @@
         }
       }
 
-      // ------------------------------------------
-      // load/unload callbacks
-      // ------------------------------------------
+      /**
+       * load/unload callbacks
+       */
       window.onload = function () {
         if (layout) {
           var splitLayout = layout.split("x");
