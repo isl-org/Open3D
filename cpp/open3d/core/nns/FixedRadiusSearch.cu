@@ -847,6 +847,7 @@ void SortPairs(void* temp,
                T* distances_sorted) {
     const bool get_temp_size = !temp;
     int texture_alignment = 512;
+    utility::Timer timer;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
@@ -857,13 +858,21 @@ void SortPairs(void* temp,
 
     std::pair<void*, size_t> sort_temp(nullptr, 0);
 
+    timer.Start();
     cub::DeviceSegmentedRadixSort::SortPairs(
             sort_temp.first, sort_temp.second, distances_unsorted,
             distances_sorted, indices_unsorted, indices_sorted, num_indices,
             num_segments, query_neighbors_row_splits,
             query_neighbors_row_splits + 1);
-    sort_temp = mem_temp.Alloc(sort_temp.second);
+    timer.Stop();
+    utility::LogInfo("First SortPairs Time: {}", timer.GetDuration());
 
+    timer.Start();
+    sort_temp = mem_temp.Alloc(sort_temp.second);
+    timer.Stop();
+    utility::LogInfo("Temp Alloc Time: {}", timer.GetDuration());
+
+    timer.Start();
     if (!get_temp_size) {
         cub::DeviceSegmentedRadixSort::SortPairs(
                 sort_temp.first, sort_temp.second, distances_unsorted,
@@ -871,7 +880,9 @@ void SortPairs(void* temp,
                 num_segments, query_neighbors_row_splits,
                 query_neighbors_row_splits + 1);
     }
+    timer.Stop();
     mem_temp.Free(sort_temp);
+    utility::LogInfo("Second SortPairs Time: {}", timer.GetDuration());
 
     if (get_temp_size) {
         // return the memory peak as the required temporary memory size.

@@ -33,7 +33,7 @@ using namespace open3d;
 
 // Parameters to adjust according to the test pointcloud.
 double voxel_downsample_factor = 0.01;
-double max_correspondence_dist = 0.02;
+double max_correspondence_dist = 0.1;
 int iterations = 1;
 
 // Prepare source and target pointcloud on device, from a single input source.
@@ -45,32 +45,32 @@ inline void PrepareInput(t::geometry::PointCloud &target,
                          core::Dtype dtype);
 
 int main(int argc, char *argv[]) {
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = core::Device(argv[1]);
     core::Dtype dtype = core::Dtype::Float32;
 
     // t::io::ReadPointCloud, changes the device to CPU and DType to Float64
     t::geometry::PointCloud source_;
     t::geometry::PointCloud target_;
 
-    t::io::ReadPointCloud(argv[1], source_, {"auto", false, false, true});
+    t::io::ReadPointCloud(argv[2], source_, {"auto", false, false, true});
     t::io::ReadPointCloud(argv[2], target_, {"auto", false, false, true});
     utility::LogInfo(" Input Successful ");
 
     // Creating Tensor from manual transformation vector.
-    core::Tensor transformation_ =
-            core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
-                                        {-0.139, 0.967, -0.215, 0.7},
-                                        {0.487, 0.255, 0.835, -1.4},
-                                        {0.0, 0.0, 0.0, 1.0}},
-                                       core::Device("CPU:0"));
+    core::Tensor transformation_ = core::Tensor::Init<double>(
+            {{0.99500417, -0.09933467, 0.00996671, 0.},
+             {0.09983342, 0.99003329, -0.09933467, 0.},
+             {0., 0.09983342, 0.99500417, 0.},
+             {0., 0., 0., 1.}},
+            core::Device("CPU:0"));
     source_ = source_.Transform(transformation_);
 
     t::geometry::PointCloud target_device(device);
     t::geometry::PointCloud source_device(device);
     PrepareInput(target_, source_, target_device, source_device, device, dtype);
 
-    core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
     utility::LogInfo(" Processing Input on {} Success", device.ToString());
+    bool sort = argc > 3 && strcmp(argv[3], "sort") == 0;
 
     open3d::core::nns::NearestNeighborSearch target_nns(
             target_device.GetPoints());
@@ -83,14 +83,15 @@ int main(int argc, char *argv[]) {
                      source_device.GetPoints().GetShape()[0],
                      target_device.GetPoints().GetShape()[0]);
 
-    double avg_ = 0, max_ = 0, min_ = 0;
+    double avg_ = 0, max_ = 0, min_ = INT_MAX;
     for (int i = 0; i < iterations; i++) {
         utility::Timer radius_time;
 
         // --- TIMER START
         radius_time.Start();
         auto result_nns = target_nns.FixedRadiusSearch(
-                source_device.GetPoints(), max_correspondence_dist);
+                source_device.GetPoints(), max_correspondence_dist,
+                /* sort */ sort);
         radius_time.Stop();
         // --- TIMER STOP
 
@@ -104,6 +105,14 @@ int main(int argc, char *argv[]) {
         avg_ += time;
         max_ = std::max(max_, time);
         min_ = std::min(min_, time);
+
+        core::Tensor neighbors_row_splits = std::get<2>(result_nns);
+        auto size = neighbors_row_splits.GetShape()[0];
+        utility::LogInfo(" size: {}", size);
+        core::Tensor num_neighbors = neighbors_row_splits.Slice(0, 1, size) -
+                                     neighbors_row_splits.Slice(0, 0, size - 1);
+        utility::LogInfo(" Max neighbors: {}",
+                         num_neighbors.Max({0}).Item<int64_t>());
     }
     avg_ = avg_ / (double)iterations;
 
