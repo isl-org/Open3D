@@ -210,8 +210,8 @@ void ComputePosePointToPlaneCPU
                 ti.RigidTransform(dst_v[0], dst_v[1], dst_v[2], &T_dst_v[0],
                                   &T_dst_v[1], &T_dst_v[2]);
                 ti.Project(T_dst_v[0], T_dst_v[1], T_dst_v[2], &u, &v);
-                u = round(u);
-                v = round(v);
+                u = roundf(u);
+                v = roundf(v);
                 if (T_dst_v[2] < 0 || !source_vertex_indexer.InBoundary(u, v)) {
                     return;
                 }
