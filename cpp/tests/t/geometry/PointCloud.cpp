@@ -30,6 +30,8 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/io/PointCloudIO.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -433,6 +435,31 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
     EXPECT_THAT(pcd_out.GetPointColors().ToFlatVector<float>(),
                 UnorderedElementsAreArray(
                         pcd_ref.GetPointColors().ToFlatVector<float>()));
+}
+
+TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
+    core::Device device = GetParam();
+
+    // Sanity test to visualize
+    t::geometry::PointCloud pcd =
+            t::geometry::PointCloud::FromLegacyPointCloud(
+                    *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
+                                                  "/ICP/cloud_bin_2.pcd"))
+                    .To(device);
+    auto pcd_down = pcd.VoxelDownSample(0.1);
+    io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),
+                        pcd_down.ToLegacyPointCloud());
+
+    // Value test
+    t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                       {0.9, 0.2, 0.4},
+                                       {0.3, 0.6, 0.8},
+                                       {0.2, 0.4, 0.2}},
+                                      device));
+    auto pcd_small_down = pcd_small.VoxelDownSample(1);
+    EXPECT_TRUE(pcd_small_down.GetPoints().AllClose(
+            core::Tensor::Init<float>({{0, 0, 0}}, device)));
 }
 
 }  // namespace tests
