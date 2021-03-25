@@ -84,15 +84,13 @@ int main(int argc, char *argv[]) {
                      target_device.GetPoints().GetShape()[0]);
 
     double avg_ = 0, max_ = 0, min_ = 0;
-    iterations = 1;
     for (int i = 0; i < iterations; i++) {
         utility::Timer radius_time;
 
         // --- TIMER START
         radius_time.Start();
         auto result_nns = target_nns.FixedRadiusSearch(
-                source_device.GetPoints(), max_correspondence_dist,
-                /*sort=*/false);
+                source_device.GetPoints(), max_correspondence_dist);
         radius_time.Stop();
         // --- TIMER STOP
 

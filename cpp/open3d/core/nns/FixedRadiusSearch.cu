@@ -748,20 +748,13 @@ void BuildSpatialHashTableCUDA(void* temp,
         temp_size = std::numeric_limits<int64_t>::max();
     }
 
-    cudaDeviceSynchronize();
     timer.Start();
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
-    // std::pair<uint32_t*, size_t> count_tmp =
-    //         mem_temp.Alloc<uint32_t>(hash_table_cell_splits_size);
-    cudaDeviceSynchronize();
-    timer.Stop();
-
-    utility::LogInfo("Temp Alloc Time: {}", timer.GetDuration());
-
     std::pair<uint32_t*, size_t> count_tmp =
             mem_temp.Alloc<uint32_t>(hash_table_cell_splits_size);
-    cudaDeviceSynchronize();
+    timer.Stop();
+    utility::LogInfo("Temp Alloc Time: {}", timer.GetDuration());
 
     const int batch_size = points_row_splits_size - 1;
     const T voxel_size = 2 * radius;
@@ -785,7 +778,6 @@ void BuildSpatialHashTableCUDA(void* temp,
                                   hash_table_size + 1, inv_voxel_size, points_i,
                                   num_points_i);
         }
-        cudaDeviceSynchronize();
         timer.Stop();
         utility::LogInfo("CountHashTable Time: {}", timer.GetDuration());
     }
@@ -811,7 +803,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 
         mem_temp.Free(inclusive_scan_temp);
     }
-    cudaDeviceSynchronize();
     timer.Stop();
     utility::LogInfo("InclusiveSum Time: {}", timer.GetDuration());
 
@@ -830,7 +821,6 @@ void BuildSpatialHashTableCUDA(void* temp,
                                    hash_table_size + 1, inv_voxel_size, points,
                                    points_start_idx, points_end_idx);
         }
-        cudaDeviceSynchronize();
         timer.Stop();
         utility::LogInfo("ComputePointIndexTable Time: {}",
                          timer.GetDuration());
@@ -940,7 +930,6 @@ void FixedRadiusSearchCUDA(void* temp,
 
     std::pair<int64_t*, size_t> query_neighbors_count =
             mem_temp.Alloc<int64_t>(num_queries);
-    cudaDeviceSynchronize();
     timer.Stop();
     utility::LogInfo("Temp Alloc Time: {}", timer.GetDuration());
 
@@ -962,7 +951,6 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric);
         }
-        cudaDeviceSynchronize();
         timer.Stop();
         utility::LogInfo("COuntNeighbor Time: {}", timer.GetDuration());
     }
@@ -999,7 +987,6 @@ void FixedRadiusSearchCUDA(void* temp,
         mem_temp.Free(inclusive_scan_temp);
     }
     mem_temp.Free(query_neighbors_count);
-    cudaDeviceSynchronize();
     timer.Stop();
     utility::LogInfo("InclusiveSum Time: {}", timer.GetDuration());
 
@@ -1018,7 +1005,6 @@ void FixedRadiusSearchCUDA(void* temp,
         timer.Start();
         output_allocator.AllocIndices(&indices_ptr, num_indices);
         output_allocator.AllocDistances(&distances_ptr, num_indices);
-        cudaDeviceSynchronize();
         timer.Stop();
         utility::LogInfo("Alloc Output Time: {}", timer.GetDuration());
 
@@ -1038,7 +1024,6 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric, true);
         }
-        cudaDeviceSynchronize();
         timer.Stop();
         utility::LogInfo("WriteNeighborsIndicesAndDistances Time: {}",
                          timer.GetDuration());
@@ -1090,7 +1075,6 @@ void HybridSearchCUDA(size_t num_points,
 
     T* distances_ptr;
     output_allocator.AllocDistances(&distances_ptr, num_indices, -1);
-    cudaDeviceSynchronize();
     timer.Stop();
     utility::LogInfo("Alloc Output Time: {}", timer.GetDuration());
 
@@ -1109,7 +1093,6 @@ void HybridSearchCUDA(size_t num_points,
                 queries_i, num_queries_i, points, num_points, inv_voxel_size,
                 radius, max_knn, metric, true);
     }
-    cudaDeviceSynchronize();
     timer.Stop();
     utility::LogInfo("WriteNeighborsHybrid Time: {}", timer.GetDuration());
 }
