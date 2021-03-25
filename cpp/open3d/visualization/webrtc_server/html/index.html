@@ -163,13 +163,6 @@
         if (document.getElementById(videoTag) === null) {
           var contentDiv = getContentDiv();
           if (contentDiv) {
-            let webStreamUrl = webrtcConfig.url + "/webrtcstreamer.html?";
-            if (url.video) {
-              webStreamUrl += "video=" + encodeURIComponent(url.video) + "&";
-            }
-            if (argoptions) {
-              webStreamUrl += "options=" + encodeURIComponent(argoptions) + "&";
-            }
             var divElt = document.createElement("div");
             divElt.id = "div_" + videoTag;
             var nameElt = document.createElement("h2");
