@@ -26,6 +26,7 @@
 
 #include "open3d/core/hashmap/CPU/TBBHashmap.h"
 #include "open3d/core/hashmap/Dispatch.h"
+#include "open3d/core/hashmap/Hashmap.h"
 
 namespace open3d {
 namespace core {
@@ -37,7 +38,12 @@ std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         const Dtype& dtype_value,
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
-        const Device& device) {
+        const Device& device,
+        const Backend& backend) {
+    if (backend != Backend::Default && backend != Backend::TBB) {
+        utility::LogError("Unsupported backend for CPU hashmap.");
+    }
+
     int64_t dim = element_shape_key.NumElements();
 
     int64_t dsize_key = dim * dtype_key.ByteSize();

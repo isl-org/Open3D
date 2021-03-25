@@ -39,7 +39,8 @@ Hashmap::Hashmap(int64_t init_capacity,
                  const Dtype& dtype_value,
                  const SizeVector& element_shape_key,
                  const SizeVector& element_shape_value,
-                 const Device& device)
+                 const Device& device,
+                 const Backend& backend)
     : dtype_key_(dtype_key),
       dtype_value_(dtype_value),
       element_shape_key_(element_shape_key),
@@ -57,9 +58,9 @@ Hashmap::Hashmap(int64_t init_capacity,
                 "key/value.");
     }
 
-    device_hashmap_ =
-            CreateDeviceHashmap(init_capacity, dtype_key, dtype_value,
-                                element_shape_key, element_shape_value, device);
+    device_hashmap_ = CreateDeviceHashmap(init_capacity, dtype_key, dtype_value,
+                                          element_shape_key,
+                                          element_shape_value, device, backend);
 }
 
 void Hashmap::Rehash(int64_t buckets) {

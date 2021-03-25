@@ -26,6 +26,7 @@
 
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
+#include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 
@@ -38,16 +39,18 @@ std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         const Dtype& dtype_value,
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
-        const Device& device) {
+        const Device& device,
+        const Backend& backend) {
     if (device.GetType() == Device::DeviceType::CPU) {
         return CreateCPUHashmap(init_capacity, dtype_key, dtype_value,
-                                element_shape_key, element_shape_value, device);
+                                element_shape_key, element_shape_value, device,
+                                backend);
     }
 #if defined(BUILD_CUDA_MODULE)
     else if (device.GetType() == Device::DeviceType::CUDA) {
         return CreateCUDAHashmap(init_capacity, dtype_key, dtype_value,
-                                 element_shape_key, element_shape_value,
-                                 device);
+                                 element_shape_key, element_shape_value, device,
+                                 backend);
     }
 #endif
     else {

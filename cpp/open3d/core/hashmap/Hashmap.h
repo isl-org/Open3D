@@ -34,6 +34,8 @@ namespace core {
 
 class DeviceHashmap;
 
+enum class Backend { Slab, StdGPU, TBB, Default };
+
 class Hashmap {
 public:
     /// Constructor for primitive types, supporting element shapes.
@@ -46,7 +48,8 @@ public:
             const Dtype& dtype_value,
             const SizeVector& element_shape_key,
             const SizeVector& element_shape_value,
-            const Device& device);
+            const Device& device,
+            const Backend& backend = Backend::Default);
 
     ~Hashmap(){};
 
