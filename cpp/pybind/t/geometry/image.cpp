@@ -179,8 +179,10 @@ void pybind_image(py::module &m) {
     image.def("to",
               py::overload_cast<const core::Device &, bool>(&Image::To,
                                                             py::const_),
-              "Transfer the Image to a specified device.", "device"_a,
-              "copy"_a = false);
+              "Transfer the Image to a specified device.  A new image is "
+              "always created if copy is true, else it is avoided when the "
+              "original image is already on the target device.",
+              "device"_a, "copy"_a = false);
     image.def("clone", &Image::Clone,
               "Returns a copy of the Image on the same device.");
     image.def("cpu", &Image::CPU,
@@ -249,6 +251,22 @@ void pybind_image(py::module &m) {
                  "Compute min 2D coordinates for the data (always {0, 0}).")
             .def("get_max_bound", &RGBDImage::GetMaxBound,
                  "Compute max 2D coordinates for the data.")
+            // Device transfers.
+            .def("to",
+                 py::overload_cast<const core::Device &, bool>(&RGBDImage::To,
+                                                               py::const_),
+                 "Transfer the RGBDImage to a specified device.", "device"_a,
+                 "copy"_a = false)
+            .def("clone", &RGBDImage::Clone,
+                 "Returns a copy of the RGBDImage on the same device.")
+            .def("cpu", &RGBDImage::CPU,
+                 "Transfer the RGBDImage to CPU. If the RGBDImage is "
+                 "already on CPU, no copy will be performed.")
+            .def("cuda", &RGBDImage::CUDA,
+                 "Transfer the RGBDImage to a CUDA device. If the RGBDImage is "
+                 "already on the specified CUDA device, no copy will be "
+                 "performed.",
+                 "device_id"_a = 0)
             // Conversion.
             .def("to_legacy_rgbd_image", &RGBDImage::ToLegacyRGBDImage,
                  "Convert to legacy RGBDImage type.")

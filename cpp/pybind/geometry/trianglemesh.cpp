@@ -359,29 +359,32 @@ void pybind_trianglemesh(py::module &m) {
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
-                        "front will be placed at (0, 0, 0).",
-                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0)
+                        "front will be placed at (0, 0, 0), and default UV "
+                        "map, maps the entire texture to each face.",
+                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0,
+                        "bool create_uv_map"_a = false,
+                        "map_texture_to_each_face"_a = false)
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Factory function to create a tetrahedron. The "
                         "centroid of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
                         "distance of "
                         "radius to the center.",
-                        "radius"_a = 1.0)
+                        "radius"_a = 1.0, "bool create_uv_map"_a = false)
             .def_static("create_octahedron", &TriangleMesh::CreateOctahedron,
                         "Factory function to create a octahedron. The centroid "
                         "of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
                         "distance of "
                         "radius to the center.",
-                        "radius"_a = 1.0)
+                        "radius"_a = 1.0, "bool create_uv_map"_a = false)
             .def_static("create_icosahedron", &TriangleMesh::CreateIcosahedron,
                         "Factory function to create a icosahedron. The "
                         "centroid of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
                         "distance of "
                         "radius to the center.",
-                        "radius"_a = 1.0)
+                        "radius"_a = 1.0, "bool create_uv_map"_a = false)
             .def_static("create_sphere", &TriangleMesh::CreateSphere,
                         "Factory function to create a sphere mesh centered at "
                         "(0, 0, 0).",
@@ -696,19 +699,25 @@ void pybind_trianglemesh(py::module &m) {
              {"n_threads",
               "Number of threads used for reconstruction. Set to -1 to "
               "automatically determine it."}});
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
-                                    {{"width", "x-directional length."},
-                                     {"height", "y-directional length."},
-                                     {"depth", "z-directional length."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_box",
+            {{"width", "x-directional length."},
+             {"height", "y-directional length."},
+             {"depth", "z-directional length."},
+             {"create_uv_map", "Add default uv map to the mesh."},
+             {"map_texture_to_each_face", "Map entire texture to each face."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_tetrahedron",
-            {{"radius", "Distance from centroid to mesh vetices."}});
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_octahedron",
-            {{"radius", "Distance from centroid to mesh vetices."}});
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_icosahedron",
-            {{"radius", "Distance from centroid to mesh vetices."}});
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_sphere",
             {{"radius", "The radius of the sphere."},
