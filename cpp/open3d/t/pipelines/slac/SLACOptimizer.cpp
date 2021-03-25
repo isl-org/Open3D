@@ -75,8 +75,7 @@ core::Tensor GetCorrespondencesForPair(int i,
     // Obtain correspondence via nns
     auto result = open3d::pipelines::registration::EvaluateRegistration(
             tpcd_i.ToLegacyPointCloud(), tpcd_j.ToLegacyPointCloud(), threshold,
-            core::eigen_converter::TensorToEigenMatrix<float>(T_ij)
-                    .cast<double>());
+            core::eigen_converter::TensorToEigenMatrixXf(T_ij).cast<double>());
     core::Tensor corres = core::eigen_converter::EigenVector2iVectorToTensor(
             result.correspondence_set_, core::Dtype::Int64,
             core::Device("CPU:0"));
@@ -497,7 +496,7 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
                                           .To(core::Dtype::Float32));
 
         Eigen::Matrix<float, -1, -1, Eigen::RowMajor> pose_eigen =
-                core::eigen_converter::TensorToEigenMatrix<float>(pose_tensor);
+                core::eigen_converter::TensorToEigenMatrixXf(pose_tensor);
         Eigen::Matrix<double, -1, -1, Eigen::RowMajor> pose_eigen_d =
                 pose_eigen.cast<double>().eval();
         Eigen::Ref<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> pose_eigen_ref(

@@ -106,7 +106,7 @@ TEST_P(TensorPermuteDevices, WithInitList) {
 
     core::Tensor t;
 
-    // 0-D tesnor with given value.
+    // 0-D tensor with given value.
     t = core::Tensor::Init<float>(1, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({}));
     EXPECT_EQ(t.GetDtype(), core::Dtype::Float32);
@@ -1189,21 +1189,29 @@ TEST_P(TensorPermuteDevices, T) {
 
 TEST_P(TensorPermuteDevices, Det) {
     core::Device device = GetParam();
+    // Det supports both Float32 and Float64.
+    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> vals{-5, 0, -1, 1, 2, -1, -3, 4, 1};
-    core::Tensor t(vals, {3, 3}, core::Dtype::Float32, device);
-    double t_t = t.Det();
-    EXPECT_DOUBLE_EQ(t_t, -40.0);
+    // Float32 test.
+    core::Tensor A_3x3f = core::Tensor::Init<float>(
+            {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
 
-    // Current implementation does not support any shape other than {3,3}.
-    std::vector<float> vals_4x4{-5, 0, -1, 1, 2, -1, -3, 4,
-                                1,  1, 1,  1, 1, 2,  2,  2};
-    core::Tensor t_4x4(vals_4x4, {4, 4}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x4.Det());
+    double A_3x3f_det = A_3x3f.Det();
+    EXPECT_DOUBLE_EQ(A_3x3f_det, -40.0);
 
-    std::vector<float> vals_4x3{-5, 0, -1, 1, 2, -1, -3, 4, 1, 1, 1, 1};
-    core::Tensor t_4x3(vals_4x3, {4, 3}, core::Dtype::Float32, device);
-    EXPECT_ANY_THROW(t_4x3.Det());
+    // Float64 test.
+    core::Tensor A_3x3d = core::Tensor::Init<double>(
+            {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
+    double A_3x3d_det = A_3x3d.Det();
+    EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
+
+    // Singular test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
+
+    // Det expects a 2D square matrix [shape test].
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Det());
+    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());
 }
 
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
@@ -2791,6 +2799,71 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
 
     // Clean up.
     utility::filesystem::RemoveFile(file_name);
+}
+
+TEST_P(TensorPermuteDevices, RValueScalar) {
+    const core::Device &device = GetParam();
+    core::Tensor t, t_ref;
+
+    // Check with shape {}.
+    t = core::Tensor::Init<int32_t>(0, device);
+    t_ref = core::Tensor::Init<int32_t>(1000, device);
+    t.AsRvalue() = 1000;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {0}.
+    t = core::Tensor::Init<bool>({}, device);
+    t_ref = core::Tensor::Init<bool>({}, device);
+    t.AsRvalue() = 0;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1, 0}.
+    t = core::Tensor::Init<int32_t>({{}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{}}, device);
+    t.AsRvalue() = 10;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1}.
+    t = core::Tensor::Init<float>({20.30}, device);
+    t_ref = core::Tensor::Init<float>({-10.10}, device);
+    t.AsRvalue() = -10.10;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1, 1}.
+    t = core::Tensor::Init<uint8_t>({{20}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{10}}, device);
+    t.AsRvalue() = 10;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1, 2}.
+    t = core::Tensor::Init<uint8_t>({{20, 10}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{0, 0}}, device);
+    t.AsRvalue() = 0;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with indexing.
+    t = core::Tensor::Init<bool>({{true, true}, {true, true}}, device);
+    t_ref = core::Tensor::Init<bool>({{false, false}, {true, true}}, device);
+    t[0] = 0;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with implicit conversion.
+    t = core::Tensor::Init<int32_t>({{5, 6}, {7, 8}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{10, 10}, {10, 10}}, device);
+    t.AsRvalue() = 10.2f;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with Slice.
+    t = core::Tensor::Init<uint8_t>({1}, device);
+    t_ref = core::Tensor::Init<uint8_t>({255}, device);
+    t.Slice(0, 0, 1) = 255;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Datatype implicit conversion with Slice.
+    t = core::Tensor::Init<bool>({{false, false}}, device);
+    t_ref = core::Tensor::Init<bool>({{true, true}}, device);
+    t.Slice(1, 0, 2) = 1.0f;
+    EXPECT_TRUE(t.AllClose(t_ref));
 }
 
 }  // namespace tests

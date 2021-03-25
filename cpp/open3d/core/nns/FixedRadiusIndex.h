@@ -101,26 +101,37 @@ public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
     void AllocIndices(int64_t** ptr, size_t num) {
-        indices = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = indices.GetDataPtr<int64_t>();
+        indices_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
+        *ptr = indices_.GetDataPtr<int64_t>();
+    }
+
+    void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
+        indices_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
+        *ptr = indices_.GetDataPtr<int64_t>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
-        distances =
+        distances_ =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = distances.GetDataPtr<T>();
+        *ptr = distances_.GetDataPtr<T>();
     }
 
-    const int64_t* IndicesPtr() const { return indices.GetDataPtr<int64_t>(); }
+    void AllocDistances(T** ptr, size_t num, T value) {
+        distances_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<T>(),
+                                  device_);
+        *ptr = distances_.GetDataPtr<T>();
+    }
 
-    const T* DistancesPtr() const { return distances.GetDataPtr<T>(); }
+    const int64_t* IndicesPtr() const { return indices_.GetDataPtr<int64_t>(); }
 
-    const Tensor& NeighborsIndex() const { return indices; }
-    const Tensor& NeighborsDistance() const { return distances; }
+    const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
+
+    const Tensor& NeighborsIndex() const { return indices_; }
+    const Tensor& NeighborsDistance() const { return distances_; }
 
 private:
-    Tensor indices;
-    Tensor distances;
+    Tensor indices_;
+    Tensor distances_;
     Device device_;
 };
 }  // namespace nns

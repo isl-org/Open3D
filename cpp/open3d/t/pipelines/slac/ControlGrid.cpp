@@ -328,8 +328,9 @@ std::pair<geometry::Image, geometry::Image> ControlGrid::Warp(
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max) {
-    geometry::PointCloud pcd = geometry::PointCloud::CreateFromRGBDImages(
-            depth, color, intrinsics, extrinsics, depth_scale, depth_max);
+    geometry::PointCloud pcd = geometry::PointCloud::CreateFromRGBDImage(
+            geometry::RGBDImage(color, depth), intrinsics, extrinsics,
+            depth_scale, depth_max);
 
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Warp(pcd_param);

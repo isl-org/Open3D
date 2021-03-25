@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ struct Label3D::Impl {
 
 Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
     : impl_(new Label3D::Impl()) {
+    SetPosition(pos);
     if (text) {
         SetText(text);
     }

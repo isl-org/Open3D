@@ -34,13 +34,28 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-__global__ void PoseToTransformationKernel(float *transformation_ptr,
-                                           const float *X_ptr) {
+template <typename scalar_t>
+__global__ void PoseToTransformationKernel(scalar_t *transformation_ptr,
+                                           const scalar_t *X_ptr) {
     PoseToTransformationImpl(transformation_ptr, X_ptr);
 }
 
-void PoseToTransformationCUDA(float *transformation_ptr, const float *X_ptr) {
-    PoseToTransformationKernel<<<1, 1>>>(transformation_ptr, X_ptr);
+template <typename scalar_t>
+void PoseToTransformationCUDA(scalar_t *transformation_ptr,
+                              const scalar_t *X_ptr) {
+    utility::LogError("Unsupported data type.");
+}
+
+template <>
+void PoseToTransformationCUDA<float>(float *transformation_ptr,
+                                     const float *X_ptr) {
+    PoseToTransformationKernel<float><<<1, 1>>>(transformation_ptr, X_ptr);
+}
+
+template <>
+void PoseToTransformationCUDA<double>(double *transformation_ptr,
+                                      const double *X_ptr) {
+    PoseToTransformationKernel<double><<<1, 1>>>(transformation_ptr, X_ptr);
 }
 
 }  // namespace kernel

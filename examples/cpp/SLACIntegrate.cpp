@@ -174,17 +174,20 @@ int main(int argc, char** argv) {
             utility::LogInfo("depth_reproj = {}", depth_reproj.ToString());
             if (false) {
                 t::geometry::PointCloud pcd =
-                        t::geometry::PointCloud::CreateFromRGBDImages(
-                                depth, color, intrinsic_t, extrinsic_t,
-                                depth_scale, max_depth);
+                        t::geometry::PointCloud::CreateFromRGBDImage(
+                                t::geometry::RGBDImage(color, depth),
+                                intrinsic_t, extrinsic_t, depth_scale,
+                                max_depth);
                 auto pcd_old_legacy =
                         std::make_shared<open3d::geometry::PointCloud>(
                                 pcd.ToLegacyPointCloud());
 
                 t::geometry::PointCloud pcd_reproj =
-                        t::geometry::PointCloud::CreateFromRGBDImages(
-                                depth_reproj, color_reproj, intrinsic_t,
-                                extrinsic_t, depth_scale, max_depth);
+                        t::geometry::PointCloud::CreateFromRGBDImage(
+                                t::geometry::RGBDImage(color_reproj,
+                                                       depth_reproj),
+                                intrinsic_t, extrinsic_t, depth_scale,
+                                max_depth);
                 auto pcd_legacy =
                         std::make_shared<open3d::geometry::PointCloud>(
                                 pcd_reproj.ToLegacyPointCloud());

@@ -175,6 +175,9 @@ void pybind_rendering_classes(py::module &m) {
                  "(x, y, z) location in the view, where x, y are the number of "
                  "pixels from the upper left of the view, and z is the depth "
                  "value. Returns the world coordinate (x', y', z').")
+            .def("copy_from", &Camera::CopyFrom,
+                 "Copies the settings from the camera passed as the argument "
+                 "into this camera")
             .def("get_near", &Camera::GetNear,
                  "Returns the distance from the camera to the near plane")
             .def("get_far", &Camera::GetFar,
@@ -259,7 +262,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("absorption_distance",
                            &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width)
+            .def_readwrite("line_width", &Material::line_width,
+                           "Requires 'shader' to be 'unlitLine'")
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -305,6 +309,27 @@ void pybind_rendering_classes(py::module &m) {
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(
             m, "ColorGrading", "Parameters to control color grading options");
+
+    py::enum_<ColorGradingParams::Quality> cgp_quality(
+            color_grading, "Quality",
+            "Quality level of color grading operations");
+    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+            .value("MEDIUM", ColorGradingParams::Quality::kMedium)
+            .value("HIGH", ColorGradingParams::Quality::kHigh)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra);
+
+    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
+            color_grading, "ToneMapping",
+            "Specifies the tone-mapping algorithm");
+    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
+            .value("ACES", ColorGradingParams::ToneMapping::kAces)
+            .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
+            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
+            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
+            .value("DISPLAY_RANGE",
+                   ColorGradingParams::ToneMapping::kDisplayRange);
+
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
                              ColorGradingParams::ToneMapping algorithm) {
@@ -415,7 +440,12 @@ void pybind_rendering_classes(py::module &m) {
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_image");
+                 "Application.render_to_image")
+            .def("render_to_depth_image", &Scene::RenderToDepthImage,
+                 "Renders the scene to a depth image. This can only be used in "
+                 "GUI app. To render without a window, use "
+                 "Application.render_to_depth_image. Pixels range from "
+                 "0.0 (near plane) to 1.0 (far plane)");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);
@@ -507,7 +537,7 @@ void pybind_rendering_classes(py::module &m) {
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(
-                    "get_view", &Open3DScene::GetView,
+                    "view", &Open3DScene::GetView,
                     "The low level view associated with the scene")
             .def_property("downsample_threshold",
                           &Open3DScene::GetDownsampleThreshold,

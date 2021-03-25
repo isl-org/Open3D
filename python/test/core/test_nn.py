@@ -143,8 +143,6 @@ def test_fixed_radius_search(device, dtype):
 @pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
 def test_hybrid_search_random(dtype):
     if o3d.core.cuda.device_count() > 0:
-        # dtype = o3c.Dtype.Float32
-
         dataset_size, query_size = 1000, 100
         radius, k = 0.1, 10
 
