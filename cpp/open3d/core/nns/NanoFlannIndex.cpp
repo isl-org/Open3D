@@ -250,27 +250,39 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                 "0.");
     }
 
-    double radius_squared = radius * radius;
-
     Tensor indices;
     Tensor distances;
-    std::tie(indices, distances) = SearchKnn(query_points, max_knn);
+    Tensor neighbors_row_splits;
 
+    std::tie(indices, distances, neighbors_row_splits) =
+            SearchRadius(query_points, radius);
+
+    int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        Tensor invalid = distances.Gt(radius_squared);
-        Tensor invalid_indices =
-                Tensor(std::vector<int64_t>({-1}), {1}, indices.GetDtype(),
-                       indices.GetDevice());
-        Tensor invalid_distances =
-                Tensor(std::vector<scalar_t>({-1}), {1}, distances.GetDtype(),
-                       distances.GetDevice());
 
-        indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
-        distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
-    });
+    Tensor batch_indices =
+            Tensor::Full({num_query_points, max_knn}, -1, Dtype::Int64);
+    Tensor batch_distances =
+            Tensor::Full({num_query_points, max_knn}, -1, dtype);
+    tbb::parallel_for(
+            tbb::blocked_range<size_t>(0, num_query_points),
+            [&](const tbb::blocked_range<size_t> &r) {
+                for (size_t i = r.begin(); i != r.end(); ++i) {
+                    int64_t start = neighbors_row_splits[i].Item<int64_t>();
 
-    return std::make_pair(indices, distances);
+                    int64_t num_neighbor = (neighbors_row_splits[i + 1] -
+                                            neighbors_row_splits[i])
+                                                   .Item<int64_t>();
+                    if (num_neighbor > 0) {
+                        int min_n = std::min(int(num_neighbor), max_knn);
+                        batch_indices[i].Slice(0, 0, min_n) =
+                                indices.Slice(0, start, start + min_n);
+                        batch_distances[i].Slice(0, 0, min_n) =
+                                distances.Slice(0, start, start + min_n);
+                    }
+                }
+            });
+    return std::make_pair(batch_indices, batch_distances);
 }
 
 }  // namespace nns
