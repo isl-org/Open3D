@@ -2,11 +2,10 @@
 #include <stdgpu/memory.h>    // createDeviceArray, destroyDeviceArray
 #include <stdgpu/platform.h>  // STDGPU_HOST_DEVICE
 #include <thrust/copy.h>
-#include <thrust/reduce.h>
-#include <thrust/for_each.h>
-#include <thrust/sequence.h>
 #include <thrust/device_vector.h>
-
+#include <thrust/for_each.h>
+#include <thrust/reduce.h>
+#include <thrust/sequence.h>
 
 #include <iostream>
 #include <stdgpu/unordered_map.cuh>  // stdgpu::unordered_map
@@ -45,11 +44,9 @@ __global__ void insert_neighbors(const int* d_result,
     }
 }
 
-
 struct collect {
-    STDGPU_HOST_DEVICE int operator()(
-            const thrust::pair<int, int>& x) const {
-      return x.second;
+    STDGPU_HOST_DEVICE int operator()(const thrust::pair<int, int>& x) const {
+        return x.second;
     }
 };
 
@@ -92,12 +89,13 @@ int main() {
                                                              map);
 
     int* output_ptr;
-    cudaMalloc(&output_ptr, sizeof(int)* n);
-    thrust::transform(range_map.begin(), range_map.end(), output_ptr, collect());
+    cudaMalloc(&output_ptr, sizeof(int) * n);
+    thrust::transform(range_map.begin(), range_map.end(), output_ptr,
+                      collect());
 
     thrust::device_ptr<int> dev_ptr(output_ptr);
-    thrust::copy(dev_ptr, dev_ptr + n, std::ostream_iterator<int>(std::cout, "\n"));
-
+    thrust::copy(dev_ptr, dev_ptr + n,
+                 std::ostream_iterator<int>(std::cout, "\n"));
 
     thrust::pair<int, int> sum =
             thrust::reduce(range_map.begin(), range_map.end(),
