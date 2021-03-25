@@ -135,8 +135,13 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                  float weight_threshold) {
     using Key = core::Block<int, 3>;
     using Hash = core::BlockHash<int, 3>;
+
     auto cuda_hashmap =
             std::dynamic_pointer_cast<core::STDGPUHashmap<Key, Hash>>(hashmap);
+    if (cuda_hashmap == nullptr) {
+        utility::LogError(
+                "Unsupported backend: CUDA raycasting only supports STDGPU.");
+    }
     auto hashmap_ctx = cuda_hashmap->GetContext();
 
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);

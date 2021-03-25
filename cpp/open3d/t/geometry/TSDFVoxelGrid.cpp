@@ -41,7 +41,8 @@ TSDFVoxelGrid::TSDFVoxelGrid(
         float sdf_trunc,
         int64_t block_resolution,
         int64_t block_count,
-        const core::Device &device)
+        const core::Device &device,
+        const core::Backend &backend)
     : voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
@@ -104,7 +105,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
             core::SizeVector{3},
             core::SizeVector{block_resolution_, block_resolution_,
                              block_resolution_, total_bytes},
-            device);
+            device, backend);
 }
 
 void TSDFVoxelGrid::Integrate(const Image &depth,
