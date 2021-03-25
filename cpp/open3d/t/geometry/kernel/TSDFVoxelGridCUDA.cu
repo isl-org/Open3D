@@ -265,6 +265,7 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                             }
                         });
             });
+
     // For profiling
     cudaDeviceSynchronize();
 }
