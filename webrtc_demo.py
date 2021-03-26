@@ -49,8 +49,8 @@ def add_draw(geometries, window_name, width, height):
 
 
 if __name__ == "__main__":
-    o3d.visualization.gui.Application.instance.enable_webrtc()
     app = o3d.visualization.gui.Application.instance
+    app.enable_webrtc()
     app.initialize()
     add_draw(get_boxes(), "Open3D empty_box", 640, 480)
     add_draw(get_spheres(), "Open3D multi_objects", 640, 480)
