@@ -57,7 +57,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       location.protocol + "//" + window.location.hostname + ":" + 8888,
       /*use_comms=*/ false
     );
-    this.webRtcClient.connect("window_0");
+    this.webRtcClient.connect(this.model.get("window_uid"));
   },
 });
 

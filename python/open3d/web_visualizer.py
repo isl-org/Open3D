@@ -38,9 +38,14 @@ class WebVisualizer(widgets.DOMWidget):
     _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)
 
-    # Attributes: ipython traitlets
-    value = Unicode('example@example.com',
-                    help="The email value.").tag(sync=True)
+    # Attributes: Jupyter traitlets
+    window_uid = Unicode("window_UNDEFINED", help="Window UID").tag(sync=True)
 
     def show(self):
         display(self)
+
+    @validate('window_uid')
+    def _valid_window_uid(self, proposal):
+        if proposal['value'][:7] != "window_":
+            raise TraitError('window_uid must be "window_xxx".')
+        return proposal['value']
