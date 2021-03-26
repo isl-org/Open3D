@@ -179,12 +179,13 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                             .GetDataPtrFromCoord<voxel_t>(
                                                     x_v, y_v, z_v, block_addr);
                                 } else {
-                                    // printf("%d %d %d-> %d %d %d\n", x_v, y_v,
-                                    //        z_v, dx_b, dy_b, dz_b);
+                                    // printf("%d %d %d-> %d %d %d->%d %d %d\n",
+                                    //        x_v, y_v, z_v, dx_b, dy_b, dz_b,
+                                    //        x_vn, y_vn, z_vn);
                                     Key key;
                                     key(0) = x_b + dx_b;
-                                    key(1) = x_b + dy_b;
-                                    key(2) = x_b + dz_b;
+                                    key(1) = y_b + dy_b;
+                                    key(2) = z_b + dz_b;
 
                                     auto iter = hashmap_ctx.find(key);
                                     if (iter == hashmap_ctx.end())
@@ -328,11 +329,8 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                     float ratio_x = x_v - float(x_v_floor);
                                     float ratio_y = y_v - float(y_v_floor);
                                     float ratio_z = z_v - float(z_v_floor);
-                                    // printf("%d %d %d, %f %f %f, %f %f %f\n",
-                                    //        x_v_floor, y_v_floor, z_v_floor,
-                                    //        x_v, y_v, z_v, ratio_x, ratio_y,
-                                    //        ratio_z);
 
+                                    // Color inteprolation
                                     float* color =
                                             color_map_indexer
                                                     .GetDataPtrFromCoord<float>(
@@ -353,29 +351,83 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                                  (1 - dy_v) * (1 - ratio_y)) *
                                                 (dz_v * (ratio_z) +
                                                  (1 - dz_v) * (1 - ratio_z));
+
                                         voxel_t* voxel_ptr_k = GetVoxelAtP(
                                                 x_b, y_b, z_b, x_v_floor + dx_v,
                                                 y_v_floor + dy_v,
                                                 z_v_floor + dz_v, block_addr);
 
-                                        if (voxel_ptr_k &&
-                                            voxel_ptr_k->GetWeight() > 0) {
-                                            sum_weight += ratio;
-                                            color[0] +=
-                                                    ratio * voxel_ptr_k->GetR();
-                                            color[1] +=
-                                                    ratio * voxel_ptr_k->GetG();
-                                            color[2] +=
-                                                    ratio * voxel_ptr_k->GetB();
+                                        // if (voxel_ptr_k &&
+                                        //     voxel_ptr_k->GetWeight() > 0) {
+                                        //     sum_weight += ratio;
+                                        //     color[0] +=
+                                        //             ratio *
+                                        //             voxel_ptr_k->GetR();
+                                        //     color[1] +=
+                                        //             ratio *
+                                        //             voxel_ptr_k->GetG();
+                                        //     color[2] +=
+                                        //             ratio *
+                                        //             voxel_ptr_k->GetB();
+                                        // }
+
+                                        for (int dim = 0; dim < 3; ++dim) {
+                                            voxel_t* voxel_ptr_k_plus =
+                                                    GetVoxelAtP(
+                                                            x_b, y_b, z_b,
+                                                            x_v_floor + dx_v +
+                                                                    (dim == 0),
+                                                            y_v_floor + dy_v +
+                                                                    (dim == 1),
+                                                            z_v_floor + dz_v +
+                                                                    (dim == 2),
+                                                            block_addr);
+                                            voxel_t* voxel_ptr_k_minus =
+                                                    GetVoxelAtP(
+                                                            x_b, y_b, z_b,
+                                                            x_v_floor + dx_v -
+                                                                    (dim == 0),
+                                                            y_v_floor + dy_v -
+                                                                    (dim == 1),
+                                                            z_v_floor + dz_v -
+                                                                    (dim == 2),
+                                                            block_addr);
+
+                                            bool valid = false;
+                                            if (voxel_ptr_k_plus &&
+                                                voxel_ptr_k_plus->GetWeight() >
+                                                        0) {
+                                                color[dim] +=
+                                                        ratio *
+                                                        voxel_ptr_k_plus
+                                                                ->GetTSDF() /
+                                                        (2 * voxel_size);
+                                                valid = true;
+                                            }
+
+                                            if (voxel_ptr_k_minus &&
+                                                voxel_ptr_k_minus->GetWeight() >
+                                                        0) {
+                                                color[dim] -=
+                                                        ratio *
+                                                        voxel_ptr_k_minus
+                                                                ->GetTSDF() /
+                                                        (2 * voxel_size);
+                                                valid = true;
+                                            }
+                                            sum_weight += valid ? ratio : 0;
                                         }
                                     }
-                                    sum_weight *= 255.0;
-                                    if (sum_weight > 0) {
-                                        color[0] /= sum_weight;
-                                        color[1] /= sum_weight;
-                                        color[2] /= sum_weight;
-                                    }
 
+                                    // sum_weight *= 255.0;
+                                    if (sum_weight > 0) {
+                                        color[0] = (color[0]) / sum_weight;
+                                        color[1] = (color[1]) / sum_weight;
+                                        color[2] = (color[2]) / sum_weight;
+                                        // color[0] /= sum_weight;
+                                        // color[1] /= sum_weight;
+                                        // color[2] /= sum_weight;
+                                    }
                                     break;
                                 }
 

@@ -171,18 +171,24 @@ int main(int argc, char** argv) {
 
             utility::Timer ray_timer;
             ray_timer.Start();
-            std::tie(vertex_map, color_map) = voxel_grid.RayCast(
-                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
-                    50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+
+            Tensor intrinsic_t_down = intrinsic_t / 1;
+            intrinsic_t_down[2][2] = 1.0;
+            std::tie(vertex_map, color_map) =
+                    voxel_grid.RayCast(intrinsic_t_down, extrinsic_t,
+                                       depth.GetCols() / 1, depth.GetRows() / 1,
+                                       80, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
             ray_timer.Stop();
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            t::geometry::Image vertex_im(color_map);
-            visualization::DrawGeometries(
-                    {std::make_shared<open3d::geometry::Image>(
-                            vertex_im.ToLegacyImage())});
+            if (i % 500 == 0) {
+                t::geometry::Image vertex_im(color_map);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                vertex_im.ToLegacyImage())});
+            }
         }
 
         timer.Stop();
