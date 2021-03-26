@@ -371,6 +371,22 @@ var WebRtcStreamer = (function () {
     console.log("onError:" + status);
   };
 
+  /*
+   * Call remove server API.
+   * This is a non-prototype method (static method), we don't need to new an
+   * instance inorder to use it. See https://stackoverflow.com/a/1635143/1255535.
+   * @param {url} Remote URL, e.g. "/api/getMediaList"
+   * @param {use_fetch} If true, `fetch` is used directly. Otherwise,
+   * Open3D's remote call API will be used.
+   */
+  WebRtcStreamer.remoteCall = function (url, use_fetch = true) {
+    if (use_fetch) {
+      return fetch(url);
+    } else {
+      throw new Error("Open3D's remote call API is not implemented.");
+    }
+  };
+
   return WebRtcStreamer;
 })();
 

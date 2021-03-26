@@ -306,20 +306,6 @@
       }
 
       /**
-       * Call remote server API.
-       * @param {url} Remote URL, e.g. "/api/getMediaList"
-       * @param {use_fetch} If true, `fetch` is used directly. Otherwise,
-       * Open3D's remote call API will be used.
-       */
-      function remoteCall(url, use_fetch = true) {
-        if (use_fetch) {
-          return fetch(url);
-        } else {
-          throw new Error("Open3D's remote call API is not implemented.");
-        }
-      }
-
-      /**
        * load/unload callbacks
        */
       window.onload = function () {
@@ -338,7 +324,7 @@
           document.getElementById("content").appendChild(tableelt);
         }
 
-        remoteCall(webrtcConfig.url + "/api/getMediaList")
+        WebRtcStreamer.remoteCall(webrtcConfig.url + "/api/getMediaList")
           .then((response) => response.json())
           .then((response) => onGetDeviceList(response));
       };
