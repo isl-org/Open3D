@@ -10,7 +10,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CLOUD_NAME = "points"
 
 
-def add_draw_window(geometries, window_name, width, height):
+def add_draw(geometries, window_name, width, height):
     vis = o3d.visualization.O3DVisualizer(title=window_name,
                                           width=width,
                                           height=height)
@@ -28,7 +28,7 @@ def empty_box():
     big_bbox = o3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
                                                    (6.0 + r, 1.0 + r, pc_rad))
 
-    add_draw_window([big_bbox], "Open3D empty_box", 640, 480)
+    add_draw([big_bbox], "Open3D empty_box", 640, 480)
 
 
 def multi_objects():
@@ -56,7 +56,7 @@ def multi_objects():
         sphere_colored_lit.get_axis_aligned_bounding_box())
     lines_colored.paint_uniform_color((0.0, 0.0, 1.0))
 
-    add_draw_window([
+    add_draw([
         sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
         big_bbox, sphere_bbox, lines, lines_colored
     ], "Open3D multi_objects", 640, 480)
