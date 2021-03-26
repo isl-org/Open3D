@@ -10,7 +10,7 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import open3d_tutorial as o3dtut
 
-CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def normalize(v):
@@ -124,9 +124,9 @@ def get_icp_transform(source, target, source_indices, target_indices):
 
 
 def selections():
-    source = o3d.io.read_point_cloud(CURRENT_DIR +
+    source = o3d.io.read_point_cloud(SCRIPTDIR +
                                      "/../../test_data/ICP/cloud_bin_0.pcd")
-    target = o3d.io.read_point_cloud(CURRENT_DIR +
+    target = o3d.io.read_point_cloud(SCRIPTDIR +
                                      "/../../test_data/ICP/cloud_bin_2.pcd")
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
