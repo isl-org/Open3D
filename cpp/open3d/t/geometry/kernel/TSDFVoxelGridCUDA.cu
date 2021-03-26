@@ -158,6 +158,83 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
                 core::kernel::CUDALauncher::LaunchGeneralKernel(
                         rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                            auto GetVoxelAtP =
+                                    [&] OPEN3D_DEVICE(int x_b, int y_b, int z_b,
+                                                      int x_v, int y_v, int z_v,
+                                                      core::addr_t block_addr)
+                                    -> voxel_t* {
+                                int x_vn = (x_v + block_resolution) %
+                                           block_resolution;
+                                int y_vn = (y_v + block_resolution) %
+                                           block_resolution;
+                                int z_vn = (z_v + block_resolution) %
+                                           block_resolution;
+
+                                int dx_b = sign(x_v - x_vn);
+                                int dy_b = sign(y_v - y_vn);
+                                int dz_b = sign(z_v - z_vn);
+
+                                if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
+                                    return voxel_block_buffer_indexer
+                                            .GetDataPtrFromCoord<voxel_t>(
+                                                    x_v, y_v, z_v, block_addr);
+                                } else {
+                                    // printf("%d %d %d-> %d %d %d\n", x_v, y_v,
+                                    //        z_v, dx_b, dy_b, dz_b);
+                                    Key key;
+                                    key(0) = x_b + dx_b;
+                                    key(1) = x_b + dy_b;
+                                    key(2) = x_b + dz_b;
+
+                                    auto iter = hashmap_ctx.find(key);
+                                    if (iter == hashmap_ctx.end())
+                                        return nullptr;
+
+                                    return voxel_block_buffer_indexer
+                                            .GetDataPtrFromCoord<voxel_t>(
+                                                    x_vn, y_vn, z_vn,
+                                                    iter->second);
+                                }
+                            };
+
+                            auto GetVoxelAtT = [&] OPEN3D_DEVICE(
+                                                       float x_o, float y_o,
+                                                       float z_o, float x_d,
+                                                       float y_d, float z_d,
+                                                       float t) -> voxel_t* {
+                                float x_g = x_o + t * x_d;
+                                float y_g = y_o + t * y_d;
+                                float z_g = z_o + t * z_d;
+
+                                // Block coordinate and look up
+                                int x_b = static_cast<int>(
+                                        floor(x_g / block_size));
+                                int y_b = static_cast<int>(
+                                        floor(y_g / block_size));
+                                int z_b = static_cast<int>(
+                                        floor(z_g / block_size));
+
+                                Key key;
+                                key(0) = x_b;
+                                key(1) = y_b;
+                                key(2) = z_b;
+                                auto iter = hashmap_ctx.find(key);
+                                if (iter == hashmap_ctx.end()) return nullptr;
+
+                                core::addr_t block_addr = iter->second;
+
+                                // Voxel coordinate and look up
+                                int x_v = int((x_g - x_b * block_size) /
+                                              voxel_size);
+                                int y_v = int((y_g - y_b * block_size) /
+                                              voxel_size);
+                                int z_v = int((z_g - z_b * block_size) /
+                                              voxel_size);
+                                return voxel_block_buffer_indexer
+                                        .GetDataPtrFromCoord<voxel_t>(
+                                                x_v, y_v, z_v, block_addr);
+                            };
+
                             int64_t y = workload_idx / cols;
                             int64_t x = workload_idx % cols;
 
@@ -167,11 +244,6 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                             float x_c = 0, y_c = 0, z_c = 0;
                             float x_g = 0, y_g = 0, z_g = 0;
                             float x_o = 0, y_o = 0, z_o = 0;
-
-                            // Coordinates in voxel blocks and voxels
-                            Key key;
-                            int x_b = 0, y_b = 0, z_b = 0;
-                            int x_v = 0, y_v = 0, z_v = 0;
 
                             // Iterative ray intersection check
                             float t_prev = t;
@@ -192,41 +264,13 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                             float z_d = (z_g - z_o);
 
                             for (int step = 0; step < max_steps; ++step) {
-                                // Release a warp if all of the threads are
-                                // inactive.
-                                x_g = x_o + t * x_d;
-                                y_g = y_o + t * y_d;
-                                z_g = z_o + t * z_d;
-
-                                x_b = static_cast<int>(floor(x_g / block_size));
-                                y_b = static_cast<int>(floor(y_g / block_size));
-                                z_b = static_cast<int>(floor(z_g / block_size));
-
-                                key(0) = x_b;
-                                key(1) = y_b;
-                                key(2) = z_b;
-
-                                auto iter = hashmap_ctx.find(key);
-                                bool flag = iter != hashmap_ctx.end();
-                                if (!flag) {
+                                voxel_t* voxel_ptr = GetVoxelAtT(
+                                        x_o, y_o, z_o, x_d, y_d, z_d, t);
+                                if (!voxel_ptr) {
                                     t_prev = t;
                                     t += block_size;
                                     continue;
                                 }
-
-                                core::addr_t block_addr = iter->second;
-                                x_v = int((x_g - x_b * block_size) /
-                                          voxel_size);
-                                y_v = int((y_g - y_b * block_size) /
-                                          voxel_size);
-                                z_v = int((z_g - z_b * block_size) /
-                                          voxel_size);
-
-                                voxel_t* voxel_ptr =
-                                        voxel_block_buffer_indexer
-                                                .GetDataPtrFromCoord<voxel_t>(
-                                                        x_v, y_v, z_v,
-                                                        block_addr);
                                 float tsdf = voxel_ptr->GetTSDF();
                                 float w = voxel_ptr->GetWeight();
 
@@ -239,6 +283,7 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                     y_g = y_o + t_intersect * y_d;
                                     z_g = z_o + t_intersect * z_d;
 
+                                    // Trivial vertex assignment
                                     float* vertex =
                                             vertex_map_indexer
                                                     .GetDataPtrFromCoord<float>(
@@ -247,13 +292,89 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                                     vertex[1] = y_g;
                                     vertex[2] = z_g;
 
+                                    // Color map assignment:
+                                    int x_b = static_cast<int>(
+                                            floor(x_g / block_size));
+                                    int y_b = static_cast<int>(
+                                            floor(y_g / block_size));
+                                    int z_b = static_cast<int>(
+                                            floor(z_g / block_size));
+                                    float x_v =
+                                            (x_g - float(x_b) * block_size) /
+                                            voxel_size;
+                                    float y_v =
+                                            (y_g - float(y_b) * block_size) /
+                                            voxel_size;
+                                    float z_v =
+                                            (z_g - float(z_b) * block_size) /
+                                            voxel_size;
+
+                                    Key key;
+                                    key(0) = x_b;
+                                    key(1) = y_b;
+                                    key(2) = z_b;
+                                    auto iter = hashmap_ctx.find(key);
+                                    if (iter == hashmap_ctx.end()) break;
+
+                                    core::addr_t block_addr = iter->second;
+
+                                    int x_v_floor =
+                                            static_cast<int>(floor(x_v));
+                                    int y_v_floor =
+                                            static_cast<int>(floor(y_v));
+                                    int z_v_floor =
+                                            static_cast<int>(floor(z_v));
+
+                                    float ratio_x = x_v - float(x_v_floor);
+                                    float ratio_y = y_v - float(y_v_floor);
+                                    float ratio_z = z_v - float(z_v_floor);
+                                    // printf("%d %d %d, %f %f %f, %f %f %f\n",
+                                    //        x_v_floor, y_v_floor, z_v_floor,
+                                    //        x_v, y_v, z_v, ratio_x, ratio_y,
+                                    //        ratio_z);
+
                                     float* color =
                                             color_map_indexer
                                                     .GetDataPtrFromCoord<float>(
                                                             x, y);
-                                    color[0] = voxel_ptr->GetR() / 255.0f;
-                                    color[1] = voxel_ptr->GetG() / 255.0f;
-                                    color[2] = voxel_ptr->GetB() / 255.0f;
+                                    color[0] = 0;
+                                    color[1] = 0;
+                                    color[2] = 0;
+
+                                    float sum_weight = 0.0;
+                                    for (int k = 0; k < 8; ++k) {
+                                        int dx_v = (k & 1) > 0 ? 1 : 0;
+                                        int dy_v = (k & 2) > 0 ? 1 : 0;
+                                        int dz_v = (k & 4) > 0 ? 1 : 0;
+                                        float ratio =
+                                                (dx_v * (ratio_x) +
+                                                 (1 - dx_v) * (1 - ratio_x)) *
+                                                (dy_v * (ratio_y) +
+                                                 (1 - dy_v) * (1 - ratio_y)) *
+                                                (dz_v * (ratio_z) +
+                                                 (1 - dz_v) * (1 - ratio_z));
+                                        voxel_t* voxel_ptr_k = GetVoxelAtP(
+                                                x_b, y_b, z_b, x_v_floor + dx_v,
+                                                y_v_floor + dy_v,
+                                                z_v_floor + dz_v, block_addr);
+
+                                        if (voxel_ptr_k &&
+                                            voxel_ptr_k->GetWeight() > 0) {
+                                            sum_weight += ratio;
+                                            color[0] +=
+                                                    ratio * voxel_ptr_k->GetR();
+                                            color[1] +=
+                                                    ratio * voxel_ptr_k->GetG();
+                                            color[2] +=
+                                                    ratio * voxel_ptr_k->GetB();
+                                        }
+                                    }
+                                    sum_weight *= 255.0;
+                                    if (sum_weight > 0) {
+                                        color[0] /= sum_weight;
+                                        color[1] /= sum_weight;
+                                        color[2] /= sum_weight;
+                                    }
 
                                     break;
                                 }
