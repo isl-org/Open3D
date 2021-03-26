@@ -54,4 +54,11 @@ if __name__ == "__main__":
     app.initialize()
     add_draw(get_boxes(), "Open3D empty_box", 640, 480)
     add_draw(get_spheres(), "Open3D multi_objects", 640, 480)
-    app.run()
+
+    def workload():
+        while True:
+            app.run_one_tick()
+
+    thread = threading.Thread(target=workload)
+    thread.start()
+    # app.run()
