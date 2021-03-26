@@ -5,8 +5,9 @@ var WebRtcStreamer = (function () {
    * @constructor
    * @param {string} videoElement - id of the video element tag
    * @param {string} srvurl -  url of webrtc-streamer (default is current location)
+   *
    */
-  function WebRtcStreamer(videoElement, srvurl) {
+  function WebRtcStreamer(videoElement, srvurl, use_comms) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
@@ -33,7 +34,7 @@ var WebRtcStreamer = (function () {
     this.earlyCandidates = [];
   }
 
-  /*
+  /**
    * Call remove server API.
    * This is a non-prototype method (static method), we don't need to new an
    * instance inorder to use it. See https://stackoverflow.com/a/1635143/1255535.
@@ -52,7 +53,7 @@ var WebRtcStreamer = (function () {
     }
   };
 
-  /*
+  /**
    * Get media list from server.
    */
   WebRtcStreamer.getMediaList = function () {
