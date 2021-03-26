@@ -76,7 +76,7 @@ var WebRtcStreamer = (function () {
     if (!this.iceServers) {
       console.log("Get IceServers");
 
-      fetch(this.srvurl + "/api/getIceServers")
+      WebRtcStreamer.remoteCall(this.srvurl + "/api/getIceServers")
         .then(this._handleHttpErrors)
         .then((response) => response.json())
         .then((response) =>
@@ -109,7 +109,9 @@ var WebRtcStreamer = (function () {
       this.videoElement.src = "";
     }
     if (this.pc) {
-      fetch(this.srvurl + "/api/hangup?peerid=" + this.pc.peerid)
+      WebRtcStreamer.remoteCall(
+        this.srvurl + "/api/hangup?peerid=" + this.pc.peerid
+      )
         .then(this._handleHttpErrors)
         .catch((error) => this.onError("hangup " + error));
 
@@ -167,7 +169,7 @@ var WebRtcStreamer = (function () {
           bind.pc.setLocalDescription(
             sessionDescription,
             function () {
-              fetch(callurl, {
+              WebRtcStreamer.remoteCall(callurl, {
                 method: "POST",
                 body: JSON.stringify(sessionDescription),
               })
@@ -193,7 +195,9 @@ var WebRtcStreamer = (function () {
   };
 
   WebRtcStreamer.prototype.getIceCandidate = function () {
-    fetch(this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid)
+    WebRtcStreamer.remoteCall(
+      this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid
+    )
       .then(this._handleHttpErrors)
       .then((response) => response.json())
       .then((response) => this.onReceiveCandidate.call(this, response))
@@ -304,10 +308,13 @@ var WebRtcStreamer = (function () {
   };
 
   WebRtcStreamer.prototype.addIceCandidate = function (peerid, candidate) {
-    fetch(this.srvurl + "/api/addIceCandidate?peerid=" + peerid, {
-      method: "POST",
-      body: JSON.stringify(candidate),
-    })
+    WebRtcStreamer.remoteCall(
+      this.srvurl + "/api/addIceCandidate?peerid=" + peerid,
+      {
+        method: "POST",
+        body: JSON.stringify(candidate),
+      }
+    )
       .then(this._handleHttpErrors)
       .then((response) => response.json())
       .then((response) => {
