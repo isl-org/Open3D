@@ -48,7 +48,7 @@ var WebRtcStreamer = (function () {
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.remoteCall = function (url, data = {}, use_comms) {
+  WebRtcStreamer.remoteCall = function (url, use_comms, data = {}) {
     if (use_comms) {
       throw new Error("Open3D's remote call API is not implemented.");
     } else {
@@ -62,10 +62,9 @@ var WebRtcStreamer = (function () {
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.getMediaList = function (use_comms = true) {
+  WebRtcStreamer.getMediaList = function (use_comms) {
     return WebRtcStreamer.remoteCall(
       webrtcConfig.url + "/api/getMediaList",
-      {},
       use_comms
     );
   };
@@ -98,7 +97,6 @@ var WebRtcStreamer = (function () {
 
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
-        {},
         this.use_comms
       )
         .then(this._handleHttpErrors)
@@ -135,7 +133,6 @@ var WebRtcStreamer = (function () {
     if (this.pc) {
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/hangup?peerid=" + this.pc.peerid,
-        {},
         this.use_comms
       )
         .then(this._handleHttpErrors)
@@ -195,14 +192,10 @@ var WebRtcStreamer = (function () {
           bind.pc.setLocalDescription(
             sessionDescription,
             function () {
-              WebRtcStreamer.remoteCall(
-                callurl,
-                {
-                  method: "POST",
-                  body: JSON.stringify(sessionDescription),
-                },
-                this.use_comms
-              )
+              WebRtcStreamer.remoteCall(callurl, this.use_comms, {
+                method: "POST",
+                body: JSON.stringify(sessionDescription),
+              })
                 .then(bind._handleHttpErrors)
                 .then((response) => response.json())
                 .catch((error) => bind.onError("call " + error))
@@ -227,7 +220,6 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.getIceCandidate = function () {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid,
-      {},
       this.use_comms
     )
       .then(this._handleHttpErrors)
@@ -342,11 +334,11 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.addIceCandidate = function (peerid, candidate) {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/addIceCandidate?peerid=" + peerid,
+      this.use_comms,
       {
         method: "POST",
         body: JSON.stringify(candidate),
-      },
-      this.use_comms
+      }
     )
       .then(this._handleHttpErrors)
       .then((response) => response.json())
