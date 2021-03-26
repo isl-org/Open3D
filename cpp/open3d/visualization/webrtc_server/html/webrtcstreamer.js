@@ -3,11 +3,13 @@ var WebRtcStreamer = (function () {
   /**
    * Interface with WebRTC-streamer API
    * @constructor
-   * @param {string} videoElement - id of the video element tag
-   * @param {string} srvurl -  url of webrtc-streamer (default is current location)
-   *
+   * @param {string} videoElement Id of the video element tag
+   * @param {string} srvurl Url of webrtc-streamer (default is current location)
+   * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
+   * be used for WebRTC handshake. Otherwise, fetch() will be used and an
+   * additioanl web server is required to process the http requests.
    */
-  function WebRtcStreamer(videoElement, srvurl, use_comms = false) {
+  function WebRtcStreamer(videoElement, srvurl, use_comms = true) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
@@ -46,7 +48,7 @@ var WebRtcStreamer = (function () {
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.remoteCall = function (url, data = {}, use_comms = false) {
+  WebRtcStreamer.remoteCall = function (url, data = {}, use_comms = true) {
     if (use_comms) {
       throw new Error("Open3D's remote call API is not implemented.");
     } else {
@@ -56,9 +58,16 @@ var WebRtcStreamer = (function () {
 
   /**
    * Get media list from server.
+   * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
+   * be used for WebRTC handshake. Otherwise, fetch() will be used and an
+   * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.getMediaList = function () {
-    return WebRtcStreamer.remoteCall(webrtcConfig.url + "/api/getMediaList");
+  WebRtcStreamer.getMediaList = function (use_comms = true) {
+    return WebRtcStreamer.remoteCall(
+      webrtcConfig.url + "/api/getMediaList",
+      {},
+      use_comms
+    );
   };
 
   WebRtcStreamer.prototype._handleHttpErrors = function (response) {
@@ -70,10 +79,10 @@ var WebRtcStreamer = (function () {
 
   /**
    * Connect a WebRTC Stream to videoElement
-   * @param {string} videourl - id of WebRTC video stream
-   * @param {string} audiourl - id of WebRTC audio stream
-   * @param {string} options -  options of WebRTC call
-   * @param {string} stream  -  local stream to send
+   * @param {string} videourl Id of WebRTC video stream
+   * @param {string} audiourl Od of WebRTC audio stream
+   * @param {string} options Options of WebRTC call
+   * @param {string} stream Local stream to send
    */
   WebRtcStreamer.prototype.connect = function (
     videourl,
@@ -87,7 +96,11 @@ var WebRtcStreamer = (function () {
     if (!this.iceServers) {
       console.log("Get IceServers");
 
-      WebRtcStreamer.remoteCall(this.srvurl + "/api/getIceServers")
+      WebRtcStreamer.remoteCall(
+        this.srvurl + "/api/getIceServers",
+        {},
+        /*use_comms=*/ false
+      )
         .then(this._handleHttpErrors)
         .then((response) => response.json())
         .then((response) =>
@@ -121,7 +134,9 @@ var WebRtcStreamer = (function () {
     }
     if (this.pc) {
       WebRtcStreamer.remoteCall(
-        this.srvurl + "/api/hangup?peerid=" + this.pc.peerid
+        this.srvurl + "/api/hangup?peerid=" + this.pc.peerid,
+        {},
+        /*use_comms=*/ false
       )
         .then(this._handleHttpErrors)
         .catch((error) => this.onError("hangup " + error));
@@ -180,10 +195,14 @@ var WebRtcStreamer = (function () {
           bind.pc.setLocalDescription(
             sessionDescription,
             function () {
-              WebRtcStreamer.remoteCall(callurl, {
-                method: "POST",
-                body: JSON.stringify(sessionDescription),
-              })
+              WebRtcStreamer.remoteCall(
+                callurl,
+                {
+                  method: "POST",
+                  body: JSON.stringify(sessionDescription),
+                },
+                /*use_comms=*/ false
+              )
                 .then(bind._handleHttpErrors)
                 .then((response) => response.json())
                 .catch((error) => bind.onError("call " + error))
@@ -207,7 +226,9 @@ var WebRtcStreamer = (function () {
 
   WebRtcStreamer.prototype.getIceCandidate = function () {
     WebRtcStreamer.remoteCall(
-      this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid
+      this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid,
+      {},
+      /*use_comms=*/ false
     )
       .then(this._handleHttpErrors)
       .then((response) => response.json())
@@ -324,7 +345,8 @@ var WebRtcStreamer = (function () {
       {
         method: "POST",
         body: JSON.stringify(candidate),
-      }
+      },
+      /*use_comms=*/ false
     )
       .then(this._handleHttpErrors)
       .then((response) => response.json())

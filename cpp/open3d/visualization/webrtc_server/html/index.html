@@ -324,7 +324,7 @@
           document.getElementById("content").appendChild(tableelt);
         }
 
-        WebRtcStreamer.getMediaList()
+        WebRtcStreamer.getMediaList(/*use_comms=*/ false)
           .then((response) => response.json())
           .then((response) => onGetDeviceList(response));
       };
