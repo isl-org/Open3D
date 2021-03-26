@@ -61,7 +61,7 @@ struct Material {
     float absorption_distance = 1.f;
 
     float point_size = 3.f;
-    float line_width = 1.f;
+    float line_width = 1.f;  // only used with shader = "unlitLine"
 
     std::shared_ptr<geometry::Image> albedo_img;
     std::shared_ptr<geometry::Image> normal_img;
@@ -98,7 +98,7 @@ struct Material {
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;
 
-    std::string shader;
+    std::string shader = "defaultUnlit";
 };
 
 }  // namespace rendering

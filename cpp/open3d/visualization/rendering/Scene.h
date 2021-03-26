@@ -203,6 +203,10 @@ public:
     virtual void RenderToImage(
             std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
+    /// Size of image is the size of the window.
+    virtual void RenderToDepthImage(
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
+
 protected:
     Renderer& renderer_;
 };

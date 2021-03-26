@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -316,7 +316,15 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.checkbox_background_hover_off_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.checkbox_background_hover_on_color =
             highlight_color.Lightened(0.15f);
-    impl_->theme_.checkbox_check_color = Color(1, 1, 1);
+    impl_->theme_.checkbox_check_color = Color(0.9f, 0.9f, 0.9f);
+    impl_->theme_.toggle_background_off_color =
+            impl_->theme_.checkbox_background_off_color;
+    impl_->theme_.toggle_background_on_color = Color(0.666f, 0.666f, 0.666f);
+    impl_->theme_.toggle_background_hover_off_color =
+            impl_->theme_.checkbox_background_hover_off_color;
+    impl_->theme_.toggle_background_hover_on_color =
+            impl_->theme_.toggle_background_on_color.Lightened(0.15f);
+    impl_->theme_.toggle_thumb_color = Color(1, 1, 1);
     impl_->theme_.combobox_background_color = Color(0.4f, 0.4f, 0.4f);
     impl_->theme_.combobox_hover_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
