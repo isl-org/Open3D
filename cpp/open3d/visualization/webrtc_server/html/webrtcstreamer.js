@@ -6,7 +6,7 @@ var WebRtcStreamer = (function () {
    * @param {string} videoElement - id of the video element tag
    * @param {string} srvurl -  url of webrtc-streamer (default is current location)
    */
-  var WebRtcStreamer = function WebRtcStreamer(videoElement, srvurl) {
+  function WebRtcStreamer(videoElement, srvurl) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
@@ -31,7 +31,7 @@ var WebRtcStreamer = (function () {
 
     this.iceServers = null;
     this.earlyCandidates = [];
-  };
+  }
 
   /*
    * Call remove server API.
