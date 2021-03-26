@@ -179,8 +179,8 @@ bool WritePointCloudToPTS(const std::string &filename,
                 static_cast<long>(pointcloud.GetPoints().GetLength());
         const double *points_ptr = static_cast<const double *>(
                 pointcloud.GetPoints().GetDataPtr());
-        const uint8_t *colors_ptr;
-        const double *intensities_ptr;
+        const uint8_t *colors_ptr = nullptr;
+        const double *intensities_ptr = nullptr;
 
         if (pointcloud.HasPointColors()) {
             colors_ptr = static_cast<const uint8_t *>(

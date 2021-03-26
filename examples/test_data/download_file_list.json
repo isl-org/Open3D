@@ -19,13 +19,11 @@
         "path": "tests/bunnyData.pts",
         "sha256": "2bc55437d6c3a6b3fbf6e63e9f909a6ab9e0bf73cc43628e243d720a6e04d40f"
     },
-    
     "tests/point_cloud_sample1.pts": {
         "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/point_cloud_sample1.pts",
         "path": "tests/point_cloud_sample1.pts",
         "sha256": "8095941de628d6c553569e39151f33467ffb972bea8c7fe9660cba89f7d52bee"
     },
-    
     "tests/point_cloud_sample2.pts": {
         "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/point_cloud_sample2.pts",
         "path": "tests/point_cloud_sample2.pts",
