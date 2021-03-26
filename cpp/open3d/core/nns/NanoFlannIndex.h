@@ -161,6 +161,13 @@ public:
                                            double radius,
                                            int max_knn) const override;
 
+    /// Hybrid1NNSearch is similar to HybridSearch with max_knn = 1,
+    /// and it retuns tuple of tensors {source_index, target_index, distance},
+    /// such that pair of {source_index, target_index} is the correspondences
+    /// of type t::pipelines::registration::CorrespondenceSet;
+    std::tuple<Tensor, Tensor, Tensor> SearchHybrid1NN(
+            const Tensor &query_points, double radius) const;
+
 protected:
     // Tensor dataset_points_;
     std::unique_ptr<NanoFlannIndexHolderBase> holder_;
