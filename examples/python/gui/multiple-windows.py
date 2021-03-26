@@ -10,109 +10,68 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CLOUD_NAME = "points"
 
 
-def main():
-    MultiWinApp().run()
+def add_draw_window(geometries, window_name, width, height):
+    vis = o3d.visualization.O3DVisualizer(title=window_name,
+                                          width=width,
+                                          height=height)
+    count = 0
+    for geometry in geometries:
+        vis.add_geometry(f"geometry_{count}", geometry)
+        count += 1
+    vis.reset_camera_to_default()
+    o3d.visualization.gui.Application.instance.add_window(vis)
 
 
-class MultiWinApp:
+def empty_box():
+    pc_rad = 1.0
+    r = 0.4
+    big_bbox = o3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
+                                                   (6.0 + r, 1.0 + r, pc_rad))
 
-    def __init__(self):
-        self.is_done = False
-        self.n_snapshots = 0
-        self.cloud = None
-        self.main_vis = None
-        self.snapshot_pos = None
+    add_draw_window([big_bbox], "Open3D empty_box", 640, 480)
 
-    def run(self):
-        app = o3d.visualization.gui.Application.instance
-        app.initialize()
 
-        self.main_vis = o3d.visualization.O3DVisualizer(
-            "Open3D - Multi-Window Demo")
-        self.main_vis.add_action("Take snapshot in new window",
-                                 self.on_snapshot)
-        self.main_vis.set_on_close(self.on_main_window_closing)
+def multi_objects():
+    pc_rad = 1.0
+    r = 0.4
+    sphere_unlit = o3d.geometry.TriangleMesh.create_sphere(r)
+    sphere_unlit.translate((0, 1, 0))
+    sphere_colored_unlit = o3d.geometry.TriangleMesh.create_sphere(r)
+    sphere_colored_unlit.paint_uniform_color((1.0, 0.0, 0.0))
+    sphere_colored_unlit.translate((2, 1, 0))
+    sphere_lit = o3d.geometry.TriangleMesh.create_sphere(r)
+    sphere_lit.compute_vertex_normals()
+    sphere_lit.translate((4, 1, 0))
+    sphere_colored_lit = o3d.geometry.TriangleMesh.create_sphere(r)
+    sphere_colored_lit.compute_vertex_normals()
+    sphere_colored_lit.paint_uniform_color((0.0, 1.0, 0.0))
+    sphere_colored_lit.translate((6, 1, 0))
+    big_bbox = o3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
+                                                   (6.0 + r, 1.0 + r, pc_rad))
+    sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
+    sphere_bbox.color = (1.0, 0.5, 0.0)
+    lines = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
+        sphere_lit.get_axis_aligned_bounding_box())
+    lines_colored = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
+        sphere_colored_lit.get_axis_aligned_bounding_box())
+    lines_colored.paint_uniform_color((0.0, 0.0, 1.0))
 
-        app.add_window(self.main_vis)
-        self.snapshot_pos = (self.main_vis.os_frame.x, self.main_vis.os_frame.y)
+    add_draw_window([
+        sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
+        big_bbox, sphere_bbox, lines, lines_colored
+    ], "Open3D multi_objects", 640, 480)
 
-        threading.Thread(target=self.update_thread).start()
 
-        app.run()
+def run():
+    app = o3d.visualization.gui.Application.instance
+    app.initialize()
 
-    def on_snapshot(self, vis):
-        self.n_snapshots += 1
-        self.snapshot_pos = (self.snapshot_pos[0] + 50,
-                             self.snapshot_pos[1] + 50)
-        title = "Open3D - Multi-Window Demo (Snapshot #" + str(
-            self.n_snapshots) + ")"
-        new_vis = o3d.visualization.O3DVisualizer(title)
-        mat = o3d.visualization.rendering.Material()
-        mat.shader = "defaultUnlit"
-        new_vis.add_geometry(CLOUD_NAME + " #" + str(self.n_snapshots),
-                             self.cloud, mat)
-        new_vis.reset_camera_to_default()
-        bounds = self.cloud.get_axis_aligned_bounding_box()
-        extent = bounds.get_extent()
-        new_vis.setup_camera(60, bounds.get_center(),
-                             bounds.get_center() + [0, 0, -3], [0, -1, 0])
-        o3d.visualization.gui.Application.instance.add_window(new_vis)
-        new_vis.os_frame = o3d.visualization.gui.Rect(self.snapshot_pos[0],
-                                                      self.snapshot_pos[1],
-                                                      new_vis.os_frame.width,
-                                                      new_vis.os_frame.height)
+    empty_box()
+    multi_objects()
 
-    def on_main_window_closing(self):
-        self.is_done = True
-        return True  # False would cancel the close
-
-    def update_thread(self):
-        # This is NOT the UI thread, need to call post_to_main_thread() to update
-        # the scene or any part of the UI.
-
-        self.cloud = o3d.io.read_point_cloud(
-            SCRIPT_DIR + "/../../test_data/ICP/cloud_bin_0.pcd")
-        bounds = self.cloud.get_axis_aligned_bounding_box()
-        extent = bounds.get_extent()
-
-        def add_first_cloud():
-            mat = o3d.visualization.rendering.Material()
-            mat.shader = "defaultUnlit"
-            self.main_vis.add_geometry(CLOUD_NAME, self.cloud, mat)
-            self.main_vis.reset_camera_to_default()
-            self.main_vis.setup_camera(60, bounds.get_center(),
-                                       bounds.get_center() + [0, 0, -3],
-                                       [0, -1, 0])
-
-        o3d.visualization.gui.Application.instance.post_to_main_thread(
-            self.main_vis, add_first_cloud)
-
-        while not self.is_done:
-            time.sleep(0.1)
-
-            # Perturb the cloud with a random walk to simulate an actual read
-            pts = np.asarray(self.cloud.points)
-            magnitude = 0.005 * extent
-            displacement = magnitude * (np.random.random_sample(pts.shape) -
-                                        0.5)
-            new_pts = pts + displacement
-            self.cloud.points = o3d.utility.Vector3dVector(new_pts)
-
-            def update_cloud():
-                # Note: if the number of points is less than or equal to the
-                #       number of points in the original object that was added,
-                #       using self.scene.update_geometry() will be faster.
-                #       Requires that the point cloud be a t.PointCloud.
-                self.main_vis.remove_geometry(CLOUD_NAME)
-                mat = o3d.visualization.rendering.Material()
-                mat.shader = "defaultUnlit"
-                self.main_vis.add_geometry(CLOUD_NAME, self.cloud, mat)
-
-            if self.is_done:  # might have changed while sleeping
-                break
-            o3d.visualization.gui.Application.instance.post_to_main_thread(
-                self.main_vis, update_cloud)
+    app.run()
 
 
 if __name__ == "__main__":
-    main()
+    o3d.visualization.gui.Application.instance.enable_webrtc()
+    run()
