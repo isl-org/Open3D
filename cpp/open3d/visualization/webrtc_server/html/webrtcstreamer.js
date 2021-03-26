@@ -88,7 +88,8 @@ var WebRtcStreamer = (function () {
 
   /**
    * Connect a WebRTC Stream to videoElement
-   * @param {string} videourl Id of WebRTC video stream
+   * @param {string} videourl Id of WebRTC video stream, a.k.a. windowUID,
+   * e.g. window_0.
    * @param {string} audiourl Od of WebRTC audio stream
    * @param {string} options Options of WebRTC call
    * @param {string} stream Local stream to send
@@ -129,6 +130,112 @@ var WebRtcStreamer = (function () {
         audiourl,
         options,
         localstream
+      );
+    }
+
+    // Set callback functions.
+    this.addEventListeners(videourl);
+  };
+
+  WebRtcStreamer.prototype.addEventListeners = function (windowUID) {
+    if (this.videoElement) {
+      this.videoElement.addEventListener("mousedown", (event) => {
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: "BUTTON_DOWN",
+          x: event.offsetX,
+          y: event.offsetY,
+          modifiers: getModifiers(event),
+          button: {
+            button: "LEFT", // Fix me.
+            count: 1,
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
+      this.videoElement.addEventListener("mouseup", (event) => {
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: "BUTTON_UP",
+          x: event.offsetX,
+          y: event.offsetY,
+          modifiers: getModifiers(event),
+          button: {
+            button: "LEFT", // Fix me.
+            count: 1,
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
+      this.videoElement.addEventListener("mousemove", (event) => {
+        // TODO: Known differences. Currently only left-key drag works.
+        // - Open3D: L=1, M=2, R=4
+        // - JavaScript: L=1, R=2, M=4
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: event.buttons == 0 ? "MOVE" : "DRAG",
+          x: event.offsetX,
+          y: event.offsetY,
+          modifiers: getModifiers(event),
+          move: {
+            buttons: event.buttons, // MouseButtons ORed together
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
+      this.videoElement.addEventListener("mouseleave", (event) => {
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: "BUTTON_UP",
+          x: event.offsetX,
+          y: event.offsetY,
+          modifiers: getModifiers(event),
+          button: {
+            button: "LEFT", // Fix me.
+            count: 1,
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
+      this.videoElement.addEventListener(
+        "wheel",
+        (event) => {
+          // Prevent propagating the wheel event to the browser.
+          // https://stackoverflow.com/a/23606063/1255535
+          event.preventDefault();
+
+          // https://stackoverflow.com/a/56948026/1255535.
+          var isTrackpad = event.wheelDeltaY
+            ? event.wheelDeltaY === -3 * event.deltaY
+            : event.deltaMode === 0;
+
+          // TODO: set better scaling.
+          // Flip the sign and set abaolute value to 1.
+          var dx = event.deltaX;
+          var dy = event.deltaY;
+          dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;
+          dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
+
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "WHEEL",
+            x: event.offsetX,
+            y: event.offsetY,
+            modifiers: getModifiers(event),
+            wheel: {
+              dx: dx,
+              dy: dy,
+              isTrackpad: isTrackpad ? 1 : 0,
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        { passive: false }
       );
     }
   };
