@@ -59,42 +59,45 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         core::Tensor points;
         core::Tensor intensities;
         core::Tensor colors;
-        double *points_ptr = NULL;
-        double *intensities_ptr = NULL;
-        uint8_t *colors_ptr = NULL;
+        double *points_ptr = nullptr;
+        double *intensities_ptr = nullptr;
+        uint8_t *colors_ptr = nullptr;
         size_t idx = 0;
         std::vector<std::string> st;
         int num_of_fields = 0;
 
-        while (idx < num_of_pts && (line_buffer = file.ReadLine())) {
+        if ((line_buffer = file.ReadLine())) {
             st.clear();
             utility::SplitString(st, line_buffer, " ");
-            if (num_of_fields == 0) {
-                num_of_fields = (int)st.size();
-                if (num_of_fields < 3) {
-                    utility::LogWarning(
-                            "Read PTS failed: insufficient data fields.");
-                    return false;
-                }
-                points = core::Tensor({(int64_t)num_of_pts, 3},
-                                      core::Dtype::Float64);
-                points_ptr = points.GetDataPtr<double>();
+            num_of_fields = (int)st.size();
+            if (num_of_fields < 3) {
+                utility::LogWarning(
+                        "Read PTS failed: insufficient data fields.");
+                return false;
+            }
+            points = core::Tensor({static_cast<int64_t>(num_of_pts), 3},
+                                  core::Dtype::Float64);
+            points_ptr = points.GetDataPtr<double>();
 
-                // X Y Z I
-                if (num_of_fields >= 4) {
-                    intensities = core::Tensor({(int64_t)num_of_pts, 1},
-                                               core::Dtype::Float64);
-                    intensities_ptr = intensities.GetDataPtr<double>();
-                }
-
-                // X Y Z I R G B
-                if (num_of_fields >= 7) {
-                    colors = core::Tensor({(int64_t)num_of_pts, 3},
-                                          core::Dtype::UInt8);
-                    colors_ptr = colors.GetDataPtr<uint8_t>();
-                }
+            // X Y Z I or X Y Z I R G B
+            if (num_of_fields == 4 || num_of_fields >= 7) {
+                intensities =
+                        core::Tensor({static_cast<int64_t>(num_of_pts), 1},
+                                     core::Dtype::Float64);
+                intensities_ptr = intensities.GetDataPtr<double>();
             }
 
+            // X Y Z R G B or X Y Z I R G B
+            if (num_of_fields >= 6) {
+                colors = core::Tensor({static_cast<int64_t>(num_of_pts), 3},
+                                      core::Dtype::UInt8);
+                colors_ptr = colors.GetDataPtr<uint8_t>();
+            }
+        }
+
+        do {
+            st.clear();
+            utility::SplitString(st, line_buffer, " ");
             if (num_of_fields > (int)st.size()) {
                 utility::LogWarning(
                         "Read PTS failed: lines have unequal elements.");
@@ -113,7 +116,16 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 colors_ptr[3 * idx + 0] = r;
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
-            } else if (num_of_fields >= 4 &&
+            } else if (num_of_fields == 6 &&
+                       (sscanf(line_buffer, "%lf %lf %lf %d %d %d", &x, &y, &z,
+                               &r, &g, &b) == 6)) {
+                points_ptr[3 * idx + 0] = x;
+                points_ptr[3 * idx + 1] = y;
+                points_ptr[3 * idx + 2] = z;
+                colors_ptr[3 * idx + 0] = r;
+                colors_ptr[3 * idx + 1] = g;
+                colors_ptr[3 * idx + 2] = b;
+            } else if (num_of_fields == 4 &&
                        (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z,
                                &i) == 4)) {
                 points_ptr[3 * idx + 0] = x;
@@ -129,13 +141,13 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             if (idx % 1000 == 0) {
                 reporter.Update(idx);
             }
-        }
+        } while (idx < num_of_pts && (line_buffer = file.ReadLine()));
 
         pointcloud.SetPoints(points);
-        if (num_of_fields >= 4) {
+        if (num_of_fields == 4 || num_of_fields >= 7) {
             pointcloud.SetPointAttr("intensities", intensities);
         }
-        if (num_of_fields >= 7) {
+        if (num_of_fields >= 6) {
             pointcloud.SetPointColors(colors);
         }
         reporter.Finish();
@@ -163,17 +175,22 @@ bool WritePointCloudToPTS(const std::string &filename,
         }
 
         utility::CountingProgressReporter reporter(params.update_progress);
-        const core::Tensor &points = pointcloud.GetPoints();
-        int64_t num_points = static_cast<long>(points.GetLength());
+        int64_t num_points =
+                static_cast<long>(pointcloud.GetPoints().GetLength());
+        const double *points_ptr = static_cast<const double *>(
+                pointcloud.GetPoints().GetDataPtr());
+        const uint8_t *colors_ptr;
+        const double *intensities_ptr;
 
-        core::Tensor colors;
-        core::Tensor intensities;
         if (pointcloud.HasPointColors()) {
-            colors = pointcloud.GetPointColors();
+            colors_ptr = static_cast<const uint8_t *>(
+                    pointcloud.GetPointColors().GetDataPtr());
         }
 
         if (pointcloud.HasPointAttr("intensities")) {
-            intensities = pointcloud.GetPointAttr("intensities");
+            intensities_ptr = static_cast<const double *>(
+                    pointcloud.GetPointAttr("intensities")
+                            .GetDataPtr<double>());
         }
 
         reporter.SetTotal(num_points);
@@ -184,49 +201,73 @@ bool WritePointCloudToPTS(const std::string &filename,
             return false;
         }
 
-        for (int i = 0; i < num_points; i++) {
-            if (pointcloud.HasPointColors() &&
-                pointcloud.HasPointAttr("intensities")) {
+        if (pointcloud.HasPointColors() &&
+            pointcloud.HasPointAttr("intensities")) {
+            for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(),
-                            "%.10f %.10f %.10f %.10f %d %d %d\r\n",
-                            points[i][0].Item<double>(),
-                            points[i][1].Item<double>(),
-                            points[i][2].Item<double>(),
-                            intensities[i].Item<double>(),
-                            colors[i][0].Item<uint8_t>(),
-                            colors[i][1].Item<uint8_t>(),
-                            colors[i][2].Item<uint8_t>()) < 0) {
+                            "%.10f %.10f %.10f %.10f %u %u %u\r\n",
+                            points_ptr[3 * i + 0], points_ptr[3 * i + 1],
+                            points_ptr[3 * i + 2], intensities_ptr[i],
+                            colors_ptr[3 * i + 0], colors_ptr[3 * i + 1],
+                            colors_ptr[3 * i + 2]) < 0) {
                     utility::LogWarning(
                             "Write PTS failed: unable to write file: {}",
                             filename);
                     return false;
                 }
-            } else if (pointcloud.HasPointAttr("intensities")) {
-                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\r\n",
-                            points[i][0].Item<double>(),
-                            points[i][1].Item<double>(),
-                            points[i][2].Item<double>(),
-                            intensities[i].Item<double>()) < 0) {
-                    utility::LogWarning(
-                            "Write PTS failed: unable to write file: {}",
-                            filename);
-                    return false;
-                }
-            } else {
-                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\r\n",
-                            points[i][0].Item<double>(),
-                            points[i][1].Item<double>(),
-                            points[i][2].Item<double>()) < 0) {
-                    utility::LogWarning(
-                            "Write PTS failed: unable to write file: {}",
-                            filename);
-                    return false;
+
+                if (i % 1000 == 0) {
+                    reporter.Update(i);
                 }
             }
-            if (i % 1000 == 0) {
-                reporter.Update(i);
+        } else if (pointcloud.HasPointColors()) {
+            for (int i = 0; i < num_points; i++) {
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %u %u %u\r\n",
+                            points_ptr[3 * i + 0], points_ptr[3 * i + 1],
+                            points_ptr[3 * i + 2], colors_ptr[3 * i + 0],
+                            colors_ptr[3 * i + 1], colors_ptr[3 * i + 2]) < 0) {
+                    utility::LogWarning(
+                            "Write PTS failed: unable to write file: {}",
+                            filename);
+                    return false;
+                }
+
+                if (i % 1000 == 0) {
+                    reporter.Update(i);
+                }
+            }
+        } else if (pointcloud.HasPointAttr("intensities")) {
+            for (int i = 0; i < num_points; i++) {
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\r\n",
+                            points_ptr[3 * i + 0], points_ptr[3 * i + 1],
+                            points_ptr[3 * i + 2], intensities_ptr[i]) < 0) {
+                    utility::LogWarning(
+                            "Write PTS failed: unable to write file: {}",
+                            filename);
+                    return false;
+                }
+
+                if (i % 1000 == 0) {
+                    reporter.Update(i);
+                }
+            }
+        } else {
+            for (int i = 0; i < num_points; i++) {
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\r\n",
+                            points_ptr[3 * i + 0], points_ptr[3 * i + 1],
+                            points_ptr[3 * i + 2]) < 0) {
+                    utility::LogWarning(
+                            "Write PTS failed: unable to write file: {}",
+                            filename);
+                    return false;
+                }
+
+                if (i % 1000 == 0) {
+                    reporter.Update(i);
+                }
             }
         }
+
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {

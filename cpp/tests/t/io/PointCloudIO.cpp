@@ -188,7 +188,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
 
 // ReadWritePTS pts with colors and intensities.
 TEST(TPointCloudIO, ReadWritePTS) {
-    t::geometry::PointCloud pcd;
+    t::geometry::PointCloud pcd, pcd_read, pcd_i, pcd_color;
     t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) +
                     "/open3d_downloads/tests/point_cloud_sample1.pts",
@@ -198,19 +198,35 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
 
-    // Write poitclod and match it after read.
+    // Write pointcloud and match it after read.
     t::io::WritePointCloud("test.pts", pcd);
-    t::geometry::PointCloud pct;
-    t::io::ReadPointCloud("test.pts", pct, {"auto", false, false, true});
-    EXPECT_TRUE(pcd.GetPoints().AllClose(pct.GetPoints()));
-    EXPECT_TRUE(pcd.GetPointColors().AllClose(pct.GetPointColors()));
+    t::io::ReadPointCloud("test.pts", pcd_read, {"auto", false, false, true});
+    EXPECT_TRUE(pcd.GetPoints().AllClose(pcd_read.GetPoints()));
+    EXPECT_TRUE(pcd.GetPointColors().AllClose(pcd_read.GetPointColors()));
     EXPECT_TRUE(pcd.GetPointAttr("intensities")
-                        .AllClose(pct.GetPointAttr("intensities")));
+                        .AllClose(pcd_read.GetPointAttr("intensities")));
 
-    // Write bad data.
-    pcd.SetPointAttr("colors",
-                     pcd.GetPointAttr("colors").To(core::Dtype::Int32));
-    EXPECT_FALSE(t::io::WritePointCloud("test.pts", pcd));
+    // Write pointcloud with only colors and match it after read.
+    pcd_read.Clear();
+    pcd_color.SetPoints(pcd.GetPoints());
+    pcd_color.SetPointColors(pcd.GetPointColors());
+    t::io::WritePointCloud("test_color.pts", pcd_color);
+    t::io::ReadPointCloud("test_color.pts", pcd_read,
+                          {"auto", false, false, true});
+    EXPECT_TRUE(pcd_color.GetPoints().AllClose(pcd_read.GetPoints()));
+    EXPECT_TRUE(pcd_color.GetPointColors().AllClose(pcd_read.GetPointColors()));
+    EXPECT_FALSE(pcd_read.HasPointAttr("intensities"));
+
+    // Write pointcloud with only intensities and match it after read.
+    pcd_read.Clear();
+    pcd_i.SetPoints(pcd.GetPoints());
+    pcd_i.SetPointAttr("intensities", pcd.GetPointAttr("intensities"));
+    t::io::WritePointCloud("test_i.pts", pcd_i);
+    t::io::ReadPointCloud("test_i.pts", pcd_read, {"auto", false, false, true});
+    EXPECT_TRUE(pcd_i.GetPoints().AllClose(pcd_read.GetPoints()));
+    EXPECT_TRUE(pcd_i.GetPointAttr("intensities")
+                        .AllClose(pcd_read.GetPointAttr("intensities")));
+    EXPECT_FALSE(pcd_read.HasPointColors());
 }
 
 // Reading pts with intensities.
