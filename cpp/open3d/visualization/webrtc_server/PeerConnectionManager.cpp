@@ -891,6 +891,7 @@ bool PeerConnectionManager::AddStreams(
     bool ret = false;
 
     // Compute options.
+    // Example options: "rtptransport=tcp&timeout=60"
     std::string optstring = options;
     if (config_.isMember(video_url)) {
         std::string urlopts = config_[video_url]["options"].asString();

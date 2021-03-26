@@ -60,6 +60,8 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/web_visualizer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/web_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/../cpp/open3d/visualization/webrtc_server/html/webrtcstreamer.js"
+               "${PYTHON_PACKAGE_DST_DIR}/js/webrtcstreamer.js")
 file(COPY "${PYTHON_PACKAGE_DST_DIR}/../_build_config.py"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
 

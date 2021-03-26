@@ -77,9 +77,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
-      "http://localhost:8888/"
+      "http://localhost:8888/",
+      /*use_comms=*/ false
     );
-    this.webRtcClient.connect("image://Open3D");
+    this.webRtcClient.connect("window_0");
 
     // Register callbacks for videoElt.
     this.videoElt.addEventListener("mousedown", (event) => {
