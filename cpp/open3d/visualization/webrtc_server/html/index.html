@@ -183,7 +183,11 @@
         var videoElt = document.getElementById(videoTag);
         if (videoElt) {
           // connect video element to webrtc stream
-          var webRtcClient = new WebRtcStreamer(videoTag, webrtcConfig.url);
+          var webRtcClient = new WebRtcStreamer(
+            videoTag,
+            webrtcConfig.url,
+            /*use_comms=*/ false
+          );
           console.log("videoTag: " + videoTag);
           console.log("webrtcConfig.url: " + webrtcConfig.url);
 
