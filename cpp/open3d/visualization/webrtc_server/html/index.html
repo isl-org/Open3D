@@ -324,7 +324,7 @@
           document.getElementById("content").appendChild(tableelt);
         }
 
-        WebRtcStreamer.remoteCall(webrtcConfig.url + "/api/getMediaList")
+        WebRtcStreamer.getMediaList()
           .then((response) => response.json())
           .then((response) => onGetDeviceList(response));
       };

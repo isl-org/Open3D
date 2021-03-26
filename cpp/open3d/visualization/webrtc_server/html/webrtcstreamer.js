@@ -50,6 +50,13 @@ var WebRtcStreamer = (function () {
     }
   };
 
+  /*
+   * Get media list from server.
+   */
+  WebRtcStreamer.getMediaList = function () {
+    return WebRtcStreamer.remoteCall(webrtcConfig.url + "/api/getMediaList");
+  };
+
   WebRtcStreamer.prototype._handleHttpErrors = function (response) {
     if (!response.ok) {
       throw Error(response.statusText);
