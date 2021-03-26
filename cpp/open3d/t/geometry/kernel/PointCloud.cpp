@@ -38,25 +38,33 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 void Unproject(const core::Tensor& depth,
+               utility::optional<std::reference_wrapper<const core::Tensor>>
+                       image_colors,
                core::Tensor& points,
+               utility::optional<std::reference_wrapper<core::Tensor>> colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
                float depth_max,
                int64_t stride) {
+    if (image_colors.has_value() != colors.has_value()) {
+        utility::LogError(
+                "[Unproject] Both or none of image_colors and colors must have "
+                "values.");
+    }
     core::Device device = depth.GetDevice();
 
-    core::Tensor intrinsics_d = intrinsics.To(device);
-    core::Tensor extrinsics_d = extrinsics.To(device);
+    core::Tensor intrinsics_d = intrinsics.To(device, core::Dtype::Float32);
+    core::Tensor extrinsics_d = extrinsics.To(device, core::Dtype::Float32);
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        UnprojectCPU(depth, points, intrinsics_d, extrinsics_d, depth_scale,
-                     depth_max, stride);
+        UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
+                     extrinsics_d, depth_scale, depth_max, stride);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        UnprojectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
-                      depth_max, stride);
+        UnprojectCUDA(depth, image_colors, points, colors, intrinsics_d,
+                      extrinsics_d, depth_scale, depth_max, stride);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

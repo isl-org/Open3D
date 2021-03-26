@@ -30,6 +30,7 @@ set(GUI_SOURCE_FILES
     Task.cpp
     TextEdit.cpp
     Theme.cpp
+    ToggleSwitch.cpp
     TreeView.cpp
     UIImage.cpp
     Util.cpp

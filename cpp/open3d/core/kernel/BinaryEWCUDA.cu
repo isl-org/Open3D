@@ -143,11 +143,11 @@ static void OPEN3D_HOST_DEVICE CUDANeqElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
-                                         const Tensor& rhs,
-                                         Tensor& dst,
-                                         BinaryEWOpCode op_code,
-                                         const Indexer& indexer) {
+void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
+                                  const Tensor& rhs,
+                                  Tensor& dst,
+                                  BinaryEWOpCode op_code,
+                                  const Indexer& indexer) {
     switch (op_code) {
         case BinaryEWOpCode::LogicalAnd:
             CUDALauncher::LaunchBinaryEWKernel(

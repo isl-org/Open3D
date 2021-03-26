@@ -24,27 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "open3d/core/Tensor.h"
-
-namespace open3d {
-namespace t {
-namespace pipelines {
-namespace kernel {
-
-/// \brief Computes pose for point to plane registration method.
-/// \param source_points_indexed source points indexed according to
-/// correspondences. \param target_points_indexed target points indexed
-/// according to correspondences. \param target_normals_indexed target normals
-/// indexed according to correspondences. \return Pose [X Y Z alpha beta
-/// gamma], a shape {6} tensor of dtype float32.
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_indexed,
-        const core::Tensor &target_points_indexed,
-        const core::Tensor &target_normals_indexed);
-
-}  // namespace kernel
-}  // namespace pipelines
-}  // namespace t
-}  // namespace open3d
+#include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"

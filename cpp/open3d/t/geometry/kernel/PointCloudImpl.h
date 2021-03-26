@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <atomic>
+#include <vector>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -47,14 +48,18 @@ void UnprojectCUDA
 void UnprojectCPU
 #endif
         (const core::Tensor& depth,
+         utility::optional<std::reference_wrapper<const core::Tensor>>
+                 image_colors,
          core::Tensor& points,
+         utility::optional<std::reference_wrapper<core::Tensor>> colors,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
          float depth_max,
          int64_t stride) {
-
+    const bool have_colors = image_colors.has_value();
     NDArrayIndexer depth_indexer(depth, 2);
+    NDArrayIndexer image_colors_indexer;
     TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
 
     // Output
@@ -64,6 +69,15 @@ void UnprojectCPU
     points = core::Tensor({rows_strided * cols_strided, 3},
                           core::Dtype::Float32, depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
+    NDArrayIndexer colors_indexer;
+    if (have_colors) {
+        const auto& imcol = image_colors.value().get();
+        image_colors_indexer = NDArrayIndexer{imcol, 2};
+        colors.value().get() =
+                core::Tensor({rows_strided * cols_strided, 3},
+                             core::Dtype::Float32, imcol.GetDevice());
+        colors_indexer = NDArrayIndexer(colors.value().get(), 1);
+    }
 
     // Counter
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -99,6 +113,16 @@ void UnprojectCPU
                             point_indexer.GetDataPtrFromCoord<float>(idx);
                     ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
                                       vertex + 2);
+                    if (have_colors) {
+                        float* pcd_pixel =
+                                colors_indexer.GetDataPtrFromCoord<float>(idx);
+                        float* image_pixel =
+                                image_colors_indexer.GetDataPtrFromCoord<float>(
+                                        x, y);
+                        *pcd_pixel = *image_pixel;
+                        *(pcd_pixel + 1) = *(image_pixel + 1);
+                        *(pcd_pixel + 2) = *(image_pixel + 2);
+                    }
                 }
             });
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -107,6 +131,10 @@ void UnprojectCPU
     int total_pts_count = (*count_ptr).load();
 #endif
     points = points.Slice(0, 0, total_pts_count);
+    if (have_colors) {
+        colors.value().get() =
+                colors.value().get().Slice(0, 0, total_pts_count);
+    }
 }
 }  // namespace pointcloud
 }  // namespace kernel

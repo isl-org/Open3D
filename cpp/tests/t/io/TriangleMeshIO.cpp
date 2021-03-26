@@ -40,7 +40,8 @@ TEST(TriangleMeshIO, CreateMeshFromFile) {
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     t::geometry::TriangleMesh mesh, mesh_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "open3d_downloads/cube.obj", mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(
+            TEST_DATA_DIR "/open3d_downloads/tests/cube.obj", mesh));
     EXPECT_TRUE(t::io::WriteTriangleMesh("test_mesh.obj", mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh("test_mesh.obj", mesh_read));
     EXPECT_TRUE(mesh.GetTriangles().AllClose(mesh_read.GetTriangles()));
