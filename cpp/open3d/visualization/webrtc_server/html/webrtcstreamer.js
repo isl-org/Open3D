@@ -9,7 +9,7 @@ var WebRtcStreamer = (function () {
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  function WebRtcStreamer(videoElement, srvurl, use_comms = true) {
+  function WebRtcStreamer(videoElement, srvurl, use_comms) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
