@@ -7,7 +7,7 @@ var WebRtcStreamer = (function () {
    * @param {string} srvurl -  url of webrtc-streamer (default is current location)
    *
    */
-  function WebRtcStreamer(videoElement, srvurl, use_comms) {
+  function WebRtcStreamer(videoElement, srvurl) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
@@ -40,10 +40,9 @@ var WebRtcStreamer = (function () {
    * instance inorder to use it. See https://stackoverflow.com/a/1635143/1255535.
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
    * @param {object} data Data object
-   * @param {bool} use_comms If true, Open3D's Jupyter "COMMS" interface will be
-   * used for handshakes. Otherwise, fetch() will be used and an additioanl
+   * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
+   * be used for handshakes. Otherwise, fetch() will be used and an additioanl
    * web server is required to process the http requests.
-   * remote call API will be used.
    */
   WebRtcStreamer.remoteCall = function (url, data = {}, use_fetch = true) {
     if (use_fetch) {
