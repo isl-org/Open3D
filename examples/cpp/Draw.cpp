@@ -37,7 +37,7 @@ const std::string TEST_DIR =
 const std::string DATA_PATH = TEST_DIR + "/knot.ply";
 
 // Create and add a window to gui::Application, but do not run it yet.
-void DrawInWindow(
+void AddDrawWindow(
         const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
         const std::string &window_name = "Open3D",
         int width = 1024,
@@ -86,11 +86,11 @@ void EmptyBox() {
                 auto mesh = std::make_shared<geometry::TriangleMesh>();
                 io::ReadTriangleMesh(DATA_PATH, *mesh);
                 mesh->ComputeVertexNormals();
-                DrawInWindow({mesh}, "Open3D pcd", 640, 480);
+                AddDrawWindow({mesh}, "Open3D pcd", 640, 480);
             };
 
-    DrawInWindow({big_bbox}, "Open3D EmptyBox", 640, 480,
-                 {{"Load example mesh", new_window_action}});
+    AddDrawWindow({big_bbox}, "Open3D EmptyBox", 640, 480,
+                  {{"Load example mesh", new_window_action}});
 }
 
 void BoxWithOjects() {
@@ -121,7 +121,7 @@ void BoxWithOjects() {
             sphere_colored_lit->GetAxisAlignedBoundingBox());
     lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
-    DrawInWindow(
+    AddDrawWindow(
             {sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
              big_bbox, sphere_bbox, lines, lines_colored},
             "Open3D BoxWithOjects", 640, 480);
