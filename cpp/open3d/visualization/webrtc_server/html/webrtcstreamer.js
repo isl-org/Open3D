@@ -7,7 +7,7 @@ var WebRtcStreamer = (function () {
    * @param {string} srvurl -  url of webrtc-streamer (default is current location)
    *
    */
-  function WebRtcStreamer(videoElement, srvurl) {
+  function WebRtcStreamer(videoElement, srvurl, use_comms = false) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
@@ -32,6 +32,8 @@ var WebRtcStreamer = (function () {
 
     this.iceServers = null;
     this.earlyCandidates = [];
+
+    this.use_comms = use_comms;
   }
 
   /**
@@ -41,14 +43,14 @@ var WebRtcStreamer = (function () {
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
    * @param {object} data Data object
    * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
-   * be used for handshakes. Otherwise, fetch() will be used and an additioanl
-   * web server is required to process the http requests.
+   * be used for WebRTC handshake. Otherwise, fetch() will be used and an
+   * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.remoteCall = function (url, data = {}, use_fetch = true) {
-    if (use_fetch) {
-      return fetch(url, data);
-    } else {
+  WebRtcStreamer.remoteCall = function (url, data = {}, use_comms = false) {
+    if (use_comms) {
       throw new Error("Open3D's remote call API is not implemented.");
+    } else {
+      return fetch(url, data);
     }
   };
 
