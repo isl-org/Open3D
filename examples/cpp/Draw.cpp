@@ -121,7 +121,7 @@ void BoxWithOjects() {
             sphere_colored_lit->GetAxisAlignedBoundingBox());
     lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
-    visualization::Draw(
+    DrawInWindow(
             {sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
              big_bbox, sphere_bbox, lines, lines_colored},
             "Open3D BoxWithOjects", 640, 480);
