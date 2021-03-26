@@ -24,360 +24,432 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Eigen.h"
+#include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 
-#include <Eigen/Geometry>
-#include <Eigen/Sparse>
+namespace pybind11 {
 
-#include "open3d/utility/Console.h"
+template <typename Vector,
+          typename holder_type = std::unique_ptr<Vector>,
+          typename... Args>
+py::class_<Vector, holder_type> bind_vector_without_repr(
+        py::module &m, std::string const &name, Args &&... args) {
+    // hack function to disable __repr__ for the convenient function
+    // bind_vector()
+    using Class_ = py::class_<Vector, holder_type>;
+    Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
+    cl.def(py::init<>());
+    cl.def(
+            "__bool__", [](const Vector &v) -> bool { return !v.empty(); },
+            "Check whether the list is nonempty");
+    cl.def("__len__", &Vector::size);
+    return cl;
+}
+
+// - This function is used by Pybind for std::vector<SomeEigenType> constructor.
+//   This optional constructor is added to avoid too many Python <-> C++ API
+//   calls when the vector size is large using the default biding method.
+//   Pybind matches np.float64 array to py::array_t<double> buffer.
+// - Directly using templates for the py::array_t<double> and py::array_t<int>
+//   and etc. doesn't work. The current solution is to explicitly implement
+//   bindings for each py array types.
+template <typename EigenVector>
+std::vector<EigenVector> py_array_to_vectors_double(
+        py::array_t<double, py::array::c_style | py::array::forcecast> array) {
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
+        // The EigenVector here must be a double-typed eigen vector, since only
+        // open3d::Vector3dVector binds to py_array_to_vectors_double.
+        // Therefore, we can use the memory map directly.
+        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+    }
+    return eigen_vectors;
+}
+
+template <typename EigenVector>
+std::vector<EigenVector> py_array_to_vectors_int(
+        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
+        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+    }
+    return eigen_vectors;
+}
+
+template <typename EigenVector,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
+std::vector<EigenVector, EigenAllocator>
+py_array_to_vectors_int_eigen_allocator(
+        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
+        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+    }
+    return eigen_vectors;
+}
+
+template <typename EigenVector,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
+std::vector<EigenVector, EigenAllocator>
+py_array_to_vectors_int64_eigen_allocator(
+        py::array_t<int64_t, py::array::c_style | py::array::forcecast> array) {
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
+        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+    }
+    return eigen_vectors;
+}
+
+}  // namespace pybind11
+
+namespace {
+
+template <typename Scalar,
+          typename Vector = std::vector<Scalar>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
+        py::module &m, const std::string &bind_name) {
+    auto vec = py::bind_vector<std::vector<Scalar>>(m, bind_name,
+                                                    py::buffer_protocol());
+    vec.def_buffer([](std::vector<Scalar> &v) -> py::buffer_info {
+        return py::buffer_info(v.data(), sizeof(Scalar),
+                               py::format_descriptor<Scalar>::format(), 1,
+                               {v.size()}, {sizeof(Scalar)});
+    });
+    vec.def("__copy__",
+            [](std::vector<Scalar> &v) { return std::vector<Scalar>(v); });
+    vec.def("__deepcopy__", [](std::vector<Scalar> &v, py::dict &memo) {
+        return std::vector<Scalar>(v);
+    });
+    // We use iterable __init__ by default
+    // vec.def("__init__", [](std::vector<Scalar> &v,
+    //        py::array_t<Scalar, py::array::c_style> b) {
+    //    py::buffer_info info = b.request();
+    //    if (info.format != py::format_descriptor<Scalar>::format() ||
+    //            info.ndim != 1)
+    //        throw std::runtime_error("Incompatible buffer format!");
+    //    new (&v) std::vector<Scalar>(info.shape[0]);
+    //    memcpy(v.data(), info.ptr, sizeof(Scalar) * v.size());
+    //});
+    return vec;
+}
+
+template <typename EigenVector,
+          typename Vector = std::vector<EigenVector>,
+          typename holder_type = std::unique_ptr<Vector>,
+          typename InitFunc>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name,
+        InitFunc init_func) {
+    typedef typename EigenVector::Scalar Scalar;
+    auto vec = py::bind_vector_without_repr<std::vector<EigenVector>>(
+            m, bind_name, py::buffer_protocol());
+    vec.def(py::init(init_func));
+    vec.def_buffer([](std::vector<EigenVector> &v) -> py::buffer_info {
+        size_t rows = EigenVector::RowsAtCompileTime;
+        return py::buffer_info(v.data(), sizeof(Scalar),
+                               py::format_descriptor<Scalar>::format(), 2,
+                               {v.size(), rows},
+                               {sizeof(EigenVector), sizeof(Scalar)});
+    });
+    vec.def("__repr__", [repr_name](const std::vector<EigenVector> &v) {
+        return repr_name + std::string(" with ") + std::to_string(v.size()) +
+               std::string(" elements.\n") +
+               std::string("Use numpy.asarray() to access data.");
+    });
+    vec.def("__copy__", [](std::vector<EigenVector> &v) {
+        return std::vector<EigenVector>(v);
+    });
+    vec.def("__deepcopy__", [](std::vector<EigenVector> &v, py::dict &memo) {
+        return std::vector<EigenVector>(v);
+    });
+
+    // py::detail must be after custom constructor
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
+
+    // Bare bones interface
+    // We choose to disable them because they do not support slice indices
+    // such as [:,:]. It is recommended to convert it to numpy.asarray()
+    // to access raw data.
+    // v.def("__getitem__", [](const std::vector<Eigen::Vector3d> &v,
+    //        std::pair<size_t, size_t> i) {
+    //    if (i.first >= v.size() || i.second >= 3)
+    //        throw py::index_error();
+    //    return v[i.first](i.second);
+    //});
+    // v.def("__setitem__", [](std::vector<Eigen::Vector3d> &v,
+    //        std::pair<size_t, size_t> i, double x) {
+    //    if (i.first >= v.size() || i.second >= 3)
+    //        throw py::index_error();
+    //    v[i.first](i.second) = x;
+    //});
+    // We use iterable __init__ by default
+    // vec.def("__init__", [](std::vector<EigenVector> &v,
+    //        py::array_t<Scalar, py::array::c_style> b) {
+    //    py::buffer_info info = b.request();s
+    //    if (info.format !=
+    //            py::format_descriptor<Scalar>::format() ||
+    //            info.ndim != 2 ||
+    //            info.shape[1] != EigenVector::RowsAtCompileTime)
+    //        throw std::runtime_error("Incompatible buffer format!");
+    //    new (&v) std::vector<EigenVector>(info.shape[0]);
+    //    memcpy(v.data(), info.ptr, sizeof(EigenVector) * v.size());
+    //});
+}
+
+template <typename EigenVector,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>,
+          typename Vector = std::vector<EigenVector, EigenAllocator>,
+          typename holder_type = std::unique_ptr<Vector>,
+          typename InitFunc>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_vector_eigen_allocator(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name,
+        InitFunc init_func) {
+    typedef typename EigenVector::Scalar Scalar;
+    auto vec = py::bind_vector_without_repr<
+            std::vector<EigenVector, EigenAllocator>>(m, bind_name,
+                                                      py::buffer_protocol());
+    vec.def(py::init(init_func));
+    vec.def_buffer(
+            [](std::vector<EigenVector, EigenAllocator> &v) -> py::buffer_info {
+                size_t rows = EigenVector::RowsAtCompileTime;
+                return py::buffer_info(v.data(), sizeof(Scalar),
+                                       py::format_descriptor<Scalar>::format(),
+                                       2, {v.size(), rows},
+                                       {sizeof(EigenVector), sizeof(Scalar)});
+            });
+    vec.def("__repr__",
+            [repr_name](const std::vector<EigenVector, EigenAllocator> &v) {
+                return repr_name + std::string(" with ") +
+                       std::to_string(v.size()) + std::string(" elements.\n") +
+                       std::string("Use numpy.asarray() to access data.");
+            });
+    vec.def("__copy__", [](std::vector<EigenVector, EigenAllocator> &v) {
+        return std::vector<EigenVector, EigenAllocator>(v);
+    });
+    vec.def("__deepcopy__",
+            [](std::vector<EigenVector, EigenAllocator> &v, py::dict &memo) {
+                return std::vector<EigenVector, EigenAllocator>(v);
+            });
+
+    // py::detail must be after custom constructor
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
+}
+
+template <typename EigenMatrix,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenMatrix>,
+          typename Vector = std::vector<EigenMatrix, EigenAllocator>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name) {
+    typedef typename EigenMatrix::Scalar Scalar;
+    auto vec = py::bind_vector_without_repr<
+            std::vector<EigenMatrix, EigenAllocator>>(m, bind_name,
+                                                      py::buffer_protocol());
+    vec.def_buffer(
+            [](std::vector<EigenMatrix, EigenAllocator> &v) -> py::buffer_info {
+                // We use this function to bind Eigen default matrix.
+                // Thus they are all column major.
+                size_t rows = EigenMatrix::RowsAtCompileTime;
+                size_t cols = EigenMatrix::ColsAtCompileTime;
+                return py::buffer_info(v.data(), sizeof(Scalar),
+                                       py::format_descriptor<Scalar>::format(),
+                                       3, {v.size(), rows, cols},
+                                       {sizeof(EigenMatrix), sizeof(Scalar),
+                                        sizeof(Scalar) * rows});
+            });
+    vec.def("__repr__",
+            [repr_name](const std::vector<EigenMatrix, EigenAllocator> &v) {
+                return repr_name + std::string(" with ") +
+                       std::to_string(v.size()) + std::string(" elements.\n") +
+                       std::string("Use numpy.asarray() to access data.");
+            });
+    vec.def("__copy__", [](std::vector<EigenMatrix, EigenAllocator> &v) {
+        return std::vector<EigenMatrix, EigenAllocator>(v);
+    });
+    vec.def("__deepcopy__",
+            [](std::vector<EigenMatrix, EigenAllocator> &v, py::dict &memo) {
+                return std::vector<EigenMatrix, EigenAllocator>(v);
+            });
+
+    // py::detail must be after custom constructor
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
+}
+
+}  // unnamed namespace
 
 namespace open3d {
 namespace utility {
 
-/// Function to solve Ax=b
-std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
-        const Eigen::MatrixXd &A,
-        const Eigen::VectorXd &b,
-        bool prefer_sparse /* = false */,
-        bool check_symmetric /* = false */,
-        bool check_det /* = false */,
-        bool check_psd /* = false */) {
-    // PSD implies symmetric
-    check_symmetric = check_symmetric || check_psd;
-    if (check_symmetric && !A.isApprox(A.transpose())) {
-        LogWarning("check_symmetric failed, empty vector will be returned");
-        return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
-    }
+void pybind_eigen(py::module &m) {
+    auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
+    intvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert int32 numpy array of shape ``(n,)`` to Open3D format.)";
+            }),
+            py::none(), py::none(), "");
 
-    if (check_det) {
-        double det = A.determinant();
-        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
-            LogWarning("check_det failed, empty vector will be returned");
-            return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
-        }
-    }
+    auto doublevector =
+            pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
+    doublevector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert float64 numpy array of shape ``(n,)`` to Open3D format.)";
+            }),
+            py::none(), py::none(), "");
 
-    // Check PSD: https://stackoverflow.com/a/54569657/1255535
-    if (check_psd) {
-        Eigen::LLT<Eigen::MatrixXd> A_llt(A);
-        if (A_llt.info() == Eigen::NumericalIssue) {
-            LogWarning("check_psd failed, empty vector will be returned");
-            return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
-        }
-    }
+    auto vector3dvector = pybind_eigen_vector_of_vector<Eigen::Vector3d>(
+            m, "Vector3dVector", "std::vector<Eigen::Vector3d>",
+            py::py_array_to_vectors_double<Eigen::Vector3d>);
+    vector3dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert float64 numpy array of shape ``(n, 3)`` to Open3D format.
 
-    Eigen::VectorXd x(b.size());
+Example usage
 
-    if (prefer_sparse) {
-        Eigen::SparseMatrix<double> A_sparse = A.sparseView();
-        // TODO: avoid deprecated API SimplicialCholesky
-        Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> A_chol;
-        A_chol.compute(A_sparse);
-        if (A_chol.info() == Eigen::Success) {
-            x = A_chol.solve(b);
-            if (A_chol.info() == Eigen::Success) {
-                // Both decompose and solve are successful
-                return std::make_tuple(true, std::move(x));
-            } else {
-                LogWarning("Cholesky solve failed, switched to dense solver");
-            }
-        } else {
-            LogWarning("Cholesky decompose failed, switched to dense solver");
-        }
-    }
+.. code-block:: python
 
-    x = A.ldlt().solve(b);
-    return std::make_tuple(true, std::move(x));
+    import open3d
+    import numpy as np
+
+    pcd = open3d.geometry.PointCloud()
+    np_points = np.random.rand(100, 3)
+
+    # From numpy to Open3D
+    pcd.points = open3d.utility.Vector3dVector(np_points)
+
+    # From Open3D to numpy
+    np_points = np.asarray(pcd.points)
+)";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector3ivector = pybind_eigen_vector_of_vector<Eigen::Vector3i>(
+            m, "Vector3iVector", "std::vector<Eigen::Vector3i>",
+            py::py_array_to_vectors_int<Eigen::Vector3i>);
+    vector3ivector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert int32 numpy array of shape ``(n, 3)`` to Open3D format..
+
+Example usage
+
+.. code-block:: python
+
+    import open3d
+    import numpy as np
+
+    # Example mesh
+    # x, y coordinates:
+    # [0: (-1, 2)]__________[1: (1, 2)]
+    #             \        /\
+    #              \  (0) /  \
+    #               \    / (1)\
+    #                \  /      \
+    #      [2: (0, 0)]\/________\[3: (2, 0)]
+    #
+    # z coordinate: 0
+
+    mesh = open3d.geometry.TriangleMesh()
+    np_vertices = np.array([[-1, 2, 0],
+                            [1, 2, 0],
+                            [0, 0, 0],
+                            [2, 0, 0]])
+    np_triangles = np.array([[0, 2, 1],
+                             [1, 2, 3]]).astype(np.int32)
+    mesh.vertices = open3d.Vector3dVector(np_vertices)
+
+    # From numpy to Open3D
+    mesh.triangles = open3d.Vector3iVector(np_triangles)
+
+    # From Open3D to numpy
+    np_triangles = np.asarray(mesh.triangles)
+)";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector2ivector = pybind_eigen_vector_of_vector<Eigen::Vector2i>(
+            m, "Vector2iVector", "std::vector<Eigen::Vector2i>",
+            py::py_array_to_vectors_int<Eigen::Vector2i>);
+    vector2ivector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert int32 numpy array of shape ``(n, 2)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector2dvector = pybind_eigen_vector_of_vector<Eigen::Vector2d>(
+            m, "Vector2dVector", "std::vector<Eigen::Vector2d>",
+            py::py_array_to_vectors_double<Eigen::Vector2d>);
+    vector2dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 2)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto matrix4dvector = pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(
+            m, "Matrix4dVector", "std::vector<Eigen::Matrix4d>");
+    matrix4dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector4ivector = pybind_eigen_vector_of_vector_eigen_allocator<
+            Eigen::Vector4i>(
+            m, "Vector4iVector", "std::vector<Eigen::Vector4i>",
+            py::py_array_to_vectors_int_eigen_allocator<Eigen::Vector4i>);
+    vector4ivector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert int numpy array of shape ``(n, 4)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
 }
 
-Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input) {
-    Eigen::Matrix4d output;
-    output.setIdentity();
-    output.block<3, 3>(0, 0) =
-            (Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ()) *
-             Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY()) *
-             Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX()))
-                    .matrix();
-    output.block<3, 1>(0, 3) = input.block<3, 1>(3, 0);
-    return output;
-}
-
-Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input) {
-    Eigen::Vector6d output;
-    Eigen::Matrix3d R = input.block<3, 3>(0, 0);
-    double sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));
-    if (!(sy < 1e-6)) {
-        output(0) = atan2(R(2, 1), R(2, 2));
-        output(1) = atan2(-R(2, 0), sy);
-        output(2) = atan2(R(1, 0), R(0, 0));
-    } else {
-        output(0) = atan2(-R(1, 2), R(1, 1));
-        output(1) = atan2(-R(2, 0), sy);
-        output(2) = 0;
-    }
-    output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
-    return output;
-}
-
-std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
-        const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr) {
-    bool solution_exist;
-    Eigen::Vector6d x;
-    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
-
-    if (solution_exist) {
-        Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);
-        return std::make_tuple(solution_exist, std::move(extrinsic));
-    }
-    return std::make_tuple(false, Eigen::Matrix4d::Identity());
-}
-
-std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
-SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
-                                                 const Eigen::VectorXd &JTr) {
-    std::vector<Eigen::Matrix4d, Matrix4d_allocator> output_matrix_array;
-    output_matrix_array.clear();
-    if (JTJ.rows() != JTr.rows() || JTJ.cols() % 6 != 0) {
-        LogWarning(
-                "[SolveJacobianSystemAndObtainExtrinsicMatrixArray] "
-                "Unsupported matrix format.");
-        return std::make_tuple(false, std::move(output_matrix_array));
-    }
-
-    bool solution_exist;
-    Eigen::VectorXd x;
-    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
-
-    if (solution_exist) {
-        int nposes = (int)x.rows() / 6;
-        for (int i = 0; i < nposes; i++) {
-            Eigen::Matrix4d extrinsic =
-                    TransformVector6dToMatrix4d(x.block<6, 1>(i * 6, 0));
-            output_matrix_array.push_back(extrinsic);
-        }
-        return std::make_tuple(solution_exist, std::move(output_matrix_array));
-    } else {
-        return std::make_tuple(false, std::move(output_matrix_array));
-    }
-}
-
-template <typename MatType, typename VecType>
-std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType &, double &, double &)> f,
-        int iteration_num,
-        bool verbose /*=true*/) {
-    MatType JTJ;
-    VecType JTr;
-    double r2_sum = 0.0;
-    JTJ.setZero();
-    JTr.setZero();
-#pragma omp parallel
-    {
-        MatType JTJ_private;
-        VecType JTr_private;
-        double r2_sum_private = 0.0;
-        JTJ_private.setZero();
-        JTr_private.setZero();
-        VecType J_r;
-        double r;
-        double w = 0.0;
-#pragma omp for nowait
-        for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r, w);
-            JTJ_private.noalias() += J_r * w * J_r.transpose();
-            JTr_private.noalias() += J_r * w * r;
-            r2_sum_private += r * r;
-        }
-#pragma omp critical
-        {
-            JTJ += JTJ_private;
-            JTr += JTr_private;
-            r2_sum += r2_sum_private;
-        }
-    }
-    if (verbose) {
-        LogDebug("Residual : {:.2e} (# of elements : {:d})",
-                 r2_sum / (double)iteration_num, iteration_num);
-    }
-    return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
-}
-
-template <typename MatType, typename VecType>
-std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<
-                void(int,
-                     std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
-                     std::vector<double> &,
-                     std::vector<double> &)> f,
-        int iteration_num,
-        bool verbose /*=true*/) {
-    MatType JTJ;
-    VecType JTr;
-    double r2_sum = 0.0;
-    JTJ.setZero();
-    JTr.setZero();
-#pragma omp parallel
-    {
-        MatType JTJ_private;
-        VecType JTr_private;
-        double r2_sum_private = 0.0;
-        JTJ_private.setZero();
-        JTr_private.setZero();
-        std::vector<double> r;
-        std::vector<double> w;
-        std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
-#pragma omp for nowait
-        for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r, w);
-            for (int j = 0; j < (int)r.size(); j++) {
-                JTJ_private.noalias() += J_r[j] * w[j] * J_r[j].transpose();
-                JTr_private.noalias() += J_r[j] * w[j] * r[j];
-                r2_sum_private += r[j] * r[j];
-            }
-        }
-#pragma omp critical
-        {
-            JTJ += JTJ_private;
-            JTr += JTr_private;
-            r2_sum += r2_sum_private;
-        }
-    }
-    if (verbose) {
-        LogDebug("Residual : {:.2e} (# of elements : {:d})",
-                 r2_sum / (double)iteration_num, iteration_num);
-    }
-    return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
-}
-
-// clang-format off
-template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
-        std::function<void(int, Eigen::Vector6d &, double &, double &)> f,
-        int iteration_num, bool verbose);
-
-template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
-        std::function<void(int,
-                           std::vector<Eigen::Vector6d, Vector6d_allocator> &,
-                           std::vector<double> &,
-                           std::vector<double> &)> f,
-        int iteration_num, bool verbose);
-// clang-format on
-
-Eigen::Matrix3d RotationMatrixX(double radians) {
-    Eigen::Matrix3d rot;
-    rot << 1, 0, 0, 0, std::cos(radians), -std::sin(radians), 0,
-            std::sin(radians), std::cos(radians);
-    return rot;
-}
-
-Eigen::Matrix3d RotationMatrixY(double radians) {
-    Eigen::Matrix3d rot;
-    rot << std::cos(radians), 0, std::sin(radians), 0, 1, 0, -std::sin(radians),
-            0, std::cos(radians);
-    return rot;
-}
-
-Eigen::Matrix3d RotationMatrixZ(double radians) {
-    Eigen::Matrix3d rot;
-    rot << std::cos(radians), -std::sin(radians), 0, std::sin(radians),
-            std::cos(radians), 0, 0, 0, 1;
-    return rot;
-}
-
-Eigen::Vector3uint8 ColorToUint8(const Eigen::Vector3d &color) {
-    Eigen::Vector3uint8 rgb;
-    for (int i = 0; i < 3; ++i) {
-        rgb[i] = uint8_t(
-                std::round(std::min(1., std::max(0., color(i))) * 255.));
-    }
-    return rgb;
-}
-
-Eigen::Vector3d ColorToDouble(uint8_t r, uint8_t g, uint8_t b) {
-    return Eigen::Vector3d(r, g, b) / 255.0;
-}
-
-Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
-    return ColorToDouble(rgb(0), rgb(1), rgb(2));
-}
-
-template <typename IdxType>
-Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
-                                  const std::vector<IdxType> &indices) {
-    Eigen::Matrix3d covariance;
-    Eigen::Matrix<double, 9, 1> cumulants;
-    cumulants.setZero();
-    for (const auto &idx : indices) {
-        const Eigen::Vector3d &point = points[idx];
-        cumulants(0) += point(0);
-        cumulants(1) += point(1);
-        cumulants(2) += point(2);
-        cumulants(3) += point(0) * point(0);
-        cumulants(4) += point(0) * point(1);
-        cumulants(5) += point(0) * point(2);
-        cumulants(6) += point(1) * point(1);
-        cumulants(7) += point(1) * point(2);
-        cumulants(8) += point(2) * point(2);
-    }
-    cumulants /= (double)indices.size();
-    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
-    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
-    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
-    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
-    covariance(1, 0) = covariance(0, 1);
-    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
-    covariance(2, 0) = covariance(0, 2);
-    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
-    covariance(2, 1) = covariance(1, 2);
-    return covariance;
-}
-
-template <typename IdxType>
-std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
-        const std::vector<Eigen::Vector3d> &points,
-        const std::vector<IdxType> &indices) {
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
-    Eigen::Matrix<double, 9, 1> cumulants;
-    cumulants.setZero();
-    for (const auto &idx : indices) {
-        const Eigen::Vector3d &point = points[idx];
-        cumulants(0) += point(0);
-        cumulants(1) += point(1);
-        cumulants(2) += point(2);
-        cumulants(3) += point(0) * point(0);
-        cumulants(4) += point(0) * point(1);
-        cumulants(5) += point(0) * point(2);
-        cumulants(6) += point(1) * point(1);
-        cumulants(7) += point(1) * point(2);
-        cumulants(8) += point(2) * point(2);
-    }
-    cumulants /= (double)indices.size();
-    mean(0) = cumulants(0);
-    mean(1) = cumulants(1);
-    mean(2) = cumulants(2);
-    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
-    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
-    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
-    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
-    covariance(1, 0) = covariance(0, 1);
-    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
-    covariance(2, 0) = covariance(0, 2);
-    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
-    covariance(2, 1) = covariance(1, 2);
-    return std::make_tuple(mean, covariance);
-}
-
-template Eigen::Matrix3d ComputeCovariance(
-        const std::vector<Eigen::Vector3d> &points,
-        const std::vector<size_t> &indices);
-template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
-        const std::vector<Eigen::Vector3d> &points,
-        const std::vector<size_t> &indices);
-template Eigen::Matrix3d ComputeCovariance(
-        const std::vector<Eigen::Vector3d> &points,
-        const std::vector<int> &indices);
-template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
-        const std::vector<Eigen::Vector3d> &points,
-        const std::vector<int> &indices);
 }  // namespace utility
 }  // namespace open3d
