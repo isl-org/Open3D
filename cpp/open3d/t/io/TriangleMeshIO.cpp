@@ -39,8 +39,7 @@ static const std::unordered_map<
         std::string,
         std::function<bool(
                 const std::string &, geometry::TriangleMesh &, bool, bool)>>
-        file_extension_to_trianglemesh_read_function{
-        };
+        file_extension_to_trianglemesh_read_function{};
 
 static const std::unordered_map<
         std::string,
@@ -52,9 +51,8 @@ static const std::unordered_map<
                            const bool,
                            const bool,
                            const bool)>>
-        file_extension_to_trianglemesh_write_function{
-        };
-}  // unnamed namespace
+        file_extension_to_trianglemesh_write_function{};
+}  // namespace io
 
 namespace io {
 
@@ -83,21 +81,25 @@ bool ReadTriangleMesh(const std::string &filename,
     bool success = false;
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         open3d::geometry::TriangleMesh legacy_mesh;
-        success =
-                open3d::io::ReadTriangleMesh(filename, legacy_mesh, enable_post_processing, print_progress);
+        success = open3d::io::ReadTriangleMesh(
+                filename, legacy_mesh, enable_post_processing, print_progress);
         if (!success) {
             return false;
         }
         mesh = geometry::TriangleMesh::FromLegacyTriangleMesh(legacy_mesh);
     } else {
-        success = map_itr->second(filename, mesh, enable_post_processing, print_progress);
+        success = map_itr->second(filename, mesh, enable_post_processing,
+                                  print_progress);
         utility::LogDebug(
-            "Read geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
-            mesh.GetTriangles().GetLength(), mesh.GetVertices().GetLength());
+                "Read geometry::TriangleMesh: {:d} triangles and {:d} "
+                "vertices.",
+                mesh.GetTriangles().GetLength(),
+                mesh.GetVertices().GetLength());
         if (mesh.HasVertices() && !mesh.HasTriangles()) {
             utility::LogWarning(
-                "geometry::TriangleMesh appears to be a geometry::PointCloud "
-                "(only contains vertices, but no triangles).");
+                    "geometry::TriangleMesh appears to be a "
+                    "geometry::PointCloud "
+                    "(only contains vertices, but no triangles).");
         }
     }
     return success;
@@ -123,7 +125,9 @@ bool WriteTriangleMesh(const std::string &filename,
             file_extension_to_trianglemesh_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
         return open3d::io::WriteTriangleMesh(
-                filename, mesh.ToLegacyTriangleMesh(), write_ascii, compressed, write_vertex_normals, write_vertex_colors, write_triangle_uvs, print_progress);
+                filename, mesh.ToLegacyTriangleMesh(), write_ascii, compressed,
+                write_vertex_normals, write_vertex_colors, write_triangle_uvs,
+                print_progress);
     }
     bool success = map_itr->second(filename, mesh, write_ascii, compressed,
                                    write_vertex_normals, write_vertex_colors,

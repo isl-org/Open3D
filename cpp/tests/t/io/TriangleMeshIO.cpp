@@ -24,28 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "tests/UnitTest.h"
-#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/io/TriangleMeshIO.h"
+
+#include "open3d/t/geometry/TriangleMesh.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(TriangleMeshIO, ReadTriangleMesh) { 
-    t::geometry::TriangleMesh mesh;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
-    EXPECT_EQ( mesh.GetTriangles().GetLength(), 2880);
-    EXPECT_EQ( mesh.GetVertices().GetLength(), 1440);
+TEST(TriangleMeshIO, CreateMeshFromFile) {
+    auto mesh = t::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+    EXPECT_EQ(mesh->GetTriangles().GetLength(), 2880);
+    EXPECT_EQ(mesh->GetVertices().GetLength(), 1440);
 }
 
-TEST(TriangleMeshIO, WriteTriangleMesh) { 
-    t::geometry::TriangleMesh mesh1, mesh2;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh1));
-    EXPECT_TRUE(t::io::WriteTriangleMesh("test.ply", mesh1));
-    EXPECT_TRUE(t::io::ReadTriangleMesh("test.ply", mesh2));
-    EXPECT_EQ( mesh1.GetTriangles().GetLength(), mesh2.GetTriangles().GetLength());
-    EXPECT_EQ( mesh1.GetVertices().GetLength(), mesh2.GetVertices().GetLength());
- }
+TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
+    t::geometry::TriangleMesh mesh, mesh_read;
+    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "open3d_downloads/cube.obj", mesh));
+    EXPECT_TRUE(t::io::WriteTriangleMesh("test_mesh.obj", mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh("test_mesh.obj", mesh_read));
+    EXPECT_TRUE(mesh.GetTriangles().AllClose(mesh_read.GetTriangles()));
+    EXPECT_TRUE(mesh.GetVertices().AllClose(mesh_read.GetVertices()));
+}
+
+TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
+    t::geometry::TriangleMesh mesh, mesh_read;
+    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
+    EXPECT_TRUE(t::io::WriteTriangleMesh("test_mesh.ply", mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh("test_mesh.ply", mesh_read));
+    EXPECT_TRUE(mesh.GetTriangles().AllClose(mesh_read.GetTriangles()));
+    EXPECT_TRUE(mesh.GetVertices().AllClose(mesh_read.GetVertices()));
+}
 
 }  // namespace tests
 }  // namespace open3d

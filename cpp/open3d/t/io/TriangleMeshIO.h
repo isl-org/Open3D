@@ -64,7 +64,6 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool write_triangle_uvs = true,
                        bool print_progress = false);
 
-
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
