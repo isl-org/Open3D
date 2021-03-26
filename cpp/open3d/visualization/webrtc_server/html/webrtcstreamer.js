@@ -49,6 +49,16 @@ var WebRtcStreamer = (function () {
    * additioanl web server is required to process the http requests.
    */
   WebRtcStreamer.remoteCall = function (url, use_comms, data = {}) {
+    console.log(
+      "WebRtcStreamer.remoteCall{" +
+        "url: " +
+        url +
+        ", use_comms: " +
+        use_comms +
+        ", data: " +
+        data +
+        "}"
+    );
     if (use_comms) {
       throw new Error("Open3D's remote call API is not implemented.");
     } else {
@@ -192,7 +202,7 @@ var WebRtcStreamer = (function () {
           bind.pc.setLocalDescription(
             sessionDescription,
             function () {
-              WebRtcStreamer.remoteCall(callurl, this.use_comms, {
+              WebRtcStreamer.remoteCall(callurl, bind.use_comms, {
                 method: "POST",
                 body: JSON.stringify(sessionDescription),
               })
