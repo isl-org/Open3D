@@ -54,7 +54,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
-      "http://localhost:8888/",
+      location.protocol + "//" + window.location.hostname + ":" + 8888,
       /*use_comms=*/ false
     );
     this.webRtcClient.connect("window_0");
@@ -65,3 +65,4 @@ module.exports = {
   WebVisualizerModel: WebVisualizerModel,
   WebVisualizerView: WebVisualizerView,
 };
+
