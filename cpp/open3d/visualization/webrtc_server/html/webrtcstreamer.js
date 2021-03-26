@@ -79,6 +79,29 @@ var WebRtcStreamer = (function () {
     );
   };
 
+  WebRtcStreamer._getModifiers = function (event) {
+    // See open3d/visualization/gui/Events.h.
+    var modNone = 0;
+    var modShift = 1 << 0;
+    var modCtrl = 1 << 1;
+    var modAlt = 1 << 2;
+    var modMeta = 1 << 3;
+    var mod = modNone;
+    if (event.getModifierState("Shift")) {
+      mod = mod | modShift;
+    }
+    if (event.getModifierState("Control")) {
+      mod = mod | modCtrl;
+    }
+    if (event.getModifierState("Alt")) {
+      mod = mod | modAlt;
+    }
+    if (event.getModifierState("Meta")) {
+      mod = mod | modMeta;
+    }
+    return mod;
+  };
+
   WebRtcStreamer.prototype._handleHttpErrors = function (response) {
     if (!response.ok) {
       throw Error(response.statusText);
@@ -146,7 +169,7 @@ var WebRtcStreamer = (function () {
           type: "BUTTON_DOWN",
           x: event.offsetX,
           y: event.offsetY,
-          modifiers: getModifiers(event),
+          modifiers: WebRtcStreamer._getModifiers(event),
           button: {
             button: "LEFT", // Fix me.
             count: 1,
@@ -161,7 +184,7 @@ var WebRtcStreamer = (function () {
           type: "BUTTON_UP",
           x: event.offsetX,
           y: event.offsetY,
-          modifiers: getModifiers(event),
+          modifiers: WebRtcStreamer._getModifiers(event),
           button: {
             button: "LEFT", // Fix me.
             count: 1,
@@ -179,7 +202,7 @@ var WebRtcStreamer = (function () {
           type: event.buttons == 0 ? "MOVE" : "DRAG",
           x: event.offsetX,
           y: event.offsetY,
-          modifiers: getModifiers(event),
+          modifiers: WebRtcStreamer._getModifiers(event),
           move: {
             buttons: event.buttons, // MouseButtons ORed together
           },
@@ -193,7 +216,7 @@ var WebRtcStreamer = (function () {
           type: "BUTTON_UP",
           x: event.offsetX,
           y: event.offsetY,
-          modifiers: getModifiers(event),
+          modifiers: WebRtcStreamer._getModifiers(event),
           button: {
             button: "LEFT", // Fix me.
             count: 1,
@@ -226,7 +249,7 @@ var WebRtcStreamer = (function () {
             type: "WHEEL",
             x: event.offsetX,
             y: event.offsetY,
-            modifiers: getModifiers(event),
+            modifiers: WebRtcStreamer._getModifiers(event),
             wheel: {
               dx: dx,
               dy: dy,
