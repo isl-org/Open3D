@@ -202,8 +202,8 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
             batch_nums.push_back(batch_indices[i].size());
         }
         std::vector<int64_t> batch_row_splits(num_query_points + 1, 0);
-        utility::InclusivePrefixSum(&batch_nums[0],
-                                    &batch_nums[num_query_points],
+        utility::InclusivePrefixSum(batch_nums.data(),
+                                    batch_nums.data() + batch_nums.size(),
                                     &batch_row_splits[1]);
 
         // Make result Tensors.
