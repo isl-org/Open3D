@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
+#include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
 
 namespace open3d {
 namespace core {

@@ -31,7 +31,7 @@
 #include <limits>
 #include <unordered_map>
 
-#include "open3d/core/hashmap/CPU/HashmapBufferCPU.hpp"
+#include "open3d/core/hashmap/CPU/CPUHashmapBufferAccessor.hpp"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
@@ -74,8 +74,8 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, addr_t, Hash>>
-    GetContext() const {
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, addr_t, Hash>> GetImpl()
+            const {
         return impl_;
     }
 
@@ -270,7 +270,7 @@ void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
         const Key& key = input_keys_templated[i];
 
         // Try to insert a dummy address.
-        auto res = impl_->insert({key, std::numeric_limits<addr_t>::max()});
+        auto res = impl_->insert({key, 0});
 
         // Lazy copy key value pair to buffer only if succeeded
         if (res.second) {
@@ -291,7 +291,7 @@ void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
                 std::memset(dst_value, 0, this->dsize_value_);
             }
 
-            // Update from dummy uint32::max
+            // Update from dummy 0
             res.first->second = dst_kv_addr;
 
             // Write to return variables

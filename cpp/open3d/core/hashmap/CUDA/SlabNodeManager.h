@@ -65,9 +65,9 @@ public:
     addr_t next_slab_ptr;
 };
 
-class SlabNodeManagerContext {
+class SlabNodeManagerImpl {
 public:
-    SlabNodeManagerContext()
+    SlabNodeManagerImpl()
         : super_blocks_(nullptr),
           hash_coef_(0),
           num_attempts_(0),
@@ -232,7 +232,7 @@ private:
     uint32_t super_block_index_;
 };
 
-__global__ void CountSlabsPerSuperblockKernel(SlabNodeManagerContext context,
+__global__ void CountSlabsPerSuperblockKernel(SlabNodeManagerImpl impl,
                                               uint32_t* slabs_per_superblock);
 
 class SlabNodeManager {
@@ -240,30 +240,27 @@ public:
     SlabNodeManager(const Device& device) : device_(device) {
         /// Random coefficients for allocator's hash function.
         std::mt19937 rng(time(0));
-        gpu_context_.hash_coef_ = rng();
+        impl_.hash_coef_ = rng();
 
         /// In the light version, we put num_super_blocks super blocks within
         /// a single array.
-        gpu_context_.super_blocks_ =
-                static_cast<uint32_t*>(MemoryManager::Malloc(
-                        kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t),
-                        device_));
+        impl_.super_blocks_ = static_cast<uint32_t*>(MemoryManager::Malloc(
+                kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t),
+                device_));
 
         OPEN3D_CUDA_CHECK(cudaMemset(
-                gpu_context_.super_blocks_, 0xFF,
+                impl_.super_blocks_, 0xFF,
                 kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t)));
 
         for (uint32_t i = 0; i < kSuperBlocks; i++) {
             // setting bitmaps into zeros:
             OPEN3D_CUDA_CHECK(cudaMemset(
-                    gpu_context_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
+                    impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
                     kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
         }
     }
 
-    ~SlabNodeManager() {
-        MemoryManager::Free(gpu_context_.super_blocks_, device_);
-    }
+    ~SlabNodeManager() { MemoryManager::Free(impl_.super_blocks_, device_); }
 
     std::vector<int> CountSlabsPerSuperblock() {
         const uint32_t num_super_blocks = kSuperBlocks;
@@ -277,8 +274,7 @@ public:
         int num_cuda_blocks =
                 (num_mem_units + kThreadsPerBlock - 1) / kThreadsPerBlock;
         CountSlabsPerSuperblockKernel<<<num_cuda_blocks, kThreadsPerBlock>>>(
-                gpu_context_,
-                thrust::raw_pointer_cast(slabs_per_superblock.data()));
+                impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -290,7 +286,7 @@ public:
     }
 
 public:
-    SlabNodeManagerContext gpu_context_;
+    SlabNodeManagerImpl impl_;
     Device device_;
 };
 }  // namespace core

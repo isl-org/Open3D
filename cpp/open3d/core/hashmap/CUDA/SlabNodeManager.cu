@@ -43,7 +43,7 @@
 namespace open3d {
 namespace core {
 
-__global__ void CountSlabsPerSuperblockKernel(SlabNodeManagerContext context,
+__global__ void CountSlabsPerSuperblockKernel(SlabNodeManagerImpl impl,
                                               uint32_t* slabs_per_superblock) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -53,7 +53,7 @@ __global__ void CountSlabsPerSuperblockKernel(SlabNodeManagerContext context,
     }
 
     for (uint32_t i = 0; i < kSuperBlocks; i++) {
-        uint32_t read_bitmap = *(context.get_ptr_for_bitmap(i, tid));
+        uint32_t read_bitmap = *(impl.get_ptr_for_bitmap(i, tid));
         atomicAdd(&slabs_per_superblock[i], __popc(read_bitmap));
     }
 }

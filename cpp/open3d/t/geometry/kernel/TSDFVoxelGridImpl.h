@@ -910,11 +910,11 @@ void RayCastCPU
         utility::LogError(
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");
     }
-    auto hashmap_ctx = cuda_hashmap->GetContext();
+    auto hashmap_impl = cuda_hashmap->GetImpl();
 #else
     auto cpu_hashmap =
             std::dynamic_pointer_cast<core::TBBHashmap<Key, Hash>>(hashmap);
-    auto hashmap_ctx = *cpu_hashmap->GetContext();
+    auto hashmap_impl = *cpu_hashmap->GetImpl();
 #endif
 
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
@@ -965,8 +965,8 @@ void RayCastCPU
                                     key(1) = y_b + dy_b;
                                     key(2) = z_b + dz_b;
 
-                                    auto iter = hashmap_ctx.find(key);
-                                    if (iter == hashmap_ctx.end())
+                                    auto iter = hashmap_impl.find(key);
+                                    if (iter == hashmap_impl.end())
                                         return nullptr;
 
                                     return voxel_block_buffer_indexer
@@ -997,8 +997,8 @@ void RayCastCPU
                                 key(0) = x_b;
                                 key(1) = y_b;
                                 key(2) = z_b;
-                                auto iter = hashmap_ctx.find(key);
-                                if (iter == hashmap_ctx.end()) return nullptr;
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return nullptr;
 
                                 core::addr_t block_addr = iter->second;
 
@@ -1092,8 +1092,8 @@ void RayCastCPU
                                     key(0) = x_b;
                                     key(1) = y_b;
                                     key(2) = z_b;
-                                    auto iter = hashmap_ctx.find(key);
-                                    if (iter == hashmap_ctx.end()) break;
+                                    auto iter = hashmap_impl.find(key);
+                                    if (iter == hashmap_impl.end()) break;
 
                                     core::addr_t block_addr = iter->second;
 

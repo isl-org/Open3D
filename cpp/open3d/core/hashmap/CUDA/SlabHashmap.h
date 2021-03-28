@@ -74,14 +74,14 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    SlabHashmapImplContext<Key, Hash> GetContext() { return gpu_context_; }
+    SlabHashmapImpl<Key, Hash> GetImpl() { return impl_; }
 
 protected:
-    /// The struct is directly passed to kernels by value, so cannot be a shared
-    /// pointer.
-    SlabHashmapImplContext<Key, Hash> gpu_context_;
+    /// The struct is directly passed to kernels by value, so cannot be a
+    /// shared pointer.
+    SlabHashmapImpl<Key, Hash> impl_;
 
-    CUDAHashmapBufferAccessor buffer_ctx_;
+    CUDAHashmapBufferAccessor buffer_accessor_;
     std::shared_ptr<SlabNodeManager> node_mgr_;
 
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
@@ -199,7 +199,7 @@ void SlabHashmap<Key, Hash>::Find(const void* input_keys,
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     FindKernel<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, output_addrs, output_masks, count);
+            impl_, input_keys, output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
@@ -217,9 +217,9 @@ void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     EraseKernelPass0<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, iterator_addrs, output_masks, count);
-    EraseKernelPass1<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, iterator_addrs, output_masks, count);
+            impl_, input_keys, iterator_addrs, output_masks, count);
+    EraseKernelPass1<<<num_blocks, kThreadsPerBlock>>>(impl_, iterator_addrs,
+                                                       output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -233,10 +233,10 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
     cudaMemset(iterator_count, 0, sizeof(uint32_t));
 
     const int64_t num_blocks =
-            (gpu_context_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
+            (impl_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
             kThreadsPerBlock;
     GetActiveIndicesKernel<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, output_addrs, iterator_count);
+            impl_, output_addrs, iterator_count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -250,7 +250,7 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
 
 template <typename Key, typename Hash>
 int64_t SlabHashmap<Key, Hash>::Size() const {
-    return buffer_ctx_.HeapCounter(this->device_);
+    return buffer_accessor_.HeapCounter(this->device_);
 }
 
 template <typename Key, typename Hash>
@@ -260,17 +260,17 @@ int64_t SlabHashmap<Key, Hash>::GetBucketCount() const {
 
 template <typename Key, typename Hash>
 std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
-    thrust::device_vector<int64_t> elems_per_bucket(gpu_context_.bucket_count_);
+    thrust::device_vector<int64_t> elems_per_bucket(impl_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
     const int64_t num_blocks =
-            (gpu_context_.capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
+            (impl_.capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
     CountElemsPerBucketKernel<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, thrust::raw_pointer_cast(elems_per_bucket.data()));
+            impl_, thrust::raw_pointer_cast(elems_per_bucket.data()));
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
-    std::vector<int64_t> result(gpu_context_.bucket_count_);
+    std::vector<int64_t> result(impl_.bucket_count_);
     thrust::copy(elems_per_bucket.begin(), elems_per_bucket.end(),
                  result.begin());
     return std::move(result);
@@ -291,18 +291,18 @@ void SlabHashmap<Key, Hash>::InsertImpl(const void* input_keys,
 
     /// Increase heap_counter to pre-allocate potential memory increment and
     /// avoid atomicAdd in kernel.
-    int prev_heap_counter = buffer_ctx_.HeapCounter(this->device_);
-    *thrust::device_ptr<int>(gpu_context_.kv_mgr_ctx_.heap_counter_) =
+    int prev_heap_counter = buffer_accessor_.HeapCounter(this->device_);
+    *thrust::device_ptr<int>(impl_.buffer_accessor_.heap_counter_) =
             prev_heap_counter + count;
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     InsertKernelPass0<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, output_addrs, prev_heap_counter, count);
+            impl_, input_keys, output_addrs, prev_heap_counter, count);
     InsertKernelPass1<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, output_addrs, output_masks, count);
+            impl_, input_keys, output_addrs, output_masks, count);
     InsertKernelPass2<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_values, output_addrs, output_masks, count);
+            impl_, input_values, output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
@@ -316,31 +316,30 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
     this->buffer_ =
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_value_, this->device_);
-    buffer_ctx_.HostAllocate(this->device_);
-    buffer_ctx_.Setup(this->capacity_, this->dsize_key_, this->dsize_value_,
-                      this->buffer_->GetKeyBuffer(),
-                      this->buffer_->GetValueBuffer(),
-                      this->buffer_->GetHeap());
-    buffer_ctx_.Reset(this->device_);
+    buffer_accessor_.HostAllocate(this->device_);
+    buffer_accessor_.Setup(this->capacity_, this->dsize_key_,
+                           this->dsize_value_, this->buffer_->GetKeyBuffer(),
+                           this->buffer_->GetValueBuffer(),
+                           this->buffer_->GetHeap());
+    buffer_accessor_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.
     node_mgr_ = std::make_shared<SlabNodeManager>(this->device_);
 
     // Allocate linked list heads.
-    gpu_context_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
+    impl_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
             sizeof(Slab) * this->bucket_count_, this->device_));
-    OPEN3D_CUDA_CHECK(cudaMemset(gpu_context_.bucket_list_head_, 0xFF,
+    OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
                                  sizeof(Slab) * this->bucket_count_));
 
-    gpu_context_.Setup(this->bucket_count_, this->capacity_, this->dsize_key_,
-                       this->dsize_value_, node_mgr_->gpu_context_,
-                       buffer_ctx_);
+    impl_.Setup(this->bucket_count_, this->capacity_, this->dsize_key_,
+                this->dsize_value_, node_mgr_->impl_, buffer_accessor_);
 }
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Free() {
-    buffer_ctx_.HostFree(this->device_);
-    MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
+    buffer_accessor_.HostFree(this->device_);
+    MemoryManager::Free(impl_.bucket_list_head_, this->device_);
 }
 }  // namespace core
 }  // namespace open3d
