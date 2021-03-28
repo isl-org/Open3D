@@ -355,8 +355,7 @@ void FileDialog::SetPath(const char *path) {
 }
 
 void FileDialog::AddFilter(const char *filter, const char *description) {
-    std::vector<std::string> exts;
-    utility::SplitString(exts, filter, ", ");
+    std::vector<std::string> exts = utility::SplitString(filter, ", ");
 
     std::unordered_set<std::string> ext_filter;
     for (auto &ext : exts) {

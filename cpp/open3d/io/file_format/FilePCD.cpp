@@ -140,8 +140,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
         if (line == "") {
             continue;
         }
-        std::vector<std::string> st;
-        utility::SplitString(st, line, "\t\r\n ");
+        std::vector<std::string> st = utility::SplitString(line, "\t\r\n ");
         std::stringstream sstream(line);
         sstream.imbue(std::locale::classic());
         std::string line_type;
@@ -360,8 +359,8 @@ bool ReadPCDData(FILE *file,
         while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file) &&
                idx < header.points) {
             std::string line(line_buffer);
-            std::vector<std::string> strs;
-            utility::SplitString(strs, line, "\t\r\n ");
+            std::vector<std::string> strs =
+                    utility::SplitString(line, "\t\r\n ");
             if ((int)strs.size() < header.elementnum) {
                 continue;
             }
