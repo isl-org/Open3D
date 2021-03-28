@@ -5,11 +5,16 @@ var WebRtcStreamer = (function () {
    * @constructor
    * @param {string} videoElement Id of the video element tag
    * @param {string} srvurl Url of webrtc-streamer (default is current location)
-   * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
+   * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  function WebRtcStreamer(videoElement, srvurl, use_comms) {
+  function WebRtcStreamer(
+    videoElement,
+    srvurl,
+    useComms,
+    webVisualizer = null
+  ) {
     if (typeof videoElement === "string") {
       this.videoElement = document.getElementById(videoElement);
     } else {
@@ -35,7 +40,8 @@ var WebRtcStreamer = (function () {
     this.iceServers = null;
     this.earlyCandidates = [];
 
-    this.use_comms = use_comms;
+    this.useComms = useComms;
+    this.webVisualizer = webVisualizer;
   }
 
   /**
@@ -44,23 +50,32 @@ var WebRtcStreamer = (function () {
    * instance inorder to use it. See https://stackoverflow.com/a/1635143/1255535.
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
    * @param {object} data Data object
-   * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
+   * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.remoteCall = function (url, use_comms, data = {}) {
+  WebRtcStreamer.remoteCall = function (
+    url,
+    useComms,
+    data = {},
+    webVisualizer = null
+  ) {
     console.log(
       "WebRtcStreamer.remoteCall{" +
         "url: " +
         url +
-        ", use_comms: " +
-        use_comms +
+        ", useComms: " +
+        useComms +
         ", data: " +
         data +
         "}"
     );
-    if (use_comms) {
-      throw new Error("Open3D's remote call API is not implemented.");
+    if (useComms) {
+      if (webVisualizer) {
+        return webVisualizer.commsCall(url, data);
+      } else {
+        throw new Error("Open3D's remote call API is not implemented.");
+      }
     } else {
       return fetch(url, data);
     }
@@ -68,14 +83,16 @@ var WebRtcStreamer = (function () {
 
   /**
    * Get media list from server.
-   * @param {boolean} use_comms If true, Open3D's Jupyter "COMMS" interface will
+   * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additioanl web server is required to process the http requests.
    */
-  WebRtcStreamer.getMediaList = function (use_comms) {
+  WebRtcStreamer.getMediaList = function (useComms, webVisualizer = null) {
     return WebRtcStreamer.remoteCall(
       webrtcConfig.url + "/api/getMediaList",
-      use_comms
+      useComms,
+      {},
+      webVisualizer
     );
   };
 
@@ -131,7 +148,9 @@ var WebRtcStreamer = (function () {
 
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
-        this.use_comms
+        this.useComms,
+        {},
+        this.webVisualizer
       )
         .then(this._handleHttpErrors)
         .then((response) => response.json())
@@ -273,7 +292,9 @@ var WebRtcStreamer = (function () {
     if (this.pc) {
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/hangup?peerid=" + this.pc.peerid,
-        this.use_comms
+        this.useComms,
+        {},
+        this.webVisualizer
       )
         .then(this._handleHttpErrors)
         .catch((error) => this.onError("hangup " + error));
@@ -332,10 +353,15 @@ var WebRtcStreamer = (function () {
           bind.pc.setLocalDescription(
             sessionDescription,
             function () {
-              WebRtcStreamer.remoteCall(callurl, bind.use_comms, {
-                method: "POST",
-                body: JSON.stringify(sessionDescription),
-              })
+              WebRtcStreamer.remoteCall(
+                callurl,
+                bind.useComms,
+                {
+                  method: "POST",
+                  body: JSON.stringify(sessionDescription),
+                },
+                bind.webVisualizer
+              )
                 .then(bind._handleHttpErrors)
                 .then((response) => response.json())
                 .catch((error) => bind.onError("call " + error))
@@ -360,7 +386,9 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.getIceCandidate = function () {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid,
-      this.use_comms
+      this.useComms,
+      {},
+      this.webVisualizer
     )
       .then(this._handleHttpErrors)
       .then((response) => response.json())
@@ -474,11 +502,12 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.addIceCandidate = function (peerid, candidate) {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/addIceCandidate?peerid=" + peerid,
-      this.use_comms,
+      this.useComms,
       {
         method: "POST",
         body: JSON.stringify(candidate),
-      }
+      },
+      this.webVisualizer
     )
       .then(this._handleHttpErrors)
       .then((response) => response.json())

@@ -42,7 +42,23 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     console.log("!!!!onGetMediaList mediaList: ", mediaList);
   },
 
-  // Render the view.
+  /**
+   * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
+   * interface.
+   */
+  commsCall: function (url, data = {}) {
+    console.log(
+      "!!!WebVisualizerView.commsCall with url: ",
+      url,
+      " data: ",
+      data
+    );
+    return fetch(url, data);
+  },
+
+  /**
+   * Entry point for Jupyter widgets. Renders the view.
+   */
   render: function () {
     console.log("render");
 
@@ -65,15 +81,16 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((response) => response.json())
       .then((response) => this.onGetMediaList(response));
 
-    // WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {})
-    //   .then((response) => response.json())
-    //   .then((response) => this.onGetMediaList(response));
+    WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
+      .then((response) => response.json())
+      .then((response) => this.onGetMediaList(response));
 
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
       location.protocol + "//" + window.location.hostname + ":" + 8888,
-      /*use_comms=*/ false
+      /*useComms=*/ true,
+      /*webVisualizer=*/ this
     );
     this.webRtcClient.connect(this.model.get("window_uid"));
   },
