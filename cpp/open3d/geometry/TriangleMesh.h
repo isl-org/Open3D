@@ -585,27 +585,39 @@ public:
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
-    static std::shared_ptr<TriangleMesh> CreateTetrahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateTetrahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
-    static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateOctahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create an icosahedron mesh
     /// (trianglemeshfactory.cpp). The mesh centroid will be at (0,0,0) and
     /// \param radius defines the distance from the center to the mesh vertices.
-    static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateIcosahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length.
     /// \param height is y-directional length.
     /// \param depth is z-directional length.
-    static std::shared_ptr<TriangleMesh> CreateBox(double width = 1.0,
-                                                   double height = 1.0,
-                                                   double depth = 1.0);
+    /// \param create_uv_map add default UV map to the shape.
+    /// \param map_texture_to_each_face if true, maps the entire texture image
+    /// to each face. If false, sets the default uv map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            bool create_uv_map = false,
+            bool map_texture_to_each_face = false);
 
     /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
     /// The sphere with radius will be centered at (0, 0, 0).

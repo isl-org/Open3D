@@ -80,17 +80,17 @@ void TouchCUDA(const core::Tensor& points,
                 float z = pcd_ptr[3 * workload_idx + 2];
 
                 int xb_lo =
-                        static_cast<int>(floor((x - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((x - sdf_trunc) / block_size));
                 int xb_hi =
-                        static_cast<int>(floor((x + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((x + sdf_trunc) / block_size));
                 int yb_lo =
-                        static_cast<int>(floor((y - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((y - sdf_trunc) / block_size));
                 int yb_hi =
-                        static_cast<int>(floor((y + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((y + sdf_trunc) / block_size));
                 int zb_lo =
-                        static_cast<int>(floor((z - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((z - sdf_trunc) / block_size));
                 int zb_hi =
-                        static_cast<int>(floor((z + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((z + sdf_trunc) / block_size));
 
                 for (int xb = xb_lo; xb <= xb_hi; ++xb) {
                     for (int yb = yb_lo; yb <= yb_hi; ++yb) {
