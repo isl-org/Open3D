@@ -113,22 +113,23 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
         double dz = tmp.determinant();
         // clang-format on
         if (a == 0) {
-            utility::LogError(
+            utility::LogWarning(
                     "[CreateFromPointCloudAlphaShape] invalid tetra in "
                     "TetraMesh");
-        }
-        double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
-                   (2 * std::abs(a));
+        } else {
+            double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
+                       (2 * std::abs(a));
 
-        if (r <= alpha) {
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(1), tetra(2)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(1), tetra(3)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(2), tetra(3)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(1), tetra(2), tetra(3)));
+            if (r <= alpha) {
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(0), tetra(1), tetra(2)));
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(0), tetra(1), tetra(3)));
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(0), tetra(2), tetra(3)));
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(1), tetra(2), tetra(3)));
+            }
         }
     }
     utility::LogDebug(
