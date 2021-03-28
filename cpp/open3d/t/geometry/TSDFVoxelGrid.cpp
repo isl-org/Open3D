@@ -188,7 +188,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             sdf_trunc_, depth_scale, depth_max);
 }
 
-std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
+std::tuple<core::Tensor, core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
         const core::Tensor &intrinsics,
         const core::Tensor &extrinsics,
         int width,
@@ -204,13 +204,15 @@ std::tuple<core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
             {height, width, 3}, core::Dtype::Float32, device_);
     core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
                                                  core::Dtype::Float32, device_);
+    core::Tensor normal_map = core::Tensor::Zeros(
+            {height, width, 3}, core::Dtype::Float32, device_);
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
     kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
-                          intrinsics, pose, block_resolution_, voxel_size_,
-                          sdf_trunc_, max_steps, depth_min, depth_max,
-                          weight_threshold);
-    return std::make_tuple(vertex_map, color_map);
+                          normal_map, intrinsics, pose, block_resolution_,
+                          voxel_size_, sdf_trunc_, max_steps, depth_min,
+                          depth_max, weight_threshold);
+    return std::make_tuple(vertex_map, color_map, normal_map);
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {

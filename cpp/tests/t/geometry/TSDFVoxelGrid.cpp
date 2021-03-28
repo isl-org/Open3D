@@ -115,11 +115,12 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
                                          0.1, 3.0, std::min(i * 1.0f, 3.0f)),
                                  std::runtime_error);
                 } else {
-                    core::Tensor vertex_map, color_map;
-                    std::tie(vertex_map, color_map) = voxel_grid.RayCast(
-                            intrinsic_t, extrinsic_t, depth.GetCols(),
-                            depth.GetRows(), 50, 0.1, 3.0,
-                            std::min(i * 1.0f, 3.0f));
+                    core::Tensor vertex_map, color_map, normal_map;
+                    std::tie(vertex_map, color_map, normal_map) =
+                            voxel_grid.RayCast(intrinsic_t, extrinsic_t,
+                                               depth.GetCols(), depth.GetRows(),
+                                               50, 0.1, 3.0,
+                                               std::min(i * 1.0f, 3.0f));
 
                     // There are CPU/CUDA numerical differences around edges, so
                     // we need to be tolerant.

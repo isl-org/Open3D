@@ -93,7 +93,7 @@ public:
     /// interpolated along the ray, but color map is not trilinearly
     /// interpolated due to performance requirements. Colormap is only used for
     /// a reference now.
-    std::tuple<core::Tensor, core::Tensor> RayCast(
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> RayCast(
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics,
             int width,
