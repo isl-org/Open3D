@@ -82,8 +82,7 @@ ENV PATH=${HOME}/${CMAKE_VER}/bin:${PATH}
 # CCACHE_DIR        = ~/.cache/ccache
 # CCACHE_DIR_NAME   = ccache
 # CCACHE_DIR_PARENT = ~/.cache
-RUN ccache -s \
- && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
