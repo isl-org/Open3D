@@ -67,8 +67,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         size_t idx = 0;
         while (idx < num_of_pts && (line_buffer = file.ReadLine())) {
             if (num_of_fields == 0) {
-                std::vector<std::string> st;
-                utility::SplitString(st, line_buffer, " ");
+                std::vector<std::string> st =
+                        utility::SplitString(line_buffer, " ");
                 num_of_fields = (int)st.size();
                 if (num_of_fields < 3) {
                     utility::LogWarning(
