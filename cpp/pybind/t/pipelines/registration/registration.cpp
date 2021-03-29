@@ -199,7 +199,7 @@ void pybind_registration_classes(py::module &m) {
                         ", and correspondence_set size of {:d}"
                         "\nAccess transformation to get result.",
                         rr.fitness_, rr.inlier_rmse_,
-                        rr.correspondence_set_.GetShape()[0]);
+                        rr.correspondence_set_.second.GetLength());
             });
 }
 
