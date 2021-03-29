@@ -69,6 +69,7 @@ void ComputePoseDirectHybridCPU(const core::Tensor& source_depth,
                                 core::Tensor& residual,
                                 float depth_diff);
 #ifdef BUILD_CUDA_MODULE
+
 void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          const core::Tensor& intrinsics,
                          core::Tensor& vertex_map,
@@ -103,6 +104,47 @@ void ComputePoseDirectHybridCUDA(const core::Tensor& source_depth,
                                  float depth_diff);
 #endif
 
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+void PreprocessDepthCUDA
+#else
+void PreprocessDepthCPU
+#endif
+        (const core::Tensor& depth,
+         core::Tensor& depth_processed,
+         float depth_scale,
+         float depth_max) {
+    depth.AssertDtype(core::Dtype::Float32);
+
+    t::geometry::kernel::NDArrayIndexer depth_in_indexer(depth, 2);
+
+    depth_processed = core::Tensor::EmptyLike(depth);
+    t::geometry::kernel::NDArrayIndexer depth_out_indexer(depth_processed, 2);
+
+    // Output
+    int64_t rows = depth_in_indexer.GetShape(0);
+    int64_t cols = depth_in_indexer.GetShape(1);
+
+    int64_t n = rows * cols;
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+#else
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+#endif
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
+
+                float* d_in_ptr =
+                        depth_in_indexer.GetDataPtrFromCoord<float>(x, y);
+                float* d_out_ptr =
+                        depth_out_indexer.GetDataPtrFromCoord<float>(x, y);
+
+                float d = *d_in_ptr / depth_scale;
+                bool valid = (d > 0 && d < depth_max);
+                *d_out_ptr = valid ? *d_in_ptr : NAN;
+            });
+}
+
 OPEN3D_HOST_DEVICE inline bool GetJacobianLocal(
         int64_t workload_idx,
         int64_t cols,
@@ -117,7 +159,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianLocal(
     int64_t x = workload_idx % cols;
 
     float* dst_v = target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-    if (dst_v[0] == INFINITY) {
+    if (dst_v[0] == NAN) {
         return false;
     }
 
@@ -136,7 +178,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianLocal(
     int64_t vi = static_cast<int64_t>(v);
     float* src_v = source_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
     float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    if (src_v[0] == INFINITY || src_n[0] == INFINITY) {
+    if (src_v[0] == NAN || src_n[0] == NAN) {
         return false;
     }
 
@@ -175,7 +217,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
         float& r_I,
         float& r_D) {
     // sqrt 0.5, according to http://redwood-data.org/indoor_lidar_rgbd/supp.pdf
-    const float sqrt_lambda_img = 0.;
+    const float sqrt_lambda_img = 0.707;
     const float sqrt_lambda_dep = 0.707;
     const float sobel_scale = 0.125;
 
@@ -183,7 +225,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
     int u_d = workload_idx % cols;
 
     float* dst_v = dst_vertex_indexer.GetDataPtrFromCoord<float>(u_d, v_d);
-    if (dst_v[0] == INFINITY) {
+    if (__ISNAN(dst_v[0])) {
         return false;
     }
 
@@ -207,7 +249,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
     // TODO: depth scale
     float depth_s =
             *src_depth_indexer.GetDataPtrFromCoord<float>(u_s, v_s) / 1000.0;
-    if (depth_s == 0 || depth_s > 3.0) {
+    if (__ISNAN(depth_s)) {
         return false;
     }
 
@@ -221,6 +263,9 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
     float dDdy = sobel_scale *
                  (*src_depth_dy_indexer.GetDataPtrFromCoord<float>(u_s, v_s)) /
                  1000.0;
+    if (__ISNAN(dDdx) || __ISNAN(dDdy)) {
+        return false;
+    }
 
     float diff_I = *src_intensity_indexer.GetDataPtrFromCoord<float>(u_s, v_s) -
                    *dst_intensity_indexer.GetDataPtrFromCoord<float>(u_d, v_d);
@@ -265,6 +310,14 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
     J_D[3] = sqrt_lambda_dep * (d0);
     J_D[4] = sqrt_lambda_dep * (d1);
     J_D[5] = sqrt_lambda_dep * (d2 - 1.0f);
+
+    // printf("D: (%d %d) -> (%f %f %f) -> (%d %d), (%f %f %f %f %f %f, %f, %f)
+    // "
+    //        "I: (%f %f %f %f %f %f)\n",
+    //        u_d, v_d, dst_v[0], dst_v[1], dst_v[2], u_s, v_s, J_D[0], J_D[1],
+    //        J_D[2], J_D[3], J_D[4], J_D[5], dDdx, dDdy, J_I[0], J_I[1],
+    //        J_I[2],
+    //            J_I[3], J_I[4], J_I[5]);
     r_D = sqrt_lambda_dep * diff_D;
 
     return true;

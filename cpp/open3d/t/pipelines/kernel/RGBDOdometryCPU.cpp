@@ -70,7 +70,7 @@ void CreateVertexMapCPU(const core::Tensor& depth_map,
                     ti.Unproject(static_cast<float>(x), static_cast<float>(y),
                                  d, vertex + 0, vertex + 1, vertex + 2);
                 } else {
-                    vertex[0] = INFINITY;
+                    vertex[0] = NAN;
                 }
             });
 }
@@ -105,9 +105,8 @@ void CreateNormalMapCPU(const core::Tensor& vertex_map,
                     float* normal =
                             normal_indexer.GetDataPtrFromCoord<float>(x, y);
 
-                    if (v00[0] == INFINITY || v10[0] == INFINITY ||
-                        v01[0] == INFINITY) {
-                        normal[0] = INFINITY;
+                    if (v00[0] == NAN || v10[0] == NAN || v01[0] == NAN) {
+                        normal[0] = NAN;
                         return;
                     }
 

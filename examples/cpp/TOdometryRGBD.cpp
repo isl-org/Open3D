@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     visualization::DrawGeometries({source_pcd, target_pcd});
 
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 0, 0},
+            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3},
             t::pipelines::odometry::LossType::DirectHybrid);
 
     // Visualize after odometry

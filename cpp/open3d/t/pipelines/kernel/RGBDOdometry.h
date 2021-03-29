@@ -34,6 +34,11 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
+void PreprocessDepth(const core::Tensor &depth,
+                     core::Tensor &depth_processed,
+                     float depth_scale,
+                     float depth_max);
+
 void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
                      core::Tensor &vertex_map,
@@ -65,6 +70,11 @@ void ComputePoseDirectHybrid(const core::Tensor &source_depth,
                              core::Tensor &delta,
                              core::Tensor &residual,
                              float depth_diff);
+
+void PreprocessDepthCPU(const core::Tensor &depth,
+                        core::Tensor &depth_processed,
+                        float depth_scale,
+                        float depth_max);
 
 void CreateVertexMapCPU(const core::Tensor &depth_map,
                         const core::Tensor &intrinsics,
@@ -100,6 +110,11 @@ void ComputePoseDirectHybridCPU(const core::Tensor &source_depth,
                                 float depth_diff);
 
 #ifdef BUILD_CUDA_MODULE
+void PreprocessDepthCUDA(const core::Tensor &depth,
+                         core::Tensor &depth_processed,
+                         float depth_scale,
+                         float depth_max);
+
 void CreateVertexMapCUDA(const core::Tensor &depth_map,
                          const core::Tensor &intrinsics,
                          core::Tensor &vertex_map,

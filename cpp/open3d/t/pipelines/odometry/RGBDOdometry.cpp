@@ -120,8 +120,16 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
         std::vector<core::Tensor> intrinsic_matrices(iterations.size());
 
-        t::geometry::Image src_depth_curr = source.depth_;
-        t::geometry::Image dst_depth_curr = target.depth_;
+        core::Tensor source_depth_filtered;
+        core::Tensor target_depth_filtered;
+        kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
+                                          source_depth_filtered, depth_scale,
+                                          3.0);
+        kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
+                                          target_depth_filtered, depth_scale,
+                                          3.0);
+        t::geometry::Image src_depth_curr(source_depth_filtered);
+        t::geometry::Image dst_depth_curr(target_depth_filtered);
 
         t::geometry::Image src_intensity_curr =
                 source.color_.RGBToGray().To(core::Dtype::Float32);
@@ -153,8 +161,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             if (i != n - 1) {
                 src_depth_curr = src_depth_curr.PyrDown();
                 dst_depth_curr = dst_depth_curr.PyrDown();
-                src_intensity = src_intensity_curr.PyrDown();
-                dst_intensity = dst_intensity_curr.PyrDown();
+                src_intensity_curr = src_intensity_curr.PyrDown();
+                dst_intensity_curr = dst_intensity_curr.PyrDown();
 
                 intrinsics_d /= 2;
                 intrinsics_d[-1][-1] = 1;

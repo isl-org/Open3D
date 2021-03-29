@@ -32,6 +32,24 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
+void PreprocessDepth(const core::Tensor &depth,
+                     core::Tensor &depth_filtered,
+                     float depth_scale,
+                     float depth_max) {
+    core::Device device = depth.GetDevice();
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        PreprocessDepthCPU(depth, depth_filtered, depth_scale, depth_max);
+    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        PreprocessDepthCUDA(depth, depth_filtered, depth_scale, depth_max);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
 void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
                      core::Tensor &vertex_map,
