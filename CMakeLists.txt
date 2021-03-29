@@ -18,6 +18,7 @@ option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
+option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for relase)"  OFF)
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
@@ -96,12 +97,6 @@ if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_FRAMEWORK LAST)
     set(CMAKE_FIND_APPBUNDLE LAST)
 endif()
-
-# Cache variables for specifying the GPU architectures
-set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
-one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
-set_property(CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
-set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
 
 # Default build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -316,7 +311,7 @@ endforeach()
 include(CheckLinkerFlag)
 foreach(FLAG ${HARDENING_LDFLAGS})
     string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
-    check_linker_flag(CXX "${FLAG}" FLAG${FLAGRESULT})              # cmake 3.18+
+    check_linker_flag(CXX "${FLAG}" FLAG${FLAGRESULT}) # cmake 3.18+
     if (NOT FLAG${FLAGRESULT})
         list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
         message(WARNING "Linker does not support security option ${FLAG}")
@@ -331,56 +326,52 @@ string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
 add_compile_options(
     "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
     "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
-    )
+)
 add_link_options(
     "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_LDFLAGS}>"
     "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
-    )
+)
 
-# Build CUDA module by default if CUDA is available
-# Compatible with CMake 3.8+
 if (BUILD_CUDA_MODULE)
-    include(CheckLanguage)
-    check_language(CUDA)
-    message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
-    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
-    if(CMAKE_CUDA_COMPILER)
-        find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
-        message(STATUS "Building CUDA enabled")
-        enable_language(CUDA)
-        # TODO: when CMake minimum version is 3.18+, switch to the NEW behavior
-        # of CMP0104 and replease CUDA_GENCODES with CUDA_ARCHITECTURES target
-        # properties. See https://cmake.org/cmake/help/v3.18/policy/CMP0104.html.
-        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
-            cmake_policy(SET CMP0104 OLD)
-        endif()
-        # Get gencode flags
-        if("${CUDA_ARCH}" STREQUAL "User")
-            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
-        elseif("${CUDA_ARCH}" STREQUAL "BasicPTX")
-            # Include oldest and most recent PTX and rely on JIT compilation
-            set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
-        else()
-            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
-        endif()
-        # Make CUDA_GENCODES a string to avoid deduplication in target_compile_options
-        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
-        message(STATUS "CUDA_GENCODES: ${CUDA_GENCODES}")
-        # Allows CUDA headers to be included as "system" headers for CMake prior
-        # to 3.17,
-        # https://gitlab.kitware.com/cmake/cmake/-/issues/20270
-        # https://github.com/intel-isl/Open3D/issues/2040
-        if(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
-            list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES
-                ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-        endif()
-        message(STATUS "CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
-        message(STATUS "CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES}")
+    enable_language(CUDA)
+    if (CMAKE_CUDA_COMPILER)
+        find_package(CUDA REQUIRED)
+        message(STATUS "CUDA_VERSION: ${CUDA_VERSION}")
+        message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
+        message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
     else()
-        set(BUILD_CUDA_MODULE OFF)
-        message(STATUS "No CUDA support")
+        message(FATAL_ERROR "No CUDA compiler found.")
     endif()
-endif ()
+
+    # For relase, select the "COMMON" set of CUDA architectures based on CUDA version.
+    # For CUDA 11, we choose to follow the CMake 3.18 behavior and keep 3.5, 5.0, 5.2
+    # for better compatibility, although they are deprecated in CUDA 11.
+    #
+    # See the following links for details:
+    # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA/select_compute_arch.cmake
+    # https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility
+    #
+    # cuda_select_nvcc_arch_flags results from CMake:
+    # - CMake: 3.18, CUDA: 11.0, CUDA_COMMON_GPU_ARCHITECTURES: 3.5;5.0;5.2;6.0;6.1;7.0;7.5;8.0;8.0+PTX  <= selected
+    # - CMake: 3.18, CUDA: 11.0, CUDA_ALL_GPU_ARCHITECTURES   : 3.0;3.2;3.5;5.0;6.0;6.1;6.2;7.0;7.2;7.5;8.0
+    # - CMake: 3.18, CUDA: 10.0, CUDA_COMMON_GPU_ARCHITECTURES: 3.5;5.0;3.0;5.2;6.0;6.1;7.0;7.5;7.5+PTX  <= selected
+    # - CMake: 3.18, CUDA: 10.0, CUDA_ALL_GPU_ARCHITECTURES   : 3.0;3.2;3.5;5.0;6.0;6.1;6.2;7.0;7.2;7.5
+    # - CMake: 3.20, CUDA: 11.0, CUDA_COMMON_GPU_ARCHITECTURES: 5.3;6.0;6.1;7.0;7.5;8.0;8.0+PTX
+    # - CMake: 3.20, CUDA: 11.0, CUDA_ALL_GPU_ARCHITECTURES   : 3.5;3.7;5.0;5.2;5.3;6.0;6.1;6.2;7.0;7.2;7.5;8.0
+    # - CMake: 3.20, CUDA: 10.0, CUDA_COMMON_GPU_ARCHITECTURES: 3.5;5.0;5.3;6.0;6.1;7.0;7.5;7.5+PTX
+    # - CMake: 3.20, CUDA: 10.0, CUDA_ALL_GPU_ARCHITECTURES   : 3.0;3.2;3.5;3.7;5.0;5.2;5.3;6.0;6.1;6.2;7.0;7.2;7.5
+    cmake_policy(SET CMP0104 NEW) # CMake 3.18+
+    if (BUILD_COMMON_CUDA_ARCHS)
+        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
+            set(CMAKE_CUDA_ARCHITECTURES 35 50 52 60 61 70 75 80)
+        elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.0")
+            set(CMAKE_CUDA_ARCHITECTURES 30 35 50 52 60 61 70 75)
+        else()
+            message(WARNING "CUDA 10+ is recommended.")
+        endif()
+    endif()
+    message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}.")
+endif()
 
 # OS specific settings
 if(WIN32)
@@ -420,6 +411,11 @@ ExternalProject_Add(
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Check if the compiler defines the _GLIBCXX_USE_CXX11_ABI macro
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("#include <cxxabi.h>
+int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
+
 # Convenience function to link against all third-party libraries
 # We need this because we create a lot of object libraries to assemble
 # the main Open3D library
@@ -444,10 +440,73 @@ function(open3d_link_3rdparty_libraries target)
     endforeach()
 endfunction()
 
-# Check if the compiler defines the _GLIBCXX_USE_CXX11_ABI macro
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("#include <cxxabi.h>
-int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
+function(open3d_show_and_abort_on_warning target)
+    set(DISABLE_MSVC_WARNINGS
+        /Wv:18  # ignore warnings introduced in Visual Studio 2015 and later.
+        /wd4201 # non-standard extention nameless struct (filament includes)
+        /wd4310 # cast truncates const value (filament)
+        /wd4505 # unreferenced local function has been removed (dirent)
+        /wd4127 # conditional expression is const (Eigen)
+        /wd4189 # local variable is initialized but not referenced (PoissonRecon)
+        /wd4324 # structure was padded due to alignment specifier (qhull)
+        /wd4706 # assignment within conditional expression (fileIO, ...)
+        /wd4100 # unreferenced parameter (many places in Open3D code)
+        /wd4702 # unreachable code (many places in Open3D code)
+        /wd4244 # implicit data type conversion (many places in Open3D code)
+        /wd4245 # signed/unsigned mismatch (visualization, PoissonRecon, ...)
+        /wd4267 # conversion from size_t to smaller type (FixedRadiusSearchCUDA, tests)
+        /wd4305 # conversion to smaller type in initialization or constructor argument (examples, tests)
+    )
+
+    if (BUILD_CUDA_MODULE)
+        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
+
+        if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
+            if (MSVC)
+                string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX")
+            else()
+                string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Werror")
+            endif()
+        else()
+            string(APPEND CUDA_FLAGS " --Werror all-warnings")
+            if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
+                string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
+            endif()
+        endif()
+        string(APPEND CUDA_FLAGS " -Wno-deprecated-gpu-targets")
+
+        if (MSVC)
+            set(CUDA_DISABLE_MSVC_WARNINGS ${DISABLE_MSVC_WARNINGS})
+            set(DISABLE_NVCC_WARNINGS
+                550  # variable was set but never used (Eigen)
+                940  # missing return statement at end of non-void function (Eigen)
+                2809 # ignoring return value from routine declared with "nodiscard" attribute (Eigen)
+            )
+            if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.1")
+                list(APPEND CUDA_DISABLE_MSVC_WARNINGS /wd4515) # namespace uses itself (thrust)
+            endif()
+            string(REPLACE ";" "," CUDA_DISABLE_MSVC_WARNINGS "${CUDA_DISABLE_MSVC_WARNINGS}")
+            string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
+            string(APPEND CUDA_FLAGS " -Xcompiler ${CUDA_DISABLE_MSVC_WARNINGS}")
+            string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
+            if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.2")
+                string(APPEND CUDA_FLAGS " -Xcudafe --diag_suppress=[${DISABLE_NVCC_WARNINGS}]")
+            else()
+                string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
+            endif()
+        else()
+            string(APPEND CUDA_FLAGS " --Werror reorder")
+        endif()
+    endif()
+
+    target_compile_options(${target} PRIVATE
+        $<$<COMPILE_LANG_AND_ID:C,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
+        $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Werror>
+        $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Werror>
+        $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
+    )
+endfunction()
 
 # Convenience function to set important target properties
 function(open3d_set_global_properties target)
