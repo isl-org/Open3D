@@ -51,6 +51,21 @@ void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
                              core::Tensor &residual,
                              float depth_diff);
 
+void ComputePoseDirectHybrid(const core::Tensor &source_depth,
+                             const core::Tensor &target_depth,
+                             const core::Tensor &source_intensity,
+                             const core::Tensor &target_intensity,
+                             const core::Tensor &source_depth_dx,
+                             const core::Tensor &source_depth_dy,
+                             const core::Tensor &source_intensity_dx,
+                             const core::Tensor &source_intensity_dy,
+                             const core::Tensor &target_vtx_map,
+                             const core::Tensor &intrinsics,
+                             const core::Tensor &init_source_to_target,
+                             core::Tensor &delta,
+                             core::Tensor &residual,
+                             float depth_diff);
+
 void CreateVertexMapCPU(const core::Tensor &depth_map,
                         const core::Tensor &intrinsics,
                         core::Tensor &vertex_map,
@@ -63,6 +78,21 @@ void CreateNormalMapCPU(const core::Tensor &vertex_map,
 void ComputePosePointToPlaneCPU(const core::Tensor &source_vertex_map,
                                 const core::Tensor &source_normal_map,
                                 const core::Tensor &target_vertex_map,
+                                const core::Tensor &intrinsics,
+                                const core::Tensor &init_source_to_target,
+                                core::Tensor &delta,
+                                core::Tensor &residual,
+                                float depth_diff);
+
+void ComputePoseDirectHybridCPU(const core::Tensor &source_depth,
+                                const core::Tensor &target_depth,
+                                const core::Tensor &source_intensity,
+                                const core::Tensor &target_intensity,
+                                const core::Tensor &source_depth_dx,
+                                const core::Tensor &source_depth_dy,
+                                const core::Tensor &source_intensity_dx,
+                                const core::Tensor &source_intensity_dy,
+                                const core::Tensor &target_vtx_map,
                                 const core::Tensor &intrinsics,
                                 const core::Tensor &init_source_to_target,
                                 core::Tensor &delta,
@@ -87,6 +117,22 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_vertex_map,
                                  core::Tensor &delta,
                                  core::Tensor &residual,
                                  float depth_diff);
+
+void ComputePoseDirectHybridCUDA(const core::Tensor &source_depth,
+                                 const core::Tensor &target_depth,
+                                 const core::Tensor &source_intensity,
+                                 const core::Tensor &target_intensity,
+                                 const core::Tensor &source_depth_dx,
+                                 const core::Tensor &source_depth_dy,
+                                 const core::Tensor &source_intensity_dx,
+                                 const core::Tensor &source_intensity_dy,
+                                 const core::Tensor &target_vtx_map,
+                                 const core::Tensor &intrinsics,
+                                 const core::Tensor &init_source_to_target,
+                                 core::Tensor &delta,
+                                 core::Tensor &residual,
+                                 float depth_diff);
+
 #endif
 
 }  // namespace odometry

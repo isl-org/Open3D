@@ -248,6 +248,133 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
     delta = AtA.Solve(Atb.Neg());
 }
 
+void ComputePoseDirectHybridCUDA(const core::Tensor& source_depth,
+                                 const core::Tensor& target_depth,
+                                 const core::Tensor& source_intensity,
+                                 const core::Tensor& target_intensity,
+                                 const core::Tensor& source_depth_dx,
+                                 const core::Tensor& source_depth_dy,
+                                 const core::Tensor& source_intensity_dx,
+                                 const core::Tensor& source_intensity_dy,
+                                 const core::Tensor& target_vtx_map,
+                                 const core::Tensor& intrinsics,
+                                 const core::Tensor& init_source_to_target,
+                                 core::Tensor& delta,
+                                 core::Tensor& residual,
+                                 float depth_diff) {
+    using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
+    NDArrayIndexer src_depth_indexer(source_depth, 2);
+    NDArrayIndexer dst_depth_indexer(target_depth, 2);
+
+    NDArrayIndexer src_intensity_indexer(source_intensity, 2);
+    NDArrayIndexer dst_intensity_indexer(target_intensity, 2);
+
+    NDArrayIndexer src_depth_dx_indexer(source_depth_dx, 2);
+    NDArrayIndexer src_depth_dy_indexer(source_depth_dy, 2);
+    NDArrayIndexer src_intensity_dx_indexer(source_intensity_dx, 2);
+    NDArrayIndexer src_intensity_dy_indexer(source_intensity_dy, 2);
+
+    NDArrayIndexer dst_vertex_indexer(target_vtx_map, 2);
+
+    core::Device device = target_vtx_map.GetDevice();
+    core::Tensor trans =
+            init_source_to_target.Inverse().To(device, core::Dtype::Float32);
+    t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
+
+    const int64_t rows = dst_vertex_indexer.GetShape(0);
+    const int64_t cols = dst_vertex_indexer.GetShape(1);
+    const int64_t n = rows * cols;
+
+    // A_29xN is a {29, N} shaped tensor, which is later reduced to {29} where
+    // [0, 20] elements are used to construct {6,6} shaped symmetric AtA matrix,
+    // [21, 26] elements are used to construct {6} AtB matrix, element [27]
+    // stores residual and element [28] stores count.
+    core::Tensor A_29xN =
+            core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
+    float* A_reduction = A_29xN.GetDataPtr<float>();
+
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                float J_I[6], J_D[6];
+                float r_I, r_D;
+
+                bool valid = GetJacobianDirectHybridLocal(
+                        workload_idx, cols, depth_diff, src_depth_indexer,
+                        dst_depth_indexer, src_intensity_indexer,
+                        dst_intensity_indexer, src_depth_dx_indexer,
+                        src_depth_dy_indexer, src_intensity_dx_indexer,
+                        dst_vertex_indexer, src_intensity_dy_indexer, ti, J_I,
+                        J_D, r_I, r_D);
+
+                if (valid) {
+                    for (int i = 0, j = 0; j < 6; j++) {
+                        for (int k = 0; k <= j; k++) {
+                            A_reduction[n * i + workload_idx] =
+                                    J_I[j] * J_I[k] + J_D[j] * J_D[k];
+                            i++;
+                        }
+                        A_reduction[n * (21 + j) + workload_idx] =
+                                J_I[j] * r_I + J_D[j] * r_D;
+                    }
+                    A_reduction[n * 27 + workload_idx] = r_I * r_I + r_D * r_D;
+                    A_reduction[n * 28 + workload_idx] = 1;
+                } else {
+                    for (int i = 0; i < 29; i++) {
+                        A_reduction[n * i + workload_idx] = 0;
+                    }
+                }
+            });
+
+    core::Tensor output_29 =
+            core::Tensor::Empty({29}, core::Dtype::Float32, device);
+    float* output_29_data = output_29.GetDataPtr<float>();
+
+    // Reduction of {29, N} to {29}.
+    for (int i = 0; i < 29; i++) {
+        // Determine temporary device storage requirements.
+        void* d_temp_storage = NULL;
+        size_t temp_storage_bytes = 0;
+        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
+                               A_reduction + i * n, output_29_data + i, n);
+        // Allocate temporary storage.
+        cudaMalloc(&d_temp_storage, temp_storage_bytes);
+        // Run sum-reduction.
+        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
+                               A_reduction + i * n, output_29_data + i, n);
+    }
+
+    const core::Device host(core::Device("CPU:0"));
+
+    core::Tensor A_1x29_host = output_29.To(host, core::Dtype::Float64);
+    double* A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
+
+    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
+    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
+
+    double* AtA_local_ptr = AtA.GetDataPtr<double>();
+    double* Atb_local_ptr = Atb.GetDataPtr<double>();
+
+    for (int j = 0; j < 6; j++) {
+        Atb_local_ptr[j] = A_1x29_ptr[21 + j];
+        const int64_t reduction_idx = ((j * (j + 1)) / 2);
+        for (int k = 0; k <= j; k++) {
+            AtA_local_ptr[j * 6 + k] = A_1x29_ptr[reduction_idx + k];
+            AtA_local_ptr[k * 6 + j] = A_1x29_ptr[reduction_idx + k];
+        }
+    }
+
+    residual = core::Tensor::Init<double>({A_1x29_ptr[27]}, host);
+
+    const int count = static_cast<int>(A_1x29_ptr[28]);
+
+    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
+                      residual.Item<double>() / count, residual.Item<double>(),
+                      count);
+
+    // Solve on CPU with double to ensure precision.
+    delta = AtA.Solve(Atb.Neg());
+}
+
 }  // namespace odometry
 }  // namespace kernel
 }  // namespace pipelines

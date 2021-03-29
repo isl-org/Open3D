@@ -107,7 +107,7 @@ public:
         *z_out = d_in;
     }
 
-private:
+public:
     float extrinsic_[3][4];
 
     float fx_;

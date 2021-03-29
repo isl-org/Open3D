@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 3) {
+        argc < 5) {
         PrintHelp();
         return 1;
     }
@@ -59,6 +59,9 @@ int main(int argc, char **argv) {
     // src and dst depth images
     std::string src_depth_path = std::string(argv[1]);
     std::string dst_depth_path = std::string(argv[2]);
+
+    std::string src_color_path = std::string(argv[3]);
+    std::string dst_color_path = std::string(argv[4]);
 
     // intrinsics and Tensor conversion
     std::string intrinsic_path = utility::GetProgramOptionAsString(
@@ -87,13 +90,15 @@ int main(int argc, char **argv) {
             argc, argv, "--depth_diff", 0.07f));
 
     // Read input
-    auto src_depth_legacy = io::CreateImageFromFile(src_depth_path);
-    auto dst_depth_legacy = io::CreateImageFromFile(dst_depth_path);
+    auto src_depth = *t::io::CreateImageFromFile(src_depth_path);
+    auto dst_depth = *t::io::CreateImageFromFile(dst_depth_path);
+    auto src_color = *t::io::CreateImageFromFile(src_color_path);
+    auto dst_color = *t::io::CreateImageFromFile(dst_color_path);
     t::geometry::RGBDImage src, dst;
-    src.depth_ = t::geometry::Image::FromLegacyImage(*src_depth_legacy, device);
-    src.depth_ = src.depth_.To(core::Dtype::Float32, false, 1.0);
-    dst.depth_ = t::geometry::Image::FromLegacyImage(*dst_depth_legacy, device);
-    dst.depth_ = dst.depth_.To(core::Dtype::Float32, false, 1.0);
+    src.color_ = src_color.To(device);
+    dst.color_ = dst_color.To(device);
+    src.depth_ = src_depth.To(core::Dtype::Float32, false, 1.0).To(device);
+    dst.depth_ = dst_depth.To(core::Dtype::Float32, false, 1.0).To(device);
 
     core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float64, device);
 
@@ -111,7 +116,8 @@ int main(int argc, char **argv) {
     visualization::DrawGeometries({source_pcd, target_pcd});
 
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3});
+            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3},
+            t::pipelines::odometry::LossType::DirectHybrid);
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(
