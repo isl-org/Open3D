@@ -87,6 +87,8 @@ int main(int argc, char **argv) {
             argc, argv, "--depth_scale", 1000.f));
     float depth_diff = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_diff", 0.07f));
+    std::string method = utility::GetProgramOptionAsString(
+            argc, argv, "--method", "PointToPlane");
 
     // Read input
     auto src_depth = *t::io::CreateImageFromFile(src_depth_path);
@@ -115,22 +117,31 @@ int main(int argc, char **argv) {
     target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 
-    trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3},
-            t::pipelines::odometry::LossType::DirectHybrid);
+    if (method == "PointToPlane") {
+        trans = t::pipelines::odometry::RGBDOdometryMultiScale(
+                src, dst, intrinsic_t, trans, depth_scale, depth_diff,
+                {10, 5, 3}, t::pipelines::odometry::LossType::PointToPlane);
+    } else if (method == "DirectHybrid") {
+        trans = t::pipelines::odometry::RGBDOdometryMultiScale(
+                src, dst, intrinsic_t, trans, depth_scale, depth_diff,
+                {10, 5, 3}, t::pipelines::odometry::LossType::DirectHybrid);
+    } else {
+        utility::LogError("Unsupported method {}", method);
+    }
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    src.depth_, intrinsic_t, trans.Inverse(), depth_scale)
+            t::geometry::PointCloud::CreateFromRGBDImage(
+                    t::geometry::RGBDImage(src.color_, src.depth_), intrinsic_t,
+                    trans.Inverse(), depth_scale)
                     .ToLegacyPointCloud());
-    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
+    // source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    dst.depth_, intrinsic_t,
+            t::geometry::PointCloud::CreateFromRGBDImage(
+                    t::geometry::RGBDImage(dst.color_, dst.depth_), intrinsic_t,
                     core::Tensor::Eye(4, core::Dtype::Float32, device),
                     depth_scale)
                     .ToLegacyPointCloud());
-    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    // target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 }

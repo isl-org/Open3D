@@ -159,7 +159,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianLocal(
     int64_t x = workload_idx % cols;
 
     float* dst_v = target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-    if (dst_v[0] == NAN) {
+    if (__ISNAN(dst_v[0])) {
         return false;
     }
 
@@ -178,7 +178,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianLocal(
     int64_t vi = static_cast<int64_t>(v);
     float* src_v = source_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
     float* src_n = source_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    if (src_v[0] == NAN || src_n[0] == NAN) {
+    if (__ISNAN(src_v[0]) || __ISNAN(src_n[0])) {
         return false;
     }
 
