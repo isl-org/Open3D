@@ -66,6 +66,7 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_UNIT_TESTS=ON `
             ${{ env.SRC_DIR }}
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
@@ -75,6 +76,11 @@ jobs:
             --target build-examples-iteratively
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
+      - name: Run C++ unit tests
+        if: ${{ matrix.SHARED == 'OFF' || matrix.STATIC_RUNTIME == 'OFF' }}
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
       - name: Linking to Open3D
         run: |
           $ErrorActionPreference = 'Stop'

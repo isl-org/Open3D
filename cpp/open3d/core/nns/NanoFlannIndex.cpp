@@ -202,8 +202,8 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
             batch_nums.push_back(batch_indices[i].size());
         }
         std::vector<int64_t> batch_row_splits(num_query_points + 1, 0);
-        utility::InclusivePrefixSum(&batch_nums[0],
-                                    &batch_nums[num_query_points],
+        utility::InclusivePrefixSum(batch_nums.data(),
+                                    batch_nums.data() + batch_nums.size(),
                                     &batch_row_splits[1]);
 
         // Make result Tensors.
@@ -271,6 +271,37 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     });
 
     return std::make_pair(indices, distances);
+}
+
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid1NN(
+        const Tensor &query_points, double radius) const {
+    Device device = GetDevice();
+    query_points.AssertDtype(GetDtype());
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
+    if (radius <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] radius should be larger than "
+                "0.");
+    }
+
+    double radius_squared = radius * radius;
+
+    Tensor indices, distances, source_indices, target_indices;
+    std::tie(indices, distances) = SearchKnn(query_points, 1);
+
+    Tensor valid = distances.Le(radius_squared).Reshape({-1});
+    // correpondence_set : (i, corres[i]).
+    // source[i] and target[corres[i]] is a correspondence.
+    source_indices = core::Tensor::Arange(0, query_points.GetShape()[0], 1,
+                                          core::Dtype::Int64, device)
+                             .IndexGet({valid});
+    // Only take valid indices.
+    target_indices = indices.IndexGet({valid}).Reshape({-1});
+    // Only take valid distances.
+    distances = distances.IndexGet({valid});
+
+    return std::make_tuple(source_indices, target_indices, distances);
 }
 
 }  // namespace nns
