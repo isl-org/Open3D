@@ -175,12 +175,12 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
         float& r_I,
         float& r_D) {
     // sqrt 0.5, according to http://redwood-data.org/indoor_lidar_rgbd/supp.pdf
-    const float sqrt_lambda_img = 0.707;
+    const float sqrt_lambda_img = 0.;
     const float sqrt_lambda_dep = 0.707;
     const float sobel_scale = 0.125;
 
-    int64_t v_d = workload_idx / cols;
-    int64_t u_d = workload_idx % cols;
+    int v_d = workload_idx / cols;
+    int u_d = workload_idx % cols;
 
     float* dst_v = dst_vertex_indexer.GetDataPtrFromCoord<float>(u_d, v_d);
     if (dst_v[0] == INFINITY) {
@@ -199,10 +199,28 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
         return false;
     }
 
-    // TODO: filter depth grads
+    // TODO: customize filter depth grads
 
     const double fx = ti.fx_;
     const double fy = ti.fy_;
+
+    // TODO: depth scale
+    float depth_s =
+            *src_depth_indexer.GetDataPtrFromCoord<float>(u_s, v_s) / 1000.0;
+    if (depth_s == 0 || depth_s > 3.0) {
+        return false;
+    }
+
+    float diff_D = depth_s - T_dst_v[2];
+    if (abs(diff_D) > depth_diff) {
+        return false;
+    }
+    float dDdx = sobel_scale *
+                 (*src_depth_dx_indexer.GetDataPtrFromCoord<float>(u_s, v_s)) /
+                 1000.0;
+    float dDdy = sobel_scale *
+                 (*src_depth_dy_indexer.GetDataPtrFromCoord<float>(u_s, v_s)) /
+                 1000.0;
 
     float diff_I = *src_intensity_indexer.GetDataPtrFromCoord<float>(u_s, v_s) -
                    *dst_intensity_indexer.GetDataPtrFromCoord<float>(u_d, v_d);
@@ -212,13 +230,17 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
     float dIdy =
             sobel_scale *
             (*src_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_s, v_s));
-    float dDdx = sobel_scale *
-                 (*src_depth_dx_indexer.GetDataPtrFromCoord<float>(u_s, v_s));
-    float dDdy = sobel_scale *
-                 (*src_depth_dy_indexer.GetDataPtrFromCoord<float>(u_s, v_s));
 
-    float diff_D = *src_depth_indexer.GetDataPtrFromCoord<float>(u_s, v_s) -
-                   T_dst_v[2];
+    // printf("%ld: (%d %d %f) -> (%f %f %f) -> (%d %d) -> depth diff: %f, color
+    // "
+    //        "diff: %f\n",
+    //        workload_idx, u_d, v_d,
+    //        *dst_depth_indexer.GetDataPtrFromCoord<float>(u_d, v_d), dst_v[0],
+    //        dst_v[1], dst_v[2], u_s, v_s, depth_s - T_dst_v[2],
+    //        *src_intensity_indexer.GetDataPtrFromCoord<float>(u_s, v_s) -
+    //                *dst_intensity_indexer.GetDataPtrFromCoord<float>(u_d,
+    //                v_d));
+
     float invz = 1 / T_dst_v[2];
     float c0 = dIdx * fx * invz;
     float c1 = dIdy * fy * invz;
@@ -233,7 +255,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDirectHybridLocal(
     J_I[3] = sqrt_lambda_img * (c0);
     J_I[4] = sqrt_lambda_img * (c1);
     J_I[5] = sqrt_lambda_img * (c2);
-
     r_I = sqrt_lambda_img * diff_I;
 
     J_D[0] = sqrt_lambda_dep *

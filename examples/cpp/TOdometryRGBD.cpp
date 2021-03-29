@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 5) {
+        argc < 3) {
         PrintHelp();
         return 1;
     }
@@ -59,7 +59,6 @@ int main(int argc, char **argv) {
     // src and dst depth images
     std::string src_depth_path = std::string(argv[1]);
     std::string dst_depth_path = std::string(argv[2]);
-
     std::string src_color_path = std::string(argv[3]);
     std::string dst_color_path = std::string(argv[4]);
 
@@ -94,6 +93,7 @@ int main(int argc, char **argv) {
     auto dst_depth = *t::io::CreateImageFromFile(dst_depth_path);
     auto src_color = *t::io::CreateImageFromFile(src_color_path);
     auto dst_color = *t::io::CreateImageFromFile(dst_color_path);
+
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
     dst.color_ = dst_color.To(device);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     visualization::DrawGeometries({source_pcd, target_pcd});
 
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3},
+            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 0, 0},
             t::pipelines::odometry::LossType::DirectHybrid);
 
     // Visualize after odometry

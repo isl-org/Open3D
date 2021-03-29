@@ -153,6 +153,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             if (i != n - 1) {
                 src_depth_curr = src_depth_curr.PyrDown();
                 dst_depth_curr = dst_depth_curr.PyrDown();
+                src_intensity = src_intensity_curr.PyrDown();
+                dst_intensity = dst_intensity_curr.PyrDown();
 
                 intrinsics_d /= 2;
                 intrinsics_d[-1][-1] = 1;
@@ -162,6 +164,43 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         // Odometry
         for (int64_t i = 0; i < n; ++i) {
             for (int iter = 0; iter < iterations[i]; ++iter) {
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(src_intensity_dx[i])
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(src_intensity_dy[i])
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(src_depth_dx[i] / 1000.0)
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(src_depth_dy[i] / 1000.0)
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(src_depth[i] / 5000.0)
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(src_intensity[i])
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(dst_depth[i] / 5000.0)
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(dst_intensity[i])
+                //                         .ToLegacyImage())});
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 t::geometry::Image(dst_vertex_maps[i])
+                //                         .ToLegacyImage())});
+
                 core::Tensor delta_src_to_dst = ComputePoseDirectHybrid(
                         src_depth[i], dst_depth[i], src_intensity[i],
                         dst_intensity[i], src_depth_dx[i], src_depth_dy[i],

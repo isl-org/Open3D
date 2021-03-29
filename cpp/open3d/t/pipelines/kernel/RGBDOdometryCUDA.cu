@@ -285,10 +285,10 @@ void ComputePoseDirectHybridCUDA(const core::Tensor& source_depth,
     const int64_t cols = dst_vertex_indexer.GetShape(1);
     const int64_t n = rows * cols;
 
-    // A_29xN is a {29, N} shaped tensor, which is later reduced to {29} where
-    // [0, 20] elements are used to construct {6,6} shaped symmetric AtA matrix,
-    // [21, 26] elements are used to construct {6} AtB matrix, element [27]
-    // stores residual and element [28] stores count.
+    // A_29xN is a {29, N} shaped tensor, which is later red[<0;100;16M]uced to
+    // {29} where [0, 20] elements are used to construct {6,6} shaped symmetric
+    // AtA matrix, [21, 26] elements are used to construct {6} AtB matrix,
+    // element [27] stores residual and element [28] stores count.
     core::Tensor A_29xN =
             core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
     float* A_reduction = A_29xN.GetDataPtr<float>();
@@ -303,7 +303,7 @@ void ComputePoseDirectHybridCUDA(const core::Tensor& source_depth,
                         dst_depth_indexer, src_intensity_indexer,
                         dst_intensity_indexer, src_depth_dx_indexer,
                         src_depth_dy_indexer, src_intensity_dx_indexer,
-                        dst_vertex_indexer, src_intensity_dy_indexer, ti, J_I,
+                        src_intensity_dy_indexer, dst_vertex_indexer, ti, J_I,
                         J_D, r_I, r_D);
 
                 if (valid) {

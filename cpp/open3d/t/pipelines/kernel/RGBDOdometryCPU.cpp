@@ -299,7 +299,7 @@ void ComputePoseDirectHybridCPU(const core::Tensor& source_depth,
                             dst_depth_indexer, src_intensity_indexer,
                             dst_intensity_indexer, src_depth_dx_indexer,
                             src_depth_dy_indexer, src_intensity_dx_indexer,
-                            dst_vertex_indexer, src_intensity_dy_indexer, ti,
+                            src_intensity_dy_indexer, dst_vertex_indexer, ti,
                             J_I, J_D, r_I, r_D);
 
                     if (valid) {
