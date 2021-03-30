@@ -84,34 +84,210 @@ def monkey_patch_class(eloop, clazz):
             continue
         f = getattr(clazz, attr)
         # TODO: need to proxy properties, too
+        #        if callable(f):
+        #            def patch(func):
+        #                #signature = inspect.signature(func)
+        #                #default_kwargs = {
+        #                #    k: v.default
+        #                #    for k, v in signature.parameters.items()
+        #                #    if v.default is not inspect.Parameter.empty
+        #                #}
+        #                default_kwargs = {}  # can't get this from pybind
+        #                def patched(*args, **kwargs):
+        #                    merged_kwargs = kwargs
+        #                    for k, v in default_kwargs.items():
+        #                        if k not in merged_kwargs:
+        #                            merged_kwargs[k] = v
+        #
+        #                    def call():
+        #                        return func(args, merged_kwargs)
+        #                    return eloop.run_sync(call)
+        #                return patched
+        #            try:
+        #                setattr(clazz, attr, patch(f))
+        #            except AttributeError as e:
+        #                pass
         if callable(f):
-
-            def patch(func):
-                #signature = inspect.signature(func)
-                #default_kwargs = {
-                #    k: v.default
-                #    for k, v in signature.parameters.items()
-                #    if v.default is not inspect.Parameter.empty
-                #}
-                default_kwargs = {}  # can't get this from pybind
-
-                def patched(*args, **kwargs):
-                    merged_kwargs = kwargs
-                    for k, v in default_kwargs.items():
-                        if k not in merged_kwargs:
-                            merged_kwargs[k] = v
-
-                    def call():
-                        return func(args, merged_kwargs)
-
-                    return eloop.run_sync(call)
-
-                return patched
-
+            # pybind can't use inspect, but it does put the call signature
+            # in the docstring
+            docstr = getattr(f, "__doc__")
+            if docstr is None:
+                continue
+            # Docstring signature always ends in \n, even if there is no
+            # docstring specified in the pybind call.
+            sigstr = docstr.split("\n")[0]
+            arg_start_idx = docstr.find("(") + 1
+            arg_end_idx = docstr.find(")") - 1
+            argstr = docstr[arg_start_idx:arg_end_idx - arg_start_idx]
+            if argstr != "":
+                n_args = argstr.count(",") + 1
+            else:
+                n_args = 0
             try:
-                setattr(clazz, attr, patch(f))
+                setattr(clazz, attr, patch(eloop, f, n_args, clazz.__name__))
             except AttributeError as e:
                 pass
+
+
+def patch(eloop, f, n_args, clazzname):
+    debug = clazzname + "." + f.__name__
+    if n_args == 0:
+        return patch_0_arg(eloop, f, debug)
+    elif n_args == 1:
+        return patch_1_arg(eloop, f, debug)
+    elif n_args == 2:
+        return patch_2_arg(eloop, f, debug)
+    elif n_args == 3:
+        return patch_3_arg(eloop, f, debug)
+    elif n_args == 4:
+        return patch_4_arg(eloop, f, debug)
+    elif n_args == 5:
+        return patch_5_arg(eloop, f, debug)
+    elif n_args == 6:
+        return patch_6_arg(eloop, f, debug)
+    elif n_args == 7:
+        return patch_7_arg(eloop, f, debug)
+    elif n_args == 8:
+        return patch_8_arg(eloop, f, debug)
+    elif n_args == 12:
+        return patch_12_arg(eloop, f, debug)
+    else:
+        print("[error] monkey patching for", n_args,
+              "argument functions not implemented")
+        print("[error]     ", clazzname + "." + f.__name__)
+        return None
+
+
+def patch_0_arg(eloop, f, debug):
+
+    def patched():
+
+        def call():
+            print("[debug]", debug)
+            return f()
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_1_arg(eloop, f, debug):
+
+    def patched(arg1):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_2_arg(eloop, f, debug):
+
+    def patched(arg1, arg2):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_3_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_4_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3, arg4):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3, arg4)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_5_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3, arg4, arg5):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3, arg4, arg5)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_6_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3, arg4, arg5, arg6):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3, arg4, arg5, arg6)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_7_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3, arg4, arg5, arg6, arg7):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_8_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+
+        return eloop.run_sync(call)
+
+    return patched
+
+
+def patch_12_arg(eloop, f, debug):
+
+    def patched(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
+                arg11, arg12):
+
+        def call():
+            print("[debug]", debug)
+            return f(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,
+                     arg10, arg11, arg12)
+
+        return eloop.run_sync(call)
+
+    return patched
 
 
 def gui_start_async(f, use_native=False):
@@ -200,11 +376,11 @@ def gui_start_async(f, use_native=False):
 
     # debugging
     o3d.visualization.gui.Application.create_window = patched_create_window
-    o3d.visualization.gui.Application.add_window = patched_add_window
-    o3d.visualization.O3DVisualizer.__init__ = patched_o3dvis_init
+    #    o3d.visualization.gui.Application.add_window = patched_add_window
+    #    o3d.visualization.O3DVisualizer.__init__ = patched_o3dvis_init
     o3d.visualization.O3DVisualizer.add_geometry = patched_o3dvis_add_geom
-    o3d.visualization.O3DVisualizer.reset_camera_to_default = patched_o3dvis_reset_camera
-    rendering.Material.__init__ = mat_init  # Material doesn't use Filament
+    #    o3d.visualization.O3DVisualizer.reset_camera_to_default = patched_o3dvis_reset_camera
+    #    rendering.Material.__init__ = mat_init # Material doesn't use Filament
 
     if use_native:
         thread = threading.Thread(target=f)
