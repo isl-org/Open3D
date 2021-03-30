@@ -171,7 +171,7 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
 
 void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  const core::Tensor& target_vertex_map,
-                                 const core::Tensor& source_normal_map,
+                                 const core::Tensor& target_normal_map,
                                  const core::Tensor& intrinsics,
                                  const core::Tensor& init_source_to_target,
                                  core::Tensor& delta,
@@ -181,13 +181,12 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                                               2);
     t::geometry::kernel::NDArrayIndexer target_vertex_indexer(target_vertex_map,
                                                               2);
-    t::geometry::kernel::NDArrayIndexer source_normal_indexer(source_normal_map,
+    t::geometry::kernel::NDArrayIndexer target_normal_indexer(target_normal_map,
                                                               2);
 
     core::Device device = source_vertex_map.GetDevice();
 
-    core::Tensor trans =
-            init_source_to_target.Inverse().To(device, core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
@@ -209,7 +208,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
 
                 bool valid = GetJacobianPointToPlane(
                         workload_idx, cols, depth_diff, source_vertex_indexer,
-                        target_vertex_indexer, source_normal_indexer, ti, J_ij,
+                        target_vertex_indexer, target_normal_indexer, ti, J_ij,
                         r);
 
                 if (valid) {

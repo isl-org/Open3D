@@ -64,8 +64,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         int64_t n = int64_t(iterations.size());
 
         std::vector<core::Tensor> source_vertex_maps(iterations.size());
-        std::vector<core::Tensor> source_normal_maps(iterations.size());
         std::vector<core::Tensor> target_vertex_maps(iterations.size());
+        std::vector<core::Tensor> target_normal_maps(iterations.size());
         std::vector<core::Tensor> intrinsic_matrices(iterations.size());
 
         t::geometry::Image source_depth = source.depth_;
@@ -75,14 +75,14 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         for (int64_t i = 0; i < n; ++i) {
             core::Tensor source_vertex_map =
                     CreateVertexMap(source_depth, intrinsics_d, depth_scale);
-            core::Tensor source_normal_map = CreateNormalMap(source_vertex_map);
 
             core::Tensor target_vertex_map =
                     CreateVertexMap(target_depth, intrinsics_d, depth_scale);
+            core::Tensor target_normal_map = CreateNormalMap(target_vertex_map);
 
             source_vertex_maps[n - 1 - i] = source_vertex_map;
-            source_normal_maps[n - 1 - i] = source_normal_map;
             target_vertex_maps[n - 1 - i] = target_vertex_map;
+            target_normal_maps[n - 1 - i] = target_normal_map;
 
             intrinsic_matrices[n - 1 - i] = intrinsics_d.Clone();
 
@@ -99,7 +99,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             for (int iter = 0; iter < iterations[i]; ++iter) {
                 core::Tensor delta_source_to_target = ComputePosePointToPlane(
                         source_vertex_maps[i], target_vertex_maps[i],
-                        source_normal_maps[i], intrinsic_matrices[i], trans_d,
+                        target_normal_maps[i], intrinsic_matrices[i], trans_d,
                         depth_diff);
                 trans_d = delta_source_to_target.Matmul(trans_d);
             }
@@ -233,25 +233,9 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     return trans_d;
 }
 
-core::Tensor CreateVertexMap(const t::geometry::Image& depth,
-                             const core::Tensor& intrinsics,
-                             float depth_scale,
-                             float depth_max) {
-    core::Tensor vertex_map;
-    kernel::odometry::CreateVertexMap(depth.AsTensor(), intrinsics, vertex_map,
-                                      depth_scale, depth_max);
-    return vertex_map;
-}
-
-core::Tensor CreateNormalMap(const core::Tensor& vertex_map) {
-    core::Tensor normal_map;
-    kernel::odometry::CreateNormalMap(vertex_map, normal_map);
-    return normal_map;
-}
-
 core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
                                      const core::Tensor& target_vertex_map,
-                                     const core::Tensor& source_normal_map,
+                                     const core::Tensor& target_normal_map,
                                      const core::Tensor& intrinsics,
                                      const core::Tensor& init_source_to_target,
                                      float depth_diff) {
@@ -259,20 +243,19 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
     core::Tensor se3_delta;
     core::Tensor residual;
     kernel::odometry::ComputePosePointToPlane(
-            source_vertex_map, target_vertex_map, source_normal_map, intrinsics,
+            source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
 
-    core::Tensor T_delta_inv =
-            pipelines::kernel::PoseToTransformation(se3_delta);
+    core::Tensor T_delta = pipelines::kernel::PoseToTransformation(se3_delta);
 
     // T.inv = [R.T | -R.T @ t]
-    core::Tensor R_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 0, 3);
-    core::Tensor t_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 3, 4);
+    // core::Tensor R_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 0, 3);
+    // core::Tensor t_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 3, 4);
 
-    core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float64);
-    T_delta.Slice(0, 0, 3).Slice(1, 0, 3) = R_inv.T();
-    T_delta.Slice(0, 0, 3).Slice(1, 3, 4) = R_inv.T().Matmul(t_inv).Neg();
-    T_delta[-1][-1] = 1;
+    // core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float64);
+    // T_delta.Slice(0, 0, 3).Slice(1, 0, 3) = R_inv.T();
+    // T_delta.Slice(0, 0, 3).Slice(1, 3, 4) = R_inv.T().Matmul(t_inv).Neg();
+    // T_delta[-1][-1] = 1;
 
     return T_delta;
 }
@@ -323,6 +306,22 @@ core::Tensor ComputePoseIntensity(const core::Tensor& source_vertex_map,
                                   const core::Tensor& init_source_to_target,
                                   float depth_diff) {
     utility::LogError("Direct intensity odometry unimplemented.");
+}
+
+core::Tensor CreateVertexMap(const t::geometry::Image& depth,
+                             const core::Tensor& intrinsics,
+                             float depth_scale,
+                             float depth_max) {
+    core::Tensor vertex_map;
+    kernel::odometry::CreateVertexMap(depth.AsTensor(), intrinsics, vertex_map,
+                                      depth_scale, depth_max);
+    return vertex_map;
+}
+
+core::Tensor CreateNormalMap(const core::Tensor& vertex_map) {
+    core::Tensor normal_map;
+    kernel::odometry::CreateNormalMap(vertex_map, normal_map);
+    return normal_map;
 }
 
 }  // namespace odometry

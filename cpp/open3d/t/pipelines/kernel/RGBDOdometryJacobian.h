@@ -44,50 +44,56 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         float depth_diff,
         const NDArrayIndexer& source_vertex_indexer,
         const NDArrayIndexer& target_vertex_indexer,
-        const NDArrayIndexer& source_normal_indexer,
+        const NDArrayIndexer& target_normal_indexer,
         const t::geometry::kernel::TransformIndexer& ti,
         float* J_ij,
         float& r) {
     int64_t y = workload_idx / cols;
     int64_t x = workload_idx % cols;
 
-    float* target_v = target_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-    if (__ISNAN(target_v[0])) {
+    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    if (__ISNAN(source_v[0])) {
         return false;
     }
 
-    float T_target_v[3], u, v;
-    ti.RigidTransform(target_v[0], target_v[1], target_v[2], &T_target_v[0],
-                      &T_target_v[1], &T_target_v[2]);
-    ti.Project(T_target_v[0], T_target_v[1], T_target_v[2], &u, &v);
+    float T_source_on_target_v[3], u, v;
+    ti.RigidTransform(source_v[0], source_v[1], source_v[2],
+                      &T_source_on_target_v[0], &T_source_on_target_v[1],
+                      &T_source_on_target_v[2]);
+    ti.Project(T_source_on_target_v[0], T_source_on_target_v[1],
+               T_source_on_target_v[2], &u, &v);
     u = round(u);
     v = round(v);
 
-    if (T_target_v[2] < 0 || !source_vertex_indexer.InBoundary(u, v)) {
+    if (T_source_on_target_v[2] < 0 ||
+        !target_vertex_indexer.InBoundary(u, v)) {
         return false;
     }
 
     int64_t ui = static_cast<int64_t>(u);
     int64_t vi = static_cast<int64_t>(v);
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    float* source_n = source_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    if (__ISNAN(source_v[0]) || __ISNAN(source_n[0])) {
+    float* target_v = target_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
+    float* target_n = target_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
+    if (__ISNAN(target_v[0]) || __ISNAN(target_n[0])) {
         return false;
     }
 
-    r = (T_target_v[0] - source_v[0]) * source_n[0] +
-        (T_target_v[1] - source_v[1]) * source_n[1] +
-        (T_target_v[2] - source_v[2]) * source_n[2];
+    r = (T_source_on_target_v[0] - target_v[0]) * target_n[0] +
+        (T_source_on_target_v[1] - target_v[1]) * target_n[1] +
+        (T_source_on_target_v[2] - target_v[2]) * target_n[2];
     if (abs(r) > depth_diff) {
         return false;
     }
 
-    J_ij[0] = -T_target_v[2] * source_n[1] + T_target_v[1] * source_n[2];
-    J_ij[1] = T_target_v[2] * source_n[0] - T_target_v[0] * source_n[2];
-    J_ij[2] = -T_target_v[1] * source_n[0] + T_target_v[0] * source_n[1];
-    J_ij[3] = source_n[0];
-    J_ij[4] = source_n[1];
-    J_ij[5] = source_n[2];
+    J_ij[0] = -T_source_on_target_v[2] * target_n[1] +
+              T_source_on_target_v[1] * target_n[2];
+    J_ij[1] = T_source_on_target_v[2] * target_n[0] -
+              T_source_on_target_v[0] * target_n[2];
+    J_ij[2] = -T_source_on_target_v[1] * target_n[0] +
+              T_source_on_target_v[0] * target_n[1];
+    J_ij[3] = target_n[0];
+    J_ij[4] = target_n[1];
+    J_ij[5] = target_n[2];
 
     return true;
 }
