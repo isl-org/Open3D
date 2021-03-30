@@ -24,7 +24,7 @@ class AsyncEventLoop:
         # self._finished_cv = threading.Condition(self._lock)
         self._run_queue = []
         self._return_vals = {}
-        self._thread_finished = False
+        # self._thread_finished = False
 
         if use_native:
             gui.Application.instance.initialize()
@@ -54,13 +54,13 @@ class AsyncEventLoop:
 
             done = not app.run_one_tick()
 
-        with self._lock:
-            self._thread_finished = True
-            self._finished_cv.notify_all()
+        # with self._lock:
+        #     self._thread_finished = True
+        #     self._finished_cv.notify_all()
 
     def run_sync(self, f):
         with self._lock:
-            assert (not self._thread_finished)
+            # assert (not self._thread_finished)
             task = self._Task(f)
             self._run_queue.append(task)
 
@@ -69,11 +69,11 @@ class AsyncEventLoop:
                 if task.task_id in self._return_vals:
                     return self._return_vals[task.task_id]
 
-    def app_run(self):
-        pass
-        # self._lock.acquire()
-        # self._finished_cv.wait()
-        # self._lock.release()
+    # def app_run(self):
+    #     pass
+    # self._lock.acquire()
+    # self._finished_cv.wait()
+    # self._lock.release()
 
 
 def monkey_patch_class(eloop, clazz):
@@ -394,10 +394,8 @@ def gui_start_async(f, use_native=False):
 
 
 #-------------------------------------------------------------------------------
-def main():
+def torus():
     app = gui.Application.instance
-    app.initialize()
-    # app.run()
 
     torus = o3d.geometry.TriangleMesh.create_torus()
     torus.compute_vertex_normals()
@@ -409,13 +407,9 @@ def main():
     w.reset_camera_to_default()
     app.add_window(w)
 
-    print("hello")
-
 
 def box():
     app = gui.Application.instance
-    app.initialize()
-    # app.run()
 
     torus = o3d.geometry.TriangleMesh.create_box()
     torus.compute_vertex_normals()
@@ -427,8 +421,6 @@ def box():
     w.reset_camera_to_default()
     app.add_window(w)
 
-    print("hello")
-
 
 # if __name__ == "__main__":
 #     o3d.visualization.gui.Application.instance.enable_webrtc()
@@ -437,12 +429,9 @@ def box():
 if __name__ == "__main__":
     o3d.visualization.gui.Application.instance.enable_webrtc()
     use_native = False
-    print("before AsyncEventLoop(use_native)")
     AsyncEventLoop.instance = AsyncEventLoop(use_native)
     eloop = AsyncEventLoop.instance
-    print("before start()")
     eloop.start()
-    print("after start()")
-    eloop.run_sync(main)
-    print("after main()")
-    # gui_start_async(main, use_native=False)
+
+    eloop.run_sync(torus)
+    eloop.run_sync(box)
