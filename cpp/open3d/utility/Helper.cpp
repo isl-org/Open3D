@@ -40,10 +40,10 @@
 namespace open3d {
 namespace utility {
 
-void SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters /* = " "*/,
-                 bool trim_empty_str /* = true*/) {
+std::vector<std::string> SplitString(const std::string& str,
+                                     const std::string& delimiters /* = " "*/,
+                                     bool trim_empty_str /* = true*/) {
+    std::vector<std::string> tokens;
     std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
     while (pos != std::string::npos) {
         pos = str.find_first_of(delimiters, last_pos);
@@ -53,6 +53,7 @@ void SplitString(std::vector<std::string>& tokens,
         }
         last_pos = new_pos + 1;
     }
+    return tokens;
 }
 
 std::string& LeftStripString(std::string& str, const std::string& chars) {
