@@ -110,12 +110,10 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
 ///
 /// Helper functions exposed for easier testing.
 ///
-/// Create a vertex map (image) from a depth image. Useful for point-to-plane
-/// odometry.
+/// Create a vertex map (image) from a preprocessed depth image. Useful for
+/// point-to-plane odometry.
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
-                             const core::Tensor& intrinsics,
-                             float depth_factor = 1000.0,
-                             float depth_max = 3.0);
+                             const core::Tensor& intrinsics);
 
 /// Create a normal map (image) from a vertex map (image). Useful for
 /// point-to-plane odometry.

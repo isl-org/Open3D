@@ -54,9 +54,7 @@ void PreprocessDepth(const core::Tensor &depth,
 
 void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
-                     core::Tensor &vertex_map,
-                     float depth_scale,
-                     float depth_max) {
+                     core::Tensor &vertex_map) {
     core::Device device = depth_map.GetDevice();
     if (device != intrinsics.GetDevice()) {
         utility::LogError(
@@ -65,12 +63,10 @@ void CreateVertexMap(const core::Tensor &depth_map,
     }
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
-        CreateVertexMapCPU(depth_map, intrinsics, vertex_map, depth_scale,
-                           depth_max);
+        CreateVertexMapCPU(depth_map, intrinsics, vertex_map);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CreateVertexMapCUDA(depth_map, intrinsics, vertex_map, depth_scale,
-                            depth_max);
+        CreateVertexMapCUDA(depth_map, intrinsics, vertex_map);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

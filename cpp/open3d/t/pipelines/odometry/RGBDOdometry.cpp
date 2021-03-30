@@ -59,6 +59,13 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     core::Device host("CPU:0");
     core::Tensor trans_d = init_source_to_target.To(host, core::Dtype::Float64);
 
+    core::Tensor source_depth_processed;
+    core::Tensor target_depth_processed;
+    kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
+                                      source_depth_processed, depth_scale, 3.0);
+    kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
+                                      target_depth_processed, depth_scale, 3.0);
+
     // TODO: decouple interfaces
     if (method == Method::PointToPlane) {
         int64_t n = int64_t(iterations.size());
@@ -68,16 +75,16 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         std::vector<core::Tensor> target_normal_maps(iterations.size());
         std::vector<core::Tensor> intrinsic_matrices(iterations.size());
 
-        t::geometry::Image source_depth = source.depth_;
-        t::geometry::Image target_depth = target.depth_;
+        t::geometry::Image source_depth(source_depth_processed);
+        t::geometry::Image target_depth(target_depth_processed);
 
         // Create image pyramid.
         for (int64_t i = 0; i < n; ++i) {
             core::Tensor source_vertex_map =
-                    CreateVertexMap(source_depth, intrinsics_d, depth_scale);
+                    CreateVertexMap(source_depth, intrinsics_d);
 
             core::Tensor target_vertex_map =
-                    CreateVertexMap(target_depth, intrinsics_d, depth_scale);
+                    CreateVertexMap(target_depth, intrinsics_d);
             core::Tensor target_normal_map = CreateNormalMap(target_vertex_map);
 
             source_vertex_maps[n - 1 - i] = source_vertex_map;
@@ -122,16 +129,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
         std::vector<core::Tensor> intrinsic_matrices(iterations.size());
 
-        core::Tensor source_depth_filtered;
-        core::Tensor target_depth_filtered;
-        kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
-                                          source_depth_filtered, depth_scale,
-                                          3.0);
-        kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
-                                          target_depth_filtered, depth_scale,
-                                          3.0);
-        t::geometry::Image source_depth_curr(source_depth_filtered);
-        t::geometry::Image target_depth_curr(target_depth_filtered);
+        t::geometry::Image source_depth_curr(source_depth_processed);
+        t::geometry::Image target_depth_curr(target_depth_processed);
 
         t::geometry::Image source_intensity_curr =
                 source.color_.RGBToGray().To(core::Dtype::Float32);
@@ -148,8 +147,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             target_intensity[n - 1 - i] =
                     target_intensity_curr.AsTensor().Clone();
 
-            core::Tensor source_vertex_map = CreateVertexMap(
-                    source_depth_curr, intrinsics_d, depth_scale);
+            core::Tensor source_vertex_map =
+                    CreateVertexMap(source_depth_curr, intrinsics_d);
             source_vertex_maps[n - 1 - i] = source_vertex_map;
 
             auto target_intensity_grad = target_intensity_curr.FilterSobel();
@@ -241,16 +240,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
         std::vector<core::Tensor> intrinsic_matrices(iterations.size());
 
-        core::Tensor source_depth_filtered;
-        core::Tensor target_depth_filtered;
-        kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
-                                          source_depth_filtered, depth_scale,
-                                          3.0);
-        kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
-                                          target_depth_filtered, depth_scale,
-                                          3.0);
-        t::geometry::Image source_depth_curr(source_depth_filtered);
-        t::geometry::Image target_depth_curr(target_depth_filtered);
+        t::geometry::Image source_depth_curr(source_depth_processed);
+        t::geometry::Image target_depth_curr(target_depth_processed);
 
         t::geometry::Image source_intensity_curr =
                 source.color_.RGBToGray().To(core::Dtype::Float32);
@@ -267,8 +258,8 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             target_intensity[n - 1 - i] =
                     target_intensity_curr.AsTensor().Clone();
 
-            core::Tensor source_vertex_map = CreateVertexMap(
-                    source_depth_curr, intrinsics_d, depth_scale);
+            core::Tensor source_vertex_map =
+                    CreateVertexMap(source_depth_curr, intrinsics_d);
             source_vertex_maps[n - 1 - i] = source_vertex_map;
 
             auto target_intensity_grad = target_intensity_curr.FilterSobel();
@@ -370,12 +361,9 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
 }
 
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
-                             const core::Tensor& intrinsics,
-                             float depth_scale,
-                             float depth_max) {
+                             const core::Tensor& intrinsics) {
     core::Tensor vertex_map;
-    kernel::odometry::CreateVertexMap(depth.AsTensor(), intrinsics, vertex_map,
-                                      depth_scale, depth_max);
+    kernel::odometry::CreateVertexMap(depth.AsTensor(), intrinsics, vertex_map);
     return vertex_map;
 }
 

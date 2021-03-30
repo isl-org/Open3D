@@ -75,15 +75,13 @@ void PreprocessDepthCUDA(const core::Tensor& depth,
 
                 float d = *d_in_ptr / depth_scale;
                 bool valid = (d > 0 && d < depth_max);
-                *d_out_ptr = valid ? *d_in_ptr : NAN;
+                *d_out_ptr = valid ? d : NAN;
             });
 }
 
 void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          const core::Tensor& intrinsics,
-                         core::Tensor& vertex_map,
-                         float depth_scale,
-                         float depth_max) {
+                         core::Tensor& vertex_map) {
     NDArrayIndexer depth_indexer(depth_map, 2);
     t::geometry::kernel::TransformIndexer ti(intrinsics);
 
@@ -101,11 +99,10 @@ void CreateVertexMapCUDA(const core::Tensor& depth_map,
                 int64_t y = workload_idx / cols;
                 int64_t x = workload_idx % cols;
 
-                float d = *depth_indexer.GetDataPtrFromCoord<float>(x, y) /
-                          depth_scale;
+                float d = *depth_indexer.GetDataPtrFromCoord<float>(x, y);
 
                 float* vertex = vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-                if (d > 0 && d < depth_max) {
+                if (!__ISNAN(d)) {
                     ti.Unproject(static_cast<float>(x), static_cast<float>(y),
                                  d, vertex + 0, vertex + 1, vertex + 2);
                 } else {
@@ -143,7 +140,7 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
                     float* normal =
                             normal_indexer.GetDataPtrFromCoord<float>(x, y);
 
-                    if (v00[0] == NAN || v10[0] == NAN || v01[0] == NAN) {
+                    if (__ISNAN(v00[0]) || __ISNAN(v10[0]) || __ISNAN(v01[0])) {
                         normal[0] = NAN;
                         return;
                     }

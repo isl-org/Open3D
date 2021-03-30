@@ -141,8 +141,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
     const double fy = ti.fy_;
 
     // TODO: depth scale at the preprocessing stage
-    float depth_t =
-            *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t) / 1000.0;
+    float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
     float diff_D = depth_t - T_source_on_target_v[2];
     if (__ISNAN(depth_t) || abs(diff_D) > depth_diff) {
         return false;
@@ -226,8 +225,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     const double fy = ti.fy_;
 
     // TODO: depth scale at the preprocessing stage
-    float depth_t =
-            *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t) / 1000.0;
+    float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
     float diff_D = depth_t - T_source_on_target_v[2];
     if (__ISNAN(depth_t) || abs(diff_D) > depth_diff) {
         return false;
@@ -235,12 +233,10 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
 
     float dDdx =
             sobel_scale *
-            (*target_depth_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t)) /
-            1000.0;
+            (*target_depth_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
     float dDdy =
             sobel_scale *
-            (*target_depth_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t)) /
-            1000.0;
+            (*target_depth_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
     if (__ISNAN(dDdx) || __ISNAN(dDdy)) {
         return false;
     }

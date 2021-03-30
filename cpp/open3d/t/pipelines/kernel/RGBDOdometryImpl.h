@@ -41,9 +41,7 @@ void PreprocessDepthCPU(const core::Tensor& depth,
 
 void CreateVertexMapCPU(const core::Tensor& depth_map,
                         const core::Tensor& intrinsics,
-                        core::Tensor& vertex_map,
-                        float depth_scale,
-                        float depth_max);
+                        core::Tensor& vertex_map);
 
 void CreateNormalMapCPU(const core::Tensor& vertex_map,
                         core::Tensor& normal_map);
@@ -93,9 +91,7 @@ void PreprocessDepthCUDA(const core::Tensor& depth,
 
 void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          const core::Tensor& intrinsics,
-                         core::Tensor& vertex_map,
-                         float depth_scale,
-                         float depth_max);
+                         core::Tensor& vertex_map);
 
 void CreateNormalMapCUDA(const core::Tensor& vertex_map,
                          core::Tensor& normal_map);

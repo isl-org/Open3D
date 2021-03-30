@@ -41,9 +41,7 @@ void PreprocessDepth(const core::Tensor &depth,
 
 void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
-                     core::Tensor &vertex_map,
-                     float depth_scale,
-                     float depth_max);
+                     core::Tensor &vertex_map);
 
 void CreateNormalMap(const core::Tensor &vertex_map, core::Tensor &normal_map);
 
