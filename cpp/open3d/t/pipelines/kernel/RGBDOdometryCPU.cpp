@@ -74,6 +74,63 @@ void PreprocessDepthCPU(const core::Tensor& depth,
     });
 }
 
+void PyrDownDepthCPU(const core::Tensor& depth,
+                     core::Tensor& depth_down,
+                     float depth_diff) {
+    t::geometry::kernel::NDArrayIndexer depth_indexer(depth, 2);
+    int rows = depth_indexer.GetShape(0);
+    int cols = depth_indexer.GetShape(1);
+
+    int rows_down = rows / 2;
+    int cols_down = cols / 2;
+    depth_down = core::Tensor::Zeros({rows_down, cols_down},
+                                     core::Dtype::Float32, depth.GetDevice());
+
+    t::geometry::kernel::NDArrayIndexer depth_down_indexer(depth_down, 2);
+
+    int n = rows_down * cols_down;
+
+    const int D = 5;
+    const float weights[3] = {0.375f, 0.25f, 0.0625f};
+
+    // Reference:
+    // https://github.com/mp3guy/ICPCUDA/blob/master/Cuda/pyrdown.cu#L41
+    core::kernel::CPULauncher::LaunchGeneralKernel(
+            n, [&](int64_t workload_idx) {
+                int y = workload_idx / cols_down;
+                int x = workload_idx % cols_down;
+
+                float center =
+                        *depth_indexer.GetDataPtrFromCoord<float>(2 * x, 2 * y);
+                if (__ISNAN(center)) {
+                    *depth_down_indexer.GetDataPtrFromCoord<float>(x, y) = NAN;
+                    return;
+                }
+
+                int x_mi = std::max(0, 2 * x - D / 2) - 2 * x;
+                int y_mi = std::max(0, 2 * y - D / 2) - 2 * y;
+
+                int x_ma = std::min(cols, 2 * x - D / 2 + D) - 2 * x;
+                int y_ma = std::min(rows, 2 * y - D / 2 + D) - 2 * y;
+
+                float sum = 0;
+                float sum_weight = 0;
+                for (int yi = y_mi; yi < y_ma; ++yi) {
+                    for (int xi = x_mi; xi < x_ma; ++xi) {
+                        float val = *depth_indexer.GetDataPtrFromCoord<float>(
+                                2 * x + xi, 2 * y + yi);
+                        if (!__ISNAN(val) && abs(val - center) < depth_diff) {
+                            sum += val * weights[abs(xi)] * weights[abs(yi)];
+                            sum_weight += weights[abs(xi)] * weights[abs(yi)];
+                        }
+                    }
+                }
+
+                *depth_down_indexer.GetDataPtrFromCoord<float>(x, y) =
+                        sum / sum_weight;
+            });
+}
+
 void CreateVertexMapCPU(const core::Tensor& depth_map,
                         const core::Tensor& intrinsics,
                         core::Tensor& vertex_map) {

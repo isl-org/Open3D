@@ -58,6 +58,31 @@ void PreprocessDepth(const core::Tensor &depth,
     }
 }
 
+void PyrDownDepth(const core::Tensor &depth,
+                  core::Tensor &depth_down,
+                  float depth_diff) {
+    core::Dtype dtype = depth.GetDtype();
+    if (dtype != core::Dtype::Float32) {
+        utility::LogError(
+                "Unsupported format! Please preprocess depth before calling "
+                "PyrDown. Expected Float32, but got {}",
+                dtype.ToString());
+    }
+
+    core::Device device = depth.GetDevice();
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        PyrDownDepthCPU(depth, depth_down, depth_diff);
+    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        PyrDownDepthCUDA(depth, depth_down, depth_diff);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
 void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
                      core::Tensor &vertex_map) {

@@ -116,6 +116,10 @@ core::Tensor PreprocessDepth(const t::geometry::Image& depth,
                              float depth_scale = 1000.0,
                              float depth_max = 3.0);
 
+/// Pyramid downsampling depth, with a difference truncation.
+core::Tensor PyrDownDepth(const t::geometry::Image& depth,
+                          float depth_diff = 0.25);
+
 /// Create a vertex map (image) from a preprocessed depth image. Useful for
 /// point-to-plane odometry.
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,

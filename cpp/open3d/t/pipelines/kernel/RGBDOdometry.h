@@ -39,6 +39,10 @@ void PreprocessDepth(const core::Tensor &depth,
                      float depth_scale,
                      float depth_max);
 
+void PyrDownDepth(const core::Tensor &depth,
+                  core::Tensor &depth_down,
+                  float depth_diff);
+
 void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
                      core::Tensor &vertex_map);

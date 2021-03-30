@@ -130,8 +130,8 @@ int main(int argc, char **argv) {
     }
 
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3},
-            odom_method);
+            src, dst, intrinsic_t, trans, depth_scale, 3.0, depth_diff,
+            {10, 5, 3}, odom_method);
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(

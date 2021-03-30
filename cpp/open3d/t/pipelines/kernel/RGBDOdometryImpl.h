@@ -39,6 +39,10 @@ void PreprocessDepthCPU(const core::Tensor& depth,
                         float depth_scale,
                         float depth_max);
 
+void PyrDownDepthCPU(const core::Tensor& depth,
+                     core::Tensor& depth_down,
+                     float depth_diff);
+
 void CreateVertexMapCPU(const core::Tensor& depth_map,
                         const core::Tensor& intrinsics,
                         core::Tensor& vertex_map);
@@ -88,6 +92,10 @@ void PreprocessDepthCUDA(const core::Tensor& depth,
                          core::Tensor& depth_processed,
                          float depth_scale,
                          float depth_max);
+
+void PyrDownDepthCUDA(const core::Tensor& depth,
+                      core::Tensor& depth_down,
+                      float depth_diff);
 
 void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          const core::Tensor& intrinsics,
