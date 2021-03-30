@@ -57,6 +57,19 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 core::Tensor& residual,
                                 float depth_diff);
 
+void ComputePoseIntensityCPU(const core::Tensor& source_depth,
+                             const core::Tensor& target_depth,
+                             const core::Tensor& source_intensity,
+                             const core::Tensor& target_intensity,
+                             const core::Tensor& target_intensity_dx,
+                             const core::Tensor& target_intensity_dy,
+                             const core::Tensor& source_vertex_map,
+                             const core::Tensor& intrinsics,
+                             const core::Tensor& init_source_to_target,
+                             core::Tensor& delta,
+                             core::Tensor& residual,
+                             float depth_diff);
+
 void ComputePoseHybridCPU(const core::Tensor& source_depth,
                           const core::Tensor& target_depth,
                           const core::Tensor& source_intensity,
@@ -95,6 +108,19 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  core::Tensor& delta,
                                  core::Tensor& residual,
                                  float depth_diff);
+
+void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
+                              const core::Tensor& target_depth,
+                              const core::Tensor& source_intensity,
+                              const core::Tensor& target_intensity,
+                              const core::Tensor& target_intensity_dx,
+                              const core::Tensor& target_intensity_dy,
+                              const core::Tensor& source_vertex_map,
+                              const core::Tensor& intrinsics,
+                              const core::Tensor& init_source_to_target,
+                              core::Tensor& delta,
+                              core::Tensor& residual,
+                              float depth_diff);
 
 void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            const core::Tensor& target_depth,

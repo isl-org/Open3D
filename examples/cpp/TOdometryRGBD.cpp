@@ -117,17 +117,21 @@ int main(int argc, char **argv) {
     target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 
+    t::pipelines::odometry::Method odom_method;
+
     if (method == "PointToPlane") {
-        trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-                src, dst, intrinsic_t, trans, depth_scale, depth_diff,
-                {10, 5, 3}, t::pipelines::odometry::Method::PointToPlane);
+        odom_method = t::pipelines::odometry::Method::PointToPlane;
     } else if (method == "Hybrid") {
-        trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-                src, dst, intrinsic_t, trans, depth_scale, depth_diff,
-                {10, 5, 3}, t::pipelines::odometry::Method::Hybrid);
+        odom_method = t::pipelines::odometry::Method::Hybrid;
+    } else if (method == "Intensity") {
+        odom_method = t::pipelines::odometry::Method::Intensity;
     } else {
         utility::LogError("Unsupported method {}", method);
     }
+
+    trans = t::pipelines::odometry::RGBDOdometryMultiScale(
+            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3},
+            odom_method);
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(

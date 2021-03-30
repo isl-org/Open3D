@@ -98,6 +98,83 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     return true;
 }
 
+OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
+        int64_t workload_idx,
+        int64_t cols,
+        float depth_diff,
+        const NDArrayIndexer& source_depth_indexer,
+        const NDArrayIndexer& target_depth_indexer,
+        const NDArrayIndexer& source_intensity_indexer,
+        const NDArrayIndexer& target_intensity_indexer,
+        const NDArrayIndexer& target_intensity_dx_indexer,
+        const NDArrayIndexer& target_intensity_dy_indexer,
+        const NDArrayIndexer& source_vertex_indexer,
+        const t::geometry::kernel::TransformIndexer& ti,
+        float* J_I,
+        float& r_I) {
+    const float sobel_scale = 0.125;
+
+    int y = workload_idx / cols;
+    int x = workload_idx % cols;
+
+    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    if (__ISNAN(source_v[0])) {
+        return false;
+    }
+
+    // target on source: T_target_v
+    float T_source_on_target_v[3], u_tf, v_tf;
+    ti.RigidTransform(source_v[0], source_v[1], source_v[2],
+                      &T_source_on_target_v[0], &T_source_on_target_v[1],
+                      &T_source_on_target_v[2]);
+    ti.Project(T_source_on_target_v[0], T_source_on_target_v[1],
+               T_source_on_target_v[2], &u_tf, &v_tf);
+    int u_t = int(round(u_tf));
+    int v_t = int(round(v_tf));
+
+    if (T_source_on_target_v[2] < 0 ||
+        !target_depth_indexer.InBoundary(u_t, v_t)) {
+        return false;
+    }
+
+    const double fx = ti.fx_;
+    const double fy = ti.fy_;
+
+    // TODO: depth scale at the preprocessing stage
+    float depth_t =
+            *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t) / 1000.0;
+    float diff_D = depth_t - T_source_on_target_v[2];
+    if (__ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+        return false;
+    }
+
+    float diff_I =
+            *target_intensity_indexer.GetDataPtrFromCoord<float>(u_t, v_t) -
+            *source_intensity_indexer.GetDataPtrFromCoord<float>(x, y);
+    float dIdx =
+            sobel_scale *
+            (*target_intensity_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float dIdy =
+            sobel_scale *
+            (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+
+    float invz = 1 / T_source_on_target_v[2];
+    float c0 = dIdx * fx * invz;
+    float c1 = dIdy * fy * invz;
+    float c2 = -(c0 * T_source_on_target_v[0] + c1 * T_source_on_target_v[1]) *
+               invz;
+
+    J_I[0] = (-T_source_on_target_v[2] * c1 + T_source_on_target_v[1] * c2);
+    J_I[1] = (T_source_on_target_v[2] * c0 - T_source_on_target_v[0] * c2);
+    J_I[2] = (-T_source_on_target_v[1] * c0 + T_source_on_target_v[0] * c1);
+    J_I[3] = (c0);
+    J_I[4] = (c1);
+    J_I[5] = (c2);
+    r_I = diff_I;
+
+    return true;
+}
+
 OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
         int64_t workload_idx,
         int64_t cols,

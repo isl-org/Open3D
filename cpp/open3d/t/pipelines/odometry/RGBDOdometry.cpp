@@ -226,6 +226,81 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                 trans_d = delta_source_to_target.Matmul(trans_d);
             }
         }
+    } else if (method == Method::Intensity) {
+        int64_t n = int64_t(iterations.size());
+
+        std::vector<core::Tensor> source_intensity(iterations.size());
+        std::vector<core::Tensor> target_intensity(iterations.size());
+
+        std::vector<core::Tensor> source_depth(iterations.size());
+        std::vector<core::Tensor> target_depth(iterations.size());
+        std::vector<core::Tensor> target_intensity_dx(iterations.size());
+        std::vector<core::Tensor> target_intensity_dy(iterations.size());
+
+        std::vector<core::Tensor> source_vertex_maps(iterations.size());
+
+        std::vector<core::Tensor> intrinsic_matrices(iterations.size());
+
+        core::Tensor source_depth_filtered;
+        core::Tensor target_depth_filtered;
+        kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
+                                          source_depth_filtered, depth_scale,
+                                          3.0);
+        kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
+                                          target_depth_filtered, depth_scale,
+                                          3.0);
+        t::geometry::Image source_depth_curr(source_depth_filtered);
+        t::geometry::Image target_depth_curr(target_depth_filtered);
+
+        t::geometry::Image source_intensity_curr =
+                source.color_.RGBToGray().To(core::Dtype::Float32);
+        t::geometry::Image target_intensity_curr =
+                target.color_.RGBToGray().To(core::Dtype::Float32);
+
+        // Create image pyramid
+        for (int64_t i = 0; i < n; ++i) {
+            source_depth[n - 1 - i] = source_depth_curr.AsTensor().Clone();
+            target_depth[n - 1 - i] = target_depth_curr.AsTensor().Clone();
+
+            source_intensity[n - 1 - i] =
+                    source_intensity_curr.AsTensor().Clone();
+            target_intensity[n - 1 - i] =
+                    target_intensity_curr.AsTensor().Clone();
+
+            core::Tensor source_vertex_map = CreateVertexMap(
+                    source_depth_curr, intrinsics_d, depth_scale);
+            source_vertex_maps[n - 1 - i] = source_vertex_map;
+
+            auto target_intensity_grad = target_intensity_curr.FilterSobel();
+            target_intensity_dx[n - 1 - i] =
+                    target_intensity_grad.first.AsTensor();
+            target_intensity_dy[n - 1 - i] =
+                    target_intensity_grad.second.AsTensor();
+
+            intrinsic_matrices[n - 1 - i] = intrinsics_d.Clone();
+
+            if (i != n - 1) {
+                source_depth_curr = source_depth_curr.PyrDown();
+                target_depth_curr = target_depth_curr.PyrDown();
+                source_intensity_curr = source_intensity_curr.PyrDown();
+                target_intensity_curr = target_intensity_curr.PyrDown();
+
+                intrinsics_d /= 2;
+                intrinsics_d[-1][-1] = 1;
+            }
+        }
+
+        // Odometry
+        for (int64_t i = 0; i < n; ++i) {
+            for (int iter = 0; iter < iterations[i]; ++iter) {
+                core::Tensor delta_source_to_target = ComputePoseIntensity(
+                        source_depth[i], target_depth[i], source_intensity[i],
+                        target_intensity[i], target_intensity_dx[i],
+                        target_intensity_dy[i], source_vertex_maps[i],
+                        intrinsic_matrices[i], trans_d, depth_diff);
+                trans_d = delta_source_to_target.Matmul(trans_d);
+            }
+        }
     } else {
         utility::LogError("Odometry method not implemented.");
     }
@@ -245,6 +320,27 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
     kernel::odometry::ComputePosePointToPlane(
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
+
+    return pipelines::kernel::PoseToTransformation(se3_delta);
+}
+
+core::Tensor ComputePoseIntensity(const core::Tensor& source_depth,
+                                  const core::Tensor& target_depth,
+                                  const core::Tensor& source_intensity,
+                                  const core::Tensor& target_intensity,
+                                  const core::Tensor& target_intensity_dx,
+                                  const core::Tensor& target_intensity_dy,
+                                  const core::Tensor& source_vertex_map,
+                                  const core::Tensor& intrinsics,
+                                  const core::Tensor& init_source_to_target,
+                                  float depth_diff) {
+    // Delta target_to_source on host.
+    core::Tensor se3_delta;
+    core::Tensor residual;
+    kernel::odometry::ComputePoseIntensity(
+            source_depth, target_depth, source_intensity, target_intensity,
+            target_intensity_dx, target_intensity_dy, source_vertex_map,
+            intrinsics, init_source_to_target, se3_delta, residual, depth_diff);
 
     return pipelines::kernel::PoseToTransformation(se3_delta);
 }
@@ -271,18 +367,6 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
             init_source_to_target, se3_delta, residual, depth_diff);
 
     return pipelines::kernel::PoseToTransformation(se3_delta);
-}
-
-core::Tensor ComputePoseIntensity(const core::Tensor& source_vertex_map,
-                                  const core::Tensor& target_vertex_map,
-                                  const core::Tensor& source_color,
-                                  const core::Tensor& target_color,
-                                  const core::Tensor& source_color_dx,
-                                  const core::Tensor& source_color_dy,
-                                  const core::Tensor& intrinsics,
-                                  const core::Tensor& init_source_to_target,
-                                  float depth_diff) {
-    utility::LogError("Direct intensity odometry unimplemented.");
 }
 
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,

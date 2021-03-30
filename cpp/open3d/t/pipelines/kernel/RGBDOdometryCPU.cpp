@@ -165,6 +165,122 @@ void CreateNormalMapCPU(const core::Tensor& vertex_map,
             });
 }
 
+void ComputePoseIntensityCPU(const core::Tensor& source_depth,
+                             const core::Tensor& target_depth,
+                             const core::Tensor& source_intensity,
+                             const core::Tensor& target_intensity,
+                             const core::Tensor& target_intensity_dx,
+                             const core::Tensor& target_intensity_dy,
+                             const core::Tensor& source_vertex_map,
+                             const core::Tensor& intrinsics,
+                             const core::Tensor& init_source_to_target,
+                             core::Tensor& delta,
+                             core::Tensor& residual,
+                             float depth_diff) {
+    using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
+    NDArrayIndexer source_depth_indexer(source_depth, 2);
+    NDArrayIndexer target_depth_indexer(target_depth, 2);
+
+    NDArrayIndexer source_intensity_indexer(source_intensity, 2);
+    NDArrayIndexer target_intensity_indexer(target_intensity, 2);
+
+    NDArrayIndexer target_intensity_dx_indexer(target_intensity_dx, 2);
+    NDArrayIndexer target_intensity_dy_indexer(target_intensity_dy, 2);
+
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+
+    core::Tensor trans = init_source_to_target.To(source_vertex_map.GetDevice(),
+                                                  core::Dtype::Float32);
+    t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
+
+    // Output
+    int64_t rows = source_vertex_indexer.GetShape(0);
+    int64_t cols = source_vertex_indexer.GetShape(1);
+
+    core::Device device = source_vertex_map.GetDevice();
+
+    int64_t n = rows * cols;
+
+    std::vector<float> A_1x29(29, 0.0);
+
+#ifdef _WIN32
+    std::vector<float> zeros_29(29, 0.0);
+    A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_29,
+            [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
+#else
+    float* A_reduction = A_1x29.data();
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
+                    float J_I[6];
+                    float r_I;
+
+                    bool valid = GetJacobianIntensity(
+                            workload_idx, cols, depth_diff,
+                            source_depth_indexer, target_depth_indexer,
+                            source_intensity_indexer, target_intensity_indexer,
+                            target_intensity_dx_indexer,
+                            target_intensity_dy_indexer, source_vertex_indexer,
+                            ti, J_I, r_I);
+
+                    if (valid) {
+                        for (int i = 0, j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                A_reduction[i] += J_I[j] * J_I[k];
+                                i++;
+                            }
+                            A_reduction[21 + j] += J_I[j] * r_I;
+                        }
+                        A_reduction[27] += r_I * r_I;
+                        A_reduction[28] += 1;
+                    }
+                }
+#ifdef _WIN32
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(29);
+                for (int j = 0; j < 29; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
+#endif
+
+    core::Tensor AtA =
+            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
+    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float32, device);
+
+    float* AtA_local_ptr = AtA.GetDataPtr<float>();
+    float* Atb_local_ptr = Atb.GetDataPtr<float>();
+
+    for (int i = 0, j = 0; j < 6; j++) {
+        for (int k = 0; k <= j; k++) {
+            AtA_local_ptr[j * 6 + k] = A_1x29[i];
+            AtA_local_ptr[k * 6 + j] = A_1x29[i];
+            i++;
+        }
+        Atb_local_ptr[j] = A_1x29[21 + j];
+    }
+
+    residual = core::Tensor::Init<float>({A_1x29[27]}, device);
+
+    int count = static_cast<int>(A_1x29[28]);
+
+    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
+                      residual.Item<float>() / count, residual.Item<float>(),
+                      count);
+
+    // Solve on CPU with double to ensure precision.
+    core::Device host(core::Device("CPU:0"));
+    delta = AtA.To(host, core::Dtype::Float64)
+                    .Solve(Atb.Neg().To(host, core::Dtype::Float64));
+}
+
 void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 const core::Tensor& target_vertex_map,
                                 const core::Tensor& target_normal_map,
