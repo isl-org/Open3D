@@ -67,9 +67,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         int num_of_fields = 0;
 
         if ((line_buffer = file.ReadLine())) {
-            st.clear();
-            utility::SplitString(st, line_buffer, " ");
-            num_of_fields = (int)st.size();
+            st = utility::SplitString(line_buffer, " ");
+            num_of_fields = static_cast<int64_t>(st.size());
             if (num_of_fields < 3) {
                 utility::LogWarning(
                         "Read PTS failed: insufficient data fields.");
@@ -97,7 +96,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
         do {
             st.clear();
-            utility::SplitString(st, line_buffer, " ");
+            st = utility::SplitString(line_buffer, " ");
             if (num_of_fields > (int)st.size()) {
                 utility::LogWarning(
                         "Read PTS failed: lines have unequal elements.");
