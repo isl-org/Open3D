@@ -21,7 +21,7 @@ class AsyncEventLoop:
         self._using_native = use_native
 
         self._lock = threading.Lock()
-        self._finished_cv = threading.Condition(self._lock)
+        # self._finished_cv = threading.Condition(self._lock)
         self._run_queue = []
         self._return_vals = {}
         self._thread_finished = False
@@ -397,7 +397,7 @@ def gui_start_async(f, use_native=False):
 def main():
     app = gui.Application.instance
     app.initialize()
-    app.run()
+    # app.run()
 
     torus = o3d.geometry.TriangleMesh.create_torus()
     torus.compute_vertex_normals()
@@ -412,14 +412,37 @@ def main():
     print("hello")
 
 
-if __name__ == "__main__":
-    gui_start_async(main, use_native=False)
+def box():
+    app = gui.Application.instance
+    app.initialize()
+    # app.run()
+
+    torus = o3d.geometry.TriangleMesh.create_box()
+    torus.compute_vertex_normals()
+    mat = rendering.Material()
+    mat.shader = "defaultLit"
+
+    w = o3d.visualization.O3DVisualizer("Open3D", 640, 480)
+    w.add_geometry("Torus", torus, mat)
+    w.reset_camera_to_default()
+    app.add_window(w)
+
+    print("hello")
+
 
 # if __name__ == "__main__":
 #     o3d.visualization.gui.Application.instance.enable_webrtc()
-#     use_native = False
-#     AsyncEventLoop.instance = AsyncEventLoop(use_native)
-#     eloop = AsyncEventLoop.instance
-#     eloop.start()
-#     eloop.run_sync(main)
-#     # gui_start_async(main, use_native=False)
+#     gui_start_async(main, use_native=False)
+
+if __name__ == "__main__":
+    o3d.visualization.gui.Application.instance.enable_webrtc()
+    use_native = False
+    print("before AsyncEventLoop(use_native)")
+    AsyncEventLoop.instance = AsyncEventLoop(use_native)
+    eloop = AsyncEventLoop.instance
+    print("before start()")
+    eloop.start()
+    print("after start()")
+    eloop.run_sync(main)
+    print("after main()")
+    # gui_start_async(main, use_native=False)
