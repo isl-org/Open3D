@@ -52,12 +52,19 @@ if __name__ == "__main__":
     app = o3d.visualization.gui.Application.instance
     app.initialize()
     add_draw(get_boxes(), "Open3D empty_box", 640, 480)
-    add_draw(get_spheres(), "Open3D multi_objects", 640, 480)
+    app.run()
 
-    # def workload():
-    while (app.run_one_tick()):
-        pass
-
-    thread = threading.Thread(target=workload)
-    thread.start()
-    # app.run()
+# if __name__ == "__main__":
+#     app = o3d.visualization.gui.Application.instance
+#     app.initialize()
+#     add_draw(get_boxes(), "Open3D empty_box", 640, 480)
+#     add_draw(get_spheres(), "Open3D multi_objects", 640, 480)
+#     app.run()
+#
+#     def workload():
+#     while (app.run_one_tick()):
+#         pass
+#
+#     thread = threading.Thread(target=workload)
+#     thread.start()
+#     app.run()
