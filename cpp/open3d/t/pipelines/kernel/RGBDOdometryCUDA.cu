@@ -36,6 +36,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobian.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 #define WARPSIZE 32
 #define BLOCKSIZE 1024
@@ -52,10 +53,10 @@ void PreprocessDepthCUDA(const core::Tensor& depth,
                          float depth_max) {
     depth.AssertDtype(core::Dtype::Float32);
 
-    t::geometry::kernel::NDArrayIndexer depth_in_indexer(depth, 2);
+    NDArrayIndexer depth_in_indexer(depth, 2);
 
     depth_processed = core::Tensor::EmptyLike(depth);
-    t::geometry::kernel::NDArrayIndexer depth_out_indexer(depth_processed, 2);
+    NDArrayIndexer depth_out_indexer(depth_processed, 2);
 
     // Output
     int64_t rows = depth_in_indexer.GetShape(0);
@@ -83,7 +84,7 @@ void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          core::Tensor& vertex_map,
                          float depth_scale,
                          float depth_max) {
-    t::geometry::kernel::NDArrayIndexer depth_indexer(depth_map, 2);
+    NDArrayIndexer depth_indexer(depth_map, 2);
     t::geometry::kernel::TransformIndexer ti(intrinsics);
 
     // Output
@@ -92,7 +93,7 @@ void CreateVertexMapCUDA(const core::Tensor& depth_map,
 
     vertex_map = core::Tensor::Zeros({rows, cols, 3}, core::Dtype::Float32,
                                      depth_map.GetDevice());
-    t::geometry::kernel::NDArrayIndexer vertex_indexer(vertex_map, 2);
+    NDArrayIndexer vertex_indexer(vertex_map, 2);
 
     int64_t n = rows * cols;
     core::kernel::CUDALauncher::LaunchGeneralKernel(
@@ -115,7 +116,7 @@ void CreateVertexMapCUDA(const core::Tensor& depth_map,
 
 void CreateNormalMapCUDA(const core::Tensor& vertex_map,
                          core::Tensor& normal_map) {
-    t::geometry::kernel::NDArrayIndexer vertex_indexer(vertex_map, 2);
+    NDArrayIndexer vertex_indexer(vertex_map, 2);
 
     // Output
     int64_t rows = vertex_indexer.GetShape(0);
@@ -124,7 +125,7 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
     normal_map =
             core::Tensor::Zeros(vertex_map.GetShape(), vertex_map.GetDtype(),
                                 vertex_map.GetDevice());
-    t::geometry::kernel::NDArrayIndexer normal_indexer(normal_map, 2);
+    NDArrayIndexer normal_indexer(normal_map, 2);
 
     int64_t n = rows * cols;
     core::kernel::CUDALauncher::LaunchGeneralKernel(
@@ -169,6 +170,33 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
             });
 }
 
+void ReduceAndSolve6x6(float* A_reduction,
+                       core::Tensor& delta,
+                       core::Tensor& residual,
+                       int64_t n,
+                       const core::Device& device) {
+    core::Tensor output_29 =
+            core::Tensor::Empty({29}, core::Dtype::Float32, device);
+    float* output_29_data = output_29.GetDataPtr<float>();
+
+    // Reduction of {29, N} to {29}.
+    for (int i = 0; i < 29; i++) {
+        // Determine temporary device storage requirements.
+        void* d_temp_storage = NULL;
+        size_t temp_storage_bytes = 0;
+        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
+                               A_reduction + i * n, output_29_data + i, n);
+        // Allocate temporary storage.
+        cudaMalloc(&d_temp_storage, temp_storage_bytes);
+        // Run sum-reduction.
+        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
+                               A_reduction + i * n, output_29_data + i, n);
+        cudaFree(d_temp_storage);
+    }
+
+    DecodeAndSolve6x6(output_29, delta, residual);
+}
+
 void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  const core::Tensor& target_vertex_map,
                                  const core::Tensor& target_normal_map,
@@ -177,12 +205,9 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  core::Tensor& delta,
                                  core::Tensor& residual,
                                  float depth_diff) {
-    t::geometry::kernel::NDArrayIndexer source_vertex_indexer(source_vertex_map,
-                                                              2);
-    t::geometry::kernel::NDArrayIndexer target_vertex_indexer(target_vertex_map,
-                                                              2);
-    t::geometry::kernel::NDArrayIndexer target_normal_indexer(target_normal_map,
-                                                              2);
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
+    NDArrayIndexer target_normal_indexer(target_normal_map, 2);
 
     core::Device device = source_vertex_map.GetDevice();
 
@@ -229,55 +254,9 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                 }
             });
 
-    core::Tensor output_29 =
-            core::Tensor::Empty({29}, core::Dtype::Float32, device);
-    float* output_29_data = output_29.GetDataPtr<float>();
-
-    // Reduction of {29, N} to {29}.
-    for (int i = 0; i < 29; i++) {
-        // Determine temporary device storage requirements.
-        void* d_temp_storage = NULL;
-        size_t temp_storage_bytes = 0;
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        // Allocate temporary storage.
-        cudaMalloc(&d_temp_storage, temp_storage_bytes);
-        // Run sum-reduction.
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-    }
-
-    const core::Device host(core::Device("CPU:0"));
-
-    core::Tensor A_1x29_host = output_29.To(host, core::Dtype::Float64);
-    double* A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
-
-    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
-
-    double* AtA_local_ptr = AtA.GetDataPtr<double>();
-    double* Atb_local_ptr = Atb.GetDataPtr<double>();
-
-    for (int j = 0; j < 6; j++) {
-        Atb_local_ptr[j] = A_1x29_ptr[21 + j];
-        const int64_t reduction_idx = ((j * (j + 1)) / 2);
-        for (int k = 0; k <= j; k++) {
-            AtA_local_ptr[j * 6 + k] = A_1x29_ptr[reduction_idx + k];
-            AtA_local_ptr[k * 6 + j] = A_1x29_ptr[reduction_idx + k];
-        }
-    }
-
-    residual = core::Tensor::Init<double>({A_1x29_ptr[27]}, host);
-
-    const int count = static_cast<int>(A_1x29_ptr[28]);
-
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<double>() / count, residual.Item<double>(),
-                      count);
-
-    // Solve on CPU with double to ensure precision.
-    delta = AtA.Solve(Atb.Neg());
+    ReduceAndSolve6x6(A_reduction, delta, residual, n, device);
 }
+
 void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               const core::Tensor& target_depth,
                               const core::Tensor& source_intensity,
@@ -290,7 +269,6 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               core::Tensor& delta,
                               core::Tensor& residual,
                               float depth_diff) {
-    using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -347,54 +325,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                 }
             });
 
-    core::Tensor output_29 =
-            core::Tensor::Empty({29}, core::Dtype::Float32, device);
-    float* output_29_data = output_29.GetDataPtr<float>();
-
-    // Reduction of {29, N} to {29}.
-    for (int i = 0; i < 29; i++) {
-        // Determine temporary device storage requirements.
-        void* d_temp_storage = NULL;
-        size_t temp_storage_bytes = 0;
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        // Allocate temporary storage.
-        cudaMalloc(&d_temp_storage, temp_storage_bytes);
-        // Run sum-reduction.
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-    }
-
-    const core::Device host(core::Device("CPU:0"));
-
-    core::Tensor A_1x29_host = output_29.To(host, core::Dtype::Float64);
-    double* A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
-
-    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
-
-    double* AtA_local_ptr = AtA.GetDataPtr<double>();
-    double* Atb_local_ptr = Atb.GetDataPtr<double>();
-
-    for (int j = 0; j < 6; j++) {
-        Atb_local_ptr[j] = A_1x29_ptr[21 + j];
-        const int64_t reduction_idx = ((j * (j + 1)) / 2);
-        for (int k = 0; k <= j; k++) {
-            AtA_local_ptr[j * 6 + k] = A_1x29_ptr[reduction_idx + k];
-            AtA_local_ptr[k * 6 + j] = A_1x29_ptr[reduction_idx + k];
-        }
-    }
-
-    residual = core::Tensor::Init<double>({A_1x29_ptr[27]}, host);
-
-    const int count = static_cast<int>(A_1x29_ptr[28]);
-
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<double>() / count, residual.Item<double>(),
-                      count);
-
-    // Solve on CPU with double to ensure precision.
-    delta = AtA.Solve(Atb.Neg());
+    ReduceAndSolve6x6(A_reduction, delta, residual, n, device);
 }
 
 void ComputePoseHybridCUDA(const core::Tensor& source_depth,
@@ -411,7 +342,6 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            core::Tensor& delta,
                            core::Tensor& residual,
                            float depth_diff) {
-    using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -472,55 +402,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                     }
                 }
             });
-
-    core::Tensor output_29 =
-            core::Tensor::Empty({29}, core::Dtype::Float32, device);
-    float* output_29_data = output_29.GetDataPtr<float>();
-
-    // Reduction of {29, N} to {29}.
-    for (int i = 0; i < 29; i++) {
-        // Determine temporary device storage requirements.
-        void* d_temp_storage = NULL;
-        size_t temp_storage_bytes = 0;
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        // Allocate temporary storage.
-        cudaMalloc(&d_temp_storage, temp_storage_bytes);
-        // Run sum-reduction.
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-    }
-
-    const core::Device host(core::Device("CPU:0"));
-
-    core::Tensor A_1x29_host = output_29.To(host, core::Dtype::Float64);
-    double* A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
-
-    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
-
-    double* AtA_local_ptr = AtA.GetDataPtr<double>();
-    double* Atb_local_ptr = Atb.GetDataPtr<double>();
-
-    for (int j = 0; j < 6; j++) {
-        Atb_local_ptr[j] = A_1x29_ptr[21 + j];
-        const int64_t reduction_idx = ((j * (j + 1)) / 2);
-        for (int k = 0; k <= j; k++) {
-            AtA_local_ptr[j * 6 + k] = A_1x29_ptr[reduction_idx + k];
-            AtA_local_ptr[k * 6 + j] = A_1x29_ptr[reduction_idx + k];
-        }
-    }
-
-    residual = core::Tensor::Init<double>({A_1x29_ptr[27]}, host);
-
-    const int count = static_cast<int>(A_1x29_ptr[28]);
-
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<double>() / count, residual.Item<double>(),
-                      count);
-
-    // Solve on CPU with double to ensure precision.
-    delta = AtA.Solve(Atb.Neg());
+    ReduceAndSolve6x6(A_reduction, delta, residual, n, device);
 }
 
 }  // namespace odometry

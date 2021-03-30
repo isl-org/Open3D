@@ -33,6 +33,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobian.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
@@ -46,10 +47,10 @@ void PreprocessDepthCPU(const core::Tensor& depth,
                         float depth_max) {
     depth.AssertDtype(core::Dtype::Float32);
 
-    t::geometry::kernel::NDArrayIndexer depth_in_indexer(depth, 2);
+    NDArrayIndexer depth_in_indexer(depth, 2);
 
     depth_processed = core::Tensor::EmptyLike(depth);
-    t::geometry::kernel::NDArrayIndexer depth_out_indexer(depth_processed, 2);
+    NDArrayIndexer depth_out_indexer(depth_processed, 2);
 
     // Output
     int64_t rows = depth_in_indexer.GetShape(0);
@@ -77,7 +78,7 @@ void CreateVertexMapCPU(const core::Tensor& depth_map,
                         core::Tensor& vertex_map,
                         float depth_scale,
                         float depth_max) {
-    t::geometry::kernel::NDArrayIndexer depth_indexer(depth_map, 2);
+    NDArrayIndexer depth_indexer(depth_map, 2);
     t::geometry::kernel::TransformIndexer ti(intrinsics);
 
     // Output
@@ -86,7 +87,7 @@ void CreateVertexMapCPU(const core::Tensor& depth_map,
 
     vertex_map = core::Tensor::Zeros({rows, cols, 3}, core::Dtype::Float32,
                                      depth_map.GetDevice());
-    t::geometry::kernel::NDArrayIndexer vertex_indexer(vertex_map, 2);
+    NDArrayIndexer vertex_indexer(vertex_map, 2);
 
     int64_t n = rows * cols;
 
@@ -110,7 +111,7 @@ void CreateVertexMapCPU(const core::Tensor& depth_map,
 
 void CreateNormalMapCPU(const core::Tensor& vertex_map,
                         core::Tensor& normal_map) {
-    t::geometry::kernel::NDArrayIndexer vertex_indexer(vertex_map, 2);
+    NDArrayIndexer vertex_indexer(vertex_map, 2);
 
     // Output
     int64_t rows = vertex_indexer.GetShape(0);
@@ -119,7 +120,7 @@ void CreateNormalMapCPU(const core::Tensor& vertex_map,
     normal_map =
             core::Tensor::Zeros(vertex_map.GetShape(), vertex_map.GetDtype(),
                                 vertex_map.GetDevice());
-    t::geometry::kernel::NDArrayIndexer normal_indexer(normal_map, 2);
+    NDArrayIndexer normal_indexer(normal_map, 2);
 
     int64_t n = rows * cols;
 
@@ -177,7 +178,6 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                              core::Tensor& delta,
                              core::Tensor& residual,
                              float depth_diff) {
-    using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -250,35 +250,9 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                 return result;
             });
 #endif
-
-    core::Tensor AtA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float32, device);
-
-    float* AtA_local_ptr = AtA.GetDataPtr<float>();
-    float* Atb_local_ptr = Atb.GetDataPtr<float>();
-
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            AtA_local_ptr[j * 6 + k] = A_1x29[i];
-            AtA_local_ptr[k * 6 + j] = A_1x29[i];
-            i++;
-        }
-        Atb_local_ptr[j] = A_1x29[21 + j];
-    }
-
-    residual = core::Tensor::Init<float>({A_1x29[27]}, device);
-
-    int count = static_cast<int>(A_1x29[28]);
-
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<float>() / count, residual.Item<float>(),
-                      count);
-
-    // Solve on CPU with double to ensure precision.
-    core::Device host(core::Device("CPU:0"));
-    delta = AtA.To(host, core::Dtype::Float64)
-                    .Solve(Atb.Neg().To(host, core::Dtype::Float64));
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
+                                    device);
+    DecodeAndSolve6x6(A_reduction_tensor, delta, residual);
 }
 
 void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
@@ -289,12 +263,9 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 core::Tensor& delta,
                                 core::Tensor& residual,
                                 float depth_diff) {
-    t::geometry::kernel::NDArrayIndexer source_vertex_indexer(source_vertex_map,
-                                                              2);
-    t::geometry::kernel::NDArrayIndexer target_vertex_indexer(target_vertex_map,
-                                                              2);
-    t::geometry::kernel::NDArrayIndexer target_normal_indexer(target_normal_map,
-                                                              2);
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
+    NDArrayIndexer target_normal_indexer(target_normal_map, 2);
 
     core::Tensor trans = init_source_to_target.To(source_vertex_map.GetDevice(),
                                                   core::Dtype::Float32);
@@ -354,35 +325,9 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                 return result;
             });
 #endif
-
-    core::Tensor AtA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float32, device);
-
-    float* AtA_local_ptr = AtA.GetDataPtr<float>();
-    float* Atb_local_ptr = Atb.GetDataPtr<float>();
-
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            AtA_local_ptr[j * 6 + k] = A_1x29[i];
-            AtA_local_ptr[k * 6 + j] = A_1x29[i];
-            i++;
-        }
-        Atb_local_ptr[j] = A_1x29[21 + j];
-    }
-
-    residual = core::Tensor::Init<float>({A_1x29[27]}, device);
-
-    int count = static_cast<int>(A_1x29[28]);
-
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<float>() / count, residual.Item<float>(),
-                      count);
-
-    // Solve on CPU with double to ensure precision.
-    core::Device host(core::Device("CPU:0"));
-    delta = AtA.To(host, core::Dtype::Float64)
-                    .Solve(Atb.Neg().To(host, core::Dtype::Float64));
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
+                                    device);
+    DecodeAndSolve6x6(A_reduction_tensor, delta, residual);
 }
 
 void ComputePoseHybridCPU(const core::Tensor& source_depth,
@@ -399,7 +344,6 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                           core::Tensor& delta,
                           core::Tensor& residual,
                           float depth_diff) {
-    using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -476,35 +420,9 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                 return result;
             });
 #endif
-
-    core::Tensor AtA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float32, device);
-
-    float* AtA_local_ptr = AtA.GetDataPtr<float>();
-    float* Atb_local_ptr = Atb.GetDataPtr<float>();
-
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            AtA_local_ptr[j * 6 + k] = A_1x29[i];
-            AtA_local_ptr[k * 6 + j] = A_1x29[i];
-            i++;
-        }
-        Atb_local_ptr[j] = A_1x29[21 + j];
-    }
-
-    residual = core::Tensor::Init<float>({A_1x29[27]}, device);
-
-    int count = static_cast<int>(A_1x29[28]);
-
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<float>() / count, residual.Item<float>(),
-                      count);
-
-    // Solve on CPU with double to ensure precision.
-    core::Device host(core::Device("CPU:0"));
-    delta = AtA.To(host, core::Dtype::Float64)
-                    .Solve(Atb.Neg().To(host, core::Dtype::Float64));
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
+                                    device);
+    DecodeAndSolve6x6(A_reduction_tensor, delta, residual);
 }
 
 }  // namespace odometry
