@@ -236,43 +236,43 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                     .Solve(Atb.Neg().To(host, core::Dtype::Float64));
 }
 
-void ComputePoseDirectHybridCPU(const core::Tensor& source_depth,
-                                const core::Tensor& target_depth,
-                                const core::Tensor& source_intensity,
-                                const core::Tensor& target_intensity,
-                                const core::Tensor& source_depth_dx,
-                                const core::Tensor& source_depth_dy,
-                                const core::Tensor& source_intensity_dx,
-                                const core::Tensor& source_intensity_dy,
-                                const core::Tensor& target_vtx_map,
-                                const core::Tensor& intrinsics,
-                                const core::Tensor& init_source_to_target,
-                                core::Tensor& delta,
-                                core::Tensor& residual,
-                                float depth_diff) {
+void ComputePoseHybridCPU(const core::Tensor& source_depth,
+                          const core::Tensor& target_depth,
+                          const core::Tensor& source_intensity,
+                          const core::Tensor& target_intensity,
+                          const core::Tensor& source_depth_dx,
+                          const core::Tensor& source_depth_dy,
+                          const core::Tensor& source_intensity_dx,
+                          const core::Tensor& source_intensity_dy,
+                          const core::Tensor& target_vertex_map,
+                          const core::Tensor& intrinsics,
+                          const core::Tensor& init_source_to_target,
+                          core::Tensor& delta,
+                          core::Tensor& residual,
+                          float depth_diff) {
     using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
-    NDArrayIndexer src_depth_indexer(source_depth, 2);
-    NDArrayIndexer dst_depth_indexer(target_depth, 2);
+    NDArrayIndexer source_depth_indexer(source_depth, 2);
+    NDArrayIndexer target_depth_indexer(target_depth, 2);
 
-    NDArrayIndexer src_intensity_indexer(source_intensity, 2);
-    NDArrayIndexer dst_intensity_indexer(target_intensity, 2);
+    NDArrayIndexer source_intensity_indexer(source_intensity, 2);
+    NDArrayIndexer target_intensity_indexer(target_intensity, 2);
 
-    NDArrayIndexer src_depth_dx_indexer(source_depth_dx, 2);
-    NDArrayIndexer src_depth_dy_indexer(source_depth_dy, 2);
-    NDArrayIndexer src_intensity_dx_indexer(source_intensity_dx, 2);
-    NDArrayIndexer src_intensity_dy_indexer(source_intensity_dy, 2);
+    NDArrayIndexer source_depth_dx_indexer(source_depth_dx, 2);
+    NDArrayIndexer source_depth_dy_indexer(source_depth_dy, 2);
+    NDArrayIndexer source_intensity_dx_indexer(source_intensity_dx, 2);
+    NDArrayIndexer source_intensity_dy_indexer(source_intensity_dy, 2);
 
-    NDArrayIndexer dst_vertex_indexer(target_vtx_map, 2);
+    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
 
     core::Tensor trans = init_source_to_target.Inverse().To(
-            target_vtx_map.GetDevice(), core::Dtype::Float32);
+            target_vertex_map.GetDevice(), core::Dtype::Float32);
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     // Output
-    int64_t rows = dst_vertex_indexer.GetShape(0);
-    int64_t cols = dst_vertex_indexer.GetShape(1);
+    int64_t rows = target_vertex_indexer.GetShape(0);
+    int64_t cols = target_vertex_indexer.GetShape(1);
 
-    core::Device device = target_vtx_map.GetDevice();
+    core::Device device = target_vertex_map.GetDevice();
 
     int64_t n = rows * cols;
 
@@ -293,13 +293,14 @@ void ComputePoseDirectHybridCPU(const core::Tensor& source_depth,
                     float J_I[6], J_D[6];
                     float r_I, r_D;
 
-                    bool valid = GetJacobianDirectHybridLocal(
-                            workload_idx, cols, depth_diff, src_depth_indexer,
-                            dst_depth_indexer, src_intensity_indexer,
-                            dst_intensity_indexer, src_depth_dx_indexer,
-                            src_depth_dy_indexer, src_intensity_dx_indexer,
-                            src_intensity_dy_indexer, dst_vertex_indexer, ti,
-                            J_I, J_D, r_I, r_D);
+                    bool valid = GetJacobianHybridLocal(
+                            workload_idx, cols, depth_diff,
+                            source_depth_indexer, target_depth_indexer,
+                            source_intensity_indexer, target_intensity_indexer,
+                            source_depth_dx_indexer, source_depth_dy_indexer,
+                            source_intensity_dx_indexer,
+                            source_intensity_dy_indexer, target_vertex_indexer,
+                            ti, J_I, J_D, r_I, r_D);
 
                     if (valid) {
                         for (int i = 0, j = 0; j < 6; j++) {

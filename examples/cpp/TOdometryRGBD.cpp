@@ -120,11 +120,11 @@ int main(int argc, char **argv) {
     if (method == "PointToPlane") {
         trans = t::pipelines::odometry::RGBDOdometryMultiScale(
                 src, dst, intrinsic_t, trans, depth_scale, depth_diff,
-                {10, 5, 3}, t::pipelines::odometry::LossType::PointToPlane);
-    } else if (method == "DirectHybrid") {
+                {10, 5, 3}, t::pipelines::odometry::Method::PointToPlane);
+    } else if (method == "Hybrid") {
         trans = t::pipelines::odometry::RGBDOdometryMultiScale(
                 src, dst, intrinsic_t, trans, depth_scale, depth_diff,
-                {10, 5, 3}, t::pipelines::odometry::LossType::DirectHybrid);
+                {10, 5, 3}, t::pipelines::odometry::Method::Hybrid);
     } else {
         utility::LogError("Unsupported method {}", method);
     }
