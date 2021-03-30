@@ -185,7 +185,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 3e-4);
 }
 
-TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
+TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScale) {
     core::Device device = GetParam();
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {
@@ -193,6 +193,7 @@ TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
     }
 
     float depth_scale = 1000.0;
+    float depth_max = 3.0;
     float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
@@ -214,7 +215,8 @@ TEST_P(OdometryPermuteDevices, MultiScaleOdometry) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_diff, {10, 5, 3});
+            src, dst, intrinsic_t, trans, depth_scale, depth_max, depth_diff,
+            {10, 5, 3});
 
     core::Device host("CPU:0");
     core::Tensor T0 = core::Tensor::Init<double>(

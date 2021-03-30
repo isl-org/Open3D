@@ -42,6 +42,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                                     const core::Tensor& intrinsics,
                                     const core::Tensor& init_source_to_target,
                                     float depth_scale,
+                                    float depth_max,
                                     float depth_diff,
                                     const std::vector<int>& iterations,
                                     const Method method) {
@@ -62,9 +63,11 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     core::Tensor source_depth_processed;
     core::Tensor target_depth_processed;
     kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
-                                      source_depth_processed, depth_scale, 3.0);
+                                      source_depth_processed, depth_scale,
+                                      depth_max);
     kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
-                                      target_depth_processed, depth_scale, 3.0);
+                                      target_depth_processed, depth_scale,
+                                      depth_max);
 
     int64_t n = int64_t(iterations.size());
     if (method == Method::PointToPlane) {

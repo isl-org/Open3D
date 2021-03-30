@@ -62,6 +62,7 @@ static void ComputePosePointToPlane(benchmark::State& state,
 
     float depth_scale = 1000.0;
     float depth_diff = 0.07;
+    float depth_max = 3.0;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
@@ -72,15 +73,15 @@ static void ComputePosePointToPlane(benchmark::State& state,
     dst_depth = dst_depth.To(device).To(core::Dtype::Float32, false, 1.0);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
-    core::Tensor src_depth_processed =
-            t::pipelines::odometry::PreprocessDepth(src_depth, depth_scale);
+    core::Tensor src_depth_processed = t::pipelines::odometry::PreprocessDepth(
+            src_depth, depth_scale, depth_max);
     core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
             src_depth_processed, intrinsic_t.To(device));
     core::Tensor src_normal_map =
             t::pipelines::odometry::CreateNormalMap(src_vertex_map);
 
-    core::Tensor dst_depth_processed =
-            t::pipelines::odometry::PreprocessDepth(dst_depth, depth_scale);
+    core::Tensor dst_depth_processed = t::pipelines::odometry::PreprocessDepth(
+            dst_depth, depth_scale, depth_max);
     core::Tensor dst_vertex_map = t::pipelines::odometry::CreateVertexMap(
             dst_depth_processed, intrinsic_t.To(device));
 
@@ -119,8 +120,8 @@ static void RGBDOdometryMultiScale(
     }
 
     float depth_scale = 1000.0;
+    float depth_max = 3.0;
     float depth_diff = 0.07;
-    // float depth_max = 3.0;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
@@ -144,13 +145,14 @@ static void RGBDOdometryMultiScale(
     RGBDOdometryMultiScale(
             source, target, intrinsic_t,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")),
-            depth_scale, depth_diff, {10, 5, 3}, method);
+            depth_scale, depth_max, depth_diff, {10, 5, 3}, method);
 
     for (auto _ : state) {
         RGBDOdometryMultiScale(source, target, intrinsic_t,
                                core::Tensor::Eye(4, core::Dtype::Float64,
                                                  core::Device("CPU:0")),
-                               depth_scale, depth_diff, {10, 5, 3}, method);
+                               depth_scale, depth_max, depth_diff, {10, 5, 3},
+                               method);
     }
 }
 
