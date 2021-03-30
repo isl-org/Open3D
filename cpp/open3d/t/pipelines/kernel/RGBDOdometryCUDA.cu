@@ -35,6 +35,7 @@
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
+#include "open3d/t/pipelines/kernel/RGBDOdometryJacobian.h"
 
 #define WARPSIZE 32
 #define BLOCKSIZE 1024
@@ -44,6 +45,38 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 namespace odometry {
+
+void PreprocessDepthCUDA(const core::Tensor& depth,
+                         core::Tensor& depth_processed,
+                         float depth_scale,
+                         float depth_max) {
+    depth.AssertDtype(core::Dtype::Float32);
+
+    t::geometry::kernel::NDArrayIndexer depth_in_indexer(depth, 2);
+
+    depth_processed = core::Tensor::EmptyLike(depth);
+    t::geometry::kernel::NDArrayIndexer depth_out_indexer(depth_processed, 2);
+
+    // Output
+    int64_t rows = depth_in_indexer.GetShape(0);
+    int64_t cols = depth_in_indexer.GetShape(1);
+
+    int64_t n = rows * cols;
+    core::kernel::CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
+
+                float* d_in_ptr =
+                        depth_in_indexer.GetDataPtrFromCoord<float>(x, y);
+                float* d_out_ptr =
+                        depth_out_indexer.GetDataPtrFromCoord<float>(x, y);
+
+                float d = *d_in_ptr / depth_scale;
+                bool valid = (d > 0 && d < depth_max);
+                *d_out_ptr = valid ? *d_in_ptr : NAN;
+            });
+}
 
 void CreateVertexMapCUDA(const core::Tensor& depth_map,
                          const core::Tensor& intrinsics,
@@ -174,7 +207,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                 float J_ij[6];
                 float r;
 
-                bool valid = GetJacobianLocal(
+                bool valid = GetJacobianPointToPlane(
                         workload_idx, cols, depth_diff, source_vertex_indexer,
                         target_vertex_indexer, source_normal_indexer, ti, J_ij,
                         r);
@@ -297,7 +330,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                 float J_I[6], J_D[6];
                 float r_I, r_D;
 
-                bool valid = GetJacobianHybridLocal(
+                bool valid = GetJacobianHybrid(
                         workload_idx, cols, depth_diff, source_depth_indexer,
                         target_depth_indexer, source_intensity_indexer,
                         target_intensity_indexer, source_depth_dx_indexer,

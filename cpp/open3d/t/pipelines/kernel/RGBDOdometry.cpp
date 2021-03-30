@@ -26,6 +26,8 @@
 
 #include "open3d/t/pipelines/kernel/RGBDOdometry.h"
 
+#include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
