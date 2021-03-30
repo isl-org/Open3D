@@ -7,8 +7,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    GIT_REPOSITORY https://github.com/yxlao/stdgpu.git
-    GIT_TAG fix-thrust
+    GIT_REPOSITORY https://github.com/intel-isl/stdgpu.git
+    GIT_TAG build-without-gpu
     GIT_SHALLOW ON  # Do not download the history.
     UPDATE_COMMAND ""
     CMAKE_ARGS
