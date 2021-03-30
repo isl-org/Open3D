@@ -18,7 +18,6 @@ option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
-option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
@@ -31,6 +30,7 @@ else()
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
@@ -55,11 +55,12 @@ option(WITH_FAISS                 "Enable Faiss"                             ON 
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
 option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"    OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
+
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
-option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
+option(DEVELOPER_BUILD "Add +commit_hash to version, build single cuda arch" ON )
 
 # In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
@@ -361,7 +362,7 @@ if (BUILD_CUDA_MODULE)
     # - CMake: 3.20, CUDA: 10.0, CUDA_COMMON_GPU_ARCHITECTURES: 3.5;5.0;5.3;6.0;6.1;7.0;7.5;7.5+PTX
     # - CMake: 3.20, CUDA: 10.0, CUDA_ALL_GPU_ARCHITECTURES   : 3.0;3.2;3.5;3.7;5.0;5.2;5.3;6.0;6.1;6.2;7.0;7.2;7.5
     cmake_policy(SET CMP0104 NEW) # CMake 3.18+
-    if (BUILD_COMMON_CUDA_ARCHS)
+    if (NOT DEVELOPER_BUILD)
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
             set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 52-real 60-real 61-real 70-real 75-real 80)
         elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.0")
