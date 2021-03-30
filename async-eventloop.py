@@ -414,3 +414,12 @@ def main():
 
 if __name__ == "__main__":
     gui_start_async(main, use_native=False)
+
+# if __name__ == "__main__":
+#     o3d.visualization.gui.Application.instance.enable_webrtc()
+#     use_native = False
+#     AsyncEventLoop.instance = AsyncEventLoop(use_native)
+#     eloop = AsyncEventLoop.instance
+#     eloop.start()
+#     eloop.run_sync(main)
+#     # gui_start_async(main, use_native=False)
