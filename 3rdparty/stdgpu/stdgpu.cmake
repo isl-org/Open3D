@@ -4,11 +4,16 @@
 
 include(ExternalProject)
 
+# Alternative separatator: https://stackoverflow.com/a/45433229/1255535
+# string(REPLACE ";" "|" CMAKE_CUDA_ARCHITECTURES_LIST "${CMAKE_CUDA_ARCHITECTURES}")
+# -DSTDGPU_SETUP_COMPILER_FLAGS=OFF
+# -DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES_LIST}
+
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    GIT_REPOSITORY https://github.com/intel-isl/stdgpu.git
-    GIT_TAG build-without-gpu
+    GIT_REPOSITORY https://github.com/yxlao/stdgpu.git
+    GIT_TAG no-gpu-build
     GIT_SHALLOW ON  # Do not download the history.
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -20,7 +25,6 @@ ExternalProject_Add(
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
-        -DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DSTDGPU_BUILD_SHARED_LIBS=OFF
         -DSTDGPU_BUILD_EXAMPLES=OFF
