@@ -4,11 +4,6 @@
 
 include(ExternalProject)
 
-# Alternative separatator: https://stackoverflow.com/a/45433229/1255535
-# string(REPLACE ";" "|" CMAKE_CUDA_ARCHITECTURES_LIST "${CMAKE_CUDA_ARCHITECTURES}")
-# -DSTDGPU_SETUP_COMPILER_FLAGS=OFF
-# -DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES_LIST}
-
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
