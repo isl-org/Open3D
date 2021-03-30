@@ -70,9 +70,10 @@ class AsyncEventLoop:
                     return self._return_vals[task.task_id]
 
     def app_run(self):
-        self._lock.acquire()
-        self._finished_cv.wait()
-        self._lock.release()
+        pass
+        # self._lock.acquire()
+        # self._finished_cv.wait()
+        # self._lock.release()
 
 
 def monkey_patch_class(eloop, clazz):
@@ -396,6 +397,7 @@ def gui_start_async(f, use_native=False):
 def main():
     app = gui.Application.instance
     app.initialize()
+    app.run()
 
     torus = o3d.geometry.TriangleMesh.create_torus()
     torus.compute_vertex_normals()
@@ -407,7 +409,7 @@ def main():
     w.reset_camera_to_default()
     app.add_window(w)
 
-    app.run()
+    print("hello")
 
 
 if __name__ == "__main__":
