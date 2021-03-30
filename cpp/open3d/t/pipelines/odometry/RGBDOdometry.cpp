@@ -315,6 +315,15 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
     return pipelines::kernel::PoseToTransformation(se3_delta);
 }
 
+core::Tensor PreprocessDepth(const t::geometry::Image& depth,
+                             float depth_scale,
+                             float depth_max) {
+    core::Tensor depth_processed;
+    kernel::odometry::PreprocessDepth(depth.AsTensor(), depth_processed,
+                                      depth_scale, depth_max);
+    return depth_processed;
+}
+
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
                              const core::Tensor& intrinsics) {
     core::Tensor vertex_map;

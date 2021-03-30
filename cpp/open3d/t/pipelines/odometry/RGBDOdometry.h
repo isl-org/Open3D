@@ -59,7 +59,7 @@ core::Tensor RGBDOdometryMultiScale(
         float depth_factor = 1000.0f,
         float depth_diff = 0.07f,
         const std::vector<int>& iterations = {10, 5, 3},
-        const Method method = Method::PointToPlane);
+        const Method method = Method::Hybrid);
 
 /// Estimates 4x4 rigid transformation T from source to target.
 /// Perform one iteration of RGBD odometry using loss function
@@ -110,6 +110,11 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
 ///
 /// Helper functions exposed for easier testing.
 ///
+/// Rescale depth, clip to max range, and assign NaN to out-of-range pixels.
+core::Tensor PreprocessDepth(const t::geometry::Image& depth,
+                             float depth_scale = 1000.0,
+                             float depth_max = 3.0);
+
 /// Create a vertex map (image) from a preprocessed depth image. Useful for
 /// point-to-plane odometry.
 core::Tensor CreateVertexMap(const t::geometry::Image& depth,
