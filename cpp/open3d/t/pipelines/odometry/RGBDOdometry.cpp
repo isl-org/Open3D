@@ -112,13 +112,13 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
         std::vector<core::Tensor> source_depth(iterations.size());
         std::vector<core::Tensor> target_depth(iterations.size());
+        std::vector<core::Tensor> target_intensity_dx(iterations.size());
+        std::vector<core::Tensor> target_intensity_dy(iterations.size());
 
-        std::vector<core::Tensor> target_vertex_maps(iterations.size());
-        std::vector<core::Tensor> source_intensity_dx(iterations.size());
-        std::vector<core::Tensor> source_intensity_dy(iterations.size());
+        std::vector<core::Tensor> target_depth_dx(iterations.size());
+        std::vector<core::Tensor> target_depth_dy(iterations.size());
 
-        std::vector<core::Tensor> source_depth_dx(iterations.size());
-        std::vector<core::Tensor> source_depth_dy(iterations.size());
+        std::vector<core::Tensor> source_vertex_maps(iterations.size());
 
         std::vector<core::Tensor> intrinsic_matrices(iterations.size());
 
@@ -148,19 +148,19 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             target_intensity[n - 1 - i] =
                     target_intensity_curr.AsTensor().Clone();
 
-            core::Tensor target_vertex_map = CreateVertexMap(
-                    target_depth_curr, intrinsics_d, depth_scale);
-            target_vertex_maps[n - 1 - i] = target_vertex_map;
+            core::Tensor source_vertex_map = CreateVertexMap(
+                    source_depth_curr, intrinsics_d, depth_scale);
+            source_vertex_maps[n - 1 - i] = source_vertex_map;
 
-            auto source_intensity_grad = source_intensity_curr.FilterSobel();
-            source_intensity_dx[n - 1 - i] =
-                    source_intensity_grad.first.AsTensor();
-            source_intensity_dy[n - 1 - i] =
-                    source_intensity_grad.second.AsTensor();
+            auto target_intensity_grad = target_intensity_curr.FilterSobel();
+            target_intensity_dx[n - 1 - i] =
+                    target_intensity_grad.first.AsTensor();
+            target_intensity_dy[n - 1 - i] =
+                    target_intensity_grad.second.AsTensor();
 
-            auto source_depth_grad = source_depth_curr.FilterSobel();
-            source_depth_dx[n - 1 - i] = source_depth_grad.first.AsTensor();
-            source_depth_dy[n - 1 - i] = source_depth_grad.second.AsTensor();
+            auto target_depth_grad = target_depth_curr.FilterSobel();
+            target_depth_dx[n - 1 - i] = target_depth_grad.first.AsTensor();
+            target_depth_dy[n - 1 - i] = target_depth_grad.second.AsTensor();
 
             intrinsic_matrices[n - 1 - i] = intrinsics_d.Clone();
 
@@ -219,9 +219,9 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
                 core::Tensor delta_source_to_target = ComputePoseHybrid(
                         source_depth[i], target_depth[i], source_intensity[i],
-                        target_intensity[i], source_depth_dx[i],
-                        source_depth_dy[i], source_intensity_dx[i],
-                        source_intensity_dy[i], target_vertex_maps[i],
+                        target_intensity[i], target_depth_dx[i],
+                        target_depth_dy[i], target_intensity_dx[i],
+                        target_intensity_dy[i], source_vertex_maps[i],
                         intrinsic_matrices[i], trans_d, depth_diff);
                 trans_d = delta_source_to_target.Matmul(trans_d);
             }
@@ -246,29 +246,18 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
 
-    core::Tensor T_delta = pipelines::kernel::PoseToTransformation(se3_delta);
-
-    // T.inv = [R.T | -R.T @ t]
-    // core::Tensor R_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 0, 3);
-    // core::Tensor t_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 3, 4);
-
-    // core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float64);
-    // T_delta.Slice(0, 0, 3).Slice(1, 0, 3) = R_inv.T();
-    // T_delta.Slice(0, 0, 3).Slice(1, 3, 4) = R_inv.T().Matmul(t_inv).Neg();
-    // T_delta[-1][-1] = 1;
-
-    return T_delta;
+    return pipelines::kernel::PoseToTransformation(se3_delta);
 }
 
 core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
                                const core::Tensor& target_depth,
                                const core::Tensor& source_intensity,
                                const core::Tensor& target_intensity,
-                               const core::Tensor& source_depth_dx,
-                               const core::Tensor& source_depth_dy,
-                               const core::Tensor& source_intensity_dx,
-                               const core::Tensor& source_intensity_dy,
-                               const core::Tensor& target_vertex_map,
+                               const core::Tensor& target_depth_dx,
+                               const core::Tensor& target_depth_dy,
+                               const core::Tensor& target_intensity_dx,
+                               const core::Tensor& target_intensity_dy,
+                               const core::Tensor& source_vertex_map,
                                const core::Tensor& intrinsics,
                                const core::Tensor& init_source_to_target,
                                float depth_diff) {
@@ -277,23 +266,11 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
     core::Tensor residual;
     kernel::odometry::ComputePoseHybrid(
             source_depth, target_depth, source_intensity, target_intensity,
-            source_depth_dx, source_depth_dy, source_intensity_dx,
-            source_intensity_dy, target_vertex_map, intrinsics,
+            target_depth_dx, target_depth_dy, target_intensity_dx,
+            target_intensity_dy, source_vertex_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
 
-    core::Tensor T_delta_inv =
-            pipelines::kernel::PoseToTransformation(se3_delta);
-
-    // T.inv = [R.T | -R.T @ t]
-    core::Tensor R_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 0, 3);
-    core::Tensor t_inv = T_delta_inv.Slice(0, 0, 3).Slice(1, 3, 4);
-
-    core::Tensor T_delta = core::Tensor::Zeros({4, 4}, core::Dtype::Float64);
-    T_delta.Slice(0, 0, 3).Slice(1, 0, 3) = R_inv.T();
-    T_delta.Slice(0, 0, 3).Slice(1, 3, 4) = R_inv.T().Matmul(t_inv).Neg();
-    T_delta[-1][-1] = 1;
-
-    return T_delta;
+    return pipelines::kernel::PoseToTransformation(se3_delta);
 }
 
 core::Tensor ComputePoseIntensity(const core::Tensor& source_vertex_map,

@@ -283,11 +283,11 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            const core::Tensor& target_depth,
                            const core::Tensor& source_intensity,
                            const core::Tensor& target_intensity,
-                           const core::Tensor& source_depth_dx,
-                           const core::Tensor& source_depth_dy,
-                           const core::Tensor& source_intensity_dx,
-                           const core::Tensor& source_intensity_dy,
-                           const core::Tensor& target_vertex_map,
+                           const core::Tensor& target_depth_dx,
+                           const core::Tensor& target_depth_dy,
+                           const core::Tensor& target_intensity_dx,
+                           const core::Tensor& target_intensity_dy,
+                           const core::Tensor& source_vertex_map,
                            const core::Tensor& intrinsics,
                            const core::Tensor& init_source_to_target,
                            core::Tensor& delta,
@@ -300,20 +300,19 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
     NDArrayIndexer source_intensity_indexer(source_intensity, 2);
     NDArrayIndexer target_intensity_indexer(target_intensity, 2);
 
-    NDArrayIndexer source_depth_dx_indexer(source_depth_dx, 2);
-    NDArrayIndexer source_depth_dy_indexer(source_depth_dy, 2);
-    NDArrayIndexer source_intensity_dx_indexer(source_intensity_dx, 2);
-    NDArrayIndexer source_intensity_dy_indexer(source_intensity_dy, 2);
+    NDArrayIndexer target_depth_dx_indexer(target_depth_dx, 2);
+    NDArrayIndexer target_depth_dy_indexer(target_depth_dy, 2);
+    NDArrayIndexer target_intensity_dx_indexer(target_intensity_dx, 2);
+    NDArrayIndexer target_intensity_dy_indexer(target_intensity_dy, 2);
 
-    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
-    core::Device device = target_vertex_map.GetDevice();
-    core::Tensor trans =
-            init_source_to_target.Inverse().To(device, core::Dtype::Float32);
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
-    const int64_t rows = target_vertex_indexer.GetShape(0);
-    const int64_t cols = target_vertex_indexer.GetShape(1);
+    const int64_t rows = source_vertex_indexer.GetShape(0);
+    const int64_t cols = source_vertex_indexer.GetShape(1);
     const int64_t n = rows * cols;
 
     // A_29xN is a {29, N} shaped tensor, which is later red[<0;100;16M]uced to
@@ -332,9 +331,9 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                 bool valid = GetJacobianHybrid(
                         workload_idx, cols, depth_diff, source_depth_indexer,
                         target_depth_indexer, source_intensity_indexer,
-                        target_intensity_indexer, source_depth_dx_indexer,
-                        source_depth_dy_indexer, source_intensity_dx_indexer,
-                        source_intensity_dy_indexer, target_vertex_indexer, ti,
+                        target_intensity_indexer, target_depth_dx_indexer,
+                        target_depth_dy_indexer, target_intensity_dx_indexer,
+                        target_intensity_dy_indexer, source_vertex_indexer, ti,
                         J_I, J_D, r_I, r_D);
 
                 if (valid) {

@@ -97,7 +97,7 @@ void CreateNormalMap(const core::Tensor &vertex_map, core::Tensor &normal_map) {
 
 void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
                              const core::Tensor &target_vertex_map,
-                             const core::Tensor &source_normal_map,
+                             const core::Tensor &target_normal_map,
                              const core::Tensor &intrinsics,
                              const core::Tensor &init_source_to_target,
                              core::Tensor &delta,
@@ -107,12 +107,12 @@ void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(
-                source_vertex_map, target_vertex_map, source_normal_map,
+                source_vertex_map, target_vertex_map, target_normal_map,
                 intrinsics, init_source_to_target, delta, residual, depth_diff);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         ComputePosePointToPlaneCUDA(
-                source_vertex_map, target_vertex_map, source_normal_map,
+                source_vertex_map, target_vertex_map, target_normal_map,
                 intrinsics, init_source_to_target, delta, residual, depth_diff);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
@@ -126,30 +126,30 @@ void ComputePoseHybrid(const core::Tensor &source_depth,
                        const core::Tensor &target_depth,
                        const core::Tensor &source_intensity,
                        const core::Tensor &target_intensity,
-                       const core::Tensor &source_depth_dx,
-                       const core::Tensor &source_depth_dy,
-                       const core::Tensor &source_intensity_dx,
-                       const core::Tensor &source_intensity_dy,
-                       const core::Tensor &target_vertex_map,
+                       const core::Tensor &target_depth_dx,
+                       const core::Tensor &target_depth_dy,
+                       const core::Tensor &target_intensity_dx,
+                       const core::Tensor &target_intensity_dy,
+                       const core::Tensor &source_vertex_map,
                        const core::Tensor &intrinsics,
                        const core::Tensor &init_source_to_target,
                        core::Tensor &delta,
                        core::Tensor &residual,
                        float depth_diff) {
-    core::Device device = target_vertex_map.GetDevice();
+    core::Device device = source_vertex_map.GetDevice();
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputePoseHybridCPU(
                 source_depth, target_depth, source_intensity, target_intensity,
-                source_depth_dx, source_depth_dy, source_intensity_dx,
-                source_intensity_dy, target_vertex_map, intrinsics,
+                target_depth_dx, target_depth_dy, target_intensity_dx,
+                target_intensity_dy, source_vertex_map, intrinsics,
                 init_source_to_target, delta, residual, depth_diff);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         ComputePoseHybridCUDA(
                 source_depth, target_depth, source_intensity, target_intensity,
-                source_depth_dx, source_depth_dy, source_intensity_dx,
-                source_intensity_dy, target_vertex_map, intrinsics,
+                target_depth_dx, target_depth_dy, target_intensity_dx,
+                target_intensity_dy, source_vertex_map, intrinsics,
                 init_source_to_target, delta, residual, depth_diff);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
