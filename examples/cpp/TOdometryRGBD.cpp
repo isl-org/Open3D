@@ -99,8 +99,8 @@ int main(int argc, char **argv) {
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
     dst.color_ = dst_color.To(device);
-    src.depth_ = src_depth.To(core::Dtype::Float32, false, 1.0).To(device);
-    dst.depth_ = dst_depth.To(core::Dtype::Float32, false, 1.0).To(device);
+    src.depth_ = src_depth.To(device);
+    dst.depth_ = dst_depth.To(device);
 
     core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float64, device);
 

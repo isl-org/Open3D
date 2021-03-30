@@ -66,14 +66,12 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     kernel::odometry::PreprocessDepth(target.depth_.AsTensor(),
                                       target_depth_processed, depth_scale, 3.0);
 
-    // TODO: decouple interfaces
+    int64_t n = int64_t(iterations.size());
     if (method == Method::PointToPlane) {
-        int64_t n = int64_t(iterations.size());
-
-        std::vector<core::Tensor> source_vertex_maps(iterations.size());
-        std::vector<core::Tensor> target_vertex_maps(iterations.size());
-        std::vector<core::Tensor> target_normal_maps(iterations.size());
-        std::vector<core::Tensor> intrinsic_matrices(iterations.size());
+        std::vector<core::Tensor> source_vertex_maps(n);
+        std::vector<core::Tensor> target_vertex_maps(n);
+        std::vector<core::Tensor> target_normal_maps(n);
+        std::vector<core::Tensor> intrinsic_matrices(n);
 
         t::geometry::Image source_depth(source_depth_processed);
         t::geometry::Image target_depth(target_depth_processed);
@@ -112,22 +110,20 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             }
         }
     } else if (method == Method::Hybrid) {
-        int64_t n = int64_t(iterations.size());
+        std::vector<core::Tensor> source_intensity(n);
+        std::vector<core::Tensor> target_intensity(n);
 
-        std::vector<core::Tensor> source_intensity(iterations.size());
-        std::vector<core::Tensor> target_intensity(iterations.size());
+        std::vector<core::Tensor> source_depth(n);
+        std::vector<core::Tensor> target_depth(n);
+        std::vector<core::Tensor> target_intensity_dx(n);
+        std::vector<core::Tensor> target_intensity_dy(n);
 
-        std::vector<core::Tensor> source_depth(iterations.size());
-        std::vector<core::Tensor> target_depth(iterations.size());
-        std::vector<core::Tensor> target_intensity_dx(iterations.size());
-        std::vector<core::Tensor> target_intensity_dy(iterations.size());
+        std::vector<core::Tensor> target_depth_dx(n);
+        std::vector<core::Tensor> target_depth_dy(n);
 
-        std::vector<core::Tensor> target_depth_dx(iterations.size());
-        std::vector<core::Tensor> target_depth_dy(iterations.size());
+        std::vector<core::Tensor> source_vertex_maps(n);
 
-        std::vector<core::Tensor> source_vertex_maps(iterations.size());
-
-        std::vector<core::Tensor> intrinsic_matrices(iterations.size());
+        std::vector<core::Tensor> intrinsic_matrices(n);
 
         t::geometry::Image source_depth_curr(source_depth_processed);
         t::geometry::Image target_depth_curr(target_depth_processed);
@@ -177,45 +173,6 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         // Odometry
         for (int64_t i = 0; i < n; ++i) {
             for (int iter = 0; iter < iterations[i]; ++iter) {
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(source_intensity_dx[i])
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(source_intensity_dy[i])
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(source_depth_dx[i] /
-                //                 1000.0)
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(source_depth_dy[i] /
-                //                 1000.0)
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(source_depth[i] / 5000.0)
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(source_intensity[i])
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(target_depth[i] / 5000.0)
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(target_intensity[i])
-                //                         .ToLegacyImage())});
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 t::geometry::Image(target_vertex_maps[i])
-                //                         .ToLegacyImage())});
-
                 core::Tensor delta_source_to_target = ComputePoseHybrid(
                         source_depth[i], target_depth[i], source_intensity[i],
                         target_intensity[i], target_depth_dx[i],
@@ -226,19 +183,17 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             }
         }
     } else if (method == Method::Intensity) {
-        int64_t n = int64_t(iterations.size());
+        std::vector<core::Tensor> source_intensity(n);
+        std::vector<core::Tensor> target_intensity(n);
 
-        std::vector<core::Tensor> source_intensity(iterations.size());
-        std::vector<core::Tensor> target_intensity(iterations.size());
+        std::vector<core::Tensor> source_depth(n);
+        std::vector<core::Tensor> target_depth(n);
+        std::vector<core::Tensor> target_intensity_dx(n);
+        std::vector<core::Tensor> target_intensity_dy(n);
 
-        std::vector<core::Tensor> source_depth(iterations.size());
-        std::vector<core::Tensor> target_depth(iterations.size());
-        std::vector<core::Tensor> target_intensity_dx(iterations.size());
-        std::vector<core::Tensor> target_intensity_dy(iterations.size());
+        std::vector<core::Tensor> source_vertex_maps(n);
 
-        std::vector<core::Tensor> source_vertex_maps(iterations.size());
-
-        std::vector<core::Tensor> intrinsic_matrices(iterations.size());
+        std::vector<core::Tensor> intrinsic_matrices(n);
 
         t::geometry::Image source_depth_curr(source_depth_processed);
         t::geometry::Image target_depth_curr(target_depth_processed);

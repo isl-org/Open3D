@@ -51,32 +51,33 @@ void PreprocessDepthCUDA(const core::Tensor& depth,
                          core::Tensor& depth_processed,
                          float depth_scale,
                          float depth_max) {
-    depth.AssertDtype(core::Dtype::Float32);
-
     NDArrayIndexer depth_in_indexer(depth, 2);
 
-    depth_processed = core::Tensor::EmptyLike(depth);
+    // Output
+    depth_processed = core::Tensor::Empty(
+            depth.GetShape(), core::Dtype::Float32, depth.GetDevice());
     NDArrayIndexer depth_out_indexer(depth_processed, 2);
 
-    // Output
     int64_t rows = depth_in_indexer.GetShape(0);
     int64_t cols = depth_in_indexer.GetShape(1);
 
     int64_t n = rows * cols;
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                int64_t y = workload_idx / cols;
-                int64_t x = workload_idx % cols;
+    DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
+        core::kernel::CUDALauncher::LaunchGeneralKernel(
+                n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t y = workload_idx / cols;
+                    int64_t x = workload_idx % cols;
 
-                float* d_in_ptr =
-                        depth_in_indexer.GetDataPtrFromCoord<float>(x, y);
-                float* d_out_ptr =
-                        depth_out_indexer.GetDataPtrFromCoord<float>(x, y);
+                    float d = *depth_in_indexer.GetDataPtrFromCoord<scalar_t>(
+                                      x, y) /
+                              depth_scale;
+                    float* d_out_ptr =
+                            depth_out_indexer.GetDataPtrFromCoord<float>(x, y);
 
-                float d = *d_in_ptr / depth_scale;
-                bool valid = (d > 0 && d < depth_max);
-                *d_out_ptr = valid ? d : NAN;
-            });
+                    bool valid = (d > 0 && d < depth_max);
+                    *d_out_ptr = valid ? d : NAN;
+                });
+    });
 }
 
 void CreateVertexMapCUDA(const core::Tensor& depth_map,

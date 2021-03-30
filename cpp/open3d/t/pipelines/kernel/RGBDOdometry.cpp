@@ -38,6 +38,12 @@ void PreprocessDepth(const core::Tensor &depth,
                      core::Tensor &depth_filtered,
                      float depth_scale,
                      float depth_max) {
+    core::Dtype dtype = depth.GetDtype();
+    if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
+        utility::LogError(
+                "Unsupported format! Expect UInt16 or Float32, but got {}",
+                dtype.ToString());
+    }
     core::Device device = depth.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {
         PreprocessDepthCPU(depth, depth_filtered, depth_scale, depth_max);
