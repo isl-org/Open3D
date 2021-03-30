@@ -56,7 +56,7 @@ install_cuda_toolkit() {
     $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
     $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
     $SUDO apt-get install --yes --no-install-recommends \
-        "cuda-${CUDA_VERSION[0]}" \
+        "cuda-toolkit-${CUDA_VERSION[0]}" \
         libcublas-dev
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
         echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
