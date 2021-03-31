@@ -36,6 +36,11 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/PointCloudIO.h"
 
+static const std::string source_filename =
+        fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR));
+static const std::string target_filename =
+        fmt::format("{}/ICP/cloud_bin_1.pcd", std::string(TEST_DATA_DIR));
+
 namespace open3d {
 namespace benchmarks {
 
@@ -67,26 +72,18 @@ static void BM_TestNNS(benchmark::State& state, const core::Device& device) {
     double radius = state.range(0) / 1000.0;
     int max_knn = state.range(1);
 
-    t::geometry::PointCloud dataset_pc(device);
-    t::geometry::PointCloud query_pc(device);
+    t::geometry::PointCloud dataset_pc;
+    t::geometry::PointCloud query_pc;
 
-    t::io::ReadPointCloud(fmt::format("{}/open3d_downloads/ICP/Civil.pcd",
-                                      std::string(TEST_DATA_DIR)),
-                          dataset_pc, {"auto", false, false, true});
-    t::io::ReadPointCloud(fmt::format("{}/open3d_downloads/ICP/Civil.pcd",
-                                      std::string(TEST_DATA_DIR)),
-                          query_pc, {"auto", false, false, true});
+    t::io::ReadPointCloud(source_filename, dataset_pc,
+                          {"auto", false, false, true});
+    t::io::ReadPointCloud(target_filename, query_pc,
+                          {"auto", false, false, true});
 
-    core::Tensor dataset_points =
-            dataset_pc.GetPoints().To(core::Dtype::Float32);
-    core::Tensor trans =
-            core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
-                                        {-0.139, 0.967, -0.215, 0.7},
-                                        {0.487, 0.255, 0.835, -1.4},
-                                        {0.0, 0.0, 0.0, 1.0}},
-                                       device);
-    query_pc = query_pc.Transform(trans);
-    core::Tensor query_points = query_pc.GetPoints().To(core::Dtype::Float32);
+    core::Tensor dataset_points = dataset_pc.GetPoints().To(
+            device, core::Dtype::Float32, /*copy*/ true);
+    core::Tensor query_points = query_pc.GetPoints().To(
+            device, core::Dtype::Float32, /*copy*/ true);
 
     testNNS.setup(dataset_points, radius);
     for (auto _ : state) {
