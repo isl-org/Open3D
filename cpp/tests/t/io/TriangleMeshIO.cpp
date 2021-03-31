@@ -26,6 +26,7 @@
 
 #include "open3d/t/io/TriangleMeshIO.h"
 
+#include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "tests/UnitTest.h"
 
@@ -38,23 +39,64 @@ TEST(TriangleMeshIO, CreateMeshFromFile) {
     EXPECT_EQ(mesh->GetVertices().GetLength(), 1440);
 }
 
+TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
+    t::geometry::TriangleMesh mesh, mesh_read;
+    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
+    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.ply";
+    EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
+    EXPECT_TRUE(mesh.GetTriangles().AllClose(mesh_read.GetTriangles()));
+    EXPECT_TRUE(mesh.GetVertices().AllClose(mesh_read.GetVertices()));
+    EXPECT_EQ(std::remove(file_name.c_str()), 0);
+}
+
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(
             TEST_DATA_DIR "/open3d_downloads/tests/cube.obj", mesh));
-    EXPECT_TRUE(t::io::WriteTriangleMesh("test_mesh.obj", mesh));
-    EXPECT_TRUE(t::io::ReadTriangleMesh("test_mesh.obj", mesh_read));
+    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.obj";
+    EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(mesh.GetTriangles().AllClose(mesh_read.GetTriangles()));
     EXPECT_TRUE(mesh.GetVertices().AllClose(mesh_read.GetVertices()));
+    EXPECT_EQ(std::remove(file_name.c_str()), 0);
 }
 
-TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
-    t::geometry::TriangleMesh mesh, mesh_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
-    EXPECT_TRUE(t::io::WriteTriangleMesh("test_mesh.ply", mesh));
-    EXPECT_TRUE(t::io::ReadTriangleMesh("test_mesh.ply", mesh_read));
-    EXPECT_TRUE(mesh.GetTriangles().AllClose(mesh_read.GetTriangles()));
-    EXPECT_TRUE(mesh.GetVertices().AllClose(mesh_read.GetVertices()));
+// TODO: Add tests for triangle_uvs, materials, triangle_material_ids and
+// textures once these are supported.
+TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
+    t::geometry::TriangleMesh mesh_tensor, mesh_tensor_read;
+    geometry::TriangleMesh mesh_legacy, mesh_legacy_read;
+    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
+                                        mesh_tensor));
+    EXPECT_TRUE(io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
+                                     mesh_legacy));
+
+    EXPECT_EQ(mesh_tensor.GetTriangles().GetLength(),
+              mesh_legacy.triangles_.size());
+    EXPECT_EQ(mesh_tensor.GetVertices().GetLength(),
+              mesh_legacy.vertices_.size());
+    EXPECT_EQ(mesh_tensor.GetVertexNormals().GetLength(),
+              mesh_legacy.vertex_normals_.size());
+
+    std::string file_name_tensor =
+            std::string(TEST_DATA_DIR) + "/test_mesh_tensor.obj";
+    std::string file_name_legacy =
+            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.obj";
+
+    EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
+    EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(file_name_tensor, mesh_tensor_read));
+    EXPECT_TRUE(io::ReadTriangleMesh(file_name_legacy, mesh_legacy_read));
+
+    EXPECT_EQ(mesh_tensor_read.GetTriangles().GetLength(),
+              mesh_legacy_read.triangles_.size());
+    EXPECT_EQ(mesh_tensor_read.GetVertices().GetLength(),
+              mesh_legacy_read.vertices_.size());
+    EXPECT_EQ(mesh_tensor_read.GetVertexNormals().GetLength(),
+              mesh_legacy_read.vertex_normals_.size());
+    EXPECT_EQ(std::remove(file_name_tensor.c_str()), 0);
+    EXPECT_EQ(std::remove(file_name_legacy.c_str()), 0);
 }
 
 }  // namespace tests

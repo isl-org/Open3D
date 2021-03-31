@@ -52,9 +52,6 @@ static const std::unordered_map<
                            const bool,
                            const bool)>>
         file_extension_to_trianglemesh_write_function{};
-}  // namespace io
-
-namespace io {
 
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
@@ -62,6 +59,19 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
     ReadTriangleMesh(filename, *mesh, print_progress);
     return mesh;
 }
+
+// TODO:
+// 1. Currently, the tensor triangle mesh implementation has no provision for
+// triangle_uvs,  materials, triangle_material_ids and textures which are
+// supported by the legacy. These can be added with the custom attribute
+// approach. Please check legacy file formats(e.g. FileOBJ.cpp) for more
+// information.
+// 2. Add these properties to the legacy to tensor mesh and tensor to legacy
+// mesh conversion.
+// 3. Update the documention with information on how to access these additional
+// attributes from tensor based triangle mesh.
+// 4. Implement read/write tensor triangle mesh with various file formats.
+// 5. Compare with legacy triangle mesh and add corresponding unit tests.
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
