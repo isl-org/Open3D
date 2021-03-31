@@ -161,6 +161,11 @@ public:
                                            double radius,
                                            int max_knn) const override;
 
+    std::pair<Tensor, Tensor> SearchHybrid1NN(
+            const Tensor &query_points,
+            const double &radius,
+            double &squared_error) const;
+
 protected:
     // Tensor dataset_points_;
     std::unique_ptr<NanoFlannIndexHolderBase> holder_;

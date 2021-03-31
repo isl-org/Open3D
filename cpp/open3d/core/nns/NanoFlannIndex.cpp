@@ -28,10 +28,13 @@
 
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
 
+#include <atomic>
 #include <nanoflann.hpp>
 
 #include "open3d/core/CoreUtil.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/ParallelScan.h"
 
@@ -250,14 +253,17 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
     double radius_squared = radius * radius;
     int64_t num_query_points = query_points.GetShape()[0];
+    int64_t cols = query_points.GetShape()[1];
+
     Tensor indices, distances;
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         indices = Tensor::Empty({num_query_points, max_knn}, Dtype::Int64);
-        auto indices_ptr = indices.GetDataPtr<int64_t>();
+        int64_t *indices_ptr = indices.GetDataPtr<int64_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);
-        auto distances_ptr = distances.GetDataPtr<scalar_t>();
+        scalar_t *distances_ptr = distances.GetDataPtr<scalar_t>();
+        const scalar_t *query_points_ptr = query_points.GetDataPtr<scalar_t>();
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
@@ -268,21 +274,19 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
-                    std::vector<std::pair<int64_t, scalar_t>> ret_matches;
                     for (size_t workload_idx = r.begin();
                          workload_idx != r.end(); ++workload_idx) {
+                        std::vector<std::pair<int64_t, scalar_t>> ret_matches;
                         int64_t result_idx = workload_idx * max_knn;
 
                         size_t num_results = holder->index_->radiusSearch(
-                                static_cast<scalar_t *>(
-                                        query_points[workload_idx]
-                                                .GetDataPtr()),
+                                query_points_ptr + cols * workload_idx,
                                 radius_squared, ret_matches, params);
                         ret_matches.resize(num_results);
 
                         int neighbour_idx = 0;
                         for (auto it = ret_matches.begin();
-                             it < ret_matches.end() && neighbour_idx < max_knn;
+                             it != ret_matches.end() && neighbour_idx < max_knn;
                              it++, neighbour_idx++) {
                             indices_ptr[result_idx + neighbour_idx] = it->first;
                             distances_ptr[result_idx + neighbour_idx] =
@@ -298,6 +302,73 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                 });
     });
     return std::make_pair(indices, distances);
+}
+
+std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid1NN(
+        const Tensor &query_points, const double &radius, double &squared_error) const {
+    query_points.AssertDtype(GetDtype());
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
+    if (radius <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] radius should be larger than "
+                "0.");
+    }
+
+    double radius_squared = radius * radius;
+    int64_t num_query_points = query_points.GetShape()[0];
+    int64_t cols = query_points.GetShape()[1];
+
+    Tensor source_indices, indices, distances;
+    Dtype dtype = GetDtype();
+
+    std::atomic<int> count_atomic(0);
+    std::atomic<int> *count_ptr = &count_atomic;
+
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        indices = Tensor::Empty({num_query_points}, Dtype::Int64);
+        int64_t *indices_ptr = indices.GetDataPtr<int64_t>();
+        source_indices = Tensor::Empty({num_query_points}, Dtype::Int64);
+        int64_t *source_indices_ptr = source_indices.GetDataPtr<int64_t>();
+        const scalar_t *query_points_ptr = query_points.GetDataPtr<scalar_t>();
+
+        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
+                holder_.get());
+        nanoflann::SearchParams params;
+
+        // Parallel search.
+        squared_error = 
+			tbb::parallel_reduce(
+                tbb::blocked_range<size_t>(0, num_query_points), 0.0,
+                [&](const tbb::blocked_range<size_t> &r, double error_local) {
+                    for (size_t workload_idx = r.begin();
+                         workload_idx != r.end(); ++workload_idx) {
+
+                        std::vector<std::pair<int64_t, scalar_t>> ret_matches;
+
+                        size_t num_results = holder->index_->radiusSearch(
+                                query_points_ptr + cols * workload_idx,
+                                radius_squared, ret_matches, params);
+                        ret_matches.resize(num_results);
+
+                        if (num_results) {
+                            int count_val = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+							error_local += ret_matches[0].second;
+                            source_indices_ptr[count_val] =
+                                    static_cast<int64_t>(workload_idx);
+                            indices_ptr[count_val] = ret_matches[0].first;
+                        }
+                    }
+					return error_local;
+                }, std::plus<double>());
+    });
+
+    int count_val = (*count_ptr).load();
+
+    source_indices = source_indices.Slice(0, 0, count_val);
+    indices = indices.Slice(0, 0, count_val);
+
+    return std::make_pair(source_indices, indices);
 }
 
 }  // namespace nns

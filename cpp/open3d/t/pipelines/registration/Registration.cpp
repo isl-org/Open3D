@@ -71,20 +71,18 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    core::Tensor distances;
-    std::tie(result.correspondence_set_.first,
-             result.correspondence_set_.second, distances) =
-            target_nns.Hybrid1NNSearch(source.GetPoints(),
-                                       max_correspondence_distance);
+
+    double squared_error;
+    result.correspondence_set_ = target_nns.Hybrid1NNSearch(source.GetPoints(),
+                                       max_correspondence_distance,
+                                       squared_error);
 
     // Number of good correspondences (C).
     int num_correspondences = result.correspondence_set_.first.GetLength();
 
-    // Reduction sum of "distances" for error.
-    double squared_error =
-            static_cast<double>(distances.Sum({0}).Item<float>());
     result.fitness_ = static_cast<double>(num_correspondences) /
                       static_cast<double>(source.GetPoints().GetLength());
+
     result.inlier_rmse_ =
             std::sqrt(squared_error / static_cast<double>(num_correspondences));
     result.transformation_ = transformation;

@@ -129,15 +129,19 @@ public:
                                            int max_knn);
 
     /// \brief Hybrid1NNSearch is similar to HybridSearch with max_knn = 1,
-    /// and it retuns tuple of tensors {source_index, target_index, distance},
+    /// and it retuns pair of tensors {source_index, target_index},
     /// such that pair of {source_index, target_index} is the correspondences
     /// of type t::pipelines::registration::CorrespondenceSet;
     ///
     /// \param query_points Data points for querying. Must be 2D, with shape {n,
     /// d}.
     /// \param radius Radius.
-    std::tuple<Tensor, Tensor, Tensor> Hybrid1NNSearch(
-            const Tensor &query_points, double radius);
+    /// \param squared_error [Output] returns the squared error or the sum of
+    /// distances.
+    std::pair<Tensor, Tensor> Hybrid1NNSearch(
+            const Tensor &query_points,
+            const double &radius,
+            double &squared_error);
 
 private:
     bool SetIndex();

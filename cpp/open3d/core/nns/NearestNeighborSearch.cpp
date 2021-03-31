@@ -180,13 +180,32 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
     }
 }
 
-std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::Hybrid1NNSearch(
-        const Tensor& query_points, double radius) {
+std::pair<Tensor, Tensor> NearestNeighborSearch::Hybrid1NNSearch(
+        const Tensor& query_points,
+        const double& radius,
+        double& squared_error) {
     core::Tensor valid, source_indices, neighbour_indices, neighbour_distances;
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
             std::tie(neighbour_indices, neighbour_distances) =
                     fixed_radius_index_->SearchHybrid(query_points, radius, 1);
+
+            valid = neighbour_indices.Ne(-1).Reshape({-1});
+            // correpondence_set : (i, corres[i]).
+            // source[i] and target[corres[i]] is a correspondence.
+            source_indices = core::Tensor::Arange(0, query_points.GetShape()[0],
+                                                  1, core::Dtype::Int64,
+                                                  query_points.GetDevice())
+                                     .IndexGet({valid});
+            // Only take valid indices.
+            neighbour_indices =
+                    neighbour_indices.IndexGet({valid}).Reshape({-1});
+            // Only take valid distances.
+            neighbour_distances = neighbour_distances.IndexGet({valid});
+            DISPATCH_FLOAT32_FLOAT64_DTYPE(neighbour_distances.GetDtype(), [&] {
+                squared_error = static_cast<double>(
+                        neighbour_distances.Sum({0}).Item<scalar_t>());
+            });
 
         } else {
             utility::LogError(
@@ -194,27 +213,16 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::Hybrid1NNSearch(
         }
     } else {
         if (nanoflann_index_) {
-            std::tie(neighbour_indices, neighbour_distances) =
-                    nanoflann_index_->SearchHybrid(query_points, radius, 1);
+            std::tie(source_indices, neighbour_indices) =
+                    nanoflann_index_->SearchHybrid1NN(query_points, radius,
+                                                      squared_error);
         } else {
             utility::LogError(
                     "[NearestNeighborSearch::HybridSearch] Index is not set.");
         }
     }
 
-    valid = neighbour_indices.Ne(-1).Reshape({-1});
-    // correpondence_set : (i, corres[i]).
-    // source[i] and target[corres[i]] is a correspondence.
-    source_indices =
-            core::Tensor::Arange(0, query_points.GetShape()[0], 1,
-                                 core::Dtype::Int64, query_points.GetDevice())
-                    .IndexGet({valid});
-    // Only take valid indices.
-    neighbour_indices = neighbour_indices.IndexGet({valid}).Reshape({-1});
-    // Only take valid distances.
-    neighbour_distances = neighbour_distances.IndexGet({valid});
-    return std::make_tuple(source_indices, neighbour_indices,
-                           neighbour_distances);
+    return std::make_pair(source_indices, neighbour_indices);
 }
 
 void NearestNeighborSearch::AssertNotCUDA(const Tensor& t) const {

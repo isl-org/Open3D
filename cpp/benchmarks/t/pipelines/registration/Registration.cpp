@@ -148,12 +148,6 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                       reg_result.fitness_, reg_result.inlier_rmse_);
 }
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CPU,
-                  core::Device("CPU:0"),
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CUDA,
@@ -163,9 +157,9 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 #endif
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CPU,
+                  PointToPlane / CPU,
                   core::Device("CPU:0"),
-                  TransformationEstimationType::PointToPoint)
+                  TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
@@ -175,6 +169,12 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 #endif
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPoint / CPU,
+                  core::Device("CPU:0"),
+                  TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
 
 }  // namespace registration
 }  // namespace pipelines
