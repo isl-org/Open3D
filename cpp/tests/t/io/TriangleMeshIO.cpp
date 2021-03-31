@@ -97,6 +97,10 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
               mesh_legacy_read.vertex_normals_.size());
     EXPECT_EQ(std::remove(file_name_tensor.c_str()), 0);
     EXPECT_EQ(std::remove(file_name_legacy.c_str()), 0);
+
+    std::string file_name_legacy_mtl =
+            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.mtl";
+    EXPECT_EQ(std::remove(file_name_legacy_mtl.c_str()), 0);
 }
 
 }  // namespace tests
