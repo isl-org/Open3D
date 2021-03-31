@@ -210,23 +210,26 @@ TEST(TPointCloudIO, ReadWritePTS) {
     pcd_read.Clear();
     pcd_color.SetPoints(pcd.GetPoints());
     pcd_color.SetPointColors(pcd.GetPointColors());
-    t::io::WritePointCloud("test_color.pts", pcd_color);
-    t::io::ReadPointCloud("test_color.pts", pcd_read,
-                          {"auto", false, false, true});
+    std::string file_name = std::string(TEST_DATA_DIR) + "/test_color.pts";
+    t::io::WritePointCloud(file_name, pcd_color);
+    t::io::ReadPointCloud(file_name, pcd_read, {"auto", false, false, true});
     EXPECT_TRUE(pcd_color.GetPoints().AllClose(pcd_read.GetPoints()));
     EXPECT_TRUE(pcd_color.GetPointColors().AllClose(pcd_read.GetPointColors()));
     EXPECT_FALSE(pcd_read.HasPointAttr("intensities"));
+    EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Write pointcloud with only intensities and match it after read.
     pcd_read.Clear();
     pcd_i.SetPoints(pcd.GetPoints());
     pcd_i.SetPointAttr("intensities", pcd.GetPointAttr("intensities"));
-    t::io::WritePointCloud("test_i.pts", pcd_i);
-    t::io::ReadPointCloud("test_i.pts", pcd_read, {"auto", false, false, true});
+    file_name = std::string(TEST_DATA_DIR) + "/test_intensities.pts";
+    t::io::WritePointCloud(file_name, pcd_i);
+    t::io::ReadPointCloud(file_name, pcd_read, {"auto", false, false, true});
     EXPECT_TRUE(pcd_i.GetPoints().AllClose(pcd_read.GetPoints()));
     EXPECT_TRUE(pcd_i.GetPointAttr("intensities")
                         .AllClose(pcd_read.GetPointAttr("intensities")));
     EXPECT_FALSE(pcd_read.HasPointColors());
+    EXPECT_EQ(std::remove(file_name.c_str()), 0);
 }
 
 // Reading pts with intensities.
