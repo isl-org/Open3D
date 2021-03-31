@@ -100,8 +100,7 @@ int main(int argc, char *argv[]) {
                             (int)camera_trajectory->parameters_.size());
     geometry::Image depth, color;
     while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-        std::vector<std::string> st;
-        utility::SplitString(st, buffer, "\t\r\n ");
+        std::vector<std::string> st = utility::SplitString(buffer, "\t\r\n ");
         if (st.size() >= 2) {
             utility::LogInfo("Processing frame {:d} ...", index);
             io::ReadImage(dir_name + st[0], depth);

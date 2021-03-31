@@ -165,8 +165,8 @@ Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
                               !(str.front() == '<' && str.back() == '>'))) {
         return default_value;
     }
-    std::vector<std::string> tokens;
-    SplitString(tokens, str.substr(1, str.length() - 2), ",");
+    std::vector<std::string> tokens =
+            SplitString(str.substr(1, str.length() - 2), ",");
     Eigen::VectorXd vec(tokens.size());
     for (size_t i = 0; i < tokens.size(); i++) {
         char *end;

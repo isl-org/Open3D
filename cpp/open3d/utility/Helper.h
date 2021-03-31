@@ -106,10 +106,9 @@ struct hash_enum_class {
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
-void SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters = " ",
-                 bool trim_empty_str = true);
+std::vector<std::string> SplitString(const std::string& str,
+                                     const std::string& delimiters = " ",
+                                     bool trim_empty_str = true);
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
