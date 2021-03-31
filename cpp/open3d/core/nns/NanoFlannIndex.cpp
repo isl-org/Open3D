@@ -30,11 +30,9 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
-#include <atomic>
 #include <nanoflann.hpp>
 
 #include "open3d/core/CoreUtil.h"
-#include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/ParallelScan.h"
 
