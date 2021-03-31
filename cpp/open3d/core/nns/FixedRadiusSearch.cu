@@ -77,6 +77,41 @@ inline __device__ bool NeighborTest(const Vec3<T>& p1,
     return result;
 }
 
+template <class T>
+inline __device__ void swap(T* x, T* y) {
+    T tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
+
+template <class T>
+__device__ void reheap(T* dist, int64_t* idx, int k) {
+    int root = 0;
+    int child = root * 2 + 1;
+    while (child < k) {
+        if (child + 1 < k && dist[child + 1] > dist[child]) {
+            child++;
+        }
+        if (dist[root] > dist[child]) {
+            return;
+        }
+        swap<T>(&dist[root], &dist[child]);
+        swap<int64_t>(&idx[root], &idx[child]);
+        root = child;
+        child = root * 2 + 1;
+    }
+}
+
+template <class T>
+__device__ void heap_sort(T* dist, int64_t* idx, int k) {
+    int i;
+    for (i = k - 1; i > 0; i--) {
+        swap<T>(&dist[0], &dist[i]);
+        swap<int64_t>(&idx[0], &idx[i]);
+        reheap(dist, idx, i);
+    }
+}
+
 /// Kernel for CountHashTableEntries
 template <class T>
 __global__ void CountHashTableEntriesKernel(uint32_t* count_table,
@@ -533,8 +568,6 @@ __global__ void WriteNeighborsHybridKernel(
     int query_idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (query_idx >= num_queries) return;
 
-    int count = 0;  // counts the number of neighbors for this query point
-
     size_t indices_offset = max_knn * query_idx;
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
@@ -565,9 +598,7 @@ __global__ void WriteNeighborsHybridKernel(
         }
     }
 
-    int max_index;
-    T max_value;
-
+    int count = 0;  // counts the number of neighbors for this query point
     for (int bin_i = 0; bin_i < 8; ++bin_i) {
         int bin = bins_to_visit[bin_i];
         if (bin == -1) break;
@@ -583,50 +614,23 @@ __global__ void WriteNeighborsHybridKernel(
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
                 // If count if less than max_knn, record idx and dist.
-                if (count < max_knn) {
-                    indices[indices_offset + count] = idx;
-                    distances[indices_offset + count] = dist;
-                    // Update max_index and max_value.
-                    if (count == 0 || max_value < dist) {
-                        max_index = count;
-                        max_value = dist;
+                if (dist < distances[indices_offset]) {
+                    distances[indices_offset] = dist;
+                    indices[indices_offset] = idx;
+                    if (count < max_knn) {
+                        ++count;
                     }
-                    // Increase count
-                    ++count;
-                } else {
-                    // If dist is smaller than current max_value.
-                    if (max_value > dist) {
-                        // Replace idx and dist at current max_index.
-                        indices[indices_offset + max_index] = idx;
-                        distances[indices_offset + max_index] = dist;
-                        // Update max_value
-                        max_value = dist;
-                        // Find max_index.
-                        for (auto k = 0; k < max_knn; ++k) {
-                            if (distances[indices_offset + k] > max_value) {
-                                max_index = k;
-                                max_value = distances[indices_offset + k];
-                            }
-                        }
-                    }
+                    reheap(distances + indices_offset, indices + indices_offset,
+                           max_knn);
                 }
             }
         }
     }
-    // bubble sort
-    for (int i = 0; i < count - 1; ++i) {
-        for (int j = 0; j < count - i - 1; ++j) {
-            if (distances[indices_offset + j] >
-                distances[indices_offset + j + 1]) {
-                T dist_tmp = distances[indices_offset + j];
-                int64_t ind_tmp = indices[indices_offset + j];
-                distances[indices_offset + j] =
-                        distances[indices_offset + j + 1];
-                indices[indices_offset + j] = indices[indices_offset + j + 1];
-                distances[indices_offset + j + 1] = dist_tmp;
-                indices[indices_offset + j + 1] = ind_tmp;
-            }
-        }
+    // heap sort
+    heap_sort(distances + indices_offset, indices + indices_offset, max_knn);
+    for (auto i = count; i < max_knn; ++i) {
+        distances[indices_offset + i] = -1;
+        indices[indices_offset + i] = -1;
     }
 }
 /// Write indices and distances for each query point in hybrid search mode.
@@ -1040,7 +1044,8 @@ void HybridSearchCUDA(size_t num_points,
     output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
 
     T* distances_ptr;
-    output_allocator.AllocDistances(&distances_ptr, num_indices, -1);
+    output_allocator.AllocDistances(&distances_ptr, num_indices,
+                                    std::numeric_limits<T>::max());
 
     for (int i = 0; i < batch_size; ++i) {
         const size_t hash_table_size =

@@ -24,12 +24,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import os
+import sys
+
+import numpy as np
 import open3d as o3d
 import open3d.core as o3c
-import numpy as np
 import pytest
-import sys
-import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
@@ -143,7 +145,7 @@ def test_fixed_radius_search(device, dtype):
 @pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
 def test_hybrid_search_random(dtype):
     if o3d.core.cuda.device_count() > 0:
-        dataset_size, query_size = 1000, 100
+        dataset_size, query_size = 1000, 1
         radius, k = 0.1, 10
 
         dataset_np = np.random.rand(dataset_size, 3)
