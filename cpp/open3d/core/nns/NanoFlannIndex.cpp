@@ -305,7 +305,9 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 }
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid1NN(
-        const Tensor &query_points, const double &radius, double &squared_error) const {
+        const Tensor &query_points,
+        const double &radius,
+        double &squared_error) const {
     query_points.AssertDtype(GetDtype());
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
@@ -337,30 +339,28 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid1NN(
         nanoflann::SearchParams params;
 
         // Parallel search.
-        squared_error = 
-			tbb::parallel_reduce(
+        squared_error = tbb::parallel_reduce(
                 tbb::blocked_range<size_t>(0, num_query_points), 0.0,
                 [&](const tbb::blocked_range<size_t> &r, double error_local) {
                     for (size_t workload_idx = r.begin();
                          workload_idx != r.end(); ++workload_idx) {
-
                         std::vector<std::pair<int64_t, scalar_t>> ret_matches;
 
                         size_t num_results = holder->index_->radiusSearch(
                                 query_points_ptr + cols * workload_idx,
                                 radius_squared, ret_matches, params);
-                        ret_matches.resize(num_results);
 
                         if (num_results) {
                             int count_val = OPEN3D_ATOMIC_ADD(count_ptr, 1);
-							error_local += ret_matches[0].second;
+                            error_local += ret_matches[0].second;
                             source_indices_ptr[count_val] =
                                     static_cast<int64_t>(workload_idx);
                             indices_ptr[count_val] = ret_matches[0].first;
                         }
                     }
-					return error_local;
-                }, std::plus<double>());
+                    return error_local;
+                },
+                std::plus<double>());
     });
 
     int count_val = (*count_ptr).load();

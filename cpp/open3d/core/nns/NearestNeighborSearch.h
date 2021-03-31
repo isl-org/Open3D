@@ -138,10 +138,9 @@ public:
     /// \param radius Radius.
     /// \param squared_error [Output] returns the squared error or the sum of
     /// distances.
-    std::pair<Tensor, Tensor> Hybrid1NNSearch(
-            const Tensor &query_points,
-            const double &radius,
-            double &squared_error);
+    std::pair<Tensor, Tensor> Hybrid1NNSearch(const Tensor &query_points,
+                                              const double &radius,
+                                              double &squared_error);
 
 private:
     bool SetIndex();
