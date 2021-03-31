@@ -133,17 +133,14 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
     } else if (dst.IsContiguous() && src.NumElements() == 1 &&
                !src_dtype.IsObject()) {
         int64_t num_elements = dst.NumElements();
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            using src_t = scalar_t;
-            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
-                using dst_t = scalar_t;
-                const dst_t value = static_cast<dst_t>(src.Item<src_t>());
-                dst_t* dst_ptr = dst.GetDataPtr<dst_t>();
-                CPULauncher::LaunchGeneralKernel(
-                        num_elements, [&](int64_t workload_idx) {
-                            dst_ptr[workload_idx] = value;
-                        });
-            });
+
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+            scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
+            scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
+            CPULauncher::LaunchGeneralKernel(
+                    num_elements, [&](int64_t workload_idx) {
+                        dst_ptr[workload_idx] = scalar_element;
+                    });
         });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
