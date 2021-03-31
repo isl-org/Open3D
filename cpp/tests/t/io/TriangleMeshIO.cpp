@@ -73,11 +73,11 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
                                      mesh_legacy));
 
     EXPECT_EQ(mesh_tensor.GetTriangles().GetLength(),
-              mesh_legacy.triangles_.size());
+              static_cast<int64_t>(mesh_legacy.triangles_.size()));
     EXPECT_EQ(mesh_tensor.GetVertices().GetLength(),
-              mesh_legacy.vertices_.size());
+              static_cast<int64_t>(mesh_legacy.vertices_.size()));
     EXPECT_EQ(mesh_tensor.GetVertexNormals().GetLength(),
-              mesh_legacy.vertex_normals_.size());
+              static_cast<int64_t>(mesh_legacy.vertex_normals_.size()));
 
     std::string file_name_tensor =
             std::string(TEST_DATA_DIR) + "/test_mesh_tensor.obj";
@@ -90,11 +90,11 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     EXPECT_TRUE(io::ReadTriangleMesh(file_name_legacy, mesh_legacy_read));
 
     EXPECT_EQ(mesh_tensor_read.GetTriangles().GetLength(),
-              mesh_legacy_read.triangles_.size());
+              static_cast<int64_t>(mesh_legacy_read.triangles_.size()));
     EXPECT_EQ(mesh_tensor_read.GetVertices().GetLength(),
-              mesh_legacy_read.vertices_.size());
+              static_cast<int64_t>(mesh_legacy_read.vertices_.size()));
     EXPECT_EQ(mesh_tensor_read.GetVertexNormals().GetLength(),
-              mesh_legacy_read.vertex_normals_.size());
+              static_cast<int64_t>(mesh_legacy_read.vertex_normals_.size()));
     EXPECT_EQ(std::remove(file_name_tensor.c_str()), 0);
     EXPECT_EQ(std::remove(file_name_legacy.c_str()), 0);
 
