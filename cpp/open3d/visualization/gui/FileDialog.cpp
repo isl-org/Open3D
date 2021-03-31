@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -355,8 +355,7 @@ void FileDialog::SetPath(const char *path) {
 }
 
 void FileDialog::AddFilter(const char *filter, const char *description) {
-    std::vector<std::string> exts;
-    utility::SplitString(exts, filter, ", ");
+    std::vector<std::string> exts = utility::SplitString(filter, ", ");
 
     std::unordered_set<std::string> ext_filter;
     for (auto &ext : exts) {

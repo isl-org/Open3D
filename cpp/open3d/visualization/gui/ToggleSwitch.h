@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,41 @@
 
 #pragma once
 
-#include "open3d/core/Tensor.h"
+#include <functional>
+
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
-namespace t {
-namespace pipelines {
-namespace kernel {
+namespace visualization {
+namespace gui {
 
-/// \brief Computes pose for point to plane registration method.
-/// \param source_points_indexed source points indexed according to
-/// correspondences. \param target_points_indexed target points indexed
-/// according to correspondences. \param target_normals_indexed target normals
-/// indexed according to correspondences. \return Pose [X Y Z alpha beta
-/// gamma], a shape {6} tensor of dtype float32.
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points_indexed,
-        const core::Tensor &target_points_indexed,
-        const core::Tensor &target_normals_indexed);
+class ToggleSwitch : public Widget {
+public:
+    explicit ToggleSwitch(const char* title);
+    ~ToggleSwitch();
 
-}  // namespace kernel
-}  // namespace pipelines
-}  // namespace t
+    /// Returns the text of the toggle slider.
+    const char* GetText() const;
+    /// Sets the text of the toggle slider.
+    void SetText(const char* text);
+
+    bool GetIsOn() const;
+    void SetOn(bool is_on);
+
+    Size CalcPreferredSize(const Theme& theme) const override;
+
+    DrawResult Draw(const DrawContext& context) override;
+
+    /// Sets a function that will be called when the switch is clicked on to
+    /// change state. The boolean argument is true if the switch is now on
+    /// and false otherwise.
+    void SetOnClicked(std::function<void(bool)> on_clicked);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
