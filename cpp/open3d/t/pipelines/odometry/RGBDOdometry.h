@@ -35,10 +35,10 @@ namespace t {
 namespace pipelines {
 namespace odometry {
 
-enum class LossType {
+enum class Method {
     PointToPlane,
-    DirectIntensity,
-    DirectHybrid,
+    Intensity,
+    Hybrid,
 };
 
 /// Note: all the 4x4 transformation in this file, from params to returns, are
@@ -48,69 +48,86 @@ enum class LossType {
 /// perform hierarchical odometry.
 /// Used for offline odometry where we do not care performance (too much) and
 /// not reuse vertex/normal map computed before.
+/// In put RGBD images hold a depth image (UInt16 or Float32) with a scale
+/// factor.
 core::Tensor RGBDOdometryMultiScale(
         const t::geometry::RGBDImage& source,
         const t::geometry::RGBDImage& target,
         const core::Tensor& intrinsics,
         const core::Tensor& init_source_to_target = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0")),
-        float depth_factor = 1000.0f,
+        float depth_scale = 1000.0f,
+        float depth_max = 3.0f,
         float depth_diff = 0.07f,
         const std::vector<int>& iterations = {10, 5, 3},
-        const LossType method = LossType::PointToPlane);
+        const Method method = Method::Hybrid);
 
-/// Create a vertex map (image) from a depth image. Useful for point-to-plane
-/// odometry and point-to-point.
-core::Tensor CreateVertexMap(const t::geometry::Image& depth,
-                             const core::Tensor& intrinsics,
-                             float depth_factor = 1000.0,
-                             float depth_max = 3.0);
-
-/// Create a normal map (image) from a vertex map (image). Useful for
-/// point-to-plane odometry.
-core::Tensor CreateNormalMap(const core::Tensor& vertex_map);
-
-/// Perform single scale odometry using loss function
+/// Estimates 4x4 rigid transformation T from source to target.
+/// Perform one iteration of RGBD odometry using loss function
 /// [(V_p - V_q)^T N_p]^2,
 /// requiring normal map generation.
 /// KinectFusion, ISMAR 2011
-core::Tensor ComputePosePointToPlane(const core::Tensor& source_vtx_map,
-                                     const core::Tensor& target_vtx_map,
+core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
+                                     const core::Tensor& target_vertex_map,
                                      const core::Tensor& source_normal_map,
                                      const core::Tensor& intrinsics,
                                      const core::Tensor& init_source_to_target,
                                      float depth_diff);
 
-/// Perform single scale odometry using loss function
+/// Estimates 4x4 rigid transformation T from source to target.
+/// Perform one iteration of RGBD odometry using loss function
+/// (I_p - I_q)^2,
+/// requiring the gradient image of source color.
+/// Real-time visual odometry from dense RGB-D images, ICCV Workshops, 2011
+core::Tensor ComputePoseIntensity(const core::Tensor& source_depth_map,
+                                  const core::Tensor& target_depth_map,
+                                  const core::Tensor& source_intensity,
+                                  const core::Tensor& target_intensity,
+                                  const core::Tensor& target_intensity_dx,
+                                  const core::Tensor& target_intensity_dy,
+                                  const core::Tensor& source_vertex_map,
+                                  const core::Tensor& intrinsics,
+                                  const core::Tensor& init_source_to_target,
+                                  float depth_diff);
+
+/// Estimates 4x4 rigid transformation T from source to target.
+/// Perform one iteration of RGBD odometry using loss function
 /// (I_p - I_q)^2 + lambda(D_p - (D_q)')^2,
 /// requiring the gradient images of target color and depth.
 /// Colored ICP Revisited, ICCV 2017
-core::Tensor ComputePoseDirectHybrid(const core::Tensor& source_vtx_map,
-                                     const core::Tensor& target_vtx_map,
-                                     const core::Tensor& source_color,
-                                     const core::Tensor& target_color,
-                                     const core::Tensor& source_color_dx,
-                                     const core::Tensor& target_color_dy,
-                                     const core::Tensor& source_depth_dx,
-                                     const core::Tensor& target_depth_dy,
-                                     const core::Tensor& intrinsics,
-                                     const core::Tensor& init_source_to_target,
-                                     float depth_diff);
+core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
+                               const core::Tensor& target_depth,
+                               const core::Tensor& source_intensity,
+                               const core::Tensor& target_intensity,
+                               const core::Tensor& source_depth_dx,
+                               const core::Tensor& source_depth_dy,
+                               const core::Tensor& source_intensity_dx,
+                               const core::Tensor& source_intensity_dy,
+                               const core::Tensor& target_vertex_map,
+                               const core::Tensor& intrinsics,
+                               const core::Tensor& init_source_to_target,
+                               float depth_diff);
 
-/// Perform single scale odometry using loss function
-/// (I_p - I_q)^2,
-/// requiring the gradient image of target color.
-/// Real-time visual odometry from dense RGB-D images, ICCV Workshops, 2011
-core::Tensor ComputePoseDirectIntensity(
-        const core::Tensor& source_vtx_map,
-        const core::Tensor& target_vtx_map,
-        const core::Tensor& source_color,
-        const core::Tensor& target_color,
-        const core::Tensor& source_color_dx,
-        const core::Tensor& source_color_dy,
-        const core::Tensor& intrinsics,
-        const core::Tensor& init_source_to_target,
-        float depth_diff);
+///
+/// Helper functions exposed for easier testing.
+///
+/// Rescale depth, clip to max range, and assign NaN to out-of-range pixels.
+core::Tensor PreprocessDepth(const t::geometry::Image& depth,
+                             float depth_scale = 1000.0,
+                             float depth_max = 3.0);
+
+/// Pyramid downsampling depth, with a difference truncation.
+core::Tensor PyrDownDepth(const t::geometry::Image& depth,
+                          float depth_diff = 0.25);
+
+/// Create a vertex map (image) from a preprocessed depth image. Useful for
+/// point-to-plane odometry.
+core::Tensor CreateVertexMap(const t::geometry::Image& depth,
+                             const core::Tensor& intrinsics);
+
+/// Create a normal map (image) from a vertex map (image). Useful for
+/// point-to-plane odometry.
+core::Tensor CreateNormalMap(const core::Tensor& vertex_map);
 
 }  // namespace odometry
 }  // namespace pipelines
