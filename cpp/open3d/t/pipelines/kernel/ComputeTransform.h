@@ -27,7 +27,6 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/registration/Registration.h"
 
 namespace open3d {
 namespace t {
@@ -45,7 +44,7 @@ core::Tensor ComputePosePointToPlane(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &target_normals,
-        const pipelines::registration::CorrespondenceSet &correspondences);
+        const std::pair<core::Tensor, core::Tensor> &correspondences);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.
@@ -57,7 +56,7 @@ core::Tensor ComputePosePointToPlane(
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const pipelines::registration::CorrespondenceSet &correspondences);
+        const std::pair<core::Tensor, core::Tensor> &correspondences);
 
 }  // namespace kernel
 }  // namespace pipelines

@@ -32,40 +32,38 @@
 
 namespace open3d {
 namespace t {
+
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCPU(const float *source_points_ptr,
-                                const float *target_points_ptr,
-                                const float *target_normals_ptr,
-                                const int64_t *correspondences_first,
-                                const int64_t *correspondences_second,
-                                const int n,
-                                core::Tensor &pose,
-                                const core::Dtype &dtype,
-                                const core::Device &device);
+void ComputePosePointToPlaneCPU(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &pose,
+        const core::Dtype &dtype,
+        const core::Device &device);
 
 #ifdef BUILD_CUDA_MODULE
-void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
-                                 const float *target_points_ptr,
-                                 const float *target_normals_ptr,
-                                 const int64_t *correspondences_first,
-                                 const int64_t *correspondences_second,
-                                 const int n,
-                                 core::Tensor &pose,
-                                 const core::Dtype &dtype,
-                                 const core::Device &device);
+void ComputePosePointToPlaneCUDA(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &pose,
+        const core::Dtype &dtype,
+        const core::Device &device);
 #endif
 
-void ComputeRtPointToPointCPU(const float *source_points_ptr,
-                              const float *target_points_ptr,
-                              const int64_t *correspondences_first,
-                              const int64_t *correspondences_second,
-                              const int n,
-                              core::Tensor &R,
-                              core::Tensor &t,
-                              const core::Dtype dtype,
-                              const core::Device device);
+void ComputeRtPointToPointCPU(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &R,
+        core::Tensor &t,
+        const core::Dtype &dtype,
+        const core::Device &device);
 
 }  // namespace kernel
 }  // namespace pipelines

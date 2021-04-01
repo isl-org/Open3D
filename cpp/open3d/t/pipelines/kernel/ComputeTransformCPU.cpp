@@ -34,22 +34,28 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
-#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCPU(const float *source_points_ptr,
-                                const float *target_points_ptr,
-                                const float *target_normals_ptr,
-                                const int64_t *correspondences_first,
-                                const int64_t *correspondences_second,
-                                const int n,
-                                core::Tensor &pose,
-                                const core::Dtype &dtype,
-                                const core::Device &device) {
+void ComputePosePointToPlaneCPU(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &pose,
+        const core::Dtype &dtype,
+        const core::Device &device) {
+    const float *source_points_ptr = source_points.GetDataPtr<float>();
+    const float *target_points_ptr = target_points.GetDataPtr<float>();
+    const float *target_normals_ptr = target_normals.GetDataPtr<float>();
+    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
+    const int64_t *correspondences_second = corres.second.GetDataPtr<int64_t>();
+
+    int n = corres.first.GetLength();
+
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
@@ -131,15 +137,21 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     pose = ATA.Solve(ATB_neg).Reshape({-1}).To(dtype);
 }
 
-void ComputeRtPointToPointCPU(const float *source_points_ptr,
-                              const float *target_points_ptr,
-                              const int64_t *correspondences_first,
-                              const int64_t *correspondences_second,
-                              const int n,
-                              core::Tensor &R,
-                              core::Tensor &t,
-                              const core::Dtype dtype,
-                              const core::Device device) {
+void ComputeRtPointToPointCPU(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &R,
+        core::Tensor &t,
+        const core::Dtype &dtype,
+        const core::Device &device) {
+    const float *source_points_ptr = source_points.GetDataPtr<float>();
+    const float *target_points_ptr = target_points.GetDataPtr<float>();
+    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
+    const int64_t *correspondences_second = corres.second.GetDataPtr<int64_t>();
+
+    int n = corres.first.GetLength();
+
     // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
     // target points respectively.
     std::vector<double> mean_1x6(6, 0.0);

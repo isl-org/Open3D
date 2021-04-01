@@ -27,22 +27,28 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
-#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
-                                 const float *target_points_ptr,
-                                 const float *target_normals_ptr,
-                                 const int64_t *correspondences_first,
-                                 const int64_t *correspondences_second,
-                                 const int n,
-                                 core::Tensor &pose,
-                                 const core::Dtype &dtype,
-                                 const core::Device &device) {
+void ComputePosePointToPlaneCUDA(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &pose,
+        const core::Dtype &dtype,
+        const core::Device &device) {
+    const float *source_points_ptr = source_points.GetDataPtr<float>();
+    const float *target_points_ptr = target_points.GetDataPtr<float>();
+    const float *target_normals_ptr = target_normals.GetDataPtr<float>();
+    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
+    const int64_t *correspondences_second = corres.second.GetDataPtr<int64_t>();
+
+    int n = corres.first.GetLength();
+
     core::Dtype solve_dtype = core::Dtype::Float32;
 
     // atai: {n, 21} Stores local sum for ATA stacked vertically
