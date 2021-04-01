@@ -53,7 +53,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         if ((line_buffer = file.ReadLine())) {
             sscanf(line_buffer, "%zu", &num_pts);
         }
-        if (num_pts <= 0) {
+        if (static_cast<int64_t>(num_pts) <= 0) {
             utility::LogWarning("Read PTS failed: Number of points <= 0");
             return false;
         }
