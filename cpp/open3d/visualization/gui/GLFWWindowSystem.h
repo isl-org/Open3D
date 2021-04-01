@@ -71,6 +71,7 @@ public:
     void SetWindowSizePixels(OSWindow w, const Size& size) override;
 
     float GetWindowScaleFactor(OSWindow w) const override;
+    float GetUIScaleFactor(OSWindow w) const override;
 
     void SetWindowTitle(OSWindow w, const char* title) override;
 

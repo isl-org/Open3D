@@ -1,14 +1,7 @@
 include(ExternalProject)
 
-if (WIN32)
-    set(LIBDIR "lib")
-else()
-    include(GNUInstallDirs)
-    set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
-endif()
-
 # Set compiler flags
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+if (MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
 endif()
@@ -49,6 +42,15 @@ else()
 endif()
 message(STATUS "libturbojpeg: WITH_CRT_DLL=${WITH_CRT_DLL}")
 
+set(JPEG_TURBO_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install)
+
+# If MSVC, the OUTPUT_NAME was set to turbojpeg-static
+if(MSVC)
+    set(lib_name "turbojpeg-static")
+else()
+    set(lib_name "turbojpeg")
+endif()
+
 ExternalProject_Add(
     ext_turbojpeg
     PREFIX turbojpeg
@@ -63,20 +65,15 @@ ExternalProject_Add(
         -DENABLE_STATIC=ON
         -DENABLE_SHARED=OFF
         -DWITH_SIMD=${WITH_SIMD}
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install
+        -DCMAKE_INSTALL_PREFIX=${JPEG_TURBO_INSTALL_PREFIX}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+    BUILD_BYPRODUCTS
+        ${JPEG_TURBO_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
-
-# If MSVC, the OUTPUT_NAME was set to turbojpeg-static
-if(MSVC)
-    set(lib_name "turbojpeg-static")
-else()
-    set(lib_name "turbojpeg")
-endif()
 
 # For linking with Open3D's after installation
 set(JPEG_TURBO_LIBRARIES ${lib_name})

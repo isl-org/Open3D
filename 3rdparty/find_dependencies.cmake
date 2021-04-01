@@ -491,7 +491,7 @@ if(NOT USE_SYSTEM_JPEG)
     import_3rdparty_library(3rdparty_jpeg
         INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/include/
         LIBRARIES ${JPEG_TURBO_LIBRARIES}
-        LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/lib
+        LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/${Open3D_INSTALL_LIB_DIR}
     )
     add_dependencies(3rdparty_jpeg ext_turbojpeg)
     set(JPEG_TARGET "3rdparty_jpeg")
@@ -588,6 +588,9 @@ if(USE_SYSTEM_PNG)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "PNG")
         endif()
         set(PNG_TARGET "PNG::PNG")
+        set(ZLIB_TARGET "ZLIB::ZLIB")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
     else()
         message(STATUS "Unable to find installed third-party library libpng")
         set(USE_SYSTEM_PNG OFF)
@@ -609,12 +612,12 @@ if(NOT USE_SYSTEM_PNG)
         LIB_DIR      ${LIBPNG_LIB_DIR}
         LIBRARIES    ${LIBPNG_LIBRARIES}
     )
-    set(LIBPNG_TARGET "3rdparty_libpng")
+    set(PNG_TARGET "3rdparty_libpng")
     add_dependencies(3rdparty_libpng ext_libpng)
     add_dependencies(ext_libpng ext_zlib)
 
     # Putting zlib after libpng somehow works for Ubuntu.
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
 
@@ -1097,16 +1100,15 @@ else()
     message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
     message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
     if(UNIX)
-        target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+        target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
         target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-        # cuSOLVER and cuBLAS
-        if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_mkl INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
-        endif()
-    elseif(MSVC)
-        target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+    endif()
+    target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE
+                            ${CUDA_cusolver_LIBRARY}
+                            ${CUDA_CUBLAS_LIBRARIES})
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
@@ -1147,7 +1149,10 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    foreach(NPPLIB nppc nppi npp nppicc nppif nppig nppim nppial)
+    foreach(NPPLIB nppc nppicc nppif nppig nppim nppial)
+        if (NOT CUDA_${NPPLIB}_LIBRARY)
+            message(FATAL_ERROR "NPP library ${NPPLIB} not found!: ${CUDA_${NPPLIB}_LIBRARY}")
+        endif()
         list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
     endforeach()
     add_library(3rdparty_CUDA_NPP INTERFACE)

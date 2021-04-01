@@ -96,14 +96,7 @@ public:
 public:
     /// The estimated transformation matrix.
     core::Tensor transformation_;
-    /// correspondence_select_bool_ is a {N,1} bool tensor (N is the number of
-    /// query points), with value true for source points having good
-    /// correspondence, and false otherwise
-    core::Tensor correspondence_select_bool_;
-    /// correspondence_set_ is a {C,1} shape Float32 tensor (C is the number
-    /// of good correspondences), where value at [i, 1] is the corresponding
-    /// index in the target, for query point [i, 1].
-    core::Tensor correspondence_set_;
+    CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
     /// For ICP: the overlapping area (# of inlier correspondences / # of points

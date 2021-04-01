@@ -11,15 +11,14 @@ System requirements
 * Ubuntu 18.04+: GCC 5+, Clang 7+
 * macOS 10.14+: XCode 8.0+
 * Windows 10 (64-bit): Visual Studio 2019+
-* CMake: 3.17+ for Ubuntu and macOS, 3.18+ for Windows
+* CMake: 3.18+
 
-  * Ubuntu (18.04):
+  * Ubuntu (18.04 / 20.04):
 
     * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
     * Install with ``snap``: ``sudo snap install cmake --classic``
     * Install with ``pip`` (run inside a Python virtualenv): ``pip install cmake``
 
-  * Ubuntu (20.04+): Use the default OS repository: ``sudo apt-get install cmake``
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
@@ -110,7 +109,7 @@ To install Open3D C++ library:
     make install
 
 To link a C++ project against the Open3D C++ library, please refer to
-:ref:`create_cplusplus_project`.
+:ref:`cplusplus_example_project`.
 
 
 To install Open3D Python library, build one of the following options:
@@ -183,7 +182,7 @@ in Visual Studio.
     cmake --build . --config Release --target INSTALL
 
 To link a C++ project against the Open3D C++ library, please refer to
-:ref:`create_cplusplus_project`.
+:ref:`cplusplus_example_project`.
 
 To install Open3D Python library, build the corresponding python installation
 targets in terminal or Visual Studio.

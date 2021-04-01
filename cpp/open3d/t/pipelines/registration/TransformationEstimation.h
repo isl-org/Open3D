@@ -46,12 +46,12 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 
-/// CorrespondenceSet is a pair of tensor, where first tensor
-/// [correspondence_select_bool_] is a {N,1} bool tensor (N is the number of
-/// query points), with value true for source points having good correspondence,
-/// and false otherwise, and second [correspondence_set_] is a {C,1} shape
-/// Float32 tensor (C is the number of good correspondences), where value at
-/// [i, 1] is the corresponding index in the target, for query point [i, 1].
+/// \brief CorrespondenceSet: pair of 2 tensors of shape {C,1},
+/// where C is the number of good correspondences between source and
+/// target pointcloud. The first tensor is the source indexes, and
+/// the second tensor is target indexes. Such that,
+/// source[correspondence.first] and target[correspondence.second]
+/// is a correspondence pair.
 typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
 
 enum class TransformationEstimationType {
@@ -84,7 +84,7 @@ public:
     /// \param corres Correspondence set between source and target point cloud.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
-                               CorrespondenceSet &corres) const = 0;
+                               const CorrespondenceSet &corres) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
@@ -94,7 +94,7 @@ public:
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const = 0;
+            const CorrespondenceSet &corres) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -113,11 +113,11 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       CorrespondenceSet &corres) const override;
+                       const CorrespondenceSet &corres) const override;
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const override;
+            const CorrespondenceSet &corres) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -140,11 +140,11 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       CorrespondenceSet &corres) const override;
+                       const CorrespondenceSet &corres) const override;
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const override;
+            const CorrespondenceSet &corres) const override;
 
 private:
     const TransformationEstimationType type_ =

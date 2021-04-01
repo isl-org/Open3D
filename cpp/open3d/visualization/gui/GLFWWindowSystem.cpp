@@ -31,6 +31,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
 #ifdef __APPLE__
@@ -48,6 +49,15 @@ namespace gui {
 namespace {
 static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
 static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
+
+// GLFW doesn't provide double-click messages, nor will it read the default
+// values from the OS, so we need to do it ourselves.
+static constexpr double DOUBLE_CLICK_TIME = 0.300;  // 300 ms is a typical value
+
+// These are used in the GLFW callbacks, which are global functions, and it's
+// not worth creating a wrapper around Window just for this.
+double g_last_button_down_time = 0.0;
+MouseButton g_last_button_down = MouseButton::NONE;
 
 int MouseButtonFromGLFW(int button) {
     switch (button) {
@@ -93,6 +103,18 @@ int KeymodsFromGLFW(int glfw_mods) {
 #endif  // __APPLE__
     }
     return keymods;
+}
+
+float CallGLFWGetWindowContentScale(GLFWwindow* w) {
+    // Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
+#if (GLFW_VERSION_MAJOR > 3 || \
+     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
+    float xscale, yscale;
+    glfwGetWindowContentScale(w, &xscale, &yscale);
+    return std::min(xscale, yscale);
+#else
+    return 1.0f;
+#endif  // GLFW version >= 3.3
 }
 
 }  // namespace
@@ -246,15 +268,24 @@ void GLFWWindowSystem::SetWindowSizePixels(OSWindow w, const Size& size) {
 }
 
 float GLFWWindowSystem::GetWindowScaleFactor(OSWindow w) const {
-// Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
-#if (GLFW_VERSION_MAJOR > 3 || \
-     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
-    float xscale, yscale;
-    glfwGetWindowContentScale((GLFWwindow*)w, &xscale, &yscale);
-    return std::min(xscale, yscale);
+    // This function returns the number of device pixels per OS distance-unit.
+    // Windows and Linux keep one pixel equal to one real pixel, whereas
+    // macOS keeps the unit of measurement the same (1 pt = 1/72 inch) and
+    // changes the number pixels in one "virtual pixel". This function returns
+    // the scale factor as macOS thinks of it. This function should be used
+    // in converting to/from OS coordinates (e.g. mouse events), but not for
+    // sizing user interface elements like fonts.
+#if __APPLE__
+    return CallGLFWGetWindowContentScale((GLFWwindow*)w);
 #else
     return 1.0f;
-#endif  // GLFW version >= 3.3
+#endif  // __APPLE__
+}
+
+float GLFWWindowSystem::GetUIScaleFactor(OSWindow w) const {
+    // This function returns the scale factor needed to have appropriately
+    // sized user interface elements.
+    return CallGLFWGetWindowContentScale((GLFWwindow*)w);
 }
 
 void GLFWWindowSystem::SetWindowTitle(OSWindow w, const char* title) {
@@ -328,7 +359,9 @@ void GLFWWindowSystem::MouseMoveCallback(GLFWwindow* window,
             buttons |= MouseButtonFromGLFW(b);
         }
     }
-    float scaling = w->GetScaling();
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(x * scaling));
     int iy = int(std::ceil(y * scaling));
 
@@ -349,13 +382,27 @@ void GLFWWindowSystem::MouseButtonCallback(GLFWwindow* window,
                                       : MouseEvent::BUTTON_UP);
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
     MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
     me.button.button = MouseButton(MouseButtonFromGLFW(button));
+    me.button.count = 1;
 
+    double now = Application::GetInstance().Now();
+    if (g_last_button_down == me.button.button) {
+        double dt = now - g_last_button_down_time;
+        if (dt > 0.0 && dt < DOUBLE_CLICK_TIME) {
+            me.button.count += 1;
+        }
+    }
+    if (type == MouseEvent::BUTTON_DOWN) {
+        g_last_button_down = me.button.button;
+        g_last_button_down_time = now;
+    }
     w->OnMouseEvent(me);
 }
 
@@ -366,7 +413,9 @@ void GLFWWindowSystem::MouseScrollCallback(GLFWwindow* window,
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
