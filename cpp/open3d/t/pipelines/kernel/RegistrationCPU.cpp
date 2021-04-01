@@ -34,6 +34,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
@@ -41,22 +42,14 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-void ComputePosePointToPlaneCPU(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &pose,
-        const core::Dtype &dtype,
-        const core::Device &device) {
-    const float *source_points_ptr = source_points.GetDataPtr<float>();
-    const float *target_points_ptr = target_points.GetDataPtr<float>();
-    const float *target_normals_ptr = target_normals.GetDataPtr<float>();
-    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
-    const int64_t *correspondences_second = corres.second.GetDataPtr<int64_t>();
-
-    int n = corres.first.GetLength();
-
+template <typename scalar_t>
+static core::Tensor Get6x6CompressedLinearTensor(
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const int64_t *correspondences_second,
+        int n) {
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
@@ -69,10 +62,10 @@ void ComputePosePointToPlaneCPU(
             [&](tbb::blocked_range<int> r, std::vector<double> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-                    float J_ij[6];
-                    float r;
+                    scalar_t J_ij[6];
+                    scalar_t r;
 
-                    bool valid = GetJacobianPointToPlane(
+                    bool valid = GetJacobianPointToPlane<scalar_t>(
                             workload_idx, source_points_ptr, target_points_ptr,
                             target_normals_ptr, correspondences_first,
                             correspondences_second, J_ij, r);
@@ -118,48 +111,50 @@ void ComputePosePointToPlaneCPU(
                 }
                 return result;
             });
-
-    // DecodeAndSolve6x6()
-    core::Tensor ATA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
-    float *ata_ptr = ATA.GetDataPtr<float>();
-
-    // ATB_neg is -(ATB), as bi_neg is used in kernel instead of bi,
-    // where  bi = [source_points - target_points].(target_normals).
-    core::Tensor ATB_neg =
-            core::Tensor::Empty({6, 1}, core::Dtype::Float32, device);
-    float *atb_ptr = ATB_neg.GetDataPtr<float>();
-
-    // ATA_ {1,21} to ATA {6,6}.
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            ata_ptr[j * 6 + k] = A_1x27[i];
-            ata_ptr[k * 6 + j] = A_1x27[i];
-            i++;
-        }
-        atb_ptr[j] = -A_1x27[21 + j];
-    }
-
-    // ATA(6,6) . Pose(6,1) = -ATB(6,1).
-
-    pose = ATA.Solve(ATB_neg).Reshape({-1}).To(dtype);
+    return core::Tensor(A_1x27, {27}, core::Dtype::Float64);
 }
 
-void ComputeRtPointToPointCPU(
+void ComputePosePointToPlaneCPU(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
+        const core::Tensor &target_normals,
         const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &R,
-        core::Tensor &t,
+        core::Tensor &pose,
         const core::Dtype &dtype,
         const core::Device &device) {
-    const float *source_points_ptr = source_points.GetDataPtr<float>();
-    const float *target_points_ptr = target_points.GetDataPtr<float>();
-    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
-    const int64_t *correspondences_second = corres.second.GetDataPtr<int64_t>();
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        const scalar_t *source_points_ptr =
+                source_points.GetDataPtr<scalar_t>();
+        const scalar_t *target_points_ptr =
+                target_points.GetDataPtr<scalar_t>();
+        const scalar_t *target_normals_ptr =
+                target_normals.GetDataPtr<scalar_t>();
+        const int64_t *correspondences_first =
+                corres.first.GetDataPtr<int64_t>();
+        const int64_t *correspondences_second =
+                corres.second.GetDataPtr<int64_t>();
 
-    int n = corres.first.GetLength();
+        int n = corres.first.GetLength();
 
+        core::Tensor A_reduction = Get6x6CompressedLinearTensor<scalar_t>(
+                source_points_ptr, target_points_ptr, target_normals_ptr,
+                correspondences_first, correspondences_second, n);
+
+        DecodeAndSolve6x6(A_reduction, pose);
+    });
+}
+
+template <typename scalar_t>
+static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
+                                  const scalar_t *target_points_ptr,
+                                  const int64_t *correspondences_first,
+                                  const int64_t *correspondences_second,
+                                  const int &n,
+                                  const core::Dtype &dtype,
+                                  const core::Device &device,
+                                  core::Tensor &Sxy,
+                                  core::Tensor &mean_t,
+                                  core::Tensor &mean_s) {
     // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
     // target points respectively.
     std::vector<double> mean_1x6(6, 0.0);
@@ -229,16 +224,13 @@ void ComputeRtPointToPointCPU(
                 return result;
             });
 
-    core::Tensor mean_s =
-            core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
+    mean_s = core::Tensor::Empty({1, 3}, dtype, device);
     float *mean_s_ptr = mean_s.GetDataPtr<float>();
 
-    core::Tensor mean_t =
-            core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
+    mean_t = core::Tensor::Empty({1, 3}, dtype, device);
     float *mean_t_ptr = mean_t.GetDataPtr<float>();
 
-    core::Tensor Sxy =
-            core::Tensor::Empty({3, 3}, core::Dtype::Float32, device);
+    Sxy = core::Tensor::Empty({3, 3}, dtype, device);
     float *sxy_ptr = Sxy.GetDataPtr<float>();
 
     // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
@@ -252,6 +244,28 @@ void ComputeRtPointToPointCPU(
         mean_s_ptr[j] = mean_1x6[j];
         mean_t_ptr[j] = mean_1x6[j + 3];
     }
+}
+
+void ComputeRtPointToPointCPU(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const std::pair<core::Tensor, core::Tensor> &corres,
+        core::Tensor &R,
+        core::Tensor &t,
+        const core::Dtype &dtype,
+        const core::Device &device) {
+    const float *source_points_ptr = source_points.GetDataPtr<float>();
+    const float *target_points_ptr = target_points.GetDataPtr<float>();
+    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
+    const int64_t *correspondences_second = corres.second.GetDataPtr<int64_t>();
+
+    int n = corres.first.GetLength();
+
+    core::Tensor Sxy, mean_t, mean_s;
+
+    Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
+                          correspondences_first, correspondences_second, n,
+                          dtype, device, Sxy, mean_t, mean_s);
 
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();

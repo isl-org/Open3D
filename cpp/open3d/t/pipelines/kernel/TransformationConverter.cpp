@@ -132,6 +132,7 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction, core::Tensor &delta) {
     double *AtA_local_ptr = AtA.GetDataPtr<double>();
     double *Atb_local_ptr = Atb.GetDataPtr<double>();
 
+#pragma omp parallel for
     for (int j = 0; j < 6; j++) {
         Atb_local_ptr[j] = A_ptr[21 + j];
         const int64_t reduction_idx = ((j * (j + 1)) / 2);

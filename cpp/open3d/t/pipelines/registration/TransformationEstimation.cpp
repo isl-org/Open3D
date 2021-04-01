@@ -118,14 +118,13 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
+    core::Dtype dtype = source.GetPoints().GetDtype();
+    target.GetPoints().AssertDtype(dtype,
+                                   " Target Pointcloud dtype mismatch with "
+                                   "Source Pointcloud's dtype.");
+    target.GetPoints().AssertDevice(device,
+                                    " Target Pointcloud device mismatch with "
+                                    "Source Pointcloud's device.");
 
     // Get pose {6} from correspondences indexed source and target point cloud.
     core::Tensor pose =
@@ -134,7 +133,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                     target.GetPointNormals(), corres);
 
     // Get transformation {4,4} from pose {6}.
-    return pipelines::kernel::PoseToTransformation(pose).To(device);
+    return pipelines::kernel::PoseToTransformation(pose).To(device, dtype);
 }
 
 }  // namespace registration

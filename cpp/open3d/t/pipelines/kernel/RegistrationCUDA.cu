@@ -39,10 +39,10 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-void Reduce27AndSolve6x6(float *A_reduction,
-                         core::Tensor &delta,
-                         int64_t n,
-                         const core::Device &device) {
+static void Reduce27AndSolve6x6(float *A_reduction,
+                                core::Tensor &delta,
+                                int64_t n,
+                                const core::Device &device) {
     core::Tensor output_27 =
             core::Tensor::Empty({27}, core::Dtype::Float32, device);
     float *output_27_data = output_27.GetDataPtr<float>();
@@ -63,7 +63,6 @@ void Reduce27AndSolve6x6(float *A_reduction,
     }
 
     DecodeAndSolve6x6(output_27, delta);
-    delta = delta.To(core::Dtype::Float32);
 }
 
 void ComputePosePointToPlaneCUDA(
@@ -94,7 +93,7 @@ void ComputePosePointToPlaneCUDA(
                 float J_ij[6];
                 float r;
 
-                bool valid = GetJacobianPointToPlane(
+                bool valid = GetJacobianPointToPlane<float>(
                         workload_idx, source_points_ptr, target_points_ptr,
                         target_normals_ptr, correspondences_first,
                         correspondences_second, J_ij, r);

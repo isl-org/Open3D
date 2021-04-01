@@ -47,7 +47,7 @@ static const double relative_rmse = 1e-6;
 static const int max_iterations = 1;
 
 // NNS parameter.
-static const double max_correspondence_distance = 0.15;
+static const double max_correspondence_distance = 0.015;
 
 // Initial transformation guess for registation.
 static const std::vector<float> initial_transform_flat{
