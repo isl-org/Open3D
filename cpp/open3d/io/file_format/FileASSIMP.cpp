@@ -303,8 +303,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
     };
 
     Assimp::Importer importer;
-    // The ASSIMP documentation does not say who owns the progress handler
-    // pointer, but empirically it the importer seems to take ownership.
+    // The importer takes ownership of the pointer (the documentation
+    // is silent on this salient point).
     importer.SetProgressHandler(
             new AssimpProgress(params, readfile_total / progress_total));
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
