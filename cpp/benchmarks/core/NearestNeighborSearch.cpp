@@ -116,25 +116,31 @@ static void BM_TestNNS_Radius(benchmark::State& state,
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({100, 1})
         ->Args({100, 64})
+        ->Args({100, 256})
         ->Args({200, 1})
         ->Args({200, 64})
+        ->Args({200, 256})
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, core::Device("CPU:0"))
+        ->Args({10})
+        ->Args({50})
         ->Args({100})
         ->Args({200})
-        ->Args({400})
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, core::Device("CUDA:0"))
         ->Args({100, 1})
         ->Args({100, 64})
+        ->Args({100, 256})
         ->Args({200, 1})
         ->Args({200, 64})
+        ->Args({200, 256})
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU, core::Device("CUDA:0"))
+        ->Args({10})
+        ->Args({50})
         ->Args({100})
         ->Args({200})
-        ->Args({400})
         ->Unit(benchmark::kMillisecond);
 #endif
 }  // namespace benchmarks
