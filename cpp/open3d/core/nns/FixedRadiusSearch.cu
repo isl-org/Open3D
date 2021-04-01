@@ -444,7 +444,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
                 distances[indices_offset] = dist;
                 indices[indices_offset] = idx;
-                reheap(distances + indices_offset, indices + indices_offset, max_n);
+                reheap(distances + indices_offset, indices + indices_offset,
+                       max_n);
                 ++count;
             }
         }
