@@ -395,9 +395,9 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
     int query_idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (query_idx >= num_queries) return;
 
-    int count = 0;  // counts the number of neighbors for this query point
-
     size_t indices_offset = neighbors_row_splits[query_idx];
+    size_t max_n = neighbors_row_splits[query_idx + 1] -
+                   neighbors_row_splits[query_idx];
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
                       query_points[query_idx * 3 + 1],
@@ -427,6 +427,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         }
     }
 
+    int count = 0;  // counts the number of neighbors for this query point
     for (int bin_i = 0; bin_i < 8; ++bin_i) {
         int bin = bins_to_visit[bin_i];
         if (bin == -1) break;
@@ -441,14 +442,14 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
-                indices[indices_offset + count] = idx;
-                if (RETURN_DISTANCES) {
-                    distances[indices_offset + count] = dist;
-                }
+                distances[indices_offset] = dist;
+                indices[indices_offset] = idx;
+                reheap(distances + indices_offset, indices + indices_offset, max_n);
                 ++count;
             }
         }
     }
+    heap_sort(distances + indices_offset, indices + indices_offset, max_n);
 }
 
 /// Write indices and distances of neighbors for each query point
@@ -983,7 +984,8 @@ void FixedRadiusSearchCUDA(void* temp,
         T* distances_ptr;
 
         output_allocator.AllocIndices(&indices_ptr, num_indices);
-        output_allocator.AllocDistances(&distances_ptr, num_indices);
+        output_allocator.AllocDistances(&distances_ptr, num_indices,
+                                        std::numeric_limits<T>::max());
         for (int i = 0; i < batch_size; ++i) {
             const size_t hash_table_size =
                     hash_table_splits[i + 1] - hash_table_splits[i];

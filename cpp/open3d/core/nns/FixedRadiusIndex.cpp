@@ -137,8 +137,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     void *temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    Tensor neighbors_index;
-    Tensor neighbors_distance;
+    Tensor indices;
+    Tensor distances;
     Tensor neighbors_row_splits =
             Tensor({num_query_points + 1}, Dtype::Int64, device);
 
@@ -172,49 +172,10 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                 hash_table_cell_splits_.GetDataPtr<int64_t>(),
                 hash_table_index_.GetDataPtr<int64_t>(), output_allocator);
 
-        Tensor indices_unsorted = output_allocator.NeighborsIndex();
-        Tensor distances_unsorted = output_allocator.NeighborsDistance();
-
-        if (!sort) {
-            neighbors_index = indices_unsorted;
-            neighbors_distance = distances_unsorted;
-        } else {
-            // Sort indices & distances.
-            temp_ptr = nullptr;
-            temp_size = 0;
-
-            int64_t num_indices = indices_unsorted.GetShape()[0];
-            int64_t num_segments = neighbors_row_splits.GetShape()[0] - 1;
-            Tensor indices_sorted =
-                    Tensor::Empty({num_indices}, Dtype::Int64, device);
-            Tensor distances_sorted =
-                    Tensor::Empty({num_indices}, dtype, device);
-
-            // Determine temp_size for sorting
-            SortPairs(temp_ptr, temp_size, num_indices, num_segments,
-                      neighbors_row_splits.GetDataPtr<int64_t>(),
-                      indices_unsorted.GetDataPtr<int64_t>(),
-                      distances_unsorted.GetDataPtr<scalar_t>(),
-                      indices_sorted.GetDataPtr<int64_t>(),
-                      distances_sorted.GetDataPtr<scalar_t>());
-
-            temp_tensor =
-                    Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
-            temp_ptr = temp_tensor.GetDataPtr();
-
-            // Actually run the sorting.
-            SortPairs(temp_ptr, temp_size, num_indices, num_segments,
-                      neighbors_row_splits.GetDataPtr<int64_t>(),
-                      indices_unsorted.GetDataPtr<int64_t>(),
-                      distances_unsorted.GetDataPtr<scalar_t>(),
-                      indices_sorted.GetDataPtr<int64_t>(),
-                      distances_sorted.GetDataPtr<scalar_t>());
-            neighbors_index = indices_sorted;
-            neighbors_distance = distances_sorted;
-        }
+        indices = output_allocator.NeighborsIndex();
+        distances = output_allocator.NeighborsDistance();
     });
-    return std::make_tuple(neighbors_index, neighbors_distance,
-                           neighbors_row_splits);
+    return std::make_tuple(indices, distances, neighbors_row_splits);
 #else
     utility::LogError(
             "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
