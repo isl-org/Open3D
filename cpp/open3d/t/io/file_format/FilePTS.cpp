@@ -47,57 +47,64 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                                 filename);
             return false;
         }
-        size_t num_of_pts = 0;
+
+        size_t num_pts = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
-            sscanf(line_buffer, "%zu", &num_of_pts);
+            sscanf(line_buffer, "%zu", &num_pts);
         }
-        utility::CountingProgressReporter reporter(params.update_progress);
-        reporter.SetTotal(num_of_pts);
+        if (num_pts <= 0) {
+            utility::LogWarning("Read PTS failed: Number of points <= 0");
+            return false;
+        }
 
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(num_pts);
         pointcloud.Clear();
-        core::Tensor points;
-        core::Tensor intensities;
-        core::Tensor colors;
+
         double *points_ptr = nullptr;
         double *intensities_ptr = nullptr;
         uint8_t *colors_ptr = nullptr;
         size_t idx = 0;
         std::vector<std::string> st;
-        int num_of_fields = 0;
+        int num_fields = 0;
 
         if ((line_buffer = file.ReadLine())) {
             st = utility::SplitString(line_buffer, " ");
-            num_of_fields = static_cast<int64_t>(st.size());
-            if (num_of_fields < 3) {
+            num_fields = static_cast<int64_t>(st.size());
+            if (num_fields < 3) {
                 utility::LogWarning(
                         "Read PTS failed: insufficient data fields.");
                 return false;
             }
-            points = core::Tensor({static_cast<int64_t>(num_of_pts), 3},
-                                  core::Dtype::Float64);
-            points_ptr = points.GetDataPtr<double>();
+
+            pointcloud.SetPoints(core::Tensor(
+                    {static_cast<int64_t>(num_pts), 3}, core::Dtype::Float64));
+            points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
 
             // X Y Z I or X Y Z I R G B
-            if (num_of_fields == 4 || num_of_fields >= 7) {
-                intensities =
-                        core::Tensor({static_cast<int64_t>(num_of_pts), 1},
-                                     core::Dtype::Float64);
-                intensities_ptr = intensities.GetDataPtr<double>();
+            if (num_fields == 4 || num_fields == 7) {
+                pointcloud.SetPointAttr(
+                        "intensities",
+                        core::Tensor({static_cast<int64_t>(num_pts), 1},
+                                     core::Dtype::Float64));
+                intensities_ptr = pointcloud.GetPointAttr("intensities")
+                                          .GetDataPtr<double>();
             }
 
             // X Y Z R G B or X Y Z I R G B
-            if (num_of_fields >= 6) {
-                colors = core::Tensor({static_cast<int64_t>(num_of_pts), 3},
-                                      core::Dtype::UInt8);
-                colors_ptr = colors.GetDataPtr<uint8_t>();
+            if (num_fields == 6 || num_fields == 7) {
+                pointcloud.SetPointColors(
+                        core::Tensor({static_cast<int64_t>(num_pts), 3},
+                                     core::Dtype::UInt8));
+                colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
             }
         }
 
         do {
             st.clear();
             st = utility::SplitString(line_buffer, " ");
-            if (num_of_fields > (int)st.size()) {
+            if (num_fields > (int)st.size()) {
                 utility::LogWarning(
                         "Read PTS failed: lines have unequal elements.");
                 return false;
@@ -105,7 +112,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
             double x, y, z, i;
             int r, g, b;
-            if (num_of_fields >= 7 &&
+            if (num_fields == 7 &&
                 (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z, &i,
                         &r, &g, &b) == 7)) {
                 points_ptr[3 * idx + 0] = x;
@@ -115,7 +122,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 colors_ptr[3 * idx + 0] = r;
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
-            } else if (num_of_fields == 6 &&
+            } else if (num_fields == 6 &&
                        (sscanf(line_buffer, "%lf %lf %lf %d %d %d", &x, &y, &z,
                                &r, &g, &b) == 6)) {
                 points_ptr[3 * idx + 0] = x;
@@ -124,31 +131,28 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 colors_ptr[3 * idx + 0] = r;
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
-            } else if (num_of_fields == 4 &&
+            } else if (num_fields == 4 &&
                        (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z,
                                &i) == 4)) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
                 intensities_ptr[idx] = i;
-            } else if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
+            } else if (num_fields == 3 &&
+                       sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
+            } else {
+                utility::LogWarning("Read PTS failed: unknown pts format");
+                return false;
             }
             idx++;
             if (idx % 1000 == 0) {
                 reporter.Update(idx);
             }
-        } while (idx < num_of_pts && (line_buffer = file.ReadLine()));
+        } while (idx < num_pts && (line_buffer = file.ReadLine()));
 
-        pointcloud.SetPoints(points);
-        if (num_of_fields == 4 || num_of_fields >= 7) {
-            pointcloud.SetPointAttr("intensities", intensities);
-        }
-        if (num_of_fields >= 6) {
-            pointcloud.SetPointColors(colors);
-        }
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {
