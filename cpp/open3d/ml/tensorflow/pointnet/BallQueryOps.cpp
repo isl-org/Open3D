@@ -19,7 +19,7 @@ REGISTER_OP("Open3DBallQuery")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             ::tensorflow::shape_inference::ShapeHandle
                     dims1;  // batch_size * nsample * 3
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 3, &dims1));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 3, &dims1));
             int nsample;
             TF_RETURN_IF_ERROR(c->GetAttr("nsample", &nsample));
             ::tensorflow::shape_inference::ShapeHandle output =

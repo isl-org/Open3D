@@ -49,7 +49,7 @@ namespace core {
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
 public:
-    Tensor(){};
+    Tensor() {}
 
     /// Constructor for creating a contiguous Tensor
     Tensor(const SizeVector& shape,
@@ -145,23 +145,14 @@ public:
     /// An actual copy of the data will be performed.
     Tensor& operator=(Tensor&& other) &&;
 
-    /// Tensor assignment rvalue = rvalue_scalar, e.g. `tensor_a[0] = 100`
+    /// Tensor assignment rvalue = scalar, e.g. `tensor_a[0] = 100`
     /// Implicit casting is performed to the underlying dtype.
     ///
-    /// Note that we don't have lvalue = rvalue_scalar, e.g. we don't support
+    /// Note that we don't have lvalue = scalar, e.g. we don't support
     /// Tensor a_slice = tensor_a[0]; a_slice = 100;
     template <typename T>
-    Tensor& operator=(const T& v) && {
-        if (shape_.size() != 0) {
-            utility::LogError(
-                    "Assignment with scalar only works for scalar Tensor of "
-                    "shape ()");
-        }
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
-            scalar_t casted_v = static_cast<scalar_t>(v);
-            MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
-                                          sizeof(scalar_t));
-        });
+    Tensor& operator=(const T v) && {
+        this->Fill(v);
         return *this;
     }
 
@@ -229,7 +220,7 @@ public:
         std::vector<T> ele_list{val};
         SizeVector shape;
         return Tensor(ele_list, shape, type, device);
-    };
+    }
 
     /// Create a 1-D tensor with initializer list,
     /// e.g., core::Tensor::Init<float>({0, 1, 2});
@@ -237,7 +228,7 @@ public:
     static Tensor Init(const std::initializer_list<T>& in_list,
                        const Device& device = Device("CPU:0")) {
         return InitWithInitializerList<T, 1>(in_list, device);
-    };
+    }
 
     /// Create a 2-D tensor with nested initializer list,
     /// e.g., core::Tensor::Init<float>({{0, 1, 2}, {3, 4, 5}});
@@ -246,7 +237,7 @@ public:
             const std::initializer_list<std::initializer_list<T>>& in_list,
             const Device& device = Device("CPU:0")) {
         return InitWithInitializerList<T, 2>(in_list, device);
-    };
+    }
 
     /// Create a 3-D tensor with nested initializer list,
     /// e.g., core::Tensor::Init<float>({{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}});
@@ -256,7 +247,7 @@ public:
                     std::initializer_list<std::initializer_list<T>>>& in_list,
             const Device& device = Device("CPU:0")) {
         return InitWithInitializerList<T, 3>(in_list, device);
-    };
+    }
 
     /// Create a identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
@@ -992,7 +983,7 @@ public:
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
         return shape_util::DefaultStrides(shape_) == strides_;
-    };
+    }
 
     /// Returns a contiguous Tensor containing the same data in the same device.
     /// If self tensor is already contiguous, the same underlying memory will be
@@ -1182,7 +1173,7 @@ private:
         std::vector<T> values =
                 tensor_init::ToFlatVector<T, D>(shape, nested_list);
         return Tensor(values, shape, Dtype::FromType<T>(), device);
-    };
+    }
 
 protected:
     /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension

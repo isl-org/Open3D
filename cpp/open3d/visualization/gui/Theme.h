@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,6 +64,12 @@ struct Theme {
     Color checkbox_background_hover_off_color;
     Color checkbox_background_hover_on_color;
     Color checkbox_check_color;
+
+    Color toggle_background_off_color;
+    Color toggle_background_on_color;
+    Color toggle_background_hover_off_color;
+    Color toggle_background_hover_on_color;
+    Color toggle_thumb_color;
 
     Color combobox_background_color;
     Color combobox_hover_color;

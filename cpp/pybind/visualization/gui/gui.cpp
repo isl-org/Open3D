@@ -50,6 +50,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/ToggleSwitch.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
@@ -611,6 +612,9 @@ void pybind_gui_classes(py::module &m) {
                           "True if widget is visible, False otherwise")
             .def_property("enabled", &Widget::IsEnabled, &Widget::SetEnabled,
                           "True if widget is enabled, False if disabled")
+            .def_property("background_color", &Widget::GetBackgroundColor,
+                          &Widget::SetBackgroundColor,
+                          "Background color of the widget")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
                  "Returns the preferred size of the widget. This is intended "
                  "to be called only during layout, although it will also work "
@@ -992,6 +996,11 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "scene", &PySceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
+            .def_property("center_of_rotation",
+                          &SceneWidget::GetCenterOfRotation,
+                          &SceneWidget::SetCenterOfRotation,
+                          "Current center of rotation (for ROTATE_CAMERA and "
+                          "ROTATE_CAMERA_SPHERE)")
             .def("enable_scene_caching", &PySceneWidget::EnableSceneCaching,
                  "Enable/Disable caching of scene content when the view or "
                  "model is not changing. Scene caching can help improve UI "
@@ -1133,6 +1142,25 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_value_changed", &TextEdit::SetOnValueChanged,
                  "Sets f(new_text) which is called with the new text when the "
                  "user completes text editing");
+
+    // ---- ToggleSwitch ----
+    py::class_<ToggleSwitch, UnownedPointer<ToggleSwitch>, Widget> toggle(
+            m, "ToggleSwitch", "ToggleSwitch");
+    toggle.def(py::init<const char *>(),
+               "Creates a toggle switch with the given text")
+            .def("__repr__",
+                 [](const ToggleSwitch &ts) {
+                     std::stringstream s;
+                     s << "ToggleSwitch (" << ts.GetFrame().x << ", "
+                       << ts.GetFrame().y << "), " << ts.GetFrame().width
+                       << " x " << ts.GetFrame().height;
+                     return s.str();
+                 })
+            .def_property("is_on", &ToggleSwitch::GetIsOn, &ToggleSwitch::SetOn,
+                          "True if is one, False otherwise")
+            .def("set_on_clicked", &ToggleSwitch::SetOnClicked,
+                 "Sets f(is_on) which is called when the switch changes "
+                 "state.");
 
     // ---- TreeView ----
     py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(

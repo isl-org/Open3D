@@ -166,6 +166,11 @@ public:
         for (int64_t i = active_dims_; i < n; ++i) {
             element_byte_size_ *= shape[i];
         }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
+        }
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
     }
 
@@ -181,6 +186,11 @@ public:
         active_dims_ = n;
         for (int64_t i = 0; i < active_dims_; ++i) {
             shape_[i] = shape[i];
+        }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
         }
 
         // Reserved
