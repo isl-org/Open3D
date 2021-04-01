@@ -63,7 +63,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 // TODO:
 // 1. Currently, the tensor triangle mesh implementation has no provision for
 // triangle_uvs,  materials, triangle_material_ids and textures which are
-// supported by the legacy. These can be added with the custom attribute
+// supported by the legacy. These can be added as custom attributes (level 2)
 // approach. Please check legacy file formats(e.g. FileOBJ.cpp) for more
 // information.
 // 2. Add these properties to the legacy to tensor mesh and tensor to legacy
