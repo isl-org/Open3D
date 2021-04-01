@@ -981,6 +981,12 @@ struct O3DVisualizer::Impl {
         return DrawObject();
     }
 
+    void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
+        scene_->AddLabel(pos, text);
+    }
+
+    void Clear3DLabels() { scene_->ClearLabels(); }
+
     void SetupCamera(float fov,
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
@@ -1824,6 +1830,12 @@ void O3DVisualizer::AddGeometry(
         bool is_visible /*= true*/) {
     impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
 }
+
+void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
+    impl_->Add3DLabel(pos, text);
+}
+
+void O3DVisualizer::Clear3DLabels() { impl_->Clear3DLabels(); }
 
 void O3DVisualizer::RemoveGeometry(const std::string &name) {
     return impl_->RemoveGeometry(name);
