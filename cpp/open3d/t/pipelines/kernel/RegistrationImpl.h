@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/CoreUtil.h"
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
@@ -35,6 +37,7 @@ namespace t {
 
 namespace pipelines {
 namespace kernel {
+namespace registration {
 
 void ComputePosePointToPlaneCPU(
         const core::Tensor &source_points,
@@ -65,6 +68,41 @@ void ComputeRtPointToPointCPU(
         const core::Dtype &dtype,
         const core::Device &device);
 
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
+        int64_t workload_idx,
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const int64_t *correspondences_second,
+        scalar_t *J_ij,
+        scalar_t &r) {
+    const int64_t &source_idx = 3 * correspondences_first[workload_idx];
+    const int64_t &target_idx = 3 * correspondences_second[workload_idx];
+
+    const scalar_t &sx = source_points_ptr[source_idx + 0];
+    const scalar_t &sy = source_points_ptr[source_idx + 1];
+    const scalar_t &sz = source_points_ptr[source_idx + 2];
+    const scalar_t &tx = target_points_ptr[target_idx + 0];
+    const scalar_t &ty = target_points_ptr[target_idx + 1];
+    const scalar_t &tz = target_points_ptr[target_idx + 2];
+    const scalar_t &nx = target_normals_ptr[target_idx + 0];
+    const scalar_t &ny = target_normals_ptr[target_idx + 1];
+    const scalar_t &nz = target_normals_ptr[target_idx + 2];
+
+    r = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
+    J_ij[0] = nz * sy - ny * sz;
+    J_ij[1] = nx * sz - nz * sx;
+    J_ij[2] = ny * sx - nx * sy;
+    J_ij[3] = nx;
+    J_ij[4] = ny;
+    J_ij[5] = nz;
+
+    return true;
+}
+
+}  // namespace registration
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

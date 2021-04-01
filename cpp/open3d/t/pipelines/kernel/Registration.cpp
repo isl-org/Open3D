@@ -24,15 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/kernel/ComputeTransform.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
 
 #include "open3d/core/CoreUtil.h"
-#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+namespace registration {
 
 core::Tensor ComputePosePointToPlane(
         const core::Tensor &source_points,
@@ -62,12 +63,12 @@ core::Tensor ComputePosePointToPlane(
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(source_points, target_points, target_normals,
-                                   corres, pose, dtype, device);
+                                   corres_contiguous, pose, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         ComputePosePointToPlaneCUDA(source_points, target_points,
-                                    target_normals, corres, pose, dtype,
-                                    device);
+                                    target_normals, corres_contiguous, pose,
+                                    dtype, device);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -99,8 +100,8 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         corres_contiguous.first = corres.first.Contiguous();
         corres_contiguous.second = corres.second.Contiguous();
 
-        ComputeRtPointToPointCPU(source_points, target_points, corres, R, t,
-                                 dtype, device);
+        ComputeRtPointToPointCPU(source_points, target_points,
+                                 corres_contiguous, R, t, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         int n = corres.first.GetLength();
@@ -134,6 +135,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     return std::make_tuple(R, t);
 }
 
+}  // namespace registration
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

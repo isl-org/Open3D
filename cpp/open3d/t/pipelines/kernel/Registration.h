@@ -32,6 +32,7 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+namespace registration {
 
 /// \brief Computes pose for point to plane registration method.
 /// \param source_points source points indexed according to correspondences.
@@ -58,6 +59,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &target_points,
         const std::pair<core::Tensor, core::Tensor> &correspondences);
 
+}  // namespace registration
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

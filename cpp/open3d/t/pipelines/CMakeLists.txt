@@ -10,15 +10,15 @@ set(ODOMETRY_SRC
 
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
-    kernel/ComputeTransform.cpp
-    kernel/ComputeTransformCPU.cpp
+    kernel/Registration.cpp
+    kernel/RegistrationCPU.cpp
     kernel/RGBDOdometry.cpp
     kernel/RGBDOdometryCPU.cpp
     )
 
 set(KERNEL_CUDA_SRC
     kernel/TransformationConverter.cu
-    kernel/ComputeTransformCUDA.cu
+    kernel/RegistrationCUDA.cu
     kernel/RGBDOdometryCUDA.cu
 )
 

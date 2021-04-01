@@ -33,12 +33,13 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+namespace registration {
 
 void ComputePosePointToPlaneCPU(
         const core::Tensor &source_points,
@@ -68,44 +69,49 @@ void ComputePosePointToPlaneCPU(
             [&](tbb::blocked_range<int> r, std::vector<double> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-                    const int64_t &source_idx =
-                            3 * correspondences_first[workload_idx];
-                    const int64_t &target_idx =
-                            3 * correspondences_second[workload_idx];
+                    float J_ij[6];
+                    float r;
 
-                    const float &sx = source_points_ptr[source_idx + 0];
-                    const float &sy = source_points_ptr[source_idx + 1];
-                    const float &sz = source_points_ptr[source_idx + 2];
-                    const float &tx = target_points_ptr[target_idx + 0];
-                    const float &ty = target_points_ptr[target_idx + 1];
-                    const float &tz = target_points_ptr[target_idx + 2];
-                    const float &nx = target_normals_ptr[target_idx + 0];
-                    const float &ny = target_normals_ptr[target_idx + 1];
-                    const float &nz = target_normals_ptr[target_idx + 2];
+                    bool valid = GetJacobianPointToPlane(
+                            workload_idx, source_points_ptr, target_points_ptr,
+                            target_normals_ptr, correspondences_first,
+                            correspondences_second, J_ij, r);
 
-                    const double bi_neg =
-                            (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                    const double ai[] = {(nz * sy - ny * sz),
-                                         (nx * sz - nz * sx),
-                                         (ny * sx - nx * sy),
-                                         nx,
-                                         ny,
-                                         nz};
+                    if (valid) {
+                        A_reduction[0] += J_ij[0] * J_ij[0];
+                        A_reduction[1] += J_ij[1] * J_ij[0];
+                        A_reduction[2] += J_ij[1] * J_ij[1];
+                        A_reduction[3] += J_ij[2] * J_ij[0];
+                        A_reduction[4] += J_ij[2] * J_ij[1];
+                        A_reduction[5] += J_ij[2] * J_ij[2];
+                        A_reduction[6] += J_ij[3] * J_ij[0];
+                        A_reduction[7] += J_ij[3] * J_ij[1];
+                        A_reduction[8] += J_ij[3] * J_ij[2];
+                        A_reduction[9] += J_ij[3] * J_ij[3];
+                        A_reduction[10] += J_ij[4] * J_ij[0];
+                        A_reduction[11] += J_ij[4] * J_ij[1];
+                        A_reduction[12] += J_ij[4] * J_ij[2];
+                        A_reduction[13] += J_ij[4] * J_ij[3];
+                        A_reduction[14] += J_ij[4] * J_ij[4];
+                        A_reduction[15] += J_ij[5] * J_ij[0];
+                        A_reduction[16] += J_ij[5] * J_ij[1];
+                        A_reduction[17] += J_ij[5] * J_ij[2];
+                        A_reduction[18] += J_ij[5] * J_ij[3];
+                        A_reduction[19] += J_ij[5] * J_ij[4];
+                        A_reduction[20] += J_ij[5] * J_ij[5];
 
-                    for (int i = 0, j = 0; j < 6; j++) {
-                        for (int k = 0; k <= j; k++) {
-                            // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
-                            A_reduction[i] += ai[j] * ai[k];
-                            i++;
-                        }
-                        // ATB {6,1}.
-                        A_reduction[21 + j] += ai[j] * bi_neg;
+                        A_reduction[21] += J_ij[0] * r;
+                        A_reduction[22] += J_ij[1] * r;
+                        A_reduction[23] += J_ij[2] * r;
+                        A_reduction[24] += J_ij[3] * r;
+                        A_reduction[25] += J_ij[4] * r;
+                        A_reduction[26] += J_ij[5] * r;
                     }
                 }
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
+            [&](const std::vector<double> &a, const std::vector<double> &b) {
                 std::vector<double> result(27);
                 for (int j = 0; j < 27; j++) {
                     result[j] = a[j] + b[j];
@@ -113,6 +119,7 @@ void ComputePosePointToPlaneCPU(
                 return result;
             });
 
+    // DecodeAndSolve6x6()
     core::Tensor ATA =
             core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
     float *ata_ptr = ATA.GetDataPtr<float>();
@@ -130,10 +137,11 @@ void ComputePosePointToPlaneCPU(
             ata_ptr[k * 6 + j] = A_1x27[i];
             i++;
         }
-        atb_ptr[j] = A_1x27[21 + j];
+        atb_ptr[j] = -A_1x27[21 + j];
     }
 
     // ATA(6,6) . Pose(6,1) = -ATB(6,1).
+
     pose = ATA.Solve(ATB_neg).Reshape({-1}).To(dtype);
 }
 
@@ -256,6 +264,7 @@ void ComputeRtPointToPointCPU(
     t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
 }
 
+}  // namespace registration
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

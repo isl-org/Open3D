@@ -26,7 +26,7 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-#include "open3d/t/pipelines/kernel/ComputeTransform.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -77,10 +77,10 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     }
 
     core::Tensor R, t;
-    std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
+    std::tie(R, t) = pipelines::kernel::registration::ComputeRtPointToPoint(
             source.GetPoints(), target.GetPoints(), corres);
 
-    return t::pipelines::kernel::RtToTransformation(R, t);
+    return t::pipelines::kernel::RtToTransformation(R, t).To(device);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -128,12 +128,13 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     }
 
     // Get pose {6} from correspondences indexed source and target point cloud.
-    core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
-            source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
-            corres);
+    core::Tensor pose =
+            pipelines::kernel::registration::ComputePosePointToPlane(
+                    source.GetPoints(), target.GetPoints(),
+                    target.GetPointNormals(), corres);
 
     // Get transformation {4,4} from pose {6}.
-    return pipelines::kernel::PoseToTransformation(pose);
+    return pipelines::kernel::PoseToTransformation(pose).To(device);
 }
 
 }  // namespace registration

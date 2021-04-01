@@ -38,9 +38,6 @@
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobian.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
-#define WARPSIZE 32
-#define BLOCKSIZE 1024
-
 namespace open3d {
 namespace t {
 namespace pipelines {
