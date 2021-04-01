@@ -186,7 +186,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
 }
 
-// ReadWritePTS pts with colors and intensities.
+// Read write pts with colors and intensities.
 TEST(TPointCloudIO, ReadWritePTS) {
     t::geometry::PointCloud pcd, pcd_read, pcd_i, pcd_color;
     t::io::ReadPointCloud(
@@ -206,7 +206,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_TRUE(pcd.GetPointColors().AllClose(pcd_read.GetPointColors()));
     EXPECT_TRUE(pcd.GetPointAttr("intensities")
                         .AllClose(pcd_read.GetPointAttr("intensities")));
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
+    std::remove(file_name.c_str());
 
     // Write pointcloud with only colors and match it after read.
     pcd_read.Clear();
@@ -218,7 +218,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_TRUE(pcd_color.GetPoints().AllClose(pcd_read.GetPoints()));
     EXPECT_TRUE(pcd_color.GetPointColors().AllClose(pcd_read.GetPointColors()));
     EXPECT_FALSE(pcd_read.HasPointAttr("intensities"));
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
+    std::remove(file_name.c_str());
 
     // Write pointcloud with only intensities and match it after read.
     pcd_read.Clear();
@@ -231,7 +231,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_TRUE(pcd_i.GetPointAttr("intensities")
                         .AllClose(pcd_read.GetPointAttr("intensities")));
     EXPECT_FALSE(pcd_read.HasPointColors());
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
+    std::remove(file_name.c_str());
 }
 
 // Reading pts with intensities.
