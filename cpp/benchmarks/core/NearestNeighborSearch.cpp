@@ -35,7 +35,9 @@
 
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/utility/Console.h"
 
+// Test data.
 static const std::string source_filename =
         fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR));
 static const std::string target_filename =
@@ -44,63 +46,95 @@ static const std::string target_filename =
 namespace open3d {
 namespace benchmarks {
 
-class TestNNS {
-    std::unique_ptr<core::nns::NearestNeighborSearch> nns_;
-
-    int pos_ = 0;
-    int size_ = 0;
-
-public:
-    void setup(core::Tensor& dataset_points, double radius) {
-        nns_.reset(new core::nns::NearestNeighborSearch(dataset_points));
-        nns_->HybridIndex(radius);
-    }
-
-    void search(core::Tensor& query_points, double radius, int max_knn) {
-        core::Tensor indices;
-        core::Tensor distances;
-
-        std::tie(indices, distances) =
-                nns_->HybridSearch(query_points, radius, max_knn);
-    }
-};
-// reuse the same instance so we don't recreate the kdtree every time
-TestNNS testNNS;
-
-static void BM_TestNNS(benchmark::State& state, const core::Device& device) {
-    // state.range(n) are arguments that are passed to us
-    double radius = state.range(0) / 1000.0;
-    int max_knn = state.range(1);
-
+std::pair<core::Tensor, core::Tensor> PrepareInput(const core::Device& device,
+                                                   const core::Dtype& dtype) {
+    // Load test point cloud data.
     t::geometry::PointCloud dataset_pc;
     t::geometry::PointCloud query_pc;
-
     t::io::ReadPointCloud(source_filename, dataset_pc,
                           {"auto", false, false, true});
     t::io::ReadPointCloud(target_filename, query_pc,
                           {"auto", false, false, true});
 
-    core::Tensor dataset_points = dataset_pc.GetPoints().To(
-            device, core::Dtype::Float32, /*copy*/ true);
-    core::Tensor query_points = query_pc.GetPoints().To(
-            device, core::Dtype::Float32, /*copy*/ true);
+    // Build Tensor.
+    core::Tensor dataset_points =
+            dataset_pc.GetPoints().To(device, dtype, /*copy*/ true);
+    core::Tensor query_points =
+            query_pc.GetPoints().To(device, dtype, /*copy*/ true);
 
-    testNNS.setup(dataset_points, radius);
+    //     utility::LogInfo("Source point cloud size: {}",
+    //                      dataset_points.GetShape()[0]);
+    //     utility::LogInfo("Target point cloud size: {}",
+    //     query_points.GetShape()[0]);
+    return std::make_pair(dataset_points, query_points);
+}
+
+static void BM_TestNNS_Hybrid(benchmark::State& state,
+                              const core::Device& device) {
+    // state.range(n) are arguments that are passed to us
+    double radius = state.range(0) / 1000.0;
+    int max_knn = state.range(1);
+
+    // Prepare input data.
+    core::Tensor dataset_points, query_points;
+    std::tie(dataset_points, query_points) =
+            PrepareInput(device, core::Dtype::Float32);
+
+    // Setup NNS.
+    core::nns::NearestNeighborSearch nns(dataset_points);
+    nns.HybridIndex(radius);
+
+    // Search.
+    core::Tensor indices, distances;
     for (auto _ : state) {
-        testNNS.search(query_points, radius, max_knn);
+        std::tie(indices, distances) =
+                nns.HybridSearch(query_points, radius, max_knn);
     }
 }
-// a few specific sized tests, each ->Args({params}) will be a test
-BENCHMARK_CAPTURE(BM_TestNNS, CPU, core::Device("CPU:0"))
-        ->Args({1000, 1})
-        ->Args({1000, 5})
+
+static void BM_TestNNS_Radius(benchmark::State& state,
+                              const core::Device& device) {
+    // state.range(n) are arguments that are passed to us
+    double radius = state.range(0) / 1000.0;
+
+    // Prepare input data.
+    core::Tensor dataset_points, query_points;
+    std::tie(dataset_points, query_points) =
+            PrepareInput(device, core::Dtype::Float32);
+
+    // Setup NNS.
+    core::nns::NearestNeighborSearch nns(dataset_points);
+    nns.FixedRadiusIndex(radius);
+
+    // Search.
+    core::Tensor indices, distances, neighbors_row_splits;
+    for (auto _ : state) {
+        std::tie(indices, distances, neighbors_row_splits) =
+                nns.FixedRadiusSearch(query_points, radius);
+    }
+}
+BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
+        ->Args({100, 1})
+        ->Args({100, 64})
+        ->Args({200, 1})
+        ->Args({200, 64})
         ->Unit(benchmark::kMillisecond);
-// let benchmark vary parameters for us; run each test only for 0.1sec so it
-// doesn't take too long
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, core::Device("CPU:0"))
+        ->Args({100})
+        ->Args({200})
+        ->Args({400})
+        ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BM_TestNNS, GPU, core::Device("CUDA:0"))
-        ->Args({1000, 1})
-        ->Args({1000, 5})
+BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, core::Device("CUDA:0"))
+        ->Args({100, 1})
+        ->Args({100, 64})
+        ->Args({200, 1})
+        ->Args({200, 64})
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU, core::Device("CUDA:0"))
+        ->Args({100})
+        ->Args({200})
+        ->Args({400})
         ->Unit(benchmark::kMillisecond);
 #endif
 }  // namespace benchmarks
