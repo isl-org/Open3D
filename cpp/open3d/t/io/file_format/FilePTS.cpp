@@ -48,18 +48,21 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             return false;
         }
 
-        size_t num_pts = 0;
+        size_t num_points = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
-            sscanf(line_buffer, "%zu", &num_pts);
+            sscanf(line_buffer, "%zu", &num_points);
         }
-        if (static_cast<int64_t>(num_pts) <= 0) {
+        if (static_cast<int64_t>(num_points) <= 0) {
             utility::LogWarning("Read PTS failed: Number of points <= 0");
             return false;
         }
 
+        // Store data start position.
+        int64_t start_pos = file.CurPos();
+
         utility::CountingProgressReporter reporter(params.update_progress);
-        reporter.SetTotal(num_pts);
+        reporter.SetTotal(num_points);
         pointcloud.Clear();
 
         double *points_ptr = nullptr;
@@ -72,44 +75,60 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         if ((line_buffer = file.ReadLine())) {
             st = utility::SplitString(line_buffer, " ");
             num_fields = static_cast<int64_t>(st.size());
-            if (num_fields < 3) {
-                utility::LogWarning(
-                        "Read PTS failed: insufficient data fields.");
-                return false;
-            }
 
-            pointcloud.SetPoints(core::Tensor(
-                    {static_cast<int64_t>(num_pts), 3}, core::Dtype::Float64));
-            points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
-
-            // X Y Z I or X Y Z I R G B
-            if (num_fields == 4 || num_fields == 7) {
+            if (num_fields == 7) {
+                pointcloud.SetPoints(
+                        core::Tensor({static_cast<int64_t>(num_points), 3},
+                                     core::Dtype::Float64));
+                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
-                        core::Tensor({static_cast<int64_t>(num_pts), 1},
+                        core::Tensor({static_cast<int64_t>(num_points), 1},
                                      core::Dtype::Float64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
-            }
-
-            // X Y Z R G B or X Y Z I R G B
-            if (num_fields == 6 || num_fields == 7) {
                 pointcloud.SetPointColors(
-                        core::Tensor({static_cast<int64_t>(num_pts), 3},
+                        core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
+            } else if (num_fields == 6) {
+                pointcloud.SetPoints(
+                        core::Tensor({static_cast<int64_t>(num_points), 3},
+                                     core::Dtype::Float64));
+                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+                pointcloud.SetPointColors(
+                        core::Tensor({static_cast<int64_t>(num_points), 3},
+                                     core::Dtype::UInt8));
+                colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
+            } else if (num_fields == 4) {
+                pointcloud.SetPoints(
+                        core::Tensor({static_cast<int64_t>(num_points), 3},
+                                     core::Dtype::Float64));
+                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+                pointcloud.SetPointAttr(
+                        "intensities",
+                        core::Tensor({static_cast<int64_t>(num_points), 1},
+                                     core::Dtype::Float64));
+                intensities_ptr = pointcloud.GetPointAttr("intensities")
+                                          .GetDataPtr<double>();
+            } else if (num_fields == 3) {
+                pointcloud.SetPoints(
+                        core::Tensor({static_cast<int64_t>(num_points), 3},
+                                     core::Dtype::Float64));
+                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+            } else {
+                utility::LogWarning("Read PTS failed: unknown pts format: {}",
+                                    line_buffer);
+                return false;
             }
         }
 
-        do {
+        // Go to data start position.
+        fseek(file.GetFILE(), start_pos, 0);
+
+        while (idx < num_points && (line_buffer = file.ReadLine())) {
             st.clear();
             st = utility::SplitString(line_buffer, " ");
-            if (num_fields > (int)st.size()) {
-                utility::LogWarning(
-                        "Read PTS failed: lines have unequal elements.");
-                return false;
-            }
-
             double x, y, z, i;
             int r, g, b;
             if (num_fields == 7 &&
@@ -144,14 +163,15 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
             } else {
-                utility::LogWarning("Read PTS failed: unknown pts format");
+                utility::LogWarning("Read PTS failed: unknown pts format: {}",
+                                    line_buffer);
                 return false;
             }
             idx++;
             if (idx % 1000 == 0) {
                 reporter.Update(idx);
             }
-        } while (idx < num_pts && (line_buffer = file.ReadLine()));
+        }
 
         reporter.Finish();
         return true;
@@ -178,8 +198,7 @@ bool WritePointCloudToPTS(const std::string &filename,
         }
 
         utility::CountingProgressReporter reporter(params.update_progress);
-        int64_t num_points =
-                static_cast<long>(pointcloud.GetPoints().GetLength());
+        int64_t num_points = pointcloud.GetPoints().GetLength();
         const double *points_ptr = static_cast<const double *>(
                 pointcloud.GetPoints().GetDataPtr());
         const uint8_t *colors_ptr = nullptr;
