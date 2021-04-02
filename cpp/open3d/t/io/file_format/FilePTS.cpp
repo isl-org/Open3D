@@ -61,6 +61,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     "Read PTS failed: number of points must be >= 0.");
             return false;
         } else if (num_points == 0) {
+            // TODO (Shubham): test with empty point cloud.
             pointcloud.SetPoints(core::Tensor({0, 3}, core::Dtype::Float64));
             return true;
         }
@@ -198,6 +199,7 @@ bool WritePointCloudToPTS(const std::string &filename,
             return false;
         }
 
+        // TODO (Shbham): allow writing empty point cloud.
         if (pointcloud.IsEmpty()) {
             utility::LogWarning("Write PTS failed: point cloud has 0 points.");
             return false;
@@ -206,6 +208,20 @@ bool WritePointCloudToPTS(const std::string &filename,
         utility::CountingProgressReporter reporter(params.update_progress);
         int64_t num_points = pointcloud.GetPoints().GetLength();
 
+        // TODO (Shubham):
+        // 1. we cannot make assumptions about the dtype of points,
+        // colors and intensities. For example, the color can be in float32
+        // (between 0 to 1), in this case we shall convert it to uint_8 first.
+        // If you look at the original FilePTS.cpp, we use:
+        // utility::ColorToUint8(pointcloud.colors_[i]);. Similarly, points can
+        // be stored in float32 or even boolean (think about all possibilities
+        // and how we shall handle them properly).
+        //
+        // 2. we cannot make assumptions about even the shape of points, colors,
+        // intrinsics. For example, someone could save an arbitrarily shaped
+        // tensor e.g. {num_points, 100} in the "intensities" attribute. The
+        // HasPointAttr() only checks the first dimension's consistency. We need
+        // to to check their shapes and make sure they are consistent.
         const double *points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
         const uint8_t *colors_ptr = nullptr;
         const double *intensities_ptr = nullptr;
