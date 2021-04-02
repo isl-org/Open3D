@@ -205,7 +205,14 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            float depth_scale,
                                            float depth_max,
                                            int stride) {
-    rgbd_image.depth_.AsTensor().AssertDtype(core::Dtype::UInt16);
+    auto dtype = rgbd_image.depth_.AsTensor().GetDtype();
+    if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
+        utility::LogError(
+                "Unsupported dtype for CreateFromRGBDImage, expected UInt16 "
+                "or Float32, but got {}.",
+                dtype.ToString());
+    }
+
     core::Tensor image_colors =
             rgbd_image.color_.To(core::Dtype::Float32, /*copy=*/false)
                     .AsTensor();
