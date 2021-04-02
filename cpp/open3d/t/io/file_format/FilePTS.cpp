@@ -68,11 +68,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         double *points_ptr = nullptr;
         double *intensities_ptr = nullptr;
         uint8_t *colors_ptr = nullptr;
-        int num_fields = 0;
+        size_t num_fields = 0;
 
         if ((line_buffer = file.ReadLine())) {
-            num_fields = static_cast<int64_t>(
-                    utility::SplitString(line_buffer, " ").size());
+            num_fields = utility::SplitString(line_buffer, " ").size();
 
             // X Y Z I R G B.
             if (num_fields == 7) {
