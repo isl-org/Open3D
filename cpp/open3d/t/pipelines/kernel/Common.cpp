@@ -58,15 +58,20 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
-    std::vector<double> A_1x29(29, 0.0);
-    // Identity element for running_total reduction variable: zeros_27.
-    std::vector<double> zeros_29(29, 0.0);
+    std::vector<float> A_1x29(29, 0.0);
 
+#ifdef _WIN32
+    std::vectorfloate > zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<double> A_reduction) {
+            [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
+#else
+    float *A_reduction = A_1x29.data();
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
                     float J_ij[6];
                     float r;
 
@@ -109,17 +114,19 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                         A_reduction[28] += 1;
                     }
                 }
+#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](const std::vector<double> &a, const std::vector<double> &b) {
-                std::vector<double> result(29);
+            [&](const std::vector<float> &a, const std::vector<float> &b) {
+                std::vector<float> result(29);
                 for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
-    return core::Tensor(A_1x29, {29}, core::Dtype::Float64);
+#endif
+    return core::Tensor(A_1x29, {1, 29}, core::Dtype::Float32);
 }
 
 template <>
@@ -133,15 +140,20 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
-    std::vector<double> A_1x29(29, 0.0);
-    // Identity element for running_total reduction variable: zeros_27.
-    std::vector<double> zeros_29(29, 0.0);
+    std::vector<float> A_1x29(29, 0.0);
 
+#ifdef _WIN32
+    std::vectorfloate > zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<double> A_reduction) {
+            [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
+#else
+    float *A_reduction = A_1x29.data();
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
                     double J_ij[6];
                     double r;
 
@@ -184,6 +196,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                         A_reduction[28] += 1;
                     }
                 }
+#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -194,7 +207,8 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                 }
                 return result;
             });
-    return core::Tensor(A_1x29, {29}, core::Dtype::Float64);
+#endif
+    return core::Tensor(A_1x29, {1, 29}, core::Dtype::Float64);
 }
 
 }  // namespace kernel

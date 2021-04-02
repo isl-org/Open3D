@@ -156,7 +156,6 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     core::Tensor transformation_device = init.To(device);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-
     bool check = target_nns.HybridIndex(max_correspondence_distance);
     if (!check) {
         utility::LogError(
@@ -193,6 +192,8 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
         transformation_device = update.Matmul(transformation_device);
         // Apply the transform on source pointcloud.
         source_transformed.Transform(update);
+        prev_fitness_ = result.fitness_;
+        prev_inliner_rmse_ = result.inlier_rmse_;
         result.transformation_ = transformation_device;
 
         // Calculate fitness and inlier_rmse given the squared_error and number
@@ -213,15 +214,8 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                     criteria.relative_rmse_) {
             break;
         }
-
-        prev_fitness_ = result.fitness_;
-        prev_inliner_rmse_ = result.inlier_rmse_;
-        utility::LogInfo(" Fitness: {}, RMSE: {}", result.fitness_,
-                         result.inlier_rmse_);
     }
 
-    utility::LogInfo(" Fitness: {}, RMSE: {}", result.fitness_,
-                     result.inlier_rmse_);
     return result;
 }
 

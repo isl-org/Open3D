@@ -96,8 +96,6 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     // [Output] Rotation and translation tensor.
     core::Tensor R, t;
 
-    utility::LogInfo(" Inside Kernel ");
-
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         // Pointer to point cloud data - indexed according to correspondences.
@@ -117,31 +115,23 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         core::Tensor neighbour_indices =
                 corres.first.IndexGet({valid}).Reshape({-1});
         core::Tensor source_points_indexed = source_points.IndexGet({valid});
-        std::cout << " Source points Shape: "
-                  << source_points_indexed.ToString() << std::endl;
 
         core::Tensor target_points_indexed =
                 target_points.IndexGet({neighbour_indices});
-        std::cout << " target_points_indexed "
-                  << target_points_indexed.ToString() << std::endl;
+
         core::Tensor squared_error = (corres.second.IndexGet({valid})).Sum({0});
         // Only take valid distances.
         residual = static_cast<double>(squared_error.Item<float>());
-        std::cout << " Residual: " << residual << std::endl;
         // Number of good correspondences (C).
         count = source_points_indexed.GetLength();
-        std::cout << " Count: " << count << std::endl;
 
         // https://ieeexplore.ieee.org/document/88573
         core::Tensor mean_s = source_points_indexed.Mean({0}, true);
-        std::cout << " Mean_s: " << mean_s.ToString() << std::endl;
         core::Tensor mean_t = target_points_indexed.Mean({0}, true);
-        std::cout << " Mean_t: " << mean_t.ToString() << std::endl;
         core::Tensor Sxy = (target_points_indexed - mean_t)
                                    .T()
                                    .Matmul(source_points_indexed - mean_s)
                                    .Div_(static_cast<float>(count));
-        std::cout << " Sxy: " << Sxy.ToString() << std::endl;
         core::Tensor U, D, VT;
         std::tie(U, D, VT) = Sxy.SVD();
         core::Tensor S = core::Tensor::Eye(3, dtype, device);
@@ -149,10 +139,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
             S[-1][-1] = -1;
         }
         R = U.Matmul(S.Matmul(VT));
-        std::cout << " R: " << R.ToString() << std::endl;
         t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
-        std::cout << " t: " << t.ToString() << std::endl;
-
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

@@ -76,7 +76,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     core::Tensor R, t;
     std::tie(R, t) = pipelines::kernel::registration::ComputeRtPointToPoint(
             source.GetPoints(), target.GetPoints(), corres, residual, count);
-    utility::LogInfo(" Compute Kernel ");
+
     return t::pipelines::kernel::RtToTransformation(R, t).To(device, dtype);
 }
 

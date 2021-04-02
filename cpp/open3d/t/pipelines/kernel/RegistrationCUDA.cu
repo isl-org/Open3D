@@ -39,7 +39,7 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-static void ReduceAndSolve6x6(float *A_reduction,
+inline void ReduceAndSolve6x6(float *A_reduction,
                               int64_t n,
                               core::Tensor &delta,
                               double &residual,

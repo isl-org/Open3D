@@ -201,7 +201,10 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
                             TransformationEstimationPointToPoint(),
                     open3d::pipelines::registration::ICPConvergenceCriteria(
                             relative_fitness, relative_rmse, max_iterations));
-
+    std::cout << " Tensor Fitness: " << reg_p2p_t.fitness_ << std::endl;
+    std::cout << " Legacy Fitness: " << reg_p2p_l.fitness_ << std::endl;
+    std::cout << " Tensor RMSE: " << reg_p2p_t.inlier_rmse_ << std::endl;
+    std::cout << " Legacy RMSE: " << reg_p2p_l.inlier_rmse_ << std::endl;
     EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.0005);
     EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
 }

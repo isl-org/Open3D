@@ -77,7 +77,7 @@ void ComputePosePointToPlaneCPU(
 }
 
 template <typename scalar_t>
-static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
+inline void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   const scalar_t *target_points_ptr,
                                   const int64_t *correspondences_first,
                                   const scalar_t *correspondences_second,
@@ -100,8 +100,9 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
             [&](tbb::blocked_range<int> r, std::vector<double> mean_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-                    int64_t target_idx = correspondences_first[workload_idx];
-                    if (target_idx != -1) {
+                    if (correspondences_first[workload_idx] != -1) {
+                        int64_t target_idx =
+                                3 * correspondences_first[workload_idx];
                         mean_reduction[0] +=
                                 source_points_ptr[3 * workload_idx];
                         mean_reduction[1] +=
@@ -109,11 +110,9 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                         mean_reduction[2] +=
                                 source_points_ptr[3 * workload_idx + 2];
 
-                        mean_reduction[3] += target_points_ptr[3 * target_idx];
-                        mean_reduction[4] +=
-                                target_points_ptr[3 * target_idx + 1];
-                        mean_reduction[5] +=
-                                target_points_ptr[3 * target_idx + 2];
+                        mean_reduction[3] += target_points_ptr[target_idx];
+                        mean_reduction[4] += target_points_ptr[target_idx + 1];
+                        mean_reduction[5] += target_points_ptr[target_idx + 2];
 
                         mean_reduction[6] +=
                                 correspondences_second[workload_idx];
@@ -123,7 +122,7 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return mean_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
+            [&](const std::vector<double> &a, const std::vector<double> &b) {
                 std::vector<double> result(8);
                 for (int j = 0; j < 8; j++) {
                     result[j] = a[j] + b[j];
@@ -147,17 +146,20 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 std::vector<double> sxy_1x9_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-                    for (int i = 0; i < 9; i++) {
-                        const int row = i % 3;
-                        const int col = i / 3;
-                        const int source_idx =
-                                3 * correspondences_first[workload_idx] + row;
-                        const int target_idx =
-                                3 * correspondences_second[workload_idx] + col;
-                        sxy_1x9_reduction[i] += (source_points_ptr[source_idx] -
-                                                 mean_1x8[row]) *
-                                                (target_points_ptr[target_idx] -
-                                                 mean_1x8[3 + col]);
+                    if (correspondences_first[workload_idx] != -1) {
+                        for (int i = 0; i < 9; i++) {
+                            const int row = i % 3;
+                            const int col = i / 3;
+                            const int source_idx = 3 * workload_idx + row;
+                            const int target_idx =
+                                    3 * correspondences_first[workload_idx] +
+                                    col;
+                            sxy_1x9_reduction[i] +=
+                                    (source_points_ptr[source_idx] -
+                                     mean_1x8[row]) *
+                                    (target_points_ptr[target_idx] -
+                                     mean_1x8[3 + col]);
+                        }
                     }
                 }
                 return sxy_1x9_reduction;
@@ -211,7 +213,7 @@ void ComputeRtPointToPointCPU(
     const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
     const float *correspondences_second = corres.second.GetDataPtr<float>();
 
-    int n = corres.first.GetLength();
+    int n = source_points.GetLength();
 
     core::Tensor Sxy, mean_t, mean_s;
 
