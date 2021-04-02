@@ -140,6 +140,7 @@ struct Layout1D::Impl {
     Layout1D::Dir dir_;
     int spacing_;
     Margins margins_;
+    int minor_axis_size_ = Widget::DIM_GROW;
 };
 
 void Layout1D::debug_PrintPreferredSizes(Layout1D* layout,
@@ -224,12 +225,23 @@ void Layout1D::AddFixed(int size) {
     AddChild(std::make_shared<Fixed>(size, impl_->dir_));
 }
 
+int Layout1D::GetMinorAxisPreferredSize() const {
+    return impl_->minor_axis_size_;
+}
+
+void Layout1D::SetMinorAxisPreferredSize(int size) {
+    impl_->minor_axis_size_ = size;
+}
+
 void Layout1D::AddStretch() { AddChild(std::make_shared<Stretch>()); }
 
 Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     int minor;
     std::vector<int> major =
             CalcMajor(theme, impl_->dir_, GetChildren(), &minor);
+    if (impl_->minor_axis_size_ < Widget::DIM_GROW) {
+        minor = impl_->minor_axis_size_;
+    }
 
     int total_spacing = impl_->spacing_ * std::max(0, int(major.size()) - 1);
     int major_size = 0;
@@ -330,6 +342,9 @@ Vert::Vert(int spacing,
     : Layout1D(VERT, spacing, margins, children) {}
 
 Vert::~Vert() {}
+
+int Vert::GetPreferredWidth() const { return GetMinorAxisPreferredSize(); }
+void Vert::SetPreferredWidth(int w) { SetMinorAxisPreferredSize(w); }
 
 // ----------------------------------------------------------------------------
 struct CollapsableVert::Impl {
@@ -453,11 +468,15 @@ Horiz::Horiz(int spacing,
 
 Horiz::~Horiz() {}
 
+int Horiz::GetPreferredHeight() const { return GetMinorAxisPreferredSize(); }
+void Horiz::SetPreferredHeight(int h) { SetMinorAxisPreferredSize(h); }
+
 // ----------------------------------------------------------------------------
 struct VGrid::Impl {
     int num_cols_;
     int spacing_;
     Margins margins_;
+    int preferred_width_ = Widget::DIM_GROW;
 };
 
 VGrid::VGrid(int num_cols,
@@ -474,6 +493,9 @@ VGrid::~VGrid() {}
 int VGrid::GetSpacing() const { return impl_->spacing_; }
 const Margins& VGrid::GetMargins() const { return impl_->margins_; }
 
+int VGrid::GetPreferredWidth() const { return impl_->preferred_width_; }
+void VGrid::SetPreferredWidth(int w) { impl_->preferred_width_ = w; }
+
 Size VGrid::CalcPreferredSize(const Theme& theme) const {
     auto columns = CalcColumns(impl_->num_cols_, GetChildren());
     auto column_sizes = CalcColumnSizes(columns, theme);
@@ -489,8 +511,13 @@ Size VGrid::CalcPreferredSize(const Theme& theme) const {
     width = std::max(width, 0);  // in case width or height has no items
     height = std::max(height, 0);
 
-    return Size(width + impl_->margins_.left + impl_->margins_.right,
-                height + impl_->margins_.top + impl_->margins_.bottom);
+    if (impl_->preferred_width_ < Widget::DIM_GROW) {
+        width = impl_->preferred_width_;
+    } else {
+        width = width + impl_->margins_.left + impl_->margins_.right;
+    }
+
+    return Size(width, height + impl_->margins_.top + impl_->margins_.bottom);
 }
 
 void VGrid::Layout(const Theme& theme) {

@@ -111,6 +111,9 @@ public:
     };
 
 protected:
+    int GetMinorAxisPreferredSize() const;
+    void SetMinorAxisPreferredSize(int size);
+
     Margins& GetMutableMargins();
 
 private:
@@ -132,6 +135,9 @@ public:
          const Margins& margins,
          const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Vert();
+
+    int GetPreferredWidth() const;
+    void SetPreferredWidth(int w);
 };
 
 /// This is a vertical layout with a twisty + title that can be clicked on
@@ -177,6 +183,9 @@ public:
           const Margins& margins,
           const std::vector<std::shared_ptr<Widget>>& children);
     ~Horiz();
+
+    int GetPreferredHeight() const;
+    void SetPreferredHeight(int h);
 };
 
 /// Lays out widgets in a grid. The widgets are assigned to the next
@@ -191,6 +200,9 @@ public:
 
     int GetSpacing() const;
     const Margins& GetMargins() const;
+
+    int GetPreferredWidth() const;
+    void SetPreferredWidth(int w);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
