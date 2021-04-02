@@ -85,9 +85,10 @@ inline __device__ void swap(T* x, T* y) {
 }
 
 template <class T>
-__device__ void reheap(T* dist, int64_t* idx, int k) {
-    int root = 0;
+inline __device__ void heapify(T* dist, int64_t* idx, int index, int k) {
+    int root = index;
     int child = root * 2 + 1;
+
     while (child < k) {
         if (child + 1 < k && dist[child + 1] > dist[child]) {
             child++;
@@ -108,7 +109,7 @@ __device__ void heap_sort(T* dist, int64_t* idx, int k) {
     for (i = k - 1; i > 0; i--) {
         swap<T>(&dist[0], &dist[i]);
         swap<int64_t>(&idx[0], &idx[i]);
-        reheap(dist, idx, i);
+        heapify(dist, idx, 0, i);
     }
 }
 
@@ -396,8 +397,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
     if (query_idx >= num_queries) return;
 
     size_t indices_offset = neighbors_row_splits[query_idx];
-    size_t max_n = neighbors_row_splits[query_idx + 1] -
-                   neighbors_row_splits[query_idx];
+    // size_t max_n = neighbors_row_splits[query_idx + 1] -
+    //                neighbors_row_splits[query_idx];
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
                       query_points[query_idx * 3 + 1],
@@ -442,15 +443,17 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
-                distances[indices_offset] = dist;
-                indices[indices_offset] = idx;
-                reheap(distances + indices_offset, indices + indices_offset,
-                       max_n);
+                distances[indices_offset + count] = dist;
+                indices[indices_offset + count] = idx;
                 ++count;
             }
         }
     }
-    heap_sort(distances + indices_offset, indices + indices_offset, max_n);
+    // heap sort
+    for (int i = (count / 2) - 1; i > -1; i--) {
+        heapify(distances + indices_offset, indices + indices_offset, i, count);
+    }
+    heap_sort(distances + indices_offset, indices + indices_offset, count);
 }
 
 /// Write indices and distances of neighbors for each query point
@@ -622,8 +625,8 @@ __global__ void WriteNeighborsHybridKernel(
                     if (count < max_knn) {
                         ++count;
                     }
-                    reheap(distances + indices_offset, indices + indices_offset,
-                           max_knn);
+                    heapify(distances + indices_offset,
+                            indices + indices_offset, 0, max_knn);
                 }
             }
         }
