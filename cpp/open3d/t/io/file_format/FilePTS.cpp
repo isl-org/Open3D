@@ -56,9 +56,13 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         if ((line_buffer = file.ReadLine())) {
             sscanf(line_buffer, "%ld", &num_points);
         }
-        if (num_points <= 0) {
-            utility::LogWarning("Read PTS failed: Number of points <= 0.");
+        if (num_points < 0) {
+            utility::LogWarning(
+                    "Read PTS failed: number of points must be >= 0.");
             return false;
+        } else if (num_points == 0) {
+            pointcloud.SetPoints(core::Tensor({0, 3}, core::Dtype::Float64));
+            return true;
         }
         utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(num_points);
