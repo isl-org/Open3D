@@ -603,6 +603,8 @@ __global__ void WriteNeighborsHybridKernel(
         }
     }
 
+    int max_index;
+    T max_value;
     int count = 0;  // counts the number of neighbors for this query point
     for (int bin_i = 0; bin_i < 8; ++bin_i) {
         int bin = bins_to_visit[bin_i];
@@ -619,19 +621,40 @@ __global__ void WriteNeighborsHybridKernel(
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
                 // If count if less than max_knn, record idx and dist.
-                if (dist < distances[indices_offset]) {
-                    distances[indices_offset] = dist;
-                    indices[indices_offset] = idx;
-                    if (count < max_knn) {
-                        ++count;
+                if (count < max_knn) {
+                    indices[indices_offset + count] = idx;
+                    distances[indices_offset + count] = dist;
+                    // Update max_index and max_value.
+                    if (count == 0 || max_value < dist) {
+                        max_index = count;
+                        max_value = dist;
                     }
-                    heapify(distances + indices_offset,
-                            indices + indices_offset, 0, max_knn);
+                    // Increase count
+                    ++count;
+                } else {
+                    // If dist is smaller than current max_value.
+                    if (max_value > dist) {
+                        // Replace idx and dist at current max_index.
+                        indices[indices_offset + max_index] = idx;
+                        distances[indices_offset + max_index] = dist;
+                        // Update max_value
+                        max_value = dist;
+                        // Find max_index.
+                        for (auto k = 0; k < max_knn; ++k) {
+                            if (distances[indices_offset + k] > max_value) {
+                                max_index = k;
+                                max_value = distances[indices_offset + k];
+                            }
+                        }
+                    }
                 }
             }
         }
     }
     // heap sort
+    for (int i = (count / 2) - 1; i > -1; i--) {
+        heapify(distances + indices_offset, indices + indices_offset, i, count);
+    }
     heap_sort(distances + indices_offset, indices + indices_offset, max_knn);
     for (auto i = count; i < max_knn; ++i) {
         distances[indices_offset + i] = -1;
