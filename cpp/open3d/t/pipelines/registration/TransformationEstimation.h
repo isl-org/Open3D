@@ -94,7 +94,9 @@ public:
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const = 0;
+            const CorrespondenceSet &corres,
+            double &residual,
+            int64_t &count) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -114,10 +116,11 @@ public:
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
-    core::Tensor ComputeTransformation(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const override;
+    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target,
+                                       const CorrespondenceSet &corres,
+                                       double &residual,
+                                       int64_t &count) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -141,10 +144,11 @@ public:
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
-    core::Tensor ComputeTransformation(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const override;
+    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target,
+                                       const CorrespondenceSet &corres,
+                                       double &residual,
+                                       int64_t &count) const override;
 
 private:
     const TransformationEstimationType type_ =

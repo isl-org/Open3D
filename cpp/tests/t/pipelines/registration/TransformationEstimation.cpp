@@ -85,11 +85,15 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPoint) {
     target_device.SetPoints(target_points);
 
     t::pipelines::registration::CorrespondenceSet corres;
-    corres.first = core::Tensor::Init<int64_t>(
-            {0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13}, device);
 
-    corres.second = core::Tensor::Init<int64_t>(
-            {10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8}, device);
+    corres.first = core::Tensor::Init<int64_t>(
+            {10, 1, 1, 3, 2, 5, 9, 7, 5, 8, -1, 7, 5, 8}, device);
+
+    corres.second = core::Tensor::Init<float>(
+            {0.104909, 0.211529, 0.408826, 0.774383, 0.28457, 0.281543,
+             0.226949, 1.16501, 0.7241, 0.14576, -1.0, 0.0879698, 0.0664853,
+             0.707667},
+            device);
 
     t::pipelines::registration::TransformationEstimationPointToPoint
             estimation_p2p;
@@ -140,17 +144,22 @@ TEST_P(TransformationEstimationPermuteDevices,
 
     t::pipelines::registration::CorrespondenceSet corres;
     corres.first = core::Tensor::Init<int64_t>(
-            {0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13}, device);
+            {10, 1, 1, 3, 2, 5, 9, 7, 5, 8, -1, 7, 5, 8}, device);
 
-    corres.second = core::Tensor::Init<int64_t>(
-            {10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8}, device);
+    corres.second = core::Tensor::Init<float>(
+            {0.104909, 0.211529, 0.408826, 0.774383, 0.28457, 0.281543,
+             0.226949, 1.16501, 0.7241, 0.14576, -1.0, 0.0879698, 0.0664853,
+             0.707667},
+            device);
 
     t::pipelines::registration::TransformationEstimationPointToPoint
             estimation_p2p;
 
+    double residual;
+    int64_t count;
     // Get transfrom.
     core::Tensor p2p_transform = estimation_p2p.ComputeTransformation(
-            source_device, target_device, corres);
+            source_device, target_device, corres, residual, count);
     // Apply transform.
     t::geometry::PointCloud source_transformed_p2p = source_device.Clone();
     source_transformed_p2p.Transform(p2p_transform.To(core::Dtype::Float32));
@@ -216,10 +225,13 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPlane) {
 
     t::pipelines::registration::CorrespondenceSet corres;
     corres.first = core::Tensor::Init<int64_t>(
-            {0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13}, device);
+            {10, 1, 1, 3, 2, 5, 9, 7, 5, 8, -1, 7, 5, 8}, device);
 
-    corres.second = core::Tensor::Init<int64_t>(
-            {10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8}, device);
+    corres.second = core::Tensor::Init<float>(
+            {0.104909, 0.211529, 0.408826, 0.774383, 0.28457, 0.281543,
+             0.226949, 1.16501, 0.7241, 0.14576, -1.0, 0.0879698, 0.0664853,
+             0.707667},
+            device);
 
     t::pipelines::registration::TransformationEstimationPointToPlane
             estimation_p2plane;
@@ -285,15 +297,20 @@ TEST_P(TransformationEstimationPermuteDevices,
 
     t::pipelines::registration::CorrespondenceSet corres;
     corres.first = core::Tensor::Init<int64_t>(
-            {0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13}, device);
+            {10, 1, 1, 3, 2, 5, 9, 7, 5, 8, -1, 7, 5, 8}, device);
 
-    corres.second = core::Tensor::Init<int64_t>(
-            {10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8}, device);
+    corres.second = core::Tensor::Init<float>(
+            {0.104909, 0.211529, 0.408826, 0.774383, 0.28457, 0.281543,
+             0.226949, 1.16501, 0.7241, 0.14576, -1.0, 0.0879698, 0.0664853,
+             0.707667},
+            device);
 
+	double residual;
+	int64_t count;
     t::pipelines::registration::TransformationEstimationPointToPlane
             estimation_p2plane;
     core::Tensor p2plane_transform = estimation_p2plane.ComputeTransformation(
-            source_device, target_device, corres);
+            source_device, target_device, corres, residual, count);
     t::geometry::PointCloud source_transformed_p2plane = source_device.Clone();
     source_transformed_p2plane.Transform(
             p2plane_transform.To(core::Dtype::Float32));

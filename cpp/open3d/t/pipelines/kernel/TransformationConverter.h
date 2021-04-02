@@ -47,6 +47,33 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t);
 /// \return Transformation, a tensor of shape {4, 4}, dtype Float32.
 core::Tensor PoseToTransformation(const core::Tensor &pose);
 
+/// \brief Decodes a 6x6 linear system from a compressed 1x27 or 1x29 tensor.
+/// If the compressed tensor is 1x29, then it is assumed that residual and
+/// inlier count are present, if it is 1x27, they are assumed to be absent.
+/// \param A_reduction {1x27} tensor storing a linear system
+/// (21 for JtJ matrix, 6 for Jtr).
+/// \param delta [output] 6d tensor for a se3 tangent vector.
+void DecodeAndSolve6x6(const core::Tensor &A_reduction, core::Tensor &delta);
+
+/// \brief Decodes a 6x6 linear system from a compressed 1x29 tensor.
+/// \param A_reduction {1x29} tensor storing a linear system
+/// (21 for JtJ matrix, 6 for Jtr, 1 for residual, 1 for inlier count).
+/// \param delta [output] 6d tensor for a se3 tangent vector.
+/// \param residual [output] 1d tensor for residual.
+void DecodeAndSolve6x6(const core::Tensor &A_reduction,
+                       core::Tensor &delta,
+                       core::Tensor &residual);
+
+/// \brief Decodes a 6x6 linear system from a compressed 1x29 tensor.
+/// \param A_reduction {1x29} tensor storing a linear system
+/// (21 for JtJ matrix, 6 for Jtr, 1 for residual, 1 for inlier count).
+/// \param delta [output] 6d tensor for a se3 tangent vector.
+/// \param residual [output] double.
+void DecodeAndSolve6x6(const core::Tensor &A_reduction,
+                       core::Tensor &delta,
+                       double &residual,
+                       int64_t &count);
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

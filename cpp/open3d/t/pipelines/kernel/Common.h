@@ -27,37 +27,38 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/registration/Registration.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-/// \brief Computes pose for point to plane registration method.
-/// \param source_points source points indexed according to correspondences.
-/// \param target_points target points indexed according to correspondences.
-/// \param target_normals target normals indexed according to correspondences.
-/// \param correspondences CorrespondenceSet. [refer to definition in
-/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
-/// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype Float32.
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const pipelines::registration::CorrespondenceSet &correspondences);
+template <typename scalar_t>
+core::Tensor Get6x6CompressedLinearTensor(
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const scalar_t *correspondences_second,
+        const int n);
 
-/// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
-/// for point to point registration method.
-/// \param source_points source points indexed according to correspondences.
-/// \param target_points target points indexed according to correspondences.
-/// \param correspondences CorrespondenceSet. [refer to definition in
-/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
-/// \return tuple of (R, t). [Dtype: Float32].
-std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const pipelines::registration::CorrespondenceSet &correspondences);
+template <>
+core::Tensor Get6x6CompressedLinearTensor<float>(
+        const float *source_points_ptr,
+        const float *target_points_ptr,
+        const float *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const float *correspondences_second,
+        const int n);
+
+template <>
+core::Tensor Get6x6CompressedLinearTensor<double>(
+        const double *source_points_ptr,
+        const double *target_points_ptr,
+        const double *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const double *correspondences_second,
+        const int n);
 
 }  // namespace kernel
 }  // namespace pipelines

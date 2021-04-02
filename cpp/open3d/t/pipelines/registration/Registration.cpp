@@ -71,18 +71,28 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    core::Tensor distances;
-    std::tie(result.correspondence_set_.first,
-             result.correspondence_set_.second, distances) =
-            target_nns.Hybrid1NNSearch(source.GetPoints(),
-                                       max_correspondence_distance);
+    core::Tensor neighbour_indices, squared_distances;
+    result.correspondence_set_ = target_nns.HybridSearch(
+            source.GetPoints(), max_correspondence_distance, 1);
+    neighbour_indices = result.correspondence_set_.first;
+    squared_distances = result.correspondence_set_.second;
+
+    core::Tensor valid = neighbour_indices.Ne(-1).Reshape({-1});
+    core::Tensor source_indices =
+            core::Tensor::Arange(0, source.GetPoints().GetShape()[0], 1,
+                                 core::Dtype::Int64, device)
+                    .IndexGet({valid});
+    // Only take valid indices.
+    neighbour_indices = neighbour_indices.IndexGet({valid}).Reshape({-1});
+    // Only take valid distances.
+    squared_distances = squared_distances.IndexGet({valid});
 
     // Number of good correspondences (C).
-    int num_correspondences = result.correspondence_set_.first.GetLength();
+    int num_correspondences = neighbour_indices.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
-            static_cast<double>(distances.Sum({0}).Item<float>());
+            static_cast<double>(squared_distances.Sum({0}).Item<float>());
     result.fitness_ = static_cast<double>(num_correspondences) /
                       static_cast<double>(source.GetPoints().GetLength());
     result.inlier_rmse_ =
@@ -133,53 +143,85 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+
+    if (max_correspondence_distance <= 0.0) {
+        utility::LogError(
+                " Max correspondence distance must be greater than 0, but got "
+                "{}.",
+                max_correspondence_distance);
+    }
+
     init.AssertShape({4, 4});
     init.AssertDtype(dtype);
     core::Tensor transformation_device = init.To(device);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+
+    bool check = target_nns.HybridIndex(max_correspondence_distance);
+    if (!check) {
+        utility::LogError(
+                "[Tensor Registration: NearestNeighborSearch::HybridSearch] "
+                "Index is not set.");
+    }
+
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation_device);
 
     // TODO: Default constructor absent in RegistrationResult class.
     RegistrationResult result(transformation_device);
 
-    result = GetRegistrationResultAndCorrespondences(
-            source_transformed, target, target_nns, max_correspondence_distance,
-            transformation_device);
-    CorrespondenceSet corres = result.correspondence_set_;
+    CorrespondenceSet corres;
+
+    double prev_fitness_ = 0;
+    double prev_inliner_rmse_ = 0;
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                          result.fitness_, result.inlier_rmse_);
+        // Get correspondences.
+        corres = target_nns.HybridSearch(source_transformed.GetPoints(),
+                                         max_correspondence_distance, 1);
+        result.correspondence_set_ = corres;
 
-        // Get transformation between source and target points, given
-        // correspondences, and multiply it cumulative transformation (update).
+        // Get transformation, squared_error and number of correspondences
+        // between source and target points, given the correspondence_set.
+        double squared_error = 0;
+        int64_t num_correspondences = 0;
         core::Tensor update = estimation.ComputeTransformation(
-                source_transformed, target, corres);
-        transformation_device = update.Matmul(transformation_device);
+                source_transformed, target, corres, squared_error,
+                num_correspondences);
 
+        // Multiply the transform to the cumulative transformation (update).
+        transformation_device = update.Matmul(transformation_device);
         // Apply the transform on source pointcloud.
         source_transformed.Transform(update);
-        double prev_fitness_ = result.fitness_;
-        double prev_inliner_rmse_ = result.inlier_rmse_;
+        result.transformation_ = transformation_device;
 
-        // Get new correspondences, which will be used to calculate
-        // updated transform in next iteration.
-        result = GetRegistrationResultAndCorrespondences(
-                source_transformed, target, target_nns,
-                max_correspondence_distance, transformation_device);
-        corres = result.correspondence_set_;
+        // Calculate fitness and inlier_rmse given the squared_error and number
+        // of correspondences.
+        result.fitness_ = static_cast<double>(num_correspondences) /
+                          static_cast<double>(source.GetPoints().GetLength());
+        result.inlier_rmse_ = std::sqrt(
+                squared_error / static_cast<double>(num_correspondences));
+
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}",
+                          i + 1, result.fitness_, result.inlier_rmse_);
 
         // ICPConvergenceCriteria, to terminate iteration.
-        if (std::abs(prev_fitness_ - result.fitness_) <
+        if (i != 0 &&
+            std::abs(prev_fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
             break;
         }
+
+        prev_fitness_ = result.fitness_;
+        prev_inliner_rmse_ = result.inlier_rmse_;
+        utility::LogInfo(" Fitness: {}, RMSE: {}", result.fitness_,
+                         result.inlier_rmse_);
     }
 
+    utility::LogInfo(" Fitness: {}, RMSE: {}", result.fitness_,
+                     result.inlier_rmse_);
     return result;
 }
 
