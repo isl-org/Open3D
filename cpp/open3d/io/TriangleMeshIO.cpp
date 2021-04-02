@@ -38,8 +38,9 @@ using namespace io;
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(
-                const std::string &, geometry::TriangleMesh &, bool, bool)>>
+        std::function<bool(const std::string &,
+                           geometry::TriangleMesh &,
+                           const ReadTriangleMeshOptions &)>>
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
                 {"stl", ReadTriangleMeshUsingASSIMP},
@@ -76,14 +77,15 @@ namespace io {
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    ReadTriangleMesh(filename, *mesh, print_progress);
+    ReadTriangleMeshOptions opt;
+    opt.print_progress = print_progress;
+    ReadTriangleMesh(filename, *mesh, opt);
     return mesh;
 }
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      bool enable_post_processing /* = false */,
-                      bool print_progress /* = false */) {
+                      ReadTriangleMeshOptions params /*={}*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -100,8 +102,19 @@ bool ReadTriangleMesh(const std::string &filename,
                 "extension.");
         return false;
     }
-    bool success = map_itr->second(filename, mesh, enable_post_processing,
-                                   print_progress);
+
+    if (params.print_progress) {
+        auto progress_text = std::string("Reading ") +
+                             utility::ToUpper(filename_ext) +
+                             " file: " + filename;
+        auto pbar = utility::ConsoleProgressBar(100, progress_text, true);
+        params.update_progress = [pbar](double percent) mutable -> bool {
+            pbar.SetCurrentCount(size_t(percent));
+            return true;
+        };
+    }
+
+    bool success = map_itr->second(filename, mesh, params);
     utility::LogDebug(
             "Read geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());

@@ -270,9 +270,14 @@ public:
     }
 
     ConsoleProgressBar &operator++() {
-        current_count_++;
+        SetCurrentCount(current_count_ + 1);
+        return *this;
+    }
+
+    void SetCurrentCount(size_t n) {
+        current_count_ = n;
         if (!active_) {
-            return *this;
+            return;
         }
         if (current_count_ >= expected_count_) {
             fmt::print("{}[{}] 100%\n", progress_info_,
@@ -290,7 +295,6 @@ public:
                 fflush(stdout);
             }
         }
-        return *this;
     }
 
 private:
