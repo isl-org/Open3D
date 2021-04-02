@@ -76,8 +76,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             st = utility::SplitString(line_buffer, " ");
             num_fields = static_cast<int64_t>(st.size());
 
-            // X Y Z I R G B
-            if (num_fields == 7) {
+            if (num_fields == 7) {  // X Y Z I R G B
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::Float64));
@@ -92,9 +91,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
-
-                // X Y Z R G B
-            } else if (num_fields == 6) {
+            } else if (num_fields == 6) {  // X Y Z R G B
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::Float64));
@@ -103,9 +100,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
-
-                // X Y Z I
-            } else if (num_fields == 4) {
+            } else if (num_fields == 4) {  // X Y Z I
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::Float64));
@@ -116,9 +111,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                                      core::Dtype::Float64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
-
-                // X Y Z
-            } else if (num_fields == 3) {
+            } else if (num_fields == 3) {  // X Y Z
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::Float64));
@@ -170,8 +163,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
             } else {
-                utility::LogWarning("Read PTS failed: unknown pts format: {}",
-                                    line_buffer);
+                utility::LogWarning("Read PTS failed at line: {}", line_buffer);
                 return false;
             }
             idx++;
