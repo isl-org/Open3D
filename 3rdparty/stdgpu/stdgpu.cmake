@@ -7,8 +7,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    GIT_REPOSITORY https://github.com/stotko/stdgpu.git
-    GIT_TAG 0091cee675bf64eddf61523108e2e53a985e51ec
+    GIT_REPOSITORY https://github.com/intel-isl/stdgpu.git
+    GIT_TAG build-without-gpu
     GIT_SHALLOW ON  # Do not download the history.
     UPDATE_COMMAND ""
     CMAKE_ARGS
