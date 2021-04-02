@@ -41,29 +41,30 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params) {
     try {
+        // Pointcloud is empty if the file is not read successfully.
+        pointcloud.Clear();
+
+        // Get num_points.
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
             utility::LogWarning("Read PTS failed: unable to open file: {}",
                                 filename);
             return false;
         }
-
         int64_t num_points = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
             sscanf(line_buffer, "%ld", &num_points);
         }
         if (num_points <= 0) {
-            utility::LogWarning("Read PTS failed: Number of points <= 0");
+            utility::LogWarning("Read PTS failed: Number of points <= 0.");
             return false;
         }
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(num_points);
 
         // Store data start position.
         int64_t start_pos = ftell(file.GetFILE());
-
-        utility::CountingProgressReporter reporter(params.update_progress);
-        reporter.SetTotal(num_points);
-        pointcloud.Clear();
 
         double *points_ptr = nullptr;
         double *intensities_ptr = nullptr;
