@@ -68,7 +68,6 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         double *points_ptr = nullptr;
         double *intensities_ptr = nullptr;
         uint8_t *colors_ptr = nullptr;
-        int64_t idx = 0;
         std::vector<std::string> st;
         int num_fields = 0;
 
@@ -118,6 +117,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         // Go to data start position.
         fseek(file.GetFILE(), start_pos, 0);
 
+        int64_t idx = 0;
         while (idx < num_points && (line_buffer = file.ReadLine())) {
             st.clear();
             st = utility::SplitString(line_buffer, " ");
