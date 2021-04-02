@@ -59,7 +59,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         }
 
         // Store data start position.
-        int64_t start_pos = file.CurPos();
+        int64_t start_pos = ftell(file.GetFILE());
 
         utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(num_points);
