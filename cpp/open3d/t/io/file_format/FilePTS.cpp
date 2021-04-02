@@ -75,7 +75,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             st = utility::SplitString(line_buffer, " ");
             num_fields = static_cast<int64_t>(st.size());
 
-            if (num_fields == 7) {  // X Y Z I R G B
+            // X Y Z I R G B.
+            if (num_fields == 7) {
                 pointcloud.SetPoints(
                         core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
@@ -87,14 +88,18 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 pointcloud.SetPointColors(
                         core::Tensor({num_points, 3}, core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
-            } else if (num_fields == 6) {  // X Y Z R G B
+            }
+            // X Y Z R G B.
+            else if (num_fields == 6) {
                 pointcloud.SetPoints(
                         core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointColors(
                         core::Tensor({num_points, 3}, core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
-            } else if (num_fields == 4) {  // X Y Z I
+            }
+            // X Y Z I.
+            else if (num_fields == 4) {
                 pointcloud.SetPoints(
                         core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
@@ -103,7 +108,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                         core::Tensor({num_points, 1}, core::Dtype::Float64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
-            } else if (num_fields == 3) {  // X Y Z
+
+            }
+            // X Y Z.
+            else if (num_fields == 3) {
                 pointcloud.SetPoints(
                         core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
@@ -123,6 +131,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             st = utility::SplitString(line_buffer, " ");
             double x, y, z, i;
             int r, g, b;
+            // X Y Z I R G B.
             if (num_fields == 7 &&
                 (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z, &i,
                         &r, &g, &b) == 7)) {
@@ -133,24 +142,29 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 colors_ptr[3 * idx + 0] = r;
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
-            } else if (num_fields == 6 &&
-                       (sscanf(line_buffer, "%lf %lf %lf %d %d %d", &x, &y, &z,
-                               &r, &g, &b) == 6)) {
+            }
+            // X Y Z R G B.
+            else if (num_fields == 6 &&
+                     (sscanf(line_buffer, "%lf %lf %lf %d %d %d", &x, &y, &z,
+                             &r, &g, &b) == 6)) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
                 colors_ptr[3 * idx + 0] = r;
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
-            } else if (num_fields == 4 &&
-                       (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z,
-                               &i) == 4)) {
+            }
+            // X Y Z I.
+            else if (num_fields == 4 && (sscanf(line_buffer, "%lf %lf %lf %lf",
+                                                &x, &y, &z, &i) == 4)) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
                 intensities_ptr[idx] = i;
-            } else if (num_fields == 3 &&
-                       sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
+            }
+            // X Y Z.
+            else if (num_fields == 3 &&
+                     sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
@@ -214,6 +228,7 @@ bool WritePointCloudToPTS(const std::string &filename,
             return false;
         }
 
+        // X Y Z I R G B.
         if (pointcloud.HasPointColors() &&
             pointcloud.HasPointAttr("intensities")) {
             for (int i = 0; i < num_points; i++) {
@@ -233,7 +248,9 @@ bool WritePointCloudToPTS(const std::string &filename,
                     reporter.Update(i);
                 }
             }
-        } else if (pointcloud.HasPointColors()) {
+        }
+        // X Y Z R G B.
+        else if (pointcloud.HasPointColors()) {
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %u %u %u\r\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
@@ -249,7 +266,9 @@ bool WritePointCloudToPTS(const std::string &filename,
                     reporter.Update(i);
                 }
             }
-        } else if (pointcloud.HasPointAttr("intensities")) {
+        }
+        // X Y Z I.
+        else if (pointcloud.HasPointAttr("intensities")) {
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\r\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
@@ -264,7 +283,9 @@ bool WritePointCloudToPTS(const std::string &filename,
                     reporter.Update(i);
                 }
             }
-        } else {
+        }
+        // X Y Z.
+        else {
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\r\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
