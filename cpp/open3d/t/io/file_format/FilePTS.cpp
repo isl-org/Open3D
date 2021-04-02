@@ -48,12 +48,12 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             return false;
         }
 
-        size_t num_points = 0;
+        int64_t num_points = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
-            sscanf(line_buffer, "%zu", &num_points);
+            sscanf(line_buffer, "%ld", &num_points);
         }
-        if (static_cast<int64_t>(num_points) <= 0) {
+        if (num_points <= 0) {
             utility::LogWarning("Read PTS failed: Number of points <= 0");
             return false;
         }
@@ -68,7 +68,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         double *points_ptr = nullptr;
         double *intensities_ptr = nullptr;
         uint8_t *colors_ptr = nullptr;
-        size_t idx = 0;
+        int64_t idx = 0;
         std::vector<std::string> st;
         int num_fields = 0;
 
@@ -78,43 +78,35 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
             if (num_fields == 7) {  // X Y Z I R G B
                 pointcloud.SetPoints(
-                        core::Tensor({static_cast<int64_t>(num_points), 3},
-                                     core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
-                        core::Tensor({static_cast<int64_t>(num_points), 1},
-                                     core::Dtype::Float64));
+                        core::Tensor({num_points, 1}, core::Dtype::Float64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
                 pointcloud.SetPointColors(
-                        core::Tensor({static_cast<int64_t>(num_points), 3},
-                                     core::Dtype::UInt8));
+                        core::Tensor({num_points, 3}, core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
             } else if (num_fields == 6) {  // X Y Z R G B
                 pointcloud.SetPoints(
-                        core::Tensor({static_cast<int64_t>(num_points), 3},
-                                     core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointColors(
-                        core::Tensor({static_cast<int64_t>(num_points), 3},
-                                     core::Dtype::UInt8));
+                        core::Tensor({num_points, 3}, core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
             } else if (num_fields == 4) {  // X Y Z I
                 pointcloud.SetPoints(
-                        core::Tensor({static_cast<int64_t>(num_points), 3},
-                                     core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
-                        core::Tensor({static_cast<int64_t>(num_points), 1},
-                                     core::Dtype::Float64));
+                        core::Tensor({num_points, 1}, core::Dtype::Float64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
             } else if (num_fields == 3) {  // X Y Z
                 pointcloud.SetPoints(
-                        core::Tensor({static_cast<int64_t>(num_points), 3},
-                                     core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::Dtype::Float64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
             } else {
                 utility::LogWarning("Read PTS failed: unknown pts format: {}",
