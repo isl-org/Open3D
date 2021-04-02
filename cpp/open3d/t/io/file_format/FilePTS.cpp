@@ -92,8 +92,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                         core::Tensor({static_cast<int64_t>(num_points), 3},
                                      core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
-            
-            // X Y Z R G B
+
+                // X Y Z R G B
             } else if (num_fields == 6) {
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},
@@ -104,7 +104,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                                      core::Dtype::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
 
-            // X Y Z I
+                // X Y Z I
             } else if (num_fields == 4) {
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},
@@ -116,8 +116,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                                      core::Dtype::Float64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
-            
-            // X Y Z
+
+                // X Y Z
             } else if (num_fields == 3) {
                 pointcloud.SetPoints(
                         core::Tensor({static_cast<int64_t>(num_points), 3},

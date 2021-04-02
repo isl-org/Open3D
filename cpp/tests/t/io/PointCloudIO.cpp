@@ -227,8 +227,9 @@ TEST(TPointCloudIO, ReadWritePTS) {
     pcd_i.SetPoints(pcd.GetPoints());
     pcd_i.SetPointAttr("intensities", pcd.GetPointAttr("intensities"));
     file_name = std::string(TEST_DATA_DIR) + "/test_intensities.pts";
-    t::io::WritePointCloud(file_name, pcd_i);
-    t::io::ReadPointCloud(file_name, pcd_read, {"auto", false, false, true});
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd_i));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
     EXPECT_TRUE(pcd_i.GetPoints().AllClose(pcd_read.GetPoints()));
     EXPECT_TRUE(pcd_i.GetPointAttr("intensities")
                         .AllClose(pcd_read.GetPointAttr("intensities")));
