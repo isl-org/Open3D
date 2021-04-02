@@ -205,19 +205,17 @@ bool WritePointCloudToPTS(const std::string &filename,
 
         utility::CountingProgressReporter reporter(params.update_progress);
         int64_t num_points = pointcloud.GetPoints().GetLength();
+
         const double *points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
         const uint8_t *colors_ptr = nullptr;
         const double *intensities_ptr = nullptr;
 
         if (pointcloud.HasPointColors()) {
-            colors_ptr = static_cast<const uint8_t *>(
-                    pointcloud.GetPointColors().GetDataPtr());
+            colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
         }
-
         if (pointcloud.HasPointAttr("intensities")) {
-            intensities_ptr = static_cast<const double *>(
-                    pointcloud.GetPointAttr("intensities")
-                            .GetDataPtr<double>());
+            intensities_ptr =
+                    pointcloud.GetPointAttr("intensities").GetDataPtr<double>();
         }
 
         reporter.SetTotal(num_points);
