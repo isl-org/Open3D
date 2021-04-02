@@ -419,6 +419,7 @@ void Application::EnableWebRTC() {
     // TODO: WebRTCWindowSystem should be a global singleton. Consider returning
     // a shared pointer with singleton, to keep everything constant.
     // https://stackoverflow.com/a/33380514/1255535.
+    utility::LogInfo("WebRTC GUI backend enabled.");
     SetWindowSystem(gui::WebRTCWindowSystem::GetInstance());
 }
 

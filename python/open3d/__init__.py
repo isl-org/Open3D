@@ -89,11 +89,10 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
     # TODO: make this more robust, e.g. build gui, windows, macos
     try:
         shell = get_ipython().__class__.__name__
-        print(f"shell: {shell}")
+        print("Jupyter environment detected, to enable WebRTC GUI backend.")
         if shell == 'ZMQInteractiveShell':
             import open3d.visualization.gui as gui
             gui.Application.instance.enable_webrtc()
-            print("Jupyter WebRTC headless mode enabled.")
     except NameError:
         pass
 
