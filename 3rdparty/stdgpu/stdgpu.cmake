@@ -7,8 +7,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    GIT_REPOSITORY https://github.com/stotko/stdgpu.git
-    GIT_TAG 0091cee675bf64eddf61523108e2e53a985e51ec
+    GIT_REPOSITORY https://github.com/intel-isl/stdgpu.git
+    GIT_TAG build-without-gpu
     GIT_SHALLOW ON  # Do not download the history.
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -24,9 +24,11 @@ ExternalProject_Add(
         -DSTDGPU_BUILD_SHARED_LIBS=OFF
         -DSTDGPU_BUILD_EXAMPLES=OFF
         -DSTDGPU_BUILD_TESTS=OFF
+    BUILD_BYPRODUCTS
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}stdgpu${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_stdgpu INSTALL_DIR)
 set(STDGPU_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-set(STDGPU_LIB_DIR ${INSTALL_DIR}/lib)
+set(STDGPU_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(STDGPU_LIBRARIES stdgpu)

@@ -36,8 +36,8 @@ class Block {
 public:
     bool OPEN3D_HOST_DEVICE operator==(const Block<T, N>& other) const {
         bool is_eq = true;
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-#pragma unroll 1
+#if defined(__CUDA_ARCH__)
+#pragma unroll
 #endif
         for (size_t i = 0; i < N; ++i) {
             is_eq = is_eq && (data_[i] == other.data_[i]);
@@ -46,8 +46,8 @@ public:
     }
 
     void OPEN3D_HOST_DEVICE operator=(const Block<T, N>& other) {
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-#pragma unroll 1
+#if defined(__CUDA_ARCH__)
+#pragma unroll
 #endif
         for (size_t i = 0; i < N; ++i) {
             data_[i] = other.data_[i];
@@ -66,9 +66,8 @@ struct BlockHash {
 public:
     uint64_t OPEN3D_HOST_DEVICE operator()(const Block<T, N>& key) const {
         uint64_t hash = UINT64_C(14695981039346656037);
-
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-#pragma unroll 1
+#if defined(__CUDA_ARCH__)
+#pragma unroll
 #endif
         for (size_t i = 0; i < N; ++i) {
             hash ^= static_cast<uint64_t>(key(i));
