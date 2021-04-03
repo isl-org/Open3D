@@ -42,7 +42,10 @@ set(BENCHMARK_SOURCE_FILES
     geometry/KDTreeFlann.cpp
     geometry/SamplePoints.cpp
     io/PointCloudIO.cpp
-    tgeometry/PointCloud.cpp
+    pipelines/registration/Registration.cpp
+    t/geometry/PointCloud.cpp
+    t/pipelines/odometry/RGBDOdometry.cpp
+    t/pipelines/registration/Registration.cpp
 )
 
 add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
@@ -56,4 +59,11 @@ open3d_link_3rdparty_libraries(benchmarks)
 
 if (BUILD_CUDA_MODULE)
     target_include_directories(benchmarks SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+endif()
+
+if (WITH_IPPICV)
+    target_compile_definitions(benchmarks PRIVATE WITH_IPPICV
+        IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
 endif()

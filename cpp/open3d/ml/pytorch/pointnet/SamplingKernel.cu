@@ -37,64 +37,6 @@
 
 using namespace open3d::ml::contrib;
 
-void gather_points_launcher(int b,
-                            int c,
-                            int n,
-                            int npoints,
-                            const float *points,
-                            const int *idx,
-                            float *out) {
-    // points: (B, C, N)
-    // idx: (B, npoints)
-    // output:
-    //      out: (B, C, npoints)
-
-    auto stream = at::cuda::getCurrentCUDAStream();
-
-    cudaError_t err;
-    dim3 blocks(DIVUP(npoints, THREADS_PER_BLOCK), c,
-                b);  // blockIdx.x(col), blockIdx.y(row)
-    dim3 threads(THREADS_PER_BLOCK);
-
-    gather_points_kernel<<<blocks, threads, 0, stream>>>(b, c, n, npoints,
-                                                         points, idx, out);
-
-    err = cudaGetLastError();
-    if (cudaSuccess != err) {
-        fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
-        exit(-1);
-    }
-}
-
-void gather_points_grad_launcher(int b,
-                                 int c,
-                                 int n,
-                                 int npoints,
-                                 const float *grad_out,
-                                 const int *idx,
-                                 float *grad_points) {
-    // grad_out: (B, C, npoints)
-    // idx: (B, npoints)
-    // output:
-    //      grad_points: (B, C, N)
-
-    auto stream = at::cuda::getCurrentCUDAStream();
-
-    cudaError_t err;
-    dim3 blocks(DIVUP(npoints, THREADS_PER_BLOCK), c,
-                b);  // blockIdx.x(col), blockIdx.y(row)
-    dim3 threads(THREADS_PER_BLOCK);
-
-    gather_points_grad_kernel<<<blocks, threads, 0, stream>>>(
-            b, c, n, npoints, grad_out, idx, grad_points);
-
-    err = cudaGetLastError();
-    if (cudaSuccess != err) {
-        fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
-        exit(-1);
-    }
-}
-
 void furthest_point_sampling_launcher(
         int b, int n, int m, const float *dataset, float *temp, int *idxs) {
     // dataset: (B, N, 3)

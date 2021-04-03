@@ -192,10 +192,14 @@ void FilamentRenderer::BeginFrame() {
 
 void FilamentRenderer::Draw() {
     if (frame_started_) {
+        // Draw 3D scenes into textures
         for (const auto& pair : scenes_) {
             pair.second->Draw(*renderer_);
         }
 
+        // Draw the UI. This should come after the 3D scene(s), as SceneWidget
+        // will draw the textures as an image, and this way we will have the
+        // current frame's content from above.
         if (gui_scene_) {
             gui_scene_->Draw(*renderer_);
         }

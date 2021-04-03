@@ -150,6 +150,34 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
+PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
+    if (voxel_size <= 0) {
+        utility::LogError("voxel_size must be positive.");
+    }
+    core::Tensor points_voxeld = GetPoints() / voxel_size;
+    core::Tensor points_voxeli = points_voxeld.Floor().To(core::Dtype::Int64);
+
+    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(),
+                                        core::Dtype::Int64, core::Dtype::Int32,
+                                        {3}, {1}, device_);
+
+    core::Tensor addrs, masks;
+    points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
+
+    PointCloud pcd_down(GetPoints().GetDevice());
+    for (auto &kv : point_attr_) {
+        if (kv.first == "points") {
+            pcd_down.SetPointAttr(kv.first, points_voxeli.IndexGet({masks}).To(
+                                                    GetPoints().GetDtype()) *
+                                                    voxel_size);
+        } else {
+            pcd_down.SetPointAttr(kv.first, kv.second.IndexGet({masks}));
+        }
+    }
+
+    return pcd_down;
+}
+
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
                                             const core::Tensor &extrinsics,

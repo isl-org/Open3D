@@ -125,11 +125,6 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
     RecreateAxis(scene, bounds_, false);
-
-    window_scene_ = renderer_.CreateScene();
-    auto window_scene = renderer_.GetScene(window_scene_);
-    window_view_ = window_scene->AddView(0, 0, 1, 1);
-    window_scene->SetBackground({0.f, 1.f, 0.f, 1.f});
 }
 
 Open3DScene::~Open3DScene() {
@@ -144,11 +139,6 @@ View* Open3DScene::GetView() const {
     return scene->GetView(view_);
 }
 
-View* Open3DScene::GetWindowView() const {
-    auto scene = renderer_.GetScene(window_scene_);
-    return scene->GetView(window_view_);
-}
-
 void Open3DScene::SetViewport(std::int32_t x,
                               std::int32_t y,
                               std::uint32_t width,
@@ -156,16 +146,12 @@ void Open3DScene::SetViewport(std::int32_t x,
     // Setup the view in which we render to a texture. Since this is just a
     // texture, we want our viewport to be the entire texture.
     auto view = GetView();
+    // Since we are rendering into a texture (EnableViewCaching(true) below),
+    // we need to use the entire texture; the viewport passed in is the viewport
+    // with respect to the window, and we are setting the viewport with respect
+    // to the render target here.
     view->SetViewport(0, 0, width, height);
     view->EnableViewCaching(true);
-
-    // Now setup the view that actually draws to the window, so the viewport
-    // is the one passed by the user.
-    auto window_view = GetWindowView();
-    window_view->SetViewport(x, y, width, height);
-    window_view->ConfigureForColorPicking();
-    auto window_scene = renderer_.GetScene(window_scene_);
-    window_scene->SetBackground(view->GetColorBuffer());
 }
 
 void Open3DScene::ShowSkybox(bool enable) {

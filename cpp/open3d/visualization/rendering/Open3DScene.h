@@ -145,8 +145,6 @@ private:
 
     void SetGeometryToLOD(const GeometryData&, LOD lod);
 
-    View* GetWindowView() const;
-
 private:
     Renderer& renderer_;
     SceneHandle scene_;

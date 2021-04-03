@@ -37,6 +37,12 @@
 #ifndef FMT_STRING_ALIAS
 #define FMT_STRING_ALIAS 1
 #endif
+// NVCC does not support deprecated attribute on Windows prior to v11.
+#if defined(__CUDACC__) && defined(_MSC_VER) && __CUDACC_VER_MAJOR__ < 11
+#ifndef FMT_DEPRECATED
+#define FMT_DEPRECATED
+#endif
+#endif
 #include <fmt/format.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
@@ -264,9 +270,14 @@ public:
     }
 
     ConsoleProgressBar &operator++() {
-        current_count_++;
+        SetCurrentCount(current_count_ + 1);
+        return *this;
+    }
+
+    void SetCurrentCount(size_t n) {
+        current_count_ = n;
         if (!active_) {
-            return *this;
+            return;
         }
         if (current_count_ >= expected_count_) {
             fmt::print("{}[{}] 100%\n", progress_info_,
@@ -284,7 +295,6 @@ public:
                 fflush(stdout);
             }
         }
-        return *this;
     }
 
 private:

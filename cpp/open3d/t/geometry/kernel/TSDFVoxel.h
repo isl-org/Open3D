@@ -121,11 +121,11 @@ struct ColoredVoxel16i {
         float inv_wsum = 1.0f / inc_wsum;
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         r = static_cast<uint16_t>(
-                round((weight * r + dr * kColorFactor) * inv_wsum));
+                roundf((weight * r + dr * kColorFactor) * inv_wsum));
         g = static_cast<uint16_t>(
-                round((weight * g + dg * kColorFactor) * inv_wsum));
+                roundf((weight * g + dg * kColorFactor) * inv_wsum));
         b = static_cast<uint16_t>(
-                round((weight * b + db * kColorFactor) * inv_wsum));
+                roundf((weight * b + db * kColorFactor) * inv_wsum));
         weight = static_cast<uint16_t>(inc_wsum < static_cast<float>(kMaxUint16)
                                                ? weight + 1
                                                : kMaxUint16);

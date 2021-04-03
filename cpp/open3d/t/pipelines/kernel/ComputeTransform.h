@@ -24,34 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Private header. Do not include in Open3d.h.
-
 #pragma once
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/registration/Registration.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCPU(const float *src_pcd_ptr,
-                                const float *tar_pcd_ptr,
-                                const float *tar_norm_ptr,
-                                const int n,
-                                core::Tensor &pose,
-                                const core::Dtype dtype,
-                                const core::Device device);
+/// \brief Computes pose for point to plane registration method.
+/// \param source_points source points indexed according to correspondences.
+/// \param target_points target points indexed according to correspondences.
+/// \param target_normals target normals indexed according to correspondences.
+/// \param correspondences CorrespondenceSet. [refer to definition in
+/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
+/// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype Float32.
+core::Tensor ComputePosePointToPlane(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const pipelines::registration::CorrespondenceSet &correspondences);
 
-#ifdef BUILD_CUDA_MODULE
-void ComputePosePointToPlaneCUDA(const float *src_pcd_ptr,
-                                 const float *tar_pcd_ptr,
-                                 const float *tar_norm_ptr,
-                                 const int n,
-                                 core::Tensor &pose,
-                                 const core::Dtype dtype,
-                                 const core::Device device);
-#endif
+/// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
+/// for point to point registration method.
+/// \param source_points source points indexed according to correspondences.
+/// \param target_points target points indexed according to correspondences.
+/// \param correspondences CorrespondenceSet. [refer to definition in
+/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
+/// \return tuple of (R, t). [Dtype: Float32].
+std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const pipelines::registration::CorrespondenceSet &correspondences);
 
 }  // namespace kernel
 }  // namespace pipelines
