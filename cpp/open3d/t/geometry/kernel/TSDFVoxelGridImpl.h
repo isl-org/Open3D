@@ -436,7 +436,9 @@ void ExtractSurfacePointsCPU
                     }
                 });
             });
-    cudaDeviceSynchronize();
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
