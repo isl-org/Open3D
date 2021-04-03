@@ -71,7 +71,9 @@
 #define LogError(...)                                                 \
     Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, false, \
                      __VA_ARGS__)
-#define LogErrorConsole LogError
+#define LogErrorConsole(...)                                         \
+    Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, true, \
+                     __VA_ARGS__)
 
 namespace open3d {
 namespace utility {
