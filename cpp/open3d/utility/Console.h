@@ -69,7 +69,7 @@
 // will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
 #define LogError(...) \
-    _LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 #define LogErrorConsole LogError
 
 namespace open3d {
@@ -121,6 +121,16 @@ public:
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
     VerbosityLevel GetVerbosityLevel() const;
 
+    template <typename... Args>
+    static void _LogError [[noreturn]] (const char *file_name,
+                                        int line_number,
+                                        const char *function_name,
+                                        const char *format,
+                                        Args &&... args) {
+        Logger::GetInstance().VError(file_name, line_number, function_name,
+                                     format, fmt::make_format_args(args...));
+    }
+
 private:
     Logger();
 
@@ -137,16 +147,6 @@ void SetVerbosityLevel(VerbosityLevel level);
 
 /// Get global verbosity level of Open3D.
 VerbosityLevel GetVerbosityLevel();
-
-template <typename... Args>
-inline void _LogError [[noreturn]] (const char *file_name,
-                                    int line_number,
-                                    const char *function_name,
-                                    const char *format,
-                                    Args &&... args) {
-    Logger::GetInstance().VError(file_name, line_number, function_name, format,
-                                 fmt::make_format_args(args...));
-}
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {
