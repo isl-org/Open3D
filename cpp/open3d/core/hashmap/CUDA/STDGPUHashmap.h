@@ -202,7 +202,9 @@ __global__ void STDGPUEraseKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
     Key key = input_keys[tid];
     if (output_masks[tid]) {
         output_masks[tid] = map.erase(key);
-        buffer_accessor.DeviceFree(output_addrs[tid]);
+        if (output_masks[tid]) {
+            buffer_accessor.DeviceFree(output_addrs[tid]);
+        }
     }
 }
 
