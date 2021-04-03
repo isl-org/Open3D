@@ -40,11 +40,10 @@
 namespace open3d {
 
 PYBIND11_MODULE(pybind, m) {
-    open3d::utility::Logger::i().OverwritePrintFunction(
-            [](const std::string& msg) {
-                py::gil_scoped_acquire acquire;
-                py::print(msg);
-            });
+    open3d::utility::OverwritePrintFunction([](const std::string& msg) {
+        py::gil_scoped_acquire acquire;
+        py::print(msg);
+    });
 
     m.doc() = "Python binding of Open3D";
 

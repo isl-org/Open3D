@@ -95,138 +95,53 @@ enum class VerbosityLevel {
     Debug = 3,
 };
 
-class OPEN3D_API Logger {
+/// Global singleton logger.
+class Logger {
 public:
-    enum class TextColor {
-        Black = 0,
-        Red = 1,
-        Green = 2,
-        Yellow = 3,
-        Blue = 4,
-        Magenta = 5,
-        Cyan = 6,
-        White = 7
-    };
-
     Logger(Logger const &) = delete;
-
     void operator=(Logger const &) = delete;
-
-    static Logger &i() {
-        static Logger instance;
-        return instance;
-    }
-
+    static Logger &GetInstance();
     void VError [[noreturn]] (const char *file_name,
                               int line_number,
                               const char *function_name,
                               const char *format,
                               fmt::format_args args,
-                              bool force_console_log = false) const {
-        std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D Error] ({}:{}): {}", function_name,
-                              file_name, line_number, err_msg);
-        err_msg = ColorString(err_msg, TextColor::Red, 1);
-
-        // Always print in console, void to avoid copmiler warning.
-        (void)force_console_log;
-
-        if (print_fcn_overwritten_) {
-            // In Jupyter, print_fcn_ is replaced by Pybind11's py::print() and
-            // prints the error message inside Jupyter cell.
-            Logger::print_fcn_(err_msg);
-        }
-        throw std::runtime_error(err_msg);
-    }
-
+                              bool force_console_log = false) const;
     void VWarning(const char *format,
                   fmt::format_args args,
-                  bool force_console_log = false) const {
-        if (verbosity_level_ >= VerbosityLevel::Warning) {
-            std::string err_msg = fmt::vformat(format, args);
-            err_msg = fmt::format("[Open3D WARNING] {}", err_msg);
-            err_msg = ColorString(err_msg, TextColor::Yellow, 1);
-            if (force_console_log) {
-                Logger::console_print_fcn_(err_msg);
-            } else {
-                print_fcn_(err_msg);
-            }
-        }
-    }
-
+                  bool force_console_log = false) const;
     void VInfo(const char *format,
                fmt::format_args args,
-               bool force_console_log = false) const {
-        if (verbosity_level_ >= VerbosityLevel::Info) {
-            std::string err_msg = fmt::vformat(format, args);
-            err_msg = fmt::format("[Open3D INFO] {}", err_msg);
-            if (force_console_log) {
-                Logger::console_print_fcn_(err_msg);
-            } else {
-                print_fcn_(err_msg);
-            }
-        }
-    }
-
+               bool force_console_log = false) const;
     void VDebug(const char *format,
                 fmt::format_args args,
-                bool force_console_log = false) const {
-        if (verbosity_level_ >= VerbosityLevel::Debug) {
-            std::string err_msg = fmt::vformat(format, args);
-            err_msg = fmt::format("[Open3D DEBUG] {}", err_msg);
-            if (force_console_log) {
-                Logger::console_print_fcn_(err_msg);
-            } else {
-                print_fcn_(err_msg);
-            }
-        }
-    }
-
+                bool force_console_log = false) const;
     void OverwritePrintFunction(
-            std::function<void(const std::string &)> print_fcn) {
-        print_fcn_ = print_fcn;
-        print_fcn_overwritten_ = true;
-    }
-
-    void SetVerbosityLevel(VerbosityLevel verbosity_level) {
-        verbosity_level_ = verbosity_level;
-    }
-
-    VerbosityLevel GetVerbosityLevel() const { return verbosity_level_; }
+            std::function<void(const std::string &)> print_fcn);
+    void SetVerbosityLevel(VerbosityLevel verbosity_level);
+    VerbosityLevel GetVerbosityLevel() const;
 
 private:
-    Logger()
-        : print_fcn_(Logger::console_print_fcn_),
-          verbosity_level_(VerbosityLevel::Info) {}
+    Logger();
 
-    /// Internal function to change text color for the console
-    /// Note there is no safety check for parameters.
-    /// \param text_color from 0 to 7, they are black, red, green, yellow,
-    /// blue, magenta, cyan, white
-    /// \param highlight_text is 0 or 1
-    void ChangeConsoleColor(TextColor text_color, int highlight_text) const;
-    void ResetConsoleColor() const;
-    /// Colorize and reset the color of a string, does not work on Windows
-    std::string ColorString(const std::string &text,
-                            TextColor text_color,
-                            int highlight_text) const;
-    std::function<void(const std::string &)> print_fcn_;
-    static std::function<void(const std::string &)> console_print_fcn_;
-    VerbosityLevel verbosity_level_;
-    bool print_fcn_overwritten_ = false;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
+
+void OverwritePrintFunction(std::function<void(const std::string &)> print_fcn);
 
 /// Set global verbosity level of Open3D
 ///
 /// \param level Messages with equal or less than verbosity_level verbosity will
 /// be printed.
 inline void SetVerbosityLevel(VerbosityLevel level) {
-    Logger::i().SetVerbosityLevel(level);
+    Logger::GetInstance().SetVerbosityLevel(level);
 }
 
 /// Get global verbosity level of Open3D.
 inline VerbosityLevel GetVerbosityLevel() {
-    return Logger::i().GetVerbosityLevel();
+    return Logger::GetInstance().GetVerbosityLevel();
 }
 
 template <typename... Args>
@@ -235,38 +150,39 @@ inline void _LogError [[noreturn]] (const char *file_name,
                                     const char *function_name,
                                     const char *format,
                                     Args &&... args) {
-    Logger::i().VError(file_name, line_number, function_name, format,
-                       fmt::make_format_args(args...));
+    Logger::GetInstance().VError(file_name, line_number, function_name, format,
+                                 fmt::make_format_args(args...));
 }
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {
-    Logger::i().VWarning(format, fmt::make_format_args(args...));
+    Logger::GetInstance().VWarning(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
 inline void LogWarningConsole(const char *format, const Args &... args) {
-    Logger::i().VWarning(format, fmt::make_format_args(args...), true);
+    Logger::GetInstance().VWarning(format, fmt::make_format_args(args...),
+                                   true);
 }
 
 template <typename... Args>
 inline void LogInfo(const char *format, const Args &... args) {
-    Logger::i().VInfo(format, fmt::make_format_args(args...));
+    Logger::GetInstance().VInfo(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
 inline void LogInfoConsole(const char *format, const Args &... args) {
-    Logger::i().VInfo(format, fmt::make_format_args(args...), true);
+    Logger::GetInstance().VInfo(format, fmt::make_format_args(args...), true);
 }
 
 template <typename... Args>
 inline void LogDebug(const char *format, const Args &... args) {
-    Logger::i().VDebug(format, fmt::make_format_args(args...));
+    Logger::GetInstance().VDebug(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
 inline void LogDebugConsole(const char *format, const Args &... args) {
-    Logger::i().VDebug(format, fmt::make_format_args(args...), true);
+    Logger::GetInstance().VDebug(format, fmt::make_format_args(args...), true);
 }
 
 class VerbosityContextManager {
@@ -274,11 +190,11 @@ public:
     VerbosityContextManager(VerbosityLevel level) : level_(level) {}
 
     void enter() {
-        level_backup_ = Logger::i().GetVerbosityLevel();
-        Logger::i().SetVerbosityLevel(level_);
+        level_backup_ = Logger::GetInstance().GetVerbosityLevel();
+        Logger::GetInstance().SetVerbosityLevel(level_);
     }
 
-    void exit() { Logger::i().SetVerbosityLevel(level_backup_); }
+    void exit() { Logger::GetInstance().SetVerbosityLevel(level_backup_); }
 
 private:
     VerbosityLevel level_;

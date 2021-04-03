@@ -47,56 +47,144 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
-
 namespace utility {
 
-std::function<void(const std::string &)> Logger::console_print_fcn_ =
+enum class TextColor {
+    Black = 0,
+    Red = 1,
+    Green = 2,
+    Yellow = 3,
+    Blue = 4,
+    Magenta = 5,
+    Cyan = 6,
+    White = 7
+};
+
+struct Logger::Impl {
+    // The current print function.
+    std::function<void(const std::string &)> print_fcn_;
+
+    // The default print function (that prints to console).
+    static std::function<void(const std::string &)> console_print_fcn_;
+
+    // Verbosity level.
+    VerbosityLevel verbosity_level_;
+
+    // True if print function had been overwritten.
+    bool print_fcn_overwritten_ = false;
+
+    // Colorize and reset the color of a string, does not work on Windows,
+    std::string ColorString(const std::string &text,
+                            TextColor text_color,
+                            int highlight_text) const {
+        std::ostringstream msg;
+#ifndef _WIN32
+        msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+                            (int)text_color + 30);
+#endif
+        msg << text;
+#ifndef _WIN32
+        msg << fmt::sprintf("%c[0;m", 0x1B);
+#endif
+        return msg.str();
+    }
+};
+
+std::function<void(const std::string &)> Logger::Impl::console_print_fcn_ =
         [](const std::string &msg) { std::cout << msg << std::endl; };
 
-void Logger::ChangeConsoleColor(TextColor text_color,
-                                int highlight_text) const {
-#ifdef _WIN32
-    const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
-    const WORD COLOR_MASK[8] = {
-            0,
-            FOREGROUND_RED,
-            FOREGROUND_GREEN,
-            FOREGROUND_GREEN | FOREGROUND_RED,
-            FOREGROUND_BLUE,
-            FOREGROUND_RED | FOREGROUND_BLUE,
-            FOREGROUND_GREEN | FOREGROUND_BLUE,
-            FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED};
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(
-            h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
-#else
-    printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
-#endif
+Logger::Logger() : impl_(new Logger::Impl()) {
+    impl_->print_fcn_ = Logger::Impl::console_print_fcn_;
+    impl_->verbosity_level_ = VerbosityLevel::Info;
 }
 
-void Logger::ResetConsoleColor() const {
-#ifdef _WIN32
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(
-            h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-#else
-    printf("%c[0;m", 0x1B);
-#endif
+Logger &Logger::GetInstance() {
+    static Logger instance;
+    return instance;
 }
 
-std::string Logger::ColorString(const std::string &text,
-                                TextColor text_color,
-                                int highlight_text) const {
-    std::ostringstream msg;
-#ifndef _WIN32
-    msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
-                        (int)text_color + 30);
-#endif
-    msg << text;
-#ifndef _WIN32
-    msg << fmt::sprintf("%c[0;m", 0x1B);
-#endif
-    return msg.str();
+void Logger::VError [[noreturn]] (const char *file_name,
+                                  int line_number,
+                                  const char *function_name,
+                                  const char *format,
+                                  fmt::format_args args,
+                                  bool force_console_log) const {
+    std::string err_msg = fmt::vformat(format, args);
+    err_msg = fmt::format("[Open3D Error] ({}:{}): {}", function_name,
+                          file_name, line_number, err_msg);
+    err_msg = impl_->ColorString(err_msg, TextColor::Red, 1);
+
+    // Always print in console, void to avoid copmiler warning.
+    (void)force_console_log;
+
+    if (impl_->print_fcn_overwritten_) {
+        // In Jupyter, print_fcn_ is replaced by Pybind11's py::print() and
+        // prints the error message inside Jupyter cell.
+        Logger::impl_->print_fcn_(err_msg);
+    }
+    throw std::runtime_error(err_msg);
+}
+
+void Logger::VWarning(const char *format,
+                      fmt::format_args args,
+                      bool force_console_log) const {
+    if (impl_->verbosity_level_ >= VerbosityLevel::Warning) {
+        std::string err_msg = fmt::vformat(format, args);
+        err_msg = fmt::format("[Open3D WARNING] {}", err_msg);
+        err_msg = impl_->ColorString(err_msg, TextColor::Yellow, 1);
+        if (force_console_log) {
+            Logger::Impl::console_print_fcn_(err_msg);
+        } else {
+            impl_->print_fcn_(err_msg);
+        }
+    }
+}
+
+void Logger::VInfo(const char *format,
+                   fmt::format_args args,
+                   bool force_console_log) const {
+    if (impl_->verbosity_level_ >= VerbosityLevel::Info) {
+        std::string err_msg = fmt::vformat(format, args);
+        err_msg = fmt::format("[Open3D INFO] {}", err_msg);
+        if (force_console_log) {
+            Logger::Impl::console_print_fcn_(err_msg);
+        } else {
+            impl_->print_fcn_(err_msg);
+        }
+    }
+}
+
+void Logger::VDebug(const char *format,
+                    fmt::format_args args,
+                    bool force_console_log) const {
+    if (impl_->verbosity_level_ >= VerbosityLevel::Debug) {
+        std::string err_msg = fmt::vformat(format, args);
+        err_msg = fmt::format("[Open3D DEBUG] {}", err_msg);
+        if (force_console_log) {
+            Logger::Impl::console_print_fcn_(err_msg);
+        } else {
+            impl_->print_fcn_(err_msg);
+        }
+    }
+}
+
+void Logger::OverwritePrintFunction(
+        std::function<void(const std::string &)> print_fcn) {
+    impl_->print_fcn_ = print_fcn;
+    impl_->print_fcn_overwritten_ = true;
+}
+
+void Logger::SetVerbosityLevel(VerbosityLevel verbosity_level) {
+    impl_->verbosity_level_ = verbosity_level;
+}
+
+VerbosityLevel Logger::GetVerbosityLevel() const {
+    return impl_->verbosity_level_;
+}
+
+void OverwritePrintFunction(
+        std::function<void(const std::string &)> print_fcn) {
+    Logger::GetInstance().OverwritePrintFunction(print_fcn);
 }
 
 std::string GetCurrentTimeStamp() {
