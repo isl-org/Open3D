@@ -129,8 +129,6 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-void OverwritePrintFunction(std::function<void(const std::string &)> print_fcn);
-
 /// Set global verbosity level of Open3D
 ///
 /// \param level Messages with equal or less than verbosity_level verbosity will

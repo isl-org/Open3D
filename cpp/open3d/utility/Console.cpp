@@ -173,11 +173,6 @@ VerbosityLevel Logger::GetVerbosityLevel() const {
     return impl_->verbosity_level_;
 }
 
-void OverwritePrintFunction(
-        std::function<void(const std::string &)> print_fcn) {
-    Logger::GetInstance().OverwritePrintFunction(print_fcn);
-}
-
 std::string GetCurrentTimeStamp() {
     std::time_t t = std::time(nullptr);
     return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
