@@ -81,7 +81,7 @@ enum class VerbosityLevel {
     /// some point and the error is not returned in another way (e.g., via a
     /// bool/int as return value).
     Error = 0,
-    /// LogWarning is used if an error occured, but the error is also signaled
+    /// LogWarning is used if an error occurs, but the error is also signaled
     /// via a return value (i.e., there is no need to throw an exception). This
     /// warning should further be used, if the algorithms encounters a state
     /// that does not break its continuation, but the output is likely not to be
