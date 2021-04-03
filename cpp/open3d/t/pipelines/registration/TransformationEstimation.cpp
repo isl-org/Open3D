@@ -68,14 +68,15 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
-        double &residual,
+        double &squared_error,
         int64_t &count) const {
     core::Device device = source.GetDevice();
     core::Dtype dtype = source.GetPoints().GetDtype();
 
     core::Tensor R, t;
     std::tie(R, t) = pipelines::kernel::registration::ComputeRtPointToPoint(
-            source.GetPoints(), target.GetPoints(), corres, residual, count);
+            source.GetPoints(), target.GetPoints(), corres, squared_error,
+            count);
 
     return t::pipelines::kernel::RtToTransformation(R, t).To(device, dtype);
 }
@@ -85,7 +86,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = source.GetPoints().GetDtype();
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {

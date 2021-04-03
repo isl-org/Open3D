@@ -120,7 +120,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<float> &a, std::vector<float> &b) {
+            [&](std::vector<float> a, std::vector<float> b) {
                 std::vector<float> result(29);
                 for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];
@@ -202,7 +202,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> &a, std::vector<double> &b) {
+            [&](std::vector<double> a, std::vector<double> b) {
                 std::vector<double> result(29);
                 for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];

@@ -51,7 +51,6 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
 
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     R.AssertShape({3, 3});
-    R.AssertDtype(dtype);
     t.AssertShape({3});
     t.AssertDevice(device);
     t.AssertDtype(dtype);

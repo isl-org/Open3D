@@ -130,8 +130,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                                    const TransformationEstimation &estimation,
                                    const ICPConvergenceCriteria &criteria) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
+    core::Dtype dtype = source.GetPoints().GetDtype();
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         utility::LogError(
@@ -185,6 +184,7 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
 
         // Multiply the transform to the cumulative transformation (update).
         transformation_device = update.Matmul(transformation_device);
+
         // Apply the transform on source pointcloud.
         source_transformed.Transform(update);
 

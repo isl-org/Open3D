@@ -50,7 +50,7 @@ static const int max_iterations = 1;
 static const double max_correspondence_distance = 0.15;
 
 // Initial transformation guess for registation.
-static const std::vector<float> initial_transform_flat{
+static const std::vector<double> initial_transform_flat{
         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
 
@@ -72,23 +72,6 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     io::ReadPointCloud(target_pointcloud_filename, target,
                        {"auto", false, false, true});
 
-    // Eliminates the case of impractical values (including negative).
-    if (voxel_downsample_factor > 0.001) {
-        // TODO: Use geometry::PointCloud::VoxelDownSample.
-        open3d::geometry::PointCloud legacy_s = source.ToLegacyPointCloud();
-        open3d::geometry::PointCloud legacy_t = target.ToLegacyPointCloud();
-
-        legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
-        legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
-
-        source = geometry::PointCloud::FromLegacyPointCloud(legacy_s);
-        target = geometry::PointCloud::FromLegacyPointCloud(legacy_t);
-    } else {
-        utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
-                "downsampling.");
-    }
-
     geometry::PointCloud source_device(device), target_device(device);
 
     core::Tensor source_points = source.GetPoints().To(device, dtype);
@@ -99,13 +82,25 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);
 
+    // Eliminates the case of impractical values (including negative).
+    if (voxel_downsample_factor > 0.001) {
+        // TODO: Use geometry::PointCloud::VoxelDownSample.
+        source_device = source_device.VoxelDownSample(voxel_downsample_factor);
+        target_device = target_device.VoxelDownSample(voxel_downsample_factor);
+
+    } else {
+        utility::LogWarning(
+                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "downsampling.");
+    }
+
     return std::make_tuple(source_device, target_device);
 }
 
 static void BenchmarkRegistrationICP(benchmark::State& state,
                                      const core::Device& device,
                                      const TransformationEstimationType& type) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Dtype::Float64;
 
     geometry::PointCloud source(device), target(device);
 

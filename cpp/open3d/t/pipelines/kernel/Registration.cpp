@@ -119,9 +119,11 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         core::Tensor target_points_indexed =
                 target_points.IndexGet({neighbour_indices});
 
-        core::Tensor squared_error = (corres.second.IndexGet({valid})).Sum({0});
+        core::Tensor squared_error = (corres.second.IndexGet({valid}))
+                                             .Sum({0})
+                                             .To(core::Dtype::Float64);
         // Only take valid distances.
-        residual = static_cast<double>(squared_error.Item<float>());
+        residual = squared_error.Item<double>();
         // Number of good correspondences (C).
         count = source_points_indexed.GetLength();
 

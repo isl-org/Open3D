@@ -77,7 +77,7 @@ void ComputePosePointToPlaneCPU(
 }
 
 template <typename scalar_t>
-inline void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
+static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   const scalar_t *target_points_ptr,
                                   const int64_t *correspondences_first,
                                   const scalar_t *correspondences_second,
@@ -122,7 +122,7 @@ inline void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return mean_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](const std::vector<double> &a, const std::vector<double> &b) {
+            [&](std::vector<double> a, std::vector<double> b) {
                 std::vector<double> result(8);
                 for (int j = 0; j < 8; j++) {
                     result[j] = a[j] + b[j];
@@ -173,14 +173,14 @@ inline void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return result;
             });
 
-    mean_s = core::Tensor::Empty({1, 3}, dtype, device);
-    float *mean_s_ptr = mean_s.GetDataPtr<float>();
+    mean_s = core::Tensor::Empty({1, 3}, core::Dtype::Float64, device);
+    double *mean_s_ptr = mean_s.GetDataPtr<double>();
 
-    mean_t = core::Tensor::Empty({1, 3}, dtype, device);
-    float *mean_t_ptr = mean_t.GetDataPtr<float>();
+    mean_t = core::Tensor::Empty({1, 3}, core::Dtype::Float64, device);
+    double *mean_t_ptr = mean_t.GetDataPtr<double>();
 
-    Sxy = core::Tensor::Empty({3, 3}, dtype, device);
-    float *sxy_ptr = Sxy.GetDataPtr<float>();
+    Sxy = core::Tensor::Empty({3, 3}, core::Dtype::Float64, device);
+    double *sxy_ptr = Sxy.GetDataPtr<double>();
 
     // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
     // reduction variables. The shapes of mean_s and mean_t are such, because it
@@ -208,18 +208,25 @@ void ComputeRtPointToPointCPU(
         int64_t &count,
         const core::Dtype &dtype,
         const core::Device &device) {
-    const float *source_points_ptr = source_points.GetDataPtr<float>();
-    const float *target_points_ptr = target_points.GetDataPtr<float>();
-    const int64_t *correspondences_first = corres.first.GetDataPtr<int64_t>();
-    const float *correspondences_second = corres.second.GetDataPtr<float>();
-
-    int n = source_points.GetLength();
-
     core::Tensor Sxy, mean_t, mean_s;
 
-    Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
-                          correspondences_first, correspondences_second, n,
-                          dtype, device, Sxy, mean_t, mean_s, residual, count);
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        const scalar_t *source_points_ptr =
+                source_points.GetDataPtr<scalar_t>();
+        const scalar_t *target_points_ptr =
+                target_points.GetDataPtr<scalar_t>();
+        const int64_t *correspondences_first =
+                corres.first.GetDataPtr<int64_t>();
+        const scalar_t *correspondences_second =
+                corres.second.GetDataPtr<scalar_t>();
+
+        int n = source_points.GetLength();
+
+        Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
+                              correspondences_first, correspondences_second, n,
+                              dtype, device, Sxy, mean_t, mean_s, residual,
+                              count);
+    });
 
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
@@ -229,7 +236,8 @@ void ComputeRtPointToPointCPU(
     }
 
     R = U.Matmul(S.Matmul(VT));
-    t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+    t = (mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1})).To(dtype);
+    R = R.To(dtype);
 }
 
 }  // namespace registration
