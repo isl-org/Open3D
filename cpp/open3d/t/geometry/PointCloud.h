@@ -293,7 +293,8 @@ public:
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// \brief Downsamples a point cloud with a specified voxel size.
-    /// \param voxel_size Voxel size. A positive number.
+    /// If voxel_size == -1, returns the original pointcloud.
+    /// \param voxel_size Voxel size. A positive number or -1.
     PointCloud VoxelDownSample(double voxel_size) const;
 
     /// \brief Returns the device attribute of this PointCloud.

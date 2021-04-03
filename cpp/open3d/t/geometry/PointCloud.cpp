@@ -151,8 +151,13 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 }
 
 PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
+    // If voxel_size == -1, returns the original pointcloud.
+    if (voxel_size == -1) {
+        return *this;
+    }
     if (voxel_size <= 0) {
-        utility::LogError("voxel_size must be positive.");
+        utility::LogError(
+                "voxel_size must be positive or -1 for no-downsampling.");
     }
     core::Tensor points_voxeld = GetPoints() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Dtype::Int64);

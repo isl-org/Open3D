@@ -69,8 +69,8 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
     io::ReadPointCloud(target_pointcloud_filename, target,
                        {"auto", false, false, true});
 
-	source = source.To(device).VoxelDownSample(voxel_downsampling_factor);
-	target = target.To(device).VoxelDownSample(voxel_downsampling_factor);
+    source = source.To(device).VoxelDownSample(voxel_downsampling_factor);
+    target = target.To(device).VoxelDownSample(voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
@@ -127,7 +127,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   core::Device("CUDA:0"),
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
-		
+
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CUDA,
                   core::Device("CUDA:0"),

@@ -85,7 +85,8 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix.
-    RegistrationResult(const core::Tensor &transformation)
+    RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
+                               4, core::Dtype::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
     bool IsBetterRANSACThan(const RegistrationResult &other) const {
@@ -132,7 +133,31 @@ RegistrationResult RegistrationICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const core::Tensor &init,
+        const core::Tensor &init = core::Tensor::Eye(4,
+                                                     core::Dtype::Float64,
+                                                     core::Device("CPU:0")),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint(),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+
+/// \brief Functions for ICP registration.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance.
+/// \param init Initial transformation estimation.
+/// \param estimation Estimation method.
+/// \param criteria Convergence criteria.
+RegistrationResult RegistrationICPMultiScale(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const std::vector<int> &iterations,
+        const std::vector<double> &voxel_sizes,
+        const std::vector<double> &max_correspondence_distances,
+        const core::Tensor &init = core::Tensor::Eye(4,
+                                                     core::Dtype::Float64,
+                                                     core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());

@@ -61,12 +61,14 @@ static void BenchmarkRegistrationICPLegacy(
         benchmark::State& state, const TransformationEstimationType& type) {
     geometry::PointCloud source;
     geometry::PointCloud target;
-    
-    io::ReadPointCloud(source_pointcloud_filename, source, {"auto", false, false, true});
-    io::ReadPointCloud(target_pointcloud_filename, target, {"auto", false, false, true});
 
-	source = *source.VoxelDownSample(voxel_downsampling_factor);
-	target = *target.VoxelDownSample(voxel_downsampling_factor);
+    io::ReadPointCloud(source_pointcloud_filename, source,
+                       {"auto", false, false, true});
+    io::ReadPointCloud(target_pointcloud_filename, target,
+                       {"auto", false, false, true});
+
+    source = *source.VoxelDownSample(voxel_downsampling_factor);
+    target = *target.VoxelDownSample(voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
