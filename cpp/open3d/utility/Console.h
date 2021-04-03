@@ -115,16 +115,14 @@ public:
         return instance;
     }
 
-    void VError [[noreturn]] (const char *fname,
-                              int linenum,
-                              const char *fn_name,
+    void VError [[noreturn]] (const char *file_name,
+                              int line_number,
+                              const char *function_name,
                               const char *format,
                               fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format(
-                "In function {}:\n"
-                "{}:{} [Open3D Error] {}",
-                fn_name, fname, linenum, err_msg);
+        err_msg = fmt::format("[Open3D Error] ({}:{}): {}", function_name,
+                              file_name, line_number, err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         if (print_fcn_overwritten_) {
             // In Jupyter, print_fcn_ is replaced by Pybind11's py::print() and
@@ -225,12 +223,12 @@ inline VerbosityLevel GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void _LogError [[noreturn]] (const char *fname,
-                                    int linenum,
-                                    const char *fn_name,
+inline void _LogError [[noreturn]] (const char *file_name,
+                                    int line_number,
+                                    const char *function_name,
                                     const char *format,
                                     Args &&... args) {
-    Logger::i().VError(fname, linenum, fn_name, format,
+    Logger::i().VError(file_name, line_number, function_name, format,
                        fmt::make_format_args(args...));
 }
 
