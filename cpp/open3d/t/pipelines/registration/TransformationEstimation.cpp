@@ -96,13 +96,6 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 
     if (!target.HasPointNormals()) return 0.0;
     // TODO: Optimise using kernel.
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first.Reshape({-1})});
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second.Reshape({-1})});
-    core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second.Reshape({-1})});
-
     core::Tensor valid = corres.first.Ne(-1).Reshape({-1});
     core::Tensor neighbour_indices =
             corres.first.IndexGet({valid}).Reshape({-1});
@@ -112,8 +105,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     core::Tensor target_normals_indexed =
             target.GetPointNormals().IndexGet({neighbour_indices});
 
-    core::Tensor error_t =
-            (source_select - target_select).Mul_(target_n_select);
+    core::Tensor error_t = (source_points_indexed - target_points_indexed)
+                                   .Mul_(target_normals_indexed);
     error_t.Mul_(error_t);
     double error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
     return std::sqrt(error / static_cast<double>(corres.second.GetLength()));

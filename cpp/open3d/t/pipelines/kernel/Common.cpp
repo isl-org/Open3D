@@ -44,7 +44,9 @@ core::Tensor Get6x6CompressedLinearTensor(
         const int64_t *correspondences_first,
         const scalar_t *correspondences_second,
         const int n) {
-    utility::LogError(" Get6x6CompressedLinearTensor: Datatype not supported.");
+    utility::LogError(
+            " Get6x6CompressedLinearTensor: Supports only Float32 and "
+            "Float64.");
 }
 
 template <>
@@ -61,7 +63,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
     std::vector<float> A_1x29(29, 0.0);
 
 #ifdef _WIN32
-    std::vectorfloate > zeros_29(29, 0.0);
+    std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
@@ -69,7 +71,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                      workload_idx++) {
 #else
     float *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(auto)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     float J_ij[6];
@@ -143,7 +145,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
     std::vector<float> A_1x29(29, 0.0);
 
 #ifdef _WIN32
-    std::vectorfloate > zeros_29(29, 0.0);
+    std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
@@ -151,7 +153,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                      workload_idx++) {
 #else
     float *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(dynamic)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     double J_ij[6];
