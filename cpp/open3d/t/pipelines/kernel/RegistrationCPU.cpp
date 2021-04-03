@@ -172,13 +172,13 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return result;
             });
 
-    mean_s = core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
+    mean_s = core::Tensor::Empty({1, 3}, dtype, device);
     scalar_t *mean_s_ptr = mean_s.GetDataPtr<scalar_t>();
 
-    mean_t = core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
+    mean_t = core::Tensor::Empty({1, 3}, dtype, device);
     scalar_t *mean_t_ptr = mean_t.GetDataPtr<scalar_t>();
 
-    Sxy = core::Tensor::Empty({3, 3}, core::Dtype::Float32, device);
+    Sxy = core::Tensor::Empty({3, 3}, dtype, device);
     scalar_t *sxy_ptr = Sxy.GetDataPtr<scalar_t>();
 
     // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
@@ -236,7 +236,6 @@ void ComputeRtPointToPointCPU(
 
     R = U.Matmul(S.Matmul(VT));
     t = (mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1})).To(dtype);
-    R = R.To(dtype);
 }
 
 }  // namespace registration

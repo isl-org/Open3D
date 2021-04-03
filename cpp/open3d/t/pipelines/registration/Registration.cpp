@@ -44,8 +44,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
+    core::Dtype dtype = source.GetPoints().GetDtype();
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         utility::LogError(
@@ -71,9 +70,10 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    core::Tensor neighbour_indices, squared_distances;
     result.correspondence_set_ = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
+
+    core::Tensor neighbour_indices, squared_distances;
     neighbour_indices = result.correspondence_set_.first;
     squared_distances = result.correspondence_set_.second;
 
@@ -81,13 +81,12 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 
     // Only take valid distances.
     squared_distances = squared_distances.IndexGet({valid});
-
     // Number of good correspondences (C).
     int num_correspondences = squared_distances.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
-            static_cast<double>(squared_distances.Sum({0}).Item<float>());
+            squared_distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
     result.fitness_ = static_cast<double>(num_correspondences) /
                       static_cast<double>(source.GetPoints().GetLength());
     result.inlier_rmse_ =
@@ -102,8 +101,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         double max_correspondence_distance,
                                         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
+    core::Dtype dtype = source.GetPoints().GetDtype();
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         utility::LogError(
