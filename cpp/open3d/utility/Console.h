@@ -126,11 +126,6 @@ public:
                 "{}:{} [Open3D Error] {}",
                 fn_name, fname, linenum, err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
-        if (print_fcn_overwritten_) {
-            // In Jupyter, print_fcn_ is replaced by Pybind11's py::print() and
-            // prints the error message inside Jupyter cell.
-            Logger::print_fcn_(err_msg);
-        }
         throw std::runtime_error(err_msg);
     }
 
@@ -180,7 +175,6 @@ public:
     void OverwritePrintFunction(
             std::function<void(const std::string &)> print_fcn) {
         print_fcn_ = print_fcn;
-        print_fcn_overwritten_ = true;
     }
 
     void SetVerbosityLevel(VerbosityLevel verbosity_level) {
@@ -208,7 +202,6 @@ private:
     std::function<void(const std::string &)> print_fcn_;
     static std::function<void(const std::string &)> console_print_fcn_;
     VerbosityLevel verbosity_level_;
-    bool print_fcn_overwritten_ = false;
 };
 
 /// Set global verbosity level of Open3D
