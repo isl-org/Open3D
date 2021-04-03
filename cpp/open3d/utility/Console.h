@@ -68,8 +68,9 @@
 // __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
 // will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
-#define LogError(...) \
-    Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogError(...)                                                 \
+    Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, false, \
+                     __VA_ARGS__)
 #define LogErrorConsole LogError
 
 namespace open3d {
@@ -120,10 +121,12 @@ public:
     static void LogError [[noreturn]] (const char *file_name,
                                        int line_number,
                                        const char *function_name,
+                                       bool force_console_log,
                                        const char *format,
                                        Args &&... args) {
         Logger::GetInstance().VError(file_name, line_number, function_name,
-                                     format, fmt::make_format_args(args...));
+                                     force_console_log, format,
+                                     fmt::make_format_args(args...));
     }
 
 private:
@@ -131,9 +134,9 @@ private:
     void VError [[noreturn]] (const char *file_name,
                               int line_number,
                               const char *function_name,
+                              bool force_console_log,
                               const char *format,
-                              fmt::format_args args,
-                              bool force_console_log = false) const;
+                              fmt::format_args args) const;
 
 private:
     struct Impl;

@@ -103,9 +103,9 @@ Logger &Logger::GetInstance() {
 void Logger::VError [[noreturn]] (const char *file_name,
                                   int line_number,
                                   const char *function_name,
+                                  bool force_console_log,
                                   const char *format,
-                                  fmt::format_args args,
-                                  bool force_console_log) const {
+                                  fmt::format_args args) const {
     std::string err_msg = fmt::vformat(format, args);
     err_msg = fmt::format("[Open3D Error] {}:{} ({}): {}\n", file_name,
                           line_number, function_name, err_msg);
