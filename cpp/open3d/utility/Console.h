@@ -133,14 +133,10 @@ private:
 ///
 /// \param level Messages with equal or less than verbosity_level verbosity will
 /// be printed.
-inline void SetVerbosityLevel(VerbosityLevel level) {
-    Logger::GetInstance().SetVerbosityLevel(level);
-}
+void SetVerbosityLevel(VerbosityLevel level);
 
 /// Get global verbosity level of Open3D.
-inline VerbosityLevel GetVerbosityLevel() {
-    return Logger::GetInstance().GetVerbosityLevel();
-}
+VerbosityLevel GetVerbosityLevel();
 
 template <typename... Args>
 inline void _LogError [[noreturn]] (const char *file_name,

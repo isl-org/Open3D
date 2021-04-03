@@ -173,6 +173,14 @@ VerbosityLevel Logger::GetVerbosityLevel() const {
     return impl_->verbosity_level_;
 }
 
+void SetVerbosityLevel(VerbosityLevel level) {
+    Logger::GetInstance().SetVerbosityLevel(level);
+}
+
+VerbosityLevel GetVerbosityLevel() {
+    return Logger::GetInstance().GetVerbosityLevel();
+}
+
 std::string GetCurrentTimeStamp() {
     std::time_t t = std::time(nullptr);
     return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
