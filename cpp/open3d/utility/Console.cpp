@@ -70,9 +70,6 @@ struct Logger::Impl {
     // Verbosity level.
     VerbosityLevel verbosity_level_;
 
-    // True if print function had been overwritten.
-    bool print_fcn_overwritten_ = false;
-
     // Colorize and reset the color of a string, does not work on Windows,
     std::string ColorString(const std::string &text,
                             TextColor text_color,
@@ -117,11 +114,6 @@ void Logger::VError [[noreturn]] (const char *file_name,
     // Always print in console, void to avoid copmiler warning.
     (void)force_console_log;
 
-    if (impl_->print_fcn_overwritten_) {
-        // In Jupyter, print_fcn_ is replaced by Pybind11's py::print() and
-        // prints the error message inside Jupyter cell.
-        Logger::impl_->print_fcn_(err_msg);
-    }
     throw std::runtime_error(err_msg);
 }
 
@@ -171,7 +163,6 @@ void Logger::VDebug(const char *format,
 void Logger::OverwritePrintFunction(
         std::function<void(const std::string &)> print_fcn) {
     impl_->print_fcn_ = print_fcn;
-    impl_->print_fcn_overwritten_ = true;
 }
 
 void Logger::SetVerbosityLevel(VerbosityLevel verbosity_level) {
