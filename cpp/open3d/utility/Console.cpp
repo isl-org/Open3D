@@ -50,6 +50,9 @@ namespace open3d {
 
 namespace utility {
 
+std::function<void(const std::string &)> Logger::console_print_fcn_ =
+        [](const std::string &msg) { std::cout << msg << std::endl; };
+
 void Logger::ChangeConsoleColor(TextColor text_color,
                                 int highlight_text) const {
 #ifdef _WIN32
