@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+#include "open3d/Macro.h"
+
 #ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY 1
 #endif
@@ -93,7 +95,7 @@ enum class VerbosityLevel {
     Debug = 3,
 };
 
-class Logger {
+class OPEN3D_API Logger {
 public:
     enum class TextColor {
         Black = 0,
