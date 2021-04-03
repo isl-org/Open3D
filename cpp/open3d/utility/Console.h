@@ -101,12 +101,7 @@ public:
     Logger(Logger const &) = delete;
     void operator=(Logger const &) = delete;
     static Logger &GetInstance();
-    void VError [[noreturn]] (const char *file_name,
-                              int line_number,
-                              const char *function_name,
-                              const char *format,
-                              fmt::format_args args,
-                              bool force_console_log = false) const;
+
     void VWarning(const char *format,
                   fmt::format_args args,
                   bool force_console_log = false) const;
@@ -133,6 +128,12 @@ public:
 
 private:
     Logger();
+    void VError [[noreturn]] (const char *file_name,
+                              int line_number,
+                              const char *function_name,
+                              const char *format,
+                              fmt::format_args args,
+                              bool force_console_log = false) const;
 
 private:
     struct Impl;
