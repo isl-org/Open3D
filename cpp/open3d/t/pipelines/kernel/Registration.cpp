@@ -85,7 +85,6 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const std::pair<core::Tensor, core::Tensor> &corres,
-        double &residual,
         int64_t &count) {
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
@@ -105,8 +104,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         corres_contiguous.first = corres.first.Contiguous();
         corres_contiguous.second = corres.second.Contiguous();
         ComputeRtPointToPointCPU(source_points, target_points,
-                                 corres_contiguous, R, t, residual, count,
-                                 dtype, device);
+                                 corres_contiguous, R, t, count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         // TODO: Implement optimised CUDA reduction kernel.
@@ -119,11 +117,6 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         core::Tensor target_points_indexed =
                 target_points.IndexGet({neighbour_indices});
 
-        core::Tensor squared_error = (corres.second.IndexGet({valid}))
-                                             .Sum({0})
-                                             .To(core::Dtype::Float64);
-        // Only take valid distances.
-        residual = squared_error.Item<double>();
         // Number of good correspondences (C).
         count = source_points_indexed.GetLength();
 

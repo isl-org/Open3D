@@ -95,7 +95,6 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres,
-            double &residual,
             int64_t &count) const = 0;
 };
 
@@ -119,7 +118,6 @@ public:
     core::Tensor ComputeTransformation(const geometry::PointCloud &source,
                                        const geometry::PointCloud &target,
                                        const CorrespondenceSet &corres,
-                                       double &residual,
                                        int64_t &count) const override;
 
 private:
@@ -147,7 +145,6 @@ public:
     core::Tensor ComputeTransformation(const geometry::PointCloud &source,
                                        const geometry::PointCloud &target,
                                        const CorrespondenceSet &corres,
-                                       double &residual,
                                        int64_t &count) const override;
 
 private:

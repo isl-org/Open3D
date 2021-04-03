@@ -87,16 +87,15 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   core::Tensor &Sxy,
                                   core::Tensor &mean_t,
                                   core::Tensor &mean_s,
-                                  double &residual,
                                   int64_t &count) {
     // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
     // target points respectively.
-    std::vector<double> mean_1x8(8, 0.0);
+    std::vector<double> mean_1x7(7, 0.0);
     // Identity element for running_total reduction variable: zeros_6.
-    std::vector<double> zeros_8(8, 0.0);
+    std::vector<double> zeros_7(7, 0.0);
 
-    mean_1x8 = tbb::parallel_reduce(
-            tbb::blocked_range<int>(0, n), zeros_8,
+    mean_1x7 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_7,
             [&](tbb::blocked_range<int> r, std::vector<double> mean_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
@@ -114,24 +113,22 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                         mean_reduction[4] += target_points_ptr[target_idx + 1];
                         mean_reduction[5] += target_points_ptr[target_idx + 2];
 
-                        mean_reduction[6] +=
-                                correspondences_second[workload_idx];
-                        mean_reduction[7] += 1;
+                        mean_reduction[6] += 1;
                     }
                 }
                 return mean_reduction;
             },
             // TBB: Defining reduction operation.
             [&](std::vector<double> a, std::vector<double> b) {
-                std::vector<double> result(8);
-                for (int j = 0; j < 8; j++) {
+                std::vector<double> result(7);
+                for (int j = 0; j < 7; j++) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
 
     for (int i = 0; i < 6; i++) {
-        mean_1x8[i] = mean_1x8[i] / mean_1x8[7];
+        mean_1x7[i] = mean_1x7[i] / mean_1x7[6];
     }
 
     // Calculating the Sxy for SVD.
@@ -155,9 +152,9 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                     col;
                             sxy_1x9_reduction[i] +=
                                     (source_points_ptr[source_idx] -
-                                     mean_1x8[row]) *
+                                     mean_1x7[row]) *
                                     (target_points_ptr[target_idx] -
-                                     mean_1x8[3 + col]);
+                                     mean_1x7[3 + col]);
                         }
                     }
                 }
@@ -187,14 +184,13 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
     // t = mean_s - R.Matmul(mean_t.T()).Reshape({-1}).
     for (int i = 0, j = 0; j < 3; j++) {
         for (int k = 0; k < 3; k++) {
-            sxy_ptr[j * 3 + k] = sxy_1x9[i++] / mean_1x8[7];
+            sxy_ptr[j * 3 + k] = sxy_1x9[i++] / mean_1x7[6];
         }
-        mean_s_ptr[j] = mean_1x8[j];
-        mean_t_ptr[j] = mean_1x8[j + 3];
+        mean_s_ptr[j] = mean_1x7[j];
+        mean_t_ptr[j] = mean_1x7[j + 3];
     }
 
-    residual = mean_1x8[6];
-    count = static_cast<int64_t>(mean_1x8[7]);
+    count = static_cast<int64_t>(mean_1x7[6]);
 }
 
 void ComputeRtPointToPointCPU(
@@ -203,7 +199,6 @@ void ComputeRtPointToPointCPU(
         const std::pair<core::Tensor, core::Tensor> &corres,
         core::Tensor &R,
         core::Tensor &t,
-        double &residual,
         int64_t &count,
         const core::Dtype &dtype,
         const core::Device &device) {
@@ -223,8 +218,7 @@ void ComputeRtPointToPointCPU(
 
         Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
                               correspondences_first, correspondences_second, n,
-                              dtype, device, Sxy, mean_t, mean_s, residual,
-                              count);
+                              dtype, device, Sxy, mean_t, mean_s, count);
     });
 
     core::Tensor U, D, VT;

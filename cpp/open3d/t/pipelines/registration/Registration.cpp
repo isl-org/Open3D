@@ -174,15 +174,14 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
 
         // Get transformation, squared_error and number of correspondences
         // between source and target points, given the correspondence_set.
-        double squared_error = 0;
+        double squared_error = 
+            corres.second.Sum({0}).To(core::Dtype::Float64).Item<double>();
+
         int64_t num_correspondences = 0;
         core::Tensor update = estimation.ComputeTransformation(
-                source_transformed, target, corres, squared_error,
-                num_correspondences);
-
+                source_transformed, target, corres, num_correspondences);
         // Multiply the transform to the cumulative transformation (update).
         transformation_device = update.Matmul(transformation_device);
-
         // Apply the transform on source pointcloud.
         source_transformed.Transform(update);
 

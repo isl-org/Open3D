@@ -39,15 +39,15 @@ static const std::string source_pointcloud_filename =
 static const std::string target_pointcloud_filename =
         std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
 
-static const double voxel_downsampling_factor = 0.05;
+static const double voxel_downsampling_factor = 0.01;
 
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 2;
+static const int max_iterations = 10;
 
 // NNS parameter.
-static const double max_correspondence_distance = 0.15;
+static const double max_correspondence_distance = 0.03;
 
 // Initial transformation guess for registation.
 static const std::vector<double> initial_transform_flat{
@@ -59,54 +59,18 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-static std::tuple<geometry::PointCloud, geometry::PointCloud>
-LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
-                             const std::string& target_pointcloud_filename,
-                             const double voxel_downsample_factor,
-                             const core::Dtype& dtype,
-                             const core::Device& device) {
-    geometry::PointCloud source, target;
+static void BenchmarkRegistrationICP(benchmark::State& state,
+                                     const core::Device& device,
+                                     const TransformationEstimationType& type) {
+    geometry::PointCloud source(device), target(device);
 
     io::ReadPointCloud(source_pointcloud_filename, source,
                        {"auto", false, false, true});
     io::ReadPointCloud(target_pointcloud_filename, target,
                        {"auto", false, false, true});
 
-    geometry::PointCloud source_device(device), target_device(device);
-
-    core::Tensor source_points = source.GetPoints().To(device, dtype);
-    source_device.SetPoints(source_points);
-
-    core::Tensor target_points = target.GetPoints().To(device, dtype);
-    core::Tensor target_normals = target.GetPointNormals().To(device, dtype);
-    target_device.SetPoints(target_points);
-    target_device.SetPointNormals(target_normals);
-
-    // Eliminates the case of impractical values (including negative).
-    if (voxel_downsample_factor > 0.001) {
-        // TODO: Use geometry::PointCloud::VoxelDownSample.
-        source_device = source_device.VoxelDownSample(voxel_downsample_factor);
-        target_device = target_device.VoxelDownSample(voxel_downsample_factor);
-
-    } else {
-        utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
-                "downsampling.");
-    }
-
-    return std::make_tuple(source_device, target_device);
-}
-
-static void BenchmarkRegistrationICP(benchmark::State& state,
-                                     const core::Device& device,
-                                     const TransformationEstimationType& type) {
-    core::Dtype dtype = core::Dtype::Float32;
-
-    geometry::PointCloud source(device), target(device);
-
-    std::tie(source, target) = LoadTensorPointCloudFromFile(
-            source_pointcloud_filename, target_pointcloud_filename,
-            voxel_downsampling_factor, dtype, device);
+	source = source.To(device).VoxelDownSample(voxel_downsampling_factor);
+	target = target.To(device).VoxelDownSample(voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
@@ -117,6 +81,7 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
 
     core::Tensor init_trans = core::Tensor(initial_transform_flat, {4, 4},
                                            core::Dtype::Float64, device);
+    core::Dtype dtype = source.GetPoints().GetDtype();
     init_trans = init_trans.To(dtype);
 
     RegistrationResult reg_result(init_trans);
@@ -158,15 +123,15 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CUDA,
-                  core::Device("CUDA:0"),
-                  TransformationEstimationType::PointToPoint)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CUDA,
                   core::Device("CUDA:0"),
                   TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+		
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPoint / CUDA,
+                  core::Device("CUDA:0"),
+                  TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 #endif
 

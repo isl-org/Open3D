@@ -112,7 +112,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                         A_reduction[25] += J_ij[4] * r;
                         A_reduction[26] += J_ij[5] * r;
 
-                        A_reduction[27] += correspondences_second[workload_idx];
+                        A_reduction[27] += r;
                         A_reduction[28] += 1;
                     }
                 }
@@ -194,7 +194,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                         A_reduction[25] += J_ij[4] * r;
                         A_reduction[26] += J_ij[5] * r;
 
-                        A_reduction[27] += correspondences_second[workload_idx];
+                        A_reduction[27] += r;
                         A_reduction[28] += 1;
                     }
                 }

@@ -69,7 +69,6 @@ void ComputeRtPointToPointCPU(
         const std::pair<core::Tensor, core::Tensor> &corres,
         core::Tensor &R,
         core::Tensor &t,
-        double &residual,
         int64_t &count,
         const core::Dtype &dtype,
         const core::Device &device);

@@ -60,7 +60,6 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const std::pair<core::Tensor, core::Tensor> &correspondences,
-        double &residual,
         int64_t &count);
 
 }  // namespace registration

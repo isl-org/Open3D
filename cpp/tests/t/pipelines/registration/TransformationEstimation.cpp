@@ -158,11 +158,10 @@ TEST_P(TransformationEstimationPermuteDevices,
     t::pipelines::registration::TransformationEstimationPointToPoint
             estimation_p2p;
 
-    double squared_error;
     int64_t count;
     // Get transfrom.
     core::Tensor p2p_transform = estimation_p2p.ComputeTransformation(
-            source_device, target_device, corres, squared_error, count);
+            source_device, target_device, corres, count);
     // Apply transform.
     t::geometry::PointCloud source_transformed_p2p = source_device.Clone();
     source_transformed_p2p.Transform(p2p_transform.To(core::Dtype::Float32));
@@ -310,12 +309,11 @@ TEST_P(TransformationEstimationPermuteDevices,
              0.707667},
             device);
 
-    double squared_error;
     int64_t count;
     t::pipelines::registration::TransformationEstimationPointToPlane
             estimation_p2plane;
     core::Tensor p2plane_transform = estimation_p2plane.ComputeTransformation(
-            source_device, target_device, corres, squared_error, count);
+            source_device, target_device, corres, count);
 
     t::geometry::PointCloud source_transformed_p2plane = source_device.Clone();
 

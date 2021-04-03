@@ -43,51 +43,30 @@ static const std::string source_pointcloud_filename =
 static const std::string target_pointcloud_filename =
         TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
 
-static const double voxel_downsampling_factor = 0.05;
+static const double voxel_downsampling_factor = 0.01;
 
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 2;
+static const int max_iterations = 10;
 
 // NNS parameter.
-static const double max_correspondence_distance = 0.15;
+static const double max_correspondence_distance = 0.03;
 
 namespace open3d {
 namespace pipelines {
 namespace registration {
 
-static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
-        const std::string& source_filename,
-        const std::string& target_filename,
-        const double voxel_downsample_factor) {
-    geometry::PointCloud source;
-    geometry::PointCloud target;
-
-    io::ReadPointCloud(source_filename, source, {"auto", false, false, true});
-    io::ReadPointCloud(target_filename, target, {"auto", false, false, true});
-
-    // Eliminates the case of impractical values (including negative).
-    if (voxel_downsample_factor > 0.001) {
-        source = *source.VoxelDownSample(voxel_downsample_factor);
-        target = *target.VoxelDownSample(voxel_downsample_factor);
-    } else {
-        utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
-                "downsampling.");
-    }
-
-    return std::make_tuple(source, target);
-}
-
 static void BenchmarkRegistrationICPLegacy(
         benchmark::State& state, const TransformationEstimationType& type) {
     geometry::PointCloud source;
     geometry::PointCloud target;
+    
+    io::ReadPointCloud(source_pointcloud_filename, source, {"auto", false, false, true});
+    io::ReadPointCloud(target_pointcloud_filename, target, {"auto", false, false, true});
 
-    std::tie(source, target) = LoadPointCloud(source_pointcloud_filename,
-                                              target_pointcloud_filename,
-                                              voxel_downsampling_factor);
+	source = *source.VoxelDownSample(voxel_downsampling_factor);
+	target = *target.VoxelDownSample(voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
