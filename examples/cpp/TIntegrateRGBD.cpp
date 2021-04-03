@@ -185,10 +185,18 @@ int main(int argc, char** argv) {
             time_raycasting += ray_timer.GetDuration();
 
             if (i % 500 == 0) {
-                t::geometry::Image im(normal_map);
+                t::geometry::Image vertex(vertex_map);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                im.ToLegacyImage())});
+                                vertex.ToLegacyImage())});
+                t::geometry::Image normal(normal_map);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                normal.ToLegacyImage())});
+                t::geometry::Image color(color_map);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                color.ToLegacyImage())});
             }
         }
 

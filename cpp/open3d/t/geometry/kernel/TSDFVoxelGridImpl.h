@@ -436,6 +436,7 @@ void ExtractSurfacePointsCPU
                     }
                 });
             });
+    cudaDeviceSynchronize();
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
