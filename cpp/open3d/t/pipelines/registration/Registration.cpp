@@ -78,17 +78,12 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     squared_distances = result.correspondence_set_.second;
 
     core::Tensor valid = neighbour_indices.Ne(-1).Reshape({-1});
-    core::Tensor source_indices =
-            core::Tensor::Arange(0, source.GetPoints().GetShape()[0], 1,
-                                 core::Dtype::Int64, device)
-                    .IndexGet({valid});
-    // Only take valid indices.
-    neighbour_indices = neighbour_indices.IndexGet({valid}).Reshape({-1});
+
     // Only take valid distances.
     squared_distances = squared_distances.IndexGet({valid});
 
     // Number of good correspondences (C).
-    int num_correspondences = neighbour_indices.GetLength();
+    int num_correspondences = squared_distances.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -192,10 +187,8 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
         transformation_device = update.Matmul(transformation_device);
         // Apply the transform on source pointcloud.
         source_transformed.Transform(update);
-        prev_fitness_ = result.fitness_;
-        prev_inliner_rmse_ = result.inlier_rmse_;
-        result.transformation_ = transformation_device;
 
+        result.transformation_ = transformation_device;
         // Calculate fitness and inlier_rmse given the squared_error and number
         // of correspondences.
         result.fitness_ = static_cast<double>(num_correspondences) /
@@ -214,6 +207,9 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                     criteria.relative_rmse_) {
             break;
         }
+
+        prev_fitness_ = result.fitness_;
+        prev_inliner_rmse_ = result.inlier_rmse_;
     }
 
     return result;
