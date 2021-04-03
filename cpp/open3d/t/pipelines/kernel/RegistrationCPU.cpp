@@ -130,9 +130,8 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return result;
             });
 
-    double num_correspondences = mean_1x8[7];
     for (int i = 0; i < 6; i++) {
-        mean_1x8[i] = mean_1x8[i] / num_correspondences;
+        mean_1x8[i] = mean_1x8[i] / mean_1x8[7];
     }
 
     // Calculating the Sxy for SVD.
@@ -173,14 +172,14 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return result;
             });
 
-    mean_s = core::Tensor::Empty({1, 3}, core::Dtype::Float64, device);
-    double *mean_s_ptr = mean_s.GetDataPtr<double>();
+    mean_s = core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
+    scalar_t *mean_s_ptr = mean_s.GetDataPtr<scalar_t>();
 
-    mean_t = core::Tensor::Empty({1, 3}, core::Dtype::Float64, device);
-    double *mean_t_ptr = mean_t.GetDataPtr<double>();
+    mean_t = core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
+    scalar_t *mean_t_ptr = mean_t.GetDataPtr<scalar_t>();
 
-    Sxy = core::Tensor::Empty({3, 3}, core::Dtype::Float64, device);
-    double *sxy_ptr = Sxy.GetDataPtr<double>();
+    Sxy = core::Tensor::Empty({3, 3}, core::Dtype::Float32, device);
+    scalar_t *sxy_ptr = Sxy.GetDataPtr<scalar_t>();
 
     // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
     // reduction variables. The shapes of mean_s and mean_t are such, because it
@@ -188,7 +187,7 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
     // t = mean_s - R.Matmul(mean_t.T()).Reshape({-1}).
     for (int i = 0, j = 0; j < 3; j++) {
         for (int k = 0; k < 3; k++) {
-            sxy_ptr[j * 3 + k] = sxy_1x9[i++] / num_correspondences;
+            sxy_ptr[j * 3 + k] = sxy_1x9[i++] / mean_1x8[7];
         }
         mean_s_ptr[j] = mean_1x8[j];
         mean_t_ptr[j] = mean_1x8[j + 3];

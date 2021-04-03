@@ -48,7 +48,7 @@ static const double voxel_downsampling_factor = 0.05;
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 1;
+static const int max_iterations = 2;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.15;

@@ -218,9 +218,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
             1.30386,  1.55279, 0.634826, 1.04995,  2.47046, 1.40107, 1.37469,
             1.09687,  2.93002, 1.96242,  1.48532,  3.74384, 1.30258, 1.30244};
     core::Tensor source_points(src_points_vec, {14, 3}, dtype, device);
-    t::geometry::PointCloud source_device(device);
-    source_device.SetPoints(source_points);
-
+    
     std::vector<double> target_points_vec{
             2.41766, 2.05397, 1.74994, 1.37848, 2.19793, 1.66553, 2.24325,
             2.27183, 1.33708, 3.09898, 1.98482, 1.77401, 1.81615, 1.48337,
@@ -237,6 +235,10 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
             0.109144,   0.180992,  -0.762368, 0.273325,   0.292013,   -0.903111,
             0.385407,   -0.212348, -0.277818};
     core::Tensor target_normals(target_normals_vec, {11, 3}, dtype, device);
+
+    t::geometry::PointCloud source_device(device);
+    source_device.SetPoints(source_points);
+
     t::geometry::PointCloud target_device(device);
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);

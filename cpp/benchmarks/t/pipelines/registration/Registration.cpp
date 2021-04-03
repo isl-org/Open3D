@@ -44,7 +44,7 @@ static const double voxel_downsampling_factor = 0.05;
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 1;
+static const int max_iterations = 2;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.15;
@@ -100,7 +100,7 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
 static void BenchmarkRegistrationICP(benchmark::State& state,
                                      const core::Device& device,
                                      const TransformationEstimationType& type) {
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Dtype::Float32;
 
     geometry::PointCloud source(device), target(device);
 
@@ -115,8 +115,9 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
         estimation = std::make_shared<TransformationEstimationPointToPoint>();
     }
 
-    core::Tensor init_trans =
-            core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
+    core::Tensor init_trans = core::Tensor(initial_transform_flat, {4, 4},
+                                           core::Dtype::Float64, device);
+    init_trans = init_trans.To(dtype);
 
     RegistrationResult reg_result(init_trans);
     // Warm up.
@@ -149,14 +150,6 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CUDA,
-                  core::Device("CUDA:0"),
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CPU,
                   core::Device("CPU:0"),
@@ -168,6 +161,12 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CUDA,
                   core::Device("CUDA:0"),
                   TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPlane / CUDA,
+                  core::Device("CUDA:0"),
+                  TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
 
