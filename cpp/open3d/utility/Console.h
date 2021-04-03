@@ -69,7 +69,7 @@
 // will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
 #define LogError(...) \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+    Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 #define LogErrorConsole LogError
 
 namespace open3d {
@@ -117,11 +117,11 @@ public:
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
-    static void _LogError [[noreturn]] (const char *file_name,
-                                        int line_number,
-                                        const char *function_name,
-                                        const char *format,
-                                        Args &&... args) {
+    static void LogError [[noreturn]] (const char *file_name,
+                                       int line_number,
+                                       const char *function_name,
+                                       const char *format,
+                                       Args &&... args) {
         Logger::GetInstance().VError(file_name, line_number, function_name,
                                      format, fmt::make_format_args(args...));
     }
