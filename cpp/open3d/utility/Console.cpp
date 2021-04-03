@@ -107,7 +107,7 @@ void Logger::VError [[noreturn]] (const char *file_name,
                                   fmt::format_args args,
                                   bool force_console_log) const {
     std::string err_msg = fmt::vformat(format, args);
-    err_msg = fmt::format("[Open3D Error] {}:{} ({}): {}", file_name,
+    err_msg = fmt::format("[Open3D Error] {}:{} ({}): {}\n", file_name,
                           line_number, function_name, err_msg);
     err_msg = impl_->ColorString(err_msg, TextColor::Red, 1);
 
