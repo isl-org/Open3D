@@ -121,11 +121,16 @@ public:
                               int line_number,
                               const char *function_name,
                               const char *format,
-                              fmt::format_args args) const {
+                              fmt::format_args args,
+                              bool force_console_log = false) const {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D Error] ({}:{}): {}", function_name,
                               file_name, line_number, err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
+
+        // Always print in console, void to avoid copmiler warning.
+        (void)force_console_log;
+
         if (print_fcn_overwritten_) {
             // In Jupyter, print_fcn_ is replaced by Pybind11's py::print() and
             // prints the error message inside Jupyter cell.
