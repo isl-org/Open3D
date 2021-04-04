@@ -31,8 +31,6 @@
 #include <string>
 #include <vector>
 
-#include "open3d/Macro.h"
-
 #ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY 1
 #endif
