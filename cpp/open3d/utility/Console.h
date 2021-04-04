@@ -156,10 +156,25 @@ class Logger {
 public:
     Logger(Logger const &) = delete;
     void operator=(Logger const &) = delete;
+
+    /// Get Logger global singleton instance.
     static Logger &GetInstance();
 
+    /// Overwrite the default print function, this is useful when you want to
+    /// redirect prints rather than printing to stdout. For example, in Open3D's
+    /// python binding, the default print function is replaced with py::print().
+    ///
+    /// \param print_fcn The function for printing. It should take a string
+    /// input and returns nothing.
     void SetPrintFunction(std::function<void(const std::string &)> print_fcn);
+
+    /// Set global verbosity level of Open3D.
+    ///
+    /// \param level Messages with equal or less than verbosity_level verbosity
+    /// will be printed.
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
+
+    /// Get global verbosity level of Open3D.
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
