@@ -234,48 +234,15 @@ class ConsoleProgressBar {
 public:
     ConsoleProgressBar(size_t expected_count,
                        const std::string &progress_info,
-                       bool active = false) {
-        Reset(expected_count, progress_info, active);
-    }
+                       bool active = false);
 
     void Reset(size_t expected_count,
                const std::string &progress_info,
-               bool active) {
-        expected_count_ = expected_count;
-        current_count_ = static_cast<size_t>(-1);  // Guaranteed to wraparound
-        progress_info_ = progress_info;
-        progress_pixel_ = 0;
-        active_ = active;
-        operator++();
-    }
+               bool active);
 
-    ConsoleProgressBar &operator++() {
-        SetCurrentCount(current_count_ + 1);
-        return *this;
-    }
+    ConsoleProgressBar &operator++();
 
-    void SetCurrentCount(size_t n) {
-        current_count_ = n;
-        if (!active_) {
-            return;
-        }
-        if (current_count_ >= expected_count_) {
-            fmt::print("{}[{}] 100%\n", progress_info_,
-                       std::string(resolution_, '='));
-        } else {
-            size_t new_progress_pixel =
-                    int(current_count_ * resolution_ / expected_count_);
-            if (new_progress_pixel > progress_pixel_) {
-                progress_pixel_ = new_progress_pixel;
-                int percent = int(current_count_ * 100 / expected_count_);
-                fmt::print("{}[{}>{}] {:d}%\r", progress_info_,
-                           std::string(progress_pixel_, '='),
-                           std::string(resolution_ - 1 - progress_pixel_, ' '),
-                           percent);
-                fflush(stdout);
-            }
-        }
-    }
+    void SetCurrentCount(size_t n);
 
 private:
     const size_t resolution_ = 40;
