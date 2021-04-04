@@ -33,10 +33,8 @@
 // [Device]: CPU:0 / CUDA:0 ...
 // [Sample Config Path]: ../examples/test_data/ICP/TMultiScaleICPRegConfig.txt
 
-#include <algorithm>
 #include <fstream>
 #include <sstream>
-#include <string>
 
 #include "open3d/Open3D.h"
 
@@ -46,19 +44,18 @@ using namespace open3d::t::pipelines::registration;
 // ICP ConvergenceCriteria.
 double relative_fitness = 1e-6;
 double relative_rmse = 1e-6;
-int max_iterations = 10;
-
-std::string path_config_file;
-std::string path_source;
-std::string path_target;
-
-int dataset_length = 100;
-std::string registration_method;
+// This is overriden by the scale-wise iteration set in config file.
+int max_iterations = 30;
 
 // For each frame registration using MultiScaleICP.
 std::vector<int> iterations;
 std::vector<double> voxel_sizes;
 std::vector<double> search_radius;
+
+std::string path_config_file;
+std::string path_source;
+std::string path_target;
+std::string registration_method;
 
 // Initial transformation guess for registation.
 std::vector<double> initial_transform_flat = {
@@ -84,7 +81,6 @@ void ReadConfigFile() {
             auto name = line.substr(0, delimiterPos);
             auto value = line.substr(delimiterPos + 1);
 
-            // Custom coding
             if (name == "source_path") {
                 path_source = value;
             } else if (name == "target_path") {
@@ -133,7 +129,6 @@ void ReadConfigFile() {
     std::cout << std::endl;
 
     std::cout << " Press Enter To Continue... " << std::endl;
-
     std::getchar();
 }
 
@@ -178,16 +173,11 @@ int main(int argc, char *argv[]) {
 
     auto dtype = source.GetPoints().GetDtype();
 
-    std::shared_ptr<t::pipelines::registration::TransformationEstimation>
-            estimation;
+    std::shared_ptr<TransformationEstimation> estimation;
     if (registration_method == "PointToPoint") {
-        estimation = std::make_shared<
-                t::pipelines::registration::
-                        TransformationEstimationPointToPoint>();
+        estimation = std::make_shared<TransformationEstimationPointToPoint>();
     } else if (registration_method == "PointToPlane") {
-        estimation = std::make_shared<
-                t::pipelines::registration::
-                        TransformationEstimationPointToPlane>();
+        estimation = std::make_shared<TransformationEstimationPointToPlane>();
     } else {
         utility::LogError(" Registration method {}, not implemented.",
                           registration_method);
@@ -201,22 +191,23 @@ int main(int argc, char *argv[]) {
     auto warm_up_result = RegistrationICPMultiScale(
             source, target, iterations, voxel_sizes, search_radius,
             initial_transformation, *estimation,
-            open3d::t::pipelines::registration::ICPConvergenceCriteria(
-                    relative_fitness, relative_rmse, 1));
+            ICPConvergenceCriteria(relative_fitness, relative_rmse, 1));
 
     VisualizeRegistration(source, target, initial_transformation,
                           " Before Registration ");
+
     time_multiscaleICP.Start();
     auto result = RegistrationICPMultiScale(
             source, target, iterations, voxel_sizes, search_radius,
             initial_transformation, *estimation,
-            open3d::t::pipelines::registration::ICPConvergenceCriteria(
-                    relative_fitness, relative_rmse, 30));
+            ICPConvergenceCriteria(relative_fitness, relative_rmse, 30));
     time_multiscaleICP.Stop();
+
     utility::LogInfo(
             " Total Time: {}, Fitness: {}, RMSE: {}, \n Transformation: \n{}\n",
             time_multiscaleICP.GetDuration(), result.fitness_,
             result.inlier_rmse_, result.transformation_.ToString());
+
     VisualizeRegistration(source, target, result.transformation_,
                           " After Registration ");
 

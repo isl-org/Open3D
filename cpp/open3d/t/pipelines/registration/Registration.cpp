@@ -241,11 +241,12 @@ RegistrationResult RegistrationICPMultiScale(
                     squared_error / static_cast<double>(num_correspondences));
 
             utility::LogDebug(
-                    "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i + 1,
-                    result.fitness_, result.inlier_rmse_);
+                    "Scale Iteration: #{:d}, ICP Iteration #{:d}: Fitness "
+                    "{:.4f}, RMSE {:.4f}",
+                    i + 1, j + 1, result.fitness_, result.inlier_rmse_);
 
             // ICPConvergenceCriteria, to terminate iteration.
-            if (i != 0 &&
+            if (j != 0 &&
                 std::abs(prev_fitness_ - result.fitness_) <
                         criteria.relative_fitness_ &&
                 std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
