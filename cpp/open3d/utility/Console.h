@@ -54,11 +54,11 @@ Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
         const std::string &option,
         const Eigen::VectorXd default_value = Eigen::VectorXd::Zero(0));
 
-// bool ProgramOptionExists(int argc, char **argv, const std::string &option);
+bool ProgramOptionExists(int argc, char **argv, const std::string &option);
 
-// bool ProgramOptionExistsAny(int argc,
-//                             char **argv,
-//                             const std::vector<std::string> &options);
+bool ProgramOptionExistsAny(int argc,
+                            char **argv,
+                            const std::vector<std::string> &options);
 
 }  // namespace utility
 }  // namespace open3d

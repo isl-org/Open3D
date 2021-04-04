@@ -130,20 +130,20 @@ Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
     return vec;
 }
 
-// bool ProgramOptionExists(int argc, char **argv, const std::string &option) {
-//     return std::find(argv, argv + argc, option) != argv + argc;
-// }
+bool ProgramOptionExists(int argc, char **argv, const std::string &option) {
+    return std::find(argv, argv + argc, option) != argv + argc;
+}
 
-// bool ProgramOptionExistsAny(int argc,
-//                             char **argv,
-//                             const std::vector<std::string> &options) {
-//     for (const auto &option : options) {
-//         if (ProgramOptionExists(argc, argv, option)) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
+bool ProgramOptionExistsAny(int argc,
+                            char **argv,
+                            const std::vector<std::string> &options) {
+    for (const auto &option : options) {
+        if (ProgramOptionExists(argc, argv, option)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 }  // namespace utility
 }  // namespace open3d

@@ -302,11 +302,5 @@ private:
 
 std::string GetCurrentTimeStamp();
 
-bool ProgramOptionExists(int argc, char **argv, const std::string &option);
-
-bool ProgramOptionExistsAny(int argc,
-                            char **argv,
-                            const std::vector<std::string> &options);
-
 }  // namespace utility
 }  // namespace open3d
