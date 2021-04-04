@@ -1,0 +1,19 @@
+# This is a config file for the examples/cpp/TICPRegistration.cpp. 
+# When voxel_size is -1, no downsampling is performed.
+
+dataset_path = /home/rey/Datasets/kitti_normals/
+end_range = 100
+
+registration_method = PointToPlane
+
+iteration = 5
+voxel_size = 0.1
+search_radii = 0.3
+
+iteration = 3
+voxel_size = 0.05
+search_radii = 0.15
+
+iteration = 2
+voxel_size = 0.03
+search_radii = 0.06
