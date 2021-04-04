@@ -58,6 +58,7 @@ std::vector<double> search_radius;
 std::string path_config_file;
 std::string path_dataset;
 std::string registration_method;
+std::string verbosity;
 
 void PrintHelp() {
     PrintOpen3DVersion();
@@ -94,6 +95,9 @@ void ReadConfigFile() {
             } else if (name == "search_radii") {
                 std::istringstream is(value);
                 search_radius.push_back(std::stod(value));
+            } else if (name == "verbosity") {
+                std::istringstream is(value);
+                verbosity = value;
             }
         }
     } else {
@@ -182,15 +186,23 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
-
     auto device = core::Device(argv[1]);
     path_config_file = std::string(argv[2]);
     ReadConfigFile();
     std::vector<open3d::t::geometry::PointCloud> pointclouds_host;
     LoadPointCloudsCPU(pointclouds_host);
 
-    // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::VerbosityLevel verb;
+    if(verbosity == "Debug") {
+        verb = utility::VerbosityLevel::Debug;
+    } else if (verbosity == "Info") {
+        verb = utility::VerbosityLevel::Info;
+    } else if (verbosity == "Warning") {
+        verb = utility::VerbosityLevel::Warning;
+    } else {
+        verb = utility::VerbosityLevel::Error;
+    }
+    utility::SetVerbosityLevel(verb);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (registration_method == "PointToPoint") {
@@ -229,7 +241,7 @@ int main(int argc, char *argv[]) {
                                        max_iterations));
 
         cumulative_transform =
-                result.transformation_.Inverse().Matmul(cumulative_transform);
+                cumulative_transform.Matmul(result.transformation_.Inverse());
 
         time_icp_odom_loop.Stop();
         total_processing_time += time_icp_odom_loop.GetDuration();
@@ -242,7 +254,7 @@ int main(int argc, char *argv[]) {
         utility::LogDebug(" Registraion took: {}",
                           time_icp_odom_loop.GetDuration());
         utility::LogDebug(" Cumulative Transformation: \n{}\n",
-                          cumulative_transform.ToString());
+                         cumulative_transform.ToString());
     }
 
     utility::LogInfo(" Total Time: {}, \n Transformation: \n{}\n",

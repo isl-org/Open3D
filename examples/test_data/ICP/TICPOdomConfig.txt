@@ -2,18 +2,20 @@
 # When voxel_size is -1, no downsampling is performed.
 
 dataset_path = /home/rey/Datasets/kitti_normals/
-end_range = 100
+end_range = 1000
+
+verbosity = Info
 
 registration_method = PointToPlane
 
-iteration = 5
-voxel_size = 0.1
-search_radii = 0.3
+ iteration = 4
+ voxel_size = 0.5
+ search_radii = 1.5
 
-iteration = 3
-voxel_size = 0.05
-search_radii = 0.15
+ iteration = 3
+ voxel_size = 0.1
+ search_radii = 0.3
 
-iteration = 2
-voxel_size = 0.03
-search_radii = 0.06
+# iteration = 3
+# voxel_size = 0.03
+# search_radii = 0.06

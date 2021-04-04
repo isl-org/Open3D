@@ -236,7 +236,8 @@ RegistrationResult RegistrationICPMultiScale(
             // number of correspondences.
             result.fitness_ =
                     static_cast<double>(num_correspondences) /
-                    static_cast<double>(source.GetPoints().GetLength());
+                    static_cast<double>(
+                            source_down_pyramid[i].GetPoints().GetLength());
             result.inlier_rmse_ = std::sqrt(
                     squared_error / static_cast<double>(num_correspondences));
 
