@@ -235,10 +235,10 @@ public:
     ConsoleProgressBar(size_t expected_count,
                        const std::string &progress_info,
                        bool active = false) {
-        reset(expected_count, progress_info, active);
+        Reset(expected_count, progress_info, active);
     }
 
-    void reset(size_t expected_count,
+    void Reset(size_t expected_count,
                const std::string &progress_info,
                bool active) {
         expected_count_ = expected_count;
