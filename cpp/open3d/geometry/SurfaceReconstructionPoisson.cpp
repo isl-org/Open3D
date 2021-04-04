@@ -673,9 +673,9 @@ void Execute(const open3d::geometry::PointCloud& pcd,
             typename FEMTree<Dim, Real>::SolverInfo sInfo;
             sInfo.cgDepth = 0, sInfo.cascadic = true, sInfo.vCycles = 1,
             sInfo.iters = iters, sInfo.cgAccuracy = cg_solver_accuracy,
-            sInfo.verbose = utility::Logger::i().verbosity_level_ ==
+            sInfo.verbose = utility::GetVerbosityLevel() ==
                             utility::VerbosityLevel::Debug,
-            sInfo.showResidual = utility::Logger::i().verbosity_level_ ==
+            sInfo.showResidual = utility::GetVerbosityLevel() ==
                                  utility::VerbosityLevel::Debug,
             sInfo.showGlobalResidual = SHOW_GLOBAL_RESIDUAL_NONE,
             sInfo.sliceBlockSize = 1;
