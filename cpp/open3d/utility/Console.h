@@ -68,12 +68,30 @@
 // __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
 // will be triggered.
 // Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
-#define LogError(...)                                                 \
-    Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, false, \
+#define LogError(...)                                                  \
+    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, false, \
+                      __VA_ARGS__)
+#define LogErrorConsole(...)                                          \
+    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, true, \
+                      __VA_ARGS__)
+#define LogWarning(...)                                                  \
+    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, false, \
+                        __VA_ARGS__)
+#define LogWarningConsole(...)                                          \
+    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, true, \
+                        __VA_ARGS__)
+#define LogInfo(...)                                                  \
+    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, false, \
                      __VA_ARGS__)
-#define LogErrorConsole(...)                                         \
-    Logger::LogError(__FILE__, __LINE__, (const char *)__FN__, true, \
+#define LogInfoConsole(...)                                          \
+    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, true, \
                      __VA_ARGS__)
+#define LogDebug(...)                                                  \
+    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, false, \
+                      __VA_ARGS__)
+#define LogDebugConsole(...)                                          \
+    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, true, \
+                      __VA_ARGS__)
 
 namespace open3d {
 namespace utility {
@@ -105,28 +123,52 @@ public:
     void operator=(Logger const &) = delete;
     static Logger &GetInstance();
 
-    void VWarning(const char *format,
-                  fmt::format_args args,
-                  bool force_console_log = false) const;
-    void VInfo(const char *format,
-               fmt::format_args args,
-               bool force_console_log = false) const;
-    void VDebug(const char *format,
-                fmt::format_args args,
-                bool force_console_log = false) const;
     void OverwritePrintFunction(
             std::function<void(const std::string &)> print_fcn);
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
-    static void LogError [[noreturn]] (const char *file_name,
-                                       int line_number,
-                                       const char *function_name,
-                                       bool force_console_log,
-                                       const char *format,
-                                       Args &&... args) {
+    static void _LogError [[noreturn]] (const char *file_name,
+                                        int line_number,
+                                        const char *function_name,
+                                        bool force_console_log,
+                                        const char *format,
+                                        Args &&... args) {
         Logger::GetInstance().VError(file_name, line_number, function_name,
+                                     force_console_log, format,
+                                     fmt::make_format_args(args...));
+    }
+    template <typename... Args>
+    static void _LogWarning(const char *file_name,
+                            int line_number,
+                            const char *function_name,
+                            bool force_console_log,
+                            const char *format,
+                            Args &&... args) {
+        Logger::GetInstance().VWarning(file_name, line_number, function_name,
+                                       force_console_log, format,
+                                       fmt::make_format_args(args...));
+    }
+    template <typename... Args>
+    static void _LogInfo(const char *file_name,
+                         int line_number,
+                         const char *function_name,
+                         bool force_console_log,
+                         const char *format,
+                         Args &&... args) {
+        Logger::GetInstance().VInfo(file_name, line_number, function_name,
+                                    force_console_log, format,
+                                    fmt::make_format_args(args...));
+    }
+    template <typename... Args>
+    static void _LogDebug(const char *file_name,
+                          int line_number,
+                          const char *function_name,
+                          bool force_console_log,
+                          const char *format,
+                          Args &&... args) {
+        Logger::GetInstance().VDebug(file_name, line_number, function_name,
                                      force_console_log, format,
                                      fmt::make_format_args(args...));
     }
@@ -139,6 +181,24 @@ private:
                               bool force_console_log,
                               const char *format,
                               fmt::format_args args) const;
+    void VWarning(const char *file_name,
+                  int line_number,
+                  const char *function_name,
+                  bool force_console_log,
+                  const char *format,
+                  fmt::format_args args) const;
+    void VInfo(const char *file_name,
+               int line_number,
+               const char *function_name,
+               bool force_console_log,
+               const char *format,
+               fmt::format_args args) const;
+    void VDebug(const char *file_name,
+                int line_number,
+                const char *function_name,
+                bool force_console_log,
+                const char *format,
+                fmt::format_args args) const;
 
 private:
     struct Impl;
@@ -153,37 +213,6 @@ void SetVerbosityLevel(VerbosityLevel level);
 
 /// Get global verbosity level of Open3D.
 VerbosityLevel GetVerbosityLevel();
-
-template <typename... Args>
-inline void LogWarning(const char *format, const Args &... args) {
-    Logger::GetInstance().VWarning(format, fmt::make_format_args(args...));
-}
-
-template <typename... Args>
-inline void LogWarningConsole(const char *format, const Args &... args) {
-    Logger::GetInstance().VWarning(format, fmt::make_format_args(args...),
-                                   true);
-}
-
-template <typename... Args>
-inline void LogInfo(const char *format, const Args &... args) {
-    Logger::GetInstance().VInfo(format, fmt::make_format_args(args...));
-}
-
-template <typename... Args>
-inline void LogInfoConsole(const char *format, const Args &... args) {
-    Logger::GetInstance().VInfo(format, fmt::make_format_args(args...), true);
-}
-
-template <typename... Args>
-inline void LogDebug(const char *format, const Args &... args) {
-    Logger::GetInstance().VDebug(format, fmt::make_format_args(args...));
-}
-
-template <typename... Args>
-inline void LogDebugConsole(const char *format, const Args &... args) {
-    Logger::GetInstance().VDebug(format, fmt::make_format_args(args...), true);
-}
 
 class VerbosityContextManager {
 public:

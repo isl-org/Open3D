@@ -106,20 +106,25 @@ void Logger::VError [[noreturn]] (const char *file_name,
                                   bool force_console_log,
                                   const char *format,
                                   fmt::format_args args) const {
+    (void)force_console_log;
+
     std::string err_msg = fmt::vformat(format, args);
     err_msg = fmt::format("[Open3D Error] {}:{} ({}): {}\n", file_name,
                           line_number, function_name, err_msg);
     err_msg = impl_->ColorString(err_msg, TextColor::Red, 1);
 
-    // Always print in console, void to avoid copmiler warning.
-    (void)force_console_log;
-
     throw std::runtime_error(err_msg);
 }
 
-void Logger::VWarning(const char *format,
-                      fmt::format_args args,
-                      bool force_console_log) const {
+void Logger::VWarning(const char *file_name,
+                      int line_number,
+                      const char *function_name,
+                      bool force_console_log,
+                      const char *format,
+                      fmt::format_args args) const {
+    (void)file_name;
+    (void)line_number;
+    (void)function_name;
     if (impl_->verbosity_level_ >= VerbosityLevel::Warning) {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D WARNING] {}", err_msg);
@@ -132,9 +137,15 @@ void Logger::VWarning(const char *format,
     }
 }
 
-void Logger::VInfo(const char *format,
-                   fmt::format_args args,
-                   bool force_console_log) const {
+void Logger::VInfo(const char *file_name,
+                   int line_number,
+                   const char *function_name,
+                   bool force_console_log,
+                   const char *format,
+                   fmt::format_args args) const {
+    (void)file_name;
+    (void)line_number;
+    (void)function_name;
     if (impl_->verbosity_level_ >= VerbosityLevel::Info) {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D INFO] {}", err_msg);
@@ -146,9 +157,15 @@ void Logger::VInfo(const char *format,
     }
 }
 
-void Logger::VDebug(const char *format,
-                    fmt::format_args args,
-                    bool force_console_log) const {
+void Logger::VDebug(const char *file_name,
+                    int line_number,
+                    const char *function_name,
+                    bool force_console_log,
+                    const char *format,
+                    fmt::format_args args) const {
+    (void)file_name;
+    (void)line_number;
+    (void)function_name;
     if (impl_->verbosity_level_ >= VerbosityLevel::Debug) {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D DEBUG] {}", err_msg);
