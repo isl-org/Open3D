@@ -26,7 +26,7 @@
 
 #include "pybind/open3d_pybind.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/camera/camera.h"
 #include "pybind/core/core.h"
 #include "pybind/geometry/geometry.h"

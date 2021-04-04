@@ -30,7 +30,7 @@
 #include <string>
 
 #include "open3d/core/Dtype.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 #define DISPATCH_FLOAT32_FLOAT64_DTYPE(DTYPE, ...)          \
     [&] {                                                   \

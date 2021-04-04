@@ -26,7 +26,7 @@
 
 #include "open3d/visualization/gui/Events.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
