@@ -26,6 +26,12 @@
 
 #include "open3d/utility/Logging.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#include <fmt/chrono.h>
+
 #include <algorithm>
 #include <cerrno>
 #include <climits>
@@ -38,12 +44,7 @@
 #include <sstream>
 #include <string>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-#include <fmt/chrono.h>
-
+#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
