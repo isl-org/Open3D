@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Console.h"
-
+#include "open3d/utility/Logging.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

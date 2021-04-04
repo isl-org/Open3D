@@ -29,7 +29,7 @@
 #include <zmq.hpp>
 
 #include "open3d/io/rpc/Messages.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 using namespace open3d::utility;
 

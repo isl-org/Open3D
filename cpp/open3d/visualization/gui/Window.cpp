@@ -36,7 +36,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Dialog.h"

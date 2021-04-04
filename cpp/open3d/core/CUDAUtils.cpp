@@ -26,7 +26,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/CUDAState.cuh"
