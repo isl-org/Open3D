@@ -177,7 +177,7 @@ void Logger::VDebug(const char *file_name,
     }
 }
 
-void Logger::OverwritePrintFunction(
+void Logger::SetPrintFunction(
         std::function<void(const std::string &)> print_fcn) {
     impl_->print_fcn_ = print_fcn;
 }

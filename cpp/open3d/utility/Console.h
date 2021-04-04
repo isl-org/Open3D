@@ -123,8 +123,7 @@ public:
     void operator=(Logger const &) = delete;
     static Logger &GetInstance();
 
-    void OverwritePrintFunction(
-            std::function<void(const std::string &)> print_fcn);
+    void SetPrintFunction(std::function<void(const std::string &)> print_fcn);
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
     VerbosityLevel GetVerbosityLevel() const;
 
