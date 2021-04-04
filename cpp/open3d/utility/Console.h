@@ -218,12 +218,12 @@ class VerbosityContextManager {
 public:
     VerbosityContextManager(VerbosityLevel level) : level_(level) {}
 
-    void enter() {
+    void Enter() {
         level_backup_ = Logger::GetInstance().GetVerbosityLevel();
         Logger::GetInstance().SetVerbosityLevel(level_);
     }
 
-    void exit() { Logger::GetInstance().SetVerbosityLevel(level_backup_); }
+    void Exit() { Logger::GetInstance().SetVerbosityLevel(level_backup_); }
 
 private:
     VerbosityLevel level_;
