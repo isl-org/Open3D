@@ -167,22 +167,40 @@ RegistrationResult RegistrationICPMultiScale(
     init.AssertDtype(dtype);
     core::Tensor transformation_device = init.To(device);
 
-    geometry::PointCloud source_down = source.Clone();
-    geometry::PointCloud target_down = target.Clone();
+    std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
+    std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
+
+    source_down_pyramid[num_iterations - 1] =
+            source.Clone().VoxelDownSample(voxel_sizes[num_iterations - 1]);
+    target_down_pyramid[num_iterations - 1] =
+            target.Clone().VoxelDownSample(voxel_sizes[num_iterations - 1]);
+
+    for (int k = num_iterations - 2; k >= 0; k--) {
+        source_down_pyramid[k] =
+                source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+        target_down_pyramid[k] =
+                target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+    }
 
     RegistrationResult result(transformation_device);
-
     CorrespondenceSet corres;
 
     double prev_fitness_ = 0;
     double prev_inliner_rmse_ = 0;
 
     for (int64_t i = 0; i < num_iterations; i++) {
-        source_down = source_down.VoxelDownSample(voxel_sizes[i])
-                              .Transform(transformation_device);
-        target_down = target_down.VoxelDownSample(voxel_sizes[i]);
+        if (max_correspondence_distances[i] <= 0.0) {
+            utility::LogError(
+                    " Max correspondence distance must be greater than 0, but"
+                    " got {} in scale: {}.",
+                    max_correspondence_distances[i], i);
+        }
 
-        core::nns::NearestNeighborSearch target_nns(target_down.GetPoints());
+        source_down_pyramid[i].Transform(transformation_device);
+
+        core::nns::NearestNeighborSearch target_nns(
+                target_down_pyramid[i].GetPoints());
+
         bool check = target_nns.HybridIndex(max_correspondence_distances[i]);
         if (!check) {
             utility::LogError(
@@ -190,18 +208,11 @@ RegistrationResult RegistrationICPMultiScale(
                     "NearestNeighborSearch::HybridSearch] "
                     "Index is not set.");
         }
-        if (max_correspondence_distances[i] <= 0.0) {
-            utility::LogError(
-                    " Max correspondence distance must be greater than 0, but "
-                    "got "
-                    "{} in scale: {}.",
-                    max_correspondence_distances[i], i);
-        }
 
         for (int j = 0; j < iterations[i]; j++) {
             // Get correspondences.
             corres =
-                    target_nns.HybridSearch(source_down.GetPoints(),
+                    target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
                                             max_correspondence_distances[i], 1);
             result.correspondence_set_ = corres;
 
@@ -213,11 +224,12 @@ RegistrationResult RegistrationICPMultiScale(
 
             int64_t num_correspondences = 0;
             core::Tensor update = estimation.ComputeTransformation(
-                    source_down, target_down, corres, num_correspondences);
+                    source_down_pyramid[i], target_down_pyramid[i], corres,
+                    num_correspondences);
             // Multiply the transform to the cumulative transformation (update).
             transformation_device = update.Matmul(transformation_device);
             // Apply the transform on source pointcloud.
-            source_down = source_down.Transform(update);
+            source_down_pyramid[i].Transform(update);
 
             result.transformation_ = transformation_device;
             // Calculate fitness and inlier_rmse given the squared_error and
@@ -245,7 +257,6 @@ RegistrationResult RegistrationICPMultiScale(
             prev_inliner_rmse_ = result.inlier_rmse_;
         }
     }
-
     return result;
 }
 
