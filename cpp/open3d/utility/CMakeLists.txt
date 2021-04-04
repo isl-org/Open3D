@@ -5,8 +5,9 @@ set(ALL_SOURCE_FILES
     FileSystem.cpp
     Helper.cpp
     IJsonConvertible.cpp
+    Logging.cpp
     Timer.cpp
-    )
+)
 
 # create object library
 add_library(utility OBJECT ${ALL_SOURCE_FILES})

@@ -93,6 +93,7 @@
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/Timer.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"

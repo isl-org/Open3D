@@ -32,7 +32,7 @@
 #include <nanoflann.hpp>
 
 #include "open3d/core/CoreUtil.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {

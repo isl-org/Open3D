@@ -26,7 +26,7 @@
 
 #include "open3d/visualization/visualizer/ViewControl.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro
 // defined also in glfw3.h

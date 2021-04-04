@@ -31,7 +31,7 @@
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {

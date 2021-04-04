@@ -31,7 +31,7 @@
 #include <thread>
 
 #include "open3d/geometry/Image.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
 #include "open3d/visualization/gui/Window.h"

@@ -26,7 +26,7 @@
 
 #include "open3d/ml/contrib/IoU.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
