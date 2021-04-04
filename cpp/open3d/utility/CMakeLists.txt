@@ -1,6 +1,5 @@
 # build
 set(ALL_SOURCE_FILES
-    Console.cpp
     Eigen.cpp
     FileSystem.cpp
     Helper.cpp
