@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     LoadPointCloudsCPU(pointclouds_host);
 
     utility::VerbosityLevel verb;
-    if(verbosity == "Debug") {
+    if (verbosity == "Debug") {
         verb = utility::VerbosityLevel::Debug;
     } else if (verbosity == "Info") {
         verb = utility::VerbosityLevel::Info;
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
         utility::LogDebug(" Registraion took: {}",
                           time_icp_odom_loop.GetDuration());
         utility::LogDebug(" Cumulative Transformation: \n{}\n",
-                         cumulative_transform.ToString());
+                          cumulative_transform.ToString());
     }
 
     utility::LogInfo(" Total Time: {}, \n Transformation: \n{}\n",
