@@ -407,6 +407,27 @@ TextureHandle FilamentResourceManager::CreateTextureFilled(
     return handle;
 }
 
+bool FilamentResourceManager::UpdateTexture(
+        TextureHandle texture,
+        const std::shared_ptr<geometry::Image> image,
+        bool srgb) {
+    auto ftexture_weak = GetTexture(texture);
+    if (auto ftexture = ftexture_weak.lock()) {
+        if (ftexture->getWidth() == size_t(image->width_) &&
+            ftexture->getHeight() == size_t(image->height_)) {
+            auto retained_img_id = RetainImageForLoading(image);
+            auto texture_settings = GetSettingsFromImage(*image, srgb);
+            filament::Texture::PixelBufferDescriptor desc(
+                    image->data_.data(), image->data_.size(),
+                    texture_settings.image_format, texture_settings.image_type,
+                    FreeRetainedImage, (void*)retained_img_id);
+            ftexture->setImage(engine_, 0, std::move(desc));
+            return true;
+        }
+    }
+    return false;
+}
+
 TextureHandle FilamentResourceManager::CreateColorAttachmentTexture(
         int width, int height) {
     using namespace filament;
@@ -939,6 +960,7 @@ void FilamentResourceManager::LoadDefaults() {
                                 {1.0f, 1.0f, 1.0f});
     bg_mat->setDefaultParameter("albedo", texture, default_sampler);
     bg_mat->setDefaultParameter("aspectRatio", 0.0f);
+    bg_mat->setDefaultParameter("yOrigin", 0.0f);
     materials_[kDefaultUnlitBackgroundShader] = BoxResource(bg_mat, engine_);
 
     const auto inf_path = resource_root + "/infiniteGroundPlane.filamat";
