@@ -52,20 +52,21 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     int64_t x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-    if (__ISNAN(source_v[0])) {
+    if (ISNAN(source_v[0])) {
         return false;
     }
 
-    float T_source_on_target_v[3], u, v;
+    // Transform source points to the target camera's coordinate space.
+    float T_source_to_target_v[3], u, v;
     ti.RigidTransform(source_v[0], source_v[1], source_v[2],
-                      &T_source_on_target_v[0], &T_source_on_target_v[1],
-                      &T_source_on_target_v[2]);
-    ti.Project(T_source_on_target_v[0], T_source_on_target_v[1],
-               T_source_on_target_v[2], &u, &v);
+                      &T_source_to_target_v[0], &T_source_to_target_v[1],
+                      &T_source_to_target_v[2]);
+    ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
+               T_source_to_target_v[2], &u, &v);
     u = round(u);
     v = round(v);
 
-    if (T_source_on_target_v[2] < 0 ||
+    if (T_source_to_target_v[2] < 0 ||
         !target_vertex_indexer.InBoundary(u, v)) {
         return false;
     }
@@ -74,23 +75,23 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     int64_t vi = static_cast<int64_t>(v);
     float* target_v = target_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
     float* target_n = target_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    if (__ISNAN(target_v[0]) || __ISNAN(target_n[0])) {
+    if (ISNAN(target_v[0]) || ISNAN(target_n[0])) {
         return false;
     }
 
-    r = (T_source_on_target_v[0] - target_v[0]) * target_n[0] +
-        (T_source_on_target_v[1] - target_v[1]) * target_n[1] +
-        (T_source_on_target_v[2] - target_v[2]) * target_n[2];
+    r = (T_source_to_target_v[0] - target_v[0]) * target_n[0] +
+        (T_source_to_target_v[1] - target_v[1]) * target_n[1] +
+        (T_source_to_target_v[2] - target_v[2]) * target_n[2];
     if (abs(r) > depth_diff) {
         return false;
     }
 
-    J_ij[0] = -T_source_on_target_v[2] * target_n[1] +
-              T_source_on_target_v[1] * target_n[2];
-    J_ij[1] = T_source_on_target_v[2] * target_n[0] -
-              T_source_on_target_v[0] * target_n[2];
-    J_ij[2] = -T_source_on_target_v[1] * target_n[0] +
-              T_source_on_target_v[0] * target_n[1];
+    J_ij[0] = -T_source_to_target_v[2] * target_n[1] +
+              T_source_to_target_v[1] * target_n[2];
+    J_ij[1] = T_source_to_target_v[2] * target_n[0] -
+              T_source_to_target_v[0] * target_n[2];
+    J_ij[2] = -T_source_to_target_v[1] * target_n[0] +
+              T_source_to_target_v[0] * target_n[1];
     J_ij[3] = target_n[0];
     J_ij[4] = target_n[1];
     J_ij[5] = target_n[2];
@@ -118,32 +119,31 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
     int x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-    if (__ISNAN(source_v[0])) {
+    if (ISNAN(source_v[0])) {
         return false;
     }
 
-    // target on source: T_target_v
-    float T_source_on_target_v[3], u_tf, v_tf;
+    // Transform source points to the target camera's coordinate space.
+    float T_source_to_target_v[3], u_tf, v_tf;
     ti.RigidTransform(source_v[0], source_v[1], source_v[2],
-                      &T_source_on_target_v[0], &T_source_on_target_v[1],
-                      &T_source_on_target_v[2]);
-    ti.Project(T_source_on_target_v[0], T_source_on_target_v[1],
-               T_source_on_target_v[2], &u_tf, &v_tf);
+                      &T_source_to_target_v[0], &T_source_to_target_v[1],
+                      &T_source_to_target_v[2]);
+    ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
+               T_source_to_target_v[2], &u_tf, &v_tf);
     int u_t = int(round(u_tf));
     int v_t = int(round(v_tf));
 
-    if (T_source_on_target_v[2] < 0 ||
+    if (T_source_to_target_v[2] < 0 ||
         !target_depth_indexer.InBoundary(u_t, v_t)) {
         return false;
     }
 
-    const double fx = ti.fx_;
-    const double fy = ti.fy_;
+    float fx, fy;
+    ti.GetFocalLength(&fx, &fy);
 
-    // TODO: depth scale at the preprocessing stage
     float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
-    float diff_D = depth_t - T_source_on_target_v[2];
-    if (__ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+    float diff_D = depth_t - T_source_to_target_v[2];
+    if (ISNAN(depth_t) || abs(diff_D) > depth_diff) {
         return false;
     }
 
@@ -157,15 +157,15 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
             sobel_scale *
             (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
 
-    float invz = 1 / T_source_on_target_v[2];
+    float invz = 1 / T_source_to_target_v[2];
     float c0 = dIdx * fx * invz;
     float c1 = dIdy * fy * invz;
-    float c2 = -(c0 * T_source_on_target_v[0] + c1 * T_source_on_target_v[1]) *
+    float c2 = -(c0 * T_source_to_target_v[0] + c1 * T_source_to_target_v[1]) *
                invz;
 
-    J_I[0] = (-T_source_on_target_v[2] * c1 + T_source_on_target_v[1] * c2);
-    J_I[1] = (T_source_on_target_v[2] * c0 - T_source_on_target_v[0] * c2);
-    J_I[2] = (-T_source_on_target_v[1] * c0 + T_source_on_target_v[0] * c1);
+    J_I[0] = (-T_source_to_target_v[2] * c1 + T_source_to_target_v[1] * c2);
+    J_I[1] = (T_source_to_target_v[2] * c0 - T_source_to_target_v[0] * c2);
+    J_I[2] = (-T_source_to_target_v[1] * c0 + T_source_to_target_v[0] * c1);
     J_I[3] = (c0);
     J_I[4] = (c1);
     J_I[5] = (c2);
@@ -202,32 +202,31 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     int x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-    if (__ISNAN(source_v[0])) {
+    if (ISNAN(source_v[0])) {
         return false;
     }
 
-    // target on source: T_target_v
-    float T_source_on_target_v[3], u_tf, v_tf;
+    // Transform source points to the target camera coordinate space.
+    float T_source_to_target_v[3], u_tf, v_tf;
     ti.RigidTransform(source_v[0], source_v[1], source_v[2],
-                      &T_source_on_target_v[0], &T_source_on_target_v[1],
-                      &T_source_on_target_v[2]);
-    ti.Project(T_source_on_target_v[0], T_source_on_target_v[1],
-               T_source_on_target_v[2], &u_tf, &v_tf);
+                      &T_source_to_target_v[0], &T_source_to_target_v[1],
+                      &T_source_to_target_v[2]);
+    ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
+               T_source_to_target_v[2], &u_tf, &v_tf);
     int u_t = int(round(u_tf));
     int v_t = int(round(v_tf));
 
-    if (T_source_on_target_v[2] < 0 ||
+    if (T_source_to_target_v[2] < 0 ||
         !target_depth_indexer.InBoundary(u_t, v_t)) {
         return false;
     }
 
-    const double fx = ti.fx_;
-    const double fy = ti.fy_;
+    float fx, fy;
+    ti.GetFocalLength(&fx, &fy);
 
-    // TODO: depth scale at the preprocessing stage
     float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
-    float diff_D = depth_t - T_source_on_target_v[2];
-    if (__ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+    float diff_D = depth_t - T_source_to_target_v[2];
+    if (ISNAN(depth_t) || abs(diff_D) > depth_diff) {
         return false;
     }
 
@@ -237,7 +236,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     float dDdy =
             sobel_scale *
             (*target_depth_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    if (__ISNAN(dDdx) || __ISNAN(dDdy)) {
+    if (ISNAN(dDdx) || ISNAN(dDdy)) {
         return false;
     }
 
@@ -251,59 +250,39 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
             sobel_scale *
             (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
 
-    // printf("%ld: (%d %d %f) -> (%f %f %f) -> (%d %d) -> depth diff: %f,
-    // color
-    // "
-    //        "diff: %f\n",
-    //        workload_idx, x, y,
-    //        *target_depth_indexer.GetDataPtrFromCoord<float>(x, y),
-    //        target_v[0], target_v[1], target_v[2], u_t, v_t, depth_s -
-    //        T_source_on_target_v[2],
-    //        *source_intensity_indexer.GetDataPtrFromCoord<float>(u_t, v_t) -
-    //                *target_intensity_indexer.GetDataPtrFromCoord<float>(x,
-    //                y));
-
-    float invz = 1 / T_source_on_target_v[2];
+    float invz = 1 / T_source_to_target_v[2];
     float c0 = dIdx * fx * invz;
     float c1 = dIdy * fy * invz;
-    float c2 = -(c0 * T_source_on_target_v[0] + c1 * T_source_on_target_v[1]) *
+    float c2 = -(c0 * T_source_to_target_v[0] + c1 * T_source_to_target_v[1]) *
                invz;
     float d0 = dDdx * fx * invz;
     float d1 = dDdy * fy * invz;
-    float d2 = -(d0 * T_source_on_target_v[0] + d1 * T_source_on_target_v[1]) *
+    float d2 = -(d0 * T_source_to_target_v[0] + d1 * T_source_to_target_v[1]) *
                invz;
 
     J_I[0] = sqrt_lambda_intensity *
-             (-T_source_on_target_v[2] * c1 + T_source_on_target_v[1] * c2);
+             (-T_source_to_target_v[2] * c1 + T_source_to_target_v[1] * c2);
     J_I[1] = sqrt_lambda_intensity *
-             (T_source_on_target_v[2] * c0 - T_source_on_target_v[0] * c2);
+             (T_source_to_target_v[2] * c0 - T_source_to_target_v[0] * c2);
     J_I[2] = sqrt_lambda_intensity *
-             (-T_source_on_target_v[1] * c0 + T_source_on_target_v[0] * c1);
+             (-T_source_to_target_v[1] * c0 + T_source_to_target_v[0] * c1);
     J_I[3] = sqrt_lambda_intensity * (c0);
     J_I[4] = sqrt_lambda_intensity * (c1);
     J_I[5] = sqrt_lambda_intensity * (c2);
     r_I = sqrt_lambda_intensity * diff_I;
 
     J_D[0] = sqrt_lambda_depth *
-             ((-T_source_on_target_v[2] * d1 + T_source_on_target_v[1] * d2) -
-              T_source_on_target_v[1]);
+             ((-T_source_to_target_v[2] * d1 + T_source_to_target_v[1] * d2) -
+              T_source_to_target_v[1]);
     J_D[1] = sqrt_lambda_depth *
-             ((T_source_on_target_v[2] * d0 - T_source_on_target_v[0] * d2) +
-              T_source_on_target_v[0]);
+             ((T_source_to_target_v[2] * d0 - T_source_to_target_v[0] * d2) +
+              T_source_to_target_v[0]);
     J_D[2] = sqrt_lambda_depth *
-             ((-T_source_on_target_v[1] * d0 + T_source_on_target_v[0] * d1));
+             ((-T_source_to_target_v[1] * d0 + T_source_to_target_v[0] * d1));
     J_D[3] = sqrt_lambda_depth * (d0);
     J_D[4] = sqrt_lambda_depth * (d1);
     J_D[5] = sqrt_lambda_depth * (d2 - 1.0f);
 
-    // printf("D: (%d %d) -> (%f %f %f) -> (%d %d), (%f %f %f %f %f %f, %f,
-    // %f)
-    // "
-    //        "I: (%f %f %f %f %f %f)\n",
-    //        x, y, target_v[0], target_v[1], target_v[2], u_t, v_t,
-    //        J_D[0], J_D[1], J_D[2], J_D[3], J_D[4], J_D[5], dDdx, dDdy,
-    //        J_I[0], J_I[1], J_I[2],
-    //            J_I[3], J_I[4], J_I[5]);
     r_D = sqrt_lambda_depth * diff_D;
 
     return true;

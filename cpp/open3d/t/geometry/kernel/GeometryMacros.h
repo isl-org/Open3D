@@ -30,12 +30,12 @@
 
 #include "open3d/core/CUDAUtils.h"
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
-#define __ISNAN(X) isnan(X)
+#define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
-#define __ISNAN(X) std::isnan(X)
+#define ISNAN(X) std::isnan(X)
 #endif
 
 OPEN3D_HOST_DEVICE inline int sign(int x) {

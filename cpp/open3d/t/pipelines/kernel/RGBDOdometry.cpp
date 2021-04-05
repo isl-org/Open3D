@@ -34,6 +34,7 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
+// TODO (Wei): wrap up CUDA kernel calls in macros.
 void PreprocessDepth(const core::Tensor &depth,
                      core::Tensor &depth_filtered,
                      float depth_scale,

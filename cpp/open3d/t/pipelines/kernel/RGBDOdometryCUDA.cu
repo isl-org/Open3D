@@ -35,11 +35,8 @@
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
-#include "open3d/t/pipelines/kernel/RGBDOdometryJacobian.h"
+#include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
-
-#define WARPSIZE 32
-#define BLOCKSIZE 1024
 
 namespace open3d {
 namespace t {
@@ -89,7 +86,7 @@ void PyrDownDepthCUDA(const core::Tensor& depth,
 
     int rows_down = rows / 2;
     int cols_down = cols / 2;
-    depth_down = core::Tensor::Zeros({rows_down, cols_down},
+    depth_down = core::Tensor::Empty({rows_down, cols_down},
                                      core::Dtype::Float32, depth.GetDevice());
 
     t::geometry::kernel::NDArrayIndexer depth_down_indexer(depth_down, 2);
@@ -108,7 +105,7 @@ void PyrDownDepthCUDA(const core::Tensor& depth,
 
                 float center =
                         *depth_indexer.GetDataPtrFromCoord<float>(2 * x, 2 * y);
-                if (__ISNAN(center)) {
+                if (isnan(center)) {
                     *depth_down_indexer.GetDataPtrFromCoord<float>(x, y) = NAN;
                     return;
                 }
@@ -125,7 +122,7 @@ void PyrDownDepthCUDA(const core::Tensor& depth,
                     for (int xi = x_mi; xi < x_ma; ++xi) {
                         float val = *depth_indexer.GetDataPtrFromCoord<float>(
                                 2 * x + xi, 2 * y + yi);
-                        if (!__ISNAN(val) && abs(val - center) < depth_diff) {
+                        if (!isnan(val) && abs(val - center) < depth_diff) {
                             sum += val * weights[abs(xi)] * weights[abs(yi)];
                             sum_weight += weights[abs(xi)] * weights[abs(yi)];
                         }
@@ -147,7 +144,7 @@ void CreateVertexMapCUDA(const core::Tensor& depth_map,
     int64_t rows = depth_indexer.GetShape(0);
     int64_t cols = depth_indexer.GetShape(1);
 
-    vertex_map = core::Tensor::Zeros({rows, cols, 3}, core::Dtype::Float32,
+    vertex_map = core::Tensor::Empty({rows, cols, 3}, core::Dtype::Float32,
                                      depth_map.GetDevice());
     NDArrayIndexer vertex_indexer(vertex_map, 2);
 
@@ -160,7 +157,7 @@ void CreateVertexMapCUDA(const core::Tensor& depth_map,
                 float d = *depth_indexer.GetDataPtrFromCoord<float>(x, y);
 
                 float* vertex = vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-                if (!__ISNAN(d)) {
+                if (!isnan(d)) {
                     ti.Unproject(static_cast<float>(x), static_cast<float>(y),
                                  d, vertex + 0, vertex + 1, vertex + 2);
                 } else {
@@ -178,7 +175,7 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
     int64_t cols = vertex_indexer.GetShape(1);
 
     normal_map =
-            core::Tensor::Zeros(vertex_map.GetShape(), vertex_map.GetDtype(),
+            core::Tensor::Empty(vertex_map.GetShape(), vertex_map.GetDtype(),
                                 vertex_map.GetDevice());
     NDArrayIndexer normal_indexer(normal_map, 2);
 
@@ -188,6 +185,8 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
                 int64_t y = workload_idx / cols;
                 int64_t x = workload_idx % cols;
 
+                float* normal = normal_indexer.GetDataPtrFromCoord<float>(x, y);
+
                 if (y < rows - 1 && x < cols - 1) {
                     float* v00 =
                             vertex_indexer.GetDataPtrFromCoord<float>(x, y);
@@ -195,10 +194,8 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
                             vertex_indexer.GetDataPtrFromCoord<float>(x + 1, y);
                     float* v01 =
                             vertex_indexer.GetDataPtrFromCoord<float>(x, y + 1);
-                    float* normal =
-                            normal_indexer.GetDataPtrFromCoord<float>(x, y);
 
-                    if (__ISNAN(v00[0]) || __ISNAN(v10[0]) || __ISNAN(v01[0])) {
+                    if (isnan(v00[0]) || isnan(v10[0]) || isnan(v01[0])) {
                         normal[0] = NAN;
                         return;
                     }
@@ -221,6 +218,8 @@ void CreateNormalMapCUDA(const core::Tensor& vertex_map,
                     normal[0] /= normal_norm;
                     normal[1] /= normal_norm;
                     normal[2] /= normal_norm;
+                } else {
+                    normal[0] = NAN;
                 }
             });
 }

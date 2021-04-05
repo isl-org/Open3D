@@ -60,9 +60,9 @@ static void ComputePosePointToPlane(benchmark::State& state,
         return;
     }
 
-    float depth_scale = 1000.0;
-    float depth_diff = 0.07;
-    float depth_max = 3.0;
+    const float depth_scale = 1000.0;
+    const float depth_diff = 0.07;
+    const float depth_max = 3.0;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
@@ -119,9 +119,9 @@ static void RGBDOdometryMultiScale(
         return;
     }
 
-    float depth_scale = 1000.0;
-    float depth_max = 3.0;
-    float depth_diff = 0.07;
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
+    const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
@@ -179,6 +179,7 @@ BENCHMARK_CAPTURE(RGBDOdometryMultiScale,
                   t::pipelines::odometry::Method::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
+#ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(RGBDOdometryMultiScale,
                   Hybrid_CUDA,
                   core::Device("CUDA:0"),
@@ -194,7 +195,7 @@ BENCHMARK_CAPTURE(RGBDOdometryMultiScale,
                   core::Device("CUDA:0"),
                   t::pipelines::odometry::Method::PointToPlane)
         ->Unit(benchmark::kMillisecond);
-
+#endif
 }  // namespace odometry
 }  // namespace pipelines
 }  // namespace t

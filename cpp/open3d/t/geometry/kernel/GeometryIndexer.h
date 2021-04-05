@@ -107,7 +107,12 @@ public:
         *z_out = d_in;
     }
 
-public:
+    OPEN3D_HOST_DEVICE void GetFocalLength(float* fx, float* fy) const {
+        *fx = fx_;
+        *fy = fy_;
+    }
+
+private:
     float extrinsic_[3][4];
 
     float fx_;
