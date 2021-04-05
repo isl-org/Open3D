@@ -60,46 +60,45 @@ namespace pipelines {
 namespace registration {
 
 static std::tuple<geometry::PointCloud, geometry::PointCloud>
-LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
-                             const std::string& target_pointcloud_filename,
+LoadTensorPointCloudFromFile(const std::string& path_source,
+                             const std::string& path_target,
                              const double voxel_downsample_factor,
+                             const TransformationEstimationType& type,
                              const core::Dtype& dtype,
                              const core::Device& device) {
-    geometry::PointCloud source, target;
+    t::geometry::PointCloud source, target;
 
-    io::ReadPointCloud(source_pointcloud_filename, source,
-                       {"auto", false, false, true});
-    io::ReadPointCloud(target_pointcloud_filename, target,
-                       {"auto", false, false, true});
+    // t::io::ReadPointCloud copies the pointcloud to CPU.
+    t::io::ReadPointCloud(path_source, source, {"auto", false, false, true});
+    t::io::ReadPointCloud(path_target, target, {"auto", false, false, true});
 
-    // Eliminates the case of impractical values (including negative).
-    if (voxel_downsample_factor > 0.001) {
-        // TODO: Use geometry::PointCloud::VoxelDownSample.
-        open3d::geometry::PointCloud legacy_s = source.ToLegacyPointCloud();
-        open3d::geometry::PointCloud legacy_t = target.ToLegacyPointCloud();
+    source = source.To(device);
+    target = target.To(device);
 
-        legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
-        legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
-
-        source = geometry::PointCloud::FromLegacyPointCloud(legacy_s);
-        target = geometry::PointCloud::FromLegacyPointCloud(legacy_t);
-    } else {
-        utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
-                "downsampling.");
+    // Currently only Float32 pointcloud is supported.
+    for (std::string attr : {"points", "colors", "normals"}) {
+        if (source.HasPointAttr(attr)) {
+            source.SetPointAttr(attr, source.GetPointAttr(attr).To(dtype));
+        }
+    }
+    for (std::string attr : {"points", "colors", "normals"}) {
+        if (target.HasPointAttr(attr)) {
+            target.SetPointAttr(attr, target.GetPointAttr(attr).To(dtype));
+        }
     }
 
-    geometry::PointCloud source_device(device), target_device(device);
-
-    core::Tensor source_points = source.GetPoints().To(device, dtype);
-    source_device.SetPoints(source_points);
-
-    core::Tensor target_points = target.GetPoints().To(device, dtype);
-    core::Tensor target_normals = target.GetPointNormals().To(device, dtype);
-    target_device.SetPoints(target_points);
-    target_device.SetPointNormals(target_normals);
-
-    return std::make_tuple(source_device, target_device);
+    if (type == TransformationEstimationType::PointToPlane &&
+        !target.HasPointNormals()) {
+        auto target_legacy = target.ToLegacyPointCloud();
+        target_legacy.EstimateNormals(open3d::geometry::KDTreeSearchParamKNN(),
+                                      false);
+        core::Tensor target_normals =
+                t::geometry::PointCloud::FromLegacyPointCloud(target_legacy)
+                        .GetPointNormals()
+                        .To(device, dtype);
+        target.SetPointNormals(target_normals);
+    }
+    return std::make_tuple(source, target);
 }
 
 static void BenchmarkRegistrationICP(benchmark::State& state,
@@ -111,7 +110,7 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
 
     std::tie(source, target) = LoadTensorPointCloudFromFile(
             source_pointcloud_filename, target_pointcloud_filename,
-            voxel_downsampling_factor, dtype, device);
+            voxel_downsampling_factor, type, dtype, device);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {

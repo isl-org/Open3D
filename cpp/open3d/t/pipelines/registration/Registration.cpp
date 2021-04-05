@@ -124,62 +124,120 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                                    const core::Tensor &init,
                                    const TransformationEstimation &estimation,
                                    const ICPConvergenceCriteria &criteria) {
+    return RegistrationICPMultiScale(source, target, {-1}, {criteria},
+                                     {max_correspondence_distance}, init,
+                                     estimation);
+}
+
+RegistrationResult RegistrationICPMultiScale(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const std::vector<double> &voxel_sizes,
+        const std::vector<ICPConvergenceCriteria> &criterias,
+        const std::vector<double> &max_correspondence_distances,
+        const core::Tensor &init,
+        const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
+    core::Dtype dtype = source.GetPoints().GetDtype();
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-    init.AssertShape({4, 4});
-    init.AssertDtype(dtype);
-    core::Tensor transformation_device = init.To(device);
 
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-    geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation_device);
+    int64_t num_iterations = int64_t(criterias.size());
+    if (!(criterias.size() == voxel_sizes.size() &&
+          criterias.size() == max_correspondence_distances.size())) {
+        utility::LogError(
+                " [RegistrationICPMultiScale]: Size of ICPConvergenceCriteria,"
+                " voxel_size, max_correspondence_distances vectors must be "
+                "same.");
+    }
 
-    // TODO: Default constructor absent in RegistrationResult class.
-    RegistrationResult result(transformation_device);
-
-    result = GetRegistrationResultAndCorrespondences(
-            source_transformed, target, target_nns, max_correspondence_distance,
-            transformation_device);
-    CorrespondenceSet corres = result.correspondence_set_;
-
-    for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                          result.fitness_, result.inlier_rmse_);
-
-        // Get transformation between source and target points, given
-        // correspondences, and multiply it cumulative transformation (update).
-        core::Tensor update = estimation.ComputeTransformation(
-                source_transformed, target, corres);
-        transformation_device = update.Matmul(transformation_device);
-
-        // Apply the transform on source pointcloud.
-        source_transformed.Transform(update);
-        double prev_fitness_ = result.fitness_;
-        double prev_inliner_rmse_ = result.inlier_rmse_;
-
-        // Get new correspondences, which will be used to calculate
-        // updated transform in next iteration.
-        result = GetRegistrationResultAndCorrespondences(
-                source_transformed, target, target_nns,
-                max_correspondence_distance, transformation_device);
-        corres = result.correspondence_set_;
-
-        // ICPConvergenceCriteria, to terminate iteration.
-        if (std::abs(prev_fitness_ - result.fitness_) <
-                    criteria.relative_fitness_ &&
-            std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
-                    criteria.relative_rmse_) {
-            break;
+    for (int64_t i = 1; i < num_iterations; i++) {
+        if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
+            utility::LogError(
+                    " [MultiScaleICP] Voxel sizes must be in strictly "
+                    "decreasing "
+                    "order.");
+        }
+        if (max_correspondence_distances[i] <= 0.0) {
+            utility::LogError(
+                    " Max correspondence distance must be greater than 0, but"
+                    " got {} in scale: {}.",
+                    max_correspondence_distances[i], i);
         }
     }
 
+    init.AssertShape({4, 4});
+    init.AssertDtype(dtype);
+
+    core::Tensor transformation_device = init.To(device);
+
+    std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
+    std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
+
+    if (voxel_sizes[num_iterations - 1] == -1) {
+        source_down_pyramid[num_iterations - 1] = source.Clone();
+        target_down_pyramid[num_iterations - 1] = target;
+    } else {
+        source_down_pyramid[num_iterations - 1] =
+                source.Clone().VoxelDownSample(voxel_sizes[num_iterations - 1]);
+        target_down_pyramid[num_iterations - 1] =
+                target.Clone().VoxelDownSample(voxel_sizes[num_iterations - 1]);
+    }
+
+    for (int k = num_iterations - 2; k >= 0; k--) {
+        source_down_pyramid[k] =
+                source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+        target_down_pyramid[k] =
+                target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+    }
+
+    RegistrationResult result(transformation_device);
+
+    double prev_fitness_ = 0;
+    double prev_inliner_rmse_ = 0;
+
+    for (int64_t i = 0; i < num_iterations; i++) {
+        source_down_pyramid[i].Transform(transformation_device);
+
+        core::nns::NearestNeighborSearch target_nns(
+                target_down_pyramid[i].GetPoints());
+
+        for (int j = 0; j < criterias[i].max_iteration_; j++) {
+            result = GetRegistrationResultAndCorrespondences(
+                    source_down_pyramid[i], target_down_pyramid[i], target_nns,
+                    max_correspondence_distances[i], transformation_device);
+
+            core::Tensor update = estimation.ComputeTransformation(
+                    source_down_pyramid[i], target_down_pyramid[i],
+                    result.correspondence_set_);
+
+            // Multiply the transform to the cumulative transformation (update).
+            transformation_device = update.Matmul(transformation_device);
+            // Apply the transform on source pointcloud.
+            source_down_pyramid[i].Transform(update);
+
+            utility::LogDebug(
+                    "Scale Iteration: #{:d}, ICP Iteration #{:d}: Fitness "
+                    "{:.4f}, RMSE {:.4f}",
+                    i + 1, j + 1, result.fitness_, result.inlier_rmse_);
+
+            // ICPConvergenceCriteria, to terminate iteration.
+            if (j != 0 &&
+                std::abs(prev_fitness_ - result.fitness_) <
+                        criterias[i].relative_fitness_ &&
+                std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
+                        criterias[i].relative_rmse_) {
+                break;
+            }
+
+            prev_fitness_ = result.fitness_;
+            prev_inliner_rmse_ = result.inlier_rmse_;
+        }
+    }
     return result;
 }
 

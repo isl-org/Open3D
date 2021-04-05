@@ -132,10 +132,43 @@ RegistrationResult RegistrationICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const core::Tensor &init,
+        const core::Tensor &init = core::Tensor::Eye(4,
+                                                     core::Dtype::Float32,
+                                                     core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+
+/// \brief Functions for Multi-Scale ICP registration.
+/// It will run ICP on different voxel level, from coarse to dense.
+/// The vector of ICPConvergenceCriteria(relative fitness, relative rmse,
+/// max_iterations) contains the stoping condition for each voxel level.
+/// The length of voxel_sizes vector, criteria vector,
+/// max_correspondence_distances vector must be same, and voxel_sizes must
+/// contain positive values in strictly decreasing order [Lower the voxel size,
+/// higher is the resolution]. Only the last value of the voxel_sizes vector can
+/// be {-1}, as it allows to run on the original scale without downsampling.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param voxel_sizes Vector of voxel scales of type double.
+/// \param criteria Vector of ICPConvergenceCriteria objects for each scale.
+/// \param max_correspondence_distance Vector of maximum correspondence
+/// points-pair distances of type double, for each iteration. Must be of same
+/// length as voxel_sizes and criteria.
+/// \param init Initial transformation estimation.
+/// \param estimation Estimation method.
+RegistrationResult RegistrationICPMultiScale(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const std::vector<double> &voxel_sizes,
+        const std::vector<ICPConvergenceCriteria> &criteria,
+        const std::vector<double> &max_correspondence_distances,
+        const core::Tensor &init = core::Tensor::Eye(4,
+                                                     core::Dtype::Float32,
+                                                     core::Device("CPU:0")),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint());
 
 }  // namespace registration
 }  // namespace pipelines
