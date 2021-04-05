@@ -99,8 +99,9 @@ public:
 
     void SetWidth(int width) { width_ = width; }
 
-    Size CalcPreferredSize(const Theme &theme) const override {
-        auto frames = CalcFrames(theme);
+    Size CalcPreferredSize(const Theme &theme,
+                           const Constraints &constraints) const override {
+        auto frames = CalcFrames(theme, constraints);
         if (!frames.empty()) {
             // Add spacing on the bottom to look like the start of a new row
             return Size(width_,
@@ -111,7 +112,7 @@ public:
     }
 
     void Layout(const Theme &theme) override {
-        auto frames = CalcFrames(theme);
+        auto frames = CalcFrames(theme, Constraints());
         auto &children = GetChildren();
         for (size_t i = 0; i < children.size(); ++i) {
             children[i]->SetFrame(frames[i]);
@@ -124,14 +125,15 @@ private:
     int spacing_;
     int width_ = 10000;
 
-    std::vector<Rect> CalcFrames(const Theme &theme) const {
+    std::vector<Rect> CalcFrames(const Theme &theme,
+                                 const Widget::Constraints &constraints) const {
         auto &f = GetFrame();
         std::vector<Rect> frames;
         int x = f.x;
         int y = f.y;
         int lineHeight = 0;
         for (auto child : GetChildren()) {
-            auto pref = child->CalcPreferredSize(theme);
+            auto pref = child->CalcPreferredSize(theme, constraints);
             if (x > f.x && x + pref.width > f.x + width_) {
                 y = y + lineHeight + spacing_;
                 x = f.x;
@@ -161,9 +163,10 @@ public:
         needsLayout_ = true;
     }
 
-    Size CalcPreferredSize(const Theme &theme) const override {
+    Size CalcPreferredSize(const Theme &theme,
+                           const Constraints &constraints) const override {
         if (IsVisible()) {
-            return Super::CalcPreferredSize(theme);
+            return Super::CalcPreferredSize(theme, constraints);
         } else {
             return Size(0, 0);
         }
@@ -228,9 +231,10 @@ public:
     std::shared_ptr<Checkbox> GetCheckbox() { return checkbox_; }
     std::shared_ptr<Label> GetName() { return name_; }
 
-    Size CalcPreferredSize(const Theme &theme) const override {
-        auto check_pref = checkbox_->CalcPreferredSize(theme);
-        auto name_pref = name_->CalcPreferredSize(theme);
+    Size CalcPreferredSize(const Theme &theme,
+                           const Constraints &constraints) const override {
+        auto check_pref = checkbox_->CalcPreferredSize(theme, constraints);
+        auto name_pref = name_->CalcPreferredSize(theme, constraints);
         int w = check_pref.width + name_pref.width + GroupWidth(theme) +
                 TimeWidth(theme);
         return Size(w, std::max(check_pref.height, name_pref.height));
@@ -238,7 +242,8 @@ public:
 
     void Layout(const Theme &theme) override {
         auto &frame = GetFrame();
-        auto check_width = checkbox_->CalcPreferredSize(theme).width;
+        auto check_width =
+                checkbox_->CalcPreferredSize(theme, Constraints()).width;
         checkbox_->SetFrame(Rect(frame.x, frame.y, check_width, frame.height));
         auto group_width = GroupWidth(theme);
         auto time_width = TimeWidth(theme);

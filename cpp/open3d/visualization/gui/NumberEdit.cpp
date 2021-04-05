@@ -109,7 +109,8 @@ void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
 
-Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
+Size NumberEdit::CalcPreferredSize(const Theme& theme,
+                                   const Constraints& constraints) const {
     int num_min_digits =
             int(std::ceil(std::log10(std::abs(impl_->min_value_))));
     int num_max_digits =
@@ -134,8 +135,8 @@ Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
     return Size(width, height);
 }
 
-Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
-    auto &frame = GetFrame();
+Widget::DrawResult NumberEdit::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
     ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,

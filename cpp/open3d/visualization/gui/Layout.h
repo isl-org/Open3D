@@ -65,6 +65,7 @@ public:
 
     static void debug_PrintPreferredSizes(Layout1D* layout,
                                           const Theme& theme,
+                                          const Constraints& constraints,
                                           int depth = 0);
 
     /// Spacing is in pixels; see the comment in Margin(). 1em is typically
@@ -84,7 +85,8 @@ public:
     /// before a layout that will happen, such as before adding as a child).
     void SetMargins(const Margins& margins);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
 
     /// Adds a fixed number of pixels after the previously added widget.
@@ -99,7 +101,8 @@ public:
     class Fixed : public Widget {
     public:
         Fixed(int size, Dir dir);
-        Size CalcPreferredSize(const Theme& theme) const override;
+        Size CalcPreferredSize(const Theme& theme,
+                               const Constraints& constraints) const override;
 
     private:
         int size_;
@@ -107,7 +110,8 @@ public:
     };
 
     class Stretch : public Widget {
-        Size CalcPreferredSize(const Theme& theme) const override;
+        Size CalcPreferredSize(const Theme& theme,
+                               const Constraints& constraints) const override;
     };
 
 protected:
@@ -159,7 +163,8 @@ public:
     /// the window is shown.)
     void SetIsOpen(bool is_open);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
@@ -204,7 +209,8 @@ public:
     int GetPreferredWidth() const;
     void SetPreferredWidth(int w);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
 
 private:
