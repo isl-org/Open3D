@@ -140,27 +140,17 @@ RegistrationResult RegistrationICP(
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
-/// \brief Functions for ICP registration.
-///
-/// \param source The source point cloud.
-/// \param target The target point cloud.
-/// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance.
-/// \param init Initial transformation estimation.
-/// \param estimation Estimation method.
-/// \param criteria Convergence criteria.
 RegistrationResult RegistrationICPMultiScale(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const std::vector<int> &iterations,
         const std::vector<double> &voxel_sizes,
+        const std::vector<ICPConvergenceCriteria> &criteria,
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init = core::Tensor::Eye(4,
                                                      core::Dtype::Float64,
                                                      core::Device("CPU:0")),
         const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+                TransformationEstimationPointToPoint());
 
 }  // namespace registration
 }  // namespace pipelines

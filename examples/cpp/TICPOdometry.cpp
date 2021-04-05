@@ -44,21 +44,19 @@ using namespace open3d::t::pipelines::registration;
 int end_range = 100;
 bool visualize_output = false;
 
-// ICP ConvergenceCriteria.
-double relative_fitness = 1e-6;
-double relative_rmse = 1e-6;
-// This is overriden by the scale-wise iteration set in config file.
-int max_iterations = 30;
-
 // For each frame registration using MultiScaleICP.
-std::vector<int> iterations;
 std::vector<double> voxel_sizes;
 std::vector<double> search_radius;
+std::vector<ICPConvergenceCriteria> criterias;
 
 std::string path_config_file;
 std::string path_dataset;
 std::string registration_method;
 std::string verbosity;
+
+// Ground Truth value of odometry after (end_range - 1)th iteration.
+double gt_tx = 0;
+double gt_ty = 0;
 
 void PrintHelp() {
     PrintOpen3DVersion();
@@ -67,6 +65,10 @@ void PrintHelp() {
 }
 
 void ReadConfigFile() {
+    std::vector<double> relative_fitness;
+    std::vector<double> relative_rmse;
+    std::vector<int> max_iterations;
+
     std::ifstream cFile(path_config_file);
     if (cFile.is_open()) {
         std::string line;
@@ -86,9 +88,15 @@ void ReadConfigFile() {
                 end_range = std::stoi(value);
             } else if (name == "registration_method") {
                 registration_method = value;
-            } else if (name == "iteration") {
+            } else if (name == "criteria.relative_fitness") {
                 std::istringstream is(value);
-                iterations.push_back(std::stoi(value));
+                relative_fitness.push_back(std::stod(value));
+            } else if (name == "criteria.relative_rmse") {
+                std::istringstream is(value);
+                relative_rmse.push_back(std::stod(value));
+            } else if (name == "criteria.max_iterations") {
+                std::istringstream is(value);
+                max_iterations.push_back(std::stoi(value));
             } else if (name == "voxel_size") {
                 std::istringstream is(value);
                 voxel_sizes.push_back(std::stod(value));
@@ -98,6 +106,12 @@ void ReadConfigFile() {
             } else if (name == "verbosity") {
                 std::istringstream is(value);
                 verbosity = value;
+            } else if (name == "ground_truth_tx") {
+                std::istringstream is(value);
+                gt_tx = std::stod(value);
+            } else if (name == "ground_truth_ty") {
+                std::istringstream is(value);
+                gt_ty = std::stod(value);
             }
         }
     } else {
@@ -109,14 +123,8 @@ void ReadConfigFile() {
         utility::LogWarning(" Too large range. Memory might exceed.");
     }
     utility::LogInfo(" Range: 0 to {} pointcloud files in sequence.",
-                     end_range);
+                     end_range - 1);
     utility::LogInfo(" Registrtion method: {}", registration_method);
-    std::cout << std::endl;
-
-    std::cout << " Per frame registration: " << std::endl;
-
-    std::cout << " Iterations: ";
-    for (auto iteration : iterations) std::cout << iteration << " ";
     std::cout << std::endl;
 
     std::cout << " Voxel Sizes: ";
@@ -126,6 +134,31 @@ void ReadConfigFile() {
     std::cout << " Search Radius Sizes: ";
     for (auto search_radii : search_radius) std::cout << search_radii << " ";
     std::cout << std::endl;
+
+    std::cout << " ICPCriteria: " << std::endl;
+    std::cout << "   Max Iterations: ";
+    for (auto iteration : max_iterations) std::cout << iteration << " ";
+    std::cout << std::endl;
+    std::cout << "   Relative Fitness: ";
+    for (auto fitness : relative_fitness) std::cout << fitness << " ";
+    std::cout << std::endl;
+    std::cout << "   Relative RMSE: ";
+    for (auto rmse : relative_rmse) std::cout << rmse << " ";
+    std::cout << std::endl;
+
+    size_t length = voxel_sizes.size();
+    if (search_radius.size() != length || max_iterations.size() != length ||
+        relative_fitness.size() != length || relative_rmse.size() != length) {
+        utility::LogError(
+                " Length of vector: voxel_sizes, search_sizes, max_iterations, "
+                "relative_fitness, relative_rmse must be same.");
+    }
+
+    for (int i = 0; i < (int)length; i++) {
+        auto criteria = ICPConvergenceCriteria(
+                relative_fitness[i], relative_rmse[i], max_iterations[i]);
+        criterias.push_back(criteria);
+    }
 
     std::cout << " Press Enter To Continue... " << std::endl;
     std::getchar();
@@ -219,10 +252,12 @@ int main(int argc, char *argv[]) {
     // Getting dtype.
     auto dtype = pointcloud_warmup.GetPoints().GetDtype();
 
+    std::vector<ICPConvergenceCriteria> warm_up_criteria = {
+            ICPConvergenceCriteria(0.01, 0.01, 1)};
+
     auto warm_up_result = RegistrationICPMultiScale(
-            pointcloud_warmup, pointcloud_warmup, {5}, {0.05}, {0.1},
-            core::Tensor::Eye(4, dtype, device), *estimation,
-            ICPConvergenceCriteria(relative_fitness, relative_rmse, 1));
+            pointcloud_warmup, pointcloud_warmup, {0.05}, warm_up_criteria,
+            {0.1}, core::Tensor::Eye(4, dtype, device), *estimation);
 
     core::Tensor initial_transform = core::Tensor::Eye(4, dtype, device);
     core::Tensor cumulative_transform = initial_transform.Clone();
@@ -234,11 +269,9 @@ int main(int argc, char *argv[]) {
         auto source = pointclouds_host[i].To(device);
         auto target = pointclouds_host[i + 1].To(device);
 
-        auto result = RegistrationICPMultiScale(
-                source, target, iterations, voxel_sizes, search_radius,
-                initial_transform, *estimation,
-                ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                       max_iterations));
+        auto result = RegistrationICPMultiScale(source, target, voxel_sizes,
+                                                criterias, search_radius,
+                                                initial_transform, *estimation);
 
         cumulative_transform =
                 cumulative_transform.Matmul(result.transformation_.Inverse());
@@ -257,8 +290,27 @@ int main(int argc, char *argv[]) {
                           cumulative_transform.ToString());
     }
 
-    utility::LogInfo(" Total Time: {}, \n Transformation: \n{}\n",
-                     total_processing_time, cumulative_transform.ToString());
+    utility::LogInfo(" \n\n Transformation: \n{}\n",
+                     cumulative_transform.ToString());
+
+    if (gt_tx > 0.001 && gt_ty > 0.001) {
+        double tx = cumulative_transform[0][3].Item<double>();
+        double ty = cumulative_transform[1][3].Item<double>();
+        double drift_x = std::abs(tx - gt_tx);
+        double perct_drift_x = drift_x * 100 / gt_tx;
+        double drift_y = std::abs(ty - gt_ty);
+        double perct_error_y = drift_y * 100 / gt_ty;
+        double cumulative_rmse =
+                std::sqrt(drift_x * drift_x + drift_y + drift_y);
+        double error_perct = 100 * cumulative_rmse /
+                             std::sqrt(gt_tx * gt_tx + gt_ty * gt_ty);
+        utility::LogInfo(" Drift  x: {}%, y: {}%, RMSE: {}, Error %: {}%",
+                         perct_drift_x, perct_error_y, cumulative_rmse,
+                         error_perct);
+    }
+    double average_fps = 1000 * end_range / total_processing_time;
+    utility::LogInfo(" Total Time for {} frames: {}, Average FPS: {}.",
+                     end_range, total_processing_time, average_fps);
 
     return 0;
 }

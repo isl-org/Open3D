@@ -129,23 +129,23 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                                    const ICPConvergenceCriteria &criteria) {
     std::vector<int> iterations = {criteria.max_iteration_};
     std::vector<double> voxel_sizes = {-1};
+    std::vector<ICPConvergenceCriteria> criterias = {criteria};
     std::vector<double> max_correspondence_distances = {
             max_correspondence_distance};
 
-    return RegistrationICPMultiScale(source, target, iterations, voxel_sizes,
+    return RegistrationICPMultiScale(source, target, voxel_sizes, criterias,
                                      max_correspondence_distances, init,
-                                     estimation, criteria);
+                                     estimation);
 }
 
 RegistrationResult RegistrationICPMultiScale(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const std::vector<int> &iterations,
         const std::vector<double> &voxel_sizes,
+        const std::vector<ICPConvergenceCriteria> &criterias,
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init,
-        const TransformationEstimation &estimation,
-        const ICPConvergenceCriteria &criteria) {
+        const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = source.GetPoints().GetDtype();
     target.GetPoints().AssertDtype(dtype);
@@ -155,12 +155,13 @@ RegistrationResult RegistrationICPMultiScale(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    int64_t num_iterations = int64_t(iterations.size());
-    if (!(iterations.size() == voxel_sizes.size() &&
-          iterations.size() == max_correspondence_distances.size())) {
+    int64_t num_iterations = int64_t(criterias.size());
+    if (!(criterias.size() == voxel_sizes.size() &&
+          criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [RegistrationICPMultiScale]: Size of iterations, voxel_size, "
-                "max_correspondence_distances vectors must be same.");
+                " [RegistrationICPMultiScale]: Size of ICPConvergenceCriteria,"
+                " voxel_size, max_correspondence_distances vectors must be "
+                "same.");
     }
 
     init.AssertShape({4, 4});
@@ -209,7 +210,7 @@ RegistrationResult RegistrationICPMultiScale(
                     "Index is not set.");
         }
 
-        for (int j = 0; j < iterations[i]; j++) {
+        for (int j = 0; j < criterias[i].max_iteration_; j++) {
             // Get correspondences.
             corres =
                     target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
@@ -249,9 +250,9 @@ RegistrationResult RegistrationICPMultiScale(
             // ICPConvergenceCriteria, to terminate iteration.
             if (j != 0 &&
                 std::abs(prev_fitness_ - result.fitness_) <
-                        criteria.relative_fitness_ &&
+                        criterias[i].relative_fitness_ &&
                 std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
-                        criteria.relative_rmse_) {
+                        criterias[i].relative_rmse_) {
                 break;
             }
 

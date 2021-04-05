@@ -41,21 +41,16 @@
 using namespace open3d;
 using namespace open3d::t::pipelines::registration;
 
-// ICP ConvergenceCriteria.
-double relative_fitness = 1e-6;
-double relative_rmse = 1e-6;
-// This is overriden by the scale-wise iteration set in config file.
-int max_iterations = 30;
-
 // For each frame registration using MultiScaleICP.
-std::vector<int> iterations;
 std::vector<double> voxel_sizes;
 std::vector<double> search_radius;
+std::vector<ICPConvergenceCriteria> criterias;
 
 std::string path_config_file;
 std::string path_source;
 std::string path_target;
 std::string registration_method;
+std::string verbosity;
 
 // Initial transformation guess for registation.
 std::vector<double> initial_transform_flat = {
@@ -70,6 +65,10 @@ void PrintHelp() {
 
 void ReadConfigFile() {
     std::ifstream cFile(path_config_file);
+    std::vector<double> relative_fitness;
+    std::vector<double> relative_rmse;
+    std::vector<int> max_iterations;
+
     if (cFile.is_open()) {
         std::string line;
         while (getline(cFile, line)) {
@@ -87,15 +86,24 @@ void ReadConfigFile() {
                 path_target = value;
             } else if (name == "registration_method") {
                 registration_method = value;
-            } else if (name == "iteration") {
+            } else if (name == "criteria.relative_fitness") {
                 std::istringstream is(value);
-                iterations.push_back(std::stoi(value));
+                relative_fitness.push_back(std::stod(value));
+            } else if (name == "criteria.relative_rmse") {
+                std::istringstream is(value);
+                relative_rmse.push_back(std::stod(value));
+            } else if (name == "criteria.max_iterations") {
+                std::istringstream is(value);
+                max_iterations.push_back(std::stoi(value));
             } else if (name == "voxel_size") {
                 std::istringstream is(value);
                 voxel_sizes.push_back(std::stod(value));
             } else if (name == "search_radii") {
                 std::istringstream is(value);
                 search_radius.push_back(std::stod(value));
+            } else if (name == "verbosity") {
+                std::istringstream is(value);
+                verbosity = value;
             }
         }
     } else {
@@ -116,10 +124,6 @@ void ReadConfigFile() {
     }
     std::cout << std::endl;
 
-    std::cout << " Iterations: ";
-    for (auto iteration : iterations) std::cout << iteration << " ";
-    std::cout << std::endl;
-
     std::cout << " Voxel Sizes: ";
     for (auto voxel_size : voxel_sizes) std::cout << voxel_size << " ";
     std::cout << std::endl;
@@ -127,6 +131,31 @@ void ReadConfigFile() {
     std::cout << " Search Radius Sizes: ";
     for (auto search_radii : search_radius) std::cout << search_radii << " ";
     std::cout << std::endl;
+
+    std::cout << " ICPCriteria: " << std::endl;
+    std::cout << "   Max Iterations: ";
+    for (auto iteration : max_iterations) std::cout << iteration << " ";
+    std::cout << std::endl;
+    std::cout << "   Relative Fitness: ";
+    for (auto fitness : relative_fitness) std::cout << fitness << " ";
+    std::cout << std::endl;
+    std::cout << "   Relative RMSE: ";
+    for (auto rmse : relative_rmse) std::cout << rmse << " ";
+    std::cout << std::endl;
+
+    size_t length = voxel_sizes.size();
+    if (search_radius.size() != length || max_iterations.size() != length ||
+        relative_fitness.size() != length || relative_rmse.size() != length) {
+        utility::LogError(
+                " Length of vector: voxel_sizes, search_sizes, max_iterations, "
+                "relative_fitness, relative_rmse must be same.");
+    }
+
+    for (int i = 0; i < (int)length; i++) {
+        auto criteria = ICPConvergenceCriteria(
+                relative_fitness[i], relative_rmse[i], max_iterations[i]);
+        criterias.push_back(criteria);
+    }
 
     std::cout << " Press Enter To Continue... " << std::endl;
     std::getchar();
@@ -157,7 +186,6 @@ int main(int argc, char *argv[]) {
         PrintHelp();
         return 1;
     }
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto device = core::Device(argv[1]);
     path_config_file = std::string(argv[2]);
@@ -167,6 +195,18 @@ int main(int argc, char *argv[]) {
 
     t::io::ReadPointCloud(path_source, source, {"auto", false, false, true});
     t::io::ReadPointCloud(path_target, target, {"auto", false, false, true});
+
+    utility::VerbosityLevel verb;
+    if (verbosity == "Debug") {
+        verb = utility::VerbosityLevel::Debug;
+    } else if (verbosity == "Info") {
+        verb = utility::VerbosityLevel::Info;
+    } else if (verbosity == "Warning") {
+        verb = utility::VerbosityLevel::Warning;
+    } else {
+        verb = utility::VerbosityLevel::Error;
+    }
+    utility::SetVerbosityLevel(verb);
 
     source = source.To(device);
     target = target.To(device);
@@ -188,19 +228,19 @@ int main(int argc, char *argv[]) {
     utility::Timer time_multiscaleICP;
 
     // Warm Up.
+    std::vector<ICPConvergenceCriteria> warm_up_criteria = {
+            ICPConvergenceCriteria(0.01, 0.01, 1)};
     auto warm_up_result = RegistrationICPMultiScale(
-            source, target, iterations, voxel_sizes, search_radius,
-            initial_transformation, *estimation,
-            ICPConvergenceCriteria(relative_fitness, relative_rmse, 1));
+            source, target, {0.05}, warm_up_criteria, {0.1},
+            core::Tensor::Eye(4, dtype, device), *estimation);
 
     VisualizeRegistration(source, target, initial_transformation,
                           " Before Registration ");
 
     time_multiscaleICP.Start();
     auto result = RegistrationICPMultiScale(
-            source, target, iterations, voxel_sizes, search_radius,
-            initial_transformation, *estimation,
-            ICPConvergenceCriteria(relative_fitness, relative_rmse, 30));
+            source, target, voxel_sizes, criterias, search_radius,
+            initial_transformation, *estimation);
     time_multiscaleICP.Stop();
 
     utility::LogInfo(
