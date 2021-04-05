@@ -97,7 +97,7 @@ public:
 public:
     /// The estimated transformation matrix.
     core::Tensor transformation_;
-    CorrespondenceSet correspondence_set_;
+    core::Tensor correspondence_indices_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
     /// For ICP: the overlapping area (# of inlier correspondences / # of points

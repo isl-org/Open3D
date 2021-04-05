@@ -35,13 +35,12 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        double &residual,
-        int64_t &count) {
+core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
+                                     const core::Tensor &target_points,
+                                     const core::Tensor &target_normals,
+                                     const core::Tensor &corres,
+                                     double &residual,
+                                     int64_t &count) {
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
@@ -58,9 +57,7 @@ core::Tensor ComputePosePointToPlane(
     core::Tensor source_points_contiguous = source_points.Contiguous();
     core::Tensor target_points_contiguous = target_points.Contiguous();
     core::Tensor target_normals_contiguous = target_normals.Contiguous();
-    std::pair<core::Tensor, core::Tensor> corres_contiguous;
-    corres_contiguous.first = corres.first.Contiguous();
-    corres_contiguous.second = corres.second.Contiguous();
+    core::Tensor corres_contiguous = corres.Contiguous();
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
@@ -84,7 +81,7 @@ core::Tensor ComputePosePointToPlane(
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const std::pair<core::Tensor, core::Tensor> &corres,
+        const core::Tensor &corres,
         int64_t &count) {
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
@@ -100,20 +97,17 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         // Pointer to point cloud data - indexed according to correspondences.
         core::Tensor source_points_contiguous = source_points.Contiguous();
         core::Tensor target_points_contiguous = target_points.Contiguous();
-        std::pair<core::Tensor, core::Tensor> corres_contiguous;
-        corres_contiguous.first = corres.first.Contiguous();
-        corres_contiguous.second = corres.second.Contiguous();
+        core::Tensor corres_contiguous = corres.Contiguous();
         ComputeRtPointToPointCPU(source_points, target_points,
                                  corres_contiguous, R, t, count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         // TODO: Implement optimised CUDA reduction kernel.
         // Only take valid indices.
-        core::Tensor valid = corres.first.Ne(-1).Reshape({-1});
-        core::Tensor neighbour_indices =
-                corres.first.IndexGet({valid}).Reshape({-1});
-        core::Tensor source_points_indexed = source_points.IndexGet({valid});
+        core::Tensor valid = corres.Ne(-1).Reshape({-1});
+        core::Tensor neighbour_indices = corres.IndexGet({valid}).Reshape({-1});
 
+        core::Tensor source_points_indexed = source_points.IndexGet({valid});
         core::Tensor target_points_indexed =
                 target_points.IndexGet({neighbour_indices});
 

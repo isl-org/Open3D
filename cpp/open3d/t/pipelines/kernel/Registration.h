@@ -35,31 +35,28 @@ namespace kernel {
 namespace registration {
 
 /// \brief Computes pose for point to plane registration method.
-/// \param source_points source points indexed according to correspondences.
-/// \param target_points target points indexed according to correspondences.
-/// \param target_normals target normals indexed according to correspondences.
-/// \param correspondences CorrespondenceSet. [refer to definition in
-/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
+/// \param source_points source points indexed according.
+/// \param target_points target points indexed according.
+/// \param target_normals target normals indexed according.
+/// \param correspondence_indices
 /// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype Float32.
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &correspondences,
-        double &residual,
-        int64_t &count);
+core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
+                                     const core::Tensor &target_points,
+                                     const core::Tensor &target_normals,
+                                     const core::Tensor &correspondence_indices,
+                                     double &residual,
+                                     int64_t &count);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.
-/// \param source_points source points indexed according to correspondences.
-/// \param target_points target points indexed according to correspondences.
-/// \param correspondences CorrespondenceSet. [refer to definition in
-/// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
+/// \param source_points source points.
+/// \param target_points target points.
+/// \param correspondence_indices
 /// \return tuple of (R, t). [Dtype: Float32].
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const std::pair<core::Tensor, core::Tensor> &correspondences,
+        const core::Tensor &correspondence_indices,
         int64_t &count);
 
 }  // namespace registration

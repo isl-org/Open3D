@@ -70,20 +70,17 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 "Index is not set.");
     }
 
-    result.correspondence_set_ = target_nns.HybridSearch(
+    core::Tensor neighbour_indices, squared_distances;
+    std::tie(neighbour_indices, squared_distances) = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
 
-    core::Tensor neighbour_indices, squared_distances;
-    neighbour_indices = result.correspondence_set_.first;
-    squared_distances = result.correspondence_set_.second;
+    result.correspondence_indices_ = neighbour_indices;
 
     core::Tensor valid = neighbour_indices.Ne(-1).Reshape({-1});
-
     // Only take valid distances.
     squared_distances = squared_distances.IndexGet({valid});
     // Number of good correspondences (C).
     int num_correspondences = squared_distances.GetLength();
-
     // Reduction sum of "distances" for error.
     double squared_error =
             squared_distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
@@ -184,7 +181,7 @@ RegistrationResult RegistrationICPMultiScale(
     }
 
     RegistrationResult result(transformation_device);
-    CorrespondenceSet corres;
+    core::Tensor corres;
 
     double prev_fitness_ = 0;
     double prev_inliner_rmse_ = 0;
@@ -212,14 +209,15 @@ RegistrationResult RegistrationICPMultiScale(
 
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
             // Get correspondences.
-            corres =
+            core::Tensor squared_distances;
+            std::tie(corres, squared_distances) =
                     target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
                                             max_correspondence_distances[i], 1);
-            result.correspondence_set_ = corres;
+            result.correspondence_indices_ = corres;
 
             // Get transformation, squared_error and number of correspondences
             // between source and target points, given the correspondence_set.
-            double squared_error = corres.second.Sum({0})
+            double squared_error = squared_distances.Sum({0})
                                            .To(core::Dtype::Float64)
                                            .Item<double>();
 

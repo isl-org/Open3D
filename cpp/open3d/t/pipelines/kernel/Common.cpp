@@ -37,13 +37,11 @@ namespace pipelines {
 namespace kernel {
 
 template <typename scalar_t>
-core::Tensor Get6x6CompressedLinearTensor(
-        const scalar_t *source_points_ptr,
-        const scalar_t *target_points_ptr,
-        const scalar_t *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const scalar_t *correspondences_second,
-        const int n) {
+core::Tensor Get6x6CompressedLinearTensor(const scalar_t *source_points_ptr,
+                                          const scalar_t *target_points_ptr,
+                                          const scalar_t *target_normals_ptr,
+                                          const int64_t *correspondence_indices,
+                                          const int n) {
     utility::LogError(
             " Get6x6CompressedLinearTensor: Supports only Float32 and "
             "Float64.");
@@ -54,8 +52,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
         const float *source_points_ptr,
         const float *target_points_ptr,
         const float *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const float *correspondences_second,
+        const int64_t *correspondence_indices,
         const int n) {
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
@@ -80,7 +77,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                     bool valid = kernel::registration::GetJacobianPointToPlane<
                             float>(workload_idx, source_points_ptr,
                                    target_points_ptr, target_normals_ptr,
-                                   correspondences_first, J_ij, r);
+                                   correspondence_indices, J_ij, r);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * J_ij[0];
@@ -136,8 +133,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
         const double *source_points_ptr,
         const double *target_points_ptr,
         const double *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const double *correspondences_second,
+        const int64_t *correspondence_indices,
         const int n) {
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
@@ -162,7 +158,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                     bool valid = kernel::registration::GetJacobianPointToPlane<
                             double>(workload_idx, source_points_ptr,
                                     target_points_ptr, target_normals_ptr,
-                                    correspondences_first, J_ij, r);
+                                    correspondence_indices, J_ij, r);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * J_ij[0];

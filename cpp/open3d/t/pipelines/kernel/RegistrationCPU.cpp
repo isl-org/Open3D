@@ -42,16 +42,15 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-void ComputePosePointToPlaneCPU(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &pose,
-        double &residual,
-        int64_t &count,
-        const core::Dtype &dtype,
-        const core::Device &device) {
+void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
+                                const core::Tensor &target_points,
+                                const core::Tensor &target_normals,
+                                const core::Tensor &corres,
+                                core::Tensor &pose,
+                                double &residual,
+                                int64_t &count,
+                                const core::Dtype &dtype,
+                                const core::Device &device) {
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         const scalar_t *source_points_ptr =
                 source_points.GetDataPtr<scalar_t>();
@@ -59,18 +58,14 @@ void ComputePosePointToPlaneCPU(
                 target_points.GetDataPtr<scalar_t>();
         const scalar_t *target_normals_ptr =
                 target_normals.GetDataPtr<scalar_t>();
-        const int64_t *correspondences_first =
-                corres.first.GetDataPtr<int64_t>();
-        const scalar_t *correspondences_second =
-                corres.second.GetDataPtr<scalar_t>();
+        const int64_t *correspondence_indices = corres.GetDataPtr<int64_t>();
 
-        int n = corres.first.GetLength();
+        int n = corres.GetLength();
 
         core::Tensor A_reduction =
                 kernel::Get6x6CompressedLinearTensor<scalar_t>(
                         source_points_ptr, target_points_ptr,
-                        target_normals_ptr, correspondences_first,
-                        correspondences_second, n);
+                        target_normals_ptr, correspondence_indices, n);
 
         DecodeAndSolve6x6(A_reduction, pose, residual, count);
     });
@@ -79,8 +74,7 @@ void ComputePosePointToPlaneCPU(
 template <typename scalar_t>
 static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   const scalar_t *target_points_ptr,
-                                  const int64_t *correspondences_first,
-                                  const scalar_t *correspondences_second,
+                                  const int64_t *correspondence_indices,
                                   const int &n,
                                   const core::Dtype &dtype,
                                   const core::Device &device,
@@ -99,9 +93,9 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
             [&](tbb::blocked_range<int> r, std::vector<double> mean_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-                    if (correspondences_first[workload_idx] != -1) {
+                    if (correspondence_indices[workload_idx] != -1) {
                         int64_t target_idx =
-                                3 * correspondences_first[workload_idx];
+                                3 * correspondence_indices[workload_idx];
                         mean_reduction[0] +=
                                 source_points_ptr[3 * workload_idx];
                         mean_reduction[1] +=
@@ -142,13 +136,13 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 std::vector<double> sxy_1x9_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-                    if (correspondences_first[workload_idx] != -1) {
+                    if (correspondence_indices[workload_idx] != -1) {
                         for (int i = 0; i < 9; i++) {
                             const int row = i % 3;
                             const int col = i / 3;
                             const int source_idx = 3 * workload_idx + row;
                             const int target_idx =
-                                    3 * correspondences_first[workload_idx] +
+                                    3 * correspondence_indices[workload_idx] +
                                     col;
                             sxy_1x9_reduction[i] +=
                                     (source_points_ptr[source_idx] -
@@ -193,15 +187,14 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
     count = static_cast<int64_t>(mean_1x7[6]);
 }
 
-void ComputeRtPointToPointCPU(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &R,
-        core::Tensor &t,
-        int64_t &count,
-        const core::Dtype &dtype,
-        const core::Device &device) {
+void ComputeRtPointToPointCPU(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &corres,
+                              core::Tensor &R,
+                              core::Tensor &t,
+                              int64_t &count,
+                              const core::Dtype &dtype,
+                              const core::Device &device) {
     core::Tensor Sxy, mean_t, mean_s;
 
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
@@ -209,16 +202,13 @@ void ComputeRtPointToPointCPU(
                 source_points.GetDataPtr<scalar_t>();
         const scalar_t *target_points_ptr =
                 target_points.GetDataPtr<scalar_t>();
-        const int64_t *correspondences_first =
-                corres.first.GetDataPtr<int64_t>();
-        const scalar_t *correspondences_second =
-                corres.second.GetDataPtr<scalar_t>();
+        const int64_t *correspondence_indices = corres.GetDataPtr<int64_t>();
 
         int n = source_points.GetLength();
 
         Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
-                              correspondences_first, correspondences_second, n,
-                              dtype, device, Sxy, mean_t, mean_s, count);
+                              correspondence_indices, n, dtype, device, Sxy,
+                              mean_t, mean_s, count);
     });
 
     core::Tensor U, D, VT;

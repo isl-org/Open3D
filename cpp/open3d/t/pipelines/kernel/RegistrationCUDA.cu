@@ -67,16 +67,15 @@ inline void ReduceAndSolve6x6(double *A_reduction,
     DecodeAndSolve6x6(output_29, delta, residual, count);
 }
 
-void ComputePosePointToPlaneCUDA(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &pose,
-        double &residual,
-        int64_t &count,
-        const core::Dtype &dtype,
-        const core::Device &device) {
+void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
+                                 const core::Tensor &target_points,
+                                 const core::Tensor &target_normals,
+                                 const core::Tensor &corres,
+                                 core::Tensor &pose,
+                                 double &residual,
+                                 int64_t &count,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device) {
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         const scalar_t *source_points_ptr =
                 source_points.GetDataPtr<scalar_t>();
@@ -84,12 +83,9 @@ void ComputePosePointToPlaneCUDA(
                 target_points.GetDataPtr<scalar_t>();
         const scalar_t *target_normals_ptr =
                 target_normals.GetDataPtr<scalar_t>();
-        const int64_t *correspondences_first =
-                corres.first.GetDataPtr<int64_t>();
-        const scalar_t *correspondences_second =
-                corres.second.GetDataPtr<scalar_t>();
+        const int64_t *correspondences_first = corres.GetDataPtr<int64_t>();
 
-        int n = corres.first.GetLength();
+        int n = corres.GetLength();
 
         // A_29xN is a {29, N} shaped tensor, which is later reduced to {29}
         // where [0, 20] elements are used to construct {6,6} shaped symmetric
@@ -139,8 +135,7 @@ void ComputePosePointToPlaneCUDA(
                         A_reduction[n * 25 + workload_idx] = J_ij[4] * r;
                         A_reduction[n * 26 + workload_idx] = J_ij[5] * r;
 
-                        A_reduction[n * 27 + workload_idx] =
-                                correspondences_second[workload_idx];
+                        A_reduction[n * 27 + workload_idx] = r;
                         A_reduction[n * 28 + workload_idx] = 1;
 
                     } else {

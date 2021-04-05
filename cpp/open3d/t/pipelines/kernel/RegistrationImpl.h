@@ -39,39 +39,36 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-void ComputePosePointToPlaneCPU(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &pose,
-        double &residual,
-        int64_t &count,
-        const core::Dtype &dtype,
-        const core::Device &device);
+void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
+                                const core::Tensor &target_points,
+                                const core::Tensor &target_normals,
+                                const core::Tensor &correspondence_indices,
+                                core::Tensor &pose,
+                                double &residual,
+                                int64_t &count,
+                                const core::Dtype &dtype,
+                                const core::Device &device);
 
 #ifdef BUILD_CUDA_MODULE
-void ComputePosePointToPlaneCUDA(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &pose,
-        double &residual,
-        int64_t &count,
-        const core::Dtype &dtype,
-        const core::Device &device);
+void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
+                                 const core::Tensor &target_points,
+                                 const core::Tensor &target_normals,
+                                 const core::Tensor &correspondence_indices,
+                                 core::Tensor &pose,
+                                 double &residual,
+                                 int64_t &count,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device);
 #endif
 
-void ComputeRtPointToPointCPU(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const std::pair<core::Tensor, core::Tensor> &corres,
-        core::Tensor &R,
-        core::Tensor &t,
-        int64_t &count,
-        const core::Dtype &dtype,
-        const core::Device &device);
+void ComputeRtPointToPointCPU(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &correspondence_indices,
+                              core::Tensor &R,
+                              core::Tensor &t,
+                              int64_t &count,
+                              const core::Dtype &dtype,
+                              const core::Device &device);
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
@@ -79,7 +76,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         const scalar_t *source_points_ptr,
         const scalar_t *target_points_ptr,
         const scalar_t *target_normals_ptr,
-        const int64_t *correspondences_first,
+        const int64_t *correspondence_indices,
         scalar_t *J_ij,
         scalar_t &r) {
     utility::LogError(" GetJacobianPointToPlane: Dtype not supported.");
@@ -91,14 +88,14 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<float>(
         const float *source_points_ptr,
         const float *target_points_ptr,
         const float *target_normals_ptr,
-        const int64_t *correspondences_first,
+        const int64_t *correspondence_indices,
         float *J_ij,
         float &r) {
-    if (correspondences_first[workload_idx] == -1) {
+    if (correspondence_indices[workload_idx] == -1) {
         return false;
     }
 
-    const int64_t target_idx = 3 * correspondences_first[workload_idx];
+    const int64_t target_idx = 3 * correspondence_indices[workload_idx];
     const int64_t source_idx = 3 * workload_idx;
 
     const float &sx = source_points_ptr[source_idx + 0];
@@ -128,14 +125,14 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<double>(
         const double *source_points_ptr,
         const double *target_points_ptr,
         const double *target_normals_ptr,
-        const int64_t *correspondences_first,
+        const int64_t *correspondence_indices,
         double *J_ij,
         double &r) {
-    if (correspondences_first[workload_idx] == -1) {
+    if (correspondence_indices[workload_idx] == -1) {
         return false;
     }
 
-    const int64_t target_idx = 3 * correspondences_first[workload_idx];
+    const int64_t target_idx = 3 * correspondence_indices[workload_idx];
     const int64_t source_idx = 3 * workload_idx;
 
     const double &sx = source_points_ptr[source_idx + 0];

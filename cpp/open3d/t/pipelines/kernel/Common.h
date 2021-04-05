@@ -34,21 +34,18 @@ namespace pipelines {
 namespace kernel {
 
 template <typename scalar_t>
-core::Tensor Get6x6CompressedLinearTensor(
-        const scalar_t *source_points_ptr,
-        const scalar_t *target_points_ptr,
-        const scalar_t *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const scalar_t *correspondences_second,
-        const int n);
+core::Tensor Get6x6CompressedLinearTensor(const scalar_t *source_points_ptr,
+                                          const scalar_t *target_points_ptr,
+                                          const scalar_t *target_normals_ptr,
+                                          const int64_t *correspondence_indices,
+                                          const int n);
 
 template <>
 core::Tensor Get6x6CompressedLinearTensor<float>(
         const float *source_points_ptr,
         const float *target_points_ptr,
         const float *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const float *correspondences_second,
+        const int64_t *correspondence_indices,
         const int n);
 
 template <>
@@ -56,8 +53,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
         const double *source_points_ptr,
         const double *target_points_ptr,
         const double *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const double *correspondences_second,
+        const int64_t *correspondence_indices,
         const int n);
 
 }  // namespace kernel
