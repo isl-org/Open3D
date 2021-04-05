@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
@@ -39,30 +40,24 @@ namespace pipelines {
 namespace kernel {
 namespace registration {
 
-inline void ReduceAndSolve6x6(double *A_reduction,
+inline void ReduceAndSolve6x6(const core::Tensor &A_reduction,
                               int64_t n,
                               core::Tensor &delta,
                               double &residual,
                               int64_t &count,
                               const core::Device &device) {
+    core::Tensor A_T = A_reduction.T().Contiguous();
+    const void *A_data = A_T.GetDataPtr();
+
     core::Tensor output_29 =
             core::Tensor::Empty({29}, core::Dtype::Float64, device);
-    double *output_29_data = output_29.GetDataPtr<double>();
+    void *output_29_data = output_29.GetDataPtr();
 
-    // Reduction of {29, N} to {29}.
-    for (int i = 0; i < 29; i++) {
-        // Determine temporary device storage requirements.
-        void *d_temp_storage = NULL;
-        size_t temp_storage_bytes = 0;
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        // Allocate temporary storage.
-        cudaMalloc(&d_temp_storage, temp_storage_bytes);
-        // Run sum-reduction.
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        cudaFree(d_temp_storage);
-    }
+    core::Tensor ones = core::Tensor::Ones({n}, core::Dtype::Float64, device);
+    const void *ones_data = ones.GetDataPtr();
+
+    core::MatVecMulCUDA(A_data, ones_data, output_29_data, 29, n,
+                        core::Dtype::Float64);
 
     DecodeAndSolve6x6(output_29, delta, residual, count);
 }
@@ -111,7 +106,7 @@ void ComputePosePointToPlaneCUDA(
 
                     if (valid) {
                         A_reduction[workload_idx] = J_ij[0] * J_ij[0];
-                        A_reduction[n + workload_idx] = J_ij[1] * J_ij[0];
+                        A_reduction[n * 1 + workload_idx] = J_ij[1] * J_ij[0];
                         A_reduction[n * 2 + workload_idx] = J_ij[1] * J_ij[1];
                         A_reduction[n * 3 + workload_idx] = J_ij[2] * J_ij[0];
                         A_reduction[n * 4 + workload_idx] = J_ij[2] * J_ij[1];
@@ -150,7 +145,7 @@ void ComputePosePointToPlaneCUDA(
                     }
                 });
 
-        ReduceAndSolve6x6(A_reduction, n, pose, residual, count, device);
+        ReduceAndSolve6x6(A_29xN, n, pose, residual, count, device);
     });
 }
 

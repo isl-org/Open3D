@@ -52,5 +52,26 @@ void MatmulCUDA(void* A_data,
     });
 }
 
+void MatVecMulCUDA(const void* A_data,
+                   const void* x_data,
+                   void* y_data,
+                   int64_t m,
+                   int64_t n,
+                   Dtype dtype) {
+    cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t alpha = 1, beta = 0;
+        int64_t incx = 1;
+        int64_t incy = 1;
+        OPEN3D_CUBLAS_CHECK(
+                gemv_cuda<scalar_t>(handle, CUBLAS_OP_N, m, n, &alpha,
+                                    static_cast<const scalar_t*>(A_data), m,
+                                    static_cast<const scalar_t*>(x_data), incx,
+                                    &beta, static_cast<scalar_t*>(y_data),
+                                    incy),
+                "cuda gemv failed");
+    });
+}
+
 }  // namespace core
 }  // namespace open3d

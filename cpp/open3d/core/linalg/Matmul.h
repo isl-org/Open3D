@@ -42,7 +42,16 @@ void MatmulCUDA(void* A_data,
                 int64_t k,
                 int64_t n,
                 Dtype dtype);
+
+// Not Exposed.
+void MatVecMulCUDA(const void* A_data,
+                   const void* x_data,
+                   void* y_data,
+                   int64_t m,
+                   int64_t n,
+                   Dtype dype);
 #endif
+
 void MatmulCPU(void* A_data,
                void* B_data,
                void* C_data,
@@ -50,5 +59,6 @@ void MatmulCPU(void* A_data,
                int64_t k,
                int64_t n,
                Dtype dtype);
+
 }  // namespace core
 }  // namespace open3d

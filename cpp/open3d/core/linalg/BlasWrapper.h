@@ -110,6 +110,23 @@ inline cublasStatus_t gemm_cuda(cublasHandle_t handle,
 }
 
 template <typename scalar_t>
+inline cublasStatus_t gemv_cuda(cublasHandle_t handle,
+                                cublasOperation_t trans,
+                                int m,
+                                int n,
+                                const scalar_t *alpha,
+                                const scalar_t *A_data,
+                                int lda,
+                                const scalar_t *x_data,
+                                int incx,
+                                const scalar_t *beta,
+                                scalar_t *y_data,
+                                int incy) {
+    utility::LogError("Unsupported data type.");
+    return CUBLAS_STATUS_NOT_SUPPORTED;
+}
+
+template <typename scalar_t>
 inline cublasStatus_t trsm_cuda(cublasHandle_t handle,
                                 cublasSideMode_t side,
                                 cublasFillMode_t uplo,
@@ -172,6 +189,44 @@ inline cublasStatus_t gemm_cuda<double>(cublasHandle_t handle,
                        static_cast<const double *>(B_data),
                        ldb,  // input and their leading dims
                        beta, static_cast<double *>(C_data), ldc);
+}
+
+template <>
+inline cublasStatus_t gemv_cuda<float>(cublasHandle_t handle,
+                                       cublasOperation_t trans,
+                                       int m,
+                                       int n,
+                                       const float *alpha,
+                                       const float *A_data,
+                                       int lda,
+                                       const float *x_data,
+                                       int incx,
+                                       const float *beta,
+                                       float *y_data,
+                                       int incy) {
+    return cublasSgemv(handle, trans, m, n,  // dimensions
+                       alpha, static_cast<const float *>(A_data), lda,
+                       static_cast<const float *>(x_data), incx, beta,
+                       static_cast<float *>(y_data), incy);
+}
+
+template <>
+inline cublasStatus_t gemv_cuda<double>(cublasHandle_t handle,
+                                        cublasOperation_t trans,
+                                        int m,
+                                        int n,
+                                        const double *alpha,
+                                        const double *A_data,
+                                        int lda,
+                                        const double *x_data,
+                                        int incx,
+                                        const double *beta,
+                                        double *y_data,
+                                        int incy) {
+    return cublasDgemv(handle, trans, m, n,  // dimensions
+                       alpha, static_cast<const double *>(A_data), lda,
+                       static_cast<const double *>(x_data), incx, beta,
+                       static_cast<double *>(y_data), incy);
 }
 
 template <>
