@@ -46,7 +46,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                                     float depth_diff,
                                     const std::vector<int>& iterations,
                                     const Method method) {
-    // TODO: more device check
+    // TODO (wei): more device check
     core::Device device = source.depth_.GetDevice();
     if (target.depth_.GetDevice() != device) {
         utility::LogError(
@@ -69,18 +69,18 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                                       target_depth_processed, depth_scale,
                                       depth_max);
 
-    int64_t n = int64_t(iterations.size());
+    int64_t n_levels = int64_t(iterations.size());
     if (method == Method::PointToPlane) {
-        std::vector<core::Tensor> source_vertex_maps(n);
-        std::vector<core::Tensor> target_vertex_maps(n);
-        std::vector<core::Tensor> target_normal_maps(n);
-        std::vector<core::Tensor> intrinsic_matrices(n);
+        std::vector<core::Tensor> source_vertex_maps(n_levels);
+        std::vector<core::Tensor> target_vertex_maps(n_levels);
+        std::vector<core::Tensor> target_normal_maps(n_levels);
+        std::vector<core::Tensor> intrinsic_matrices(n_levels);
 
         t::geometry::Image source_depth(source_depth_processed);
         t::geometry::Image target_depth(target_depth_processed);
 
         // Create image pyramid.
-        for (int64_t i = 0; i < n; ++i) {
+        for (int64_t i = 0; i < n_levels; ++i) {
             core::Tensor source_vertex_map =
                     CreateVertexMap(source_depth, intrinsics_d);
 
@@ -88,13 +88,13 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                     CreateVertexMap(target_depth, intrinsics_d);
             core::Tensor target_normal_map = CreateNormalMap(target_vertex_map);
 
-            source_vertex_maps[n - 1 - i] = source_vertex_map;
-            target_vertex_maps[n - 1 - i] = target_vertex_map;
-            target_normal_maps[n - 1 - i] = target_normal_map;
+            source_vertex_maps[n_levels - 1 - i] = source_vertex_map;
+            target_vertex_maps[n_levels - 1 - i] = target_vertex_map;
+            target_normal_maps[n_levels - 1 - i] = target_normal_map;
 
-            intrinsic_matrices[n - 1 - i] = intrinsics_d.Clone();
+            intrinsic_matrices[n_levels - 1 - i] = intrinsics_d.Clone();
 
-            if (i != n - 1) {
+            if (i != n_levels - 1) {
                 source_depth = t::geometry::Image(
                         PyrDownDepth(source_depth, depth_diff * 2));
                 target_depth = t::geometry::Image(
@@ -105,7 +105,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             }
         }
 
-        for (int64_t i = 0; i < n; ++i) {
+        for (int64_t i = 0; i < n_levels; ++i) {
             for (int iter = 0; iter < iterations[i]; ++iter) {
                 core::Tensor delta_source_to_target = ComputePosePointToPlane(
                         source_vertex_maps[i], target_vertex_maps[i],
@@ -115,20 +115,20 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             }
         }
     } else if (method == Method::Hybrid) {
-        std::vector<core::Tensor> source_intensity(n);
-        std::vector<core::Tensor> target_intensity(n);
+        std::vector<core::Tensor> source_intensity(n_levels);
+        std::vector<core::Tensor> target_intensity(n_levels);
 
-        std::vector<core::Tensor> source_depth(n);
-        std::vector<core::Tensor> target_depth(n);
-        std::vector<core::Tensor> target_intensity_dx(n);
-        std::vector<core::Tensor> target_intensity_dy(n);
+        std::vector<core::Tensor> source_depth(n_levels);
+        std::vector<core::Tensor> target_depth(n_levels);
+        std::vector<core::Tensor> target_intensity_dx(n_levels);
+        std::vector<core::Tensor> target_intensity_dy(n_levels);
 
-        std::vector<core::Tensor> target_depth_dx(n);
-        std::vector<core::Tensor> target_depth_dy(n);
+        std::vector<core::Tensor> target_depth_dx(n_levels);
+        std::vector<core::Tensor> target_depth_dy(n_levels);
 
-        std::vector<core::Tensor> source_vertex_maps(n);
+        std::vector<core::Tensor> source_vertex_maps(n_levels);
 
-        std::vector<core::Tensor> intrinsic_matrices(n);
+        std::vector<core::Tensor> intrinsic_matrices(n_levels);
 
         t::geometry::Image source_depth_curr(source_depth_processed);
         t::geometry::Image target_depth_curr(target_depth_processed);
@@ -139,32 +139,36 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                 target.color_.RGBToGray().To(core::Dtype::Float32);
 
         // Create image pyramid
-        for (int64_t i = 0; i < n; ++i) {
-            source_depth[n - 1 - i] = source_depth_curr.AsTensor().Clone();
-            target_depth[n - 1 - i] = target_depth_curr.AsTensor().Clone();
+        for (int64_t i = 0; i < n_levels; ++i) {
+            source_depth[n_levels - 1 - i] =
+                    source_depth_curr.AsTensor().Clone();
+            target_depth[n_levels - 1 - i] =
+                    target_depth_curr.AsTensor().Clone();
 
-            source_intensity[n - 1 - i] =
+            source_intensity[n_levels - 1 - i] =
                     source_intensity_curr.AsTensor().Clone();
-            target_intensity[n - 1 - i] =
+            target_intensity[n_levels - 1 - i] =
                     target_intensity_curr.AsTensor().Clone();
 
             core::Tensor source_vertex_map =
                     CreateVertexMap(source_depth_curr, intrinsics_d);
-            source_vertex_maps[n - 1 - i] = source_vertex_map;
+            source_vertex_maps[n_levels - 1 - i] = source_vertex_map;
 
             auto target_intensity_grad = target_intensity_curr.FilterSobel();
-            target_intensity_dx[n - 1 - i] =
+            target_intensity_dx[n_levels - 1 - i] =
                     target_intensity_grad.first.AsTensor();
-            target_intensity_dy[n - 1 - i] =
+            target_intensity_dy[n_levels - 1 - i] =
                     target_intensity_grad.second.AsTensor();
 
             auto target_depth_grad = target_depth_curr.FilterSobel();
-            target_depth_dx[n - 1 - i] = target_depth_grad.first.AsTensor();
-            target_depth_dy[n - 1 - i] = target_depth_grad.second.AsTensor();
+            target_depth_dx[n_levels - 1 - i] =
+                    target_depth_grad.first.AsTensor();
+            target_depth_dy[n_levels - 1 - i] =
+                    target_depth_grad.second.AsTensor();
 
-            intrinsic_matrices[n - 1 - i] = intrinsics_d.Clone();
+            intrinsic_matrices[n_levels - 1 - i] = intrinsics_d.Clone();
 
-            if (i != n - 1) {
+            if (i != n_levels - 1) {
                 source_depth_curr = source_depth_curr.PyrDown();
                 target_depth_curr = target_depth_curr.PyrDown();
                 source_intensity_curr = source_intensity_curr.PyrDown();
@@ -176,7 +180,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         }
 
         // Odometry
-        for (int64_t i = 0; i < n; ++i) {
+        for (int64_t i = 0; i < n_levels; ++i) {
             for (int iter = 0; iter < iterations[i]; ++iter) {
                 core::Tensor delta_source_to_target = ComputePoseHybrid(
                         source_depth[i], target_depth[i], source_intensity[i],
@@ -188,17 +192,17 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
             }
         }
     } else if (method == Method::Intensity) {
-        std::vector<core::Tensor> source_intensity(n);
-        std::vector<core::Tensor> target_intensity(n);
+        std::vector<core::Tensor> source_intensity(n_levels);
+        std::vector<core::Tensor> target_intensity(n_levels);
 
-        std::vector<core::Tensor> source_depth(n);
-        std::vector<core::Tensor> target_depth(n);
-        std::vector<core::Tensor> target_intensity_dx(n);
-        std::vector<core::Tensor> target_intensity_dy(n);
+        std::vector<core::Tensor> source_depth(n_levels);
+        std::vector<core::Tensor> target_depth(n_levels);
+        std::vector<core::Tensor> target_intensity_dx(n_levels);
+        std::vector<core::Tensor> target_intensity_dy(n_levels);
 
-        std::vector<core::Tensor> source_vertex_maps(n);
+        std::vector<core::Tensor> source_vertex_maps(n_levels);
 
-        std::vector<core::Tensor> intrinsic_matrices(n);
+        std::vector<core::Tensor> intrinsic_matrices(n_levels);
 
         t::geometry::Image source_depth_curr(source_depth_processed);
         t::geometry::Image target_depth_curr(target_depth_processed);
@@ -209,28 +213,30 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                 target.color_.RGBToGray().To(core::Dtype::Float32);
 
         // Create image pyramid
-        for (int64_t i = 0; i < n; ++i) {
-            source_depth[n - 1 - i] = source_depth_curr.AsTensor().Clone();
-            target_depth[n - 1 - i] = target_depth_curr.AsTensor().Clone();
+        for (int64_t i = 0; i < n_levels; ++i) {
+            source_depth[n_levels - 1 - i] =
+                    source_depth_curr.AsTensor().Clone();
+            target_depth[n_levels - 1 - i] =
+                    target_depth_curr.AsTensor().Clone();
 
-            source_intensity[n - 1 - i] =
+            source_intensity[n_levels - 1 - i] =
                     source_intensity_curr.AsTensor().Clone();
-            target_intensity[n - 1 - i] =
+            target_intensity[n_levels - 1 - i] =
                     target_intensity_curr.AsTensor().Clone();
 
             core::Tensor source_vertex_map =
                     CreateVertexMap(source_depth_curr, intrinsics_d);
-            source_vertex_maps[n - 1 - i] = source_vertex_map;
+            source_vertex_maps[n_levels - 1 - i] = source_vertex_map;
 
             auto target_intensity_grad = target_intensity_curr.FilterSobel();
-            target_intensity_dx[n - 1 - i] =
+            target_intensity_dx[n_levels - 1 - i] =
                     target_intensity_grad.first.AsTensor();
-            target_intensity_dy[n - 1 - i] =
+            target_intensity_dy[n_levels - 1 - i] =
                     target_intensity_grad.second.AsTensor();
 
-            intrinsic_matrices[n - 1 - i] = intrinsics_d.Clone();
+            intrinsic_matrices[n_levels - 1 - i] = intrinsics_d.Clone();
 
-            if (i != n - 1) {
+            if (i != n_levels - 1) {
                 source_depth_curr = t::geometry::Image(
                         PyrDownDepth(source_depth_curr, depth_diff * 2));
                 target_depth_curr = t::geometry::Image(
@@ -244,7 +250,7 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
         }
 
         // Odometry
-        for (int64_t i = 0; i < n; ++i) {
+        for (int64_t i = 0; i < n_levels; ++i) {
             for (int iter = 0; iter < iterations[i]; ++iter) {
                 core::Tensor delta_source_to_target = ComputePoseIntensity(
                         source_depth[i], target_depth[i], source_intensity[i],

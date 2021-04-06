@@ -42,7 +42,7 @@ namespace t {
 namespace geometry {
 namespace kernel {
 namespace pointcloud {
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void UnprojectCUDA
 #else
 void UnprojectCPU
@@ -80,7 +80,7 @@ void UnprojectCPU
     }
 
     // Counter
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
@@ -90,7 +90,7 @@ void UnprojectCPU
 #endif
 
     int64_t n = rows_strided * cols_strided;
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -127,7 +127,7 @@ void UnprojectCPU
             }
         });
     });
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     int total_pts_count = count.Item<int>();
 #else
     int total_pts_count = (*count_ptr).load();

@@ -93,7 +93,9 @@ void PyrDownDepthCUDA(const core::Tensor& depth,
 
     int n = rows_down * cols_down;
 
+    // Gaussian filter window size
     const int D = 5;
+    // Gaussian filter weights
     const float weights[3] = {0.375f, 0.25f, 0.0625f};
 
     // Reference:
@@ -110,16 +112,16 @@ void PyrDownDepthCUDA(const core::Tensor& depth,
                     return;
                 }
 
-                int x_mi = max(0, 2 * x - D / 2) - 2 * x;
-                int y_mi = max(0, 2 * y - D / 2) - 2 * y;
+                int x_min = max(0, 2 * x - D / 2) - 2 * x;
+                int y_min = max(0, 2 * y - D / 2) - 2 * y;
 
-                int x_ma = min(cols, 2 * x - D / 2 + D) - 2 * x;
-                int y_ma = min(rows, 2 * y - D / 2 + D) - 2 * y;
+                int x_max = min(cols, 2 * x - D / 2 + D) - 2 * x;
+                int y_max = min(rows, 2 * y - D / 2 + D) - 2 * y;
 
                 float sum = 0;
                 float sum_weight = 0;
-                for (int yi = y_mi; yi < y_ma; ++yi) {
-                    for (int xi = x_mi; xi < x_ma; ++xi) {
+                for (int yi = y_min; yi < y_max; ++yi) {
+                    for (int xi = x_min; xi < x_max; ++xi) {
                         float val = *depth_indexer.GetDataPtrFromCoord<float>(
                                 2 * x + xi, 2 * y + yi);
                         if (!isnan(val) && abs(val - center) < depth_diff) {
@@ -342,7 +344,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
     const int64_t cols = source_vertex_indexer.GetShape(1);
     const int64_t n = rows * cols;
 
-    // A_29xN is a {29, N} shaped tensor, which is later red[<0;100;16M]uced to
+    // A_29xN is a {29, N} shaped tensor, which is later reduced to
     // {29} where [0, 20] elements are used to construct {6,6} shaped symmetric
     // AtA matrix, [21, 26] elements are used to construct {6} AtB matrix,
     // element [27] stores residual and element [28] stores count.
@@ -417,7 +419,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
     const int64_t cols = source_vertex_indexer.GetShape(1);
     const int64_t n = rows * cols;
 
-    // A_29xN is a {29, N} shaped tensor, which is later red[<0;100;16M]uced to
+    // A_29xN is a {29, N} shaped tensor, which is later reduced to
     // {29} where [0, 20] elements are used to construct {6,6} shaped symmetric
     // AtA matrix, [21, 26] elements are used to construct {6} AtB matrix,
     // element [27] stores residual and element [28] stores count.

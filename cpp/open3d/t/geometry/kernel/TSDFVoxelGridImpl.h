@@ -43,7 +43,7 @@ namespace geometry {
 namespace kernel {
 namespace tsdf {
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void IntegrateCUDA
 #else
 void IntegrateCPU
@@ -88,7 +88,7 @@ void IntegrateCPU
 
     int64_t n = indices.GetLength() * resolution3;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -166,7 +166,7 @@ void IntegrateCPU
             });
 }
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void ExtractSurfacePointsCUDA
 #else
 void ExtractSurfacePointsCPU
@@ -202,7 +202,7 @@ void ExtractSurfacePointsCPU
     int64_t n = n_blocks * resolution3;
 
     // Output
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        block_values.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
@@ -211,7 +211,7 @@ void ExtractSurfacePointsCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -269,7 +269,7 @@ void ExtractSurfacePointsCPU
                 });
             });
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     int total_count = count.Item<int>();
 #else
     int total_count = (*count_ptr).load();
@@ -284,7 +284,7 @@ void ExtractSurfacePointsCPU
     NDArrayIndexer normal_indexer(normals, 1);
 
     // Reset count
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                          block_values.GetDevice());
     count_ptr = count.GetDataPtr<int>();
@@ -438,7 +438,7 @@ void ExtractSurfacePointsCPU
             });
 }
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void ExtractSurfaceMeshCUDA
 #else
 void ExtractSurfaceMeshCPU
@@ -463,7 +463,7 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
 
     // Output
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::CUDACachedMemoryManager::ReleaseCache();
 #endif
 
@@ -498,7 +498,7 @@ void ExtractSurfaceMeshCPU
 
     int64_t n = n_blocks * resolution3;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -589,7 +589,7 @@ void ExtractSurfaceMeshCPU
             });
 
     // Pass 1: determine valid number of vertices.
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
     int* vtx_count_ptr = vtx_count.GetDataPtr<int>();
@@ -598,7 +598,7 @@ void ExtractSurfaceMeshCPU
     std::atomic<int>* vtx_count_ptr = &vtx_count_atomic;
 #endif
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
@@ -634,7 +634,7 @@ void ExtractSurfaceMeshCPU
             });
 
     // Reset count_ptr
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     int total_vtx_count = vtx_count.Item<int>();
     vtx_count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                              block_values.GetDevice());
@@ -797,7 +797,7 @@ void ExtractSurfaceMeshCPU
             });
 
     // Pass 3: connect vertices and form triangles.
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                                 block_values.GetDevice());
     int* tri_count_ptr = triangle_count.GetDataPtr<int>();
@@ -810,7 +810,7 @@ void ExtractSurfaceMeshCPU
                              block_values.GetDevice());
     NDArrayIndexer triangle_indexer(triangles, 1);
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
@@ -872,7 +872,7 @@ void ExtractSurfaceMeshCPU
                 }
             });
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     int total_tri_count = triangle_count.Item<int>();
 #else
     int total_tri_count = (*tri_count_ptr).load();

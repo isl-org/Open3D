@@ -91,7 +91,9 @@ void PyrDownDepthCPU(const core::Tensor& depth,
 
     int n = rows_down * cols_down;
 
+    // Gaussian filter window size
     const int D = 5;
+    // Gaussian filter weights
     const float weights[3] = {0.375f, 0.25f, 0.0625f};
 
     // Reference:
@@ -108,16 +110,16 @@ void PyrDownDepthCPU(const core::Tensor& depth,
                     return;
                 }
 
-                int x_mi = std::max(0, 2 * x - D / 2) - 2 * x;
-                int y_mi = std::max(0, 2 * y - D / 2) - 2 * y;
+                int x_min = std::max(0, 2 * x - D / 2) - 2 * x;
+                int y_min = std::max(0, 2 * y - D / 2) - 2 * y;
 
-                int x_ma = std::min(cols, 2 * x - D / 2 + D) - 2 * x;
-                int y_ma = std::min(rows, 2 * y - D / 2 + D) - 2 * y;
+                int x_max = std::min(cols, 2 * x - D / 2 + D) - 2 * x;
+                int y_max = std::min(rows, 2 * y - D / 2 + D) - 2 * y;
 
                 float sum = 0;
                 float sum_weight = 0;
-                for (int yi = y_mi; yi < y_ma; ++yi) {
-                    for (int xi = x_mi; xi < x_ma; ++xi) {
+                for (int yi = y_min; yi < y_max; ++yi) {
+                    for (int xi = x_min; xi < x_max; ++xi) {
                         float val = *depth_indexer.GetDataPtrFromCoord<float>(
                                 2 * x + xi, 2 * y + yi);
                         if (!std::isnan(val) &&

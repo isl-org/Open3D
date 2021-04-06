@@ -124,8 +124,8 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
         return;
     }
 
-    float depth_scale = 1000.0;
-    float depth_diff = 0.07;
+    const float depth_scale = 1000.0;
+    const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
@@ -192,9 +192,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScale) {
         return;
     }
 
-    float depth_scale = 1000.0;
-    float depth_max = 3.0;
-    float depth_diff = 0.07;
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
+    const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
