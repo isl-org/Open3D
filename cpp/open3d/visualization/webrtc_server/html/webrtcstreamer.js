@@ -7,7 +7,7 @@ var WebRtcStreamer = (function () {
    * @param {string} srvurl Url of webrtc-streamer (default is current location)
    * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
-   * additioanl web server is required to process the http requests.
+   * additional web server is required to process the http requests.
    */
   function WebRtcStreamer(
     videoElement,
@@ -46,13 +46,13 @@ var WebRtcStreamer = (function () {
 
   /**
    * Call remove server API.
-   * This is a non-prototype method (static method), we don't need to new an
-   * instance inorder to use it. See https://stackoverflow.com/a/1635143/1255535.
+   * Non-prototype (static) method, we don't need to new an instance to use it.
+   * See https://stackoverflow.com/a/1635143/1255535.
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
    * @param {object} data Data object
    * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
-   * additioanl web server is required to process the http requests.
+   * additional web server is required to process the http requests.
    */
   WebRtcStreamer.remoteCall = function (
     url,
@@ -85,7 +85,7 @@ var WebRtcStreamer = (function () {
    * Get media list from server.
    * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
-   * additioanl web server is required to process the http requests.
+   * additional web server is required to process the http requests.
    */
   WebRtcStreamer.getMediaList = function (useComms, webVisualizer = null) {
     return WebRtcStreamer.remoteCall(
