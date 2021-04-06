@@ -211,8 +211,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::Hybrid1NNSearch(
                     .IndexGet({valid});
     // Only take valid indices.
     neighbour_indices = neighbour_indices.IndexGet({valid}).Reshape({-1});
-    // Only take valid distances.
-    neighbour_distances = neighbour_distances.IndexGet({valid});
+
     return std::make_tuple(source_indices, neighbour_indices,
                            neighbour_distances);
 }
