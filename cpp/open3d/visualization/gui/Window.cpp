@@ -461,7 +461,7 @@ Size Window::CalcPreferredSize() {
 
     Rect bbox(0, 0, 0, 0);
     for (auto& child : impl_->children_) {
-        auto pref = child->CalcPreferredSize(GetTheme());
+        auto pref = child->CalcPreferredSize(GetTheme(), Widget::Constraints());
         Rect r(child->GetFrame().x, child->GetFrame().y, pref.width,
                pref.height);
         bbox = bbox.UnionedWith(r);
@@ -595,8 +595,8 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     impl_->active_dialog_ = dlg;
     dlg->OnWillShow();
 
-    auto win_size = GetSize();
-    auto pref = dlg->CalcPreferredSize(GetTheme());
+    auto content_rect = GetContentRect();
+    auto pref = dlg->CalcPreferredSize(GetTheme(), Widget::Constraints());
     int w = dlg->GetFrame().width;
     int h = dlg->GetFrame().height;
     if (w == 0) {
@@ -605,10 +605,10 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (h == 0) {
         h = pref.height;
     }
-    w = std::min(w, int(std::round(0.8 * win_size.width)));
-    h = std::min(h, int(std::round(0.8 * win_size.height)));
-    dlg->SetFrame(gui::Rect((win_size.width - w) / 2, (win_size.height - h) / 2,
-                            w, h));
+    w = std::min(w, int(std::round(0.8 * content_rect.width)));
+    h = std::min(h, int(std::round(0.8 * content_rect.height)));
+    dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
+                            (content_rect.height - h) / 2, w, h));
     dlg->Layout(GetTheme());
 }
 

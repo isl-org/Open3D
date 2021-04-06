@@ -86,7 +86,9 @@ struct MouseEvent {
     std::string ToString() const;
 };
 
-struct TickEvent {};
+struct TickEvent {
+    double dt;
+};
 
 enum KeyName {
     KEY_NONE = 0,
