@@ -66,7 +66,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
           output: (data) => resolve(data.content.text.trim()),
         },
       };
-      Jupyter.notebook.kernel.execute(`${python_code}`, callbacks);
+      Jupyter.notebook.kernel.execute(python_code, callbacks);
     });
   },
 
@@ -107,18 +107,12 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     const callbacks = {
       iopub: {
         output: (data) => {
-          // this will print a message in browser console
-          console.log("hello in console");
-
-          // this will insert the execution result into "result_output" div
-          // document.getElementById("result_output").innerHTML =
-          //   data.content.text;
           console.log("Get python result: " + data.content.text);
         },
       },
     };
     const kernel = Jupyter.notebook.kernel;
-    kernel.execute("print(1 + 1)", callbacks);
+    kernel.execute("print(o3d.__version__)", callbacks);
 
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
