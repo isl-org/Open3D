@@ -111,7 +111,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
             me.FromJson(value)) {
             const std::string window_uid =
                     value.get("window_uid", "").asString();
-            utility::LogInfo(
+            utility::LogInfoConsole(
                     "WebRTCServer::Impl::OnDataChannelMessage: window_uid: {}, "
                     "MouseEvent: {}",
                     window_uid, me.ToString());
@@ -120,7 +120,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
             }
         }
     } catch (...) {
-        utility::LogInfo(
+        utility::LogInfoConsole(
                 "WebRTCServer::Impl::OnDataChannelMessage: cannot parse {}.",
                 message);
     }
@@ -150,7 +150,7 @@ void WebRTCServer::SendInitFrames(const std::string& window_uid) {
             this->impl_->redraw_callback_(window_uid);
             std::this_thread::sleep_for(
                     std::chrono::milliseconds(s_sleep_between_frames_ms));
-            utility::LogInfo("Sent init frames {}", i);
+            utility::LogInfoConsole("Sent init frames {}", i);
         }
     };
     std::thread thread(sender);

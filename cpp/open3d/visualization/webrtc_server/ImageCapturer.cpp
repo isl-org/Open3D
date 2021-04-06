@@ -73,7 +73,7 @@ ImageCapturer::ImageCapturer(const std::map<std::string, std::string>& opts)
 
 void ImageCapturer::OnCaptureResult(
         const std::shared_ptr<core::Tensor>& frame) {
-    utility::LogInfo("ImageCapturer::OnCaptureResult: New frame");
+    utility::LogInfoConsole("ImageCapturer::OnCaptureResult: New frame");
     int height = (int)frame->GetShape(0);
     int width = (int)frame->GetShape(1);
 
