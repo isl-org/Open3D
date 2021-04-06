@@ -206,10 +206,14 @@ RegistrationResult RegistrationICPMultiScale(
         core::nns::NearestNeighborSearch target_nns(
                 target_down_pyramid[i].GetPoints());
 
+        result = GetRegistrationResultAndCorrespondences(
+                source_down_pyramid[i], target_down_pyramid[i], target_nns,
+                max_correspondence_distances[i], transformation_device);
+
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
-            result = GetRegistrationResultAndCorrespondences(
-                    source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                    max_correspondence_distances[i], transformation_device);
+            utility::LogDebug(
+                    "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                    result.fitness_, result.inlier_rmse_);
 
             core::Tensor update = estimation.ComputeTransformation(
                     source_down_pyramid[i], target_down_pyramid[i],
@@ -220,10 +224,12 @@ RegistrationResult RegistrationICPMultiScale(
             // Apply the transform on source pointcloud.
             source_down_pyramid[i].Transform(update);
 
-            utility::LogDebug(
-                    "Scale Iteration: #{:d}, ICP Iteration #{:d}: Fitness "
-                    "{:.4f}, RMSE {:.4f}",
-                    i + 1, j + 1, result.fitness_, result.inlier_rmse_);
+            prev_fitness_ = result.fitness_;
+            prev_inliner_rmse_ = result.inlier_rmse_;
+
+            result = GetRegistrationResultAndCorrespondences(
+                    source_down_pyramid[i], target_down_pyramid[i], target_nns,
+                    max_correspondence_distances[i], transformation_device);
 
             // ICPConvergenceCriteria, to terminate iteration.
             if (j != 0 &&
@@ -233,9 +239,6 @@ RegistrationResult RegistrationICPMultiScale(
                         criterias[i].relative_rmse_) {
                 break;
             }
-
-            prev_fitness_ = result.fitness_;
-            prev_inliner_rmse_ = result.inlier_rmse_;
         }
     }
     return result;

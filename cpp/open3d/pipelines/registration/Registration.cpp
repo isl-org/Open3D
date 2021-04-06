@@ -161,20 +161,20 @@ RegistrationResult RegistrationICP(
     if (!init.isIdentity()) {
         pcd.Transform(init);
     }
-    RegistrationResult result, backup;
-
+    RegistrationResult result;
+    result = GetRegistrationResultAndCorrespondences(
+            pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
-                transformation);
-
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                          result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
         pcd.Transform(update);
-
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}",
-                          i + 1, result.fitness_, result.inlier_rmse_);
+        RegistrationResult backup = result;
+        result = GetRegistrationResultAndCorrespondences(
+                pcd, target, kdtree, max_correspondence_distance,
+                transformation);
 
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
@@ -182,8 +182,6 @@ RegistrationResult RegistrationICP(
                     criteria.relative_rmse_) {
             break;
         }
-
-        backup = result;
     }
     return result;
 }
