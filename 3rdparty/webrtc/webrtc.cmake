@@ -17,7 +17,9 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     set(WEBRTC_ARGS treat_warnings_as_errors=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_enable_libevent=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_libevent=false\n${WEBRTC_ARGS})
+    # https://stackoverflow.com/a/47384787/1255535
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS use_custom_libcxx_for_host=false\n${WEBRTC_ARGS})
 
     find_program(CCACHE_BIN "ccache")
     if(CCACHE_BIN)
