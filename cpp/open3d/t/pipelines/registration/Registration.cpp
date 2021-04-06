@@ -212,8 +212,9 @@ RegistrationResult RegistrationICPMultiScale(
 
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
             utility::LogDebug(
-                    "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                    result.fitness_, result.inlier_rmse_);
+                    " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
+                    "{:.4f}",
+                    i + 1, j, result.fitness_, result.inlier_rmse_);
 
             core::Tensor update = estimation.ComputeTransformation(
                     source_down_pyramid[i], target_down_pyramid[i],
