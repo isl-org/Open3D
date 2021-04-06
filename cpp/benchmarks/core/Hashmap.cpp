@@ -55,8 +55,8 @@ public:
         // Ensure enough duplicates for harder tests
         for (int i = 0; i < count; ++i) {
             int v = indices[i] % slots;
-            keys_[i] = v * k_factor_;
-            vals_[i] = v;
+            keys_[i] = K(v * k_factor_);
+            vals_[i] = V(v);
         }
     }
 
@@ -70,30 +70,38 @@ void HashInsertInt(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const Backend& backend) {
+                   const HashmapBackend& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
 #ifdef BUILD_CUDA_MODULE
-    if (backend == Backend::Slab || backend == Backend::StdGPU) {
-        CUDACachedMemoryManager::ReleaseCache();
-    }
+    CUDACachedMemoryManager::ReleaseCache();
 #endif
     Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
-    Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
-                    backend);
+    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {1}, {1},
+                           device, backend);
     Tensor addrs, masks;
+    hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
+        state.PauseTiming();
+        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
+                        backend);
+        Tensor addrs, masks;
+        state.ResumeTiming();
+
         hashmap.Insert(keys, values, addrs, masks);
+
+        state.PauseTiming();
         int64_t s = hashmap.Size();
         if (s != slots) {
             utility::LogError(
                     "Error returning hashmap size, expected {}, but got {}.",
                     slots, s);
         }
+        state.ResumeTiming();
     }
 }
 
@@ -101,14 +109,12 @@ void HashFindInt(benchmark::State& state,
                  int capacity,
                  int duplicate_factor,
                  const Device& device,
-                 const Backend& backend) {
+                 const HashmapBackend& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
 #ifdef BUILD_CUDA_MODULE
-    if (backend == Backend::Slab || backend == Backend::StdGPU) {
-        CUDACachedMemoryManager::ReleaseCache();
-    }
+    CUDACachedMemoryManager::ReleaseCache();
 #endif
     Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
@@ -116,6 +122,7 @@ void HashFindInt(benchmark::State& state,
     Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
                     backend);
     Tensor addrs, masks;
+    // Insert as warp-up
     hashmap.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
@@ -123,11 +130,11 @@ void HashFindInt(benchmark::State& state,
     }
 }
 
-class int3 {
+class Int3 {
 public:
-    int3() : x_(0), y_(0), z_(0){};
-    int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
-    bool operator==(const int3& other) const {
+    Int3() : x_(0), y_(0), z_(0){};
+    Int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
+    bool operator==(const Int3& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
     int x_;
@@ -139,33 +146,41 @@ void HashInsertInt3(benchmark::State& state,
                     int capacity,
                     int duplicate_factor,
                     const Device& device,
-                    const Backend& backend) {
+                    const HashmapBackend& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
-    HashData<int3, int> data(capacity, slots);
+    HashData<Int3, int> data(capacity, slots);
 
-    std::vector<int> keys_int3;
-    keys_int3.assign(reinterpret_cast<int*>(data.keys_.data()),
+    std::vector<int> keys_Int3;
+    keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
 #ifdef BUILD_CUDA_MODULE
-    if (backend == Backend::Slab || backend == Backend::StdGPU) {
-        CUDACachedMemoryManager::ReleaseCache();
-    }
+    CUDACachedMemoryManager::ReleaseCache();
 #endif
-    Tensor keys(keys_int3, {capacity, 3}, Dtype::Int32, device);
+    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
-    Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
-                    backend);
-
+    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {3}, {1},
+                           device, backend);
     Tensor addrs, masks;
+    hashmap_warmup.Insert(keys, values, addrs, masks);
+
     for (auto _ : state) {
+        state.PauseTiming();
+        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
+                        backend);
+        Tensor addrs, masks;
+        state.ResumeTiming();
+
         hashmap.Insert(keys, values, addrs, masks);
+
+        state.PauseTiming();
         int64_t s = hashmap.Size();
         if (s != slots) {
             utility::LogError(
                     "Error returning hashmap size, expected {}, but got {}.",
                     slots, s);
         }
+        state.ResumeTiming();
     }
 }
 
@@ -173,19 +188,17 @@ void HashFindInt3(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const Backend& backend) {
+                  const HashmapBackend& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
-    HashData<int3, int> data(capacity, slots);
+    HashData<Int3, int> data(capacity, slots);
 
-    std::vector<int> keys_int3;
-    keys_int3.assign(reinterpret_cast<int*>(data.keys_.data()),
+    std::vector<int> keys_Int3;
+    keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
 #ifdef BUILD_CUDA_MODULE
-    if (backend == Backend::Slab || backend == Backend::StdGPU) {
-        CUDACachedMemoryManager::ReleaseCache();
-    }
+    CUDACachedMemoryManager::ReleaseCache();
 #endif
-    Tensor keys(keys_int3, {capacity, 3}, Dtype::Int32, device);
+    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
     Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
@@ -198,8 +211,8 @@ void HashFindInt3(benchmark::State& state,
     }
 }
 
-/// No-duplicate
-
+// Note: to enable large scale insertion (> 1M entries), change
+// default_max_load_factor() in stdgpu from 1.0 to 1.2~1.4.
 #define ENUM_BM_CAPACITY(FN, FACTOR, DEVICE, BACKEND)                          \
     BENCHMARK_CAPTURE(FN, BACKEND##_100_##FACTOR, 100, FACTOR, DEVICE,         \
                       BACKEND)                                                 \
@@ -215,9 +228,6 @@ void HashFindInt3(benchmark::State& state,
             ->Unit(benchmark::kMillisecond);                                   \
     BENCHMARK_CAPTURE(FN, BACKEND##_1000000_##FACTOR, 1000000, FACTOR, DEVICE, \
                       BACKEND)                                                 \
-            ->Unit(benchmark::kMillisecond);                                   \
-    BENCHMARK_CAPTURE(FN, BACKEND##_10000000_##FACTOR, 10000000, FACTOR,       \
-                      DEVICE, BACKEND)                                         \
             ->Unit(benchmark::kMillisecond);
 
 #define ENUM_BM_FACTOR(FN, DEVICE, BACKEND)   \
@@ -229,12 +239,13 @@ void HashFindInt3(benchmark::State& state,
     ENUM_BM_CAPACITY(FN, 32, DEVICE, BACKEND)
 
 #ifdef BUILD_CUDA_MODULE
-#define ENUM_BM_BACKEND(FN)                             \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), Backend::TBB)   \
-    ENUM_BM_FACTOR(FN, Device("CUDA:0"), Backend::Slab) \
-    ENUM_BM_FACTOR(FN, Device("CUDA:0"), Backend::StdGPU)
+#define ENUM_BM_BACKEND(FN)                                    \
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashmapBackend::TBB)   \
+    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashmapBackend::Slab) \
+    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashmapBackend::StdGPU)
 #else
-#define ENUM_BM_BACKEND(FN) ENUM_BM_FACTOR(FN, Device("CPU:0"), Backend::TBB)
+#define ENUM_BM_BACKEND(FN) \
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashmapBackend::TBB)
 #endif
 
 ENUM_BM_BACKEND(HashInsertInt)

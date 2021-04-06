@@ -42,7 +42,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device,
-        const core::Backend &backend)
+        const core::HashmapBackend &backend)
     : voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),

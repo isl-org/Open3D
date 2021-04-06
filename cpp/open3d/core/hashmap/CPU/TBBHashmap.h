@@ -136,19 +136,7 @@ void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
                                      addr_t* output_addrs,
                                      bool* output_masks,
                                      int64_t count) {
-    int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
-        int64_t bucket_count = GetBucketCount();
-        float avg_capacity_per_bucket =
-                float(this->capacity_) / float(bucket_count);
-
-        int64_t expected_buckets = std::max(
-                bucket_count * 2,
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-
-        Rehash(expected_buckets);
-    }
-    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
+    Insert(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
 template <typename Key, typename Hash>

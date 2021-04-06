@@ -908,7 +908,7 @@ void RayCastCPU
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     auto cuda_hashmap =
-            std::dynamic_pointer_cast<core::STDGPUHashmap<Key, Hash>>(hashmap);
+            std::dynamic_pointer_cast<core::StdGPUHashmap<Key, Hash>>(hashmap);
     if (cuda_hashmap == nullptr) {
         utility::LogError(
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");

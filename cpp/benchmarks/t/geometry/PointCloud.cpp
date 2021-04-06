@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
@@ -75,7 +76,7 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 static const std::string path = std::string(TEST_DATA_DIR) + "/fragment.ply";
 
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
-    auto pcd = io::CreatePointCloudFromFile(path);
+    auto pcd = open3d::io::CreatePointCloudFromFile(path);
     for (auto _ : state) {
         pcd->VoxelDownSample(voxel_size);
     }
@@ -84,13 +85,18 @@ void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
 void VoxelDownSample(benchmark::State& state,
                      const core::Device& device,
                      float voxel_size,
-                     const core::Backend& backend) {
-    auto pcd = io::CreatePointCloudFromFile(path);
-    t::geometry::PointCloud tpcd =
-            t::geometry::PointCloud::FromLegacyPointCloud(
-                    *pcd, core::Dtype::Float32, device);
+                     const core::HashmapBackend& backend) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    // Warp up
+    pcd.VoxelDownSample(voxel_size, backend);
+
     for (auto _ : state) {
-        tpcd.VoxelDownSample(voxel_size, backend);
+        pcd.VoxelDownSample(voxel_size, backend);
     }
 }
 
@@ -123,13 +129,13 @@ BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
             ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-#define ENUM_VOXELDOWNSAMPLE_BACKEND()                          \
-    ENUM_VOXELSIZE(core::Device("CPU:0"), core::Backend::TBB)   \
-    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::Backend::Slab) \
-    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::Backend::StdGPU)
+#define ENUM_VOXELDOWNSAMPLE_BACKEND()                                 \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)   \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::Slab) \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::StdGPU)
 #else
 #define ENUM_VOXELDOWNSAMPLE_BACKEND() \
-    ENUM_VOXELSIZE(core::Device("CPU:0"), core::Backend::TBB)
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)
 #endif
 
 BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_01, 0.01)

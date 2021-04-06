@@ -40,7 +40,7 @@ std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
         const Device& device,
-        const Backend& backend) {
+        const HashmapBackend& backend) {
     if (device.GetType() == Device::DeviceType::CPU) {
         return CreateCPUHashmap(init_capacity, dtype_key, dtype_value,
                                 element_shape_key, element_shape_value, device,

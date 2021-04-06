@@ -43,13 +43,13 @@
 namespace open3d {
 namespace core {
 template <typename Key, typename Hash>
-class STDGPUHashmap : public DeviceHashmap {
+class StdGPUHashmap : public DeviceHashmap {
 public:
-    STDGPUHashmap(int64_t init_capacity,
+    StdGPUHashmap(int64_t init_capacity,
                   int64_t dsize_key,
                   int64_t dsize_value,
                   const Device& device);
-    ~STDGPUHashmap();
+    ~StdGPUHashmap();
 
     void Rehash(int64_t buckets) override;
 
@@ -101,7 +101,7 @@ protected:
 };
 
 template <typename Key, typename Hash>
-STDGPUHashmap<Key, Hash>::STDGPUHashmap(int64_t init_capacity,
+StdGPUHashmap<Key, Hash>::StdGPUHashmap(int64_t init_capacity,
                                         int64_t dsize_key,
                                         int64_t dsize_value,
                                         const Device& device)
@@ -110,17 +110,17 @@ STDGPUHashmap<Key, Hash>::STDGPUHashmap(int64_t init_capacity,
 }
 
 template <typename Key, typename Hash>
-STDGPUHashmap<Key, Hash>::~STDGPUHashmap() {
+StdGPUHashmap<Key, Hash>::~StdGPUHashmap() {
     Free();
 }
 
 template <typename Key, typename Hash>
-int64_t STDGPUHashmap<Key, Hash>::Size() const {
+int64_t StdGPUHashmap<Key, Hash>::Size() const {
     return impl_.size();
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Insert(const void* input_keys,
+void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
                                       const void* input_values,
                                       addr_t* output_addrs,
                                       bool* output_masks,
@@ -139,21 +139,11 @@ void STDGPUHashmap<Key, Hash>::Insert(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Activate(const void* input_keys,
+void StdGPUHashmap<Key, Hash>::Activate(const void* input_keys,
                                         addr_t* output_addrs,
                                         bool* output_masks,
                                         int64_t count) {
-    int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
-        int64_t bucket_count = GetBucketCount();
-        float avg_capacity_per_bucket =
-                float(this->capacity_) / float(bucket_count);
-        int64_t expected_buckets = std::max(
-                bucket_count * 2,
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-        Rehash(expected_buckets);
-    }
-    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
+    Insert(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
 // Need an explicit kernel for non-const access to map
@@ -175,7 +165,7 @@ __global__ void STDGPUFindKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Find(const void* input_keys,
+void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
                                     addr_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
@@ -209,7 +199,7 @@ __global__ void STDGPUEraseKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Erase(const void* input_keys,
+void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
                                      bool* output_masks,
                                      int64_t count) {
     stdgpu::index_t threads = 32;
@@ -232,7 +222,7 @@ void STDGPUHashmap<Key, Hash>::Erase(const void* input_keys,
 }
 
 template <typename Key>
-struct collect {
+struct ValueExtractor {
     OPEN3D_HOST_DEVICE addr_t
     operator()(const thrust::pair<Key, addr_t>& x) const {
         return x.second;
@@ -240,17 +230,17 @@ struct collect {
 };
 
 template <typename Key, typename Hash>
-int64_t STDGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
+int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
     auto range = impl_.device_range();
 
     thrust::transform(range.begin(), range.end(), output_indices,
-                      collect<Key>());
+                      ValueExtractor<Key>());
 
     return impl_.size();
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
+void StdGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
@@ -283,17 +273,17 @@ void STDGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
 }
 
 template <typename Key, typename Hash>
-int64_t STDGPUHashmap<Key, Hash>::GetBucketCount() const {
+int64_t StdGPUHashmap<Key, Hash>::GetBucketCount() const {
     return impl_.bucket_count();
 }
 
 template <typename Key, typename Hash>
-std::vector<int64_t> STDGPUHashmap<Key, Hash>::BucketSizes() const {
+std::vector<int64_t> StdGPUHashmap<Key, Hash>::BucketSizes() const {
     utility::LogError("Unimplemented");
 }
 
 template <typename Key, typename Hash>
-float STDGPUHashmap<Key, Hash>::LoadFactor() const {
+float StdGPUHashmap<Key, Hash>::LoadFactor() const {
     return impl_.load_factor();
 }
 
@@ -347,7 +337,7 @@ __global__ void STDGPUInsertKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
+void StdGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
                                           const void* input_values,
                                           addr_t* output_addrs,
                                           bool* output_masks,
@@ -363,7 +353,7 @@ void STDGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
+void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     // Allocate buffer for key values.
@@ -383,7 +373,7 @@ void STDGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 }
 
 template <typename Key, typename Hash>
-void STDGPUHashmap<Key, Hash>::Free() {
+void StdGPUHashmap<Key, Hash>::Free() {
     // Buffer is automatically handled by the smart pointer.
 
     buffer_accessor_.HostFree(this->device_);

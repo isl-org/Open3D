@@ -29,6 +29,43 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/utility/Console.h"
 
+// TODO: dispatch more combinations.
+#define DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(DTYPE, DIM, ...)                  \
+    [&] {                                                                    \
+        if (DTYPE == open3d::core::Dtype::Int32) {                           \
+            if (DIM == 1) {                                                  \
+                using key_t = Block<int, 1>;                                 \
+                using hash_t = BlockHash<int, 1>;                            \
+                return __VA_ARGS__();                                        \
+            } else if (DIM == 2) {                                           \
+                using key_t = Block<int, 2>;                                 \
+                using hash_t = BlockHash<int, 2>;                            \
+                return __VA_ARGS__();                                        \
+            } else if (DIM == 3) {                                           \
+                using key_t = Block<int, 3>;                                 \
+                using hash_t = BlockHash<int, 3>;                            \
+                return __VA_ARGS__();                                        \
+            }                                                                \
+        } else if (DTYPE == open3d::core::Dtype::Int64) {                    \
+            if (DIM == 1) {                                                  \
+                using key_t = Block<int64_t, 1>;                             \
+                using hash_t = BlockHash<int64_t, 1>;                        \
+                return __VA_ARGS__();                                        \
+            } else if (DIM == 2) {                                           \
+                using key_t = Block<int64_t, 2>;                             \
+                using hash_t = BlockHash<int64_t, 2>;                        \
+                return __VA_ARGS__();                                        \
+            } else if (DIM == 3) {                                           \
+                using key_t = Block<int64_t, 3>;                             \
+                using hash_t = BlockHash<int64_t, 3>;                        \
+                return __VA_ARGS__();                                        \
+            }                                                                \
+        } else {                                                             \
+            utility::LogError("Unsupported dtype {} and dim {} combination", \
+                              DTYPE.ToString(), DIM);                        \
+        }                                                                    \
+    }()
+
 namespace open3d {
 namespace core {
 template <typename T, size_t N>
@@ -79,40 +116,3 @@ public:
 
 }  // namespace core
 }  // namespace open3d
-
-// TODO: dispatch more combinations.
-#define DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(DTYPE, DIM, ...)                  \
-    [&] {                                                                    \
-        if (DTYPE == open3d::core::Dtype::Int32) {                           \
-            if (DIM == 1) {                                                  \
-                using key_t = Block<int, 1>;                                 \
-                using hash_t = BlockHash<int, 1>;                            \
-                return __VA_ARGS__();                                        \
-            } else if (DIM == 2) {                                           \
-                using key_t = Block<int, 2>;                                 \
-                using hash_t = BlockHash<int, 2>;                            \
-                return __VA_ARGS__();                                        \
-            } else if (DIM == 3) {                                           \
-                using key_t = Block<int, 3>;                                 \
-                using hash_t = BlockHash<int, 3>;                            \
-                return __VA_ARGS__();                                        \
-            }                                                                \
-        } else if (DTYPE == open3d::core::Dtype::Int64) {                    \
-            if (DIM == 1) {                                                  \
-                using key_t = Block<int64_t, 1>;                             \
-                using hash_t = BlockHash<int64_t, 1>;                        \
-                return __VA_ARGS__();                                        \
-            } else if (DIM == 2) {                                           \
-                using key_t = Block<int64_t, 2>;                             \
-                using hash_t = BlockHash<int64_t, 2>;                        \
-                return __VA_ARGS__();                                        \
-            } else if (DIM == 3) {                                           \
-                using key_t = Block<int64_t, 3>;                             \
-                using hash_t = BlockHash<int64_t, 3>;                        \
-                return __VA_ARGS__();                                        \
-            }                                                                \
-        } else {                                                             \
-            utility::LogError("Unsupported dtype {} and dim {} combination", \
-                              DTYPE.ToString(), DIM);                        \
-        }                                                                    \
-    }()

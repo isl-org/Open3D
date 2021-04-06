@@ -74,12 +74,12 @@ INSTANTIATE_TEST_SUITE_P(Hashmap,
 TEST_P(HashmapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
 
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     for (auto backend : backends) {
@@ -104,12 +104,12 @@ TEST_P(HashmapPermuteDevices, SimpleInit) {
 
 TEST_P(HashmapPermuteDevices, Find) {
     core::Device device = GetParam();
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     const int n = 1000000;
@@ -148,12 +148,12 @@ TEST_P(HashmapPermuteDevices, Find) {
 
 TEST_P(HashmapPermuteDevices, Insert) {
     core::Device device = GetParam();
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     const int n = 1000000;
@@ -201,12 +201,12 @@ TEST_P(HashmapPermuteDevices, Insert) {
 
 TEST_P(HashmapPermuteDevices, Erase) {
     core::Device device = GetParam();
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     const int n = 1000000;
@@ -266,12 +266,12 @@ TEST_P(HashmapPermuteDevices, Erase) {
 
 TEST_P(HashmapPermuteDevices, Rehash) {
     core::Device device = GetParam();
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     const int n = 1000000;
@@ -332,12 +332,12 @@ public:
 
 TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
     core::Device device = GetParam();
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     const int n = 1000000;

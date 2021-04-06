@@ -34,7 +34,7 @@
 namespace open3d {
 namespace core {
 
-enum class Backend;
+enum class HashmapBackend;
 
 class DeviceHashmap {
 public:
@@ -123,7 +123,7 @@ std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
         const Device& device,
-        const Backend& backend);
+        const HashmapBackend& backend);
 
 std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         int64_t init_capacity,
@@ -132,7 +132,7 @@ std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
         const Device& device,
-        const Backend& backend);
+        const HashmapBackend& backend);
 
 std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         int64_t init_capacity,
@@ -141,7 +141,7 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
         const Device& device,
-        const Backend& backend);
+        const HashmapBackend& backend);
 
 }  // namespace core
 }  // namespace open3d

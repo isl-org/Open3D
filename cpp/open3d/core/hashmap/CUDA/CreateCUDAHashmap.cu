@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/STDGPUHashmap.h"
 #include "open3d/core/hashmap/CUDA/SlabHashmap.h"
+#include "open3d/core/hashmap/CUDA/StdGPUHashmap.h"
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/Hashmap.h"
 
@@ -40,9 +40,9 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
         const Device& device,
-        const Backend& backend) {
-    if (backend != Backend::Default && backend != Backend::Slab &&
-        backend != Backend::StdGPU) {
+        const HashmapBackend& backend) {
+    if (backend != HashmapBackend::Default && backend != HashmapBackend::Slab &&
+        backend != HashmapBackend::StdGPU) {
         utility::LogError("Unsupported backend for CUDA hashmap.");
     }
 
@@ -53,12 +53,13 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
             element_shape_value.NumElements() * dtype_value.ByteSize();
 
     std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
-    if (backend == Backend::Default || backend == Backend::StdGPU) {
+    if (backend == HashmapBackend::Default ||
+        backend == HashmapBackend::StdGPU) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-            device_hashmap_ptr = std::make_shared<STDGPUHashmap<key_t, hash_t>>(
+            device_hashmap_ptr = std::make_shared<StdGPUHashmap<key_t, hash_t>>(
                     init_capacity, dsize_key, dsize_value, device);
         });
-    } else {  // if (backend == Backend::Slab) {
+    } else {  // if (backend == HashmapBackend::Slab) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
             device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
                     init_capacity, dsize_key, dsize_value, device);

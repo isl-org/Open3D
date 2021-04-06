@@ -40,7 +40,7 @@ Hashmap::Hashmap(int64_t init_capacity,
                  const SizeVector& element_shape_key,
                  const SizeVector& element_shape_value,
                  const Device& device,
-                 const Backend& backend)
+                 const HashmapBackend& backend)
     : dtype_key_(dtype_key),
       dtype_value_(dtype_value),
       element_shape_key_(element_shape_key),

@@ -24,17 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
-#pragma once
 namespace open3d {
 namespace core {
 
 class DeviceHashmap;
 
-enum class Backend { Slab, StdGPU, TBB, Default };
+enum class HashmapBackend { Slab, StdGPU, TBB, Default };
 
 class Hashmap {
 public:
@@ -49,7 +50,7 @@ public:
             const SizeVector& element_shape_key,
             const SizeVector& element_shape_value,
             const Device& device,
-            const Backend& backend = Backend::Default);
+            const HashmapBackend& backend = HashmapBackend::Default);
 
     ~Hashmap(){};
 

@@ -39,8 +39,8 @@ std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         const SizeVector& element_shape_key,
         const SizeVector& element_shape_value,
         const Device& device,
-        const Backend& backend) {
-    if (backend != Backend::Default && backend != Backend::TBB) {
+        const HashmapBackend& backend) {
+    if (backend != HashmapBackend::Default && backend != HashmapBackend::TBB) {
         utility::LogError("Unsupported backend for CPU hashmap.");
     }
 

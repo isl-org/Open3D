@@ -45,12 +45,12 @@ INSTANTIATE_TEST_SUITE_P(TSDFVoxelGrid,
 
 TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
     core::Device device = GetParam();
-    std::vector<core::Backend> backends;
+    std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::Backend::Slab);
-        backends.push_back(core::Backend::StdGPU);
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
     } else {
-        backends.push_back(core::Backend::TBB);
+        backends.push_back(core::HashmapBackend::TBB);
     }
 
     for (auto backend : backends) {
@@ -108,7 +108,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
             voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
 
             if (i == trajectory->parameters_.size() - 1) {
-                if (backend == core::Backend::Slab) {
+                if (backend == core::HashmapBackend::Slab) {
                     EXPECT_THROW(voxel_grid.RayCast(
                                          intrinsic_t, extrinsic_t,
                                          depth.GetCols(), depth.GetRows(), 50,
