@@ -456,7 +456,7 @@ void PickPointsInteractor::OnPickImageDone(
             }
             // Loop through the rows of the polygon.
             std::vector<bool> is_vert_corner(info.polygon.size(), false);
-            for (int i = 0; i < info.polygon.size() - 1; ++i) {
+            for (size_t i = 0; i < info.polygon.size() - 1; ++i) {
                 int prev = i - 1;
                 if (prev < 0) {
                     prev = info.polygon.size() - 2;
@@ -539,7 +539,7 @@ void PickPointsInteractor::OnPickImageDone(
                 }
 
                 // "Fill" the pixels on this row
-                for (int i = 0; i < sortedX.size(); i += 2) {
+                for (size_t i = 0; i < sortedX.size(); i += 2) {
                     int startX = sortedX[i];
                     int endX = sortedX[i + 1];
                     for (int x = startX; x <= endX; ++x) {
