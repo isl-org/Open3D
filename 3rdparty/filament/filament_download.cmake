@@ -1,8 +1,12 @@
 include(FetchContent)
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl vkshaders ibl image meshoptimizer smol-v utils)
+set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
 if(UNIX OR WIN32)
     list(APPEND filament_LIBRARIES bluevk)
+endif()
+
+if(APPLE)
+    list(APPEND filament_LIBRARIES vkshaders)
 endif()
 
 if (FILAMENT_PRECOMPILED_ROOT)
