@@ -214,12 +214,26 @@ void pybind_rendering_classes(py::module &m) {
             .def("get_field_of_view_type", &Camera::GetFieldOfViewType,
                  "Returns the field of view type. Only valid if it was passed "
                  "to set_projection().")
-            .def("get_projection_matrix", &Camera::GetProjectionMatrix,
-                 "Returns the projection matrix of the camera")
-            .def("get_view_matrix", &Camera::GetViewMatrix,
-                 "Returns the view matrix of the camera")
-            .def("get_model_matrix", &Camera::GetModelMatrix,
-                 "Returns the model matrix of the camera");
+            .def(
+                    "get_projection_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        // GetProjectionMatrix() returns Eigen::Transform which
+                        // doesn't have a conversion to a Python object
+                        return cam.GetProjectionMatrix().matrix();
+                    },
+                    "Returns the projection matrix of the camera")
+            .def(
+                    "get_view_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        return cam.GetViewMatrix().matrix();
+                    },
+                    "Returns the view matrix of the camera")
+            .def(
+                    "get_model_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        return cam.GetModelMatrix().matrix();
+                    },
+                    "Returns the model matrix of the camera");
 
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
