@@ -72,8 +72,8 @@ LoadTensorPointCloudFromFile(const std::string& path_source,
     t::io::ReadPointCloud(path_source, source, {"auto", false, false, true});
     t::io::ReadPointCloud(path_target, target, {"auto", false, false, true});
 
-    source = source.To(device);
-    target = target.To(device);
+    source = source.To(device).VoxelDownSample(voxel_downsample_factor);
+    target = target.To(device).VoxelDownSample(voxel_downsample_factor);
 
     // Currently only Float32 pointcloud is supported.
     for (std::string attr : {"points", "colors", "normals"}) {
