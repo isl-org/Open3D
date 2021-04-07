@@ -26,11 +26,11 @@ RUN which cmake \
 # depot_tools
 # We need a matching depot_tools version to the WebRTC version. The depot_tools
 # version:
-#
+# ```
 # commit 84ce160786308521c2fd115fa554ca6be161158c
 # Author: Brian Ryner <bryner@google.com>
 # Date:   Tue Mar 23 02:05:57 2021 +0000
-#
+# ```
 # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
 RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git \
  && cd depot_tools \
