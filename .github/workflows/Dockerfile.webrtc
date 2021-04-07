@@ -66,13 +66,18 @@ RUN apt-get update && apt-get install -y \
     tree \
  && rm -rf /var/lib/apt/lists/*
 
-ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+# ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 
 # Build WebRTC
 WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
- && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_install .. \
+ && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_ubuntu1804 .. \
  && make -j$(nproc) \
  && make install \
- && tree -L 2 /webrtc_install
+ && tree -L 2 /webrtc_ubuntu1804
+
+# Package WebRTC
+WORKDIR /
+RUN tar -czf webrtc_ubuntu1804.tar.gz webrtc_ubuntu1804 \
+ && ls -alh webrtc_ubuntu1804.tar.gz
