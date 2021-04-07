@@ -87,6 +87,7 @@ endif()
 
 add_custom_target(webrtc
     COMMAND export PATH=$PATH:${DEPOT_TOOLS_ROOT}
-    COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
+    COMMAND gn gen .
+    COMMAND ninja ${NINJA_TARGET}
     WORKING_DIRECTORY ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}
 )
