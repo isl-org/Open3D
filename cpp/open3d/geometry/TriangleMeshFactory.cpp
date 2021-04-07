@@ -280,6 +280,23 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
                                     height * 0.5 - h_step * i);
         }
     }
+
+    std::unordered_map<int64_t, std::pair<double, double>> map_vertices_to_uv;
+    std::unordered_map<int64_t, std::pair<double, double>>
+            map_cut_vertices_to_uv;
+
+    for (int i = 0; i <= split; i++) {
+        double uv_row = (1.0 / (double)split) * i;
+        for (int j = 0; j < resolution; j++) {
+            // double theta = step * j;
+            double uv_col = (1.0 / (double)resolution) * j;
+            map_vertices_to_uv[2 + resolution * i + j] =
+                    std::make_pair(uv_row, uv_col);
+        }
+        map_cut_vertices_to_uv[2 + resolution * i] =
+                std::make_pair(uv_row, 1.0);
+    }
+
     for (int j = 0; j < resolution; j++) {
         int j1 = (j + 1) % resolution;
         int base = 2;
@@ -287,6 +304,31 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
         base = 2 + resolution * split;
         mesh->triangles_.push_back(Eigen::Vector3i(1, base + j1, base + j));
     }
+
+    for (int j = 0; j < resolution; j++) {
+        int j1 = (j + 1) % resolution;
+        // int base = 2;
+
+        double theta = step * j;
+        double theta1 = step * j1;
+        double uv_radius = 0.25;
+
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.75, 0.25));
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                0.75 + uv_radius * cos(theta), 0.25 + uv_radius * sin(theta)));
+        mesh->triangle_uvs_.push_back(
+                Eigen::Vector2d(0.75 + uv_radius * cos(theta1),
+                                0.25 + uv_radius * sin(theta1)));
+
+        // base = 2 + resolution * split;
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.75, 0.75));
+        mesh->triangle_uvs_.push_back(
+                Eigen::Vector2d(0.75 + uv_radius * cos(theta1),
+                                0.75 + uv_radius * sin(theta1)));
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                0.75 + uv_radius * cos(theta), 0.75 + uv_radius * sin(theta)));
+    }
+
     for (int i = 0; i < split; i++) {
         int base1 = 2 + resolution * i;
         int base2 = base1 + resolution;
@@ -298,6 +340,54 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
                     Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1));
         }
     }
+
+    for (int i = 0; i < split; i++) {
+        int base1 = 2 + resolution * i;
+        int base2 = base1 + resolution;
+        for (int j = 0; j < resolution - 1; j++) {
+            int j1 = (j + 1) % resolution;
+
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base2 + j].first,
+                                    map_vertices_to_uv[base2 + j].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base1 + j1].first,
+                                    map_vertices_to_uv[base1 + j1].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base1 + j].first,
+                                    map_vertices_to_uv[base1 + j].second));
+
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base2 + j].first,
+                                    map_vertices_to_uv[base2 + j].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base2 + j1].first,
+                                    map_vertices_to_uv[base2 + j1].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base1 + j1].first,
+                                    map_vertices_to_uv[base1 + j1].second));
+        }
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                map_vertices_to_uv[base2 + resolution - 1].first,
+                map_vertices_to_uv[base2 + resolution - 1].second));
+        mesh->triangle_uvs_.push_back(
+                Eigen::Vector2d(map_cut_vertices_to_uv[base1].first,
+                                map_cut_vertices_to_uv[base1].second));
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                map_vertices_to_uv[base1 + resolution - 1].first,
+                map_vertices_to_uv[base1 + resolution - 1].second));
+
+        mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                map_vertices_to_uv[base2 + resolution - 1].first,
+                map_vertices_to_uv[base2 + resolution - 1].second));
+        mesh->triangle_uvs_.push_back(
+                Eigen::Vector2d(map_cut_vertices_to_uv[base2].first,
+                                map_cut_vertices_to_uv[base2].second));
+        mesh->triangle_uvs_.push_back(
+                Eigen::Vector2d(map_cut_vertices_to_uv[base1].first,
+                                map_cut_vertices_to_uv[base1].second));
+    }
+
     return mesh;
 }
 
