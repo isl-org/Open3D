@@ -1,7 +1,7 @@
 # Usage example:
 #
 # docker build -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
-# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_release.tar.gz > webrtc_release.tar.gz
+# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_e2ac591.tar.gz > webrtc_e2ac591.tar.gz
 
 FROM ubuntu:18.04
 
