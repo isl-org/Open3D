@@ -1,3 +1,8 @@
+# Usage example:
+#
+# docker build -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
+# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_ubuntu1804.tar.gz > webrtc_ubuntu1804.tar.gz
+
 FROM ubuntu:18.04
 
 # Dependencies
