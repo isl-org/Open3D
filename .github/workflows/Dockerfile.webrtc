@@ -84,5 +84,5 @@ RUN mkdir build \
 
 # Package WebRTC
 WORKDIR /
-RUN tar -czf webrtc_release.tar.gz webrtc_release \
- && ls -alh webrtc_release.tar.gz
+RUN tar -czf webrtc_e2ac591.tar.gz webrtc_release \
+ && ls -alh webrtc_e2ac591.tar.gz
