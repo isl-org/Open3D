@@ -11,7 +11,8 @@
 # 2) CMake will compile two libraries libwebrtc.a and libwebrtc_extra.a.
 #    - libwebrtc.a compilation is driven by Ninja, the output will be in:
 #      ${WEBRTC_ROOT}/src/out/Release/obj/libwebrtc.a
-#    - libwebrtc_extra.a compilation is driven by CMake, the output will be in:
+#    - libwebrtc_extra.a compilation is driven by Ninja but CMake packages the
+#      object files into a static library, the output will be in:
 #      ${WEBRTC_ROOT}/src/out/Release/obj/libwebrtc_extra.a
 #
 # 3) Finally, `make install` will install headers and binaries to
@@ -41,9 +42,10 @@ if(WEBRTC_IS_DEBUG)
 else()
     set(WEBRTC_BUILD Release)
 endif()
+set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 
 # Generate build/args.gn
-if(NOT EXISTS ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/args.gn)
+if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
     if(WEBRTC_IS_DEBUG)
         set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
     else()
@@ -81,13 +83,49 @@ if(NOT EXISTS ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/args.gn)
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
-    file(WRITE ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/args.gn ${WEBRTC_ARGS})
+    file(WRITE ${WEBRTC_NINJA_ROOT}/args.gn ${WEBRTC_ARGS})
     message(STATUS "Configs written to ${WEBRTC_ROOT}/src/out/Release/args.gn")
 endif()
 
+set(NINJA_TARGET
+    webrtc
+    rtc_json
+    jsoncpp
+    builtin_video_decoder_factory
+    builtin_video_encoder_factory
+    peerconnection
+    p2p_server_utils
+    task_queue
+    default_task_queue_factory
+)
+
+# Byproducts for ninja build, later packaged by CMake into libwebrtc_extra.a
+set(EXTRA_WEBRTC_OBJS
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer.o
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server.o
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server.o
+    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/default_task_queue_factory/default_task_queue_factory_stdlib.o
+    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/task_queue/task_queue_base.o
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_task_queue_stdlib/task_queue_stdlib.o
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json.o
+)
+
+# libwebrtc.a
 add_custom_target(webrtc
     COMMAND export PATH=$PATH:${DEPOT_TOOLS_ROOT}
     COMMAND gn gen .
     COMMAND ninja ${NINJA_TARGET}
-    WORKING_DIRECTORY ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}
+    WORKING_DIRECTORY ${WEBRTC_NINJA_ROOT}
+    BYPRODUCTS ${EXTRA_WEBRTC_OBJS}
+)
+
+# libwebrtc_extra.a
+add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
+set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES GENERATED TRUE)
+add_dependencies(webrtc_extra webrtc)
+set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(webrtc_extra PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${WEBRTC_NINJA_ROOT}/obj
 )

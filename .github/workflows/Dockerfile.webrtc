@@ -68,5 +68,6 @@ RUN mkdir build \
  && cd build \
  && cmake .. \
  && make webrtc -j$(nproc) \
+ && make webrtc_extra -j$(nproc) \
  && cat ../src/out/Release/args.gn \
  && false
