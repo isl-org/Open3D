@@ -158,11 +158,11 @@ RegistrationResult RegistrationICP(
 /// length as voxel_sizes and criteria.
 /// \param init Initial transformation estimation.
 /// \param estimation Estimation method.
-RegistrationResult RegistrationICPMultiScale(
+RegistrationResult RegistrationMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
-        const std::vector<ICPConvergenceCriteria> &criteria,
+        const std::vector<ICPConvergenceCriteria> &criterias,
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init = core::Tensor::Eye(4,
                                                      core::Dtype::Float32,

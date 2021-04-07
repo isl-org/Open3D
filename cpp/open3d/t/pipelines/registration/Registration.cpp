@@ -124,12 +124,12 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                                    const core::Tensor &init,
                                    const TransformationEstimation &estimation,
                                    const ICPConvergenceCriteria &criteria) {
-    return RegistrationICPMultiScale(source, target, {-1}, {criteria},
+    return RegistrationMultiScaleICP(source, target, {-1}, {criteria},
                                      {max_correspondence_distance}, init,
                                      estimation);
 }
 
-RegistrationResult RegistrationICPMultiScale(
+RegistrationResult RegistrationMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
@@ -150,9 +150,20 @@ RegistrationResult RegistrationICPMultiScale(
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [RegistrationICPMultiScale]: Size of ICPConvergenceCriteria,"
+                " [RegistrationMultiScaleICP]: Size of ICPConvergenceCriteria,"
                 " voxel_size, max_correspondence_distances vectors must be "
                 "same.");
+    }
+
+    if ((estimation.GetTransformationEstimationType() ==
+                 TransformationEstimationType::PointToPlane ||
+         estimation.GetTransformationEstimationType() ==
+                 TransformationEstimationType::ColoredICP) &&
+        (!target.HasPointNormals())) {
+        utility::LogError(
+                "TransformationEstimationPointToPlane and "
+                "TransformationEstimationColoredICP "
+                "require pre-computed normal vectors for target PointCloud.");
     }
 
     for (int64_t i = 1; i < num_iterations; i++) {
@@ -212,8 +223,9 @@ RegistrationResult RegistrationICPMultiScale(
 
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
             utility::LogDebug(
-                    "ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                    result.fitness_, result.inlier_rmse_);
+                    "ICP Scale#{:d}: Iteration #{:d}: Fitness {:.4f}, RMSE "
+                    "{:.4f}",
+                    i + 1, j, result.fitness_, result.inlier_rmse_);
 
             core::Tensor update = estimation.ComputeTransformation(
                     source_down_pyramid[i], target_down_pyramid[i],
