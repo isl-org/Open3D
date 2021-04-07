@@ -46,18 +46,6 @@ set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 
 # Generate build/args.gn
 if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
-    if(WEBRTC_IS_DEBUG)
-        set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
-    else()
-        set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
-    endif()
-
-    if(WEBRTC_IS_CLANG)
-        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
-    else()
-        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-    endif()
-
     set(WEBRTC_ARGS rtc_include_tests=false\n)
     set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_examples=false\n${WEBRTC_ARGS})
@@ -76,12 +64,24 @@ if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS use_custom_libcxx_for_host=false\n${WEBRTC_ARGS})
 
+    if(WEBRTC_IS_DEBUG)
+        set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
+    else()
+        set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
+    endif()
+
     # H264 support
     set(WEBRTC_ARGS is_chrome_branded=true\n${WEBRTC_ARGS})
 
     # Sound support
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
+
+    if(WEBRTC_IS_CLANG)
+        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    else()
+        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
+    endif()
 
     file(WRITE ${WEBRTC_NINJA_ROOT}/args.gn ${WEBRTC_ARGS})
     message(STATUS "Configs written to ${WEBRTC_NINJA_ROOT}/args.gn")
