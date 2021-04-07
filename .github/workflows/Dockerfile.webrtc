@@ -1,6 +1,8 @@
 FROM ubuntu:18.04
 
 # Dependencies
+# python*       : resolve ImportError: No module named pkg_resources
+# libglib2.0-dev: resolve pkg_config("glib")
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
     build-essential \
@@ -8,8 +10,11 @@ RUN apt-get update && apt-get install -y \
     ccache \
     git  \
     gnupg \
+    libglib2.0-dev \
     python \
-    python3 \
+    python-pip \
+    python-setuptools \
+    python-wheel \
     software-properties-common \
     wget \
  && rm -rf /var/lib/apt/lists/*
@@ -64,15 +69,6 @@ RUN cd depot_tools \
 
 # `docker build` should be executed in the Open3D root dir
 COPY 3rdparty/webrtc/CMakeLists.txt /webrtc
-
-# Python packages needed fot "ImportError: No module named pkg_resources"
-# libglib2.0-dev needed for pkg_config("glib")
-RUN apt-get update && apt-get install -y \
-    python-setuptools \
-    python-pip \
-    python-wheel \
-    libglib2.0-dev \
- && rm -rf /var/lib/apt/lists/*
 
 # Build WebRTC
 WORKDIR /webrtc
