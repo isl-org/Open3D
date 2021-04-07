@@ -128,17 +128,28 @@ int main(int argc, char** argv) {
                                           voxel_size, sdf_trunc, 16,
                                           block_count, device);
 
+    double time_total = 0;
+    double time_int = 0;
+    double time_raycasting = 0;
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
-        // Load image
-        std::shared_ptr<geometry::Image> depth_legacy =
-                io::CreateImageFromFile(depth_filenames[i]);
-        std::shared_ptr<geometry::Image> color_legacy =
-                io::CreateImageFromFile(color_filenames[i]);
+        utility::Timer timer;
+        timer.Start();
 
+        // Load image
+        utility::Timer timer_io;
+        timer_io.Start();
         t::geometry::Image depth =
-                t::geometry::Image::FromLegacyImage(*depth_legacy, device);
+                (*t::io::CreateImageFromFile(depth_filenames[i]));
         t::geometry::Image color =
-                t::geometry::Image::FromLegacyImage(*color_legacy, device);
+                (*t::io::CreateImageFromFile(color_filenames[i]));
+        timer_io.Stop();
+        utility::LogInfo("IO takes {}", timer_io.GetDuration());
+
+        timer_io.Start();
+        depth = depth.To(device);
+        color = color.To(device);
+        timer_io.Stop();
+        utility::LogInfo("Conversion takes {}", timer_io.GetDuration());
 
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
@@ -146,25 +157,57 @@ int main(int argc, char** argv) {
                 core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
-        utility::Timer timer;
-        timer.Start();
+        utility::Timer int_timer;
+        int_timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
+        int_timer.Stop();
+        utility::LogInfo("{}: Integration takes {}", i,
+                         int_timer.GetDuration());
+        time_int += int_timer.GetDuration();
 
-        if (enable_raycast && i % 100 == 0) {
-            core::Tensor vertex_map, color_map;
-            std::tie(vertex_map, color_map) = voxel_grid.RayCast(
-                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
-                    50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+        if (enable_raycast) {
+            core::Tensor vertex_map, color_map, normal_map;
 
-            t::geometry::Image vertex_im(vertex_map);
-            visualization::DrawGeometries(
-                    {std::make_shared<open3d::geometry::Image>(
-                            vertex_im.ToLegacyImage())});
+            utility::Timer ray_timer;
+            ray_timer.Start();
+
+            float scale = 4.0;
+            Tensor intrinsic_t_down = intrinsic_t / scale;
+            intrinsic_t_down[2][2] = 1.0;
+            std::tie(vertex_map, color_map, normal_map) = voxel_grid.RayCast(
+                    intrinsic_t_down, extrinsic_t, depth.GetCols() / scale,
+                    depth.GetRows() / scale, 80, 0.1, 3.0,
+                    std::min(i * 1.0f, 3.0f));
+            ray_timer.Stop();
+            utility::LogInfo("{}: Raycast takes {}", i,
+                             ray_timer.GetDuration());
+            time_raycasting += ray_timer.GetDuration();
+
+            if (i % 500 == 0) {
+                t::geometry::Image vertex(vertex_map);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                vertex.ToLegacyImage())});
+                t::geometry::Image normal(normal_map);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                normal.ToLegacyImage())});
+                t::geometry::Image color(color_map);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                color.ToLegacyImage())});
+            }
         }
+
         timer.Stop();
-        utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
+        utility::LogInfo("{}: Per iteration takes {}", i, timer.GetDuration());
+        time_total += timer.GetDuration();
     }
+
+    size_t n = trajectory->parameters_.size();
+    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
+                     time_total / n, time_raycasting / n, time_int / n);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();

@@ -24,46 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
-#pragma once
 namespace open3d {
 namespace core {
 
-// Forward declaration of device-dependent classes
-class DefaultHash;
-class DefaultKeyEq;
-
-template <typename Hash, typename KeyEq>
 class DeviceHashmap;
-typedef DeviceHashmap<DefaultHash, DefaultKeyEq> DefaultDeviceHashmap;
+
+enum class HashmapBackend { Slab, StdGPU, TBB, Default };
 
 class Hashmap {
 public:
-    static constexpr int64_t kDefaultElemsPerBucket = 4;
-
-    /// Constructor for primitive and custom types, supporting element shapes.
-    /// Example 1:
+    /// Constructor for primitive types, supporting element shapes.
+    /// Example:
     /// Key is int<3> coordinate:
-    /// # Option 1:
     /// - dtype_key = Dtype::Int32
     /// - element_shape_key = {3}
-    /// # Option 2:
-    /// - dtype_key = Dtype(DtypeCode::Object, 3 * Dtype::Int32.ByteSize(),
-    /// "int3")
-    /// - element_shape_key = {1}
-    /// Example 2:
-    /// Key is struct Pt {int x; int y; int z;}
-    /// - dtype_key = Dtype(DtypeCode::Object, sizeof(Pt), "pt")
-    /// - element_shape_key = {1}
     Hashmap(int64_t init_capacity,
             const Dtype& dtype_key,
             const Dtype& dtype_value,
             const SizeVector& element_shape_key,
             const SizeVector& element_shape_value,
-            const Device& device);
+            const Device& device,
+            const HashmapBackend& backend = HashmapBackend::Default);
 
     ~Hashmap(){};
 
@@ -141,7 +128,7 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() const {
+    std::shared_ptr<DeviceHashmap> GetDeviceHashmap() const {
         return device_hashmap_;
     }
 
@@ -155,10 +142,10 @@ protected:
     Dtype GetValueDtype() const { return dtype_value_; }
 
 private:
-    std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;
+    std::shared_ptr<DeviceHashmap> device_hashmap_;
 
-    Dtype dtype_key_ = Dtype::Undefined;
-    Dtype dtype_value_ = Dtype::Undefined;
+    Dtype dtype_key_;
+    Dtype dtype_value_;
 
     SizeVector element_shape_key_;
     SizeVector element_shape_value_;
