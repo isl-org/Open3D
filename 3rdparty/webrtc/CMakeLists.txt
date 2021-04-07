@@ -114,6 +114,7 @@ set(EXTRA_WEBRTC_OBJS
 
 # libwebrtc.a
 add_custom_target(webrtc
+    ALL
     COMMAND export PATH=$PATH:${DEPOT_TOOLS_ROOT}
     COMMAND gn gen .
     COMMAND ninja ${NINJA_TARGET}
