@@ -1192,7 +1192,7 @@ endif ()
 
 # WebRTC
 if (BUILD_WEBRTC)
-    include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc.cmake)
+    include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_download.cmake)
     import_3rdparty_library(3rdparty_webrtc
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
         LIB_DIR      ${WEBRTC_LIB_DIR}
