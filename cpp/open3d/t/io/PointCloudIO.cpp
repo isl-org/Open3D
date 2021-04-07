@@ -138,8 +138,13 @@ bool WritePointCloud(const std::string &filename,
     }
 
     bool success = map_itr->second(filename, pointcloud, params);
-    utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                      (int)pointcloud.GetPoints().GetLength());
+
+    if (!pointcloud.IsEmpty()) {
+        utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
+                          (int)pointcloud.GetPoints().GetLength());
+    } else {
+        utility::LogDebug("Write geometry::PointCloud: 0 vertices.");
+    }
     return success;
 }
 

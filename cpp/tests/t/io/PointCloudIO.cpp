@@ -186,6 +186,18 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
 }
 
+// Read write empty point cloud.
+TEST(TPointCloudIO, ReadWriteEmptyPTS) {
+    t::geometry::PointCloud pcd, pcd_read;
+    std::string file_name = std::string(TEST_DATA_DIR) + "/test_empty.pts";
+    EXPECT_TRUE(pcd.IsEmpty());
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_TRUE(pcd_read.IsEmpty());
+    std::remove(file_name.c_str());
+}
+
 // Read write pts with colors and intensities.
 TEST(TPointCloudIO, ReadWritePTS) {
     t::geometry::PointCloud pcd, pcd_read, pcd_i, pcd_color;
@@ -256,6 +268,37 @@ TEST(TPointCloudIO, ReadPointCloudFromPTS2) {
                     "/open3d_downloads/tests/bunnyData.pts",
             pcd, {"auto", false, false, true}));
     EXPECT_EQ(pcd.GetPoints().GetLength(), 30571);
+}
+
+// Check PTS color float to uint8 conversion.
+TEST(TPointCloudIO, WritePTSColorConversion1) {
+    t::geometry::PointCloud pcd, pcd_read;
+    std::string file_name =
+            std::string(TEST_DATA_DIR) + "/test_color_conversion.pts";
+    pcd.SetPoints(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointColors(
+            core::Tensor::Init<float>({{-1, 0.25, 0.3}, {0, 4, 0.1}}));
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
+              std::vector<uint8_t>({0, 64, 77, 0, 255, 26}));
+    std::remove(file_name.c_str());
+}
+
+// Check PTS color boolean to uint8 conversion.
+TEST(TPointCloudIO, WritePTSColorConversion2) {
+    t::geometry::PointCloud pcd, pcd_read;
+    std::string file_name =
+            std::string(TEST_DATA_DIR) + "/test_color_conversion.pts";
+    pcd.SetPoints(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointColors(core::Tensor::Init<bool>({{1, 0, 0}, {1, 0, 1}}));
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
+              std::vector<uint8_t>({255, 0, 0, 255, 0, 255}));
+    std::remove(file_name.c_str());
 }
 
 }  // namespace tests
