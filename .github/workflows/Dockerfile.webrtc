@@ -49,7 +49,7 @@ RUN which fetch
 # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
 RUN mkdir webrtc \
  && cd webrtc \
- && fetch --no-history webrtc \
+ && fetch webrtc \
  && cd src \
  && git checkout e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87 \
  && git submodule update --init --recursive \
