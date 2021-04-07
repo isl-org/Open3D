@@ -1,7 +1,7 @@
 # Usage example:
 #
 # docker build -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
-# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_ubuntu1804.tar.gz > webrtc_ubuntu1804.tar.gz
+# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_release.tar.gz > webrtc_release.tar.gz
 
 FROM ubuntu:18.04
 
@@ -77,12 +77,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
- && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_ubuntu1804 .. \
+ && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_release .. \
  && make -j$(nproc) \
  && make install \
- && tree -L 2 /webrtc_ubuntu1804
+ && tree -L 2 /webrtc_release
 
 # Package WebRTC
 WORKDIR /
-RUN tar -czf webrtc_ubuntu1804.tar.gz webrtc_ubuntu1804 \
- && ls -alh webrtc_ubuntu1804.tar.gz
+RUN tar -czf webrtc_release.tar.gz webrtc_release \
+ && ls -alh webrtc_release.tar.gz
