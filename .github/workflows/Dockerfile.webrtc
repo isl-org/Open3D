@@ -62,14 +62,24 @@ RUN cd depot_tools \
  && gclient sync -D --force --reset \
  && cd ..
 
-# `docker build` should be executed in the Open3D root dir
-COPY 3rdparty/webrtc/CMakeLists.txt /webrtc
-
 RUN apt-get update && apt-get install -y \
     tree \
  && rm -rf /var/lib/apt/lists/*
 
 ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
+# Copy CMake file and patches
+# `docker build` should be executed in the Open3D root dir
+COPY 3rdparty/webrtc/CMakeLists.txt /webrtc
+COPY 3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch         /webrtc
+COPY 3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch       /webrtc
+COPY 3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch /webrtc
+WORKDIR /webrtc/src
+RUN git apply /webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
+WORKDIR /webrtc/src/build
+RUN git apply /webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
+WORKDIR /webrtc/src/third_party
+RUN git apply /webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
 
 # Build WebRTC
 WORKDIR /webrtc
