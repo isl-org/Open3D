@@ -1,9 +1,13 @@
-# Usage example:
-#
+# Example usage:
 # docker build -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
-# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_e2ac591.tar.gz > webrtc_e2ac591.tar.gz
+# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_60e6748.tar.gz > webrtc_60e6748.tar.gz
 
 FROM ubuntu:18.04
+
+# Date: Wed Apr 7 21:35:29 2021 +0000
+ARG DEPOT_TOOLS_COMMIT=e1a98941d3ab10549be6d82d0686bb0fb91ec903
+# Date: Wed Apr 7 19:12:13 2021 +0200
+ARG WEBRTC_COMMIT=60e674842ebae283cc6b2627f4b6f2f8186f3317
 
 # Dependencies
 # python*       : resolve ImportError: No module named pkg_resources
@@ -21,8 +25,11 @@ RUN apt-get update && apt-get install -y \
     python-setuptools \
     python-wheel \
     software-properties-common \
+    tree \
     wget \
  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /
 
 # CMake
 # Ref: https://apt.kitware.com/
@@ -44,27 +51,17 @@ RUN which fetch
 # Get WebRTC
 RUN mkdir webrtc \
  && cd webrtc \
- && fetch webrtc \
- && cd ..
+ && fetch webrtc
 
 # Checkout to a specific version
 # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-# Date: Wed Apr 7 21:35:29 2021 +0000
-ARG DEPOT_TOOLS_COMMIT=e1a98941d3ab10549be6d82d0686bb0fb91ec903
-# Date: Wed Apr 7 19:12:13 2021 +0200
-ARG WEBRTC_COMMIT=e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87
 RUN cd depot_tools \
- && git checkout ${DEPOT_TOOLS_COMMIT} \
- && cd ../webrtc/src \
+ && git checkout ${DEPOT_TOOLS_COMMIT}
+RUN cd webrtc/src \
  && git checkout ${WEBRTC_COMMIT} \
  && git submodule update --init --recursive \
  && cd .. \
- && gclient sync -D --force --reset \
- && cd ..
-
-RUN apt-get update && apt-get install -y \
-    tree \
- && rm -rf /var/lib/apt/lists/*
+ && gclient sync -D --force --reset
 
 ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 
