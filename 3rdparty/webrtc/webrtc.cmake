@@ -53,11 +53,12 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
 
     # Compilation mode depending on target
     set(WEBRTC_ARGS use_sysroot=false\n${WEBRTC_ARGS})
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
-    else()
-        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-    endif()
+    set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    # if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    #     set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    # else()
+    #     set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
+    # endif()
 
     file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
 endif()
