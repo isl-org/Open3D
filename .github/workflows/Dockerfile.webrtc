@@ -85,7 +85,7 @@ RUN git apply /webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
 WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
- && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_release -DWEBRTC_IS_CLANG=ON .. \
+ && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_release .. \
  && make -j$(nproc) \
  && make install \
  && tree -L 2 /webrtc_release

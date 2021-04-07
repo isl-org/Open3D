@@ -23,7 +23,6 @@ cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
 
 option(WEBRTC_IS_DEBUG "Build shared libraries" OFF)
-option(WEBRTC_IS_CLANG "Build with clang" OFF)
 
 # Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
@@ -77,11 +76,8 @@ if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
-    if(WEBRTC_IS_CLANG)
-        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
-    else()
-        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-    endif()
+    # Use clang for compilation
+    set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
 
     file(WRITE ${WEBRTC_NINJA_ROOT}/args.gn ${WEBRTC_ARGS})
     message(STATUS "Configs written to ${WEBRTC_NINJA_ROOT}/args.gn")
