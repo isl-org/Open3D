@@ -61,7 +61,7 @@ static const std::unordered_map<
                 {"pts", WritePointCloudToPTS},
         };
 
-std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
+std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {

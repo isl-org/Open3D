@@ -29,6 +29,9 @@
 #include <benchmark/benchmark.h>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/io/PointCloudIO.h"
+#include "open3d/t/io/PointCloudIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
 namespace t {
@@ -70,6 +73,33 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
+static const std::string path = std::string(TEST_DATA_DIR) + "/fragment.ply";
+
+void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
+    auto pcd = open3d::io::CreatePointCloudFromFile(path);
+    for (auto _ : state) {
+        pcd->VoxelDownSample(voxel_size);
+    }
+}
+
+void VoxelDownSample(benchmark::State& state,
+                     const core::Device& device,
+                     float voxel_size,
+                     const core::HashmapBackend& backend) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    // Warp up
+    pcd.VoxelDownSample(voxel_size, backend);
+
+    for (auto _ : state) {
+        pcd.VoxelDownSample(voxel_size, backend);
+    }
+}
+
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
@@ -83,6 +113,44 @@ BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
 BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
+
+#define ENUM_VOXELSIZE(DEVICE, BACKEND)                                       \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_01, DEVICE, 0.01, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_02, DEVICE, 0.08, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_04, DEVICE, 0.04, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_08, DEVICE, 0.08, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_16, DEVICE, 0.16, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_32, DEVICE, 0.32, BACKEND) \
+            ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+#define ENUM_VOXELDOWNSAMPLE_BACKEND()                                 \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)   \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::Slab) \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::StdGPU)
+#else
+#define ENUM_VOXELDOWNSAMPLE_BACKEND() \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)
+#endif
+
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_01, 0.01)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_02, 0.02)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_04, 0.04)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_08, 0.08)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_16, 0.16)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
+        ->Unit(benchmark::kMillisecond);
+ENUM_VOXELDOWNSAMPLE_BACKEND()
 
 }  // namespace geometry
 }  // namespace t
