@@ -223,7 +223,7 @@ RegistrationResult RegistrationMultiScaleICP(
 
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
             utility::LogDebug(
-                    "ICP Scale#{:d}: Iteration #{:d}: Fitness {:.4f}, RMSE "
+                    " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
                     "{:.4f}",
                     i + 1, j, result.fitness_, result.inlier_rmse_);
 
