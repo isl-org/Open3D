@@ -6,10 +6,19 @@ include(ExternalProject)
 
 # Creates args.gn for WebRTC build.
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
+    set(WEBRTC_ARGS "")
+
+    # ABI selection
+    if(GLIBCXX_USE_CXX11_ABI)
+        set(WEBRTC_ARGS rtc_use_cxx11_abi=true\n${WEBRTC_ARGS})
+    else()
+        set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
+    endif()
+
     # Exports: WEBRTC_ARGS
     set(WEBRTC_BUILD "Release" CACHE STRING "WEBRTC build type")
 
-    set(WEBRTC_ARGS rtc_include_tests=false\n)
+    set(WEBRTC_ARGS rtc_include_tests=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_examples=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_tools=false\n${WEBRTC_ARGS})
