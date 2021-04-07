@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     ccache \
     git  \
     gnupg \
+    python \
+    python3 \
     software-properties-common \
     wget \
  && rm -rf /var/lib/apt/lists/*
