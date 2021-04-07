@@ -84,7 +84,7 @@ if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
     file(WRITE ${WEBRTC_NINJA_ROOT}/args.gn ${WEBRTC_ARGS})
-    message(STATUS "Configs written to ${WEBRTC_ROOT}/src/out/Release/args.gn")
+    message(STATUS "Configs written to ${WEBRTC_NINJA_ROOT}/args.gn")
 endif()
 
 # webrtc        -> libwebrtc.a
@@ -131,4 +131,26 @@ add_dependencies(webrtc_extra webrtc)
 set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(webrtc_extra PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${WEBRTC_NINJA_ROOT}/obj
+)
+
+# Install headers and binaries
+# /webrtc_install
+# |-- include
+# |   |-- api
+# |   |-- audio
+#    ...
+# |   |-- tools_webrtc
+# |   `-- video
+# `-- lib
+#     |-- libwebrtc.a
+#     `-- libwebrtc_extra.a
+install(DIRECTORY
+    ${WEBRTC_ROOT}/src/  # The trailing / is critical
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h"
+)
+install(FILES
+    ${WEBRTC_NINJA_ROOT}/obj/libwebrtc.a
+    ${WEBRTC_NINJA_ROOT}/obj/libwebrtc_extra.a
+    DESTINATION lib
 )

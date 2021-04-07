@@ -62,11 +62,16 @@ RUN cd depot_tools \
 # `docker build` should be executed in the Open3D root dir
 COPY 3rdparty/webrtc/CMakeLists.txt /webrtc
 
+RUN apt-get update && apt-get install -y \
+    tree \
+ && rm -rf /var/lib/apt/lists/*
+
 # Build WebRTC
 WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
- && cmake .. \
+ && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_install .. \
  && make -j$(nproc) \
- && cat ../src/out/Release/args.gn \
+ && make install \
+ && tree -L 2 /webrtc_install \
  && false
