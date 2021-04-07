@@ -49,16 +49,14 @@ RUN mkdir webrtc \
 
 # Checkout to a specific version
 # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-# - depot_tools
-#   - Commit: 84ce160786308521c2fd115fa554ca6be161158c
-#   - Date  : Tue Mar 23 02:05:57 2021 +0000
-# - webrtc
-#   - Commit: e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87
-#   - Date  : Mon Mar 22 21:03:39 2021 -0700
+# Date: Wed Apr 7 21:35:29 2021 +0000
+ARG DEPOT_TOOLS_COMMIT=e1a98941d3ab10549be6d82d0686bb0fb91ec903
+# Date: Wed Apr 7 19:12:13 2021 +0200
+ARG WEBRTC_COMMIT=e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87
 RUN cd depot_tools \
- && git checkout 84ce160786308521c2fd115fa554ca6be161158c \
+ && git checkout ${DEPOT_TOOLS_COMMIT} \
  && cd ../webrtc/src \
- && git checkout e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87 \
+ && git checkout ${WEBRTC_COMMIT} \
  && git submodule update --init --recursive \
  && cd .. \
  && gclient sync -D --force --reset \
@@ -84,5 +82,6 @@ RUN mkdir build \
 
 # Package WebRTC
 WORKDIR /
-RUN tar -czf webrtc_e2ac591.tar.gz webrtc_release \
- && ls -alh webrtc_e2ac591.tar.gz
+RUN WEBRTC_COMMIT_SHORT=$(echo ${WEBRTC_COMMIT} | cut -c1-7) \
+ && tar -czf webrtc_${WEBRTC_COMMIT_SHORT}.tar.gz webrtc_release \
+ && ls -alh webrtc_${WEBRTC_COMMIT_SHORT}.tar.gz
