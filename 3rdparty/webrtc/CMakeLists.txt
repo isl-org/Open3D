@@ -1,12 +1,22 @@
 # This CMake file is intended to be used inside Dockerfile.webrtc.
 #
-# In particular, it assumes the following directory structure:
-# /
-# ├── depot_tools         # /depot_tools shall be added to PATH
-# └── webrtc
-#     ├── CMakeLists.txt  # This CMake (copied into container)
-#     ├── .gclient
-#     └── src             # The actual git directory
+# 1) We assume the following directory structure:
+#    /
+#    ├── depot_tools         # ${DEPOT_TOOLS_ROOT}, should be added to PATH
+#    └── webrtc              # ${WEBRTC_ROOT}
+#        ├── CMakeLists.txt  # This CMakeLists.txt itself (copied to container)
+#        ├── .gclient
+#        └── src             # The actual git directory
+#
+# 2) CMake will compile two libraries libwebrtc.a and libwebrtc_extra.a.
+#    - libwebrtc.a compilation is driven by Ninja, the output will be in:
+#      ${WEBRTC_ROOT}/src/out/Release/obj/libwebrtc.a
+#    - libwebrtc_extra.a compilation is driven by CMake, the output will be in:
+#      ${WEBRTC_ROOT}/src/out/Release/obj/libwebrtc_extra.a
+#
+# 3) Finally, `make install` will install headers and binaries to
+#    - build/lib
+#    - build/include
 
 cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
@@ -14,8 +24,18 @@ project(webrtc CXX)
 option(WEBRTC_IS_DEBUG "Build shared libraries" OFF)
 option(WEBRTC_IS_CLANG "Build with clang" OFF)
 
+set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
+set(DEPOT_TOOLS_ROOT ${PROJECT_SOURCE_DIR}/../depot_tools)
+
+if(NOT EXISTS ${WEBRTC_ROOT}/src)
+    message(FATAL_ERROR "Cannot find ${WEBRTC_ROOT}/src")
+endif()
+if(NOT EXISTS ${DEPOT_TOOLS_ROOT}/fetch)
+    message(FATAL_ERROR "Cannot find ${DEPOT_TOOLS_ROOT}/fetch")
+endif()
+
 # Generate build/args.gn
-if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
+if(NOT EXISTS ${WEBRTC_ROOT}/src/out/Release/args.gn)
     if(WEBRTC_IS_DEBUG)
         set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
     else()
@@ -53,5 +73,5 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
-    file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
+    file(WRITE ${WEBRTC_ROOT}/src/out/Release/args.gn ${WEBRTC_ARGS})
 endif()
