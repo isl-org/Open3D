@@ -465,6 +465,58 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
+std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
+        const TriangleMesh &mesh, bool invert) const {
+    if (mesh.vertices_.size() <= 0) {
+        utility::LogError(
+                "[CropConvexHull] mesh either has zeros "
+                "size, or has wrong bounds.");
+    }
+    bool has_tri_normal = mesh.HasTriangleNormals();
+    if (!has_tri_normal) {
+        utility::LogError(
+                "[CropConvexHull] mesh must have triangle normals ");
+    }
+    
+    Eigen::Vector3d p1;
+    Eigen::Vector3d p2;
+    Eigen::Vector3d p3;
+    Eigen::Vector3d normal;
+    Eigen::Vector3d expectedNormal;
+    Eigen::Vector3i triangle;
+    double ccw;
+    double cosine;
+    
+    std::vector<size_t> out_index;
+    
+    for (size_t k = 0; k < points_.size(); k++) {
+        const auto &point = points_[k];
+        bool valid = true;
+        for (size_t j = 0; j < mesh.triangles_.size(); j++){   
+            triangle = mesh.triangles_[j]; 
+            p1 = mesh.vertices_[triangle(0)];
+            p2 = mesh.vertices_[triangle(1)];
+            p3 = mesh.vertices_[triangle(2)];            
+            expectedNormal = (p2-p1).cross(p3-p2);
+            normal = mesh.triangle_normals_[j];
+            ccw = expectedNormal.dot(normal);
+            if (ccw < 0){
+                normal = -normal;
+            }
+            cosine = (p1-point).dot(normal);
+            if (cosine < 0){
+                valid = false;
+                break;
+            }
+        }
+        if (valid){
+            out_index.push_back(k);
+        }
+    }
+    
+    return SelectByIndex(out_index, invert);
+}
+
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {

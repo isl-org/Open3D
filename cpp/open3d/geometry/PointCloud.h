@@ -190,6 +190,15 @@ public:
     /// \param bbox OrientedBoundingBox to crop points.
     std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
 
+    /// \brief Function to crop pointcloud into output pointcloud
+    ///
+    /// All points with coordinates outside the convex hull of \p mesh are
+    /// clipped.
+    ///
+    /// \param mesh TriangleMesh to crop points.
+    /// \param invert Invert selection
+    std::shared_ptr<PointCloud> CropConvexHull(const TriangleMesh &mesh, bool invert=false) const;
+
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.
     ///

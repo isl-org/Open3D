@@ -109,6 +109,11 @@ void pybind_pointcloud(py::module &m) {
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
+            .def("crop_convex_hull",
+                 [](const PointCloud &pcd, const TriangleMesh &mesh, bool invert) {
+                     return pcd.CropConvexHull(mesh,invert);
+                 },
+                "mesh"_a, "invert"_a = false, "Function to crop point cloud.")        
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
