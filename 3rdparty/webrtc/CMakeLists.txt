@@ -87,6 +87,8 @@ if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
     message(STATUS "Configs written to ${WEBRTC_ROOT}/src/out/Release/args.gn")
 endif()
 
+# webrtc        -> libwebrtc.a
+# other targets -> libwebrtc_extra.a
 set(NINJA_TARGET
     webrtc
     rtc_json
