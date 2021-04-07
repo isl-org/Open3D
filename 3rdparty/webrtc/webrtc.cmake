@@ -8,7 +8,6 @@ include(ExternalProject)
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     # Exports: WEBRTC_ARGS
     set(WEBRTC_BUILD "Release" CACHE STRING "WEBRTC build type")
-    set(WEBRTC_DESKTOP_CAPTURE "ON" CACHE STRING "WEBRTC Desktop capture")
 
     set(WEBRTC_ARGS rtc_include_tests=false\n)
     set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
@@ -17,6 +16,9 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     set(WEBRTC_ARGS treat_warnings_as_errors=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_enable_libevent=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_libevent=false\n${WEBRTC_ARGS})
+    # Disable screen capturing
+    set(WEBRTC_ARGS rtc_use_x11=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_use_pipewire=false\n${WEBRTC_ARGS})
     # https://stackoverflow.com/a/47384787/1255535
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS use_custom_libcxx_for_host=false\n${WEBRTC_ARGS})
@@ -46,14 +48,6 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
         set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
     else()
         set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-    endif()
-
-    # Screen capture support
-    find_package(PkgConfig QUIET)
-    pkg_check_modules(GTK3 QUIET gtk+-3.0)
-    message("GTK_FOUND = ${GTK3_FOUND}")
-    if(NOT GTK3_FOUND OR (WEBRTC_DESKTOP_CAPTURE STREQUAL "OFF"))
-        set(WEBRTC_ARGS rtc_use_x11=false\nrtc_use_pipewire=false\n${WEBRTC_ARGS})
     endif()
 
     file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
