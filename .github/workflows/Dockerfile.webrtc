@@ -66,6 +66,8 @@ RUN apt-get update && apt-get install -y \
     tree \
  && rm -rf /var/lib/apt/lists/*
 
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
 # Build WebRTC
 WORKDIR /webrtc
 RUN mkdir build \
@@ -73,5 +75,4 @@ RUN mkdir build \
  && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_install .. \
  && make -j$(nproc) \
  && make install \
- && tree -L 2 /webrtc_install \
- && false
+ && tree -L 2 /webrtc_install
