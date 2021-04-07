@@ -74,4 +74,5 @@ if(NOT EXISTS ${WEBRTC_ROOT}/src/out/Release/args.gn)
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
     file(WRITE ${WEBRTC_ROOT}/src/out/Release/args.gn ${WEBRTC_ARGS})
+    message(STATUS "Configs written to ${WEBRTC_ROOT}/src/out/Release/args.gn")
 endif()

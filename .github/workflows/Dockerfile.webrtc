@@ -70,4 +70,6 @@ WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
  && cmake .. \
- && make -j$(nproc)
+ && make -j$(nproc) \
+ && cat ../src/out/Release/args.gn \
+ && false
