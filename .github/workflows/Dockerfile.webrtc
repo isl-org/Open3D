@@ -37,7 +37,25 @@ RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git \
  && git checkout 84ce160786308521c2fd115fa554ca6be161158c \
  && cd ..
 ENV PATH=/depot_tools:${PATH}
+ENV DEPOT_TOOLS_UPDATE=0
 RUN which fetch
+
+# Fetch WebRTC code
+# ```
+# commit e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87
+# Author: webrtc-version-updater
+# Date:   Mon Mar 22 21:03:39 2021 -0700
+# ```
+# Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
+RUN mkdir webrtc \
+ && cd webrtc \
+ && fetch --no-history webrtc \
+ && cd src \
+ && git checkout e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87 \
+ && git submodule update --init --recursive \
+ && cd .. \
+ && gclient sync -D --force --reset \
+ && cd ..
 
 # PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
 # RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VER}" | cut -d"-" -f2) \
