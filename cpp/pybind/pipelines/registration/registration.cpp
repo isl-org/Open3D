@@ -589,8 +589,8 @@ void pybind_registration_methods(py::module &m) {
           "voxel_sizes"_a, "criterias"_a, "max_correspondence_distances"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
           "estimation_method"_a = TransformationEstimationPointToPoint(false));
-        docstring::FunctionDocInject(m, "registration_multi_scale_icp",
-                                     map_shared_argument_docstrings);
+    docstring::FunctionDocInject(m, "registration_multi_scale_icp",
+                                 map_shared_argument_docstrings);
 
     m.def("registration_colored_icp", &RegistrationColoredICP,
           "Function for Colored ICP registration", "source"_a, "target"_a,
