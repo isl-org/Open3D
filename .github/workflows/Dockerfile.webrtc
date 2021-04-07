@@ -65,11 +65,20 @@ RUN cd depot_tools \
 # `docker build` should be executed in the Open3D root dir
 COPY 3rdparty/webrtc/CMakeLists.txt /webrtc
 
+# Python packages needed fot "ImportError: No module named pkg_resources"
+# libglib2.0-dev needed for pkg_config("glib")
+RUN apt-get update && apt-get install -y \
+    python-setuptools \
+    python-pip \
+    python-wheel \
+    libglib2.0-dev \
+ && rm -rf /var/lib/apt/lists/*
+
 # Build WebRTC
 WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
  && cmake .. \
- && make -j$(nproc) \
+ && make webrtc -j$(nproc) \
  && cat ../src/out/Release/args.gn \
  && false

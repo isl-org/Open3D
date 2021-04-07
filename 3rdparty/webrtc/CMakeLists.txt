@@ -24,6 +24,7 @@ project(webrtc CXX)
 option(WEBRTC_IS_DEBUG "Build shared libraries" OFF)
 option(WEBRTC_IS_CLANG "Build with clang" OFF)
 
+# Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
 set(DEPOT_TOOLS_ROOT ${PROJECT_SOURCE_DIR}/../depot_tools)
 
@@ -34,8 +35,15 @@ if(NOT EXISTS ${DEPOT_TOOLS_ROOT}/fetch)
     message(FATAL_ERROR "Cannot find ${DEPOT_TOOLS_ROOT}/fetch")
 endif()
 
+# Set WebRTC build type path
+if(WEBRTC_IS_DEBUG)
+    set(WEBRTC_BUILD Debug)
+else()
+    set(WEBRTC_BUILD Release)
+endif()
+
 # Generate build/args.gn
-if(NOT EXISTS ${WEBRTC_ROOT}/src/out/Release/args.gn)
+if(NOT EXISTS ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/args.gn)
     if(WEBRTC_IS_DEBUG)
         set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
     else()
@@ -73,6 +81,12 @@ if(NOT EXISTS ${WEBRTC_ROOT}/src/out/Release/args.gn)
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
-    file(WRITE ${WEBRTC_ROOT}/src/out/Release/args.gn ${WEBRTC_ARGS})
+    file(WRITE ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/args.gn ${WEBRTC_ARGS})
     message(STATUS "Configs written to ${WEBRTC_ROOT}/src/out/Release/args.gn")
 endif()
+
+add_custom_target(webrtc
+    COMMAND export PATH=$PATH:${DEPOT_TOOLS_ROOT}
+    COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
+    WORKING_DIRECTORY ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}
+)
