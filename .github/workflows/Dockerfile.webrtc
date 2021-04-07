@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     ccache \
     git  \
     gnupg \
+    python \
+    python3 \
     software-properties-common \
     wget \
  && rm -rf /var/lib/apt/lists/*
@@ -23,34 +25,37 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
 RUN which cmake \
  && cmake --version
 
-# depot_tools
-# We need a matching depot_tools version to the WebRTC version. The depot_tools
-# version:
+# Get depot_tools
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+ENV PATH=/depot_tools:${PATH}
+ENV DEPOT_TOOLS_UPDATE=0
+RUN which fetch
+
+# Get WebRTC
+RUN mkdir webrtc \
+ && cd webrtc \
+ && fetch webrtc \
+ && cd ..
+
+# Checkout to a specific version
+# Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
+#
+# depot_tools:
 # ```
 # commit 84ce160786308521c2fd115fa554ca6be161158c
 # Author: Brian Ryner <bryner@google.com>
 # Date:   Tue Mar 23 02:05:57 2021 +0000
 # ```
-# Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git \
- && cd depot_tools \
- && git checkout 84ce160786308521c2fd115fa554ca6be161158c \
- && cd ..
-ENV PATH=/depot_tools:${PATH}
-ENV DEPOT_TOOLS_UPDATE=0
-RUN which fetch
-
-# Fetch WebRTC code
+#
+# webrtc:
 # ```
 # commit e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87
 # Author: webrtc-version-updater
 # Date:   Mon Mar 22 21:03:39 2021 -0700
 # ```
-# Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-RUN mkdir webrtc \
- && cd webrtc \
- && fetch webrtc \
- && cd src \
+RUN cd depot_tools \
+ && git checkout 84ce160786308521c2fd115fa554ca6be161158c \
+ && cd ../webrtc/src \
  && git checkout e2ac591c0d43ad7bc398950a6c6f4d4aa05dfa87 \
  && git submodule update --init --recursive \
  && cd .. \
