@@ -1,13 +1,14 @@
 include(ExternalProject)
 
-set(WEBRTC_URL ${PROJECT_SOURCE_DIR}/webrtc_e2ac591.tar.gz)
-# set(WEBRTC_SHA256 a4eec51612048001a2b3e08de9377a80934ed43aee56423a70a19aae73d4edef)
+# set(WEBRTC_URL ${PROJECT_SOURCE_DIR}/webrtc_e2ac591.tar.gz)
+set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_e2ac591.tar.gz)
+set(WEBRTC_SHA256 45307031a6f69c70ad76ed50903aaf418d6b6d0ef78cd88f338d32d40ce3fc19)
 
 ExternalProject_Add(
     ext_webrtc
     PREFIX webrtc
     URL ${WEBRTC_URL}
-    # URL_HASH SHA256=${WEBRTC_SHA256}
+    URL_HASH SHA256=${WEBRTC_SHA256}
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
