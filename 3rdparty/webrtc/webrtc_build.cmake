@@ -15,7 +15,7 @@ endif()
 set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 
 # Common configs for WebRTC
-include(${PROJECT_SOURCE_DIR}/3rdparty/webrtc/webrtc_config.cmake)
+include(${PROJECT_SOURCE_DIR}/3rdparty/webrtc/webrtc_common.cmake)
 
 # Creates args.gn for WebRTC build.
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
