@@ -29,11 +29,12 @@ option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
 set(DEPOT_TOOLS_ROOT ${PROJECT_SOURCE_DIR}/../depot_tools)
 
+# Sanity checks
 if(NOT EXISTS ${WEBRTC_ROOT}/src)
-    message(FATAL_ERROR "Cannot find ${WEBRTC_ROOT}/src")
+    message(FATAL_ERROR "Cannot find ${WEBRTC_ROOT}/src, please check WEBRTC_ROOT")
 endif()
 if(NOT EXISTS ${DEPOT_TOOLS_ROOT}/fetch)
-    message(FATAL_ERROR "Cannot find ${DEPOT_TOOLS_ROOT}/fetch")
+    message(FATAL_ERROR "Cannot find ${DEPOT_TOOLS_ROOT}/fetch, please check DEPOT_TOOLS_ROOT")
 endif()
 
 # Set WebRTC build type path
