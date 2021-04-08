@@ -114,7 +114,6 @@ ExternalProject_Add(
 )
 
 ExternalProject_Add_Step(ext_webrtc build_obj
-    COMMAND export PATH=$PATH:${DEPOT_TOOLS_ROOT}
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
     COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGET}
     WORKING_DIRECTORY <SOURCE_DIR>/src/out/${WEBRTC_BUILD}
