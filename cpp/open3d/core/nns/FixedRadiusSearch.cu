@@ -27,6 +27,7 @@
 #include <math.h>
 
 #include <cub/cub.cuh>
+#include <moderngpu/kernel_segsort.hxx>
 
 #include "open3d/core/nns/FixedRadiusSearch.h"
 #include "open3d/core/nns/MemoryAllocation.h"
@@ -449,11 +450,12 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
             }
         }
     }
-    // heap sort
-    for (int i = (count / 2) - 1; i > -1; i--) {
-        heapify(distances + indices_offset, indices + indices_offset, i, count);
-    }
-    heap_sort(distances + indices_offset, indices + indices_offset, count);
+    // // heap sort
+    // for (int i = (count / 2) - 1; i > -1; i--) {
+    //     heapify(distances + indices_offset, indices + indices_offset, i,
+    //     count);
+    // }
+    // heap_sort(distances + indices_offset, indices + indices_offset, count);
 }
 
 /// Write indices and distances of neighbors for each query point
@@ -860,6 +862,19 @@ void BuildSpatialHashTableCUDA(void* temp,
 }
 
 template <class T>
+void SortPairs2(int64_t num_indices,
+                int64_t num_segments,
+                const int64_t* query_neighbors_row_splits,
+                int64_t* indices_unsorted,
+                T* distances_unsorted) {
+    mgpu::standard_context_t context;
+
+    mgpu::segmented_sort(distances_unsorted, indices_unsorted, num_indices,
+                         query_neighbors_row_splits + 1, num_segments,
+                         mgpu::less_t<T>(), context);
+}
+
+template <class T>
 void SortPairs(void* temp,
                size_t& temp_size,
                int64_t num_indices,
@@ -1126,6 +1141,18 @@ template void BuildSpatialHashTableCUDA(
         const size_t hash_table_cell_splits_size,
         int64_t* hash_table_cell_splits,
         int64_t* hash_table_index);
+
+template void SortPairs2(int64_t num_indices,
+                         int64_t num_segments,
+                         const int64_t* query_neighbors_row_splits,
+                         int64_t* indices_unsorted,
+                         float* distances_unsorted);
+
+template void SortPairs2(int64_t num_indices,
+                         int64_t num_segments,
+                         const int64_t* query_neighbors_row_splits,
+                         int64_t* indices_unsorted,
+                         double* distances_unsorted);
 
 template void SortPairs(void* temp,
                         size_t& temp_size,

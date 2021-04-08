@@ -316,6 +316,12 @@ void SortPairs(void* temp,
                int64_t* indices_sorted,
                T* distances_sorted);
 
+template <class T>
+void SortPairs2(int64_t num_indices,
+                int64_t num_segments,
+                const int64_t* query_neighbors_row_splits,
+                int64_t* indices_unsorted,
+                T* distances_unsorted);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
