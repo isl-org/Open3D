@@ -32,6 +32,7 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     set(WEBRTC_ARGS treat_warnings_as_errors=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_enable_libevent=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_libevent=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS use_sysroot=false\n${WEBRTC_ARGS})
 
     # Disable screen capturing
     set(WEBRTC_ARGS rtc_use_x11=false\n${WEBRTC_ARGS})
@@ -55,9 +56,6 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     # Sound support
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
-
-    # Compilation mode depending on target
-    set(WEBRTC_ARGS use_sysroot=false\n${WEBRTC_ARGS})
 
     # Use clang for compilation
     set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
