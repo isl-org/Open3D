@@ -22,7 +22,8 @@
 cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
 
-option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
+option(WEBRTC_IS_DEBUG       "WebRTC Debug buid"              OFF)
+option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
 
 # Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
@@ -45,7 +46,16 @@ set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 
 # Generate build/args.gn
 if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
-    set(WEBRTC_ARGS rtc_include_tests=false\n)
+    set(WEBRTC_ARGS "")
+
+    # ABI selection
+    if(GLIBCXX_USE_CXX11_ABI)
+        set(WEBRTC_ARGS rtc_use_cxx11_abi=true\n${WEBRTC_ARGS})
+    else()
+        set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
+    endif()
+
+    set(WEBRTC_ARGS rtc_include_tests=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_examples=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_build_tools=false\n${WEBRTC_ARGS})
