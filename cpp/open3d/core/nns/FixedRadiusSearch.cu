@@ -574,6 +574,9 @@ __global__ void WriteNeighborsHybridKernel(
     if (query_idx >= num_queries) return;
 
     size_t indices_offset = max_knn * query_idx;
+    extern __shared__ __align__(sizeof(T)) unsigned char _shared_mem[];
+    T* distance_thread =
+            reinterpret_cast<T*>(_shared_mem) + max_knn * threadIdx.x;
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
                       query_points[query_idx * 3 + 1],
@@ -623,7 +626,7 @@ __global__ void WriteNeighborsHybridKernel(
                 // If count if less than max_knn, record idx and dist.
                 if (count < max_knn) {
                     indices[indices_offset + count] = idx;
-                    distances[indices_offset + count] = dist;
+                    distance_thread[count] = dist;
                     // Update max_index and max_value.
                     if (count == 0 || max_value < dist) {
                         max_index = count;
@@ -636,14 +639,14 @@ __global__ void WriteNeighborsHybridKernel(
                     if (max_value > dist) {
                         // Replace idx and dist at current max_index.
                         indices[indices_offset + max_index] = idx;
-                        distances[indices_offset + max_index] = dist;
+                        distance_thread[max_index] = dist;
                         // Update max_value
                         max_value = dist;
                         // Find max_index.
                         for (auto k = 0; k < max_knn; ++k) {
-                            if (distances[indices_offset + k] > max_value) {
+                            if (distance_thread[k] > max_value) {
                                 max_index = k;
-                                max_value = distances[indices_offset + k];
+                                max_value = distance_thread[k];
                             }
                         }
                     }
@@ -653,12 +656,16 @@ __global__ void WriteNeighborsHybridKernel(
     }
     // heap sort
     for (int i = (count / 2) - 1; i > -1; i--) {
-        heapify(distances + indices_offset, indices + indices_offset, i, count);
+        heapify(distance_thread, indices + indices_offset, i, count);
     }
-    heap_sort(distances + indices_offset, indices + indices_offset, max_knn);
-    for (auto i = count; i < max_knn; ++i) {
-        distances[indices_offset + i] = -1;
-        indices[indices_offset + i] = -1;
+    heap_sort(distance_thread, indices + indices_offset, count);
+    for (auto i = 0; i < max_knn; ++i) {
+        if (i < count) {
+            distances[indices_offset + i] = distance_thread[i];
+        } else {
+            distances[indices_offset + i] = -1;
+            indices[indices_offset + i] = -1;
+        }
     }
 }
 /// Write indices and distances for each query point in hybrid search mode.
@@ -719,7 +726,7 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
                           const bool return_distances) {
     const T threshold = (metric == L2 ? radius * radius : radius);
 
-    const int BLOCKSIZE = 64;
+    const int BLOCKSIZE = 32;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
     grid.x = utility::DivUp(num_queries, block.x);
@@ -730,10 +737,11 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
             hash_table_cell_splits_size - 1, query_points, num_queries, \
             points, num_points, inv_voxel_size, radius, threshold, max_knn
 
-#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
-    if (METRIC == metric && RETURN_DISTANCES == return_distances) { \
-        WriteNeighborsHybridKernel<T, METRIC, RETURN_DISTANCES>     \
-                <<<grid, block, 0, stream>>>(FN_PARAMETERS);        \
+#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                             \
+    if (METRIC == metric && RETURN_DISTANCES == return_distances) {         \
+        WriteNeighborsHybridKernel<T, METRIC, RETURN_DISTANCES>             \
+                <<<grid, block, BLOCKSIZE * max_knn * sizeof(T), stream>>>( \
+                        FN_PARAMETERS);                                     \
     }
 
 #define CALL_TEMPLATE2(METRIC)  \
