@@ -2903,6 +2903,12 @@ TEST_P(TensorPermuteDevices, Clamp) {
     // Check error with boolean tensor.
     t = core::Tensor::Init<bool>({{false, true, true, false, false}}, device);
     EXPECT_THROW(t_clamp = t.Clamp(1, 1.3), std::runtime_error);
+
+    // Check when min value is greater than max value.
+    t = core::Tensor::Init<float>({{0, -1, 1, 4, 1000}}, device);
+    t_ref = core::Tensor::Init<float>({{2.0, 2.0, 2.0, 2.0, 2.0}}, device);
+    t_clamp = t.Clamp(5.2, 2.0);
+    EXPECT_TRUE(t_clamp.AllClose(t_ref));
 }
 
 }  // namespace tests

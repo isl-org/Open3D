@@ -919,10 +919,10 @@ Tensor Tensor::Clamp(double min_val, double max_val) const {
     }
 
     Tensor dst_tensor = *this;
-    dst_tensor.SetItem(TensorKey::IndexTensor(Ge(max_val)),
-                       Full({}, max_val, dtype_, GetDevice()));
     dst_tensor.SetItem(TensorKey::IndexTensor(Le(min_val)),
                        Full({}, min_val, dtype_, GetDevice()));
+    dst_tensor.SetItem(TensorKey::IndexTensor(Ge(max_val)),
+                       Full({}, max_val, dtype_, GetDevice()));
     return dst_tensor;
 }
 
