@@ -30,6 +30,7 @@
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
 namespace io {
@@ -40,8 +41,7 @@ FileGeometry ReadFileGeometryTypeOFF(const std::string &path) {
 
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool enable_post_processing,
-                             bool print_progress) {
+                             const ReadTriangleMeshOptions &params) {
     std::ifstream file(filename.c_str(), std::ios::in);
     if (!file) {
         utility::LogWarning("Read OFF failed: unable to open file: {}",
@@ -93,8 +93,8 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         mesh.vertex_colors_.resize(num_of_vertices);
     }
 
-    utility::ConsoleProgressBar progress_bar(num_of_vertices + num_of_faces,
-                                             "Reading OFF: ", print_progress);
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(num_of_vertices + num_of_faces);
 
     float vx, vy, vz;
     float nx, ny, nz;
@@ -131,7 +131,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
                     Eigen::Vector3d(r / 255, g / 255, b / 255);
         }
 
-        ++progress_bar;
+        ++reporter;
     }
 
     unsigned int n, vertex_index;
@@ -157,7 +157,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
                     indices);
             return false;
         }
-        ++progress_bar;
+        ++reporter;
     }
 
     file.close();

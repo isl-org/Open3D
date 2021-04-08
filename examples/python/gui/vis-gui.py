@@ -509,8 +509,10 @@ class AppWindow:
         r = self.window.content_rect
         self._scene.frame = r
         width = 17 * theme.font_size
-        height = min(r.height,
-                     self._settings_panel.calc_preferred_size(theme).height)
+        height = min(
+            r.height,
+            self._settings_panel.calc_preferred_size(
+                theme, gui.Widget.Constraints()).height)
         self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
                                               height)
 
