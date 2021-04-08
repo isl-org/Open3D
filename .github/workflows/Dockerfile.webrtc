@@ -1,6 +1,12 @@
 # Example usage:
-# docker build -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
-# docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_60e6748.tar.gz > webrtc_60e6748.tar.gz
+#
+# - GLIBCXX_USE_CXX11_ABI=0
+#   - docker build --build-args GLIBCXX_USE_CXX11_ABI=0 -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
+#   - docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_cxx-abi-0.tar.gz > webrtc_cxx-abi-0.tar.gz
+# - GLIBCXX_USE_CXX11_ABI=1
+#   - docker build --build-args GLIBCXX_USE_CXX11_ABI=1 -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
+#   - docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_cxx-abi-1.tar.gz > webrtc_cxx-abi-1.tar.gz
+
 
 FROM ubuntu:18.04
 
@@ -80,10 +86,13 @@ WORKDIR /webrtc/src/third_party
 RUN git apply /webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
 
 # Build WebRTC
+ARG GLIBCXX_USE_CXX11_ABI=0
 WORKDIR /webrtc
 RUN mkdir build \
  && cd build \
- && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_release .. \
+ && cmake -DCMAKE_INSTALL_PREFIX=/webrtc_release \
+          -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
+          .. \
  && make -j$(nproc) \
  && make install \
  && tree -L 2 /webrtc_release
@@ -91,5 +100,5 @@ RUN mkdir build \
 # Package WebRTC
 WORKDIR /
 RUN WEBRTC_COMMIT_SHORT=$(echo ${WEBRTC_COMMIT} | cut -c1-7) \
- && tar -czf webrtc_${WEBRTC_COMMIT_SHORT}.tar.gz webrtc_release \
- && ls -alh webrtc_${WEBRTC_COMMIT_SHORT}.tar.gz
+ && tar -czf webrtc_${WEBRTC_COMMIT_SHORT}_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz webrtc_release \
+ && ls -alh webrtc_${WEBRTC_COMMIT_SHORT}_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz
