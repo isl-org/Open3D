@@ -111,6 +111,7 @@ void Integrate(const core::Tensor& depth,
 void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& block_values,
              core::Tensor& vertex_map,
+             core::Tensor& depth_map,
              core::Tensor& color_map,
              core::Tensor& normal_map,
              const core::Tensor& intrinsics,
@@ -134,15 +135,15 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        RayCastCPU(hashmap, block_values, vertex_map, color_map, normal_map,
-                   intrinsicsf32, posef32, block_resolution, voxel_size,
-                   sdf_trunc, max_steps, depth_min, depth_max,
+        RayCastCPU(hashmap, block_values, vertex_map, depth_map, color_map,
+                   normal_map, intrinsicsf32, posef32, block_resolution,
+                   voxel_size, sdf_trunc, max_steps, depth_min, depth_max,
                    weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        RayCastCUDA(hashmap, block_values, vertex_map, color_map, normal_map,
-                    intrinsicsf32, posef32, block_resolution, voxel_size,
-                    sdf_trunc, max_steps, depth_min, depth_max,
+        RayCastCUDA(hashmap, block_values, vertex_map, depth_map, color_map,
+                    normal_map, intrinsicsf32, posef32, block_resolution,
+                    voxel_size, sdf_trunc, max_steps, depth_min, depth_max,
                     weight_threshold);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");

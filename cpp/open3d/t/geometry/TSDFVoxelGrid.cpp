@@ -188,31 +188,58 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             sdf_trunc_, depth_scale, depth_max);
 }
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
-        const core::Tensor &intrinsics,
-        const core::Tensor &extrinsics,
-        int width,
-        int height,
-        int max_steps,
-        float depth_min,
-        float depth_max,
-        float weight_threshold) {
+std::unordered_map<TSDFVoxelGrid::RayCastMaskCode, core::Tensor>
+TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
+                       const core::Tensor &extrinsics,
+                       int width,
+                       int height,
+                       int max_steps,
+                       float depth_min,
+                       float depth_max,
+                       float weight_threshold,
+                       int ray_cast_mask) {
     // Extrinsic: world to camera -> pose: camera to world
     core::Tensor pose = extrinsics.Inverse();
 
-    core::Tensor vertex_map = core::Tensor::Zeros(
-            {height, width, 3}, core::Dtype::Float32, device_);
-    core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
-                                                 core::Dtype::Float32, device_);
-    core::Tensor normal_map = core::Tensor::Zeros(
-            {height, width, 3}, core::Dtype::Float32, device_);
+    core::Tensor vertex_map, depth_map, color_map, normal_map;
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {
+        vertex_map = core::Tensor::Zeros({height, width, 3},
+                                         core::Dtype::Float32, device_);
+    }
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::DepthMap) {
+        depth_map = core::Tensor::Zeros({height, width, 1},
+                                        core::Dtype::Float32, device_);
+    }
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::ColorMap) {
+        color_map = core::Tensor::Zeros({height, width, 3},
+                                        core::Dtype::Float32, device_);
+    }
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::NormalMap) {
+        normal_map = core::Tensor::Zeros({height, width, 3},
+                                         core::Dtype::Float32, device_);
+    }
+
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
-    kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
-                          normal_map, intrinsics, pose, block_resolution_,
-                          voxel_size_, sdf_trunc_, max_steps, depth_min,
-                          depth_max, weight_threshold);
-    return std::make_tuple(vertex_map, color_map, normal_map);
+    kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, depth_map,
+                          color_map, normal_map, intrinsics, pose,
+                          block_resolution_, voxel_size_, sdf_trunc_, max_steps,
+                          depth_min, depth_max, weight_threshold);
+
+    std::unordered_map<TSDFVoxelGrid::RayCastMaskCode, core::Tensor> results;
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {
+        results.emplace(TSDFVoxelGrid::RayCastMaskCode::VertexMap, vertex_map);
+    }
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::DepthMap) {
+        results.emplace(TSDFVoxelGrid::RayCastMaskCode::DepthMap, depth_map);
+    }
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::ColorMap) {
+        results.emplace(TSDFVoxelGrid::RayCastMaskCode::ColorMap, color_map);
+    }
+    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::NormalMap) {
+        results.emplace(TSDFVoxelGrid::RayCastMaskCode::NormalMap, normal_map);
+    }
+    return results;
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {

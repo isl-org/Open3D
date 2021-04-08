@@ -174,10 +174,9 @@ public:
         int64_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
-                    "[NDArrayIndexer] Tensor shape too large, only <= {} "
-                    "is "
-                    "supported, but received {}.",
-                    MAX_RESOLUTION_DIMS, active_dims);
+                    "[NDArrayIndexer] Tensor shape too large, only <= {} and "
+                    "<= {} array dim is supported, but received {}.",
+                    MAX_RESOLUTION_DIMS, n, active_dims);
         }
 
         // Leading dimensions are coordinates
