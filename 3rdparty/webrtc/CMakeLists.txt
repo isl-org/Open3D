@@ -2,9 +2,10 @@
 #
 # 1) We assume the following directory structure:
 #    /
-#    ├── depot_tools         # ${DEPOT_TOOLS_ROOT}, should be added to PATH
-#    └── webrtc              # ${WEBRTC_ROOT}
-#        ├── CMakeLists.txt  # This CMakeLists.txt itself (copied to container)
+#    ├── depot_tools              # ${DEPOT_TOOLS_ROOT}, should be added to PATH
+#    └── webrtc                   # ${WEBRTC_ROOT}
+#        ├── CMakeLists.txt       # This CMakeLists.txt itself (copied to container)
+#        ├── webrtc_config.cmake  # Common config for WebRTC (copied to container)
 #        ├── .gclient
 #        └── src             # The actual git directory
 #
