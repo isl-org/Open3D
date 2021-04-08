@@ -1,10 +1,10 @@
 # Example usage:
 #
 # - GLIBCXX_USE_CXX11_ABI=0
-#   - docker build --build-args GLIBCXX_USE_CXX11_ABI=0 -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
+#   - docker build --build-arg GLIBCXX_USE_CXX11_ABI=0 -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
 #   - docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_cxx-abi-0.tar.gz > webrtc_cxx-abi-0.tar.gz
 # - GLIBCXX_USE_CXX11_ABI=1
-#   - docker build --build-args GLIBCXX_USE_CXX11_ABI=1 -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
+#   - docker build --build-arg GLIBCXX_USE_CXX11_ABI=1 -t open3d-webrtc:latest -f .github/workflows/Dockerfile.webrtc .
 #   - docker run --rm --entrypoint cat open3d-webrtc:latest webrtc_cxx-abi-1.tar.gz > webrtc_cxx-abi-1.tar.gz
 
 
