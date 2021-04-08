@@ -105,7 +105,7 @@ ExternalProject_Add(
     COMMAND cp -ar ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/args.gn
-        <SOURCE_DIR>/src/out/${WEBRTC_BUILD}/args.gn
+        ${WEBRTC_NINJA_ROOT}/args.gn
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
@@ -116,7 +116,7 @@ ExternalProject_Add(
 ExternalProject_Add_Step(ext_webrtc build_obj
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
     COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGET}
-    WORKING_DIRECTORY <SOURCE_DIR>/src/out/${WEBRTC_BUILD}
+    WORKING_DIRECTORY ${WEBRTC_NINJA_ROOT}
     DEPENDEES build
     DEPENDERS install
 )
