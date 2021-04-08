@@ -52,3 +52,6 @@
 [submodule "3rdparty/benchmark"]
 	path = 3rdparty/benchmark
 	url = https://github.com/google/benchmark.git
+[submodule "3rdparty/moderngpu"]
+	path = 3rdparty/moderngpu
+	url = https://github.com/moderngpu/moderngpu.git

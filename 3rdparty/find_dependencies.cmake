@@ -373,6 +373,11 @@ build_3rdparty_library(3rdparty_nanoflann DIRECTORY nanoflann INCLUDE_DIRS inclu
 set(NANOFLANN_TARGET "3rdparty_nanoflann")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${NANOFLANN_TARGET}")
 
+# ModernGPU
+build_3rdparty_library(3rdparty_moderngpu DIRECTORY moderngpu INCLUDE_DIRS src/ INCLUDE_ALL)
+set(MODERNGPU_TARGET "3rdparty_moderngpu")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MODERNGPU_TARGET}")
+
 # GLEW
 if(USE_SYSTEM_GLEW)
     find_package(GLEW)
