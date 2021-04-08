@@ -867,7 +867,7 @@ void SortPairs2(int64_t num_indices,
                 const int64_t* query_neighbors_row_splits,
                 int64_t* indices_unsorted,
                 T* distances_unsorted) {
-    mgpu::standard_context_t context;
+    mgpu::standard_context_t context(/*print_prop*/ false);
 
     mgpu::segmented_sort(distances_unsorted, indices_unsorted, num_indices,
                          query_neighbors_row_splits + 1, num_segments,
