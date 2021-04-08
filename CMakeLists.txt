@@ -31,7 +31,12 @@ else()
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
-option(BUILD_WEBRTC               "Build WebRTC jupyter visualizer"          ON )
+if(UNIX AND NOT APPLE)
+    option(BUILD_WEBRTC           "Build WebRTC Jupyter visualizer"          ON )
+else()
+    option(BUILD_WEBRTC           "Build WebRTC Jupyter visualizer"          OFF)
+endif()
+
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
