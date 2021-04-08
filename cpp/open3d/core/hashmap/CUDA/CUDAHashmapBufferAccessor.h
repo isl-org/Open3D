@@ -33,8 +33,8 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
-#include "open3d/core/hashmap/CUDA/Macros.h"
-#include "open3d/core/hashmap/CUDA/Traits.h"
+#include "open3d/core/hashmap/CUDA/SlabMacros.h"
+#include "open3d/core/hashmap/CUDA/SlabTraits.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
 namespace open3d {
@@ -45,7 +45,7 @@ namespace core {
 
 __global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity);
 
-class CUDAHashmapBufferContext {
+class CUDAHashmapBufferAccessor {
 public:
     __host__ void Setup(int64_t capacity,
                         int64_t dsize_key,

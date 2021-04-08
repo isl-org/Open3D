@@ -150,7 +150,8 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
+PointCloud PointCloud::VoxelDownSample(
+        double voxel_size, const core::HashmapBackend &backend) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
@@ -159,7 +160,7 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
 
     core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(),
                                         core::Dtype::Int64, core::Dtype::Int32,
-                                        {3}, {1}, device_);
+                                        {3}, {1}, device_, backend);
 
     core::Tensor addrs, masks;
     points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);

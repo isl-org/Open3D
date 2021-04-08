@@ -84,6 +84,25 @@ public:
                  z_in * extrinsic_[2][2] + extrinsic_[2][3];
     }
 
+    /// Transform a 3D coordinate in camera coordinate to world coordinate
+    OPEN3D_HOST_DEVICE void Rotate(float x_in,
+                                   float y_in,
+                                   float z_in,
+                                   float* x_out,
+                                   float* y_out,
+                                   float* z_out) const {
+        x_in *= scale_;
+        y_in *= scale_;
+        z_in *= scale_;
+
+        *x_out = x_in * extrinsic_[0][0] + y_in * extrinsic_[0][1] +
+                 z_in * extrinsic_[0][2];
+        *y_out = x_in * extrinsic_[1][0] + y_in * extrinsic_[1][1] +
+                 z_in * extrinsic_[1][2];
+        *z_out = x_in * extrinsic_[2][0] + y_in * extrinsic_[2][1] +
+                 z_in * extrinsic_[2][2];
+    }
+
     /// Project a 3D coordinate in camera coordinate to a 2D uv coordinate
     OPEN3D_HOST_DEVICE void Project(float x_in,
                                     float y_in,
