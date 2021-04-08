@@ -21,6 +21,7 @@ include(${PROJECT_SOURCE_DIR}/3rdparty/webrtc/webrtc_common.cmake)
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     get_webrtc_args(WEBRTC_ARGS)
     file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
+    message(STATUS "Configs written to ${CMAKE_BINARY_DIR}/args.gn")
 endif()
 
 # webrtc        -> libwebrtc.a

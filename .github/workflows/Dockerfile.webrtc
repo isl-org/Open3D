@@ -68,6 +68,7 @@ ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 # `docker build` should be executed in the Open3D root dir
 WORKDIR /
 COPY 3rdparty/webrtc/CMakeLists.txt                                         /webrtc
+COPY 3rdparty/webrtc/webrtc_common.cmake                                    /webrtc
 COPY 3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch         /webrtc
 COPY 3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch       /webrtc
 COPY 3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch /webrtc
