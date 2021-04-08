@@ -201,6 +201,7 @@ const GuiSettingsModel::LitMaterial& GuiSettingsModel::GetDefaultLitMaterial() {
 GuiSettingsModel::GuiSettingsModel() {
     lighting_ = GetDefaultLightingProfile();
     current_materials_.lit = GetDefaultLitMaterial();
+    current_materials_.lit_name = DEFAULT_MATERIAL_NAME;
 }
 
 bool GuiSettingsModel::GetShowSkybox() const { return show_skybox_; }

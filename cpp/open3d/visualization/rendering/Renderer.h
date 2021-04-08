@@ -95,8 +95,12 @@ public:
     virtual TextureHandle AddTexture(const ResourceLoadRequest& request,
                                      bool srgb = false) = 0;
     virtual TextureHandle AddTexture(
-            const std::shared_ptr<geometry::Image>& image,
+            const std::shared_ptr<geometry::Image> image,
             bool srgb = false) = 0;
+    virtual bool UpdateTexture(TextureHandle texture,
+                               const std::shared_ptr<geometry::Image> image,
+                               bool srgb) = 0;
+
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 
     virtual IndirectLightHandle AddIndirectLight(
