@@ -4,6 +4,7 @@ option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
 
 # Set paths
 set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
+set(DEPOT_TOOLS_ROOT ${PROJECT_SOURCE_DIR}/../depot_tools)
 
 # Set WebRTC build type path
 if(WEBRTC_IS_DEBUG)
@@ -113,9 +114,9 @@ ExternalProject_Add(
 )
 
 ExternalProject_Add_Step(ext_webrtc build_obj
-    COMMAND export PATH=$PATH:${PROJECT_SOURCE_DIR}/../depot_tools
-    COMMAND ${PROJECT_SOURCE_DIR}/../depot_tools/gn gen .
-    COMMAND ${PROJECT_SOURCE_DIR}/../depot_tools/ninja ${NINJA_TARGET}
+    COMMAND export PATH=$PATH:${DEPOT_TOOLS_ROOT}
+    COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
+    COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGET}
     WORKING_DIRECTORY <SOURCE_DIR>/src/out/${WEBRTC_BUILD}
     DEPENDEES build
     DEPENDERS install
