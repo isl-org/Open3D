@@ -14,8 +14,7 @@ else()
 endif()
 set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 
-# Creates args.gn for WebRTC build.
-if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
+function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS "")
 
     # ABI selection
@@ -65,7 +64,12 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     if(CCACHE_BIN)
         set(WEBRTC_ARGS cc_wrapper="ccache"\n${WEBRTC_ARGS})
     endif()
+  set(WEBRTC_ARGS ${WEBRTC_ARGS} PARENT_SCOPE)
+endfunction()
 
+# Creates args.gn for WebRTC build.
+if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
+    get_webrtc_args(WEBRTC_ARGS)
     file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
 endif()
 
