@@ -6,6 +6,14 @@ option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
 set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
 set(DEPOT_TOOLS_ROOT ${PROJECT_SOURCE_DIR}/../depot_tools)
 
+# Sanity checks
+if(NOT EXISTS ${WEBRTC_ROOT}/src)
+    message(FATAL_ERROR "Cannot find ${WEBRTC_ROOT}/src, please check WEBRTC_ROOT")
+endif()
+if(NOT EXISTS ${DEPOT_TOOLS_ROOT}/fetch)
+    message(FATAL_ERROR "Cannot find ${DEPOT_TOOLS_ROOT}/fetch, please check DEPOT_TOOLS_ROOT")
+endif()
+
 # Set WebRTC build type path
 if(WEBRTC_IS_DEBUG)
     set(WEBRTC_BUILD Debug)
