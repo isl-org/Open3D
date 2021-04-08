@@ -1,8 +1,13 @@
 include(ExternalProject)
 
-# TODO:
-# - Add mechanism to download depot tool and webrtc
-# - Remove hard-coded depot tool path
+option(WEBRTC_IS_DEBUG "Build shared libraries" OFF)
+
+# Set WebRTC build type path
+if(WEBRTC_IS_DEBUG)
+    set(WEBRTC_BUILD Debug)
+else()
+    set(WEBRTC_BUILD Release)
+endif()
 
 # Creates args.gn for WebRTC build.
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
@@ -14,9 +19,6 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     else()
         set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
     endif()
-
-    # Exports: WEBRTC_ARGS
-    set(WEBRTC_BUILD "Release" CACHE STRING "WEBRTC build type")
 
     set(WEBRTC_ARGS rtc_include_tests=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
@@ -38,10 +40,10 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     endif()
 
     # Debug/Release
-    if(WEBRTC_BUILD STREQUAL "Release")
-        set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
-    else()
+    if(WEBRTC_IS_DEBUG)
         set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
+    else()
+        set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
     endif()
 
     # H264 support

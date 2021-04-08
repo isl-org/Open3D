@@ -63,6 +63,7 @@ if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS use_custom_libcxx_for_host=false\n${WEBRTC_ARGS})
 
+    # Debug/Release
     if(WEBRTC_IS_DEBUG)
         set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
     else()
