@@ -50,7 +50,6 @@
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
-#include "open3d/visualization/gui/WebRTCWindowSystem.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -58,6 +57,10 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "open3d/visualization/utility/GLHelper.h"
+
+#ifdef BUILD_WEBRTC
+#include "open3d/visualization/gui/WebRTCWindowSystem.h"
+#endif
 
 namespace {
 
@@ -415,6 +418,7 @@ void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
     impl_->is_ws_initialized_ = false;
 }
 
+#ifdef BUILD_WEBRTC
 void Application::EnableWebRTC() {
     // TODO: WebRTCWindowSystem should be a global singleton. Consider returning
     // a shared pointer with singleton, to keep everything constant.
@@ -422,6 +426,7 @@ void Application::EnableWebRTC() {
     utility::LogInfo("WebRTC GUI backend enabled.");
     SetWindowSystem(gui::WebRTCWindowSystem::GetInstance());
 }
+#endif
 
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {
     auto font_path = FindFontPath(font);
@@ -478,8 +483,8 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
-    // TODO: move this elsewhere?
-    // TODO: better way to check window system type.
+#ifdef BUILD_WEBRTC
+    // TODO: move this elsewhere, better way to check window system type.
     if (std::shared_ptr<gui::WebRTCWindowSystem> webrtc_window_system =
                 std::dynamic_pointer_cast<gui::WebRTCWindowSystem>(
                         impl_->window_system_)) {
@@ -494,9 +499,8 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
         };
         webrtc_window_system->SetMouseEventCallback(mouse_event_callback);
 
-        // Server can force a window redraw. The redraw then triggers
-        // WebRTCServer::OnFrame() automatically where the server will send a
-        // new frame to the client.
+        // redraw_callback is called when the server wants to send a frame to
+        // the client without other triggering events.
         std::function<void(const std::string &)> redraw_callback =
                 [this,
                  webrtc_window_system](const std::string &window_uid) -> void {
@@ -508,6 +512,7 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
         // No-op of the server is already started.
         webrtc_window_system->StartWebRTCServer();
     }
+#endif
 
     window->OnResize();  // so we get an initial resize
     window->Show();

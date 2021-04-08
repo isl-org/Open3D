@@ -36,10 +36,14 @@ set(GUI_SOURCE_FILES
     UIImage.cpp
     Util.cpp
     VectorEdit.cpp
-    WebRTCWindowSystem.cpp
     Widget.cpp
     Window.cpp
+)
+if(BUILD_WEBRTC)
+    set(GUI_SOURCE_FILES ${GUI_SOURCE_FILES}
+        WebRTCWindowSystem.cpp
     )
+endif()
 
 if (WIN32)
     list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)
