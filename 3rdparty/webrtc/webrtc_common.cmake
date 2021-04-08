@@ -1,3 +1,11 @@
+# Common configs for building WebRTC from source. Used in both native build
+# and building inside docker.
+#
+# Exports:
+# - get_webrtc_args(WEBRTC_ARGS) function
+# - NINJA_TARGETS
+# - EXTRA_WEBRTC_OBJS  # You have to define WEBRTC_NINJA_ROOT before including this file
+
 function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS "")
 
@@ -53,7 +61,7 @@ endfunction()
 
 # webrtc        -> libwebrtc.a
 # other targets -> libwebrtc_extra.a
-set(NINJA_TARGET
+set(NINJA_TARGETS
     webrtc
     rtc_json
     jsoncpp

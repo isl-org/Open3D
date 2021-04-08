@@ -41,7 +41,7 @@ ExternalProject_Add(
 
 ExternalProject_Add_Step(ext_webrtc build_webrtc
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
-    COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGET}
+    COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGETS}
     WORKING_DIRECTORY ${WEBRTC_NINJA_ROOT}
     DEPENDEES build
     DEPENDERS install
