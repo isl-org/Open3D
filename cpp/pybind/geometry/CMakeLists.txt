@@ -8,6 +8,7 @@ target_sources(pybind PRIVATE
     lineset.cpp
     meshbase.cpp
     octree.cpp
+    planarpatch.cpp
     pointcloud.cpp
     tetramesh.cpp
     trianglemesh.cpp

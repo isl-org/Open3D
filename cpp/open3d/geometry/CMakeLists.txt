@@ -15,10 +15,12 @@ target_sources(geometry PRIVATE
     LineSetFactory.cpp
     MeshBase.cpp
     Octree.cpp
+    PlanarPatch.cpp
     PointCloud.cpp
     PointCloudCluster.cpp
     PointCloudFactory.cpp
     PointCloudSegmentation.cpp
+    PointCloudPlanarPatchDetection.cpp
     Qhull.cpp
     RGBDImage.cpp
     RGBDImageFactory.cpp
