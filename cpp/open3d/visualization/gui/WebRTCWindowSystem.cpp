@@ -62,20 +62,10 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 #endif
               ),
       impl_(new WebRTCWindowSystem::Impl()) {
-    // The WebRTCWindowSystem does not store the state of each instance of
-    // window that it creates. It stores the global state and owns the global
-    // WebRTC server that manages connections for all window instaces.
-    //
-    // Currenlty a window instance is owned by:
-    // WindowSystem::OSWindow gui::Window::Impl::window_.
-    //
-    // O3DVisualizer is a gui::Window.
-
-    // Initialize WebRTC server. Not starting yet.
+    // Initialize WebRTC server. The sever is started at the first AddWindow,
     impl_->webrtc_server_ = std::make_shared<webrtc_server::WebRTCServer>();
 
     // Server->client send frame.
-    // TODO: multiple windows.
     auto draw_callback = [this](const gui::Window *window,
                                 std::shared_ptr<core::Tensor> im) -> void {
         this->impl_->webrtc_server_->OnFrame(window->GetUID(), im);
