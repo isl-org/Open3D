@@ -907,6 +907,25 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
+Tensor Tensor::Clamp(double min_val, double max_val) const {
+    // TODO: Implement with kernel.
+    if (dtype_ == core::Dtype::Int16 || dtype_ == core::Dtype::Int32 ||
+        dtype_ == core::Dtype::Int64 || dtype_ == core::Dtype::UInt8 ||
+        dtype_ == core::Dtype::UInt16) {
+        min_val = ceil(min_val);
+        max_val = floor(max_val);
+    } else if (dtype_ == core::Dtype::Bool) {
+        utility::LogError("Unsupported datatype: boolean.");
+    }
+
+    Tensor dst_tensor = *this;
+    dst_tensor.SetItem(TensorKey::IndexTensor(Ge(max_val)),
+                       Full({}, max_val, dtype_, GetDevice()));
+    dst_tensor.SetItem(TensorKey::IndexTensor(Le(min_val)),
+                       Full({}, min_val, dtype_, GetDevice()));
+    return dst_tensor;
+}
+
 Tensor Tensor::Clip(double min_val, double max_val) const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     utility::LogError("Not Implemented!");
