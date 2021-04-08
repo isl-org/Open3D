@@ -7,6 +7,7 @@
 * Add function to randomly downsample pointcloud (PR #3050)
 * Allow TriangleMesh with textures to be added (PR #3170)
 * Python property of open3d.visualization.rendering.Open3DScene `get_view` has been renamed to `view`.
+* Added LineSet::CreateCameraVisualization() for creating a simple camera visualization from intrinsic and extrinsic matrices (PR #3255)
 
 ## 0.11
 

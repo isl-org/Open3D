@@ -39,14 +39,14 @@ namespace core {
 
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
-class CPUHashmapBufferContext {
+class CPUHashmapBufferAccessor {
 public:
-    CPUHashmapBufferContext(int64_t capacity,
-                            int64_t dsize_key,
-                            int64_t dsize_value,
-                            Tensor &keys,
-                            Tensor &values,
-                            Tensor &heap)
+    CPUHashmapBufferAccessor(int64_t capacity,
+                             int64_t dsize_key,
+                             int64_t dsize_value,
+                             Tensor &keys,
+                             Tensor &values,
+                             Tensor &heap)
         : capacity_(capacity),
           dsize_key_(dsize_key),
           dsize_value_(dsize_value),

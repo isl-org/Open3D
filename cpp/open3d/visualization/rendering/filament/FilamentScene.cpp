@@ -329,7 +329,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto tris = dynamic_cast<const geometry::TriangleMesh*>(&geometry);
     if (tris && tris->vertex_normals_.empty() &&
         tris->triangle_normals_.empty() &&
-        (material.shader == "defaultUnlit" ||
+        (material.shader == "defaultLit" ||
          material.shader == "defaultLitTransparency")) {
         utility::LogWarning(
                 "Using a shader with lighting but geometry has no normals.");
