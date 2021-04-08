@@ -2,10 +2,10 @@
 #
 # > GLIBCXX_USE_CXX11_ABI=0
 #   - docker build --build-arg GLIBCXX_USE_CXX11_ABI=0 -t open3d-webrtc:abi0 -f .github/workflows/Dockerfile.webrtc .
-#   - docker run --rm --entrypoint cat open3d-webrtc:abi0 webrtc_cxx-abi-0.tar.gz > webrtc_cxx-abi-0.tar.gz
+#   - docker run --rm --entrypoint cat open3d-webrtc:abi0 webrtc_60e6748_cxx-abi-0.tar.gz > webrtc_60e6748_cxx-abi-0.tar.gz
 # > GLIBCXX_USE_CXX11_ABI=1
 #   - docker build --build-arg GLIBCXX_USE_CXX11_ABI=1 -t open3d-webrtc:abi1 -f .github/workflows/Dockerfile.webrtc .
-#   - docker run --rm --entrypoint cat open3d-webrtc:abi1 webrtc_cxx-abi-1.tar.gz > webrtc_cxx-abi-1.tar.gz
+#   - docker run --rm --entrypoint cat open3d-webrtc:abi1 webrtc_60e6748_cxx-abi-1.tar.gz > webrtc_60e6748_cxx-abi-1.tar.gz
 
 FROM ubuntu:18.04
 
