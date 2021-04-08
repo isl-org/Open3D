@@ -48,10 +48,10 @@ void pybind_visualization_utility(py::module &m) {
             .def(
                     "crop_point_cloud",
                     [](const SelectionPolygonVolume &s,
-                       const geometry::PointCloud &input, bool invert) {
-                        return s.CropPointCloud(input, invert);
+                       const geometry::PointCloud &input) {
+                        return s.CropPointCloud(input);
                     },
-                    "input"_a, "invert"_a = false, "Function to crop point cloud.")
+                    "input"_a, "Function to crop point cloud.")
             .def(
                     "crop_triangle_mesh",
                     [](const SelectionPolygonVolume &s,
@@ -80,7 +80,7 @@ void pybind_visualization_utility(py::module &m) {
                            "float: Maximum axis value.");
     docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
                                     "crop_point_cloud",
-                                    {{"input", "The input point cloud."}, {"invert", "Invert the selection"}});
+                                    {{"input", "The input point cloud."}});
     docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
                                     "crop_triangle_mesh",
                                     {{"input", "The input triangle mesh."}});

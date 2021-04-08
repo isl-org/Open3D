@@ -482,7 +482,7 @@ std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
     Eigen::Vector3d p2;
     Eigen::Vector3d p3;
     Eigen::Vector3d normal;
-    Eigen::Vector3d expectedNormal;
+    Eigen::Vector3d center = mesh.GetCenter();
     Eigen::Vector3i triangle;
     double ccw;
     double cosine;
@@ -497,9 +497,8 @@ std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
             p1 = mesh.vertices_[triangle(0)];
             p2 = mesh.vertices_[triangle(1)];
             p3 = mesh.vertices_[triangle(2)];            
-            expectedNormal = (p2-p1).cross(p3-p2);
             normal = mesh.triangle_normals_[j];
-            ccw = expectedNormal.dot(normal);
+            ccw = (p1-center).dot(normal);
             if (ccw < 0){
                 normal = -normal;
             }

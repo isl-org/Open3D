@@ -89,16 +89,16 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
 }
 
 std::shared_ptr<geometry::PointCloud> SelectionPolygonVolume::CropPointCloud(
-        const geometry::PointCloud &input, bool invert /* = false */) const {
+        const geometry::PointCloud &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
         return std::make_shared<geometry::PointCloud>();
-    return CropPointCloudInPolygon(input, invert);
+    return CropPointCloudInPolygon(input);
 }
 
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygonVolume::CropPointCloudInPolygon(
-        const geometry::PointCloud &input, bool invert /* = false */) const {
-    return input.SelectByIndex(CropInPolygon(input.points_), invert);
+        const geometry::PointCloud &input) const {
+    return input.SelectByIndex(CropInPolygon(input.points_));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
