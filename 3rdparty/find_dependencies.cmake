@@ -1191,8 +1191,12 @@ if (WITH_IPPICV)
 endif ()
 
 # WebRTC
-if (BUILD_WEBRTC)
-    include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
+if(BUILD_WEBRTC)
+    if(BUILD_WEBRTC_FROM_SOURCE)
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
+    else()
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_download.cmake)
+    endif()
     import_3rdparty_library(3rdparty_webrtc
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
         LIB_DIR      ${WEBRTC_LIB_DIR}

@@ -49,6 +49,7 @@ option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
+option(BUILD_WEBRTC_FROM_SOURCE   "Build WebRTC from source"                 ON )
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
 option(WITH_FAISS                 "Enable Faiss"                             ON )
 
