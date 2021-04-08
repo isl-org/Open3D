@@ -33,7 +33,6 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/gui/WebRTCWindowSystem.h"
 
 namespace open3d {
 namespace visualization {
