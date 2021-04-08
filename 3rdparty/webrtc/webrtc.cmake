@@ -66,7 +66,8 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
 endif()
 
-# Ninja targets for WebRTC.
+# webrtc        -> libwebrtc.a
+# other targets -> libwebrtc_extra.a
 set(NINJA_TARGET
     webrtc
     rtc_json
@@ -79,7 +80,7 @@ set(NINJA_TARGET
     default_task_queue_factory
 )
 
-# Determined by ExternalProject_Add, but hard-coded here.
+# Byproducts for ninja build, later packaged by CMake into libwebrtc_extra.a
 set(EXTRA_WEBRTC_OBJS
     ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader.o
     ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value.o
