@@ -50,7 +50,8 @@ public:
     void SetOnValueChanged(
             std::function<void(const Eigen::Vector3f&)> on_changed);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:

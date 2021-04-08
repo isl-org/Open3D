@@ -29,14 +29,17 @@
 #include <vector>
 
 #include "assimp/Importer.hpp"
+#include "assimp/ProgressHandler.hpp"
 #include "assimp/pbrmaterial.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/ModelIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/ProgressReporters.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Model.h"
 
@@ -136,15 +139,15 @@ void LoadTextures(const std::string& filename,
     // anisotropy
 }
 
-bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
-                                 geometry::TriangleMesh& mesh,
-                                 bool enable_post_processing,
-                                 bool print_progress) {
+bool ReadTriangleMeshUsingASSIMP(
+        const std::string& filename,
+        geometry::TriangleMesh& mesh,
+        const ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
     unsigned int post_process_flags = 0;
 
-    if (enable_post_processing) {
+    if (params.enable_post_processing) {
         post_process_flags = kPostProcessFlags;
     }
 
@@ -273,13 +276,45 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
 bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
-                          bool print_progress) {
+                          const ReadTriangleModelOptions& params /*={}*/) {
+    int64_t progress_total = 100;  // 70: ReadFile(), 10: mesh, 20: textures
+    float readfile_total = 70.0f;
+    float mesh_total = 10.0f;
+    float textures_total = 20.0f;
+    int64_t progress = 0;
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(progress_total);
+    class AssimpProgress : public Assimp::ProgressHandler {
+    public:
+        AssimpProgress(const ReadTriangleModelOptions& params, float scaling)
+            : params_(params), scaling_(scaling) {}
+
+        bool Update(float percentage = -1.0f) override {
+            if (params_.update_progress) {
+                params_.update_progress(
+                        std::max(0.0f, 100.0f * scaling_ * percentage));
+            }
+            return true;
+        }
+
+    private:
+        const ReadTriangleModelOptions& params_;
+        float scaling_;
+    };
+
     Assimp::Importer importer;
+    // The importer takes ownership of the pointer (the documentation
+    // is silent on this salient point).
+    importer.SetProgressHandler(
+            new AssimpProgress(params, readfile_total / progress_total));
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
     }
+
+    progress = int64_t(readfile_total);
+    reporter.Update(progress);
 
     // Process each Assimp mesh into a geometry::TriangleMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
@@ -344,6 +379,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
                                  assimp_mesh->mMaterialIndex});
     }
 
+    progress = int64_t(readfile_total + mesh_total);
+    reporter.Update(progress);
+
     // Load materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
@@ -393,7 +431,14 @@ bool ReadModelUsingAssimp(const std::string& filename,
         }
 
         model.materials_.push_back(o3d_mat);
+
+        progress = int64_t(readfile_total + mesh_total +
+                           textures_total * float(i + 1) /
+                                   float(scene->mNumMaterials));
+        reporter.Update(progress);
     }
+
+    reporter.Update(progress_total);
 
     return true;
 }

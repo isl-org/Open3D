@@ -24,37 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Copyright 2019 Saman Ashkiani
-// Rewritten by Wei Dong 2019 - 2020
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// implied. See the License for the specific language governing permissions
-// and limitations under the License.
-
-#pragma once
-
-#include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
+#include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
 
 namespace open3d {
 namespace core {
 
-/// Templated factory.
-template <typename Hash, typename KeyEq>
-std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
-        int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < capacity) {
+        heap[i] = i;
+    }
 }
 
 }  // namespace core

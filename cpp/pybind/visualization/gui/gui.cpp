@@ -37,7 +37,7 @@
 #include "open3d/visualization/gui/Dialog.h"
 #include "open3d/visualization/gui/FileDialog.h"
 #include "open3d/visualization/gui/Gui.h"
-#include "open3d/visualization/gui/ImageLabel.h"
+#include "open3d/visualization/gui/ImageWidget.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/Layout.h"
@@ -588,6 +588,13 @@ void pybind_gui_classes(py::module &m) {
                    "functionality")
             .export_values();
 
+    py::class_<Widget::Constraints> constraints(
+            widget, "Constraints",
+            "Constraints object for Widget.calc_preferred_size()");
+    constraints.def(py::init<>())
+            .def_readwrite("width", &Widget::Constraints::width)
+            .def_readwrite("height", &Widget::Constraints::height);
+
     widget.def(py::init<>())
             .def("__repr__",
                  [](const Widget &w) {
@@ -758,21 +765,66 @@ void pybind_gui_classes(py::module &m) {
                  "Arguments are the selected text and selected index, "
                  "respectively");
 
-    // ---- ImageLabel ----
-    py::class_<ImageLabel, UnownedPointer<ImageLabel>, Widget> imagelabel(
-            m, "ImageLabel", "Displays a bitmap");
-    imagelabel
-            .def(py::init<>(
-                         [](const char *path) { return new ImageLabel(path); }),
-                 "Creates an ImageLabel from the image at the specified path")
-            .def("__repr__", [](const ImageLabel &il) {
-                std::stringstream s;
-                s << "ImageLabel (" << il.GetFrame().x << ", "
-                  << il.GetFrame().y << "), " << il.GetFrame().width << " x "
-                  << il.GetFrame().height;
-                return s.str();
-            });
-    // TODO: add the other functions and UIImage?
+    // ---- ImageWidget ----
+    py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
+            m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
+
+    py::enum_<UIImage::Scaling> uiimage_scaling(uiimage, "Scaling",
+                                                py::arithmetic());
+    uiimage_scaling.value("NONE", UIImage::Scaling::NONE)
+            .value("ANY", UIImage::Scaling::ANY)
+            .value("ASPECT", UIImage::Scaling::ASPECT);
+
+    uiimage.def(py::init<>([](const char *path) { return new UIImage(path); }),
+                "Creates a UIImage from the image at the specified path")
+            .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
+                     return new UIImage(image);
+                 }),
+                 "Creates a UIImage from the provided image")
+            .def("__repr__", [](const UIImage &il) { return "UIImage"; })
+            .def_property("scaling", &UIImage::GetScaling, &UIImage::SetScaling,
+                          "Sets how the image is scaled:\n"
+                          "gui.UIImage.Scaling.NONE: no scaling\n"
+                          "gui.UIImage.Scaling.ANY: scaled to fit\n"
+                          "gui.UIImage.Scaling.ASPECT: scaled to fit but "
+                          "keeping the image's aspect ratio");
+
+    py::class_<ImageWidget, UnownedPointer<ImageWidget>, Widget> imagewidget(
+            m, "ImageWidget", "Displays a bitmap");
+    imagewidget
+            .def(py::init<>([]() { return new ImageWidget(); }),
+                 "Creates an ImageWidget with no image")
+            .def(py::init<>([](const char *path) {
+                     return new ImageWidget(path);
+                 }),
+                 "Creates an ImageWidget from the image at the specified path")
+            .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
+                     return new ImageWidget(image);
+                 }),
+                 "Creates an ImageWidget from the provided image")
+            .def("__repr__",
+                 [](const ImageWidget &il) {
+                     std::stringstream s;
+                     s << "ImageLabel (" << il.GetFrame().x << ", "
+                       << il.GetFrame().y << "), " << il.GetFrame().width
+                       << " x " << il.GetFrame().height;
+                     return s.str();
+                 })
+            .def("update_image", &ImageWidget::UpdateImage,
+                 "Mostly a convenience function for ui_image.update_image(). "
+                 "If 'image' is the same size as the current image, will "
+                 "update the texture with the contents of 'image'. This is "
+                 "the fastest path for setting an image, and is recommended "
+                 "if you are displaying video. If 'image' is a different size, "
+                 "it will allocate a new texture, which is essentially the "
+                 "same as creating a new UIImage and calling SetUIImage(). "
+                 "This is the slow path, and may eventually exhaust internal "
+                 "texture resources.")
+            .def_property("ui_image", &ImageWidget::GetUIImage,
+                          &ImageWidget::SetUIImage,
+                          "Replaces the texture with a new texture. This is "
+                          "not a fast path, and is not recommended for video "
+                          "as you will exhaust internal texture resources.");
 
     // ---- Label ----
     py::class_<Label, UnownedPointer<Label>, Widget> label(m, "Label",
@@ -1370,7 +1422,10 @@ void pybind_gui_classes(py::module &m) {
                  "Creates a layout that arranges widgets vertically, top to "
                  "bottom, making their width equal to the layout's width. "
                  "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.");
+                 "is the margins. Both default to 0.")
+            .def_property("preferred_width", &Vert::GetPreferredWidth,
+                          &Vert::SetPreferredWidth,
+                          "Sets the preferred width of the layout");
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, UnownedPointer<CollapsableVert>, Vert>
@@ -1424,7 +1479,10 @@ void pybind_gui_classes(py::module &m) {
                  "right, making their height equal to the layout's height "
                  "(which will generally be the largest height of the items). "
                  "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.");
+                 "is the margins. Both default to 0.")
+            .def_property("preferred_height", &Horiz::GetPreferredHeight,
+                          &Horiz::SetPreferredHeight,
+                          "Sets the preferred height of the layout");
 
     // ---- VGrid ----
     py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m, "VGrid",
@@ -1456,7 +1514,10 @@ void pybind_gui_classes(py::module &m) {
                     "spacing", &VGrid::GetSpacing,
                     "Returns the spacing between rows and columns")
             .def_property_readonly("margins", &VGrid::GetMargins,
-                                   "Returns the margins");
+                                   "Returns the margins")
+            .def_property("preferred_width", &VGrid::GetPreferredWidth,
+                          &VGrid::SetPreferredWidth,
+                          "Sets the preferred width of the layout");
 
     // ---- Dialog ----
     py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m, "Dialog",
