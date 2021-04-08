@@ -113,7 +113,7 @@ ExternalProject_Add(
     ${BUILD_BYPRODUCTS} ${EXTRA_WEBRTC_OBJS}
 )
 
-ExternalProject_Add_Step(ext_webrtc build_obj
+ExternalProject_Add_Step(ext_webrtc build_webrtc
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
     COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGET}
     WORKING_DIRECTORY ${WEBRTC_NINJA_ROOT}
