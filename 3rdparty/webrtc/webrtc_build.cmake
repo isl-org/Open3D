@@ -17,7 +17,7 @@ set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 # Common configs for WebRTC
 include(${PROJECT_SOURCE_DIR}/3rdparty/webrtc/webrtc_common.cmake)
 
-# Creates args.gn for WebRTC build.
+# Creates args.gn
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     get_webrtc_args(WEBRTC_ARGS)
     file(WRITE ${CMAKE_BINARY_DIR}/args.gn ${WEBRTC_ARGS})
@@ -39,6 +39,7 @@ ExternalProject_Add(
     ${BUILD_BYPRODUCTS} ${EXTRA_WEBRTC_OBJS}
 )
 
+# libwebrtc.a
 ExternalProject_Add_Step(ext_webrtc build_webrtc
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
     COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGETS}
@@ -47,7 +48,20 @@ ExternalProject_Add_Step(ext_webrtc build_webrtc
     DEPENDERS install
 )
 
-# TODO: check if the trailing "/" is is needed.
+# libwebrtc_extra.a
+add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
+set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES GENERATED TRUE)
+add_dependencies(webrtc_extra ext_webrtc)
+set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(webrtc_extra PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${WEBRTC_NINJA_ROOT}/obj
+)
+
+# Dummy target that depends on all WebRTC targets.
+add_custom_target(ext_webrtc_all)
+add_dependencies(ext_webrtc_all ext_webrtc webrtc_extra)
+
+# Variables consumed by find_dependencies.cmake
 set(WEBRTC_INCLUDE_DIRS
     ${WEBRTC_ROOT}/src/
     ${WEBRTC_ROOT}/src/third_party/abseil-cpp/
@@ -55,21 +69,8 @@ set(WEBRTC_INCLUDE_DIRS
     ${WEBRTC_ROOT}/src/third_party/jsoncpp/generated/
     ${WEBRTC_ROOT}/src/third_party/libyuv/include/
 )
-set(WEBRTC_LIB_DIR ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD}/obj)
+set(WEBRTC_LIB_DIR ${WEBRTC_NINJA_ROOT}/obj)
 set(WEBRTC_LIBRARIES
     webrtc
     webrtc_extra
 )
-
-# libwebrtc_extra.a
-add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
-set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES GENERATED TRUE)
-add_dependencies(webrtc_extra ext_webrtc)
-set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(webrtc_extra PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${WEBRTC_LIB_DIR}
-)
-
-# Dummy target that depends on all WebRTC targets.
-add_custom_target(ext_webrtc_all)
-add_dependencies(ext_webrtc_all ext_webrtc webrtc_extra)

@@ -21,6 +21,7 @@ set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(LIBPNG_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
 
+# Variables consumed by find_dependencies.cmake
 set(WEBRTC_INCLUDE_DIRS
     ${SOURCE_DIR}/include/
     ${SOURCE_DIR}/include/third_party/abseil-cpp/
