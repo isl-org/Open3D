@@ -50,3 +50,33 @@ function(get_webrtc_args WEBRTC_ARGS)
     endif()
   set(WEBRTC_ARGS ${WEBRTC_ARGS} PARENT_SCOPE)
 endfunction()
+
+# webrtc        -> libwebrtc.a
+# other targets -> libwebrtc_extra.a
+set(NINJA_TARGET
+    webrtc
+    rtc_json
+    jsoncpp
+    builtin_video_decoder_factory
+    builtin_video_encoder_factory
+    peerconnection
+    p2p_server_utils
+    task_queue
+    default_task_queue_factory
+)
+
+# Byproducts for ninja build, later packaged by CMake into libwebrtc_extra.a
+if(NOT WEBRTC_NINJA_ROOT)
+    message(FATAL_ERROR "Please define WEBRTC_NINJA_ROOT before including webrtc_common.cmake")
+endif()
+set(EXTRA_WEBRTC_OBJS
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer.o
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server.o
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server.o
+    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/default_task_queue_factory/default_task_queue_factory_stdlib.o
+    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/task_queue/task_queue_base.o
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_task_queue_stdlib/task_queue_stdlib.o
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json.o
+)
