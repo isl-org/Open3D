@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
 
-option(WEBRTC_IS_DEBUG "Build shared libraries" OFF)
+option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
 
 # Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})

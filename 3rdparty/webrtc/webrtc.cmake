@@ -1,6 +1,9 @@
 include(ExternalProject)
 
-option(WEBRTC_IS_DEBUG "Build shared libraries" OFF)
+option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
+
+# Set paths
+set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
 
 # Set WebRTC build type path
 if(WEBRTC_IS_DEBUG)
@@ -8,6 +11,7 @@ if(WEBRTC_IS_DEBUG)
 else()
     set(WEBRTC_BUILD Release)
 endif()
+set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 
 # Creates args.gn for WebRTC build.
 if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
@@ -76,17 +80,16 @@ set(NINJA_TARGET
 )
 
 # Determined by ExternalProject_Add, but hard-coded here.
-set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
 set(EXTRA_WEBRTC_OBJS
-    ${WEBRTC_ROOT}/src/out/Release/obj/third_party/jsoncpp/jsoncpp/json_reader.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/third_party/jsoncpp/jsoncpp/json_value.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/third_party/jsoncpp/jsoncpp/json_writer.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/p2p/p2p_server_utils/stun_server.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/p2p/p2p_server_utils/turn_server.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/api/task_queue/default_task_queue_factory/default_task_queue_factory_stdlib.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/api/task_queue/task_queue/task_queue_base.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/rtc_base/rtc_task_queue_stdlib/task_queue_stdlib.o
-    ${WEBRTC_ROOT}/src/out/Release/obj/rtc_base/rtc_json/json.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer.o
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server.o
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server.o
+    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/default_task_queue_factory/default_task_queue_factory_stdlib.o
+    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/task_queue/task_queue_base.o
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_task_queue_stdlib/task_queue_stdlib.o
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json.o
 )
 
 ExternalProject_Add(
