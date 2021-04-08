@@ -61,6 +61,7 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     # Use clang for compilation
     set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
 
+    # Use ccache if available, not recommended inside Docker
     find_program(CCACHE_BIN "ccache")
     if(CCACHE_BIN)
         set(WEBRTC_ARGS cc_wrapper="ccache"\n${WEBRTC_ARGS})
