@@ -42,8 +42,7 @@ namespace visualization {
 namespace gui {
 
 struct WebRTCWindowSystem::Impl {
-    // TODO: can this be unique?
-    std::shared_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
+    std::unique_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
     std::thread webrtc_thread_;
     bool sever_started_ = false;
 };
@@ -63,7 +62,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
               ),
       impl_(new WebRTCWindowSystem::Impl()) {
     // Initialize WebRTC server. The sever is started at the first AddWindow,
-    impl_->webrtc_server_ = std::make_shared<webrtc_server::WebRTCServer>();
+    impl_->webrtc_server_ = std::make_unique<webrtc_server::WebRTCServer>();
 
     // Server->client send frame.
     auto draw_callback = [this](const gui::Window *window,
