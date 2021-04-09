@@ -89,7 +89,7 @@ public:
     void OnDataChannelMessage(const std::string& message);
 
     // Set MouseEvent callback function. If a client -> server message is of
-    // MouseEvent type, the callback funciton will be triggered. The client
+    // MouseEvent type, the callback function will be triggered. The client
     // message shall also contain the corresponding window_uid.
     void SetMouseEventCallback(
             std::function<void(const std::string&, const gui::MouseEvent&)> f);
@@ -102,7 +102,7 @@ public:
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
 
-    // Send initial frames. This flushs the WebRTC vidoe stream. After the
+    // Send initial frames. This flushes the WebRTC video stream. After the
     // initial frames, new frames will only be sent at redraw events.
     void SendInitFrames(const std::string& window_uid);
 
