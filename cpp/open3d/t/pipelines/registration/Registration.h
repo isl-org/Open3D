@@ -88,6 +88,14 @@ public:
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Dtype::Float32, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+    /// \brief Parameterized Constructor for device type. The transformation_
+    /// will be initialized with Identity tensor of Float32 on the device.
+    ///
+    /// \param device Device on which RegistrationResult is to be initialized.
+    RegistrationResult(const core::Device &device)
+        : transformation_(core::Tensor::Eye(4, core::Dtype::Float32, device)),
+          inlier_rmse_(0.0),
+          fitness_(0.0){};
     ~RegistrationResult() {}
     bool IsBetterRANSACThan(const RegistrationResult &other) const {
         return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
@@ -152,18 +160,18 @@ RegistrationResult RegistrationICP(
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param voxel_sizes Vector of voxel scales of type double.
-/// \param criteria Vector of ICPConvergenceCriteria objects for each scale.
-/// \param max_correspondence_distance Vector of maximum correspondence
+/// \param voxel_sizes VectorDouble of voxel scales of type double.
+/// \param criterias Vector of ICPConvergenceCriteria objects for each scale.
+/// \param max_correspondence_distance VectorDouble of maximum correspondence
 /// points-pair distances of type double, for each iteration. Must be of same
-/// length as voxel_sizes and criteria.
+/// length as voxel_sizes and criterias.
 /// \param init Initial transformation estimation.
 /// \param estimation Estimation method.
-RegistrationResult RegistrationICPMultiScale(
+RegistrationResult RegistrationMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
-        const std::vector<ICPConvergenceCriteria> &criteria,
+        const std::vector<ICPConvergenceCriteria> &criterias,
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init = core::Tensor::Eye(4,
                                                      core::Dtype::Float32,
