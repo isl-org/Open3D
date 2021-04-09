@@ -12,7 +12,7 @@ endif()
 ExternalProject_Add(
     ext_properties
     PREFIX properties
-    GIT_REPOSITORY https:/gitlab.com/LIONant/properties.git
+    GIT_REPOSITORY https://gitlab.com/LIONant/properties.git
     UPDATE_COMMAND ""
 )
 
