@@ -81,7 +81,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var command_args = '"' + api_url + '"';
     var command = command_prefix + command_args + command_suffix;
     console.log("commsCall command: " + command);
-    return this.executePython(command);
+    return this.executePython(command).then((jsonStr) => JSON.parse(jsonStr));
     // return fetch(url, data);
   },
 
@@ -115,8 +115,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     //   .then((response) => response.json())
     //   .then((response) => this.onGetMediaList(response));
     WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
-      .then((jsonStr) => logAndReturn(jsonStr))
-      .then((jsonStr) => JSON.parse(jsonStr))
       .then((jsonObj) => logAndReturn(jsonObj))
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
