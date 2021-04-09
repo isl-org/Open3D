@@ -129,29 +129,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((response) => response.json())
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
-    // function LogOutput(r) {
-    //   console.log("!!! Python result: " + r);
-    // }
-
-    // console.log("Before python call");
-    // this.executePython("print(1 + 1)").then((result) => LogOutput(result));
-    // console.log("After python call");
-
-    // // https://stackoverflow.com/a/65899625/1255535
-    // const callbacks = {
-    //   iopub: {
-    //     output: (data) => {
-    //       console.log("Get python result: " + data.content.text);
-    //     },
-    //   },
-    // };
-    // const kernel = Jupyter.notebook.kernel;
-    // kernel.execute("print(o3d.__version__)", callbacks);
-    // kernel.execute(
-    //   'import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api("/api/getMediaList"))',
-    //   callbacks
-    // );
-
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
