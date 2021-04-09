@@ -71,6 +71,22 @@ public:
     /// \param point  Point to find distance to.
     double GetSignedDistanceToPoint(const Eigen::Vector3d& point) const;
 
+    /// \brief Function to orient the planar patch normal.
+    ///
+    /// \param orientation_reference Plane normal is oriented with respect to
+    /// orientation_reference.
+    void OrientNormalToAlignWithDirection(
+            const Eigen::Vector3d &orientation_reference =
+                    Eigen::Vector3d(0.0, 0.0, 1.0));
+
+    /// \brief Function to orient the planar patch normal.
+    ///
+    /// \param camera_location Plane normal is oriented with towards the
+    /// camera_location.
+    void OrientNormalTowardsCameraLocation(
+            const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
+
+
 public:
     Eigen::Vector3d center_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();

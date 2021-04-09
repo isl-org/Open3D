@@ -64,7 +64,15 @@ void pybind_planarpatch(py::module &m) {
             .def_readwrite("basis_y", &PlanarPatch::basis_y_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("color", &PlanarPatch::color_,
-                           "``float64`` array of shape ``(3, )``");
+                           "``float64`` array of shape ``(3, )``")
+            .def("orient_normal_to_align_with_direction",
+                 &PlanarPatch::OrientNormalToAlignWithDirection,
+                 "Function to orient the planar patch normal",
+                 "orientation_reference"_a = Eigen::Vector3d(0.0, 0.0, 1.0))
+            .def("orient_normal_towards_camera_location",
+                 &PlanarPatch::OrientNormalTowardsCameraLocation,
+                 "Function to orient the planar patch normal",
+                 "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
 }
 
 }  // namespace geometry
