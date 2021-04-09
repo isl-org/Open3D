@@ -85,7 +85,8 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix.
-    RegistrationResult(const core::Tensor &transformation)
+    RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
+                               4, core::Dtype::Float32, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
     bool IsBetterRANSACThan(const RegistrationResult &other) const {

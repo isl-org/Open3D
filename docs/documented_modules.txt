@@ -34,6 +34,7 @@ open3d.pipelines.color_map
 open3d.pipelines.integration
 open3d.pipelines.odometry
 open3d.pipelines.registration
+open3d.t.pipelines.registration
 open3d.utility
 open3d.visualization
 open3d.visualization.gui
