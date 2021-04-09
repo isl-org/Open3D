@@ -67,6 +67,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     return l;
   },
 
+  logAndReturn: function (value) {
+    console.log("!!! logAndReturn: ", value);
+    return value;
+  },
+
   /**
    * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
    * interface.
@@ -81,7 +86,19 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var command_args = '"' + api_url + '"';
     var command = command_prefix + command_args + command_suffix;
     console.log("commsCall command: " + command);
-    return this.executePython(command).then((jsonStr) => JSON.parse(jsonStr));
+    return this.executePython(command)
+      .then((jsonStr) => JSON.parse(jsonStr))
+      .then((val) => this.logAndReturn(val))
+      .then(
+        (jsonObj) =>
+          new Response(
+            new Blob([JSON.stringify(jsonObj)], {
+              type: "application/json",
+            })
+          )
+      )
+      .then((val) => this.logAndReturn(val));
+
     // return fetch(url, data);
   },
 
@@ -104,18 +121,13 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var http_server =
       location.protocol + "//" + window.location.hostname + ":" + 8888;
 
-    function logAndReturn(value) {
-      console.log("!!! logAndReturn: " + value);
-      return value;
-    }
-
     // TODO: remove this since the media name should be given by Python
     // directly. This is only used for developing the pipe.
     // WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
     //   .then((response) => response.json())
     //   .then((response) => this.onGetMediaList(response));
     WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
-      .then((jsonObj) => logAndReturn(jsonObj))
+      .then((response) => response.json())
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
     WebRtcStreamer.remoteCall(
@@ -124,7 +136,9 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       {},
       this
     )
+      .then((val) => this.logAndReturn(val))
       .then((response) => response.json())
+      .then((val) => this.logAndReturn(val))
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
     // Create WebRTC stream
