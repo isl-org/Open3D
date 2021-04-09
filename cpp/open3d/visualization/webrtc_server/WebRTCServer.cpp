@@ -48,6 +48,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/IJsonConvertible.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
@@ -59,19 +60,6 @@
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
-
-static Json::Value StringToJson(const std::string& json_str) {
-    Json::Value json;
-    std::string err;
-    Json::CharReaderBuilder builder;
-    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-    if (!reader->parse(json_str.c_str(), json_str.c_str() + json_str.length(),
-                       &json, &err)) {
-        throw std::runtime_error("Failed to parse string to json, error: " +
-                                 err);
-    }
-    return json;
-}
 
 struct WebRTCServer::Impl {
     std::string http_address_;
@@ -127,7 +115,7 @@ void WebRTCServer::SetRedrawCallback(
 void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     try {
         gui::MouseEvent me;
-        Json::Value value = StringToJson(message);
+        Json::Value value = utility::StringToJson(message);
         if (value.get("class_name", "").asString() == "MouseEvent" &&
             value.get("window_uid", "").asString() != "" &&
             me.FromJson(value)) {
@@ -274,7 +262,10 @@ void WebRTCServer::Run() {
 std::string WebRTCServer::CallWebRequestAPI(const std::string& entry_point,
                                             const std::string& req_info_str,
                                             const std::string& json_str) const {
-    impl_->peer_connection_manager_;
+    if (entry_point == "/api/getMediaList") {
+        return utility::JsonToString(
+                impl_->peer_connection_manager_->GetMediaList());
+    }
     return "";
 }
 
