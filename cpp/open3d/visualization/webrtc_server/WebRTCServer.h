@@ -94,8 +94,8 @@ public:
     ///                                    "peerid=" + peerid,
     ///                                    JSON.stringify(data));
     std::string CallWebRequestAPI(const std::string& entry_point,
-                                  const std::string& req_info_str,
-                                  const std::string& json_str) const;
+                                  const std::string& req_info_str = "",
+                                  const std::string& json_st = "") const;
 
 private:
     WebRTCServer();
