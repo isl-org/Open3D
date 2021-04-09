@@ -67,14 +67,22 @@ inline std::string GetEnvPort() {
     }
 }
 
+inline std::string GetEnvWebRoot() {
+    // TODO: package WEBRTC_WEB_ROOT with GUI resource files
+    if (const char* env_p = std::getenv("WEBRTC_WEB_ROOT")) {
+        return std::string(env_p);
+    } else {
+        return utility::filesystem::GetUnixHome() +
+               "/repo/Open3D/cpp/open3d/visualization/"
+               "webrtc_server/html";
+    }
+}
+
 class WebRTCServer {
 public:
     WebRTCServer(const std::string& http_address = GetEnvIP() + ":" +
                                                    GetEnvPort(),
-                 const std::string& web_root =
-                         utility::filesystem::GetUnixHome() +
-                         "/repo/Open3D/cpp/open3d/visualization/"
-                         "webrtc_server/html");
+                 const std::string& web_root = GetEnvWebRoot());
     void Run();
 
     // Client -> server message.
