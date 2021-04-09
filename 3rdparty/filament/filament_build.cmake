@@ -22,7 +22,7 @@ set(filament_LIBRARIES
     utils
 )
 
-set(lib_dir lib/x86_64)
+set(lib_dir lib)
 if(MSVC)
     if (STATIC_WINDOWS_RUNTIME)
         string(APPEND lib_dir /mt)

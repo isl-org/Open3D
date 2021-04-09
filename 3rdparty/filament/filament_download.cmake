@@ -16,7 +16,7 @@ if (FILAMENT_PRECOMPILED_ROOT)
         message(FATAL_ERROR "Filament binaries not found in ${FILAMENT_PRECOMPILED_ROOT}")
     endif()
 else()
-    set(lib_dir lib/x86_64)
+    set(lib_dir lib)
     # Setup download links
     if(WIN32)
         set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.9.19/filament-v1.9.19-windows.tgz")
