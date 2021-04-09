@@ -136,7 +136,7 @@ void WebRTCServer::OnFrame(const std::string& window_uid,
     // connected.
     if (video_track_source) {
         // TODO: this OnFrame(im); is a blocking call. Do we need to handle
-        // OnFrame in a separte thread? e.g. attach to a queue of frames, even
+        // OnFrame in a separate thread? e.g. attach to a queue of frames, even
         // if the queue size is just 1.
         video_track_source->OnFrame(im);
     }
