@@ -98,8 +98,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
           )
       )
       .then((val) => this.logAndReturn(val));
-
-    // return fetch(url, data);
   },
 
   /**
@@ -123,22 +121,8 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
     // TODO: remove this since the media name should be given by Python
     // directly. This is only used for developing the pipe.
-    // WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
-    //   .then((response) => response.json())
-    //   .then((response) => this.onGetMediaList(response));
     WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
       .then((response) => response.json())
-      .then((jsonObj) => this.onGetMediaList(jsonObj));
-
-    WebRtcStreamer.remoteCall(
-      http_server + "/api/getMediaList",
-      false,
-      {},
-      this
-    )
-      .then((val) => this.logAndReturn(val))
-      .then((response) => response.json())
-      .then((val) => this.logAndReturn(val))
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
     // Create WebRTC stream
