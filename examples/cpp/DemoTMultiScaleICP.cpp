@@ -152,6 +152,9 @@ private:
         auto source_device = source_.To(device_);
         auto target_device = target_.To(device_);
 
+        utility::Timer time_icp;
+
+        time_icp.Start();
         int64_t num_iterations = int64_t(criterias_.size());
 
         // Creating pointcloud pyramid with different voxel scale.
@@ -207,13 +210,15 @@ private:
                 // Apply the transform on source pointcloud.
                 source_down_pyramid[i].Transform(update);
 
-                auto temp =
-                        source_device.Clone().Transform(transformation_device);
+                // auto temp =
+                //         source_device.Clone().Transform(transformation_device);
 
                 // UPDATE VISUALIZATION!
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
-                    *lsource_ = temp.ToLegacyPointCloud();
+                    lsource_->Transform(
+                            core::eigen_converter::TensorToEigenMatrixXd(
+                                    update));
                 }
 
                 if (!main_vis_) {  // might have changed while sleeping
@@ -244,6 +249,9 @@ private:
                 }
             }
         }
+        time_icp.Stop();
+        utility::LogInfo(" Time [ICP + Visualization update]: {}",
+                         time_icp.GetDuration());
         // }
     }
 
