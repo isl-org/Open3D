@@ -33,6 +33,7 @@
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/MiniVec.h"
+#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace core {
@@ -996,6 +997,7 @@ void FixedRadiusSearchCUDA(void* temp,
                     num_points, inv_voxel_size, radius, metric, true);
         }
     }
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 //// Hybrid Search

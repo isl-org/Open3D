@@ -101,17 +101,27 @@ static void BM_TestNNS_Radius(benchmark::State& state,
     core::Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
             PrepareInput(device, core::Dtype::Float32);
+    int64_t num_query_points = query_points.GetShape()[0];
 
     // Setup NNS.
     core::nns::NearestNeighborSearch nns(dataset_points);
     nns.FixedRadiusIndex(radius);
 
     // Search.
+    float avg_num_neighbors;
     core::Tensor indices, distances, neighbors_row_splits;
     for (auto _ : state) {
         std::tie(indices, distances, neighbors_row_splits) =
                 nns.FixedRadiusSearch(query_points, radius);
+        state.PauseTiming();
+        core::Tensor num_neighbors =
+                neighbors_row_splits.Slice(0, 1, num_query_points + 1) -
+                neighbors_row_splits.Slice(0, 0, num_query_points);
+        avg_num_neighbors =
+                num_neighbors.To(core::Dtype::Float32).Mean({0}).Item<float>();
+        state.ResumeTiming();
     }
+    utility::LogInfo("Avg num neighbors: {}", avg_num_neighbors);
 }
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({100, 1})
