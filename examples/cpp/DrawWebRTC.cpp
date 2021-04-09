@@ -32,9 +32,7 @@
 using namespace open3d;
 
 // TODO: remove hard-coded path.
-const std::string TEST_DIR =
-        utility::filesystem::GetUnixHome() + "/repo/Open3D/examples/test_data";
-const std::string DATA_PATH = TEST_DIR + "/knot.ply";
+const std::string TEST_DIR = "../../../examples/test_data";
 
 // Create and add a window to gui::Application, but do not run it yet.
 void AddDrawWindow(
@@ -84,7 +82,7 @@ void EmptyBox() {
             [](visualization::visualizer::O3DVisualizer &o3dvis) {
                 utility::LogInfo("new_window_action called");
                 auto mesh = std::make_shared<geometry::TriangleMesh>();
-                io::ReadTriangleMesh(DATA_PATH, *mesh);
+                io::ReadTriangleMesh(TEST_DIR + "/knot.ply", *mesh);
                 mesh->ComputeVertexNormals();
                 AddDrawWindow({mesh}, "Open3D pcd", 640, 480);
             };
