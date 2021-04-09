@@ -62,13 +62,15 @@ EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
-EXAMPLE_CPP(WebRTCDemo                ${CMAKE_PROJECT_NAME})
-target_link_libraries(WebRTCDemo  Threads::Threads)
 
 if (BUILD_GUI)
     EXAMPLE_CPP(Draw                  ${CMAKE_PROJECT_NAME})
     EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
+endif()
+
+if(BUILD_WEBRTC)
+    EXAMPLE_CPP(DrawWebRTC            ${CMAKE_PROJECT_NAME})
 endif()
 
 if(BUILD_LIBREALSENSE)

@@ -56,7 +56,6 @@ if ( NOT BUILD_RPC_INTERFACE )
         list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*Receiver.cpp)
 endif()
 
-
 # create object library
 add_library(visualization OBJECT
             ${SHADER_FILES}
@@ -75,8 +74,4 @@ open3d_link_3rdparty_libraries(visualization)
 # export GUI_RESOURCE_DIR to parent scope
 if (BUILD_GUI)
     set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
-endif()
-
-if (BUILD_WEBRTC)
-    add_subdirectory(webrtc_server)
 endif()
