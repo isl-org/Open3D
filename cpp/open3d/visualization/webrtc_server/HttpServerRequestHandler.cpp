@@ -64,13 +64,13 @@ public:
 
         std::cout << "uri:" << req_info->request_uri << std::endl;
 
-        // read input
+        // Read input.
         Json::Value in = this->getInputMessage(req_info, conn);
 
-        // invoke API implementation
+        // Invoke API implementation.
         Json::Value out(func_(req_info, in));
 
-        // fill out
+        // Fill out.
         if (out.isNull() == false) {
             std::string answer(Json::writeString(writer_builder_, out));
             std::cout << "answer:" << answer << std::endl;
@@ -142,7 +142,7 @@ HttpServerRequestHandler::HttpServerRequestHandler(
         std::map<std::string, HttpFunction> &func,
         const std::vector<std::string> &options)
     : CivetServer(options, getCivetCallbacks()) {
-    // register handlers
+    // Register handlers.
     for (auto it : func) {
         this->addHandler(it.first, new RequestHandler(it.second));
     }
