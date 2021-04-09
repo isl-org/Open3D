@@ -87,10 +87,10 @@ public:
 
         return ret;
     }
-    bool handleGet(CivetServer *server, struct mg_connection *conn) {
+    bool handleGet(CivetServer *server, struct mg_connection *conn) override {
         return handle(server, conn);
     }
-    bool handlePost(CivetServer *server, struct mg_connection *conn) {
+    bool handlePost(CivetServer *server, struct mg_connection *conn) override {
         return handle(server, conn);
     }
 
