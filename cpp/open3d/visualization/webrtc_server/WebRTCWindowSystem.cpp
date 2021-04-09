@@ -39,7 +39,7 @@
 
 namespace open3d {
 namespace visualization {
-namespace gui {
+namespace webrtc_server {
 
 struct WebRTCWindowSystem::Impl {
     std::unique_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
@@ -75,7 +75,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
 
 void WebRTCWindowSystem::SetMouseEventCallback(
-        std::function<void(const std::string &, const MouseEvent &)> f) {
+        std::function<void(const std::string &, const gui::MouseEvent &)> f) {
     impl_->webrtc_server_->SetMouseEventCallback(f);
 }
 
@@ -94,6 +94,6 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     }
 }
 
-}  // namespace gui
+}  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

@@ -33,14 +33,14 @@
 
 namespace open3d {
 namespace visualization {
-namespace gui {
+namespace webrtc_server {
 
-class WebRTCWindowSystem : public BitmapWindowSystem {
+class WebRTCWindowSystem : public gui::BitmapWindowSystem {
 public:
     static std::shared_ptr<WebRTCWindowSystem> GetInstance();
     virtual ~WebRTCWindowSystem();
     void SetMouseEventCallback(
-            std::function<void(const std::string&, const MouseEvent&)> f);
+            std::function<void(const std::string&, const gui::MouseEvent&)> f);
     void SetRedrawCallback(std::function<void(const std::string&)> f);
     void StartWebRTCServer();
 
@@ -50,6 +50,6 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace gui
+}  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

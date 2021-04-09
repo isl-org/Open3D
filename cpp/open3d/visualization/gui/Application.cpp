@@ -421,7 +421,7 @@ void Application::EnableWebRTC() {
     // a shared pointer with singleton, to keep everything constant.
     // https://stackoverflow.com/a/33380514/1255535.
     utility::LogInfo("WebRTC GUI backend enabled.");
-    SetWindowSystem(gui::WebRTCWindowSystem::GetInstance());
+    SetWindowSystem(webrtc_server::WebRTCWindowSystem::GetInstance());
 }
 #endif
 
@@ -482,8 +482,9 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 void Application::AddWindow(std::shared_ptr<Window> window) {
 #ifdef BUILD_WEBRTC
     // TODO: move this elsewhere, better way to check window system type.
-    if (std::shared_ptr<gui::WebRTCWindowSystem> webrtc_window_system =
-                std::dynamic_pointer_cast<gui::WebRTCWindowSystem>(
+    if (std::shared_ptr<
+                webrtc_server::WebRTCWindowSystem> webrtc_window_system =
+                std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
                         impl_->window_system_)) {
         // Client -> server message can trigger a mouse event and
         // mouse_event_callback will be called.
