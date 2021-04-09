@@ -152,7 +152,7 @@ var WebRtcStreamer = (function () {
 
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
-        this.useComms && false,
+        this.useComms && true,
         {},
         this.webVisualizer
       )

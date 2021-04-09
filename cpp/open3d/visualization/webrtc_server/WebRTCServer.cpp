@@ -267,9 +267,15 @@ std::string WebRTCServer::CallWebRequestAPI(const std::string& entry_point,
     if (entry_point == "/api/getMediaList") {
         result = utility::JsonToString(
                 impl_->peer_connection_manager_->GetMediaList());
+    } else if (entry_point == "/api/getIceServers") {
+        result = utility::JsonToString(
+                impl_->peer_connection_manager_->GetIceServers());
     }
-    // utility::LogInfo("WebRTCServer::CallWebRequestAPI({}, {}, {}) ==> \n{}",
-    //                  entry_point, req_info_str, json_str, result);
+
+    utility::LogInfoConsole(
+            "///////////////////// WebRTCServer::CallWebRequestAPI({}, {}, {}) "
+            "==> \n{}",
+            entry_point, req_info_str, json_str, result);
     return result;
 }
 
