@@ -46,6 +46,8 @@ void pybind_webrtc_server(py::module &m) {
             },
             py::return_value_policy::reference,
             "Gets the WebRTCServer singleton (read-only).");
+    webrtc_server.def("call_web_request_api", &WebRTCServer::CallWebRequestAPI,
+                      "entry_point"_a, "req_info_str"_a = "", "json_st"_a = "");
 }
 
 }  // namespace webrtc_server
