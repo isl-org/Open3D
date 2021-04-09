@@ -28,12 +28,12 @@
 
 #include <cub/cub.cuh>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/FixedRadiusSearch.h"
 #include "open3d/core/nns/MemoryAllocation.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/MiniVec.h"
-#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace core {
