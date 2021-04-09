@@ -398,8 +398,6 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
     if (query_idx >= num_queries) return;
 
     size_t indices_offset = neighbors_row_splits[query_idx];
-    // size_t max_n = neighbors_row_splits[query_idx + 1] -
-    //                neighbors_row_splits[query_idx];
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
                       query_points[query_idx * 3 + 1],
@@ -450,12 +448,6 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
             }
         }
     }
-    // // heap sort
-    // for (int i = (count / 2) - 1; i > -1; i--) {
-    //     heapify(distances + indices_offset, indices + indices_offset, i,
-    //     count);
-    // }
-    // heap_sort(distances + indices_offset, indices + indices_offset, count);
 }
 
 /// Write indices and distances of neighbors for each query point
@@ -862,61 +854,16 @@ void BuildSpatialHashTableCUDA(void* temp,
 }
 
 template <class T>
-void SortPairs2(int64_t num_indices,
-                int64_t num_segments,
-                const int64_t* query_neighbors_row_splits,
-                int64_t* indices_unsorted,
-                T* distances_unsorted) {
-    mgpu::standard_context_t context(/*print_prop*/ false);
-
-    mgpu::segmented_sort(distances_unsorted, indices_unsorted, num_indices,
-                         query_neighbors_row_splits + 1, num_segments,
-                         mgpu::less_t<T>(), context);
-}
-
-template <class T>
-void SortPairs(void* temp,
-               size_t& temp_size,
-               int64_t num_indices,
+void SortPairs(int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int64_t* indices_unsorted,
-               T* distances_unsorted,
-               int64_t* indices_sorted,
-               T* distances_sorted) {
-    const bool get_temp_size = !temp;
-    int texture_alignment = 512;
+               int64_t* indices,
+               T* distances) {
+    mgpu::standard_context_t context(/*print_prop*/ false);
 
-    if (get_temp_size) {
-        temp = (char*)1;  // worst case pointer alignment
-        temp_size = std::numeric_limits<int64_t>::max();
-    }
-
-    MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
-
-    std::pair<void*, size_t> sort_temp(nullptr, 0);
-
-    cub::DeviceSegmentedRadixSort::SortPairs(
-            sort_temp.first, sort_temp.second, distances_unsorted,
-            distances_sorted, indices_unsorted, indices_sorted, num_indices,
-            num_segments, query_neighbors_row_splits,
-            query_neighbors_row_splits + 1);
-    sort_temp = mem_temp.Alloc(sort_temp.second);
-
-    if (!get_temp_size) {
-        cub::DeviceSegmentedRadixSort::SortPairs(
-                sort_temp.first, sort_temp.second, distances_unsorted,
-                distances_sorted, indices_unsorted, indices_sorted, num_indices,
-                num_segments, query_neighbors_row_splits,
-                query_neighbors_row_splits + 1);
-    }
-    mem_temp.Free(sort_temp);
-
-    if (get_temp_size) {
-        // return the memory peak as the required temporary memory size.
-        temp_size = mem_temp.MaxUsed();
-        return;
-    }
+    mgpu::segmented_sort(distances, indices, num_indices,
+                         query_neighbors_row_splits + 1, num_segments,
+                         mgpu::less_t<T>(), context);
 }
 
 template <class T>
@@ -1142,37 +1089,17 @@ template void BuildSpatialHashTableCUDA(
         int64_t* hash_table_cell_splits,
         int64_t* hash_table_index);
 
-template void SortPairs2(int64_t num_indices,
-                         int64_t num_segments,
-                         const int64_t* query_neighbors_row_splits,
-                         int64_t* indices_unsorted,
-                         float* distances_unsorted);
-
-template void SortPairs2(int64_t num_indices,
-                         int64_t num_segments,
-                         const int64_t* query_neighbors_row_splits,
-                         int64_t* indices_unsorted,
-                         double* distances_unsorted);
-
-template void SortPairs(void* temp,
-                        size_t& temp_size,
-                        int64_t num_indices,
+template void SortPairs(int64_t num_indices,
                         int64_t num_segments,
                         const int64_t* query_neighbors_row_splits,
-                        int64_t* indices_unsorted,
-                        float* distances_unsorted,
-                        int64_t* indices_sorted,
-                        float* distances_sorted);
+                        int64_t* indices,
+                        float* distances);
 
-template void SortPairs(void* temp,
-                        size_t& temp_size,
-                        int64_t num_indices,
+template void SortPairs(int64_t num_indices,
                         int64_t num_segments,
                         const int64_t* query_neighbors_row_splits,
-                        int64_t* indices_unsorted,
-                        double* distances_unsorted,
-                        int64_t* indices_sorted,
-                        double* distances_sorted);
+                        int64_t* indices,
+                        double* distances);
 
 template void FixedRadiusSearchCUDA(
         void* temp,

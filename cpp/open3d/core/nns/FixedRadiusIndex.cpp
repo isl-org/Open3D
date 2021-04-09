@@ -175,12 +175,13 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
 
-        int64_t num_indices = indices.GetShape()[0];
-
-        SortPairs2(num_indices, num_query_points,
-                   neighbors_row_splits.GetDataPtr<int64_t>(),
-                   indices.GetDataPtr<int64_t>(),
-                   distances.GetDataPtr<scalar_t>());
+        if (sort) {
+            int64_t num_indices = indices.GetShape()[0];
+            SortPairs(num_indices, num_query_points,
+                      neighbors_row_splits.GetDataPtr<int64_t>(),
+                      indices.GetDataPtr<int64_t>(),
+                      distances.GetDataPtr<scalar_t>());
+        }
     });
     return std::make_tuple(indices, distances, neighbors_row_splits);
 #else

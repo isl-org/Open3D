@@ -276,7 +276,7 @@ void HybridSearchCUDA(size_t num_points,
                       NeighborSearchAllocator<T>& output_allocator);
 
 /// This function sorts a list of neighbor indices and distances in
-/// descending order of distance.
+/// descending order of distance. It is based-on moderngpu's merge sort.
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
@@ -297,31 +297,16 @@ void HybridSearchCUDA(size_t num_points,
 /// \param query_neighbors_row_splits    This is the output pointer for the
 ///        prefix sum. The length of this array is \p num_queries + 1.
 ///
-/// \param indices_unsorted    Pointer to unsorted indices.
+/// \param indices    Pointer to indices.
 ///
-/// \param distances_unsorted    Pointer to unsorted distances.
-///
-/// \param indices_sorted    Pointer to sorted indices.
-///
-/// \param indices_sorted    Pointer to sorted distances.
+/// \param distances    Pointer to distances.
 ///
 template <class T>
-void SortPairs(void* temp,
-               size_t& temp_size,
-               int64_t num_indices,
+void SortPairs(int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int64_t* indices_unsorted,
-               T* distances_unsorted,
-               int64_t* indices_sorted,
-               T* distances_sorted);
-
-template <class T>
-void SortPairs2(int64_t num_indices,
-                int64_t num_segments,
-                const int64_t* query_neighbors_row_splits,
-                int64_t* indices_unsorted,
-                T* distances_unsorted);
+               int64_t* indices,
+               T* distances);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

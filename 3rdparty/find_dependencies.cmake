@@ -374,8 +374,12 @@ set(NANOFLANN_TARGET "3rdparty_nanoflann")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${NANOFLANN_TARGET}")
 
 # ModernGPU
-build_3rdparty_library(3rdparty_moderngpu DIRECTORY moderngpu INCLUDE_DIRS src/ INCLUDE_ALL)
+include(${Open3D_3RDPARTY_DIR}/moderngpu/moderngpu.cmake)
+import_3rdparty_library(3rdparty_moderngpu
+    INCLUDE_DIRS ${MODERNGPU_INCLUDE_DIRS}
+)
 set(MODERNGPU_TARGET "3rdparty_moderngpu")
+add_dependencies(3rdparty_moderngpu ext_moderngpu)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MODERNGPU_TARGET}")
 
 # GLEW
