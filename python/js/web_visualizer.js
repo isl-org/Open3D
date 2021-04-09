@@ -57,12 +57,32 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   /**
+   * https://stackoverflow.com/a/736970/1255535
+   * parseUrl(url).hostname
+   * parseUrl(url).pathname
+   */
+  parseUrl: function (url) {
+    var l = document.createElement("a");
+    l.href = url;
+    return l;
+  },
+
+  /**
    * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
    * interface.
    */
   commsCall: function (url, data = {}) {
+    api_url = this.parseUrl(url).pathname;
+    console.log("WebVisualizerView.commsCall with api_url: ", api_url);
     console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
-    return fetch(url, data);
+    var command_prefix =
+      "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api(";
+    var command_suffix = "))";
+    var command_args = '"' + api_url + '"';
+    var command = command_prefix + command_args + command_suffix;
+    console.log("commsCall command: " + command);
+    return this.executePython(command);
+    // return fetch(url, data);
   },
 
   /**
@@ -84,34 +104,46 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var http_server =
       location.protocol + "//" + window.location.hostname + ":" + 8888;
 
-    // TODO: remove this since the media name should be given by Python
-    // directly. This is only used for developing the pipe.
-    WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
-      .then((response) => response.json())
-      .then((response) => this.onGetMediaList(response));
-
     function LogOutput(r) {
       console.log("!!! Python result: " + r);
     }
 
-    console.log("Before python call");
-    this.executePython("print(1 + 1)").then((result) => LogOutput(result));
-    console.log("After python call");
+    // TODO: remove this since the media name should be given by Python
+    // directly. This is only used for developing the pipe.
+    // WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
+    //   .then((response) => response.json())
+    //   .then((response) => this.onGetMediaList(response));
+    WebRtcStreamer.remoteCall(
+      http_server + "/api/getMediaList",
+      true,
+      {},
+      this
+    ).then((result) => LogOutput(result));
+    // .then((response) => response.json())
+    // .then((response) => this.onGetMediaList(response));
 
-    // https://stackoverflow.com/a/65899625/1255535
-    const callbacks = {
-      iopub: {
-        output: (data) => {
-          console.log("Get python result: " + data.content.text);
-        },
-      },
-    };
-    const kernel = Jupyter.notebook.kernel;
-    kernel.execute("print(o3d.__version__)", callbacks);
-    kernel.execute(
-      'import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api("/api/getMediaList"))',
-      callbacks
-    );
+    // function LogOutput(r) {
+    //   console.log("!!! Python result: " + r);
+    // }
+
+    // console.log("Before python call");
+    // this.executePython("print(1 + 1)").then((result) => LogOutput(result));
+    // console.log("After python call");
+
+    // // https://stackoverflow.com/a/65899625/1255535
+    // const callbacks = {
+    //   iopub: {
+    //     output: (data) => {
+    //       console.log("Get python result: " + data.content.text);
+    //     },
+    //   },
+    // };
+    // const kernel = Jupyter.notebook.kernel;
+    // kernel.execute("print(o3d.__version__)", callbacks);
+    // kernel.execute(
+    //   'import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api("/api/getMediaList"))',
+    //   callbacks
+    // );
 
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
