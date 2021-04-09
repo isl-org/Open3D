@@ -94,6 +94,10 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     }
 }
 
+WebRTCServer *WebRTCWindowSystem::GetWebRTCServer() const {
+    return impl_->webrtc_server_.get();
+}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d
