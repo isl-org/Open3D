@@ -27,13 +27,15 @@
 #pragma once
 
 #include <Eigen/Core>
-
+#include <memory>
 #include "open3d/geometry/Geometry3D.h"
 
 namespace open3d {
 namespace geometry {
 
 class AxisAlignedBoundingBox;
+class TriangleMesh;
+class PointCloud;
 
 /// \class OrientedBoundingBox
 ///
@@ -251,5 +253,55 @@ public:
     Eigen::Vector3d color_;
 };
 
+/// \class BoundingConvexHull
+///
+/// \brief A bounding polygon consist of a convex hull of point cloud or mesh.
+///
+/// The bounding convex hull is defined by its polygon.
+class BoundingConvexHull{
+public:
+    /// \brief Parameterized constructor (for PointCloud).
+    ///
+    /// \param pcd Specifies the points to compute convex hull.
+    BoundingConvexHull(const PointCloud &pcd);
+    /// \brief Parameterized constructor (for TriangleMesh).
+    ///
+    /// \param mesh Specifies the triangle mesh to compute convex hull.
+    BoundingConvexHull(const TriangleMesh &mesh);
+    ~BoundingConvexHull(){}
+
+public:
+    Eigen::Vector3d GetMinBound() const;
+    Eigen::Vector3d GetMaxBound() const;
+    Eigen::Vector3d GetCenter() const; 
+    BoundingConvexHull& Transform(
+            const Eigen::Matrix4d& transformation);
+    BoundingConvexHull& Translate(const Eigen::Vector3d& translation,
+                                           bool relative = true);
+    BoundingConvexHull& Scale(const double scale,
+                                       const Eigen::Vector3d& center);
+    BoundingConvexHull& Rotate(const Eigen::Matrix3d& R,
+                                        const Eigen::Vector3d& center);
+
+    /// Returns the volume of the bounding polygon.
+    double Volume() const;
+
+    TriangleMesh GetConvexHull() const;
+
+    // static BoundingConvexHull CreateFromPontCloud(
+    //         const PointCloud &pcd);
+
+    // static BoundingConvexHull CreateFromTriangleMesh(
+    //         const TriangleMesh &mesh);
+
+public:
+    std::shared_ptr<TriangleMesh> convex_hull_;
+    /// The center point of the bounding box.
+    Eigen::Vector3d center_;
+};
+
+
 }  // namespace geometry
 }  // namespace open3d
+
+

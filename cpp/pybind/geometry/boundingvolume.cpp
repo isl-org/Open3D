@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 #include <sstream>
 
@@ -175,6 +177,61 @@ void pybind_boundingvolume(py::module &m) {
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
                                     "create_from_points",
                                     {{"points", "A list of points."}});
+    py::class_<BoundingConvexHull>
+            bounding_convex_hull(m, "BoundingConvexHull",
+                                  "Class that defines a convex polygon that can "
+                                  "be used to crop PointCloud.");
+
+    bounding_convex_hull
+            .def(py::init<const PointCloud &>(),
+                 "Create OrientedBoudingBox from a point cloud ",
+                 "pcd"_a)
+            .def(py::init<const TriangleMesh &>(),
+                 "Create OrientedBoudingBox from a triangle mesh ",
+                 "mesh"_a)
+            .def("__repr__",
+                 [](const BoundingConvexHull &bhul) {
+                     std::stringstream s;
+                     s << "BoundingConvexHull";
+                     return s.str();
+                 })          
+          //   .def_static("create_from_point_cloud",
+          //               &BoundingConvexHull::CreateFromPontCloud,
+          //               "Returns an bounding convex hull from the "
+          //               "PointCloud.",
+          //               "pcd"_a)
+          //   .def_static("create_from_triangle_mesh",
+          //               &BoundingConvexHull::CreateFromTriangleMesh
+          //               "Returns an bounding convex hull from the "
+          //               "TriangleMesh.",
+          //               "mesh"_a)
+            .def("volume", &BoundingConvexHull::Volume,
+                 "Returns the volume of the bounding convex hull.")
+            .def("get_convex_hull", &BoundingConvexHull::GetConvexHull,
+                 "Returns the convex hull.")
+            .def("transform", &BoundingConvexHull::Transform,
+                 "Apply transformation (4x4 matrix) to the geometry "
+                 "coordinates.")
+            .def("translate", &BoundingConvexHull::Translate,
+                 "Apply translation to the coordinates.",
+                 "translation"_a, "relative"_a = true)
+            .def("scale", &BoundingConvexHull::Scale,
+                 "Apply scaling to the geometry coordinates.", "scale"_a,
+                 "center"_a)
+            .def("rotate",
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Vector3d &>(
+                         &BoundingConvexHull::Rotate),
+                 "Apply rotation to the geometry coordinates and normals.",
+                 "R"_a, "center"_a);
+    docstring::ClassMethodDocInject(m, "BoundingConvexHull", "volume");
+    docstring::ClassMethodDocInject(m, "BoundingConvexHull", "get_convex_hull");
+//     docstring::ClassMethodDocInject(m, "BoundingConvexHull",
+//                                     "create_from_point_cloud",
+//                                     {{"pcd", "A PointCloud object"}});
+//     docstring::ClassMethodDocInject(m, "BoundingConvexHull",
+//                                     "create_from_triangle_mesh",
+//                                     {{"mesh", "A TriangleMesh object"}});                                    
 }
 
 }  // namespace geometry

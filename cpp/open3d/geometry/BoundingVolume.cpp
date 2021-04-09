@@ -327,5 +327,73 @@ std::vector<size_t> AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
     return indices;
 }
 
+BoundingConvexHull::BoundingConvexHull(const PointCloud &pcd) {
+    convex_hull_ = std::get<0>(pcd.ComputeConvexHull());
+    convex_hull_->ComputeTriangleNormals();
+}
+
+BoundingConvexHull::BoundingConvexHull(const TriangleMesh &mesh) {
+    convex_hull_ = std::get<0>(mesh.ComputeConvexHull());
+    convex_hull_->ComputeTriangleNormals();
+}
+
+Eigen::Vector3d BoundingConvexHull::GetMinBound() const {
+    return convex_hull_->GetMinBound();
+}
+
+Eigen::Vector3d BoundingConvexHull::GetMaxBound() const {
+    return convex_hull_->GetMaxBound();
+}
+
+Eigen::Vector3d BoundingConvexHull::GetCenter() const {
+    return convex_hull_->GetCenter();
+}
+
+BoundingConvexHull& BoundingConvexHull::Transform(
+        const Eigen::Matrix4d& transformation) {
+    convex_hull_->Transform(transformation);
+    return *this;
+}
+
+BoundingConvexHull& BoundingConvexHull::Translate(
+        const Eigen::Vector3d& translation, bool relative) {
+    convex_hull_->Translate(translation, relative);
+    return *this;
+}
+
+BoundingConvexHull& BoundingConvexHull::Scale(
+        const double scale, const Eigen::Vector3d& center) {
+    convex_hull_->Scale(scale, center);
+    return *this;
+}
+
+BoundingConvexHull& BoundingConvexHull::Rotate(
+        const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+    convex_hull_->Rotate(R, center);
+    return *this;
+}
+
+double BoundingConvexHull::Volume() const {return convex_hull_->GetVolume();}
+
+TriangleMesh BoundingConvexHull::GetConvexHull() const {
+    return *convex_hull_;
+}
+
+// BoundingConvexHull BoundingConvexHull::CreateFromPontCloud(
+//         const PointCloud& pcd) {
+//     BoundingConvexHull bhull = BoundingConvexHull();
+//     bhull.convex_hull_ = pcd.ComputeConvexHull();
+//     bhull.convex_hull_->ComputeTriangleNormals();
+//     return bhull;
+// }
+
+// BoundingConvexHull BoundingConvexHull::CreateFromTriangleMesh(
+//         const TriangleMesh &mesh {
+//     BoundingConvexHull bhull = BoundingConvexHull();
+//     bhull.convex_hull_ = mesh.ComputeConvexHull();
+//     bhull.convex_hull_->ComputeTriangleNormals();
+//     return bhull;
+// }
+
 }  // namespace geometry
 }  // namespace open3d

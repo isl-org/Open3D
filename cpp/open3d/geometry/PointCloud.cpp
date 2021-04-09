@@ -466,23 +466,13 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
 }
 
 std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
-        const TriangleMesh &mesh, bool invert) const {
-    if (mesh.vertices_.size() <= 0) {
-        utility::LogError(
-                "[CropConvexHull] mesh either has zeros "
-                "size, or has wrong bounds.");
-    }
-    bool has_tri_normal = mesh.HasTriangleNormals();
-    if (!has_tri_normal) {
-        utility::LogError(
-                "[CropConvexHull] mesh must have triangle normals ");
-    }
+        const BoundingConvexHull &bhull, bool invert) const {
     
     Eigen::Vector3d p1;
     Eigen::Vector3d p2;
     Eigen::Vector3d p3;
     Eigen::Vector3d normal;
-    Eigen::Vector3d center = mesh.GetCenter();
+    Eigen::Vector3d center = bhull.GetCenter();
     Eigen::Vector3i triangle;
     double ccw;
     double cosine;
@@ -492,12 +482,12 @@ std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
     for (size_t k = 0; k < points_.size(); k++) {
         const auto &point = points_[k];
         bool valid = true;
-        for (size_t j = 0; j < mesh.triangles_.size(); j++){   
-            triangle = mesh.triangles_[j]; 
-            p1 = mesh.vertices_[triangle(0)];
-            p2 = mesh.vertices_[triangle(1)];
-            p3 = mesh.vertices_[triangle(2)];            
-            normal = mesh.triangle_normals_[j];
+        for (size_t j = 0; j < bhull.convex_hull_->triangles_.size(); j++){   
+            triangle = bhull.convex_hull_->triangles_[j]; 
+            p1 = bhull.convex_hull_->vertices_[triangle(0)];
+            p2 = bhull.convex_hull_->vertices_[triangle(1)];
+            p3 = bhull.convex_hull_->vertices_[triangle(2)];            
+            normal = bhull.convex_hull_->triangle_normals_[j];
             ccw = (p1-center).dot(normal);
             if (ccw < 0){
                 normal = -normal;
