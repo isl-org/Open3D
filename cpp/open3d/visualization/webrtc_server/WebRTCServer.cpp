@@ -74,7 +74,6 @@ static Json::Value StringToJson(const std::string& json_str) {
 }
 
 struct WebRTCServer::Impl {
-    WebRTCServer* webrtc_server_;  // Parent.
     std::string http_address_;
     std::string web_root_;
     std::function<void(int, double, double, int)> mouse_button_callback_ =
@@ -89,7 +88,6 @@ struct WebRTCServer::Impl {
 
     // TODO: make this and Impl unique_ptr?
     std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
-    void Run();
 };
 
 void WebRTCServer::SetMouseEventCallback(
@@ -164,16 +162,15 @@ std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
 WebRTCServer::WebRTCServer(const std::string& http_address,
                            const std::string& web_root)
     : impl_(new WebRTCServer::Impl()) {
-    impl_->webrtc_server_ = this;
     impl_->http_address_ = http_address;
     impl_->web_root_ = web_root;
 }
 
-void WebRTCServer::Impl::Run() {
+void WebRTCServer::Run() {
     std::cout << "WebRTCServer::Run()" << std::endl;
 
-    const std::string web_root = web_root_;
-    const std::string http_address = http_address_;
+    const std::string web_root = impl_->web_root_;
+    const std::string http_address = impl_->http_address_;
     const std::vector<std::string> stun_urls{"stun:stun.l.google.com:19302"};
 
     // Logging settings.
@@ -191,9 +188,9 @@ void WebRTCServer::Impl::Run() {
     std::list<std::string> ice_servers(stun_urls.begin(), stun_urls.end());
     Json::Value config;
 
-    peer_connection_manager_ = std::make_shared<PeerConnectionManager>(
-            this->webrtc_server_, ice_servers, config["urls"], ".*", "");
-    if (peer_connection_manager_->InitializePeerConnection()) {
+    impl_->peer_connection_manager_ = std::make_shared<PeerConnectionManager>(
+            this, ice_servers, config["urls"], ".*", "");
+    if (impl_->peer_connection_manager_->InitializePeerConnection()) {
         std::cout << "InitializePeerConnection() succeeded." << std::endl;
     } else {
         throw std::runtime_error("InitializePeerConnection() failed.");
@@ -231,7 +228,7 @@ void WebRTCServer::Impl::Run() {
         // PeerConnectionManager provides a set of callback functions for
         // HttpServerRequestHandler.
         std::map<std::string, HttpServerRequestHandler::HttpFunction> func =
-                peer_connection_manager_->GetHttpApi();
+                impl_->peer_connection_manager_->GetHttpApi();
 
         // Main loop.
         std::cout << "HTTP Listen at " << http_address << std::endl;
@@ -246,8 +243,6 @@ void WebRTCServer::Impl::Run() {
     rtc::CleanupSSL();
     std::cout << "Exit" << std::endl;
 }
-
-void WebRTCServer::Run() { impl_->Run(); }
 
 }  // namespace webrtc_server
 }  // namespace visualization
