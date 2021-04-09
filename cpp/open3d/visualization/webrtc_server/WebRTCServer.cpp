@@ -86,8 +86,7 @@ struct WebRTCServer::Impl {
             mouse_event_callback_ = nullptr;
     std::function<void(const std::string&)> redraw_callback_ = nullptr;
 
-    // TODO: make this and Impl unique_ptr?
-    std::shared_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
+    std::unique_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
 };
 
 void WebRTCServer::SetMouseEventCallback(
@@ -188,7 +187,7 @@ void WebRTCServer::Run() {
     std::list<std::string> ice_servers(stun_urls.begin(), stun_urls.end());
     Json::Value config;
 
-    impl_->peer_connection_manager_ = std::make_shared<PeerConnectionManager>(
+    impl_->peer_connection_manager_ = std::make_unique<PeerConnectionManager>(
             this, ice_servers, config["urls"], ".*", "");
     if (impl_->peer_connection_manager_->InitializePeerConnection()) {
         std::cout << "InitializePeerConnection() succeeded." << std::endl;
