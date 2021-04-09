@@ -147,6 +147,11 @@ int main(int argc, char** argv) {
     size_t debug_idx = static_cast<size_t>(
             utility::GetProgramOptionAsInt(argc, argv, "--debug_idx", n));
 
+    float raycast_time = 0;
+    float odom_time = 0;
+    float total_time = 0;
+
+    utility::Timer global_timer, local_timer;
     for (size_t i = 0; i < iterations; ++i) {
         // Load image
         t::geometry::Image src_depth =
@@ -154,6 +159,7 @@ int main(int argc, char** argv) {
         t::geometry::Image src_color =
                 *t::io::CreateImageFromFile(color_filenames[i]);
 
+        global_timer.Start();
         Eigen::Matrix4d curr_pose_gt_eigen =
                 gt_trajectory->parameters_[i].extrinsic_.inverse().eval();
         Tensor curr_pose_gt =
@@ -166,13 +172,16 @@ int main(int argc, char** argv) {
             src.color_ = src_color.To(device);
 
             utility::LogInfo("Frame-to-model for the frame {}", i);
+
+            local_timer.Start();
             auto result = model.voxel_grid_.RayCast(
                     intrinsic_t, T_curr_to_model.Inverse(), src_depth.GetCols(),
-                    src_depth.GetRows(), 100, 0.1, 3.0,
-                    std::min(i * 1.0f, 3.0f),
-                    MaskCode::DepthMap | MaskCode::ColorMap);
+                    src_depth.GetRows(), 80, 0.1, 4.0, std::min(i * 1.0f, 3.0f),
+                    MaskCode::DepthMap);
             dst.depth_ = t::geometry::Image(result[MaskCode::DepthMap]);
-            dst.color_ = t::geometry::Image(result[MaskCode::ColorMap]);
+            // dst.color_ = t::geometry::Image(result[MaskCode::ColorMap]);
+            local_timer.Stop();
+            raycast_time += local_timer.GetDuration();
             // visualization::DrawGeometries({std::make_shared<geometry::Image>(
             //         dst.depth_.ToLegacyImage())});
 
@@ -198,12 +207,15 @@ int main(int argc, char** argv) {
             }
 
             // Odometry
+            local_timer.Start();
             Tensor delta_curr_to_model =
                     t::pipelines::odometry::RGBDOdometryMultiScale(
-                            src, dst, intrinsic_t, trans, depth_scale, 3.0,
+                            src, dst, intrinsic_t, trans, depth_scale, 4.0,
                             0.07, {10, 0, 0},
                             t::pipelines::odometry::Method::PointToPlane);
             T_curr_to_model = T_curr_to_model.Matmul(delta_curr_to_model);
+            local_timer.Stop();
+            odom_time += local_timer.GetDuration();
 
             // Debug: after odometry
             if (i > debug_idx) {
@@ -228,6 +240,11 @@ int main(int argc, char** argv) {
                 visualization::DrawGeometries({source_pcd, target_pcd});
             }
         }
+        model.voxel_grid_.Integrate(src_depth.To(device), src_color.To(device),
+                                    intrinsic_t, T_curr_to_model.Inverse(),
+                                    depth_scale, max_depth);
+        global_timer.Stop();
+        total_time += global_timer.GetDuration();
 
         Tensor diff = curr_pose_gt.Inverse().Matmul(T_curr_to_model);
         double rot_err = std::acos(0.5 * (diff[0][0].Item<double>() +
@@ -241,11 +258,11 @@ int main(int argc, char** argv) {
         diffs[i][1] = trans_err;
         utility::LogInfo("T_diff = {}", diff.ToString());
         utility::LogInfo("rot_err = {}, trans_err = {}", rot_err, trans_err);
-
-        model.voxel_grid_.Integrate(src_depth.To(device), src_color.To(device),
-                                    intrinsic_t, T_curr_to_model.Inverse(),
-                                    depth_scale, max_depth);
     }
+
+    utility::LogInfo("Avg total = {}, avg raycast = {}, avg odom = {}",
+                     total_time / iterations, raycast_time / iterations,
+                     odom_time / iterations);
 
     std::string diffs_name =
             utility::GetProgramOptionAsString(argc, argv, "--output", "vh.npy");
