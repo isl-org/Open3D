@@ -109,6 +109,11 @@ public:
     // List available windows.
     std::vector<std::string> GetWindowUIDs() const;
 
+    // Call PeerConnectionManager's web request API.
+    std::string CallWebRequestAPI(const std::string& entry_point,
+                                  const std::string& req_info_str,
+                                  const std::string& json_str) const;
+
 private:
     struct Impl;
     std::shared_ptr<Impl> impl_;

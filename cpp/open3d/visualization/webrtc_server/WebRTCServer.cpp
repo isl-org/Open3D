@@ -243,6 +243,13 @@ void WebRTCServer::Run() {
     std::cout << "Exit" << std::endl;
 }
 
+std::string WebRTCServer::CallWebRequestAPI(const std::string& entry_point,
+                                            const std::string& req_info_str,
+                                            const std::string& json_str) const {
+    impl_->peer_connection_manager_;
+    return "";
+}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

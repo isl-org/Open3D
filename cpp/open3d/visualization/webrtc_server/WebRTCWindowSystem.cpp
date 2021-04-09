@@ -42,6 +42,7 @@ namespace visualization {
 namespace webrtc_server {
 
 struct WebRTCWindowSystem::Impl {
+    // TODO: we can also make WebRTCServer a singleton.
     std::unique_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
     std::thread webrtc_thread_;
     bool sever_started_ = false;

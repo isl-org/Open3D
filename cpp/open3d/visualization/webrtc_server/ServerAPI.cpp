@@ -26,19 +26,19 @@
 
 #include <string>
 
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 #include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-std::string CallAPI(const std::string& entry_point,
-                    const std::string& req_info_str,
-                    const std::string& json_str) {
+std::string CallWebRequestAPI(const std::string& entry_point,
+                              const std::string& req_info_str,
+                              const std::string& json_str) {
     WebRTCServer* webrt_server =
             WebRTCWindowSystem::GetInstance()->GetWebRTCServer();
-    (void)webrt_server;
-    return "";
+    return webrt_server->CallWebRequestAPI(entry_point, req_info_str, json_str);
 }
 
 }  // namespace webrtc_server

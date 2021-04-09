@@ -39,13 +39,13 @@ namespace webrtc_server {
 /// data = {method: "POST", body: JSON.stringify(candidate)};
 /// fetch(this.srvurl + "/api/addIceCandidate?peerid=" + peerid, data);
 ///
-/// Now with CallAPI:
+/// Now with CallWebRequestAPI:
 /// open3d.visualization.webrtc_server("/api/addIceCandidate",
 ///                                    "peerid=" + peerid,
 ///                                    JSON.stringify(data));
-std::string CallAPI(const std::string& entry_point,
-                    const std::string& req_info_str,
-                    const std::string& json_str);
+std::string CallWebRequestAPI(const std::string& entry_point,
+                              const std::string& req_info_str,
+                              const std::string& json_str);
 
 }  // namespace webrtc_server
 }  // namespace visualization
