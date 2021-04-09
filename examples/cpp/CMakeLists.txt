@@ -68,6 +68,7 @@ if (BUILD_GUI)
     EXAMPLE_CPP(Draw                  ${CMAKE_PROJECT_NAME})
     EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(DemoTMultiScaleICP    ${CMAKE_PROJECT_NAME} Threads::Threads)
 endif()
 
 if(BUILD_LIBREALSENSE)

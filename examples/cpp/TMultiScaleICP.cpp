@@ -53,9 +53,12 @@ std::string registration_method;
 std::string verbosity;
 
 // Initial transformation guess for registation.
-std::vector<float> initial_transform_flat = {
-        0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
-        0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
+// std::vector<float> initial_transform_flat = {
+//         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
+//         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
+std::vector<float> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+                                             0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+                                             0.0, 0.0, 0.0, 1.0};
 
 void PrintHelp() {
     PrintOpen3DVersion();
