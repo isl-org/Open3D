@@ -10,6 +10,7 @@ set(WEBRTC_STREAMER_SRC
     ServerAPI.cpp
     PeerConnectionManager.cpp
     WebRTCServer.cpp
+    WebRTCWindowSystem.cpp
 )
 set(WEBRTC_STREAMER_3RD_PARTY_SRC
     civetweb/civetweb.c

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/WebRTCWindowSystem.h"
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
 #include <chrono>
 #include <sstream>
