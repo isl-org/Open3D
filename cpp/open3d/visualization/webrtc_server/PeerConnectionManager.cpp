@@ -67,51 +67,13 @@ const char k_candidate_sdp_name[] = "candidate";
 const char k_session_description_type_name[] = "type";
 const char k_session_description_sdp_name[] = "sdp";
 
-// Helpers that should be moved somewhere else,
-#ifdef WIN32
-std::string GetServerIpFromClientIp(int client_ip) { return "127.0.0.1"; }
-#else
-#include <ifaddrs.h>
-#include <net/if.h>
-std::string GetServerIpFromClientIp(int client_ip) {
-    std::string server_address;
-    char host[NI_MAXHOST];
-    struct ifaddrs *ifaddr = nullptr;
-    if (getifaddrs(&ifaddr) == 0) {
-        for (struct ifaddrs *ifa = ifaddr; ifa != nullptr;
-             ifa = ifa->ifa_next) {
-            if ((ifa->ifa_netmask != nullptr) &&
-                (ifa->ifa_netmask->sa_family == AF_INET) &&
-                (ifa->ifa_addr != nullptr) &&
-                (ifa->ifa_addr->sa_family == AF_INET)) {
-                struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
-                struct sockaddr_in *mask =
-                        (struct sockaddr_in *)ifa->ifa_netmask;
-                if ((addr->sin_addr.s_addr & mask->sin_addr.s_addr) ==
-                    (client_ip & mask->sin_addr.s_addr)) {
-                    if (getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
-                                    host, sizeof(host), nullptr, 0,
-                                    NI_NUMERICHOST) == 0) {
-                        server_address = host;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    freeifaddrs(ifaddr);
-    return server_address;
-}
-#endif
-
 struct IceServer {
     std::string url;
     std::string user;
     std::string pass;
 };
 
-IceServer GetIceServerFromUrl(const std::string &url,
-                              const std::string &client_ip = "") {
+static IceServer GetIceServerFromUrl(const std::string &url) {
     IceServer srv;
     srv.url = url;
 
@@ -125,14 +87,6 @@ IceServer GetIceServerFromUrl(const std::string &url,
         if (pos != std::string::npos) {
             credentials = uri.substr(0, pos);
             uri = uri.substr(pos + 1);
-        }
-
-        if ((uri.find("0.0.0.0:") == 0) && (client_ip.empty() == false)) {
-            // Answer with ip that is on same network as client.
-            std::string clienturl =
-                    GetServerIpFromClientIp(inet_addr(client_ip.c_str()));
-            clienturl += uri.substr(uri.find_first_of(':'));
-            uri = clienturl;
         }
         srv.url = protocol + ":" + uri;
 
@@ -212,7 +166,7 @@ PeerConnectionManager::PeerConnectionManager(
 
     func_["/api/getIceServers"] = [this](const struct mg_request_info *req_info,
                                          const Json::Value &in) -> Json::Value {
-        return this->GetIceServers(req_info->remote_addr);
+        return this->GetIceServers();
     };
 
     func_["/api/call"] = [this](const struct mg_request_info *req_info,
@@ -324,14 +278,15 @@ const Json::Value PeerConnectionManager::GetMediaList() {
 }
 
 // Return iceServers as JSON vector.
-const Json::Value PeerConnectionManager::GetIceServers(
-        const std::string &client_ip) {
+const Json::Value PeerConnectionManager::GetIceServers() {
+    // This is a simplified version. The original version takes the client's IP
+    // and the server returns the best available STUN server.
     Json::Value urls(Json::arrayValue);
 
     for (auto ice_server : ice_server_list_) {
         Json::Value server;
         Json::Value urlList(Json::arrayValue);
-        IceServer srv = GetIceServerFromUrl(ice_server, client_ip);
+        IceServer srv = GetIceServerFromUrl(ice_server);
         RTC_LOG(INFO) << "ICE URL:" << srv.url;
         urlList.append(srv.url);
         server["urls"] = urlList;

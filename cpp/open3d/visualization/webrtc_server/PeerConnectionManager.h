@@ -368,7 +368,7 @@ public:
                            const std::string& video_url,
                            const std::string& options,
                            const Json::Value& jmessage);
-    const Json::Value GetIceServers(const std::string& clientIp);
+    const Json::Value GetIceServers();
     const Json::Value GetPeerConnectionList();
     const Json::Value GetStreamList();
     const Json::Value CreateOffer(const std::string& peerid,
