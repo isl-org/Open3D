@@ -129,7 +129,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
       location.protocol + "//" + window.location.hostname + ":" + 8888,
-      /*useComms=*/ false,
+      /*useComms(when supported)=*/ true,
       /*webVisualizer=*/ this
     );
     this.webRtcClient.connect(this.model.get("window_uid"));

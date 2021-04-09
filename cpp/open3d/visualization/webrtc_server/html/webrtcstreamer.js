@@ -61,14 +61,13 @@ var WebRtcStreamer = (function () {
     webVisualizer = null
   ) {
     console.log(
-      "WebRtcStreamer.remoteCall{" +
-        "url: " +
-        url +
-        ", useComms: " +
-        useComms +
-        ", data: " +
-        data +
-        "}"
+      "WebRtcStreamer.remoteCall{" + "url: ",
+      url,
+      ", useComms: ",
+      useComms,
+      ", data: ",
+      data,
+      "}"
     );
     if (useComms) {
       if (webVisualizer) {
@@ -148,7 +147,7 @@ var WebRtcStreamer = (function () {
 
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
-        this.useComms,
+        this.useComms && false,
         {},
         this.webVisualizer
       )
@@ -292,7 +291,7 @@ var WebRtcStreamer = (function () {
     if (this.pc) {
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/hangup?peerid=" + this.pc.peerid,
-        this.useComms,
+        this.useComms && false,
         {},
         this.webVisualizer
       )
@@ -355,7 +354,7 @@ var WebRtcStreamer = (function () {
             function () {
               WebRtcStreamer.remoteCall(
                 callurl,
-                bind.useComms,
+                bind.useComms && false,
                 {
                   method: "POST",
                   body: JSON.stringify(sessionDescription),
@@ -386,7 +385,7 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.getIceCandidate = function () {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid,
-      this.useComms,
+      this.useComms && false,
       {},
       this.webVisualizer
     )
@@ -502,7 +501,7 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.addIceCandidate = function (peerid, candidate) {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/addIceCandidate?peerid=" + peerid,
-      this.useComms,
+      this.useComms && false,
       {
         method: "POST",
         body: JSON.stringify(candidate),
