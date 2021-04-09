@@ -58,13 +58,14 @@ namespace filesystem {
 std::string GetUnixHome() {
 #ifdef WINDOWS
     return "";
-#endif
+#else
     // https://stackoverflow.com/a/26696759/1255535.
     const char *home_dir;
     if ((home_dir = getenv("HOME")) == nullptr) {
         home_dir = getpwuid(getuid())->pw_dir;
     }
     return std::string(home_dir);
+#endif
 }
 
 std::string GetFileExtensionInLowerCase(const std::string &filename) {

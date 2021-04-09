@@ -29,6 +29,8 @@ target_compile_definitions(webrtc_server PRIVATE
     _FILE_OFFSET_BITS=64               # optional: civetweb
     _LARGEFILE_SOURCE=1                # optional: civetweb
 )
+
+# TODO: remove this, even better, remove this CMakeLists.txt
 target_compile_options(webrtc_server PRIVATE
     # Required for WebRTC. Otherwise, will cause error
     # undefined reference to `typeinfo for webrtc::VideoTrackSource'
