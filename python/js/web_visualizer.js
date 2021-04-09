@@ -104,8 +104,9 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var http_server =
       location.protocol + "//" + window.location.hostname + ":" + 8888;
 
-    function LogOutput(r) {
-      console.log("!!! Python result: " + r);
+    function logAndReturn(value) {
+      console.log("!!! logAndReturn: " + value);
+      return value;
     }
 
     // TODO: remove this since the media name should be given by Python
@@ -113,14 +114,20 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     // WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
     //   .then((response) => response.json())
     //   .then((response) => this.onGetMediaList(response));
+    WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
+      .then((jsonStr) => logAndReturn(jsonStr))
+      .then((jsonStr) => JSON.parse(jsonStr))
+      .then((jsonObj) => logAndReturn(jsonObj))
+      .then((jsonObj) => this.onGetMediaList(jsonObj));
+
     WebRtcStreamer.remoteCall(
       http_server + "/api/getMediaList",
-      true,
+      false,
       {},
       this
-    ).then((result) => LogOutput(result));
-    // .then((response) => response.json())
-    // .then((response) => this.onGetMediaList(response));
+    )
+      .then((response) => response.json())
+      .then((jsonObj) => this.onGetMediaList(jsonObj));
 
     // function LogOutput(r) {
     //   console.log("!!! Python result: " + r);
