@@ -87,6 +87,31 @@ struct WebRTCServer::Impl {
     std::function<void(const std::string&)> redraw_callback_ = nullptr;
 
     std::unique_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
+
+    static std::string GetEnvIP() {
+        if (const char* env_p = std::getenv("WEBRTC_IP")) {
+            return std::string(env_p);
+        } else {
+            return "localhost";
+        }
+    }
+    static std::string GetEnvPort() {
+        if (const char* env_p = std::getenv("WEBRTC_PORT")) {
+            return std::string(env_p);
+        } else {
+            return "8888";
+        }
+    }
+    static std::string GetEnvWebRoot() {
+        // TODO: package WEBRTC_WEB_ROOT with GUI resource files
+        if (const char* env_p = std::getenv("WEBRTC_WEB_ROOT")) {
+            return std::string(env_p);
+        } else {
+            return utility::filesystem::GetUnixHome() +
+                   "/repo/Open3D/cpp/open3d/visualization/"
+                   "webrtc_server/html";
+        }
+    }
 };
 
 void WebRTCServer::SetMouseEventCallback(
@@ -158,11 +183,14 @@ std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
     return gui::Application::GetInstance().GetWindowUIDs();
 }
 
-WebRTCServer::WebRTCServer(const std::string& http_address,
-                           const std::string& web_root)
-    : impl_(new WebRTCServer::Impl()) {
-    impl_->http_address_ = http_address;
-    impl_->web_root_ = web_root;
+WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
+    impl_->http_address_ = Impl::GetEnvIP() + ":" + Impl::GetEnvPort();
+    impl_->web_root_ = Impl::GetEnvWebRoot();
+}
+
+WebRTCServer& WebRTCServer::GetInstance() {
+    static WebRTCServer webrtc_server;
+    return webrtc_server;
 }
 
 void WebRTCServer::Run() {

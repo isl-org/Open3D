@@ -45,7 +45,6 @@ public:
             std::function<void(const std::string&, const gui::MouseEvent&)> f);
     void SetRedrawCallback(std::function<void(const std::string&)> f);
     void StartWebRTCServer();
-    WebRTCServer* GetWebRTCServer() const;
 
 private:
     WebRTCWindowSystem();

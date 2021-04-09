@@ -42,8 +42,6 @@ namespace visualization {
 namespace webrtc_server {
 
 struct WebRTCWindowSystem::Impl {
-    // TODO: we can also make WebRTCServer a singleton.
-    std::unique_ptr<webrtc_server::WebRTCServer> webrtc_server_ = nullptr;
     std::thread webrtc_thread_;
     bool sever_started_ = false;
 };
@@ -62,13 +60,10 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 #endif
               ),
       impl_(new WebRTCWindowSystem::Impl()) {
-    // Initialize WebRTC server. The sever is started at the first AddWindow,
-    impl_->webrtc_server_ = std::make_unique<webrtc_server::WebRTCServer>();
-
     // Server->client send frame.
     auto draw_callback = [this](const gui::Window *window,
                                 std::shared_ptr<core::Tensor> im) -> void {
-        this->impl_->webrtc_server_->OnFrame(window->GetUID(), im);
+        WebRTCServer::GetInstance().OnFrame(window->GetUID(), im);
     };
     SetOnWindowDraw(draw_callback);
 }
@@ -77,26 +72,22 @@ WebRTCWindowSystem::~WebRTCWindowSystem() {}
 
 void WebRTCWindowSystem::SetMouseEventCallback(
         std::function<void(const std::string &, const gui::MouseEvent &)> f) {
-    impl_->webrtc_server_->SetMouseEventCallback(f);
+    WebRTCServer::GetInstance().SetMouseEventCallback(f);
 }
 
 void WebRTCWindowSystem::SetRedrawCallback(
         std::function<void(const std::string &)> f) {
-    impl_->webrtc_server_->SetRedrawCallback(f);
+    WebRTCServer::GetInstance().SetRedrawCallback(f);
 }
 
 void WebRTCWindowSystem::StartWebRTCServer() {
     if (!impl_->sever_started_) {
         auto start_webrtc_thread = [this]() {
-            this->impl_->webrtc_server_->Run();
+            WebRTCServer::GetInstance().Run();
         };
         impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
         impl_->sever_started_ = true;
     }
-}
-
-WebRTCServer *WebRTCWindowSystem::GetWebRTCServer() const {
-    return impl_->webrtc_server_.get();
 }
 
 }  // namespace webrtc_server

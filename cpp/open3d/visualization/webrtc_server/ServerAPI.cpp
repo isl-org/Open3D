@@ -36,9 +36,7 @@ namespace webrtc_server {
 std::string CallWebRequestAPI(const std::string& entry_point,
                               const std::string& req_info_str,
                               const std::string& json_str) {
-    WebRTCServer* webrt_server =
-            WebRTCWindowSystem::GetInstance()->GetWebRTCServer();
-    return webrt_server->CallWebRequestAPI(entry_point, req_info_str, json_str);
+    return "";
 }
 
 }  // namespace webrtc_server

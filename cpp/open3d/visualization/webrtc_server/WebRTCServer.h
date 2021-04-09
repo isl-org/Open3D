@@ -51,38 +51,10 @@ class Window;
 
 namespace webrtc_server {
 
-inline std::string GetEnvIP() {
-    if (const char* env_p = std::getenv("WEBRTC_IP")) {
-        return std::string(env_p);
-    } else {
-        return "localhost";
-    }
-}
-
-inline std::string GetEnvPort() {
-    if (const char* env_p = std::getenv("WEBRTC_PORT")) {
-        return std::string(env_p);
-    } else {
-        return "8888";
-    }
-}
-
-inline std::string GetEnvWebRoot() {
-    // TODO: package WEBRTC_WEB_ROOT with GUI resource files
-    if (const char* env_p = std::getenv("WEBRTC_WEB_ROOT")) {
-        return std::string(env_p);
-    } else {
-        return utility::filesystem::GetUnixHome() +
-               "/repo/Open3D/cpp/open3d/visualization/"
-               "webrtc_server/html";
-    }
-}
-
 class WebRTCServer {
 public:
-    WebRTCServer(const std::string& http_address = GetEnvIP() + ":" +
-                                                   GetEnvPort(),
-                 const std::string& web_root = GetEnvWebRoot());
+    static WebRTCServer& GetInstance();
+
     void Run();
 
     // Client -> server message.
@@ -115,6 +87,7 @@ public:
                                   const std::string& json_str) const;
 
 private:
+    WebRTCServer();
     struct Impl;
     std::shared_ptr<Impl> impl_;
 };
