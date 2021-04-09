@@ -76,21 +76,21 @@ struct WebRTCServer::Impl {
 
     std::unique_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
 
-    static std::string GetEnvIP() {
+    static std::string GetEnvWebRTCIP() {
         if (const char* env_p = std::getenv("WEBRTC_IP")) {
             return std::string(env_p);
         } else {
             return "localhost";
         }
     }
-    static std::string GetEnvPort() {
+    static std::string GetEnvWebRTCPort() {
         if (const char* env_p = std::getenv("WEBRTC_PORT")) {
             return std::string(env_p);
         } else {
             return "8888";
         }
     }
-    static std::string GetEnvWebRoot() {
+    static std::string GetEnvWebRTCWebRoot() {
         // TODO: package WEBRTC_WEB_ROOT with GUI resource files
         if (const char* env_p = std::getenv("WEBRTC_WEB_ROOT")) {
             return std::string(env_p);
@@ -172,8 +172,9 @@ std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
 }
 
 WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
-    impl_->http_address_ = Impl::GetEnvIP() + ":" + Impl::GetEnvPort();
-    impl_->web_root_ = Impl::GetEnvWebRoot();
+    impl_->http_address_ =
+            Impl::GetEnvWebRTCIP() + ":" + Impl::GetEnvWebRTCPort();
+    impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
 }
 
 WebRTCServer& WebRTCServer::GetInstance() {
