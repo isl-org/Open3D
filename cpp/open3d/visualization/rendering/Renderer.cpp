@@ -102,6 +102,10 @@ void Renderer::RenderToImage(
                 image->data_ = std::vector<uint8_t>(buffer.bytes,
                                                     buffer.bytes + buffer.size);
                 cb(image);
+                // This does not actually cause the object to be destroyed--
+                // the lambda still has a copy--but it does ensure that the
+                // object lives long enough for the callback to get executed.
+                // The object will be freed when the callback is unassigned.
                 render = nullptr;
             });
 }
@@ -137,6 +141,10 @@ void Renderer::RenderToDepthImage(
                     pixels[i] = 1.0f - pixels[i];
                 }
                 cb(image);
+                // This does not actually cause the object to be destroyed--
+                // the lambda still has a copy--but it does ensure that the
+                // object lives long enough for the callback to get executed.
+                // The object will be freed when the callback is unassigned.
                 render = nullptr;
             });
 }
