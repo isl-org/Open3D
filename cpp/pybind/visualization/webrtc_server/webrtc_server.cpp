@@ -26,11 +26,27 @@
 
 #include "pybind/visualization/webrtc_server/webrtc_server.h"
 
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-void pybind_webrtc_server(py::module &m) {}
+void pybind_webrtc_server(py::module &m) {
+    py::class_<WebRTCServer> webrtc_server(m, "WebRTCServer",
+                                           "Global WebRTCServer singleton.");
+
+    webrtc_server.def("__repr__", [](const WebRTCServer &ws) {
+        return std::string("Global WebRTCServer instance.");
+    });
+    webrtc_server.def_property_readonly_static(
+            "instance",
+            [](py::object) -> WebRTCServer & {
+                return WebRTCServer::GetInstance();
+            },
+            py::return_value_policy::reference,
+            "Gets the WebRTCServer singleton (read-only).");
+}
 
 }  // namespace webrtc_server
 }  // namespace visualization
