@@ -59,7 +59,7 @@
 #include "open3d/visualization/utility/GLHelper.h"
 
 #ifdef BUILD_WEBRTC
-#include "open3d/visualization/gui/WebRTCWindowSystem.h"
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 #endif
 
 namespace {

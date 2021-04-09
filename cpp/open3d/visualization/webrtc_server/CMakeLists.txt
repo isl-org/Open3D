@@ -7,8 +7,10 @@ set(WEBRTC_STREAMER_SRC
     BitmapTrackSource.cpp
     ImageCapturer.cpp
     HttpServerRequestHandler.cpp
+    ServerAPI.cpp
     PeerConnectionManager.cpp
     WebRTCServer.cpp
+    WebRTCWindowSystem.cpp
 )
 set(WEBRTC_STREAMER_3RD_PARTY_SRC
     civetweb/civetweb.c

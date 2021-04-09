@@ -82,7 +82,6 @@ jobs:
           popd
           source util/ci_utils.sh
           install_docs_dependencies "${OPEN3D_ML_ROOT}"
-          ./util/install_deps_ubuntu.sh assume-yes
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH
