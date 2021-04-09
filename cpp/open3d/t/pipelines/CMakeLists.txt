@@ -8,6 +8,10 @@ set(ODOMETRY_SRC
     odometry/RGBDOdometry.cpp
 )
 
+set(VOXELHASHING_SRC
+    voxelhashing/Model.cpp
+)
+
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
     kernel/ComputeTransform.cpp
@@ -24,6 +28,7 @@ set(KERNEL_CUDA_SRC
 
 set(ALL_PIPELINE_SRC
     ${REGISTRATION_SRC}
+    ${VOXELHASHING_SRC}
     ${ODOMETRY_SRC}
     ${KERNEL_SRC}
 )

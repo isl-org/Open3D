@@ -116,6 +116,8 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& normal_map,
              const core::Tensor& intrinsics,
              const core::Tensor& pose,
+             int h,
+             int w,
              int64_t block_resolution,
              float voxel_size,
              float sdf_trunc,
@@ -124,25 +126,25 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              float depth_max,
              float weight_threshold) {
     core::Device device = hashmap->GetDevice();
-    if (vertex_map.GetDevice() != device) {
-        utility::LogError("Vertex map\'s device mismatches with hashmap");
-    }
-    if (color_map.GetDevice() != device) {
-        utility::LogError("Vertex map\'s device mismatches with hashmap");
-    }
+    // if (vertex_map.GetDevice() != device) {
+    //     utility::LogError("Vertex map\'s device mismatches with hashmap");
+    // }
+    // if (color_map.GetDevice() != device) {
+    //     utility::LogError("Vertex map\'s device mismatches with hashmap");
+    // }
     core::Tensor intrinsicsf32 = intrinsics.To(device, core::Dtype::Float32);
     core::Tensor posef32 = pose.To(device, core::Dtype::Float32);
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         RayCastCPU(hashmap, block_values, vertex_map, depth_map, color_map,
-                   normal_map, intrinsicsf32, posef32, block_resolution,
+                   normal_map, intrinsicsf32, posef32, h, w, block_resolution,
                    voxel_size, sdf_trunc, max_steps, depth_min, depth_max,
                    weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         RayCastCUDA(hashmap, block_values, vertex_map, depth_map, color_map,
-                    normal_map, intrinsicsf32, posef32, block_resolution,
+                    normal_map, intrinsicsf32, posef32, h, w, block_resolution,
                     voxel_size, sdf_trunc, max_steps, depth_min, depth_max,
                     weight_threshold);
 #else

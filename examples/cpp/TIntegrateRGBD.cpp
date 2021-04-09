@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
             utility::Timer ray_timer;
             ray_timer.Start();
 
-            float scale = 4.0;
+            float scale = 1.0;
             Tensor intrinsic_t_down = intrinsic_t / scale;
             intrinsic_t_down[2][2] = 1.0;
             auto result = voxel_grid.RayCast(

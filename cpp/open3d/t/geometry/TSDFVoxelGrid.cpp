@@ -202,6 +202,7 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     core::Tensor pose = extrinsics.Inverse();
 
     core::Tensor vertex_map, depth_map, color_map, normal_map;
+    utility::LogInfo("Code = {}", ray_cast_mask);
     if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {
         vertex_map = core::Tensor::Zeros({height, width, 3},
                                          core::Dtype::Float32, device_);
@@ -222,9 +223,9 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
     kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, depth_map,
-                          color_map, normal_map, intrinsics, pose,
-                          block_resolution_, voxel_size_, sdf_trunc_, max_steps,
-                          depth_min, depth_max, weight_threshold);
+                          color_map, normal_map, intrinsics, pose, height,
+                          width, block_resolution_, voxel_size_, sdf_trunc_,
+                          max_steps, depth_min, depth_max, weight_threshold);
 
     std::unordered_map<TSDFVoxelGrid::RayCastMaskCode, core::Tensor> results;
     if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {

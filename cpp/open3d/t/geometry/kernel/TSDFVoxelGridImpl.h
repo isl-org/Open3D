@@ -897,6 +897,8 @@ void RayCastCPU
          core::Tensor& normal_map,
          const core::Tensor& intrinsics,
          const core::Tensor& pose,
+         int h,
+         int w,
          int64_t block_resolution,
          float voxel_size,
          float sdf_trunc,
@@ -937,6 +939,9 @@ void RayCastCPU
         return;
     }
 
+    utility::LogInfo("depth_map.shape = {}, enable_depth = {}",
+                     depth_map.GetShape(), enable_depth);
+
     if (enable_vertex) {
         vertex_map_indexer = NDArrayIndexer(vertex_map, 2);
     }
@@ -953,8 +958,8 @@ void RayCastCPU
     TransformIndexer c2w_transform_indexer(intrinsics, pose);
     TransformIndexer w2c_transform_indexer(intrinsics, pose.Inverse());
 
-    int64_t rows = vertex_map_indexer.GetShape(0);
-    int64_t cols = vertex_map_indexer.GetShape(1);
+    int64_t rows = h;
+    int64_t cols = w;
 
     float block_size = voxel_size * block_resolution;
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -1083,7 +1088,7 @@ void RayCastCPU
                                         depth_map_indexer
                                                 .GetDataPtrFromCoord<float>(x,
                                                                             y);
-                                *depth = t_intersect;
+                                *depth = t_intersect * 1000.0;
                             }
                             if (enable_vertex) {
                                 float* vertex =
