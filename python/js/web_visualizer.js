@@ -43,20 +43,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   /**
-   * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
-   * interface.
-   */
-  commsCall: function (url, data = {}) {
-    console.log(
-      "!!!WebVisualizerView.commsCall with url: ",
-      url,
-      " data: ",
-      data
-    );
-    return fetch(url, data);
-  },
-
-  /**
    * https://stackoverflow.com/a/52347011/1255535
    */
   executePython: function (python_code) {
@@ -68,6 +54,15 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       };
       Jupyter.notebook.kernel.execute(python_code, callbacks);
     });
+  },
+
+  /**
+   * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
+   * interface.
+   */
+  commsCall: function (url, data = {}) {
+    console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
+    return fetch(url, data);
   },
 
   /**
@@ -114,7 +109,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     const kernel = Jupyter.notebook.kernel;
     kernel.execute("print(o3d.__version__)", callbacks);
     kernel.execute(
-      'print(o3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api("/api/getMediaList"))',
+      'import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api("/api/getMediaList"))',
       callbacks
     );
 
