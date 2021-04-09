@@ -48,7 +48,7 @@ int log_message(const struct mg_connection *conn, const char *message) {
 
 static struct CivetCallbacks _callbacks;
 const struct CivetCallbacks *getCivetCallbacks() {
-    memset(&_callbacks, 0, sizeof(_callbacks));
+    memset(static_cast<void *>(&_callbacks), 0, sizeof(_callbacks));
     _callbacks.log_message = &log_message;
     return &_callbacks;
 }
