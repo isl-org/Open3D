@@ -181,7 +181,8 @@ void pybind_boundingvolume(py::module &m) {
             bounding_convex_hull(m, "BoundingConvexHull",
                                   "Class that defines a convex polygon that can "
                                   "be used to crop PointCloud.");
-
+    py::detail::bind_copy_functions<BoundingConvexHull>(
+            bounding_convex_hull);
     bounding_convex_hull
             .def(py::init<const PointCloud &>(),
                  "Create OrientedBoudingBox from a point cloud ",

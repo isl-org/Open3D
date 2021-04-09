@@ -337,6 +337,12 @@ BoundingConvexHull::BoundingConvexHull(const TriangleMesh &mesh) {
     convex_hull_->ComputeTriangleNormals();
 }
 
+BoundingConvexHull::BoundingConvexHull(const BoundingConvexHull &bhull) {
+    TriangleMesh copied_convex_hull_ = TriangleMesh(*bhull.convex_hull_);
+    convex_hull_ = std::make_shared<TriangleMesh>(copied_convex_hull_);
+    //convex_hull_->ComputeTriangleNormals();
+}
+
 Eigen::Vector3d BoundingConvexHull::GetMinBound() const {
     return convex_hull_->GetMinBound();
 }

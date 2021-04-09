@@ -268,6 +268,10 @@ public:
     ///
     /// \param mesh Specifies the triangle mesh to compute convex hull.
     BoundingConvexHull(const TriangleMesh &mesh);
+    /// \brief Copy constructor.
+    ///
+    /// \param bhull Target to copy.
+    BoundingConvexHull(const BoundingConvexHull &bhull);
     ~BoundingConvexHull(){}
 
 public:
