@@ -98,16 +98,15 @@ double PlanarPatch::GetSignedDistanceToPoint(
 }
 
 void PlanarPatch::OrientNormalToAlignWithDirection(
-        const Eigen::Vector3d &orientation_reference
+        const Eigen::Vector3d& orientation_reference
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
-
     if (normal_.dot(orientation_reference) < 0.0) {
         normal_ *= -1.0;
     }
 }
 
 void PlanarPatch::OrientNormalTowardsCameraLocation(
-        const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
+        const Eigen::Vector3d& camera_location /* = Eigen::Vector3d::Zero()*/) {
     const Eigen::Vector3d orientation_reference = camera_location - center_;
     OrientNormalToAlignWithDirection(orientation_reference);
 }

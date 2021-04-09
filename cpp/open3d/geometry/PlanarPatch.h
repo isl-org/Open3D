@@ -76,7 +76,7 @@ public:
     /// \param orientation_reference Plane normal is oriented with respect to
     /// orientation_reference.
     void OrientNormalToAlignWithDirection(
-            const Eigen::Vector3d &orientation_reference =
+            const Eigen::Vector3d& orientation_reference =
                     Eigen::Vector3d(0.0, 0.0, 1.0));
 
     /// \brief Function to orient the planar patch normal.
@@ -84,8 +84,7 @@ public:
     /// \param camera_location Plane normal is oriented with towards the
     /// camera_location.
     void OrientNormalTowardsCameraLocation(
-            const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
-
+            const Eigen::Vector3d& camera_location = Eigen::Vector3d::Zero());
 
 public:
     Eigen::Vector3d center_ = Eigen::Vector3d::Zero();
