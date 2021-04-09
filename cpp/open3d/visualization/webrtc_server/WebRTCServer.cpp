@@ -268,8 +268,8 @@ std::string WebRTCServer::CallWebRequestAPI(const std::string& entry_point,
         result = utility::JsonToString(
                 impl_->peer_connection_manager_->GetMediaList());
     }
-    utility::LogInfo("WebRTCServer::CallWebRequestAPI({}, {}, {}) ==> \n{}",
-                     entry_point, req_info_str, json_str, result);
+    // utility::LogInfo("WebRTCServer::CallWebRequestAPI({}, {}, {}) ==> \n{}",
+    //                  entry_point, req_info_str, json_str, result);
     return result;
 }
 
