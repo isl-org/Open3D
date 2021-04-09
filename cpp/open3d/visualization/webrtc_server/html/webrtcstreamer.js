@@ -44,6 +44,11 @@ var WebRtcStreamer = (function () {
     this.webVisualizer = webVisualizer;
   }
 
+  logAndReturn = function (value) {
+    console.log("!!! logAndReturn: ", value);
+    return value;
+  };
+
   /**
    * Call remove server API.
    * Non-prototype (static) method, we don't need to new an instance to use it.
@@ -153,6 +158,7 @@ var WebRtcStreamer = (function () {
       )
         .then(this._handleHttpErrors)
         .then((response) => response.json())
+        .then((response) => logAndReturn(response))
         .then((response) =>
           this.onReceiveGetIceServers.call(
             this,
