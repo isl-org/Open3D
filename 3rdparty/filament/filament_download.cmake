@@ -1,12 +1,8 @@
 include(FetchContent)
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
+set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer vkshaders smol-v utils)
 if(UNIX OR WIN32)
     list(APPEND filament_LIBRARIES bluevk)
-endif()
-
-if(APPLE)
-    list(APPEND filament_LIBRARIES vkshaders)
 endif()
 
 if (FILAMENT_PRECOMPILED_ROOT)
@@ -46,6 +42,7 @@ else()
     set(lib_byproducts ${filament_LIBRARIES})
     list(TRANSFORM lib_byproducts PREPEND <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
     list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
+
     if(WIN32)
         set(lib_byproducts_debug ${filament_LIBRARIES})
         list(TRANSFORM lib_byproducts_debug PREPEND <SOURCE_DIR>/${lib_dir}d/${CMAKE_STATIC_LIBRARY_PREFIX})

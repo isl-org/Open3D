@@ -947,7 +947,7 @@ if(BUILD_GUI)
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
+        LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
