@@ -38,3 +38,7 @@ set(WEBRTC_LIBRARIES
     webrtc
     webrtc_extra
 )
+
+# Dummy target that depends on all WebRTC targets.
+add_custom_target(ext_webrtc_all)
+add_dependencies(ext_webrtc_all ext_webrtc)
