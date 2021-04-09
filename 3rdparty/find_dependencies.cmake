@@ -883,6 +883,19 @@ if(BUILD_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IMGUI_TARGET}")
 endif()
 
+# Properties
+if(BUILD_GUI)
+  include(${Open3D_3RDPARTY_DIR}/properties/properties.cmake)
+  # import_3rdparty_library(3rdparty_assimp
+  #   INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
+  #   LIB_DIR      ${ASSIMP_LIB_DIR}
+  #   LIBRARIES    ${ASSIMP_LIBRARIES}
+  #   )
+  # set(ASSIMP_TARGET "3rdparty_assimp")
+  # add_dependencies(3rdparty_assimp ext_assimp)
+  # list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ASSIMP_TARGET}")
+endif()
+
 # Filament
 if(BUILD_GUI)
     if(BUILD_FILAMENT_FROM_SOURCE)
