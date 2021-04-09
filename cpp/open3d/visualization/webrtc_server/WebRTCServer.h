@@ -57,31 +57,42 @@ public:
 
     void Run();
 
-    // Client -> server message.
+    /// Client -> server message.
     void OnDataChannelMessage(const std::string& message);
 
-    // Set MouseEvent callback function. If a client -> server message is of
-    // MouseEvent type, the callback function will be triggered. The client
-    // message shall also contain the corresponding window_uid.
+    /// Set MouseEvent callback function. If a client -> server message is of
+    /// MouseEvent type, the callback function will be triggered. The client
+    /// message shall also contain the corresponding window_uid.
     void SetMouseEventCallback(
             std::function<void(const std::string&, const gui::MouseEvent&)> f);
 
-    // Set redraw callback function. Server can force a redraw. Then redraw then
-    // triggers OnFrame(), where a server -> client frame will be sent.
+    /// Set redraw callback function. Server can force a redraw. Then redraw
+    /// then triggers OnFrame(), where a server -> client frame will be sent.
     void SetRedrawCallback(std::function<void(const std::string&)> f);
 
-    // Server -> client frame.
+    /// Server -> client frame.
     void OnFrame(const std::string& window_uid,
                  const std::shared_ptr<core::Tensor>& im);
 
-    // Send initial frames. This flushes the WebRTC video stream. After the
-    // initial frames, new frames will only be sent at redraw events.
+    /// Send initial frames. This flushes the WebRTC video stream. After the
+    /// initial frames, new frames will only be sent at redraw events.
     void SendInitFrames(const std::string& window_uid);
 
-    // List available windows.
+    /// List available windows.
     std::vector<std::string> GetWindowUIDs() const;
 
-    // Call PeerConnectionManager's web request API.
+    /// Call PeerConnectionManager's web request API.
+    /// This function is called in JavaScript via Python binding to mimic the
+    /// behavior of sending HTTP request via fetch() in JavaScript.
+    ///
+    /// With fetch:
+    /// data = {method: "POST", body: JSON.stringify(candidate)};
+    /// fetch(this.srvurl + "/api/addIceCandidate?peerid=" + peerid, data);
+    ///
+    /// Now with CallWebRequestAPI:
+    /// open3d.visualization.webrtc_server("/api/addIceCandidate",
+    ///                                    "peerid=" + peerid,
+    ///                                    JSON.stringify(data));
     std::string CallWebRequestAPI(const std::string& entry_point,
                                   const std::string& req_info_str,
                                   const std::string& json_str) const;
