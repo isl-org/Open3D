@@ -163,13 +163,16 @@ int main(int argc, char** argv) {
             t::geometry::RGBDImage src, dst;
             src.depth_ =
                     src_depth.To(device).To(core::Dtype::Float32, false, 1.0);
+            src.color_ = src_color.To(device);
 
             utility::LogInfo("Frame-to-model for the frame {}", i);
             auto result = model.voxel_grid_.RayCast(
                     intrinsic_t, T_curr_to_model.Inverse(), src_depth.GetCols(),
                     src_depth.GetRows(), 100, 0.1, 3.0,
-                    std::min(i * 1.0f, 3.0f), MaskCode::DepthMap);
+                    std::min(i * 1.0f, 3.0f),
+                    MaskCode::DepthMap | MaskCode::ColorMap);
             dst.depth_ = t::geometry::Image(result[MaskCode::DepthMap]);
+            dst.color_ = t::geometry::Image(result[MaskCode::ColorMap]);
             // visualization::DrawGeometries({std::make_shared<geometry::Image>(
             //         dst.depth_.ToLegacyImage())});
 
@@ -198,7 +201,7 @@ int main(int argc, char** argv) {
             Tensor delta_curr_to_model =
                     t::pipelines::odometry::RGBDOdometryMultiScale(
                             src, dst, intrinsic_t, trans, depth_scale, 3.0,
-                            0.07, {20, 0, 0},
+                            0.07, {10, 0, 0},
                             t::pipelines::odometry::Method::PointToPlane);
             T_curr_to_model = T_curr_to_model.Matmul(delta_curr_to_model);
 
