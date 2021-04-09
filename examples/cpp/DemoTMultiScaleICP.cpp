@@ -204,6 +204,8 @@ private:
                         source_down_pyramid[i], target_down_pyramid[i],
                         result_device.correspondence_set_);
 
+                utility::LogDebug(" Delta Transformation: {}", update.ToString());
+
                 // Multiply the delta transform [n-1 to n] to the cumulative
                 // transformation [0 to n-1] to update cumulative [0 to n].
                 transformation_device = update.Matmul(transformation_device);

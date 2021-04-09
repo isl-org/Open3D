@@ -108,14 +108,14 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             });
 
     core::Tensor ATA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
-    float *ata_ptr = ATA.GetDataPtr<float>();
+            core::Tensor::Empty({6, 6}, core::Dtype::Float64, device);
+    double *ata_ptr = ATA.GetDataPtr<double>();
 
     // ATB_neg is -(ATB), as bi_neg is used in kernel instead of bi,
     // where  bi = [source_points - target_points].(target_normals).
     core::Tensor ATB_neg =
-            core::Tensor::Empty({6, 1}, core::Dtype::Float32, device);
-    float *atb_ptr = ATB_neg.GetDataPtr<float>();
+            core::Tensor::Empty({6, 1}, core::Dtype::Float64, device);
+    double *atb_ptr = ATB_neg.GetDataPtr<double>();
 
     // ATA_ {1,21} to ATA {6,6}.
     for (int i = 0, j = 0; j < 6; j++) {
