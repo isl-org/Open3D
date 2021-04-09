@@ -199,7 +199,8 @@ public:
     ///
     /// \param mesh TriangleMesh to crop points.
     /// \param invert Invert selection
-    std::shared_ptr<PointCloud> CropConvexHull(const BoundingConvexHull &bhull, bool invert=false) const;
+    std::shared_ptr<PointCloud> CropConvexHull(const BoundingConvexHull &bhull,
+                                               bool invert = false) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.

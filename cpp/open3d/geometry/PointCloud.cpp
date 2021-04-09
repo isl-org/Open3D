@@ -467,7 +467,6 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
 
 std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
         const BoundingConvexHull &bhull, bool invert) const {
-    
     Eigen::Vector3d p1;
     Eigen::Vector3d p2;
     Eigen::Vector3d p3;
@@ -476,33 +475,33 @@ std::shared_ptr<PointCloud> PointCloud::CropConvexHull(
     Eigen::Vector3i triangle;
     double ccw;
     double cosine;
-    
+
     std::vector<size_t> out_index;
-    
+
     for (size_t k = 0; k < points_.size(); k++) {
         const auto &point = points_[k];
         bool valid = true;
-        for (size_t j = 0; j < bhull.convex_hull_->triangles_.size(); j++){   
-            triangle = bhull.convex_hull_->triangles_[j]; 
+        for (size_t j = 0; j < bhull.convex_hull_->triangles_.size(); j++) {
+            triangle = bhull.convex_hull_->triangles_[j];
             p1 = bhull.convex_hull_->vertices_[triangle(0)];
             p2 = bhull.convex_hull_->vertices_[triangle(1)];
-            p3 = bhull.convex_hull_->vertices_[triangle(2)];            
+            p3 = bhull.convex_hull_->vertices_[triangle(2)];
             normal = bhull.convex_hull_->triangle_normals_[j];
-            ccw = (p1-center).dot(normal);
-            if (ccw < 0){
+            ccw = (p1 - center).dot(normal);
+            if (ccw < 0) {
                 normal = -normal;
             }
-            cosine = (p1-point).dot(normal);
-            if (cosine < 0){
+            cosine = (p1 - point).dot(normal);
+            if (cosine < 0) {
                 valid = false;
                 break;
             }
         }
-        if (valid){
+        if (valid) {
             out_index.push_back(k);
         }
     }
-    
+
     return SelectByIndex(out_index, invert);
 }
 

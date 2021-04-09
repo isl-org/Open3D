@@ -327,20 +327,20 @@ std::vector<size_t> AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
     return indices;
 }
 
-BoundingConvexHull::BoundingConvexHull(const PointCloud &pcd) {
+BoundingConvexHull::BoundingConvexHull(const PointCloud& pcd) {
     convex_hull_ = std::get<0>(pcd.ComputeConvexHull());
     convex_hull_->ComputeTriangleNormals();
 }
 
-BoundingConvexHull::BoundingConvexHull(const TriangleMesh &mesh) {
+BoundingConvexHull::BoundingConvexHull(const TriangleMesh& mesh) {
     convex_hull_ = std::get<0>(mesh.ComputeConvexHull());
     convex_hull_->ComputeTriangleNormals();
 }
 
-BoundingConvexHull::BoundingConvexHull(const BoundingConvexHull &bhull) {
+BoundingConvexHull::BoundingConvexHull(const BoundingConvexHull& bhull) {
     TriangleMesh copied_convex_hull_ = TriangleMesh(*bhull.convex_hull_);
     convex_hull_ = std::make_shared<TriangleMesh>(copied_convex_hull_);
-    //convex_hull_->ComputeTriangleNormals();
+    // convex_hull_->ComputeTriangleNormals();
 }
 
 Eigen::Vector3d BoundingConvexHull::GetMinBound() const {
@@ -367,23 +367,21 @@ BoundingConvexHull& BoundingConvexHull::Translate(
     return *this;
 }
 
-BoundingConvexHull& BoundingConvexHull::Scale(
-        const double scale, const Eigen::Vector3d& center) {
+BoundingConvexHull& BoundingConvexHull::Scale(const double scale,
+                                              const Eigen::Vector3d& center) {
     convex_hull_->Scale(scale, center);
     return *this;
 }
 
-BoundingConvexHull& BoundingConvexHull::Rotate(
-        const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+BoundingConvexHull& BoundingConvexHull::Rotate(const Eigen::Matrix3d& R,
+                                               const Eigen::Vector3d& center) {
     convex_hull_->Rotate(R, center);
     return *this;
 }
 
-double BoundingConvexHull::Volume() const {return convex_hull_->GetVolume();}
+double BoundingConvexHull::Volume() const { return convex_hull_->GetVolume(); }
 
-TriangleMesh BoundingConvexHull::GetConvexHull() const {
-    return *convex_hull_;
-}
+TriangleMesh BoundingConvexHull::GetConvexHull() const { return *convex_hull_; }
 
 // BoundingConvexHull BoundingConvexHull::CreateFromPontCloud(
 //         const PointCloud& pcd) {
