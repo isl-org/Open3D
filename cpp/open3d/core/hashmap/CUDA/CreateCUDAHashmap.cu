@@ -24,20 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CPU/TemplateHashmapCPU.hpp"
+#include "open3d/core/hashmap/CUDA/SlabHashmap.h"
+#include "open3d/core/hashmap/CUDA/StdGPUHashmap.h"
+#include "open3d/core/hashmap/Dispatch.h"
+#include "open3d/core/hashmap/Hashmap.h"
 
 namespace open3d {
 namespace core {
 
 /// Non-templated factory.
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
-        int64_t init_buckets,
+std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CPUHashmap<DefaultHash, DefaultKeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+        const Dtype& dtype_key,
+        const Dtype& dtype_value,
+        const SizeVector& element_shape_key,
+        const SizeVector& element_shape_value,
+        const Device& device,
+        const HashmapBackend& backend) {
+    if (backend != HashmapBackend::Default && backend != HashmapBackend::Slab &&
+        backend != HashmapBackend::StdGPU) {
+        utility::LogError("Unsupported backend for CUDA hashmap.");
+    }
+
+    int64_t dim = element_shape_key.NumElements();
+
+    int64_t dsize_key = dim * dtype_key.ByteSize();
+    int64_t dsize_value =
+            element_shape_value.NumElements() * dtype_value.ByteSize();
+
+    std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
+    if (backend == HashmapBackend::Default ||
+        backend == HashmapBackend::StdGPU) {
+        DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
+            device_hashmap_ptr = std::make_shared<StdGPUHashmap<key_t, hash_t>>(
+                    init_capacity, dsize_key, dsize_value, device);
+        });
+    } else {  // if (backend == HashmapBackend::Slab) {
+        DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
+            device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
+                    init_capacity, dsize_key, dsize_value, device);
+        });
+    }
+    return device_hashmap_ptr;
 }
 
 }  // namespace core
