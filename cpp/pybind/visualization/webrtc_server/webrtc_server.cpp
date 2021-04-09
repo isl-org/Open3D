@@ -32,7 +32,7 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-void pybind_webrtc_server(py::module &m) {
+static void pybind_webrtc_server_classes(py::module &m) {
     py::class_<WebRTCServer> webrtc_server(m, "WebRTCServer",
                                            "Global WebRTCServer singleton.");
 
@@ -48,6 +48,11 @@ void pybind_webrtc_server(py::module &m) {
             "Gets the WebRTCServer singleton (read-only).");
     webrtc_server.def("call_web_request_api", &WebRTCServer::CallWebRequestAPI,
                       "entry_point"_a, "req_info_str"_a = "", "json_st"_a = "");
+}
+
+void pybind_webrtc_server(py::module &m) {
+    py::module m_submodule = m.def_submodule("webrtc_server");
+    pybind_webrtc_server_classes(m_submodule);
 }
 
 }  // namespace webrtc_server

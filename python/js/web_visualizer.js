@@ -113,6 +113,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     };
     const kernel = Jupyter.notebook.kernel;
     kernel.execute("print(o3d.__version__)", callbacks);
+    kernel.execute(
+      'o3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api("/api/getMediaList")',
+      callbacks
+    );
 
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
