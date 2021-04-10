@@ -100,7 +100,8 @@ int main(int argc, char *argv[]) {
     }
 
     else if (option == "cylinder") {
-        auto mesh = geometry::TriangleMesh::CreateCylinder(2.0, 5.0, 10, 5);
+        auto mesh =
+                geometry::TriangleMesh::CreateCylinder(2.0, 5.0, 10, 5, true);
         utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("Cylinder.obj", *mesh, false, false, false, true,
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
     }
 
     else if (option == "cone") {
-        auto mesh = geometry::TriangleMesh::CreateCone(2.0, 5.0, 10, 5);
+        auto mesh = geometry::TriangleMesh::CreateCone(2.0, 5.0, 10, 5, true);
         utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("Cone.obj", *mesh, false, false, false, true,
@@ -116,7 +117,7 @@ int main(int argc, char *argv[]) {
     }
 
     else if (option == "sphere") {
-        auto mesh = geometry::TriangleMesh::CreateSphere(2.0, 10.0);
+        auto mesh = geometry::TriangleMesh::CreateSphere(2.0, 10.0, true);
         utility::LogInfo(" Has UV: {}", mesh->HasTriangleUvs());
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("Sphere.obj", *mesh, false, false, false, true,
