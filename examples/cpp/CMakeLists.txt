@@ -34,7 +34,6 @@ endmacro(EXAMPLE_CPP)
 
 EXAMPLE_CPP(CameraPoseTrajectory      ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ColorMapOptimization      ${CMAKE_PROJECT_NAME})
-EXAMPLE_CPP(CreateShapes              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(DepthCapture              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(TrimMeshBasedOnPointCloud ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
 EXAMPLE_CPP(EvaluatePCDMatch          ${CMAKE_PROJECT_NAME})
