@@ -6,6 +6,8 @@ open3d.io
 open3d.t
 open3d.t.geometry
 open3d.t.io
+open3d.t.pipelines
+open3d.t.pipelines.registration
 open3d.ml
 open3d.ml.tf
 open3d.ml.tf.layers
@@ -34,7 +36,6 @@ open3d.pipelines.color_map
 open3d.pipelines.integration
 open3d.pipelines.odometry
 open3d.pipelines.registration
-open3d.t.pipelines.registration
 open3d.utility
 open3d.visualization
 open3d.visualization.gui
