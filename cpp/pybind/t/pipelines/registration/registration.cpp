@@ -179,8 +179,14 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite(
                     "correspondence_set",
                     &RegistrationResult::correspondence_set_,
-                    "pair of ``C x 1`` int tensor: Correspondence set between "
-                    "source and target point cloud.")
+                    "Correspondence set between source and target point cloud. "
+                    "It is a pair of ``Int64`` ``C x 1`` tensor, where C is "
+                    "the number of good correspondences between source and "
+                    "target pointcloud. The first tensor is the source "
+                    "indices, "
+                    "and the second tensor is corresponding target indices. "
+                    "Such that, source[correspondence.first] and "
+                    "target[correspondence.second] is a correspondence pair.")
             .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
                            "float: RMSE of all inlier correspondences. Lower "
                            "is better.")
