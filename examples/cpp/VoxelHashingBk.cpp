@@ -140,7 +140,6 @@ protected:
     std::shared_ptr<PropertyPanel> props_;
     std::shared_ptr<gui::ImageWidget> rgb_image_;
     std::shared_ptr<gui::ImageWidget> depth_image_;
-    std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
 
     void SetOutput(const std::string& output) {
         output_->SetText(output.c_str());
@@ -191,106 +190,63 @@ private:
                                                                depth_files);
         std::sort(depth_files.begin(), depth_files.end());
 
-        float voxel_size = 3.0 / 512;
-        float sdf_trunc = 0.04f;
-        int block_resolution = 16;
-        int block_count = 40000;
-        float depth_scale = 1000.0;
-        float depth_max = 3.0;
-        float depth_diff = 0.07;
-
-        core::Tensor T_frame_to_model = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0"));
-        core::Tensor intrinsic_t = core::Tensor::Init<float>(
-                {{525.0, 0, 319.5}, {0, 525.0, 239.5}, {0, 0, 1}});
-        core::Device device("CUDA:0");
-
-        t::geometry::Image ref_depth =
-                *t::io::CreateImageFromFile(depth_files[0]);
-        t::pipelines::voxelhashing::Frame input_frame(
-                ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-        t::pipelines::voxelhashing::Frame raycast_frame(
-                ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-        t::pipelines::voxelhashing::Model model(voxel_size, sdf_trunc,
-                                                block_resolution, block_count,
-                                                T_frame_to_model, device);
-
         bool is_initialized = false;
-        bool update_scene = false;
         size_t idx = 0;
-
         while (!is_done_) {
-            // Input
-            t::geometry::Image input_depth =
-                    *t::io::CreateImageFromFile(depth_files[idx]);
-            t::geometry::Image input_color =
-                    *t::io::CreateImageFromFile(rgb_files[idx]);
-            input_frame.SetDataFromImage("depth", input_depth);
-            input_frame.SetDataFromImage("color", input_color);
-
-            // Odom
-            if (idx > 0) {
-                utility::LogInfo("Frame-to-model for the frame {}", idx);
-
-                model.SynthesizeModelFrame(raycast_frame);
-
-                core::Tensor delta_frame_to_model = model.TrackFrameToModel(
-                        input_frame, raycast_frame, depth_scale, depth_max,
-                        depth_diff);
-                T_frame_to_model =
-                        T_frame_to_model.Matmul(delta_frame_to_model);
-            }
-
-            // Integrate
-            model.UpdateFramePose(idx, T_frame_to_model);
-            model.Integrate(input_frame, depth_scale, depth_max);
-
-            // Extract surface on demand
-            auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-                    model.ExtractPointCloud().ToLegacyPointCloud());
-
             std::stringstream out;
-            out << "Frame " << idx;
+            auto color = std::make_shared<geometry::Image>();
+            auto tcolor = std::make_shared<t::geometry::Image>(
+                    t::geometry::Image::FromLegacyImage(*color));
+            auto depth = std::make_shared<geometry::Image>();
+            io::ReadImage(rgb_files[idx], *color);
+            io::ReadImage(depth_files[idx], *depth);
+            auto rgbd = geometry::RGBDImage::CreateFromColorAndDepth(
+                    *color, *depth, prop_values_.depth_scale,
+                    prop_values_.depth_trunc, !prop_values_.color_points);
+            auto depth8 = ConvertDepthToNormalizedGrey8(rgbd->depth_);
 
-            // TODO: update support for timages
-            // image conversion
-            auto color = std::make_shared<open3d::geometry::Image>(
-                    input_frame.GetDataAsImage("color").ToLegacyImage());
-            auto depth = std::make_shared<open3d::geometry::Image>(
-                    input_frame.GetDataAsImage("depth")
-                            .To(core::Dtype::Float32, false, 1.0f)
-                            .ToLegacyImage());
-            auto depth8 = ConvertDepthToNormalizedGrey8(*depth);
+            camera::PinholeCameraIntrinsic intrinsic =
+                    camera::PinholeCameraIntrinsic(
+                            camera::PinholeCameraIntrinsicParameters::
+                                    PrimeSenseDefault);
+            auto pcd =
+                    geometry::PointCloud::CreateFromRGBDImage(*rgbd, intrinsic);
+            auto tpcd = std::make_shared<t::geometry::PointCloud>(
+                    t::geometry::PointCloud::FromLegacyPointCloud(*pcd));
+
+            out << pcd->points_.size() << " points" << std::endl;
+            out << "intrinsic matrix:" << std::endl;
+            out << intrinsic.intrinsic_matrix_ << std::endl;
 
             idx++;
-            is_done_ = (idx >= depth_files.size());
+            if (idx >= depth_files.size()) {
+                idx = 0;
+            }
 
             gui::Application::GetInstance().PostToMainThread(
-                    this, [this, color, depth8, pcd, is_initialized,
-                           update_scene, out = out.str()]() {
+                    this, [this, tcolor, color, depth8, pcd, tpcd,
+                           is_initialized, out = out.str()]() {
+                        this->SetOutput(out);
+                        this->rgb_image_->UpdateImage(color);
+                        this->depth_image_->UpdateImage(depth8);
                         this->widget3d_->GetScene()->RemoveGeometry("points");
                         auto mat = rendering::Material();
                         mat.shader = "defaultUnlit";
                         this->widget3d_->GetScene()->AddGeometry(
-                                "points", pcd.get(), mat);
-
-                        this->SetOutput(out);
-                        this->rgb_image_->UpdateImage(color);
-                        this->depth_image_->UpdateImage(depth8);
-
-                        // if (!is_initialized) {
-                        auto bbox =
-                                this->widget3d_->GetScene()->GetBoundingBox();
-                        auto center = bbox.GetCenter().cast<float>();
-                        this->widget3d_->SetupCamera(60, bbox, center);
-                        this->widget3d_->LookAt(
-                                center, center - Eigen::Vector3f{0, 1, 3},
-                                {0.0f, -1.0f, 0.0f});
-                        //}
+                                "points", tpcd.get(), mat);
+                        if (!is_initialized) {
+                            auto bbox = this->widget3d_->GetScene()
+                                                ->GetBoundingBox();
+                            auto center = bbox.GetCenter().cast<float>();
+                            this->widget3d_->SetupCamera(60, bbox, center);
+                            this->widget3d_->LookAt(
+                                    center, center - Eigen::Vector3f{0, 1, 3},
+                                    {0.0f, -1.0f, 0.0f});
+                        }
                     });
 
             is_initialized = true;
-            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
