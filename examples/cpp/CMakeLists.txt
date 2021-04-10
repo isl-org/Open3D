@@ -62,6 +62,7 @@ EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(VoxelHashing              ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(VoxelHashingRefact        ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(VoxelHashingGUI           ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
 

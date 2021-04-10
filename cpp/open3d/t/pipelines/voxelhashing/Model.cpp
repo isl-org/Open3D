@@ -40,6 +40,7 @@ namespace voxelhashing {
 
 Model::Model(float voxel_size,
              float sdf_trunc,
+             int block_resolution,
              int est_block_count,
              const core::Tensor& T_init,
              const core::Device& device)
@@ -48,37 +49,43 @@ Model::Model(float voxel_size,
                    {"color", core::Dtype::UInt16}},
                   voxel_size,
                   sdf_trunc,
-                  16,
+                  block_resolution,
                   est_block_count,
                   device),
       T_frame_to_world_(T_init.To(core::Device("CPU:0"))) {}
 
-void Model::SynthesizeModelFrame(const Frame& input_frame, int down_factor) {
-    // using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
-    core::Tensor intrinsics = input_frame.GetIntrinsics().Clone();
-    intrinsics /= down_factor;
-    intrinsics[2][2] = 1.0;
+// void Model::SynthesizeModelFrame(const Frame& input_frame, int down_factor) {
+//     // using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
+//     core::Tensor intrinsics = input_frame.GetIntrinsics().Clone();
+//     intrinsics /= down_factor;
+//     intrinsics[2][2] = 1.0;
 
-    // clang-format off
-    // auto result = voxel_grid_.RayCast(
-    //         intrinsics,
-    //         T_frame_to_world_.Inverse(),
-    //         input_frame.GetCols() / down_factor,
-    //         input_frame.GetRows() / down_factor,
-    //         100, // steps
-    //         0.1 // start,
-    //         3.0, // stop
-    //         std::min(i * 1.0f, 3.0f), // weight_thr
-    //         MaskCode::VertexMap | MaskCode::DepthMap | MaskCode::ColorMap);
-    // clang-format on
-}
+//     // clang-format off
+//     // auto result = voxel_grid_.RayCast(
+//     //         intrinsics,
+//     //         T_frame_to_world_.Inverse(),
+//     //         input_frame.GetCols() / down_factor,
+//     //         input_frame.GetRows() / down_factor,
+//     //         100, // steps
+//     //         0.1 // start,
+//     //         3.0, // stop
+//     //         std::min(i * 1.0f, 3.0f), // weight_thr
+//     //         MaskCode::DepthMap);
+//     // clang-format on
 
-// Track using RGBD odometry - default color + depth
-core::Tensor TrackFrameToModel(const Frame& model_frame,
-                               const Frame& input_frame);
+//     // return Frame(result);
+// }
 
-// Integrate RGBD
-core::Tensor Integrate(const Frame& input_frame);
+// // Track using RGBD odometry - default color + depth
+// core::Tensor TrackFrameToModel(const Frame& model_frame,
+//                                const Frame& input_frame,
+//                                int down_factor) {
+//     ComputePosePointToPlane(source_vertex_map, target_vertex_map,
+//                             target_normal_map, intrinsics,
+//                             init_source_to_target, depth_diff);
+// }
+
+// core::Tensor Integrate(const Frame& input_frame);
 
 }  // namespace voxelhashing
 }  // namespace pipelines

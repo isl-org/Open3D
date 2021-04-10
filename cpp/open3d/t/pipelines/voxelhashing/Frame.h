@@ -35,19 +35,23 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace voxelhashing {
+
+/// \brief Frame is a container class storing an intrinsic matrix and several 2D
+/// tensors, from depth map, vertex map, to color map, in a customized way.
 class Frame {
 public:
     Frame(const core::Tensor& intrinsics) : intrinsics_(intrinsics) {}
 
-    void SetRGBD(const t::geometry::RGBDImage& rgbd) {
-        SetData("color", rgbd.color_.AsTensor());
-        SetData("depth", rgbd.depth_.AsTensor());
-    }
-
     void SetIntrinsics(const core::Tensor& intrinsics) {
         intrinsics_ = intrinsics;
     }
-    core::Tensor GetIntrinsics() const { return intrinsics_; }
+    core::Tensor GetIntrinsics() { return intrinsics_; }
+
+    void SetRGBD(const t::geometry::RGBDImage& rgbd) {
+        // TODO type conversion
+        SetData("color", rgbd.color_.AsTensor());
+        SetData("depth", rgbd.depth_.AsTensor());
+    }
 
     void SetData(const std::string& name, const core::Tensor& data) {
         if (data_.count(name) != 0) {
@@ -56,12 +60,22 @@ public:
             data_.emplace(name, data);
         }
     }
+    core::Tensor GetData(const std::string& name) {
+        if (data_.count(name) == 0) {
+            utility::LogError("Property not found for {}!", name);
+        }
+        return data_.at(name);
+    }
 
 private:
     // (3, 3) intrinsic matrix for a pinhole camera
     core::Tensor intrinsics_;
-    // Possibly maintained maps, including:
-    // vertex, color, depth
+
+    // Maintained maps, including:
+    // depth_map: (H, W, 1), Float32 AFTER preprocessing
+    // vertex_map: (H, W, 3), Float32,
+    // color_map: (H, W, 3), Float32
+    // normal_map: (H, W, 3), Float32
     std::unordered_map<std::string, core::Tensor> data_;
 };
 }  // namespace voxelhashing

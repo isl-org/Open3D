@@ -7,7 +7,7 @@
 using namespace open3d;
 using namespace open3d::visualization;
 
-const std::string TEST_DIR = "../../../examples/test_data/RGBD";
+const std::string TEST_DIR = "/home/wei/Workspace/data/open3d/stanford/lounge/";
 
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
@@ -183,7 +183,7 @@ private:
         const std::string depth_dir = TEST_DIR + "/depth";
         std::vector<std::string> rgb_files;
         std::vector<std::string> depth_files;
-        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "jpg",
+        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "png",
                                                                rgb_files);
         std::sort(rgb_files.begin(), rgb_files.end());
         utility::filesystem::ListFilesInDirectoryWithExtension(depth_dir, "png",

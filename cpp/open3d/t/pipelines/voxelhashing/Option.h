@@ -32,46 +32,26 @@
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/t/pipelines/voxelhashing/Frame.h"
-#include "open3d/t/pipelines/voxelhashing/Option.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace voxelhashing {
-class Model {
+
+class Option {
 public:
-    Model() {}
-    Model(float voxel_size,
-          float sdf_trunc,
-          int block_resolution,
-          int block_count,
-          const core::Tensor& T_init = core::Tensor::Eye(4,
-                                                         core::Dtype::Float64,
-                                                         core::Device("CPU:0")),
-          const core::Device& device = core::Device("CUDA:0"));
+    Option() {}
 
-    /// Apply ray casting to obtain a synthesized model frame at the down
-    /// sampled resolution.
-    void SynthesizeModelFrame(const Frame& input_frame, int down_factor);
+    /// TSDF VoxelBlock options
+    float voxel_size = 3.0 / 512.0;
+    int est_block_count = 40000;
 
-    /// Track using RGBD odometry
-    /// \param model_frame Model frame synthesized with ray casting at the down
-    /// sampled resolution.
-    /// \param input_frame Input frame at the original resolution.
-    core::Tensor TrackFrameToModel(const Frame& model_frame,
-                                   const Frame& input_frame,
-                                   int down_factor);
-
-    /// Integrate RGBD at the original resolution
-    core::Tensor Integrate(const Frame& input_frame);
-
-public:
-    // Maintained volumetric map
-    t::geometry::TSDFVoxelGrid voxel_grid_;
-
-    // T_frame_to_model, maintained tracking state
-    core::Tensor T_frame_to_world_;
+    /// Input options
+    float depth_scale = 1000.0f;
+    float depth_max = 3.0f;
+    float depth_diff = 0.07f;
 };
+
 }  // namespace voxelhashing
 }  // namespace pipelines
 }  // namespace t
