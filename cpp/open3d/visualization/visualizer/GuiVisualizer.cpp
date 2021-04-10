@@ -296,8 +296,9 @@ class DrawTimeLabel : public gui::Label {
 public:
     DrawTimeLabel(gui::Window *w) : Label("0.0 ms") { window_ = w; }
 
-    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
-        auto h = Super::CalcPreferredSize(theme).height;
+    gui::Size CalcPreferredSize(const gui::Theme &theme,
+                                const Constraints &constraints) const override {
+        auto h = Super::CalcPreferredSize(theme, constraints).height;
         return gui::Size(theme.font_size * 5, h);
     }
 
@@ -867,20 +868,22 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     impl_->scene_wgt_->SetFrame(r);
 
     // Draw help keys HUD in upper left
-    const auto pref = impl_->help_keys_->CalcPreferredSize(theme);
+    const auto pref = impl_->help_keys_->CalcPreferredSize(
+            theme, gui::Widget::Constraints());
     impl_->help_keys_->SetFrame(gui::Rect(0, r.y, pref.width, pref.height));
     impl_->help_keys_->Layout(theme);
 
     // Draw camera HUD in lower left
-    const auto prefcam = impl_->help_camera_->CalcPreferredSize(theme);
+    const auto prefcam = impl_->help_camera_->CalcPreferredSize(
+            theme, gui::Widget::Constraints());
     impl_->help_camera_->SetFrame(gui::Rect(0, r.height + r.y - prefcam.height,
                                             prefcam.width, prefcam.height));
     impl_->help_camera_->Layout(theme);
 
     // Settings in upper right
     const auto LIGHT_SETTINGS_WIDTH = 18 * em;
-    auto light_settings_size =
-            impl_->settings_.wgt_base->CalcPreferredSize(theme);
+    auto light_settings_size = impl_->settings_.wgt_base->CalcPreferredSize(
+            theme, gui::Widget::Constraints());
     gui::Rect lightSettingsRect(r.width - LIGHT_SETTINGS_WIDTH, r.y,
                                 LIGHT_SETTINGS_WIDTH,
                                 std::min(r.height, light_settings_size.height));

@@ -31,6 +31,7 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
