@@ -40,13 +40,22 @@ namespace voxelhashing {
 /// tensors, from depth map, vertex map, to color map, in a customized way.
 class Frame {
 public:
-    Frame(const core::Tensor& intrinsics, const core::Device& device)
-        : intrinsics_(intrinsics), device_(device) {}
+    Frame(int height,
+          int width,
+          const core::Tensor& intrinsics,
+          const core::Device& device)
+        : height_(height),
+          width_(width),
+          intrinsics_(intrinsics),
+          device_(device) {}
+
+    int GetHeight() const { return height_; }
+    int GetWidth() const { return width_; }
 
     void SetIntrinsics(const core::Tensor& intrinsics) {
         intrinsics_ = intrinsics;
     }
-    core::Tensor GetIntrinsics() { return intrinsics_; }
+    core::Tensor GetIntrinsics() const { return intrinsics_; }
 
     void SetData(const std::string& name, const core::Tensor& data) {
         if (data_.count(name) != 0) {
@@ -55,7 +64,7 @@ public:
             data_.emplace(name, data.To(device_));
         }
     }
-    core::Tensor GetData(const std::string& name) {
+    core::Tensor GetData(const std::string& name) const {
         if (data_.count(name) == 0) {
             utility::LogError("Property not found for {}!", name);
         }
@@ -67,11 +76,14 @@ public:
                           const t::geometry::Image& data) {
         SetData(name, data.AsTensor());
     }
-    t::geometry::Image GetDataAsImage(const std::string& name) {
+    t::geometry::Image GetDataAsImage(const std::string& name) const {
         return t::geometry::Image(GetData(name));
     }
 
 private:
+    int height_;
+    int width_;
+
     // (3, 3) intrinsic matrix for a pinhole camera
     core::Tensor intrinsics_;
     core::Device device_;

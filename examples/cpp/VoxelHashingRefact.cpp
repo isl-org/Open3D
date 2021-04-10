@@ -61,8 +61,6 @@ void PrintHelp() {
 }
 
 int main(int argc, char** argv) {
-    using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
-
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         argc < 4) {
         PrintHelp();
@@ -142,6 +140,8 @@ int main(int argc, char** argv) {
             argc, argv, "--depth_scale", 1000.f));
     float depth_max = static_cast<float>(
             utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
+    float depth_diff = static_cast<float>(utility::GetProgramOptionAsDouble(
+            argc, argv, "--depth_diff", 0.07f));
 
     // Initialize model
     t::pipelines::voxelhashing::Model model(voxel_size, sdf_trunc,
@@ -149,11 +149,12 @@ int main(int argc, char** argv) {
                                             T_frame_to_model, device);
 
     // Initialize frame
-    t::pipelines::voxelhashing::Frame input_frame(intrinsic_t, device);
-    t::pipelines::voxelhashing::Frame raycast_frame(intrinsic_t, device);
-
-    core::Tensor identity =
-            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
+    t::geometry::Image ref_depth =
+            *t::io::CreateImageFromFile(depth_filenames[0]);
+    t::pipelines::voxelhashing::Frame input_frame(
+            ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
+    t::pipelines::voxelhashing::Frame raycast_frame(
+            ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
 
     // Iterate over frames
     for (size_t i = 0; i < iterations; ++i) {
@@ -168,46 +169,23 @@ int main(int argc, char** argv) {
         if (i > 0) {
             utility::LogInfo("Frame-to-model for the frame {}", i);
 
-            auto result = model.voxel_grid_.RayCast(
-                    raycast_frame.GetIntrinsics(), T_frame_to_model.Inverse(),
-                    input_depth.GetCols(), input_depth.GetRows(), 80, 0.1, 4.0,
-                    std::min(i * 1.0f, 3.0f), MaskCode::DepthMap);
-            raycast_frame.SetData("depth", result[MaskCode::DepthMap]);
+            model.SynthesizeModelFrame(raycast_frame);
 
             Tensor delta_frame_to_model =
-                    t::pipelines::odometry::RGBDOdometryMultiScale(
-                            t::geometry::RGBDImage(
-                                    input_frame.GetDataAsImage("color"),
-                                    input_frame.GetDataAsImage("depth")),
-                            t::geometry::RGBDImage(
-                                    t::geometry::Image(),
-                                    raycast_frame.GetDataAsImage("depth")),
-                            raycast_frame.GetIntrinsics(), identity,
-                            depth_scale, depth_max, 0.07, {10, 0, 0},
-                            t::pipelines::odometry::Method::PointToPlane);
+                    model.TrackFrameToModel(input_frame, raycast_frame,
+                                            depth_scale, depth_max, depth_diff);
             T_frame_to_model = T_frame_to_model.Matmul(delta_frame_to_model);
         }
 
-        model.voxel_grid_.Integrate(input_frame.GetDataAsImage("depth"),
-                                    input_frame.GetDataAsImage("color"),
-                                    intrinsic_t, T_frame_to_model.Inverse(),
-                                    depth_scale, depth_max);
-    }
-
-    if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
-        std::string filename = utility::GetProgramOptionAsString(
-                argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
-        auto mesh = model.voxel_grid_.ExtractSurfaceMesh();
-        auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                mesh.ToLegacyTriangleMesh());
-        open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
+        model.UpdateFramePose(i, T_frame_to_model);
+        model.Integrate(input_frame, depth_scale, depth_max);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.voxel_grid_.ExtractSurfacePoints();
+        auto pcd = model.ExtractPointCloud();
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud(filename, *pcd_legacy);

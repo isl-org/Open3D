@@ -50,20 +50,33 @@ public:
                                                          core::Device("CPU:0")),
           const core::Device& device = core::Device("CUDA:0"));
 
+    core::Tensor GetCurrentFramePose() { return T_frame_to_world_; }
+    void UpdateFramePose(int frame_id, const core::Tensor& T_frame_to_world) {
+        if (frame_id != frame_id_ + 1) {
+            utility::LogWarning("Skipped {} frames in update T!",
+                                frame_id - (frame_id_ + 1));
+        }
+        frame_id_ = frame_id;
+        T_frame_to_world_ = T_frame_to_world;
+    }
+
     /// Apply ray casting to obtain a synthesized model frame at the down
     /// sampled resolution.
-    void SynthesizeModelFrame(const Frame& input_frame, int down_factor);
+    void SynthesizeModelFrame(Frame& raycast_frame);
 
     /// Track using RGBD odometry
-    /// \param model_frame Model frame synthesized with ray casting at the down
-    /// sampled resolution.
-    /// \param input_frame Input frame at the original resolution.
-    core::Tensor TrackFrameToModel(const Frame& model_frame,
-                                   const Frame& input_frame,
-                                   int down_factor);
+    core::Tensor TrackFrameToModel(const Frame& input_frame,
+                                   const Frame& raycast_frame,
+                                   float depth_scale,
+                                   float depth_max,
+                                   float depth_diff);
 
     /// Integrate RGBD at the original resolution
-    core::Tensor Integrate(const Frame& input_frame);
+    void Integrate(const Frame& input_frame,
+                   float depth_scale,
+                   float depth_max);
+
+    t::geometry::PointCloud ExtractPointCloud(float weight_threshold = 3.0f);
 
 public:
     // Maintained volumetric map
@@ -71,6 +84,8 @@ public:
 
     // T_frame_to_model, maintained tracking state
     core::Tensor T_frame_to_world_;
+
+    int frame_id_ = -1;
 };
 }  // namespace voxelhashing
 }  // namespace pipelines

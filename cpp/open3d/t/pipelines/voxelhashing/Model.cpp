@@ -54,38 +54,46 @@ Model::Model(float voxel_size,
                   device),
       T_frame_to_world_(T_init.To(core::Device("CPU:0"))) {}
 
-// void Model::SynthesizeModelFrame(const Frame& input_frame, int down_factor) {
-//     // using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
-//     core::Tensor intrinsics = input_frame.GetIntrinsics().Clone();
-//     intrinsics /= down_factor;
-//     intrinsics[2][2] = 1.0;
+void Model::SynthesizeModelFrame(Frame& raycast_frame) {
+    using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
+    auto result = voxel_grid_.RayCast(
+            raycast_frame.GetIntrinsics(), GetCurrentFramePose().Inverse(),
+            raycast_frame.GetWidth(), raycast_frame.GetHeight(), 80, 0.1, 4.0,
+            std::min(frame_id_ * 1.0f, 3.0f), MaskCode::DepthMap);
+    raycast_frame.SetData("depth", result[MaskCode::DepthMap]);
+}
 
-//     // clang-format off
-//     // auto result = voxel_grid_.RayCast(
-//     //         intrinsics,
-//     //         T_frame_to_world_.Inverse(),
-//     //         input_frame.GetCols() / down_factor,
-//     //         input_frame.GetRows() / down_factor,
-//     //         100, // steps
-//     //         0.1 // start,
-//     //         3.0, // stop
-//     //         std::min(i * 1.0f, 3.0f), // weight_thr
-//     //         MaskCode::DepthMap);
-//     // clang-format on
+core::Tensor Model::TrackFrameToModel(const Frame& input_frame,
+                                      const Frame& raycast_frame,
+                                      float depth_scale,
+                                      float depth_max,
+                                      float depth_diff) {
+    const static core::Tensor identity =
+            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
 
-//     // return Frame(result);
-// }
+    // TODO: more customized / optimized
+    return t::pipelines::odometry::RGBDOdometryMultiScale(
+            t::geometry::RGBDImage(input_frame.GetDataAsImage("color"),
+                                   input_frame.GetDataAsImage("depth")),
+            t::geometry::RGBDImage(t::geometry::Image(),
+                                   raycast_frame.GetDataAsImage("depth")),
+            raycast_frame.GetIntrinsics(), identity, depth_scale, depth_max,
+            depth_diff, {10, 0, 0},
+            t::pipelines::odometry::Method::PointToPlane);
+}
 
-// // Track using RGBD odometry - default color + depth
-// core::Tensor TrackFrameToModel(const Frame& model_frame,
-//                                const Frame& input_frame,
-//                                int down_factor) {
-//     ComputePosePointToPlane(source_vertex_map, target_vertex_map,
-//                             target_normal_map, intrinsics,
-//                             init_source_to_target, depth_diff);
-// }
+void Model::Integrate(const Frame& input_frame,
+                      float depth_scale,
+                      float depth_max) {
+    voxel_grid_.Integrate(
+            input_frame.GetDataAsImage("depth"),
+            input_frame.GetDataAsImage("color"), input_frame.GetIntrinsics(),
+            GetCurrentFramePose().Inverse(), depth_scale, depth_max);
+}
 
-// core::Tensor Integrate(const Frame& input_frame);
+t::geometry::PointCloud Model::ExtractPointCloud(float weight_threshold) {
+    return voxel_grid_.ExtractSurfacePoints(weight_threshold);
+}
 
 }  // namespace voxelhashing
 }  // namespace pipelines
