@@ -72,10 +72,20 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     core::Tensor distances;
-    std::tie(result.correspondence_set_.first,
-             result.correspondence_set_.second, distances) =
-            target_nns.Hybrid1NNSearch(source.GetPoints(),
-                                       max_correspondence_distance);
+    std::tie(result.correspondence_set_.second, distances) =
+            target_nns.HybridSearch(source.GetPoints(),
+                                    max_correspondence_distance, 1);
+
+    core::Tensor valid = result.correspondence_set_.second.Ne(-1).Reshape({-1});
+    // correpondence_set : (i, corres[i]).
+    // source[i] and target[corres[i]] is a correspondence.
+    result.correspondence_set_.first =
+            core::Tensor::Arange(0, source.GetPoints().GetShape()[0], 1,
+                                 core::Dtype::Int64, device)
+                    .IndexGet({valid});
+    // Only take valid indices.
+    result.correspondence_set_.second =
+            result.correspondence_set_.second.IndexGet({valid}).Reshape({-1});
 
     // Number of good correspondences (C).
     int num_correspondences = result.correspondence_set_.first.GetLength();
