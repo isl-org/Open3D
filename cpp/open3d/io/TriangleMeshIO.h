@@ -38,13 +38,25 @@ namespace io {
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress = false);
 
+struct ReadTriangleMeshOptions {
+    /// Enables post-processing on the mesh
+    bool enable_post_processing = false;
+    /// Print progress to stdout about loading progress.
+    /// Also see \p update_progress if you want to have your own progress
+    /// indicators or to be able to cancel loading.
+    bool print_progress = false;
+    /// Callback to invoke as reading is progressing, parameter is percentage
+    /// completion (0.-100.) return true indicates to continue loading, false
+    /// means to try to stop loading and cleanup
+    std::function<bool(double)> update_progress;
+};
+
 /// The general entrance for reading a TriangleMesh from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      bool enable_post_processing = false,
-                      bool print_progress = false);
+                      ReadTriangleMeshOptions params = {});
 
 /// The general entrance for writing a TriangleMesh to a file
 /// The function calls write functions based on the extension name of filename.
@@ -65,8 +77,7 @@ bool WriteTriangleMesh(const std::string &filename,
 // Currently enable_post_processing not used in ReadTriangleMeshFromPLY.
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool enable_post_processing,
-                             bool print_progress);
+                             const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
@@ -86,9 +97,10 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
                             bool write_triangle_uvs,
                             bool print_progress);
 
+// Currently enable_post_processing not used in ReadTriangleMeshFromOBJ.
 bool ReadTriangleMeshFromOBJ(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool print_progress);
+                             const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToOBJ(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
@@ -101,14 +113,12 @@ bool WriteTriangleMeshToOBJ(const std::string &filename,
 
 bool ReadTriangleMeshUsingASSIMP(const std::string &filename,
                                  geometry::TriangleMesh &mesh,
-                                 bool enable_post_processing,
-                                 bool print_progress);
+                                 const ReadTriangleMeshOptions &params);
 
 // Currently enable_post_processing not used in ReadTriangleMeshFromOFF.
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool enable_post_processing,
-                             bool print_progress);
+                             const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToOFF(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
@@ -119,9 +129,10 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool write_triangle_uvs,
                             bool print_progress);
 
+// Currently enable_post_processing not used in ReadTriangleMeshFromGLTF.
 bool ReadTriangleMeshFromGLTF(const std::string &filename,
                               geometry::TriangleMesh &mesh,
-                              bool print_progress);
+                              const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToGLTF(const std::string &filename,
                              const geometry::TriangleMesh &mesh,

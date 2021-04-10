@@ -45,7 +45,7 @@ FileGeometry ReadFileGeometryTypeOBJ(const std::string& path) {
 
 bool ReadTriangleMeshFromOBJ(const std::string& filename,
                              geometry::TriangleMesh& mesh,
-                             bool print_progress) {
+                             const ReadTriangleMeshOptions& /*={}*/) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;

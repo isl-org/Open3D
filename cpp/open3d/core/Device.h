@@ -99,8 +99,8 @@ protected:
     }
 
     static DeviceType StringToDeviceType(const std::string& type_colon_id) {
-        std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
+        std::vector<std::string> tokens =
+                utility::SplitString(type_colon_id, ":", true);
         if (tokens.size() == 2) {
             std::string device_name_lower = utility::ToLower(tokens[0]);
             if (device_name_lower == "cpu") {
@@ -116,8 +116,8 @@ protected:
     }
 
     static int StringToDeviceId(const std::string& type_colon_id) {
-        std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
+        std::vector<std::string> tokens =
+                utility::SplitString(type_colon_id, ":", true);
         if (tokens.size() == 2) {
             return std::stoi(tokens[1]);
         } else {

@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
@@ -292,6 +292,12 @@ public:
     /// to be scaled. Should be on the same device as the PointCloud
     /// \return Rotated pointcloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
+
+    /// \brief Downsamples a point cloud with a specified voxel size.
+    /// \param voxel_size Voxel size. A positive number.
+    PointCloud VoxelDownSample(double voxel_size,
+                               const core::HashmapBackend &backend =
+                                       core::HashmapBackend::Default) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }

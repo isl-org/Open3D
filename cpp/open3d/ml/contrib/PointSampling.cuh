@@ -4,22 +4,6 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-__global__ void gather_points_kernel(int b,
-                                     int c,
-                                     int n,
-                                     int m,
-                                     const float *__restrict__ points,
-                                     const int *__restrict__ idx,
-                                     float *__restrict__ out);
-
-__global__ void gather_points_grad_kernel(int b,
-                                          int c,
-                                          int n,
-                                          int m,
-                                          const float *__restrict__ grad_out,
-                                          const int *__restrict__ idx,
-                                          float *__restrict__ grad_points);
-
 static __device__ void __update(float *__restrict__ dists,
                                 int *__restrict__ dists_i,
                                 int idx1,

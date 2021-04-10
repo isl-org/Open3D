@@ -74,7 +74,8 @@ public:
     /// item, but will return false. Does not call the onValueChanged callback
     bool SetSelectedValue(const char* value);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 

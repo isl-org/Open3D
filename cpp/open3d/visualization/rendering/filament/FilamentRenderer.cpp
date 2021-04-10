@@ -192,10 +192,14 @@ void FilamentRenderer::BeginFrame() {
 
 void FilamentRenderer::Draw() {
     if (frame_started_) {
+        // Draw 3D scenes into textures
         for (const auto& pair : scenes_) {
             pair.second->Draw(*renderer_);
         }
 
+        // Draw the UI. This should come after the 3D scene(s), as SceneWidget
+        // will draw the textures as an image, and this way we will have the
+        // current frame's content from above.
         if (gui_scene_) {
             gui_scene_->Draw(*renderer_);
         }
@@ -320,6 +324,13 @@ TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
     return resource_mgr_.CreateTexture(request.path_.data(), srgb);
 }
 
+bool FilamentRenderer::UpdateTexture(
+        TextureHandle texture,
+        const std::shared_ptr<geometry::Image> image,
+        bool srgb) {
+    return resource_mgr_.UpdateTexture(texture, image, srgb);
+}
+
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
     resource_mgr_.Destroy(id);
 }
@@ -374,7 +385,7 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+        const std::shared_ptr<geometry::Image> image, bool srgb) {
     return resource_mgr_.CreateTexture(image, srgb);
 }
 

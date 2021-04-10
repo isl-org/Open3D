@@ -84,6 +84,25 @@ public:
                  z_in * extrinsic_[2][2] + extrinsic_[2][3];
     }
 
+    /// Transform a 3D coordinate in camera coordinate to world coordinate
+    OPEN3D_HOST_DEVICE void Rotate(float x_in,
+                                   float y_in,
+                                   float z_in,
+                                   float* x_out,
+                                   float* y_out,
+                                   float* z_out) const {
+        x_in *= scale_;
+        y_in *= scale_;
+        z_in *= scale_;
+
+        *x_out = x_in * extrinsic_[0][0] + y_in * extrinsic_[0][1] +
+                 z_in * extrinsic_[0][2];
+        *y_out = x_in * extrinsic_[1][0] + y_in * extrinsic_[1][1] +
+                 z_in * extrinsic_[1][2];
+        *z_out = x_in * extrinsic_[2][0] + y_in * extrinsic_[2][1] +
+                 z_in * extrinsic_[2][2];
+    }
+
     /// Project a 3D coordinate in camera coordinate to a 2D uv coordinate
     OPEN3D_HOST_DEVICE void Project(float x_in,
                                     float y_in,
@@ -166,6 +185,11 @@ public:
         for (int64_t i = active_dims_; i < n; ++i) {
             element_byte_size_ *= shape[i];
         }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
+        }
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
     }
 
@@ -181,6 +205,11 @@ public:
         active_dims_ = n;
         for (int64_t i = 0; i < active_dims_; ++i) {
             shape_[i] = shape[i];
+        }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
         }
 
         // Reserved
