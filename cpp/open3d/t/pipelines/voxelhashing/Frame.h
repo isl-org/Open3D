@@ -40,24 +40,19 @@ namespace voxelhashing {
 /// tensors, from depth map, vertex map, to color map, in a customized way.
 class Frame {
 public:
-    Frame(const core::Tensor& intrinsics) : intrinsics_(intrinsics) {}
+    Frame(const core::Tensor& intrinsics, const core::Device& device)
+        : intrinsics_(intrinsics), device_(device) {}
 
     void SetIntrinsics(const core::Tensor& intrinsics) {
         intrinsics_ = intrinsics;
     }
     core::Tensor GetIntrinsics() { return intrinsics_; }
 
-    void SetRGBD(const t::geometry::RGBDImage& rgbd) {
-        // TODO type conversion
-        SetData("color", rgbd.color_.AsTensor());
-        SetData("depth", rgbd.depth_.AsTensor());
-    }
-
     void SetData(const std::string& name, const core::Tensor& data) {
         if (data_.count(name) != 0) {
-            data_.at(name) = data;
+            data_.at(name) = data.To(device_);
         } else {
-            data_.emplace(name, data);
+            data_.emplace(name, data.To(device_));
         }
     }
     core::Tensor GetData(const std::string& name) {
@@ -67,9 +62,19 @@ public:
         return data_.at(name);
     }
 
+    // Convenient interface for images
+    void SetDataFromImage(const std::string& name,
+                          const t::geometry::Image& data) {
+        SetData(name, data.AsTensor());
+    }
+    t::geometry::Image GetDataAsImage(const std::string& name) {
+        return t::geometry::Image(GetData(name));
+    }
+
 private:
     // (3, 3) intrinsic matrix for a pinhole camera
     core::Tensor intrinsics_;
+    core::Device device_;
 
     // Maintained maps, including:
     // depth_map: (H, W, 1), Float32 AFTER preprocessing

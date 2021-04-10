@@ -149,8 +149,11 @@ int main(int argc, char** argv) {
                                             T_frame_to_model, device);
 
     // Initialize frame
-    t::pipelines::voxelhashing::Frame input_frame(intrinsic_t);
-    t::pipelines::voxelhashing::Frame raycast_frame(intrinsic_t);
+    t::pipelines::voxelhashing::Frame input_frame(intrinsic_t, device);
+    t::pipelines::voxelhashing::Frame raycast_frame(intrinsic_t, device);
+
+    core::Tensor identity =
+            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
 
     // Iterate over frames
     for (size_t i = 0; i < iterations; ++i) {
@@ -159,11 +162,8 @@ int main(int argc, char** argv) {
                 *t::io::CreateImageFromFile(depth_filenames[i]);
         t::geometry::Image input_color =
                 *t::io::CreateImageFromFile(color_filenames[i]);
-        input_frame.SetData("depth",
-                            input_depth.To(device)
-                                    .To(core::Dtype::Float32, false, 1.0)
-                                    .AsTensor());
-        input_frame.SetData("color", input_color.To(device).AsTensor());
+        input_frame.SetDataFromImage("depth", input_depth);
+        input_frame.SetDataFromImage("color", input_color);
 
         if (i > 0) {
             utility::LogInfo("Frame-to-model for the frame {}", i);
@@ -177,26 +177,21 @@ int main(int argc, char** argv) {
             Tensor delta_frame_to_model =
                     t::pipelines::odometry::RGBDOdometryMultiScale(
                             t::geometry::RGBDImage(
-                                    t::geometry::Image(
-                                            input_frame.GetData("color")),
-                                    t::geometry::Image(
-                                            input_frame.GetData("depth"))),
+                                    input_frame.GetDataAsImage("color"),
+                                    input_frame.GetDataAsImage("depth")),
                             t::geometry::RGBDImage(
                                     t::geometry::Image(),
-                                    t::geometry::Image(
-                                            raycast_frame.GetData("depth"))),
-                            raycast_frame.GetIntrinsics(),
-                            core::Tensor::Eye(4, core::Dtype::Float32,
-                                              core::Device("CPU:0")),
+                                    raycast_frame.GetDataAsImage("depth")),
+                            raycast_frame.GetIntrinsics(), identity,
                             depth_scale, depth_max, 0.07, {10, 0, 0},
                             t::pipelines::odometry::Method::PointToPlane);
             T_frame_to_model = T_frame_to_model.Matmul(delta_frame_to_model);
         }
 
-        model.voxel_grid_.Integrate(
-                t::geometry::Image(input_frame.GetData("depth")),
-                t::geometry::Image(input_frame.GetData("color")), intrinsic_t,
-                T_frame_to_model.Inverse(), depth_scale, depth_max);
+        model.voxel_grid_.Integrate(input_frame.GetDataAsImage("depth"),
+                                    input_frame.GetDataAsImage("color"),
+                                    intrinsic_t, T_frame_to_model.Inverse(),
+                                    depth_scale, depth_max);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
