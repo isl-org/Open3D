@@ -183,9 +183,8 @@ void pybind_registration_classes(py::module &m) {
                     "It is a pair of ``Int64`` ``C x 1`` tensor, where C is "
                     "the number of good correspondences between source and "
                     "target pointcloud. The first tensor is the source "
-                    "indices, "
-                    "and the second tensor is corresponding target indices. "
-                    "Such that, source[correspondence.first] and "
+                    "indices, and the second tensor is corresponding target "
+                    "indices. Such that, source[correspondence.first] and "
                     "target[correspondence.second] is a correspondence pair.")
             .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
                            "float: RMSE of all inlier correspondences. Lower "
