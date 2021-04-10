@@ -73,11 +73,8 @@ void pybind_registration_classes(py::module &m) {
     py::detail::bind_copy_functions<ICPConvergenceCriteria>(
             convergence_criteria);
     convergence_criteria
-            .def(py::init([](double fitness, double rmse, int itr) {
-                     return new ICPConvergenceCriteria(fitness, rmse, itr);
-                 }),
-                 "relative_fitness"_a = 1e-6, "relative_rmse"_a = 1e-6,
-                 "max_iteration"_a = 30)
+            .def(py::init<double, double, int>(), "relative_fitness"_a = 1e-6,
+                 "relative_rmse"_a = 1e-6, "max_iteration"_a = 30)
             .def_readwrite(
                     "relative_fitness",
                     &ICPConvergenceCriteria::relative_fitness_,
@@ -99,7 +96,7 @@ void pybind_registration_classes(py::module &m) {
                         c.max_iteration_);
             });
 
-    // open3d.t.registration.TransformationEstimation
+    // open3d.t.pipelines.registration.TransformationEstimation
     py::class_<TransformationEstimation,
                PyTransformationEstimation<TransformationEstimation>>
             te(m, "TransformationEstimation",
@@ -128,7 +125,7 @@ void pybind_registration_classes(py::module &m) {
              {"corres",
               "Correspondence set between source and target point cloud."}});
 
-    // open3d.t.registration.TransformationEstimationPointToPoint:
+    // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
     // TransformationEstimation
     py::class_<TransformationEstimationPointToPoint,
                PyTransformationEstimation<TransformationEstimationPointToPoint>,
@@ -146,7 +143,7 @@ void pybind_registration_classes(py::module &m) {
                      return std::string("TransformationEstimationPointToPoint");
                  });
 
-    // open3d.t.registration.TransformationEstimationPointToPlane:
+    // open3d.t.pipelines.registration.TransformationEstimationPointToPlane
     // TransformationEstimation
     py::class_<TransformationEstimationPointToPlane,
                PyTransformationEstimation<TransformationEstimationPointToPlane>,
@@ -167,7 +164,7 @@ void pybind_registration_classes(py::module &m) {
                      return std::string("TransformationEstimationPointToPlane");
                  });
 
-    // open3d.registration.RegistrationResult
+    // open3d.t.pipelines.registration.RegistrationResult
     py::class_<RegistrationResult> registration_result(
             m, "RegistrationResult",
             "Class that contains the registration results.");
@@ -182,8 +179,13 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite(
                     "correspondence_set",
                     &RegistrationResult::correspondence_set_,
-                    "pair of ``C x 1`` int tensor: Correspondence set between "
-                    "source and target point cloud.")
+                    "Correspondence set between source and target point cloud. "
+                    "It is a pair of ``Int64`` ``C x 1`` tensor, where C is "
+                    "the number of good correspondences between source and "
+                    "target pointcloud. The first tensor is the source "
+                    "indices, and the second tensor is corresponding target "
+                    "indices. Such that, source[correspondence.first] and "
+                    "target[correspondence.second] is a correspondence pair.")
             .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
                            "float: RMSE of all inlier correspondences. Lower "
                            "is better.")
@@ -214,10 +216,8 @@ static const std::unordered_map<std::string, std::string>
                  "List of Convergence criteria for multi-scale icp."},
                 {"estimation_method",
                  "Estimation method. One of "
-                 "(``"
-                 "TransformationEstimationPointToPoint``, "
-                 "``"
-                 "TransformationEstimationPointToPlane``)"},
+                 "(``TransformationEstimationPointToPoint``, "
+                 "``TransformationEstimationPointToPlane``)"},
                 {"init", "Initial transformation estimation"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},

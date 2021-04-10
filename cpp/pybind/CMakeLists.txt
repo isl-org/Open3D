@@ -97,8 +97,8 @@ set(PY_ALL_SOURCE_FILES
     t/geometry/image.cpp
     t/geometry/tensormap.cpp
     t/geometry/tsdf_voxelgrid.cpp
-    t/pipelines/registration/registration.cpp
     t/pipelines/pipelines.cpp
+    t/pipelines/registration/registration.cpp
     utility/console.cpp
     utility/eigen.cpp
     utility/utility.cpp

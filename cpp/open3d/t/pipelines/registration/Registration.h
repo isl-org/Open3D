@@ -105,6 +105,8 @@ public:
 public:
     /// The estimated transformation matrix.
     core::Tensor transformation_;
+    /// Correspondence Set. Refer to the definition in
+    /// `TransformationEstimation.h`.
     CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
