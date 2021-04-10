@@ -215,8 +215,10 @@ void pybind_class_io(py::module &m_io) {
                bool print_progress) {
                 py::gil_scoped_release release;
                 geometry::TriangleMesh mesh;
-                ReadTriangleMesh(filename, mesh, enable_post_processing,
-                                 print_progress);
+                ReadTriangleMeshOptions opt;
+                opt.enable_post_processing = enable_post_processing;
+                opt.print_progress = print_progress;
+                ReadTriangleMesh(filename, mesh, opt);
                 return mesh;
             },
             "Function to read TriangleMesh from file", "filename"_a,
@@ -249,7 +251,9 @@ void pybind_class_io(py::module &m_io) {
             [](const std::string &filename, bool print_progress) {
                 py::gil_scoped_release release;
                 visualization::rendering::TriangleMeshModel model;
-                ReadTriangleModel(filename, model, print_progress);
+                ReadTriangleModelOptions opt;
+                opt.print_progress = print_progress;
+                ReadTriangleModel(filename, model, opt);
                 return model;
             },
             "Function to read visualization.rendering.TriangleMeshModel from "

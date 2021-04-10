@@ -88,7 +88,8 @@ bool Widget::IsEnabled() const { return impl_->is_enabled_; }
 
 void Widget::SetEnabled(bool enabled) { impl_->is_enabled_ = enabled; }
 
-Size Widget::CalcPreferredSize(const Theme&) const {
+Size Widget::CalcPreferredSize(const Theme&,
+                               const Constraints& constraints) const {
     return Size(DIM_GROW, DIM_GROW);
 }
 

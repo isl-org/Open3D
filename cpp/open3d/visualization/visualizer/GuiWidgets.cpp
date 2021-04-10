@@ -33,9 +33,10 @@ namespace visualization {
 
 SmallButton::SmallButton(const char *title) : gui::Button(title) {}
 
-gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme) const {
+gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme,
+                                         const Constraints &constraints) const {
     auto em = theme.font_size;
-    auto size = Super::CalcPreferredSize(theme);
+    auto size = Super::CalcPreferredSize(theme, constraints);
     return gui::Size(size.width - em, int(std::round(1.2 * em)));
 }
 
