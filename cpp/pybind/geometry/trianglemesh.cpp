@@ -362,11 +362,7 @@ void pybind_trianglemesh(py::module &m) {
                         "front will be placed at (0, 0, 0), and default UV "
                         "map, maps the entire texture to each face.",
                         "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0,
-<<<<<<< HEAD
                         "create_uv_map"_a = false,
-=======
-                        "bool create_uv_map"_a = false,
->>>>>>> ae3e5c9cf8674b01aa17029222acd01e5f333e93
                         "map_texture_to_each_face"_a = false)
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Factory function to create a tetrahedron. The "
