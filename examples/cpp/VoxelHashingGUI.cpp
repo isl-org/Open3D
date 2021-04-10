@@ -104,8 +104,14 @@ public:
         panel_->AddChild(depth_image_);
 
         output_ = std::make_shared<gui::Label>("");
+
+        raycast_color_image_ = std::make_shared<gui::ImageWidget>();
+        raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
         output_panel_->AddChild(std::make_shared<gui::Label>("Output"));
         output_panel_->AddChild(output_);
+        output_panel_->AddStretch();
+        output_panel_->AddChild(raycast_color_image_);
+        output_panel_->AddChild(raycast_depth_image_);
 
         widget3d_->SetScene(
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
@@ -140,6 +146,8 @@ protected:
     std::shared_ptr<PropertyPanel> props_;
     std::shared_ptr<gui::ImageWidget> rgb_image_;
     std::shared_ptr<gui::ImageWidget> depth_image_;
+
+    std::shared_ptr<gui::ImageWidget> raycast_color_image_;
     std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
 
     void SetOutput(const std::string& output) {
@@ -215,8 +223,7 @@ private:
                                                 block_resolution, block_count,
                                                 T_frame_to_model, device);
 
-        bool is_initialized = false;
-        bool update_scene = false;
+        int update_count = 0;
         size_t idx = 0;
 
         while (!is_done_) {
@@ -232,8 +239,6 @@ private:
             if (idx > 0) {
                 utility::LogInfo("Frame-to-model for the frame {}", idx);
 
-                model.SynthesizeModelFrame(raycast_frame);
-
                 core::Tensor delta_frame_to_model = model.TrackFrameToModel(
                         input_frame, raycast_frame, depth_scale, depth_max,
                         depth_diff);
@@ -244,13 +249,14 @@ private:
             // Integrate
             model.UpdateFramePose(idx, T_frame_to_model);
             model.Integrate(input_frame, depth_scale, depth_max);
+            model.SynthesizeModelFrame(raycast_frame);
 
-            // Extract surface on demand
-            auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-                    model.ExtractPointCloud().ToLegacyPointCloud());
+            idx++;
+            is_done_ = (idx >= depth_files.size());
 
             std::stringstream out;
-            out << "Frame " << idx;
+            out << "Frame " << idx << "\n";
+            out << T_frame_to_model.ToString() << "\n";
 
             // TODO: update support for timages
             // image conversion
@@ -262,34 +268,55 @@ private:
                             .ToLegacyImage());
             auto depth8 = ConvertDepthToNormalizedGrey8(*depth);
 
-            idx++;
-            is_done_ = (idx >= depth_files.size());
+            auto raycast_color = std::make_shared<open3d::geometry::Image>(
+                    raycast_frame.GetDataAsImage("color")
+                            .To(core::Dtype::UInt8, false, 255.0f)
+                            .ToLegacyImage());
+            auto raycast_depth = std::make_shared<open3d::geometry::Image>(
+                    raycast_frame.GetDataAsImage("depth").ToLegacyImage());
+            auto raycast_depth8 = ConvertDepthToNormalizedGrey8(*raycast_depth);
+
+            // Extract surface on demand
+            bool update_scene = false;
+            std::shared_ptr<open3d::geometry::PointCloud> pcd;
+            if (idx % 50 == 49) {
+                update_scene = true;
+                ++update_count;
+                pcd = std::make_shared<open3d::geometry::PointCloud>(
+                        model.ExtractPointCloud().ToLegacyPointCloud());
+            }
 
             gui::Application::GetInstance().PostToMainThread(
-                    this, [this, color, depth8, pcd, is_initialized,
-                           update_scene, out = out.str()]() {
-                        this->widget3d_->GetScene()->RemoveGeometry("points");
-                        auto mat = rendering::Material();
-                        mat.shader = "defaultUnlit";
-                        this->widget3d_->GetScene()->AddGeometry(
-                                "points", pcd.get(), mat);
-
+                    this, [this, color, depth8, raycast_color, raycast_depth8,
+                           pcd, update_scene, update_count, out = out.str()]() {
                         this->SetOutput(out);
                         this->rgb_image_->UpdateImage(color);
                         this->depth_image_->UpdateImage(depth8);
 
-                        // if (!is_initialized) {
-                        auto bbox =
-                                this->widget3d_->GetScene()->GetBoundingBox();
-                        auto center = bbox.GetCenter().cast<float>();
-                        this->widget3d_->SetupCamera(60, bbox, center);
-                        this->widget3d_->LookAt(
-                                center, center - Eigen::Vector3f{0, 1, 3},
-                                {0.0f, -1.0f, 0.0f});
-                        //}
+                        this->raycast_color_image_->UpdateImage(raycast_color);
+                        this->raycast_depth_image_->UpdateImage(raycast_depth8);
+
+                        if (update_scene) {
+                            this->widget3d_->GetScene()->RemoveGeometry(
+                                    "points");
+                            auto mat = rendering::Material();
+                            mat.shader = "defaultUnlit";
+                            this->widget3d_->GetScene()->AddGeometry(
+                                    "points", pcd.get(), mat);
+
+                            if (update_count == 1) {
+                                auto bbox = this->widget3d_->GetScene()
+                                                    ->GetBoundingBox();
+                                auto center = bbox.GetCenter().cast<float>();
+                                this->widget3d_->SetupCamera(60, bbox, center);
+                                this->widget3d_->LookAt(
+                                        center,
+                                        center - Eigen::Vector3f{0, 1, 3},
+                                        {0.0f, -1.0f, 0.0f});
+                            }
+                        }
                     });
 
-            is_initialized = true;
             // std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
