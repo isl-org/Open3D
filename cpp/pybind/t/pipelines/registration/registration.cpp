@@ -135,9 +135,7 @@ void pybind_registration_classes(py::module &m) {
                    "distance.");
     py::detail::bind_copy_functions<TransformationEstimationPointToPoint>(
             te_p2p);
-    te_p2p.def(py::init([]() {
-              return new TransformationEstimationPointToPoint();
-          }))
+    te_p2p.def(py::init())
             .def("__repr__",
                  [](const TransformationEstimationPointToPoint &te) {
                      return std::string("TransformationEstimationPointToPoint");
@@ -156,9 +154,7 @@ void pybind_registration_classes(py::module &m) {
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
-    te_p2l.def(py::init([]() {
-              return new TransformationEstimationPointToPlane();
-          }))
+    te_p2l.def(py::init())
             .def("__repr__",
                  [](const TransformationEstimationPointToPlane &te) {
                      return std::string("TransformationEstimationPointToPlane");
