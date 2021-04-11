@@ -389,6 +389,11 @@ TextureHandle FilamentRenderer::AddTexture(
     return resource_mgr_.CreateTexture(image, srgb);
 }
 
+TextureHandle FilamentRenderer::AddTexture(const t::geometry::Image& image,
+                                           bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
+}
+
 // void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer*
 // render) {
 //    buffer_renderers_.erase(render);

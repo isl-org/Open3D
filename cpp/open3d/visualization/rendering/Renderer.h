@@ -31,6 +31,12 @@
 
 namespace open3d {
 
+namespace t {
+namespace geometry {
+class Image;
+}
+}  // namespace t
+
 namespace geometry {
 class Image;
 }
@@ -97,6 +103,8 @@ public:
     virtual TextureHandle AddTexture(
             const std::shared_ptr<geometry::Image> image,
             bool srgb = false) = 0;
+    virtual TextureHandle AddTexture(const t::geometry::Image& image,
+                                     bool srgb = false) = 0;
     virtual bool UpdateTexture(TextureHandle texture,
                                const std::shared_ptr<geometry::Image> image,
                                bool srgb) = 0;
