@@ -81,7 +81,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     console.log("WebVisualizerView.commsCall with api_url: ", api_url);
     console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
     var command_prefix =
-      "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_web_request_api(";
+      "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_http_request(";
     var command_suffix = "))";
     var command_args = '"' + api_url + '"';
     var command = command_prefix + command_args + command_suffix;

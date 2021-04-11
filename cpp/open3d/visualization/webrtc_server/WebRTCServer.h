@@ -89,13 +89,13 @@ public:
     /// data = {method: "POST", body: JSON.stringify(candidate)};
     /// fetch(this.srvurl + "/api/addIceCandidate?peerid=" + peerid, data);
     ///
-    /// Now with CallWebRequestAPI:
+    /// Now with CallHttpRequest:
     /// open3d.visualization.webrtc_server("/api/addIceCandidate",
     ///                                    "peerid=" + peerid,
     ///                                    JSON.stringify(data));
-    std::string CallWebRequestAPI(const std::string& entry_point,
-                                  const std::string& req_info_str = "",
-                                  const std::string& json_st = "") const;
+    std::string CallHttpRequest(const std::string& entry_point,
+                                const std::string& req_info_str = "",
+                                const std::string& json_st = "") const;
 
 private:
     WebRTCServer();
