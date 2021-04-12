@@ -297,7 +297,7 @@ var WebRtcStreamer = (function () {
     if (this.pc) {
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/hangup?peerid=" + this.pc.peerid,
-        this.useComms && false,
+        this.useComms && true,
         {},
         this.webVisualizer
       )
