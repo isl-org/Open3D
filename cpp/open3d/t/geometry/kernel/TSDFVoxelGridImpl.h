@@ -181,7 +181,8 @@ void ExtractSurfacePointsCPU
          core::Tensor& colors,
          int64_t resolution,
          float voxel_size,
-         float weight_threshold) {
+         float weight_threshold,
+         int& valid_size) {
     // Parameters
     int64_t resolution3 = resolution * resolution * resolution;
 
@@ -219,10 +220,14 @@ void ExtractSurfacePointsCPU
 
     // WARNING: UNSAFE!
     int max_count = 3000000;
-    points = core::Tensor({max_count, 3}, core::Dtype::Float32,
-                          block_values.GetDevice());
-    normals = core::Tensor({max_count, 3}, core::Dtype::Float32,
-                           block_values.GetDevice());
+    if (points.GetLength() == 0) {
+        points = core::Tensor({max_count, 3}, core::Dtype::Float32,
+                              block_values.GetDevice());
+    }
+    if (normals.GetLength() == 0) {
+        normals = core::Tensor({max_count, 3}, core::Dtype::Float32,
+                               block_values.GetDevice());
+    }
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer normal_indexer(normals, 1);
 
@@ -233,8 +238,13 @@ void ExtractSurfacePointsCPU
                 NDArrayIndexer color_indexer;
                 if (voxel_t::HasColor()) {
                     extract_color = true;
-                    colors = core::Tensor({max_count, 3}, core::Dtype::Float32,
-                                          block_values.GetDevice());
+                    if (colors.GetLength() == 0) {
+                        colors = core::Tensor({max_count, 3},
+                                              core::Dtype::Float32,
+                                              block_values.GetDevice());
+                    }
+                }
+                if (extract_color) {
                     color_indexer = NDArrayIndexer(colors, 1);
                 }
 
@@ -375,12 +385,8 @@ void ExtractSurfacePointsCPU
     int total_count = (*count_ptr).load();
 #endif
 
-    points = points.Slice(0, 0, total_count);
-    normals = normals.Slice(0, 0, total_count);
-    if (colors.GetLength() > 0) {
-        colors = colors.Slice(0, 0, total_count);
-    }
     utility::LogInfo("{} vertices extracted", total_count);
+    valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());

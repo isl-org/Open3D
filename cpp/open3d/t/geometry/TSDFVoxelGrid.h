@@ -120,6 +120,9 @@ public:
     /// observations.
     PointCloud ExtractSurfacePoints(float weight_threshold = 3.0f);
 
+    PointCloud ExtractSurfacePoints(PointCloud &pcd_buffer,
+                                    float weight_threshold = 3.0f);
+
     /// Extract mesh near iso-surfaces with Marching Cubes.
     /// Weight threshold is used to filter outliers. By default we use 3.0,
     /// where we assume a reliable surface point comes from the fusion of at

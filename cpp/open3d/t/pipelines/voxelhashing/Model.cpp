@@ -97,6 +97,11 @@ t::geometry::PointCloud Model::ExtractPointCloud(float weight_threshold) {
     return voxel_grid_.ExtractSurfacePoints(weight_threshold);
 }
 
+t::geometry::PointCloud Model::ExtractPointCloud(
+        t::geometry::PointCloud& pcd_buffer, float weight_threshold) {
+    return voxel_grid_.ExtractSurfacePoints(pcd_buffer, weight_threshold);
+}
+
 }  // namespace voxelhashing
 }  // namespace pipelines
 }  // namespace t

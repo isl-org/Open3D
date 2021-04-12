@@ -84,7 +84,8 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
                           core::Tensor& colors,
                           int64_t block_resolution,
                           float voxel_size,
-                          float weight_threshold);
+                          float weight_threshold,
+                          int& valid_size);
 
 void ExtractSurfaceMesh(const core::Tensor& block_indices,
                         const core::Tensor& inv_block_indices,
@@ -147,7 +148,8 @@ void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              core::Tensor& colors,
                              int64_t block_resolution,
                              float voxel_size,
-                             float weight_threshold);
+                             float weight_threshold,
+                             int& valid_size);
 
 void ExtractSurfaceMeshCPU(const core::Tensor& block_indices,
                            const core::Tensor& inv_block_indices,
@@ -211,7 +213,8 @@ void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
                               core::Tensor& colors,
                               int64_t block_resolution,
                               float voxel_size,
-                              float weight_threshold);
+                              float weight_threshold,
+                              int& valid_size);
 
 void ExtractSurfaceMeshCUDA(const core::Tensor& block_indices,
                             const core::Tensor& inv_block_indices,

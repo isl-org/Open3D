@@ -208,7 +208,7 @@ public:
     ExampleWindow(const std::string& dataset_path) {
         dataset_path_ = dataset_path;
         // TODO: AddIntNumber
-        props_->AddNumber("Surface update", &prop_values_.surface_interval, 1.0,
+        props_->AddNumber("Surface update", &prop_values_.surface_interval, 5.0,
                           1.0, 100.);
 
         props_->AddNumber("Depth scale", &prop_values_.depth_scale, 1000.0, 1.0,
@@ -294,7 +294,15 @@ private:
         // Odom
         auto traj = std::make_shared<geometry::LineSet>();
 
+        int max_points = 3000000;
         t::geometry::PointCloud pcd;
+        t::geometry::PointCloud pcd_buffer(
+                core::Tensor({max_points, 3}, core::Dtype::Float32, device));
+        pcd_buffer.SetPointColors(
+                core::Tensor({max_points, 3}, core::Dtype::Float32, device));
+        pcd_buffer.SetPointNormals(
+                core::Tensor({max_points, 3}, core::Dtype::Float32, device));
+
         while (!is_done_) {
             // Input
             t::geometry::Image input_depth =
@@ -362,14 +370,24 @@ private:
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
                 gui::Application::GetInstance().RunInThread([&]() {
-                    pcd = model.ExtractPointCloud();
+                    utility::Timer timer;
+                    timer.Start();
+                    pcd = model.ExtractPointCloud(pcd_buffer);
+                    timer.Stop();
+                    float extraction = timer.GetDuration();
+                    timer.Start();
+                    pcd = pcd.CPU();
+                    timer.Stop();
+                    float to_cpu = timer.GetDuration();
+                    utility::LogInfo("extration takes {}, to_cpu takes {}",
+                                     extraction, to_cpu);
                     is_scene_updated = true;
                 });
             }
 
             gui::Application::GetInstance().PostToMainThread(
                     this, [this, color, depth8, raycast_color, raycast_depth8,
-                           pcd, traj, frustum, &is_initialized,
+                           pcd, pcd_buffer, traj, frustum, &is_initialized,
                            &is_scene_updated, out = out.str()]() {
                         this->widget3d_->GetScene()->SetBackground(
                                 {0, 0, 0, 1});
@@ -404,27 +422,34 @@ private:
                         if (is_scene_updated) {
                             this->widget3d_->GetScene()
                                     ->GetScene()
-                                    ->RemoveGeometry("points");
+                                    ->UpdateGeometry(
+                                            "points", pcd,
+                                            rendering::Scene::
+                                                            kUpdatePointsFlag |
+                                                    rendering::Scene ::
+                                                            kUpdateColorsFlag |
+                                                    rendering::Scene ::
+                                                            kUpdateNormalsFlag);
+                            is_scene_updated = false;
+                        }
+                        if (!is_initialized) {
                             auto mat = rendering::Material();
                             mat.shader = "defaultUnlit";
-                            utility::LogInfo("main thread points = {}",
-                                             pcd.GetPoints().GetLength());
                             this->widget3d_->GetScene()
                                     ->GetScene()
-                                    ->AddGeometry("points", pcd, mat);
-                            is_scene_updated = false;
+                                    ->AddGeometry("points", pcd_buffer.CPU(),
+                                                  mat);
+                            is_initialized = true;
 
-                            auto bbox = this->widget3d_->GetScene()
-                                                ->GetBoundingBox();
+                            geometry::AxisAlignedBoundingBox bbox(
+                                    Eigen::Vector3d(-5, -5, -5),
+                                    Eigen::Vector3d(5, 5, 5));
                             auto center = bbox.GetCenter().cast<float>();
                             this->widget3d_->SetupCamera(60, bbox, center);
                             this->widget3d_->LookAt(
                                     center, center - Eigen::Vector3f{0, 1, 3},
                                     {0.0f, -1.0f, 0.0f});
                         }
-                        // if (!is_initialized) {
-                        // is_initialized = true;
-                        //}
                     });
         }
     }

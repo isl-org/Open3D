@@ -252,18 +252,47 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {
 
     // Extract points around zero-crossings.
     core::Tensor points, normals, colors;
+    int valid_size = 0;
     kernel::tsdf::ExtractSurfacePoints(
             active_addrs.To(core::Dtype::Int64),
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
             points, normals, colors, block_resolution_, voxel_size_,
-            weight_threshold);
-    auto pcd = PointCloud(points);
-    pcd.SetPointNormals(normals);
+            weight_threshold, valid_size);
+    auto pcd = PointCloud(points.Slice(0, 0, valid_size));
+    pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
     if (colors.NumElements() != 0) {
-        pcd.SetPointColors(colors);
+        pcd.SetPointColors(colors.Slice(0, 0, valid_size));
     }
 
+    return pcd;
+}
+
+PointCloud TSDFVoxelGrid::ExtractSurfacePoints(PointCloud &pcd_buffer,
+                                               float weight_threshold) {
+    // Extract active voxel blocks from the hashmap.
+    core::Tensor active_addrs;
+    block_hashmap_->GetActiveIndices(active_addrs);
+    core::Tensor active_nb_addrs, active_nb_masks;
+    std::tie(active_nb_addrs, active_nb_masks) =
+            BufferRadiusNeighbors(active_addrs);
+
+    // Extract points around zero-crossings.
+    core::Tensor points = pcd_buffer.GetPoints();
+    core::Tensor normals = pcd_buffer.GetPointNormals();
+    core::Tensor colors = pcd_buffer.GetPointColors();
+    int valid_size = 0;
+    kernel::tsdf::ExtractSurfacePoints(
+            active_addrs.To(core::Dtype::Int64),
+            active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
+            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
+            points, normals, colors, block_resolution_, voxel_size_,
+            weight_threshold, valid_size);
+    auto pcd = PointCloud(points.Slice(0, 0, valid_size));
+    pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
+    if (colors.NumElements() != 0) {
+        pcd.SetPointColors(colors.Slice(0, 0, valid_size));
+    }
     return pcd;
 }
 
