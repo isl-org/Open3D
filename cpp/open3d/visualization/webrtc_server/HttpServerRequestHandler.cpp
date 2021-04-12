@@ -37,6 +37,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "open3d/utility/Console.h"
+
 namespace open3d {
 namespace visualization {
 namespace webrtc_server {
@@ -63,6 +65,18 @@ public:
         const struct mg_request_info *req_info = mg_get_request_info(conn);
 
         std::cout << "uri:" << req_info->request_uri << std::endl;
+        utility::LogInfoConsole("RequestHandler ##########################");
+        utility::LogInfoConsole("request_uri: {}", req_info->request_uri);
+        utility::LogInfoConsole("local_uri: {}", req_info->local_uri);
+        utility::LogInfoConsole("request_method: {}", req_info->request_method);
+        if (req_info->query_string) {
+            utility::LogInfoConsole("query_string: {}", req_info->query_string);
+        } else {
+            utility::LogInfoConsole("query_string: {}", "nullptr");
+        }
+        // utility::LogInfoConsole("remote_addr: {}", req_info->remote_addr);
+        utility::LogInfoConsole("content_length: {}", req_info->content_length);
+        utility::LogInfoConsole("#########################################");
 
         // Read input.
         Json::Value in = this->getInputMessage(req_info, conn);
