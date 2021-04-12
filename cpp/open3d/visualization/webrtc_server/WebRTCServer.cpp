@@ -261,8 +261,8 @@ void WebRTCServer::Run() {
 }
 
 std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
-                                          const std::string& req_info_str,
-                                          const std::string& json_str) const {
+                                          const std::string& query_string,
+                                          const std::string& data) const {
     std::string result = "";
     if (entry_point == "/api/getMediaList") {
         result = utility::JsonToString(
@@ -275,7 +275,7 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
     utility::LogInfoConsole(
             "///////////////////// WebRTCServer::CallHttpRequest({}, {}, {}) "
             "==> \n{}",
-            entry_point, req_info_str, json_str, result);
+            entry_point, query_string, data, result);
     return result;
 }
 

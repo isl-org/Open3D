@@ -93,9 +93,13 @@ public:
     /// open3d.visualization.webrtc_server("/api/addIceCandidate",
     ///                                    "peerid=" + peerid,
     ///                                    JSON.stringify(data));
+    ///
+    /// \param entry_point URL part before '?'.
+    /// \param query_string URL part after '?', not including '?', or "".
+    /// \param data JSON-encoded string.
     std::string CallHttpRequest(const std::string& entry_point,
-                                const std::string& req_info_str = "",
-                                const std::string& json_st = "") const;
+                                const std::string& query_string = "",
+                                const std::string& data = "") const;
 
 private:
     WebRTCServer();
