@@ -240,8 +240,8 @@ void pybind_registration_methods(py::module &m) {
 }
 
 void pybind_registration(py::module &m) {
-    py::module m_submodule =
-            m.def_submodule("registration", "Registration pipeline.");
+    py::module m_submodule = m.def_submodule(
+            "registration", "Tensor-based registration pipeline.");
     pybind_registration_classes(m_submodule);
     pybind_registration_methods(m_submodule);
 }

@@ -34,7 +34,8 @@ namespace t {
 namespace pipelines {
 
 void pybind_pipelines(py::module& m) {
-    py::module m_pipelines = m.def_submodule("pipelines");
+    py::module m_pipelines = m.def_submodule(
+            "pipelines", "Tensor-based geometry processing pipeline modules.");
     registration::pybind_registration(m_pipelines);
 }
 
