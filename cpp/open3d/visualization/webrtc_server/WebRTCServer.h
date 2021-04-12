@@ -102,6 +102,11 @@ public:
                                 const std::string& query_string = "",
                                 const std::string& data = "") const;
 
+    /// Sets WebRTCWindowSystem as the default window system in Application.
+    /// This enables a global WebRTC server and each gui::Window will be
+    /// rendered to a WebRTC video stream.
+    void EnableWebRTC();
+
     /// HTTP handshake server is enabled by default. Call DisableHttpServer() to
     /// disable the HTTP server. This must be called before WebRTCServer::Run(),
     /// i.e. before WebRTCWindowSystem::StartWebRTCServer() or

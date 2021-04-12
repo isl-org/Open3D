@@ -56,6 +56,7 @@
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
 namespace open3d {
 namespace visualization {
@@ -345,6 +346,12 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
             "///////////////////////////////////////////////////");
 
     return result;
+}
+
+void WebRTCServer::EnableWebRTC() {
+    utility::LogInfo("WebRTC GUI backend enabled.");
+    gui::Application::GetInstance().SetWindowSystem(
+            webrtc_server::WebRTCWindowSystem::GetInstance());
 }
 
 void WebRTCServer::DisableHttpHandshake() {

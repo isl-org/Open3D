@@ -183,7 +183,6 @@ PeerConnectionManager::PeerConnectionManager(
         utility::LogInfo("/api/call in data ////////////////////////////////");
         utility::LogInfo("{}", utility::JsonToString(in));
         utility::LogInfo("//////////////////////////////////////////////////");
-        utility::LogError("Stop");
         return this->Call(peerid, url, options, in);
     };
 

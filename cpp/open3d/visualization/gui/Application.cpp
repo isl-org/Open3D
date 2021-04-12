@@ -415,16 +415,6 @@ void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
     impl_->is_ws_initialized_ = false;
 }
 
-#ifdef BUILD_WEBRTC
-void Application::EnableWebRTC() {
-    // TODO: WebRTCWindowSystem should be a global singleton. Consider returning
-    // a shared pointer with singleton, to keep everything constant.
-    // https://stackoverflow.com/a/33380514/1255535.
-    utility::LogInfo("WebRTC GUI backend enabled.");
-    SetWindowSystem(webrtc_server::WebRTCWindowSystem::GetInstance());
-}
-#endif
-
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {
     auto font_path = FindFontPath(font);
     if (font_path.empty()) {

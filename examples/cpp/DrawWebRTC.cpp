@@ -29,6 +29,9 @@
 #include "open3d/Open3D.h"
 #include "open3d/utility/FileSystem.h"
 
+// TODO: edit Open3D.h.in
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
+
 using namespace open3d;
 
 // TODO: remove hard-coded path.
@@ -132,7 +135,7 @@ int main(int argc, char **argv) {
                 "test_dir: {}",
                 TEST_DIR);
     }
-    visualization::gui::Application::GetInstance().EnableWebRTC();
+    visualization::webrtc_server::WebRTCServer::GetInstance().EnableWebRTC();
 
     EmptyBox();
     BoxWithOjects();
