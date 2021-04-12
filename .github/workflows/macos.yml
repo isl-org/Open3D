@@ -58,9 +58,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
+      # Temporary fix for brew
+      # https://github.com/Homebrew/discussions/discussions/1248#discussioncomment-595112
       - name: Install dependencies
         run: |
-          brew install ccache
+          HOMEBREW_DEVELOPER=1 brew update
+          HOMEBREW_BOTTLE_DOMAIN=https://ghcr.io/v2/Homebrew/core brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -119,10 +122,13 @@ jobs:
         with:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
+      # Temporary fix for brew
+      # https://github.com/Homebrew/discussions/discussions/1248#discussioncomment-595112
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          brew install ccache
+          HOMEBREW_DEVELOPER=1 brew update
+          HOMEBREW_BOTTLE_DOMAIN=https://ghcr.io/v2/Homebrew/core brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
