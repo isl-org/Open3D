@@ -176,7 +176,7 @@ void pybind_registration_classes(py::module &m) {
                     "correspondence_set",
                     &RegistrationResult::correspondence_set_,
                     "Correspondence set between source and target point cloud. "
-                    "It is a pair of ``Int64`` ``C x 1`` tensor, where C is "
+                    "It is a pair of ``Int64`` ``{C,}`` tensor, where C is "
                     "the number of good correspondences between source and "
                     "target pointcloud. The first tensor is the source "
                     "indices, and the second tensor is corresponding target "

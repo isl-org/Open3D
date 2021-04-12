@@ -263,6 +263,39 @@ RegistrationResult RegistrationMultiScaleICP(
     return result;
 }
 
+std::vector<Eigen::Vector2i> ToLegacyCorrespondenceSet(
+        const CorrespondenceSet &tensor_correspondence_set) {
+    int64_t num_correspondence = tensor_correspondence_set.first.GetLength();
+    std::vector<Eigen::Vector2i> legacy_correspondence_set(num_correspondence);
+
+    if (tensor_correspondence_set.first.GetShape() !=
+        tensor_correspondence_set.first.GetShape()) {
+        utility::LogError(
+                " ToLegacyCorrespondenceSet: The Tensor CorrespodenceSet must "
+                "be a pair of {C,} tensor, where C is the number of "
+                "correspondences between the source and the target pointcloud. "
+                "But got source indices in shape {}, and corresponding target "
+                "correspondences in shape {}.",
+                tensor_correspondence_set.first.GetShape().ToString(),
+                tensor_correspondence_set.second.GetShape().ToString());
+    }
+
+    const core::Tensor source_idx_device =
+            tensor_correspondence_set.first.To(core::Device("CPU:0"), false);
+    const int64_t *source_idx_ptr = source_idx_device.GetDataPtr<int64_t>();
+    const core::Tensor target_idx_device =
+            tensor_correspondence_set.second.To(core::Device("CPU:0"), false);
+    const int64_t *target_idx_ptr = target_idx_device.GetDataPtr<int64_t>();
+
+#pragma omp parallel for schedule(static)
+    for (int64_t idx = 0; idx < num_correspondence; idx++) {
+        legacy_correspondence_set[idx] =
+                Eigen::Vector2i(source_idx_ptr[idx], target_idx_ptr[idx]);
+    }
+
+    return legacy_correspondence_set;
+}
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t
