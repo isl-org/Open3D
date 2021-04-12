@@ -64,7 +64,7 @@ public:
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
-        std::tie(source_, target_) = LoadTensorPointClouds();
+        pointclouds_device_ = LoadTensorPointClouds();
 
         transformation_ =
                 core::Tensor(initial_transform_flat, {4, 4}, dtype_, host_);
@@ -73,7 +73,7 @@ public:
         std::vector<ICPConvergenceCriteria> warm_up_criteria = {
                 ICPConvergenceCriteria(0.01, 0.01, 1)};
         result_ = RegistrationMultiScaleICP(
-                source_.To(device_), target_.To(device_), {1.0},
+                pointclouds_device_[0].To(device_), pointclouds_device_[0].To(device_), {1.0},
                 warm_up_criteria, {1.5}, core::Tensor::Eye(4, dtype_, device_),
                 *estimation_);
 
@@ -117,10 +117,13 @@ private:
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             lsource_ = std::make_shared<geometry::PointCloud>();
-            *lsource_ = source_.ToLegacyPointCloud();
+            
+            auto pcd = pointclouds_device_[0].Clone();
+            *lsource_ = pcd.ToLegacyPointCloud();
             // io::ReadPointCloud(path_source_, *lsource_);
             ltarget_ = std::make_shared<geometry::PointCloud>();
-            *ltarget_ = target_.ToLegacyPointCloud();
+            auto pcd2 = pointclouds_device_[1].Clone();
+            *ltarget_ = pcd2.ToLegacyPointCloud();
             // io::ReadPointCloud(path_target_, *ltarget_);
             bounds = lsource_->GetAxisAlignedBoundingBox();
             extent = bounds.GetExtent();
@@ -146,9 +149,9 @@ private:
         //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // source_ and target_ are tensor pointcloud on host.
-        auto transformation_device = transformation_.To(device_);
-        auto source_device = source_.To(device_);
-        auto target_device = target_.To(device_);
+        auto transformation_device = transformation_.To(device_, true);
+        auto source_device = pointclouds_device_[0].To(device_, true);
+        auto target_device = pointclouds_device_[1].To(device_, true);
 
         utility::Timer time_icp;
 
@@ -212,13 +215,12 @@ private:
                 source_down_pyramid[i].Transform(update);
 
                 auto temp =
-                        source_device.Clone().Transform(transformation_device);
+                        source_device.Transform(transformation_device).Clone();
 
                 // UPDATE VISUALIZATION!
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     *lsource_ = temp.ToLegacyPointCloud();
-                    lsource_->PaintUniformColor({0.0, 0.0, 1.0});
                 }
 
                 if (!main_vis_) {  // might have changed while sleeping
@@ -275,10 +277,11 @@ private:
                 auto name = line.substr(0, delimiterPos);
                 auto value = line.substr(delimiterPos + 1);
 
-                if (name == "source_path") {
-                    path_source_ = value;
-                } else if (name == "target_path") {
-                    path_target_ = value;
+                if (name == "dataset_path") {
+                    path_dataset_ = value;
+                } else if (name == "end_range") {
+                    std::istringstream is(value);
+                    end_range_ = std::stoi(value);
                 } else if (name == "registration_method") {
                     registration_method_ = value;
                 } else if (name == "criteria.relative_fitness") {
@@ -299,24 +302,25 @@ private:
                 } else if (name == "verbosity") {
                     std::istringstream is(value);
                     verb = value;
+                // } else if (name == "ground_truth_tx") {
+                //     std::istringstream is(value);
+                //     gt_tx_ = std::stod(value);
+                // } else if (name == "ground_truth_ty") {
+                //     std::istringstream is(value);
+                //     gt_ty_ = std::stod(value);
                 }
             }
         } else {
             std::cerr << "Couldn't open config file for reading.\n";
         }
 
-        utility::LogInfo(" Source path: {}", path_source_);
-        utility::LogInfo(" Target path: {}", path_target_);
-        utility::LogInfo(" Registrtion method: {}", registration_method_);
-        std::cout << std::endl;
-
-        std::cout << " Initial Transformation Guess: " << std::endl;
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                std::cout << " " << initial_transform_flat[i * 4 + j];
-            }
-            std::cout << std::endl;
+        utility::LogInfo(" Dataset path: {}", path_dataset_);
+        if (end_range_ > 500) {
+            utility::LogWarning(" Too large range. Memory might exceed.");
         }
+        utility::LogInfo(" Range: 0 to {} pointcloud files in sequence.",
+                         end_range_ - 1);
+        utility::LogInfo(" Registrtion method: {}", registration_method_);
         std::cout << std::endl;
 
         std::cout << " Voxel Sizes: ";
@@ -378,42 +382,61 @@ private:
 
     // To perform required dtype conversion, normal estimation and device
     // transfer.
-    std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
-    LoadTensorPointClouds() {
-        t::geometry::PointCloud source(host_), target(host_);
+    // To perform required dtype conversion, normal estimation and device
+    // transfer.
+    std::vector<t::geometry::PointCloud> LoadTensorPointClouds() {
+        for (int i = 0; i < end_range_; i++) {
+            filenames_.push_back(path_dataset_ + std::to_string(i) +
+                                 std::string(".pcd"));
+        }
 
-        // t::io::ReadPointCloud copies the pointcloud to CPU.
-        t::io::ReadPointCloud(path_source_, source,
-                              {"auto", false, false, true});
-        t::io::ReadPointCloud(path_target_, target,
-                              {"auto", false, false, true});
+        std::vector<t::geometry::PointCloud> pointclouds_device(
+                filenames_.size());
 
-        // Currently only Float32 pointcloud is supported.
-        for (std::string attr : {"points", "colors", "normals"}) {
-            if (source.HasPointAttr(attr)) {
-                source.SetPointAttr(attr, source.GetPointAttr(attr).To(dtype_));
+        try {
+            int i = 0;
+            t::geometry::PointCloud pointcloud_local;
+            for (auto& path : filenames_) {
+                t::io::ReadPointCloud(path, pointcloud_local,
+                                      {"auto", false, false, true});
+                // Device transfer.
+                pointcloud_local = pointcloud_local.To(device_);
+                // Dtype conversion to Float32. Currently only Float32
+                // pointcloud is supported.
+                for (std::string attr : {"points", "colors", "normals"}) {
+                    if (pointcloud_local.HasPointAttr(attr)) {
+                        pointcloud_local.SetPointAttr(
+                                attr,
+                                pointcloud_local.GetPointAttr(attr).To(dtype_, true));
+                    }
+                }
+                // Normal Estimation. Currenly Normal Estimation is not
+                // supported by Tensor Pointcloud.
+                if (registration_method_ == "PointToPoint" &&
+                    !pointcloud_local.HasPointNormals()) {
+                    auto pointcloud_legacy =
+                            pointcloud_local.ToLegacyPointCloud();
+                    pointcloud_legacy.EstimateNormals(
+                            open3d::geometry::KDTreeSearchParamKNN(), false);
+                    core::Tensor pointcloud_normals =
+                            t::geometry::PointCloud::FromLegacyPointCloud(
+                                    pointcloud_legacy)
+                                    .GetPointNormals()
+                                    .To(device_, dtype_, true);
+                    pointcloud_local.SetPointNormals(pointcloud_normals);
+                }
+                // Adding it to our vector of pointclouds.
+                pointclouds_device[i++] = pointcloud_local.Clone();
             }
+        } catch (...) {
+            utility::LogError(
+                    " Failed to read pointcloud in sequence. Ensure pointcloud "
+                    "files are present in the given dataset path in continuous "
+                    "sequence from 0 to {}. Also, in case of large range, the "
+                    "system might be going out-of-memory. ",
+                    end_range_);
         }
-
-        for (std::string attr : {"points", "colors", "normals"}) {
-            if (target.HasPointAttr(attr)) {
-                target.SetPointAttr(attr, target.GetPointAttr(attr).To(dtype_));
-            }
-        }
-
-        if (registration_method_ == "PointToPlane" &&
-            !target.HasPointNormals()) {
-            auto target_legacy = target.ToLegacyPointCloud();
-            target_legacy.EstimateNormals(geometry::KDTreeSearchParamKNN(),
-                                          false);
-            core::Tensor target_normals =
-                    t::geometry::PointCloud::FromLegacyPointCloud(target_legacy)
-                            .GetPointNormals()
-                            .To(device_, dtype_);
-            target.SetPointNormals(target_normals);
-        }
-
-        return std::make_tuple(source, target);
+        return pointclouds_device;
     }
 
     RegistrationResult GetRegistrationResultAndCorrespondences(
@@ -482,6 +505,7 @@ private:
     gui::Point snapshot_pos_;
 
 private:
+    std::vector<open3d::t::geometry::PointCloud> pointclouds_device_;
     t::geometry::PointCloud source_;
     t::geometry::PointCloud target_;
 
@@ -493,8 +517,12 @@ private:
 private:
     std::string path_source_;
     std::string path_target_;
+    std::string path_dataset_;
     std::string registration_method_;
     utility::VerbosityLevel verbosity_;
+    std::vector<std::string> filenames_;
+    int end_range_;
+    bool visualize_output_;
 
 private:
     std::vector<double> voxel_sizes_;
