@@ -281,12 +281,14 @@ private:
                                                 block_resolution, block_count,
                                                 T_frame_to_model, device);
 
+        bool update_scene = false;
         int update_count = 0;
         size_t idx = 0;
 
         // Odom
         auto traj = std::make_shared<geometry::LineSet>();
 
+        std::shared_ptr<open3d::geometry::PointCloud> pcd;
         while (!is_done_) {
             // Input
             t::geometry::Image input_depth =
@@ -351,18 +353,24 @@ private:
             auto raycast_depth8 = ConvertDepthToNormalizedGrey8(*raycast_depth);
 
             // Extract surface on demand
-            bool update_scene = false;
-            std::shared_ptr<open3d::geometry::PointCloud> pcd;
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0) {
-                update_scene = true;
-                ++update_count;
-                pcd = std::make_shared<open3d::geometry::PointCloud>(
-                        model.ExtractPointCloud().ToLegacyPointCloud());
+                gui::Application::GetInstance().RunInThread([&]() {
+                    pcd = std::make_shared<open3d::geometry::PointCloud>(
+                            model.ExtractPointCloud().ToLegacyPointCloud());
+                    update_scene = true;
+                    ++update_count;
+
+                    this->widget3d_->GetScene()->RemoveGeometry("points");
+                    auto mat = rendering::Material();
+                    mat.shader = "defaultUnlit";
+                    this->widget3d_->GetScene()->AddGeometry("points",
+                                                             pcd.get(), mat);
+                });
             }
 
             gui::Application::GetInstance().PostToMainThread(
                     this, [this, color, depth8, raycast_color, raycast_depth8,
-                           pcd, traj, frustum, update_scene, update_count,
+                           pcd, traj, frustum, &update_scene, update_count,
                            out = out.str()]() {
                         this->SetOutput(out);
                         this->rgb_image_->UpdateImage(color);
@@ -383,18 +391,13 @@ private:
                                     "trajectory");
                             auto mat = rendering::Material();
                             mat.shader = "unlitLine";
-                            mat.line_width = 5.0f;
+                            mat.line_width = 2.0f;
                             this->widget3d_->GetScene()->AddGeometry(
                                     "trajectory", traj.get(), mat);
                         }
 
                         if (update_scene) {
-                            this->widget3d_->GetScene()->RemoveGeometry(
-                                    "points");
-                            auto mat = rendering::Material();
-                            mat.shader = "defaultUnlit";
-                            this->widget3d_->GetScene()->AddGeometry(
-                                    "points", pcd.get(), mat);
+                            update_scene = false;
 
                             if (update_count == 1) {
                                 auto bbox = this->widget3d_->GetScene()
@@ -412,8 +415,8 @@ private:
     }
 
     // The renderer can only use 8-bit channels currently. Also, we need to
-    // convert to RGB because the renderer will display one-channel images in
-    // red. Normalize because otherwise it can be hard to see the image.
+    // convert to RGB because the renderer will display one-channel images
+    // in red. Normalize because otherwise it can be hard to see the image.
     std::shared_ptr<geometry::Image> ConvertDepthToNormalizedGrey8(
             const geometry::Image& depth) {
         float* data = depth.PointerAs<float>();

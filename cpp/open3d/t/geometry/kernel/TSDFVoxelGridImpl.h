@@ -217,80 +217,14 @@ void ExtractSurfacePointsCPU
     core::kernel::CPULauncher launcher;
 #endif
 
-    // This pass determines valid number of points.
-    DISPATCH_BYTESIZE_TO_VOXEL(
-            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
-                    auto GetVoxelAt = [&] OPEN3D_DEVICE(
-                                              int xo, int yo, int zo,
-                                              int curr_block_idx) -> voxel_t* {
-                        return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx,
-                                static_cast<int>(resolution),
-                                nb_block_masks_indexer,
-                                nb_block_indices_indexer,
-                                voxel_block_buffer_indexer);
-                    };
-
-                    // Natural index (0, N) -> (block_idx, voxel_idx)
-                    int64_t workload_block_idx = workload_idx / resolution3;
-                    int64_t block_idx = indices_ptr[workload_block_idx];
-                    int64_t voxel_idx = workload_idx % resolution3;
-
-                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-                    int64_t xv, yv, zv;
-                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
-
-                    voxel_t* voxel_ptr = voxel_block_buffer_indexer
-                                                 .GetDataPtrFromCoord<voxel_t>(
-                                                         xv, yv, zv, block_idx);
-                    float tsdf_o = voxel_ptr->GetTSDF();
-                    float weight_o = voxel_ptr->GetWeight();
-                    if (weight_o <= weight_threshold) return;
-
-                    // Enumerate x-y-z directions
-                    for (int i = 0; i < 3; ++i) {
-                        voxel_t* ptr = GetVoxelAt(
-                                static_cast<int>(xv) + (i == 0),
-                                static_cast<int>(yv) + (i == 1),
-                                static_cast<int>(zv) + (i == 2),
-                                static_cast<int>(workload_block_idx));
-                        if (ptr == nullptr) continue;
-
-                        float tsdf_i = ptr->GetTSDF();
-                        float weight_i = ptr->GetWeight();
-
-                        if (weight_i > weight_threshold &&
-                            tsdf_i * tsdf_o < 0) {
-                            OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                        }
-                    }
-                });
-            });
-
-#if defined(__CUDACC__)
-    int total_count = count.Item<int>();
-#else
-    int total_count = (*count_ptr).load();
-#endif
-    utility::LogInfo("Total point count = {}", total_count);
-
-    points = core::Tensor({total_count, 3}, core::Dtype::Float32,
+    // WARNING: UNSAFE!
+    int max_count = 3000000;
+    points = core::Tensor({max_count, 3}, core::Dtype::Float32,
                           block_values.GetDevice());
-    normals = core::Tensor({total_count, 3}, core::Dtype::Float32,
+    normals = core::Tensor({max_count, 3}, core::Dtype::Float32,
                            block_values.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer normal_indexer(normals, 1);
-
-    // Reset count
-#if defined(__CUDACC__)
-    count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
-                         block_values.GetDevice());
-    count_ptr = count.GetDataPtr<int>();
-#else
-    (*count_ptr) = 0;
-#endif
 
     // This pass extracts exact surface points.
     DISPATCH_BYTESIZE_TO_VOXEL(
@@ -299,9 +233,8 @@ void ExtractSurfacePointsCPU
                 NDArrayIndexer color_indexer;
                 if (voxel_t::HasColor()) {
                     extract_color = true;
-                    colors =
-                            core::Tensor({total_count, 3}, core::Dtype::Float32,
-                                         block_values.GetDevice());
+                    colors = core::Tensor({max_count, 3}, core::Dtype::Float32,
+                                          block_values.GetDevice());
                     color_indexer = NDArrayIndexer(colors, 1);
                 }
 
@@ -436,6 +369,19 @@ void ExtractSurfacePointsCPU
                     }
                 });
             });
+#if defined(__CUDACC__)
+    int total_count = count.Item<int>();
+#else
+    int total_count = (*count_ptr).load();
+#endif
+
+    points = points.Slice(0, 0, total_count);
+    normals = normals.Slice(0, 0, total_count);
+    if (colors.GetLength() > 0) {
+        colors = colors.Slice(0, 0, total_count);
+    }
+    utility::LogInfo("{} vertices extracted", total_count);
+
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
