@@ -260,7 +260,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {
             points, normals, colors, block_resolution_, voxel_size_,
             weight_threshold, valid_size);
     auto pcd = PointCloud(points.Slice(0, 0, valid_size));
-    pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
+    // pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
     if (colors.NumElements() != 0) {
         pcd.SetPointColors(colors.Slice(0, 0, valid_size));
     }
@@ -279,7 +279,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(PointCloud &pcd_buffer,
 
     // Extract points around zero-crossings.
     core::Tensor points = pcd_buffer.GetPoints();
-    core::Tensor normals = pcd_buffer.GetPointNormals();
+    core::Tensor normals;  // = pcd_buffer.GetPointNormals();
     core::Tensor colors = pcd_buffer.GetPointColors();
     int valid_size = 0;
     kernel::tsdf::ExtractSurfacePoints(
@@ -289,7 +289,6 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(PointCloud &pcd_buffer,
             points, normals, colors, block_resolution_, voxel_size_,
             weight_threshold, valid_size);
     auto pcd = PointCloud(points.Slice(0, 0, valid_size));
-    pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
     if (colors.NumElements() != 0) {
         pcd.SetPointColors(colors.Slice(0, 0, valid_size));
     }

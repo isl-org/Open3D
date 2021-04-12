@@ -294,14 +294,7 @@ private:
         // Odom
         auto traj = std::make_shared<geometry::LineSet>();
 
-        int max_points = 3000000;
         t::geometry::PointCloud pcd;
-        t::geometry::PointCloud pcd_buffer(
-                core::Tensor({max_points, 3}, core::Dtype::Float32, device));
-        pcd_buffer.SetPointColors(
-                core::Tensor({max_points, 3}, core::Dtype::Float32, device));
-        pcd_buffer.SetPointNormals(
-                core::Tensor({max_points, 3}, core::Dtype::Float32, device));
 
         while (!is_done_) {
             // Input
@@ -372,7 +365,7 @@ private:
                 gui::Application::GetInstance().RunInThread([&]() {
                     utility::Timer timer;
                     timer.Start();
-                    pcd = model.ExtractPointCloud(pcd_buffer);
+                    pcd = model.ExtractPointCloud();
                     timer.Stop();
                     float extraction = timer.GetDuration();
                     timer.Start();
@@ -387,7 +380,7 @@ private:
 
             gui::Application::GetInstance().PostToMainThread(
                     this, [this, color, depth8, raycast_color, raycast_depth8,
-                           pcd, pcd_buffer, traj, frustum, &is_initialized,
+                           pcd, traj, frustum, &is_initialized,
                            &is_scene_updated, out = out.str()]() {
                         this->widget3d_->GetScene()->SetBackground(
                                 {0, 0, 0, 1});
@@ -420,6 +413,8 @@ private:
                         }
 
                         if (is_scene_updated) {
+                            utility::Timer timer;
+                            timer.Start();
                             this->widget3d_->GetScene()
                                     ->GetScene()
                                     ->UpdateGeometry(
@@ -427,17 +422,27 @@ private:
                                             rendering::Scene::
                                                             kUpdatePointsFlag |
                                                     rendering::Scene ::
-                                                            kUpdateColorsFlag |
-                                                    rendering::Scene ::
-                                                            kUpdateNormalsFlag);
+                                                            kUpdateColorsFlag);
+                            timer.Stop();
+                            utility::LogInfo("Update geometry takes {}",
+                                             timer.GetDuration());
                             is_scene_updated = false;
                         }
                         if (!is_initialized) {
+                            int max_points = 3000000;
+                            t::geometry::PointCloud pcd_placeholder(
+                                    core::Tensor({max_points, 3},
+                                                 core::Dtype::Float32,
+                                                 core::Device("CPU:0")));
+                            pcd_placeholder.SetPointColors(core::Tensor(
+                                    {max_points, 3}, core::Dtype::Float32,
+                                    core::Device("CPU:0")));
+
                             auto mat = rendering::Material();
                             mat.shader = "defaultUnlit";
                             this->widget3d_->GetScene()
                                     ->GetScene()
-                                    ->AddGeometry("points", pcd_buffer.CPU(),
+                                    ->AddGeometry("points", pcd_placeholder,
                                                   mat);
                             is_initialized = true;
 
