@@ -57,6 +57,27 @@ std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
     return lineset_ptr;
 }
 
+std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondenceSet(
+        const PointCloud &cloud0,
+        const PointCloud &cloud1,
+        const std::vector<Eigen::Vector2i> &correspondences) {
+    auto lineset_ptr = std::make_shared<LineSet>();
+    size_t point0_size = cloud0.points_.size();
+    size_t point1_size = cloud1.points_.size();
+    lineset_ptr->points_.resize(point0_size + point1_size);
+    for (size_t i = 0; i < point0_size; i++)
+        lineset_ptr->points_[i] = cloud0.points_[i];
+    for (size_t i = 0; i < point1_size; i++)
+        lineset_ptr->points_[point0_size + i] = cloud1.points_[i];
+
+    size_t corr_size = correspondences.size();
+    lineset_ptr->lines_.resize(corr_size);
+    for (size_t i = 0; i < corr_size; i++)
+        lineset_ptr->lines_[i] = Eigen::Vector2i(
+                correspondences[i][0], point0_size + correspondences[i][1]);
+    return lineset_ptr;
+}
+
 std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
         const TriangleMesh &mesh) {
     auto line_set = std::make_shared<LineSet>();

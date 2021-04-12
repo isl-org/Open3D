@@ -113,11 +113,25 @@ public:
     ///
     /// \param cloud0 First point cloud.
     /// \param cloud1 Second point cloud.
-    /// \param correspondences Set of correspondences.
+    /// \param correspondences Set of correspondences as
+    /// std::vector<std::pair<int, int>>.
     static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
             const PointCloud &cloud0,
             const PointCloud &cloud1,
             const std::vector<std::pair<int, int>> &correspondences);
+
+    /// \brief Factory function to create a LineSet from two PointClouds
+    /// (\p cloud0, \p cloud1) and a CorrespondenceSet as
+    /// std::vector<Eigen::Vector2i> (as defined in TranformationEstimation.h).
+    ///
+    /// \param cloud0 First point cloud.
+    /// \param cloud1 Second point cloud.
+    /// \param correspondences CorrespondenceSet of type
+    /// std::vector<Eigen::Vector2i>.
+    static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondenceSet(
+            const PointCloud &cloud0,
+            const PointCloud &cloud1,
+            const std::vector<Eigen::Vector2i> &correspondences);
 
     /// \brief Factory function to create a LineSet from an OrientedBoundingBox.
     ///

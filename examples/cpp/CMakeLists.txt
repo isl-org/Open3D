@@ -70,6 +70,7 @@ if (BUILD_GUI)
     EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
     EXAMPLE_CPP(DemoTMultiScaleICP    ${CMAKE_PROJECT_NAME} Threads::Threads)
+    EXAMPLE_CPP(DemoTMultiScaleICPwithLines  ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(DemoTMultiScaleICPMapping ${CMAKE_PROJECT_NAME} Threads::Threads)
 endif()
 
