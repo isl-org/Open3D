@@ -292,6 +292,19 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
         }
         result = utility::JsonToString(
                 impl_->peer_connection_manager_->HangUp(peerid));
+    } else if (entry_point == "/api/call") {
+        std::string peerid;
+        std::string url;
+        std::string options;
+        if (!query_string_trimmed.empty()) {
+            CivetServer::getParam(query_string_trimmed.c_str(), "peerid",
+                                  peerid);
+            CivetServer::getParam(query_string_trimmed.c_str(), "url", url);
+            CivetServer::getParam(query_string_trimmed.c_str(), "options",
+                                  options);
+        }
+        result = utility::JsonToString(impl_->peer_connection_manager_->Call(
+                peerid, url, options, utility::StringToJson(data)));
     }
 
     utility::LogInfoConsole(

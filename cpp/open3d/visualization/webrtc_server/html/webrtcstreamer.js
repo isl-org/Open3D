@@ -360,7 +360,7 @@ var WebRtcStreamer = (function () {
             function () {
               WebRtcStreamer.remoteCall(
                 callurl,
-                bind.useComms && false,
+                bind.useComms && true,
                 {
                   method: "POST",
                   body: JSON.stringify(sessionDescription),
