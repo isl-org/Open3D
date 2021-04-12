@@ -105,6 +105,8 @@ public:
 public:
     /// The estimated transformation matrix.
     core::Tensor transformation_;
+    /// Correspondence Set. Refer to the definition in
+    /// `TransformationEstimation.h`.
     CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
@@ -162,7 +164,7 @@ RegistrationResult RegistrationICP(
 /// \param target The target point cloud.
 /// \param voxel_sizes VectorDouble of voxel scales of type double.
 /// \param criterias Vector of ICPConvergenceCriteria objects for each scale.
-/// \param max_correspondence_distance VectorDouble of maximum correspondence
+/// \param max_correspondence_distances VectorDouble of maximum correspondence
 /// points-pair distances of type double, for each iteration. Must be of same
 /// length as voxel_sizes and criterias.
 /// \param init Initial transformation estimation.
@@ -178,6 +180,15 @@ RegistrationResult RegistrationMultiScaleICP(
                                                      core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint());
+
+/// \brief Converts `tensor CorrespondenceSet` to `legacy CorrespondenceSet`.
+///
+/// \param tensor_correspondence_set It is a pair of Int64 tensors of shape
+/// {C,}, where C is the number of correspondences. [Refer definition at
+/// TransformationEstimation.h]. \return Legacy CorrespondenceSet definied as
+/// std::vector<Eigen::Vector2i>.
+std::vector<Eigen::Vector2i> ToLegacyCorrespondenceSet(
+        const CorrespondenceSet &tensor_correspondence_set);
 
 }  // namespace registration
 }  // namespace pipelines
