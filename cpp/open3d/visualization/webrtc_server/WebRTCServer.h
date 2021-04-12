@@ -95,7 +95,8 @@ public:
     ///                                    JSON.stringify(data));
     ///
     /// \param entry_point URL part before '?'.
-    /// \param query_string URL part after '?', not including '?', or "".
+    /// \param query_string URL part after '?', including '?'. If '?' is not the
+    /// first character or if the stirng is empty, the query_string is ignored.
     /// \param data JSON-encoded string.
     std::string CallHttpRequest(const std::string& entry_point,
                                 const std::string& query_string = "",

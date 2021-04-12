@@ -59,7 +59,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   /**
    * https://stackoverflow.com/a/736970/1255535
    * parseUrl(url).hostname
-   * parseUrl(url).pathname
+   * parseUrl(url).entryPoint
    */
   parseUrl: function (url) {
     var l = document.createElement("a");
@@ -77,13 +77,18 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
    * interface.
    */
   commsCall: function (url, data = {}) {
-    api_url = this.parseUrl(url).pathname;
-    console.log("WebVisualizerView.commsCall with api_url: ", api_url);
+    entryPoint = this.parseUrl(url).pathname;
+    queryString = this.parseUrl(url).search;
     console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
+    console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
+    console.log("WebVisualizerView.commsCall with queryString: ", queryString);
     var command_prefix =
       "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_http_request(";
     var command_suffix = "))";
-    var command_args = '"' + api_url + '"';
+    var command_args = '"' + entryPoint + '"';
+    if (queryString) {
+      command_args += ', "' + queryString + '"';
+    }
     var command = command_prefix + command_args + command_suffix;
     console.log("commsCall command: " + command);
     return this.executePython(command)

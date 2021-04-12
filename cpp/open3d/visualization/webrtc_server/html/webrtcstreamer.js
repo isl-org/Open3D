@@ -391,7 +391,7 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.getIceCandidate = function () {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid,
-      this.useComms && false,
+      this.useComms && true,
       {},
       this.webVisualizer
     )
