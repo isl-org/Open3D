@@ -41,10 +41,9 @@ using namespace open3d::t::pipelines::registration;
 const int WIDTH = 1024;
 const int HEIGHT = 768;
 
-const Eigen::Vector3f CENTER_OFFSET(0.0f, 0.0f, 30.0f);
+const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 100.0f);
 
-const std::string SRC_CLOUD = "source_pointcloud";
-const std::string DST_CLOUD = "target_pointcloud";
+const std::string CURRENT_CLOUD = "target_pointcloud";
 
 // Initial transformation guess for registation.
 // std::vector<float> initial_transform_flat = {
@@ -116,7 +115,7 @@ private:
             std::lock_guard<std::mutex> lock(cloud_lock_);
             legacy_output_ = std::make_shared<open3d::geometry::PointCloud>();
             *legacy_output_ = pointclouds_device_[0].ToLegacyPointCloud();
-            bounds = legacy_output_->GetAxisAlignedBoundingBox();
+            // bounds = legacy_output_->GetAxisAlignedBoundingBox();
             // extent = bounds.GetExtent();
         }
 
@@ -126,10 +125,13 @@ private:
         gui::Application::GetInstance().PostToMainThread(
                 main_vis_.get(), [this, bounds, mat]() {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
-                    main_vis_->AddGeometry(filenames_[0], legacy_output_, &mat);
+                    main_vis_->AddGeometry(filenames_[0],
+                                           legacy_output_ /*, &mat*/);
+                    legacy_output_->PaintUniformColor({1.0, 0.0, 0.0});
+                    main_vis_->AddGeometry(CURRENT_CLOUD, legacy_output_, &mat);
                     main_vis_->ResetCameraToDefault();
                     Eigen::Vector3f center = bounds.GetCenter().cast<float>();
-                    main_vis_->SetupCamera(100, center, center + CENTER_OFFSET,
+                    main_vis_->SetupCamera(180, center, center + CENTER_OFFSET,
                                            {0.0f, -1.0f, 0.0f});
                     main_vis_->SetBackground({0.0f, 0.0f, 0.0f, 1.0f});
                 });
@@ -154,11 +156,11 @@ private:
             time_icp_odom_loop.Stop();
             total_processing_time += time_icp_odom_loop.GetDuration();
             // if (visualize_output_) {
-            auto pcd_transformed = target.Transform(cumulative_transform);
+            auto pcd_transformed =
+                    target.Transform(cumulative_transform).ToLegacyPointCloud();
             {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
-                *legacy_output_ = pcd_transformed.ToLegacyPointCloud();
-                // legacy_output_->PaintUniformColor({0.0, 0.0, 1.0});
+                *legacy_output_ = pcd_transformed;
             }
 
             if (!main_vis_) {  // might have changed while sleeping
@@ -168,23 +170,28 @@ private:
             gui::Application::GetInstance().PostToMainThread(
                     main_vis_.get(), [this, i, mat]() {
                         std::lock_guard<std::mutex> lock(cloud_lock_);
-                        // main_vis_->RemoveGeometry(filenames_[i]);
+
                         main_vis_->AddGeometry(filenames_[i + 1],
-                                               legacy_output_, &mat);
-                        auto bounds =
-                                legacy_output_->GetAxisAlignedBoundingBox();
+                                               legacy_output_ /*, &mat*/);
+
+                        legacy_output_->PaintUniformColor({1.0, 0.0, 0.0});
+                        main_vis_->RemoveGeometry(CURRENT_CLOUD);
+                        main_vis_->AddGeometry(CURRENT_CLOUD, legacy_output_,
+                                               &mat);
+
+                        // auto bounds =
+                        //         legacy_output_->GetAxisAlignedBoundingBox();
                         // auto extent = bounds.GetExtent();
                         main_vis_->ResetCameraToDefault();
-                        Eigen::Vector3f center =
-                                bounds.GetCenter().cast<float>();
-                        main_vis_->SetupCamera(100, center,
+                        auto bbox = main_vis_->GetScene()->GetBoundingBox();
+                        auto center = bbox.GetCenter().cast<float>();
+                        // Eigen::Vector3f center =
+                        //         bounds.GetCenter().cast<float>();
+                        main_vis_->SetupCamera(180, center,
                                                center + CENTER_OFFSET,
                                                {0.0f, -1.0f, 0.0f});
                         // auto bbox = main_vis_->GetScene()->GetBoundingBox();
                         // auto center = bbox.GetCenter().cast<float>();
-                        // main_vis_->SetupCamera(60, center,
-                        //                        center + CENTER_OFFSET,
-                        //                        {0.0f, -1.0f, 0.0f});
                     });
             // }
             utility::LogDebug(" Registraion took: {}",
@@ -377,6 +384,7 @@ private:
 private:
     std::mutex cloud_lock_;
     std::shared_ptr<open3d::geometry::PointCloud> legacy_output_;
+    std::shared_ptr<open3d::geometry::PointCloud> legacy_current_;
 
     std::atomic<bool> is_done_;
     std::shared_ptr<visualizer::O3DVisualizer> main_vis_;
