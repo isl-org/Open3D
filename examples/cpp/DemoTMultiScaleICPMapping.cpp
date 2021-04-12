@@ -73,7 +73,7 @@ public:
         std::cout << " [Debug] Warm up transformation: "
                   << result_.transformation_.ToString() << std::endl;
         is_done_ = false;
-        visualize_output_ = false;
+        visualize_output_ = true;
 
         gui::Application::GetInstance().Initialize();
     }
@@ -191,7 +191,6 @@ private:
                                                    {0.0f, -1.0f, 0.0f});
                         });
             }
-
             utility::LogDebug(" Registraion took: {}",
                               time_icp_odom_loop.GetDuration());
             utility::LogDebug(" Cumulative Transformation: \n{}\n",
