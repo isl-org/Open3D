@@ -49,6 +49,7 @@
 #include <iostream>
 #include <utility>
 
+#include "open3d/utility/IJsonConvertible.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/VideoFilter.h"
@@ -179,6 +180,10 @@ PeerConnectionManager::PeerConnectionManager(
             CivetServer::getParam(req_info->query_string, "url", url);
             CivetServer::getParam(req_info->query_string, "options", options);
         }
+        utility::LogInfo("/api/call in data ////////////////////////////////");
+        utility::LogInfo("{}", utility::JsonToString(in));
+        utility::LogInfo("//////////////////////////////////////////////////");
+        utility::LogError("Stop");
         return this->Call(peerid, url, options, in);
     };
 

@@ -82,6 +82,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
     console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
     console.log("WebVisualizerView.commsCall with queryString: ", queryString);
+    console.log(
+      'WebVisualizerView.commsCall with data["body"]: ',
+      data["body"]
+    );
     var command_prefix =
       "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_http_request(";
     // entry_point
@@ -93,7 +97,8 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       command_args += ', ""';
     }
     // data
-    command_args += ', "' + JSON.stringify(data) + '"';
+    var dataStr = data["body"];
+    command_args += ", '" + dataStr + "'";
     var command_suffix = "))";
     var command = command_prefix + command_args + command_suffix;
     console.log("commsCall command: " + command);

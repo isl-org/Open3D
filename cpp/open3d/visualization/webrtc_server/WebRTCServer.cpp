@@ -263,11 +263,18 @@ void WebRTCServer::Run() {
 std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
                                           const std::string& query_string,
                                           const std::string& data) const {
+    utility::LogInfoConsole(
+            "WebRTCServer::CallHttpRequest /////////////////////");
+
     std::string query_string_trimmed = "";
     if (!query_string.empty() && query_string[0] == '?') {
         query_string_trimmed =
                 query_string.substr(1, query_string.length() - 1);
     }
+
+    utility::LogInfoConsole("entry_point: {}", entry_point);
+    utility::LogInfoConsole("query_string_trimmed: {}", query_string_trimmed);
+    utility::LogInfoConsole("data: {}", data);
 
     std::string result = "";
     if (entry_point == "/api/getMediaList") {
@@ -303,14 +310,20 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
             CivetServer::getParam(query_string_trimmed.c_str(), "options",
                                   options);
         }
+
         result = utility::JsonToString(impl_->peer_connection_manager_->Call(
                 peerid, url, options, utility::StringToJson(data)));
     }
 
+    // utility::LogInfoConsole(
+    //         "///////////////////// WebRTCServer::CallHttpRequest({}, {}, {})
+    //         "
+    //         "==> \n{}",
+    //         entry_point, query_string_trimmed, utility::StringToJson(data),
+    //         result);
     utility::LogInfoConsole(
-            "///////////////////// WebRTCServer::CallHttpRequest({}, {}, {}) "
-            "==> \n{}",
-            entry_point, query_string_trimmed, data, result);
+            "///////////////////////////////////////////////////");
+
     return result;
 }
 
