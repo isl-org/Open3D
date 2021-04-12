@@ -91,8 +91,11 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         shell = get_ipython().__class__.__name__
         print("Jupyter environment detected, to enable WebRTC GUI backend.")
         if shell == 'ZMQInteractiveShell':
-            import open3d.visualization.gui as gui
-            gui.Application.instance.enable_webrtc()
+            import open3d.visualization.gui as _gui
+            import open3d.visualization as _visualization
+            _gui.Application.instance.enable_webrtc()
+            _visualization.webrtc_server.WebRTCServer.instance.disable_http_handshake_server(
+            )
     except NameError:
         pass
 

@@ -348,6 +348,7 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
 }
 
 void WebRTCServer::DisableHttpHandshakeServer() {
+    utility::LogInfo("WebRTCServer: HTTP handshake server disabled.");
     impl_->enable_http_server_ = false;
 }
 
