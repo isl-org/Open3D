@@ -77,7 +77,7 @@ core::Tensor Model::TrackFrameToModel(const Frame& input_frame,
     return t::pipelines::odometry::RGBDOdometryMultiScale(
             t::geometry::RGBDImage(input_frame.GetDataAsImage("color"),
                                    input_frame.GetDataAsImage("depth")),
-            t::geometry::RGBDImage(t::geometry::Image(),
+            t::geometry::RGBDImage(raycast_frame.GetDataAsImage("color"),
                                    raycast_frame.GetDataAsImage("depth")),
             raycast_frame.GetIntrinsics(), identity, depth_scale, depth_max,
             depth_diff, {10, 0, 0},

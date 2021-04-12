@@ -885,9 +885,6 @@ void RayCastCPU
         return;
     }
 
-    utility::LogInfo("depth_map.shape = {}, enable_depth = {}",
-                     depth_map.GetShape(), enable_depth);
-
     if (enable_vertex) {
         vertex_map_indexer = NDArrayIndexer(vertex_map, 2);
     }

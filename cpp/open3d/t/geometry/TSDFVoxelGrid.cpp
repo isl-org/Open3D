@@ -202,7 +202,6 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     core::Tensor pose = extrinsics.Inverse();
 
     core::Tensor vertex_map, depth_map, color_map, normal_map;
-    utility::LogInfo("Code = {}", ray_cast_mask);
     if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {
         vertex_map = core::Tensor::Zeros({height, width, 3},
                                          core::Dtype::Float32, device_);

@@ -207,8 +207,9 @@ class ExampleWindow : public ReconstructionWindow {
 public:
     ExampleWindow(const std::string& dataset_path) {
         dataset_path_ = dataset_path;
-        props_->AddNumber("Surface update", &prop_values_.surface_interval,
-                          50.0, 1.0, 100.);
+        // TODO: AddIntNumber
+        props_->AddNumber("Surface update", &prop_values_.surface_interval, 1.0,
+                          1.0, 100.);
 
         props_->AddNumber("Depth scale", &prop_values_.depth_scale, 1000.0, 1.0,
                           1500.0);
@@ -247,9 +248,14 @@ private:
         const std::string depth_dir = dataset_path_ + "/depth";
         std::vector<std::string> rgb_files;
         std::vector<std::string> depth_files;
-        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "png",
+        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "jpg",
                                                                rgb_files);
+        if (rgb_files.size() == 0) {
+            utility::filesystem::ListFilesInDirectoryWithExtension(
+                    rgb_dir, "png", rgb_files);
+        }
         std::sort(rgb_files.begin(), rgb_files.end());
+
         utility::filesystem::ListFilesInDirectoryWithExtension(depth_dir, "png",
                                                                depth_files);
         std::sort(depth_files.begin(), depth_files.end());
@@ -288,7 +294,7 @@ private:
         // Odom
         auto traj = std::make_shared<geometry::LineSet>();
 
-        std::shared_ptr<open3d::geometry::PointCloud> pcd;
+        t::geometry::PointCloud pcd;
         while (!is_done_) {
             // Input
             t::geometry::Image input_depth =
@@ -353,10 +359,10 @@ private:
             auto raycast_depth8 = ConvertDepthToNormalizedGrey8(*raycast_depth);
 
             // Extract surface on demand
-            if (idx % static_cast<int>(prop_values_.surface_interval) == 0) {
+            if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
+                idx == depth_files.size() - 1) {
                 gui::Application::GetInstance().RunInThread([&]() {
-                    pcd = std::make_shared<open3d::geometry::PointCloud>(
-                            model.ExtractPointCloud().ToLegacyPointCloud());
+                    pcd = model.ExtractPointCloud();
                     is_scene_updated = true;
                 });
             }
@@ -365,6 +371,9 @@ private:
                     this, [this, color, depth8, raycast_color, raycast_depth8,
                            pcd, traj, frustum, &is_initialized,
                            &is_scene_updated, out = out.str()]() {
+                        this->widget3d_->GetScene()->SetBackground(
+                                {0, 0, 0, 1});
+
                         this->SetOutput(out);
                         this->rgb_image_->UpdateImage(color);
                         this->depth_image_->UpdateImage(depth8);
@@ -380,6 +389,9 @@ private:
                                 "frustum", frustum.get(), mat);
 
                         if (traj->points_.size() > 1) {
+                            // 1) Add geometry once w/ max size
+                            // 2) Update geometry
+                            // TPointCloud
                             this->widget3d_->GetScene()->RemoveGeometry(
                                     "trajectory");
                             auto mat = rendering::Material();
@@ -390,15 +402,18 @@ private:
                         }
 
                         if (is_scene_updated) {
-                            this->widget3d_->GetScene()->RemoveGeometry(
-                                    "points");
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->RemoveGeometry("points");
                             auto mat = rendering::Material();
                             mat.shader = "defaultUnlit";
-                            this->widget3d_->GetScene()->AddGeometry(
-                                    "points", pcd.get(), mat);
+                            utility::LogInfo("main thread points = {}",
+                                             pcd.GetPoints().GetLength());
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->AddGeometry("points", pcd, mat);
                             is_scene_updated = false;
-                        }
-                        if (!is_initialized) {
+
                             auto bbox = this->widget3d_->GetScene()
                                                 ->GetBoundingBox();
                             auto center = bbox.GetCenter().cast<float>();
@@ -406,8 +421,10 @@ private:
                             this->widget3d_->LookAt(
                                     center, center - Eigen::Vector3f{0, 1, 3},
                                     {0.0f, -1.0f, 0.0f});
-                            is_initialized = true;
                         }
+                        // if (!is_initialized) {
+                        // is_initialized = true;
+                        //}
                     });
         }
     }
