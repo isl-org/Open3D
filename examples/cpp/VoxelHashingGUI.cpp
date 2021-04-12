@@ -6,9 +6,52 @@
 
 using namespace open3d;
 using namespace open3d::visualization;
+std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
+        int view_width_px,
+        int view_height_px,
+        const Eigen::Matrix3d& intrinsic,
+        const Eigen::Matrix4d& extrinsic) {
+    Eigen::Matrix4d intrinsic4;
+    intrinsic4 << intrinsic(0, 0), intrinsic(0, 1), intrinsic(0, 2), 0.0,
+            intrinsic(1, 0), intrinsic(1, 1), intrinsic(1, 2), 0.0,
+            intrinsic(2, 0), intrinsic(2, 1), intrinsic(2, 2), 0.0, 0.0, 0.0,
+            0.0, 1.0;
+    Eigen::Matrix4d m = (intrinsic4 * extrinsic).inverse();
+    auto lines = std::make_shared<geometry::LineSet>();
 
-const std::string TEST_DIR = "/home/wei/Workspace/data/open3d/stanford/lounge/";
+    auto mult = [](const Eigen::Matrix4d& m,
+                   const Eigen::Vector3d& v) -> Eigen::Vector3d {
+        Eigen::Vector4d v4(v.x(), v.y(), v.z(), 1.0);
+        auto result = m * v4;
+        return Eigen::Vector3d{result.x() / result.w(), result.y() / result.w(),
+                               result.z() / result.w()};
+    };
+    double dist = 0.2;
+    double w = double(view_width_px);
+    double h = double(view_height_px);
+    // Matrix m transforms from homogenous pixel coordinates to world
+    // coordinates so x and y need to be multiplied by z. In the case of the
+    // first point, the eye point, z=0, so x and y will be zero, too regardless
+    // of their initial values as the center.
+    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, 0.0}));
+    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, dist}));
+    lines->points_.push_back(mult(m, Eigen::Vector3d{w * dist, 0.0, dist}));
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{w * dist, h * dist, dist}));
+    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, h * dist, dist}));
 
+    lines->lines_.push_back({0, 1});
+    lines->lines_.push_back({0, 2});
+    lines->lines_.push_back({0, 3});
+    lines->lines_.push_back({0, 4});
+    lines->lines_.push_back({1, 2});
+    lines->lines_.push_back({2, 3});
+    lines->lines_.push_back({3, 4});
+    lines->lines_.push_back({4, 1});
+    lines->PaintUniformColor({0.0f, 0.0f, 1.0f});
+
+    return lines;
+}
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
 public:
@@ -81,7 +124,7 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow() : gui::Window("Open3D - Reconstruction", 1200, 768) {
+    ReconstructionWindow() : gui::Window("Open3D - Reconstruction", 1600, 900) {
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.5f * float(em)));
@@ -95,21 +138,25 @@ public:
 
         props_ = std::make_shared<PropertyPanel>(
                 int(std::round(0.25f * float(em))));
+        panel_->AddChild(std::make_shared<gui::Label>("Control"));
         panel_->AddChild(props_);
         panel_->AddStretch();
 
+        panel_->AddChild(std::make_shared<gui::Label>("Input image(s)"));
         rgb_image_ = std::make_shared<gui::ImageWidget>();
         depth_image_ = std::make_shared<gui::ImageWidget>();
         panel_->AddChild(rgb_image_);
         panel_->AddChild(depth_image_);
 
         output_ = std::make_shared<gui::Label>("");
-
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
-        output_panel_->AddChild(std::make_shared<gui::Label>("Output"));
+        output_panel_->AddChild(std::make_shared<gui::Label>("Tracking"));
         output_panel_->AddChild(output_);
         output_panel_->AddStretch();
+
+        output_panel_->AddChild(
+                std::make_shared<gui::Label>("Ray casted image(s)"));
         output_panel_->AddChild(raycast_color_image_);
         output_panel_->AddChild(raycast_depth_image_);
 
@@ -123,7 +170,7 @@ public:
         Super::Layout(theme);
 
         int em = theme.font_size;
-        int panel_width = 15 * em;
+        int panel_width = 20 * em;
         // The usable part of the window may not be the full size if there
         // is a menu.
         auto content_rect = GetContentRect();
@@ -158,11 +205,16 @@ protected:
 //------------------------------------------------------------------------------
 class ExampleWindow : public ReconstructionWindow {
 public:
-    ExampleWindow() {
+    ExampleWindow(const std::string& dataset_path) {
+        dataset_path_ = dataset_path;
+        props_->AddNumber("Surface update", &prop_values_.surface_interval,
+                          50.0, 1.0, 100.);
+
         props_->AddNumber("Depth scale", &prop_values_.depth_scale, 1000.0, 1.0,
                           1500.0);
-        props_->AddNumber("Depth trunc", &prop_values_.depth_trunc, 3.0, 0.0,
-                          10.0);
+        props_->AddNumber("Depth max", &prop_values_.depth_max, 3.0, 0.0, 5.0);
+        props_->AddNumber("Depth diff", &prop_values_.depth_diff, 0.07, 0.03,
+                          0.5);
         props_->AddBool("Color points", &prop_values_.color_points, true);
 
         is_done_ = false;
@@ -176,9 +228,13 @@ public:
     ~ExampleWindow() { update_thread_.join(); }
 
 private:
+    std::string dataset_path_;
+
     struct {
+        std::atomic<double> surface_interval;
         std::atomic<double> depth_scale;
-        std::atomic<double> depth_trunc;
+        std::atomic<double> depth_max;
+        std::atomic<double> depth_diff;
         std::atomic<bool> color_points;
     } prop_values_;
     std::atomic<bool> is_done_;
@@ -187,9 +243,8 @@ private:
     void UpdateMain() {
         // Note that we cannot update the GUI on this thread, we must post to
         // the main thread!
-
-        const std::string rgb_dir = TEST_DIR + "/color";
-        const std::string depth_dir = TEST_DIR + "/depth";
+        const std::string rgb_dir = dataset_path_ + "/color";
+        const std::string depth_dir = dataset_path_ + "/depth";
         std::vector<std::string> rgb_files;
         std::vector<std::string> depth_files;
         utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "png",
@@ -199,13 +254,16 @@ private:
                                                                depth_files);
         std::sort(depth_files.begin(), depth_files.end());
 
+        // Only set at initialization
         float voxel_size = 3.0 / 512;
-        float sdf_trunc = 0.04f;
         int block_resolution = 16;
-        int block_count = 40000;
-        float depth_scale = 1000.0;
-        float depth_max = 3.0;
-        float depth_diff = 0.07;
+        int block_count = 80000;
+        float depth_scale = prop_values_.depth_scale;
+
+        // Can be changed at runtime
+        float sdf_trunc = 0.04f;
+        // float depth_max = prop_values_.depth_max;
+        // float depth_diff = prop_values_.depth_diff;
 
         core::Tensor T_frame_to_model = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
@@ -226,6 +284,9 @@ private:
         int update_count = 0;
         size_t idx = 0;
 
+        // Odom
+        auto traj = std::make_shared<geometry::LineSet>();
+
         while (!is_done_) {
             // Input
             t::geometry::Image input_depth =
@@ -235,28 +296,41 @@ private:
             input_frame.SetDataFromImage("depth", input_depth);
             input_frame.SetDataFromImage("color", input_color);
 
-            // Odom
             if (idx > 0) {
                 utility::LogInfo("Frame-to-model for the frame {}", idx);
 
                 core::Tensor delta_frame_to_model = model.TrackFrameToModel(
-                        input_frame, raycast_frame, depth_scale, depth_max,
-                        depth_diff);
+                        input_frame, raycast_frame, depth_scale,
+                        prop_values_.depth_max, prop_values_.depth_diff);
                 T_frame_to_model =
                         T_frame_to_model.Matmul(delta_frame_to_model);
             }
 
             // Integrate
             model.UpdateFramePose(idx, T_frame_to_model);
-            model.Integrate(input_frame, depth_scale, depth_max);
+            model.Integrate(input_frame, depth_scale, prop_values_.depth_max);
             model.SynthesizeModelFrame(raycast_frame);
 
             idx++;
             is_done_ = (idx >= depth_files.size());
 
+            auto K_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
+                    intrinsic_t);
+            auto T_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
+                    T_frame_to_model);
             std::stringstream out;
             out << "Frame " << idx << "\n";
-            out << T_frame_to_model.ToString() << "\n";
+            out << T_eigen;
+
+            traj->points_.push_back(T_eigen.block<3, 1>(0, 3));
+            if (traj->points_.size() > 1) {
+                int n = traj->points_.size();
+                traj->lines_.push_back({n - 1, n - 2});
+                traj->colors_.push_back(Eigen::Vector3d(0, 0, 1));
+            }
+
+            auto frustum =
+                    CreateCameraFrustum(640, 480, K_eigen, T_eigen.inverse());
 
             // TODO: update support for timages
             // image conversion
@@ -279,7 +353,7 @@ private:
             // Extract surface on demand
             bool update_scene = false;
             std::shared_ptr<open3d::geometry::PointCloud> pcd;
-            if (idx % 50 == 49) {
+            if (idx % static_cast<int>(prop_values_.surface_interval) == 0) {
                 update_scene = true;
                 ++update_count;
                 pcd = std::make_shared<open3d::geometry::PointCloud>(
@@ -288,13 +362,31 @@ private:
 
             gui::Application::GetInstance().PostToMainThread(
                     this, [this, color, depth8, raycast_color, raycast_depth8,
-                           pcd, update_scene, update_count, out = out.str()]() {
+                           pcd, traj, frustum, update_scene, update_count,
+                           out = out.str()]() {
                         this->SetOutput(out);
                         this->rgb_image_->UpdateImage(color);
                         this->depth_image_->UpdateImage(depth8);
 
                         this->raycast_color_image_->UpdateImage(raycast_color);
                         this->raycast_depth_image_->UpdateImage(raycast_depth8);
+
+                        this->widget3d_->GetScene()->RemoveGeometry("frustum");
+                        auto mat = rendering::Material();
+                        mat.shader = "unlitLine";
+                        mat.line_width = 5.0f;
+                        this->widget3d_->GetScene()->AddGeometry(
+                                "frustum", frustum.get(), mat);
+
+                        if (traj->points_.size() > 1) {
+                            this->widget3d_->GetScene()->RemoveGeometry(
+                                    "trajectory");
+                            auto mat = rendering::Material();
+                            mat.shader = "unlitLine";
+                            mat.line_width = 5.0f;
+                            this->widget3d_->GetScene()->AddGeometry(
+                                    "trajectory", traj.get(), mat);
+                        }
 
                         if (update_scene) {
                             this->widget3d_->GetScene()->RemoveGeometry(
@@ -316,8 +408,6 @@ private:
                             }
                         }
                     });
-
-            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
@@ -355,14 +445,17 @@ private:
 
 //------------------------------------------------------------------------------
 int main(int argc, const char* argv[]) {
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory");
+    if (argc < 2) {
+        utility::LogError("Expected dataset path as input");
+    }
+    std::string dataset_path = argv[1];
+    if (!utility::filesystem::DirectoryExists(dataset_path)) {
+        utility::LogError("Expected color/ and depth/ directories in {}",
+                          dataset_path);
     }
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
-    app.AddWindow(std::make_shared<ExampleWindow>());
+    app.AddWindow(std::make_shared<ExampleWindow>(dataset_path));
     app.Run();
 }
