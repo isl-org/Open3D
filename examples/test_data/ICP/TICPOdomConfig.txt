@@ -1,4 +1,4 @@
-# This is a config file for the examples/cpp/TICPRegistration.cpp. 
+# This is a config file for the ICP Odometry Examples.
 # When voxel_size is -1, no downsampling is performed.
 
 dataset_path = /home/rey/Datasets/kitti_normals/
