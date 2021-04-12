@@ -310,9 +310,17 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
             CivetServer::getParam(query_string_trimmed.c_str(), "options",
                                   options);
         }
-
         result = utility::JsonToString(impl_->peer_connection_manager_->Call(
                 peerid, url, options, utility::StringToJson(data)));
+    } else if (entry_point == "/api/addIceCandidate") {
+        std::string peerid;
+        if (!query_string_trimmed.empty()) {
+            CivetServer::getParam(query_string_trimmed.c_str(), "peerid",
+                                  peerid);
+        }
+        result = utility::JsonToString(
+                impl_->peer_connection_manager_->AddIceCandidate(
+                        peerid, utility::StringToJson(data)));
     }
 
     // utility::LogInfoConsole(
@@ -321,6 +329,7 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
     //         "==> \n{}",
     //         entry_point, query_string_trimmed, utility::StringToJson(data),
     //         result);
+    utility::LogInfoConsole("result: {}", result);
     utility::LogInfoConsole(
             "///////////////////////////////////////////////////");
 

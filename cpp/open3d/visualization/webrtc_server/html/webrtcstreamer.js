@@ -507,7 +507,7 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.addIceCandidate = function (peerid, candidate) {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/addIceCandidate?peerid=" + peerid,
-      this.useComms && false,
+      this.useComms && true,
       {
         method: "POST",
         body: JSON.stringify(candidate),
