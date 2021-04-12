@@ -91,8 +91,8 @@ public:
     ///
     /// Now with CallHttpRequest:
     /// open3d.visualization.webrtc_server("/api/addIceCandidate",
-    ///                                    "peerid=" + peerid,
-    ///                                    JSON.stringify(data));
+    ///                                    "?peerid=" + peerid,
+    ///                                    data["body"]);
     ///
     /// \param entry_point URL part before '?'.
     /// \param query_string URL part after '?', including '?'. If '?' is not the
@@ -101,6 +101,12 @@ public:
     std::string CallHttpRequest(const std::string& entry_point,
                                 const std::string& query_string = "",
                                 const std::string& data = "") const;
+
+    /// HTTP handshake server is enabled by default. Call DisableHttpServer() to
+    /// disable the HTTP server. This must be called before WebRTCServer::Run(),
+    /// i.e. before WebRTCWindowSystem::StartWebRTCServer() or
+    /// Application::AddWindow().
+    void DisableHttpHandshakeServer();
 
 private:
     WebRTCServer();

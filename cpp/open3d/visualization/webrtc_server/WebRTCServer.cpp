@@ -62,8 +62,12 @@ namespace visualization {
 namespace webrtc_server {
 
 struct WebRTCServer::Impl {
-    std::string http_address_;
-    std::string web_root_;
+    // HTTP handshake server settings.
+    bool enable_http_server_ = true;
+    std::string http_address_;  // Applicable if enable_http_server_ == true.
+    std::string web_root_;      // Applicable if enable_http_server_ == true.
+
+    // Callback functions.
     std::function<void(int, double, double, int)> mouse_button_callback_ =
             nullptr;
     std::function<void(int, double, double, int)> mouse_move_callback_ =
@@ -74,8 +78,11 @@ struct WebRTCServer::Impl {
             mouse_event_callback_ = nullptr;
     std::function<void(const std::string&)> redraw_callback_ = nullptr;
 
+    // PeerConnectionManager is used for setting up connections and managing API
+    // call entry points.
     std::unique_ptr<PeerConnectionManager> peer_connection_manager_ = nullptr;
 
+    // Utilities.
     static std::string GetEnvWebRTCIP() {
         if (const char* env_p = std::getenv("WEBRTC_IP")) {
             return std::string(env_p);
@@ -172,6 +179,7 @@ std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
 }
 
 WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
+    impl_->enable_http_server_ = true;
     impl_->http_address_ =
             Impl::GetEnvWebRTCIP() + ":" + Impl::GetEnvWebRTCPort();
     impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
@@ -223,39 +231,42 @@ void WebRTCServer::Run() {
     // };
 
     // CivetWeb http server.
-    std::vector<std::string> options;
-    options.push_back("document_root");
-    options.push_back(web_root);
-    options.push_back("enable_directory_listing");
-    options.push_back("no");
-    options.push_back("additional_header");
-    options.push_back("X-Frame-Options: SAMEORIGIN");
-    options.push_back("access_control_allow_origin");
-    options.push_back("*");
-    options.push_back("listening_ports");
-    options.push_back(http_address);
-    options.push_back("enable_keep_alive");
-    options.push_back("yes");
-    options.push_back("keep_alive_timeout_ms");
-    options.push_back("1000");
-    options.push_back("decode_url");
-    options.push_back("no");
-    try {
-        // PeerConnectionManager provides a set of callback functions for
-        // HttpServerRequestHandler.
-        std::map<std::string, HttpServerRequestHandler::HttpFunction> func =
-                impl_->peer_connection_manager_->GetHttpApi();
+    if (impl_->enable_http_server_) {
+        std::vector<std::string> options;
+        options.push_back("document_root");
+        options.push_back(web_root);
+        options.push_back("enable_directory_listing");
+        options.push_back("no");
+        options.push_back("additional_header");
+        options.push_back("X-Frame-Options: SAMEORIGIN");
+        options.push_back("access_control_allow_origin");
+        options.push_back("*");
+        options.push_back("listening_ports");
+        options.push_back(http_address);
+        options.push_back("enable_keep_alive");
+        options.push_back("yes");
+        options.push_back("keep_alive_timeout_ms");
+        options.push_back("1000");
+        options.push_back("decode_url");
+        options.push_back("no");
+        try {
+            // PeerConnectionManager provides a set of callback functions for
+            // HttpServerRequestHandler.
+            std::map<std::string, HttpServerRequestHandler::HttpFunction> func =
+                    impl_->peer_connection_manager_->GetHttpApi();
 
-        // Main loop.
-        std::cout << "HTTP Listen at " << http_address << std::endl;
-        HttpServerRequestHandler civet_server(func, options);
-        // signal(SIGINT, &signal_handler);  // TODO: fix me
+            // Main loop.
+            std::cout << "HTTP Listen at " << http_address << std::endl;
+            HttpServerRequestHandler civet_server(func, options);
+            // signal(SIGINT, &signal_handler);  // TODO: fix me
+            thread->Run();
+        } catch (const CivetException& ex) {
+            std::cout << "Cannot Initialize start HTTP server exception:"
+                      << ex.what() << std::endl;
+        }
+    } else {
         thread->Run();
-    } catch (const CivetException& ex) {
-        std::cout << "Cannot Initialize start HTTP server exception:"
-                  << ex.what() << std::endl;
     }
-
     rtc::CleanupSSL();
     std::cout << "Exit" << std::endl;
 }
@@ -334,6 +345,10 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
             "///////////////////////////////////////////////////");
 
     return result;
+}
+
+void WebRTCServer::DisableHttpHandshakeServer() {
+    impl_->enable_http_server_ = false;
 }
 
 }  // namespace webrtc_server
