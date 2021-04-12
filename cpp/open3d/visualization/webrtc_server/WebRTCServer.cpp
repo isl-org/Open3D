@@ -63,9 +63,9 @@ namespace webrtc_server {
 
 struct WebRTCServer::Impl {
     // HTTP handshake server settings.
-    bool enable_http_server_ = true;
-    std::string http_address_;  // Applicable if enable_http_server_ == true.
-    std::string web_root_;      // Applicable if enable_http_server_ == true.
+    bool http_handshake_enabled_ = true;
+    std::string http_address_;  // Used when http_handshake_enabled_ == true.
+    std::string web_root_;      // Used when http_handshake_enabled_ == true.
 
     // Callback functions.
     std::function<void(int, double, double, int)> mouse_button_callback_ =
@@ -179,7 +179,7 @@ std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
 }
 
 WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
-    impl_->enable_http_server_ = true;
+    impl_->http_handshake_enabled_ = true;
     impl_->http_address_ =
             Impl::GetEnvWebRTCIP() + ":" + Impl::GetEnvWebRTCPort();
     impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
@@ -231,7 +231,7 @@ void WebRTCServer::Run() {
     // };
 
     // CivetWeb http server.
-    if (impl_->enable_http_server_) {
+    if (impl_->http_handshake_enabled_) {
         std::vector<std::string> options;
         options.push_back("document_root");
         options.push_back(web_root);
@@ -347,9 +347,9 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
     return result;
 }
 
-void WebRTCServer::DisableHttpHandshakeServer() {
+void WebRTCServer::DisableHttpHandshake() {
     utility::LogInfo("WebRTCServer: HTTP handshake server disabled.");
-    impl_->enable_http_server_ = false;
+    impl_->http_handshake_enabled_ = false;
 }
 
 }  // namespace webrtc_server

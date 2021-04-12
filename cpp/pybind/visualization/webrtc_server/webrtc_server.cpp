@@ -48,8 +48,8 @@ static void pybind_webrtc_server_classes(py::module &m) {
             "Gets the WebRTCServer singleton (read-only).");
     webrtc_server.def("call_http_request", &WebRTCServer::CallHttpRequest,
                       "entry_point"_a, "query_string"_a = "", "data"_a = "");
-    webrtc_server.def("disable_http_handshake_server",
-                      &WebRTCServer::DisableHttpHandshakeServer);
+    webrtc_server.def("disable_http_handshake",
+                      &WebRTCServer::DisableHttpHandshake);
 }
 
 void pybind_webrtc_server(py::module &m) {

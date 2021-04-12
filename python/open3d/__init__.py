@@ -94,7 +94,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
             import open3d.visualization.gui as _gui
             import open3d.visualization as _visualization
             _gui.Application.instance.enable_webrtc()
-            _visualization.webrtc_server.WebRTCServer.instance.disable_http_handshake_server(
+            _visualization.webrtc_server.WebRTCServer.instance.disable_http_handshake(
             )
     except NameError:
         pass

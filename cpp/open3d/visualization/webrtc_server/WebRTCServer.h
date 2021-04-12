@@ -106,7 +106,7 @@ public:
     /// disable the HTTP server. This must be called before WebRTCServer::Run(),
     /// i.e. before WebRTCWindowSystem::StartWebRTCServer() or
     /// Application::AddWindow().
-    void DisableHttpHandshakeServer();
+    void DisableHttpHandshake();
 
 private:
     WebRTCServer();
