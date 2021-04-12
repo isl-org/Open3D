@@ -331,6 +331,12 @@ bool FilamentRenderer::UpdateTexture(
     return resource_mgr_.UpdateTexture(texture, image, srgb);
 }
 
+bool FilamentRenderer::UpdateTexture(TextureHandle texture,
+                                     const t::geometry::Image& image,
+                                     bool srgb) {
+    return resource_mgr_.UpdateTexture(texture, image, srgb);
+}
+
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
     resource_mgr_.Destroy(id);
 }

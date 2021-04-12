@@ -496,6 +496,26 @@ bool FilamentResourceManager::UpdateTexture(
     return false;
 }
 
+bool FilamentResourceManager::UpdateTexture(TextureHandle texture,
+                                            const t::geometry::Image& image,
+                                            bool srgb) {
+    auto ftexture_weak = GetTexture(texture);
+    if (auto ftexture = ftexture_weak.lock()) {
+        if (ftexture->getWidth() == size_t(image.GetCols()) &&
+            ftexture->getHeight() == size_t(image.GetRows())) {
+            auto texture_settings = GetSettingsFromImage(image, srgb);
+            filament::Texture::PixelBufferDescriptor desc(
+                    image.GetDataPtr(),
+                    image.GetRows() * image.GetCols() * image.GetChannels() *
+                            image.GetDtype().ByteSize(),
+                    texture_settings.image_format, texture_settings.image_type);
+            ftexture->setImage(engine_, 0, std::move(desc));
+            return true;
+        }
+    }
+    return false;
+}
+
 TextureHandle FilamentResourceManager::CreateColorAttachmentTexture(
         int width, int height) {
     using namespace filament;

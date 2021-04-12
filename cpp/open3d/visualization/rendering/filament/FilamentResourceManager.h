@@ -120,6 +120,9 @@ public:
     bool UpdateTexture(TextureHandle texture,
                        const std::shared_ptr<geometry::Image> image,
                        bool srgb);
+    bool UpdateTexture(TextureHandle texture,
+                       const t::geometry::Image& image,
+                       bool srgb);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
     SkyboxHandle CreateColorSkybox(const Eigen::Vector3f& color);

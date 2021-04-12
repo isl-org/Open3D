@@ -108,6 +108,9 @@ public:
     virtual bool UpdateTexture(TextureHandle texture,
                                const std::shared_ptr<geometry::Image> image,
                                bool srgb) = 0;
+    virtual bool UpdateTexture(TextureHandle texture,
+                               const t::geometry::Image& image,
+                               bool srgb) = 0;
 
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 
