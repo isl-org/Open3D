@@ -281,8 +281,8 @@ private:
                                                 block_resolution, block_count,
                                                 T_frame_to_model, device);
 
-        bool update_scene = false;
-        int update_count = 0;
+        bool is_scene_updated = false;
+        bool is_initialized = false;
         size_t idx = 0;
 
         // Odom
@@ -357,21 +357,14 @@ private:
                 gui::Application::GetInstance().RunInThread([&]() {
                     pcd = std::make_shared<open3d::geometry::PointCloud>(
                             model.ExtractPointCloud().ToLegacyPointCloud());
-                    update_scene = true;
-                    ++update_count;
-
-                    this->widget3d_->GetScene()->RemoveGeometry("points");
-                    auto mat = rendering::Material();
-                    mat.shader = "defaultUnlit";
-                    this->widget3d_->GetScene()->AddGeometry("points",
-                                                             pcd.get(), mat);
+                    is_scene_updated = true;
                 });
             }
 
             gui::Application::GetInstance().PostToMainThread(
                     this, [this, color, depth8, raycast_color, raycast_depth8,
-                           pcd, traj, frustum, &update_scene, update_count,
-                           out = out.str()]() {
+                           pcd, traj, frustum, &is_initialized,
+                           &is_scene_updated, out = out.str()]() {
                         this->SetOutput(out);
                         this->rgb_image_->UpdateImage(color);
                         this->depth_image_->UpdateImage(depth8);
@@ -396,19 +389,24 @@ private:
                                     "trajectory", traj.get(), mat);
                         }
 
-                        if (update_scene) {
-                            update_scene = false;
-
-                            if (update_count == 1) {
-                                auto bbox = this->widget3d_->GetScene()
-                                                    ->GetBoundingBox();
-                                auto center = bbox.GetCenter().cast<float>();
-                                this->widget3d_->SetupCamera(60, bbox, center);
-                                this->widget3d_->LookAt(
-                                        center,
-                                        center - Eigen::Vector3f{0, 1, 3},
-                                        {0.0f, -1.0f, 0.0f});
-                            }
+                        if (is_scene_updated) {
+                            this->widget3d_->GetScene()->RemoveGeometry(
+                                    "points");
+                            auto mat = rendering::Material();
+                            mat.shader = "defaultUnlit";
+                            this->widget3d_->GetScene()->AddGeometry(
+                                    "points", pcd.get(), mat);
+                            is_scene_updated = false;
+                        }
+                        if (!is_initialized) {
+                            auto bbox = this->widget3d_->GetScene()
+                                                ->GetBoundingBox();
+                            auto center = bbox.GetCenter().cast<float>();
+                            this->widget3d_->SetupCamera(60, bbox, center);
+                            this->widget3d_->LookAt(
+                                    center, center - Eigen::Vector3f{0, 1, 3},
+                                    {0.0f, -1.0f, 0.0f});
+                            is_initialized = true;
                         }
                     });
         }
