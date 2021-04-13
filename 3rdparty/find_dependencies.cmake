@@ -938,13 +938,6 @@ if(BUILD_GUI)
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
     endif()
     set(FILAMENT_RUNTIME_VER "")
-    if (WIN32)
-        if (STATIC_WINDOWS_RUNTIME)
-            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
-        else()
-            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
-        endif()
-    endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
         LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
