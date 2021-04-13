@@ -24,22 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/t.h"
+#include "pybind/t/pipelines/pipelines.h"
 
 #include "pybind/open3d_pybind.h"
-#include "pybind/t/geometry/geometry.h"
-#include "pybind/t/io/io.h"
-#include "pybind/t/pipelines/pipelines.h"
+#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
 namespace t {
+namespace pipelines {
 
-void pybind_t(py::module& m) {
-    py::module m_submodule = m.def_submodule("t");
-    pipelines::pybind_pipelines(m_submodule);
-    geometry::pybind_geometry(m_submodule);
-    io::pybind_io(m_submodule);
+void pybind_pipelines(py::module& m) {
+    py::module m_pipelines = m.def_submodule(
+            "pipelines", "Tensor-based geometry processing pipelines.");
+    registration::pybind_registration(m_pipelines);
 }
 
+}  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
