@@ -1,29 +1,3 @@
-// ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
-// ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
-// ----------------------------------------------------------------------------
-
 #include <atomic>
 #include <chrono>
 #include <fstream>
@@ -48,9 +22,44 @@ std::vector<float> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                                              0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
                                              0.0, 0.0, 0.0, 1.0};
 
-class ICPOdometry {
+class ReconstructionWindow : public gui::Window {
+    using Super = gui::Window;
+
 public:
-    ICPOdometry(const std::string& path_config, const core::Device& device)
+    ReconstructionWindow() : gui::Window("Open3D - Reconstruction", 1600, 900) {
+        widget3d_ = std::make_shared<gui::SceneWidget>();
+
+        AddChild(widget3d_);
+
+        widget3d_->SetScene(
+                std::make_shared<rendering::Open3DScene>(GetRenderer()));
+    }
+
+    ~ReconstructionWindow() {}
+
+    // void Layout(const gui::Theme& theme) override {
+    //     Super::Layout(theme);
+
+    //     int em = theme.font_size;
+    //     int panel_width = 20 * em;
+    //     // The usable part of the window may not be the full size if there
+    //     // is a menu.
+    //     auto content_rect = GetContentRect();
+
+    //     int x = panel_->GetFrame().GetRight();
+    //     widget3d_->SetFrame(gui::Rect(x, content_rect.y,
+    //                                   output_panel_->GetFrame().x - x,
+    //                                   content_rect.height));
+    // }
+
+protected:
+    std::shared_ptr<gui::SceneWidget> widget3d_;
+};
+
+//------------------------------------------------------------------------------
+class ExampleWindow : public ReconstructionWindow {
+public:
+    ExampleWindow(const std::string& path_config, const core::Device& device)
         : result_(device),
           device_(device),
           host_(core::Device("CPU:0")),
@@ -74,69 +83,51 @@ public:
         is_done_ = false;
         visualize_output_ = true;
 
-        gui::Application::GetInstance().Initialize();
+        SetOnClose([this]() {
+            is_done_ = true;
+            return true;  // false would cancel the close
+        });
+        update_thread_ = std::thread([this]() { this->UpdateMain(); });
     }
 
-    void Run() {
-        main_vis_ = std::make_shared<visualizer::O3DVisualizer>(
-                "Open3D - ICP Scan to Scan Odometry Demo", WIDTH, HEIGHT);
-
-        main_vis_->SetOnClose([this]() { return this->OnMainWindowClosing(); });
-
-        gui::Application::GetInstance().AddWindow(main_vis_);
-
-        std::thread read_thread([this]() { this->MultiScaleICPMappingDemo(); });
-        gui::Application::GetInstance().Run();
-        read_thread.join();
-    }
+    ~ExampleWindow() { update_thread_.join(); }
 
 private:
-    bool OnMainWindowClosing() {
-        // Ensure object is free so Filament can clean up without crashing.
-        // Also signals to the "reading" thread that it is finished.
-        main_vis_.reset();
-        return true;  // false would cancel the close
-    }
+    std::thread update_thread_;
 
-private:
-    void MultiScaleICPMappingDemo() {
-        // This is NOT the UI thread, need to call PostToMainThread() to
-        // update the scene or any part of the UI.
+    void UpdateMain() {
+        t::geometry::PointCloud pcd;
+
+        core::Tensor initial_transform = core::Tensor::Eye(4, dtype_, device_);
+        core::Tensor cumulative_transform = initial_transform.Clone();
 
         geometry::AxisAlignedBoundingBox bounds;
         auto mat = rendering::Material();
         mat.shader = "defaultUnlit";
 
-        if (visualize_output_) {
-            {
-                std::lock_guard<std::mutex> lock(cloud_lock_);
-                legacy_output_ =
-                        std::make_shared<open3d::geometry::PointCloud>();
-                *legacy_output_ = pointclouds_host_[0].ToLegacyPointCloud();
-            }
+        {
+            std::lock_guard<std::mutex> lock(cloud_lock_);
+            pcd = pointclouds_host_[0].Clone();
+        }
 
+        if (visualize_output_) {
             gui::Application::GetInstance().PostToMainThread(
-                    main_vis_.get(), [this, bounds, mat]() {
+                    this, [this, bounds, mat, pcd]() {
                         std::lock_guard<std::mutex> lock(cloud_lock_);
-                        main_vis_->AddGeometry(filenames_[0],
-                                               legacy_output_ /*, &mat*/);
-                        legacy_output_->PaintUniformColor({1.0, 0.0, 0.0});
-                        main_vis_->AddGeometry(CURRENT_CLOUD, legacy_output_,
-                                               &mat);
-                        main_vis_->ResetCameraToDefault();
-                        Eigen::Vector3f center =
-                                bounds.GetCenter().cast<float>();
-                        main_vis_->SetupCamera(180, center,
-                                               center + CENTER_OFFSET,
-                                               {0.0f, -1.0f, 0.0f});
-                        main_vis_->SetBackground({0.0f, 0.0f, 0.0f, 1.0f});
+
+                        this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                                filenames_[0], pcd, mat);
+                        // pcd->->PaintUniformColor({1.0, 0.0, 0.0});
+                        // this->widget3d_->GetScene()->GetScene()->AddGeometry(CURRENT_CLOUD,
+                        // legacy_output_, &mat);
+                        auto bbox =
+                                this->widget3d_->GetScene()->GetBoundingBox();
+                        auto center = bbox.GetCenter().cast<float>();
+
+                        this->widget3d_->SetupCamera(60, bbox, center);
                     });
         }
 
-        core::Tensor initial_transform = core::Tensor::Eye(4, dtype_, device_);
-        core::Tensor cumulative_transform = initial_transform.Clone();
-
-        double total_processing_time = 0;
         for (int i = 0; i < end_range_ - 1; i++) {
             utility::Timer time_icp_odom_loop;
             time_icp_odom_loop.Start();
@@ -151,49 +142,36 @@ private:
                     result.transformation_.Inverse());
 
             time_icp_odom_loop.Stop();
-            total_processing_time += time_icp_odom_loop.GetDuration();
-            utility::LogDebug(" Registraion took: {}",
-                              time_icp_odom_loop.GetDuration());
+            double total_processing_time = time_icp_odom_loop.GetDuration();
+            utility::LogDebug(" Registraion took: {}", total_processing_time);
             utility::LogDebug(" Cumulative Transformation: \n{}\n",
                               cumulative_transform.ToString());
 
-            if (visualize_output_) {
-                auto pcd_transformed = target.Transform(cumulative_transform)
-                                               .ToLegacyPointCloud();
-                {
-                    std::lock_guard<std::mutex> lock(cloud_lock_);
-                    *legacy_output_ = pcd_transformed;
-                }
-
-                if (!main_vis_) {  // might have changed while sleeping
-                    break;
-                }
-
-                gui::Application::GetInstance().PostToMainThread(
-                        main_vis_.get(), [this, i, mat]() {
-                            std::lock_guard<std::mutex> lock(cloud_lock_);
-
-                            main_vis_->AddGeometry(filenames_[i + 1],
-                                                   legacy_output_ /*, &mat*/);
-
-                            legacy_output_->PaintUniformColor({1.0, 0.0, 0.0});
-                            main_vis_->RemoveGeometry(CURRENT_CLOUD);
-                            main_vis_->AddGeometry(CURRENT_CLOUD,
-                                                   legacy_output_, &mat);
-
-                            // auto bounds =
-                            //         legacy_output_->GetAxisAlignedBoundingBox();
-                            // auto extent = bounds.GetExtent();
-                            main_vis_->ResetCameraToDefault();
-                            auto bbox = main_vis_->GetScene()->GetBoundingBox();
-                            auto center = bbox.GetCenter().cast<float>();
-                            // Eigen::Vector3f center =
-                            //         bounds.GetCenter().cast<float>();
-                            main_vis_->SetupCamera(180, center,
-                                                   center + CENTER_OFFSET,
-                                                   {0.0f, -1.0f, 0.0f});
-                        });
+            {
+                std::lock_guard<std::mutex> lock(cloud_lock_);
+                pcd = target.Transform(cumulative_transform)
+                              .To(core::Device("CPU:0"), true);
             }
+
+            gui::Application::GetInstance().PostToMainThread(this, [this, pcd,
+                                                                    &mat, i]() {
+                std::lock_guard<std::mutex> lock(cloud_lock_);
+                utility::Timer timer;
+                timer.Start();
+
+                this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                        filenames_[i + 1], pcd, mat);
+
+                auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
+                auto center = bbox.GetCenter().cast<float>();
+
+                this->widget3d_->SetupCamera(60, bbox, center);
+
+                timer.Stop();
+                utility::LogInfo("Update geometry takes {}",
+                                 timer.GetDuration());
+                // is_scene_updated = false;
+            });
         }
     }
 
@@ -378,13 +356,10 @@ private:
 
 private:
     std::mutex cloud_lock_;
-    std::shared_ptr<open3d::geometry::PointCloud> legacy_output_;
-    std::shared_ptr<open3d::geometry::PointCloud> legacy_current_;
 
     std::atomic<bool> is_done_;
-    std::shared_ptr<visualizer::O3DVisualizer> main_vis_;
+    // std::shared_ptr<visualizer::O3DVisualizer> main_vis_;
 
-private:
     std::vector<open3d::t::geometry::PointCloud> pointclouds_host_;
 
 private:
@@ -410,15 +385,23 @@ private:
     core::Device host_;
     core::Dtype dtype_;
 
-private:
-    // Ground Truth value of odometry after (end_range - 1)th iteration.
     double gt_tx_;
     double gt_ty_;
 };
 
-int main(int argc, char* argv[]) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+//------------------------------------------------------------------------------
+int main(int argc, const char* argv[]) {
+    if (argc < 3) {
+        utility::LogError("Expected dataset path as input");
+    }
     const std::string path_config = std::string(argv[2]);
-    ICPOdometry(path_config, core::Device(argv[1])).Run();
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    auto& app = gui::Application::GetInstance();
+    app.Initialize(argc, argv);
+    app.AddWindow(std::make_shared<ExampleWindow>(path_config,
+                                                  core::Device(argv[1])));
+    app.Run();
     return 0;
 }

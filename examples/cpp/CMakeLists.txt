@@ -72,6 +72,7 @@ if (BUILD_GUI)
     EXAMPLE_CPP(DemoTMultiScaleICP    ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(DemoTMultiScaleICPwithLines  ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(DemoTMultiScaleICPMapping ${CMAKE_PROJECT_NAME} Threads::Threads)
+    EXAMPLE_CPP(DemoTMultiScaleICPMapping2 ${CMAKE_PROJECT_NAME} Threads::Threads)
 endif()
 
 if(BUILD_LIBREALSENSE)

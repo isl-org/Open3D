@@ -2,7 +2,7 @@
 # When voxel_size is -1, no downsampling is performed.
 
 dataset_path = /home/rey/Datasets/kitti_normals/
-end_range = 200
+end_range = 100
 
 verbosity = Info
 
