@@ -23,7 +23,7 @@ else()
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
         if(${glibc_version} VERSION_LESS "2.31")
             set(DOWNLOAD_URL_PRIMARY
-                "https://storage.googleapis.com/open3d-releases/filament/filament-v1.9.19-linux.tgz")
+                "https://github.com/intel-isl/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz")
             message(STATUS "GLIBC version ${glibc_version} found: Downloading "
                 "Google Filament binary.")
         else()
