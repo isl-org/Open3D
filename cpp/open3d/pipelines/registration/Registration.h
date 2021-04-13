@@ -185,11 +185,11 @@ RegistrationResult RegistrationICP(
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param voxel_sizes Vector of voxel scales of type double.
-/// \param criteria Vector of ICPConvergenceCriteria objects for each scale.
-/// \param max_correspondence_distance Vector of maximum correspondence
+/// \param voxel_sizes VectorDouble of voxel scales of type double.
+/// \param criterias Vector of ICPConvergenceCriteria objects for each scale.
+/// \param max_correspondence_distances VectorDouble of maximum correspondence
 /// points-pair distances of type double, for each iteration. Must be of same
-/// length as voxel_sizes and criteria.
+/// length as voxel_sizes and criterias.
 /// \param init Initial transformation estimation.
 /// \param estimation Estimation method.
 RegistrationResult RegistrationMultiScaleICP(
