@@ -111,21 +111,22 @@ private:
         }
 
         if (visualize_output_) {
-            gui::Application::GetInstance().PostToMainThread(
-                    this, [this, bounds, mat, pcd]() {
-                        std::lock_guard<std::mutex> lock(cloud_lock_);
+            gui::Application::GetInstance().PostToMainThread(this, [this,
+                                                                    bounds, mat,
+                                                                    pcd]() {
+                std::lock_guard<std::mutex> lock(cloud_lock_);
 
-                        this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                                filenames_[0], pcd, mat);
-                        // pcd->->PaintUniformColor({1.0, 0.0, 0.0});
-                        // this->widget3d_->GetScene()->GetScene()->AddGeometry(CURRENT_CLOUD,
-                        // legacy_output_, &mat);
-                        auto bbox =
-                                this->widget3d_->GetScene()->GetBoundingBox();
-                        auto center = bbox.GetCenter().cast<float>();
+                this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                        filenames_[0], pcd, mat);
+                // pcd->->PaintUniformColor({1.0, 0.0, 0.0});
+                // this->widget3d_->GetScene()->GetScene()->AddGeometry(CURRENT_CLOUD,
+                // legacy_output_, &mat);
+                auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
+                auto center = bbox.GetCenter().cast<float>();
 
-                        this->widget3d_->SetupCamera(60, bbox, center);
-                    });
+                this->widget3d_->SetupCamera(60, bbox, center);
+                this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
+            });
         }
 
         for (int i = 0; i < end_range_ - 1; i++) {
