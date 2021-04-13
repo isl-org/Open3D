@@ -1039,7 +1039,7 @@ void RayCastCPU
                                         depth_map_indexer
                                                 .GetDataPtrFromCoord<float>(x,
                                                                             y);
-                                *depth = t_intersect * 1000.0;
+                                *depth = t_intersect * 4000.0;
                             }
                             if (enable_vertex) {
                                 float* vertex =
