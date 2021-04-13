@@ -201,6 +201,23 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
+      this.videoElement.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        var rect = event.target.getBoundingClientRect();
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: "BUTTON_DOWN",
+          x: Math.round(event.targetTouches[0].pageX - rect.left),
+          y: Math.round(event.targetTouches[0].pageY - rect.top),
+          modifiers: 0,
+          button: {
+            button: "LEFT", // Fix me.
+            count: 1,
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
       this.videoElement.addEventListener("mouseup", (event) => {
         var open3dMouseEvent = {
           window_uid: windowUID,
@@ -216,6 +233,24 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
+      this.videoElement.addEventListener("touchend", (event) => {
+        event.preventDefault();
+        var rect = event.target.getBoundingClientRect();
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: "BUTTON_UP",
+          x: Math.round(event.targetTouches[0].pageX - rect.left),
+          y: Math.round(event.targetTouches[0].pageY - rect.top),
+          modifiers: 0,
+          button: {
+            button: "LEFT", // Fix me.
+            count: 1,
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
+      this.v;
       this.videoElement.addEventListener("mousemove", (event) => {
         // TODO: Known differences. Currently only left-key drag works.
         // - Open3D: L=1, M=2, R=4
@@ -229,6 +264,25 @@ var WebRtcStreamer = (function () {
           modifiers: WebRtcStreamer._getModifiers(event),
           move: {
             buttons: event.buttons, // MouseButtons ORed together
+          },
+        };
+        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+      });
+      this.videoElement.addEventListener("touchmove", (event) => {
+        // TODO: Known differences. Currently only left-key drag works.
+        // - Open3D: L=1, M=2, R=4
+        // - JavaScript: L=1, R=2, M=4
+        event.preventDefault();
+        var rect = event.target.getBoundingClientRect();
+        var open3dMouseEvent = {
+          window_uid: windowUID,
+          class_name: "MouseEvent",
+          type: "DRAG",
+          x: Math.round(event.targetTouches[0].pageX - rect.left),
+          y: Math.round(event.targetTouches[0].pageY - rect.top),
+          modifiers: 0,
+          move: {
+            buttons: 1, // MouseButtons ORed together
           },
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
