@@ -181,15 +181,6 @@ RegistrationResult RegistrationMultiScaleICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint());
 
-/// \brief Converts `tensor CorrespondenceSet` to `legacy CorrespondenceSet`.
-///
-/// \param tensor_correspondence_set It is a pair of Int64 tensors of shape
-/// {C,}, where C is the number of correspondences. [Refer definition at
-/// TransformationEstimation.h]. \return Legacy CorrespondenceSet definied as
-/// std::vector<Eigen::Vector2i>.
-std::vector<Eigen::Vector2i> ToLegacyCorrespondenceSet(
-        const CorrespondenceSet &tensor_correspondence_set);
-
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t
