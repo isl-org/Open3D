@@ -218,9 +218,8 @@ static const std::unordered_map<std::string, std::string>
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
                 {"max_correspondence_distances",
-                 "DoubleVector of maximum correspondence points-pair distances "
-                 "for "
-                 "multi-scale icp."},
+                 "o3d.utility.DoubleVector of maximum correspondence "
+                 "points-pair distances for multi-scale icp."},
                 {"option", "Registration option"},
                 {"source", "The source point cloud."},
                 {"target", "The target point cloud."},
@@ -228,8 +227,8 @@ static const std::unordered_map<std::string, std::string>
                  "The 4x4 transformation matrix to transform ``source`` to "
                  "``target``"},
                 {"voxel_sizes",
-                 "DoubleVector of voxel sizes in strictly decreasing order,"
-                 "for multi-scale icp."}};
+                 "o3d.utility.DoubleVector of voxel sizes in strictly "
+                 "decreasing order, for multi-scale icp."}};
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
