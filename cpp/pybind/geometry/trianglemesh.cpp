@@ -328,7 +328,7 @@ void pybind_trianglemesh(py::module &m) {
             .def_static("create_from_point_cloud_alpha_shape",
                         &TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "
-                        "With decreasing alpha value the shape schrinks and "
+                        "With decreasing alpha value the shape shrinks and "
                         "creates cavities. See Edelsbrunner and Muecke, "
                         "\"Three-Dimensional Alpha Shapes\", 1994.",
                         "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a)
@@ -657,7 +657,7 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
             {{"pcd",
-              "PointCloud from whicht the TriangleMesh surface is "
+              "PointCloud from which the TriangleMesh surface is "
               "reconstructed."},
              {"alpha",
               "Parameter to control the shape. A very big value will give a "
