@@ -88,6 +88,14 @@ public:
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Dtype::Float32, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+    /// \brief Parameterized Constructor for device type. The transformation_
+    /// will be initialized with Identity tensor of Float32 on the device.
+    ///
+    /// \param device Device on which RegistrationResult is to be initialized.
+    RegistrationResult(const core::Device &device)
+        : transformation_(core::Tensor::Eye(4, core::Dtype::Float32, device)),
+          inlier_rmse_(0.0),
+          fitness_(0.0){};
     ~RegistrationResult() {}
     bool IsBetterRANSACThan(const RegistrationResult &other) const {
         return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
@@ -135,10 +143,52 @@ RegistrationResult RegistrationICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const core::Tensor &init,
+        const core::Tensor &init = core::Tensor::Eye(4,
+                                                     core::Dtype::Float32,
+                                                     core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+
+/// \brief Functions for Multi-Scale ICP registration.
+/// It will run ICP on different voxel level, from coarse to dense.
+/// The vector of ICPConvergenceCriteria(relative fitness, relative rmse,
+/// max_iterations) contains the stoping condition for each voxel level.
+/// The length of voxel_sizes vector, criteria vector,
+/// max_correspondence_distances vector must be same, and voxel_sizes must
+/// contain positive values in strictly decreasing order [Lower the voxel size,
+/// higher is the resolution]. Only the last value of the voxel_sizes vector can
+/// be {-1}, as it allows to run on the original scale without downsampling.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param voxel_sizes VectorDouble of voxel scales of type double.
+/// \param criterias Vector of ICPConvergenceCriteria objects for each scale.
+/// \param max_correspondence_distances VectorDouble of maximum correspondence
+/// points-pair distances of type double, for each iteration. Must be of same
+/// length as voxel_sizes and criterias.
+/// \param init Initial transformation estimation.
+/// \param estimation Estimation method.
+RegistrationResult RegistrationMultiScaleICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const std::vector<double> &voxel_sizes,
+        const std::vector<ICPConvergenceCriteria> &criterias,
+        const std::vector<double> &max_correspondence_distances,
+        const core::Tensor &init = core::Tensor::Eye(4,
+                                                     core::Dtype::Float32,
+                                                     core::Device("CPU:0")),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint());
+
+/// \brief Converts `tensor CorrespondenceSet` to `legacy CorrespondenceSet`.
+///
+/// \param tensor_correspondence_set It is a pair of Int64 tensors of shape
+/// {C,}, where C is the number of correspondences. [Refer definition at
+/// TransformationEstimation.h]. \return Legacy CorrespondenceSet definied as
+/// std::vector<Eigen::Vector2i>.
+std::vector<Eigen::Vector2i> ToLegacyCorrespondenceSet(
+        const CorrespondenceSet &tensor_correspondence_set);
 
 }  // namespace registration
 }  // namespace pipelines

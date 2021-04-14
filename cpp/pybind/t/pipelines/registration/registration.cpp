@@ -176,7 +176,7 @@ void pybind_registration_classes(py::module &m) {
                     "correspondence_set",
                     &RegistrationResult::correspondence_set_,
                     "Correspondence set between source and target point cloud. "
-                    "It is a pair of ``Int64`` ``C x 1`` tensor, where C is "
+                    "It is a pair of ``Int64`` ``{C,}`` tensor, where C is "
                     "the number of good correspondences between source and "
                     "target pointcloud. The first tensor is the source "
                     "indices, and the second tensor is corresponding target "
@@ -208,6 +208,8 @@ static const std::unordered_map<std::string, std::string>
                  "pair of Tensors that stores indices of "
                  "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
+                {"criterias",
+                 "List of Convergence criteria for multi-scale icp."},
                 {"estimation_method",
                  "Estimation method. One of "
                  "(``TransformationEstimationPointToPoint``, "
@@ -215,12 +217,19 @@ static const std::unordered_map<std::string, std::string>
                 {"init", "Initial transformation estimation"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
+                {"max_correspondence_distances",
+                 "DoubleVector of maximum correspondence points-pair distances "
+                 "for "
+                 "multi-scale icp."},
                 {"option", "Registration option"},
                 {"source", "The source point cloud."},
                 {"target", "The target point cloud."},
                 {"transformation",
-                 "The 4x4 transformation matrix "
-                 "to transform ``source`` to ``target``"}};
+                 "The 4x4 transformation matrix to transform ``source`` to "
+                 "``target``"},
+                {"voxel_sizes",
+                 "DoubleVector of voxel sizes in strictly decreasing order,"
+                 "for multi-scale icp."}};
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
@@ -232,10 +241,21 @@ void pybind_registration_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("registration_icp", &RegistrationICP, "Function for ICP registration",
-          "source"_a, "target"_a, "max_correspondence_distance"_a, "init"_a,
+          "source"_a, "target"_a, "max_correspondence_distance"_a,
+          "init"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                       core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_icp",
+                                 map_shared_argument_docstrings);
+
+    m.def("registration_multi_scale_icp", &RegistrationMultiScaleICP,
+          "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
+          "voxel_sizes"_a, "criterias"_a, "max_correspondence_distances"_a,
+          "init"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                       core::Device("CPU:0")),
+          "estimation_method"_a = TransformationEstimationPointToPoint());
+    docstring::FunctionDocInject(m, "registration_multi_scale_icp",
                                  map_shared_argument_docstrings);
 }
 
