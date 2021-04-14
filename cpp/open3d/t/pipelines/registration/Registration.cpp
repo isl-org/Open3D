@@ -160,9 +160,8 @@ RegistrationResult RegistrationMultiScaleICP(
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [RegistrationMultiScaleICP]: Size of criterias,"
-                " voxel_size, max_correspondence_distances vectors must be "
-                "same.");
+                " [RegistrationMultiScaleICP]: Size of criterias, voxel_size,"
+                " max_correspondence_distances vectors must be same.");
     }
 
     if ((estimation.GetTransformationEstimationType() ==
@@ -176,19 +175,18 @@ RegistrationResult RegistrationMultiScaleICP(
                 "require pre-computed normal vectors for target PointCloud.");
     }
 
-	if (max_correspondence_distances[0] <= 0.0) {
-			utility::LogError(
-					" Max correspondence distance must be greater than 0, but"
-					" got {} in scale: {}.",
-					max_correspondence_distances[0], 0);
-	}
+    if (max_correspondence_distances[0] <= 0.0) {
+        utility::LogError(
+                " Max correspondence distance must be greater than 0, but"
+                " got {} in scale: {}.",
+                max_correspondence_distances[0], 0);
+    }
 
     for (int64_t i = 1; i < num_iterations; i++) {
         if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
             utility::LogError(
                     " [MultiScaleICP] Voxel sizes must be in strictly "
-                    "decreasing "
-                    "order.");
+                    "decreasing order.");
         }
         if (max_correspondence_distances[i] <= 0.0) {
             utility::LogError(
