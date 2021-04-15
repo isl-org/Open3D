@@ -62,6 +62,12 @@ public:
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
+    template <typename T = int64_t>
+    Scalar(long v,
+           typename std::enable_if<!std::is_same<T, long>::value>::type* = 0) {
+        scalar_type_ = ScalarType::Int64;
+        value_.i = static_cast<int64_t>(v);
+    }
     Scalar(uint8_t v) {
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
