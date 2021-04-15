@@ -28,6 +28,8 @@
 include README.rst
 include LICENSE.txt
 include requirements.txt
+include setup.cfg
+include setup.py
 
 # Main library, including compiled binaries
 graft open3d
