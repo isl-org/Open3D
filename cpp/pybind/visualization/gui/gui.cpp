@@ -1454,10 +1454,12 @@ void pybind_gui_classes(py::module &m) {
                  "First argument is the heading text, the second is the "
                  "spacing between widgets, and the third is the margins. "
                  "Both the spacing and the margins default to 0.")
-            .def("set_is_open", &CollapsableVert::SetIsOpen,
+            .def("set_is_open", &CollapsableVert::SetIsOpen, "is_open"_a,
                  "Sets to collapsed (False) or open (True). Requires a call to "
                  "Window.SetNeedsLayout() afterwards, unless calling before "
-                 "window is visible");
+                 "window is visible")
+            .def("get_is_open", &CollapsableVert::GetIsOpen,
+                 "Check if widget is open.");
 
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(

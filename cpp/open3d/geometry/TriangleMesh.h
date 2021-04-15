@@ -628,8 +628,11 @@ public:
     /// latitude lines including the north and south pole). The latitudes will
     /// be split into `2 * resolution segments (i.e. there are 2 * resolution
     /// longitude lines.)
-    static std::shared_ptr<TriangleMesh> CreateSphere(double radius = 1.0,
-                                                      int resolution = 20);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateSphere(
+            double radius = 1.0,
+            int resolution = 20,
+            bool create_uv_map = false);
 
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
@@ -641,10 +644,13 @@ public:
     /// \param resolution defines that the circle will be split into resolution
     /// segments \param split defines that the height will be split into split
     /// segments.
-    static std::shared_ptr<TriangleMesh> CreateCylinder(double radius = 1.0,
-                                                        double height = 2.0,
-                                                        int resolution = 20,
-                                                        int split = 4);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateCylinder(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 4,
+            bool create_uv_map = false);
 
     /// Factory function to create a cone mesh (TriangleMeshFactory.cpp)
     /// The axis of the cone will be from (0, 0, 0) to (0, 0, height).
@@ -655,10 +661,12 @@ public:
     /// \param resolution defines that the circle will be split into resolution
     /// segments \param split defines that the height will be split into split
     /// segments.
+    /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateCone(double radius = 1.0,
                                                     double height = 2.0,
                                                     int resolution = 20,
-                                                    int split = 1);
+                                                    int split = 1,
+                                                    bool create_uv_map = false);
 
     /// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
     /// The torus will be centered at (0, 0, 0) and a radius of

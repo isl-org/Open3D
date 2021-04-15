@@ -394,6 +394,8 @@ CollapsableVert::~CollapsableVert() {}
 
 void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 
+bool CollapsableVert::GetIsOpen() { return impl_->is_open_; }
+
 Size CollapsableVert::CalcPreferredSize(const Theme& theme,
                                         const Constraints& constraints) const {
     auto* font = ImGui::GetFont();
