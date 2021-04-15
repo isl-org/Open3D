@@ -81,8 +81,16 @@ endif()
 # dependencies and include all static assets. The generated output is in
 # ${PYTHON_PACKAGE_DST_DIR}/open3d/static.
 if (BUILD_JUPYTER_EXTENSION)
+    if(UNIX AND NOT APPLE)
+        message(STATUS "Jupyter support is enabled, building Jupyter plugin now.")
+    else()
+        message(FATAL_ERROR "Jupyter plugin is only supported on Linux. You may"
+                "build and start the Jupyter server on Linux and view the "
+                "Jupyter webpage in any OS with modern WebRTC-enabled browsers.")
+    endif()
+
     file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR}/open3d/static)
-    message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
+
     if (WIN32)
         find_program(NPM "npm")
         execute_process(
