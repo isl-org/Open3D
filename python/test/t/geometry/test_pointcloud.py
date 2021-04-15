@@ -149,3 +149,12 @@ def test_member_functions(device):
     pcd.rotate(rotation, center)
     assert pcd.point["points"].allclose(o3c.Tensor([[3, 3, 2]], dtype, device))
     assert pcd.point["normals"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
+
+    # voxel_down_sample
+    pcd = o3d.t.geometry.PointCloud(device)
+    pcd.point["points"] = o3c.Tensor(
+        [[0.1, 0.3, 0.9], [0.9, 0.2, 0.4], [0.3, 0.6, 0.8], [0.2, 0.4, 0.2]],
+        dtype, device)
+
+    pcd_small_down = pcd.voxel_down_sample(1)
+    assert pcd.point["points"].allclose(o3c.Tensor([[0, 0, 0]], dtype, device))
