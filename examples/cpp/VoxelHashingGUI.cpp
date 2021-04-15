@@ -161,6 +161,23 @@ class PropertyPanel : public gui::VGrid {
 public:
     PropertyPanel(int spacing) : gui::VGrid(2, spacing) {}
 
+    void AddButton(const std::string& name, std::atomic<bool>* is_running) {
+        auto cb = std::make_shared<gui::Button>(name.c_str());
+        cb->SetText("Start");
+        *is_running = false;
+
+        cb->SetOnClicked([is_running, cb, this]() {
+            *is_running = !(*is_running);
+            if (*is_running) {
+                cb->SetText("Pause");
+            } else {
+                cb->SetText("Resume");
+            }
+            this->NotifyChanged();
+        });
+        AddChild(cb);
+    }
+
     void AddBool(const std::string& name,
                  std::atomic<bool>* bool_addr,
                  bool default_val) {
@@ -193,7 +210,7 @@ public:
     }
 
     void AddIntSlider(const std::string& name,
-                      std::atomic<double>* num_addr,
+                      std::atomic<int>* num_addr,
                       int default_val,
                       int min_val,
                       int max_val) {
@@ -257,10 +274,16 @@ public:
         AddChild(widget3d_);
         AddChild(output_panel_);
 
+        control_props_ = std::make_shared<PropertyPanel>(
+                int(std::round(0.25f * float(em))));
+
         fixed_props_ = std::make_shared<PropertyPanel>(
                 int(std::round(0.25f * float(em))));
         adjustable_props_ = std::make_shared<PropertyPanel>(
                 int(std::round(0.25f * float(em))));
+
+        panel_->AddChild(std::make_shared<gui::Label>("Control"));
+        panel_->AddChild(control_props_);
 
         panel_->AddChild(std::make_shared<gui::Label>("Preset params"));
         panel_->AddChild(fixed_props_);
@@ -317,7 +340,7 @@ protected:
     std::shared_ptr<gui::Vert> output_panel_;
     std::shared_ptr<gui::Label> output_;
     std::shared_ptr<gui::SceneWidget> widget3d_;
-
+    std::shared_ptr<PropertyPanel> control_props_;
     std::shared_ptr<PropertyPanel> fixed_props_;
     std::shared_ptr<PropertyPanel> adjustable_props_;
 
@@ -336,6 +359,8 @@ class ExampleWindow : public ReconstructionWindow {
 public:
     ExampleWindow(const std::string& dataset_path) {
         dataset_path_ = dataset_path;
+        control_props_->AddButton("Toggle", &prop_values_.is_running);
+
         // Adjustable
         adjustable_props_->AddIntSlider(
                 "Surface update", &prop_values_.surface_interval, 50, 1, 100);
@@ -347,8 +372,8 @@ public:
                                    true);
 
         // Fixed
-        fixed_props_->AddFloatSlider("Depth scale", &prop_values_.depth_scale,
-                                     1000.0, 1.0, 5000.0);
+        fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
+                                   1000, 1, 5000);
 
         is_done_ = false;
         SetOnClose([this]() {
@@ -364,11 +389,12 @@ private:
     std::string dataset_path_;
 
     struct {
-        std::atomic<double> surface_interval;
-        std::atomic<double> depth_scale;
+        std::atomic<int> surface_interval;
+        std::atomic<int> depth_scale;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
+        std::atomic<bool> is_running;
     } prop_values_;
     std::atomic<bool> is_done_;
     std::thread update_thread_;
@@ -411,6 +437,9 @@ private:
 
         t::geometry::Image ref_depth =
                 *t::io::CreateImageFromFile(depth_files[0]);
+        t::geometry::Image ref_color =
+                *t::io::CreateImageFromFile(rgb_files[0]);
+
         t::pipelines::voxelhashing::Frame input_frame(
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
         t::pipelines::voxelhashing::Frame raycast_frame(
@@ -435,9 +464,43 @@ private:
         auto raycast_depth8 = std::make_shared<geometry::Image>();
 
         t::geometry::PointCloud pcd;
-        this->fixed_props_->GetChildren()[1]->SetEnabled(false);
+
+        color = std::make_shared<open3d::geometry::Image>(
+                ref_color.ToLegacyImage());
+        depth = std::make_shared<open3d::geometry::Image>(
+                ref_depth.To(core::Dtype::Float32, false, 1.0f)
+                        .ToLegacyImage());
+        depth8 =
+                ColorizeDepth(*depth, depth_scale, 0.3, prop_values_.depth_max);
+        raycast_color = std::make_shared<geometry::Image>(
+                t::geometry::Image(
+                        core::Tensor::Zeros(
+                                {ref_depth.GetRows(), ref_depth.GetCols(), 3},
+                                core::Dtype::UInt8, core::Device("CPU:0")))
+                        .ToLegacyImage());
+        raycast_depth8 = std::make_shared<geometry::Image>(
+                t::geometry::Image(
+                        core::Tensor::Zeros(
+                                {ref_depth.GetRows(), ref_depth.GetCols(), 3},
+                                core::Dtype::UInt8, core::Device("CPU:0")))
+                        .ToLegacyImage());
+
+        // Render once to refresh
+        gui::Application::GetInstance().PostToMainThread(
+                this, [this, color, depth8, raycast_color, raycast_depth8]() {
+                    this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
+                    this->input_color_image_->UpdateImage(color);
+                    this->input_depth_image_->UpdateImage(depth8);
+                    this->raycast_color_image_->UpdateImage(raycast_color);
+                    this->raycast_depth_image_->UpdateImage(raycast_depth8);
+                });
 
         while (!is_done_) {
+            if (!prop_values_.is_running) continue;
+
+            // Disable depth_scale change
+            this->fixed_props_->GetChildren()[1]->SetEnabled(false);
+
             this->raycast_color_image_->SetVisible(prop_values_.raycast_color);
 
             // Input
