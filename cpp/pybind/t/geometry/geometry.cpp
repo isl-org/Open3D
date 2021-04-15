@@ -35,8 +35,8 @@ namespace geometry {
 
 void pybind_geometry_class(py::module& m) {
     // open3d.t.geometry.Geometry
-    py::class_<Geometry, PyGeometry<Geometry>> geometry(
-            m, "Geometry", "The base geometry class.");
+    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
+            geometry(m, "Geometry", "The base geometry class.");
 
     geometry.def("clear", &Geometry::Clear,
                  "Clear all elements in the geometry.")
