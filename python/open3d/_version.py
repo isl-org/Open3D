@@ -1,5 +1,6 @@
 # Module version
-version_info = (0, 1, 0, 'alpha', 0)
+# TODO (yixing): fix me with CMake config
+version_info = (0, 1, 12, 'final', 0)
 
 # Module version stage suffix map
 _specifier_ = {'alpha': 'a', 'beta': 'b', 'candidate': 'rc', 'final': ''}
