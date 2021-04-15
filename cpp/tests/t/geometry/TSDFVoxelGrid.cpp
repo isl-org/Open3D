@@ -116,7 +116,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
                                  std::runtime_error);
                 } else {
                     using MaskCode =
-                            t::geometry::TSDFVoxelGrid::RayCastMaskCode;
+                            t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
                     auto result = voxel_grid.RayCast(
                             intrinsic_t, extrinsic_t, depth.GetCols(),
                             depth.GetRows(), 50, 0.1, 3.0,

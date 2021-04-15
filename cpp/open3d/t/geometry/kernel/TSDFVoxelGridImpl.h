@@ -177,8 +177,8 @@ void ExtractSurfacePointsCPU
          const core::Tensor& block_keys,
          const core::Tensor& block_values,
          core::Tensor& points,
-         core::Tensor& normals,
-         core::Tensor& colors,
+         utility::optional<std::reference_wrapper<core::Tensor>> normals,
+         utility::optional<std::reference_wrapper<core::Tensor>> colors,
          int64_t resolution,
          float voxel_size,
          float weight_threshold,
@@ -219,33 +219,40 @@ void ExtractSurfacePointsCPU
 #endif
 
     // WARNING: UNSAFE!
-    int max_count = 3000000;
+    int max_count = 6000000;
     if (points.GetLength() == 0) {
         points = core::Tensor({max_count, 3}, core::Dtype::Float32,
                               block_values.GetDevice());
     }
-    // if (normals.GetLength() == 0) {
-    //     normals = core::Tensor({max_count, 3}, core::Dtype::Float32,
-    //                            block_values.GetDevice());
-    // }
     NDArrayIndexer point_indexer(points, 1);
-    // NDArrayIndexer normal_indexer(normals, 1);
+
+    // Normals
+    bool extract_normal = false;
+    NDArrayIndexer normal_indexer;
+    if (normals.has_value()) {
+        extract_normal = true;
+        if (normals.value().get().GetLength() == 0) {
+            normals.value().get() =
+                    core::Tensor({max_count, 3}, core::Dtype::Float32,
+                                 block_values.GetDevice());
+        }
+        normal_indexer = NDArrayIndexer(normals.value().get(), 1);
+    }
 
     // This pass extracts exact surface points.
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                // Colors
                 bool extract_color = false;
                 NDArrayIndexer color_indexer;
-                if (voxel_t::HasColor()) {
+                if (voxel_t::HasColor() && colors.has_value()) {
                     extract_color = true;
-                    if (colors.GetLength() == 0) {
-                        colors = core::Tensor({max_count, 3},
-                                              core::Dtype::Float32,
-                                              block_values.GetDevice());
+                    if (colors.value().get().GetLength() == 0) {
+                        colors.value().get() = core::Tensor(
+                                {max_count, 3}, core::Dtype::Float32,
+                                block_values.GetDevice());
                     }
-                }
-                if (extract_color) {
-                    color_indexer = NDArrayIndexer(colors, 1);
+                    color_indexer = NDArrayIndexer(colors.value().get(), 1);
                 }
 
                 launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -260,17 +267,16 @@ void ExtractSurfacePointsCPU
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
                     };
-                    // auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int
-                    // zo,
-                    //                                      int curr_block_idx,
-                    //                                      float* n) {
-                    //     return DeviceGetNormalAt<voxel_t>(
-                    //             xo, yo, zo, curr_block_idx, n,
-                    //             static_cast<int>(resolution), voxel_size,
-                    //             nb_block_masks_indexer,
-                    //             nb_block_indices_indexer,
-                    //             voxel_block_buffer_indexer);
-                    // };
+                    auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                                         int curr_block_idx,
+                                                         float* n) {
+                        return DeviceGetNormalAt<voxel_t>(
+                                xo, yo, zo, curr_block_idx, n,
+                                static_cast<int>(resolution), voxel_size,
+                                nb_block_masks_indexer,
+                                nb_block_indices_indexer,
+                                voxel_block_buffer_indexer);
+                    };
 
                     // Natural index (0, N) -> (block_idx, voxel_idx)
                     int64_t workload_block_idx = workload_idx / resolution3;
@@ -302,10 +308,12 @@ void ExtractSurfacePointsCPU
                     int64_t y = yb * resolution + yv;
                     int64_t z = zb * resolution + zv;
 
-                    // float no[3] = {0}, ni[3] = {0};
-                    // GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
-                    //             static_cast<int>(zv),
-                    //             static_cast<int>(workload_block_idx), no);
+                    float no[3] = {0}, ni[3] = {0};
+                    if (extract_normal) {
+                        GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
+                                    static_cast<int>(zv),
+                                    static_cast<int>(workload_block_idx), no);
+                    }
 
                     // Enumerate x-y-z axis
                     for (int i = 0; i < 3; ++i) {
@@ -334,24 +342,6 @@ void ExtractSurfacePointsCPU
                                     voxel_size * (y + ratio * int(i == 1));
                             point_ptr[2] =
                                     voxel_size * (z + ratio * int(i == 2));
-                            // GetNormalAt(static_cast<int>(xv) + (i == 0),
-                            //             static_cast<int>(yv) + (i == 1),
-                            //             static_cast<int>(zv) + (i == 2),
-                            //             static_cast<int>(workload_block_idx),
-                            //             ni);
-
-                            // float* normal_ptr =
-                            //         normal_indexer.GetDataPtrFromCoord<float>(
-                            //                 idx);
-                            // float nx = (1 - ratio) * no[0] + ratio * ni[0];
-                            // float ny = (1 - ratio) * no[1] + ratio * ni[1];
-                            // float nz = (1 - ratio) * no[2] + ratio * ni[2];
-                            // float norm = static_cast<float>(
-                            //         sqrt(nx * nx + ny * ny + nz * nz) +
-                            //         1e-5);
-                            // normal_ptr[0] = nx / norm;
-                            // normal_ptr[1] = ny / norm;
-                            // normal_ptr[2] = nz / norm;
 
                             if (extract_color) {
                                 float* color_ptr =
@@ -376,6 +366,29 @@ void ExtractSurfacePointsCPU
                                 color_ptr[2] =
                                         ((1 - ratio) * b_o + ratio * b_i) /
                                         255.0f;
+                            }
+
+                            if (extract_normal) {
+                                GetNormalAt(
+                                        static_cast<int>(xv) + (i == 0),
+                                        static_cast<int>(yv) + (i == 1),
+                                        static_cast<int>(zv) + (i == 2),
+                                        static_cast<int>(workload_block_idx),
+                                        ni);
+
+                                float* normal_ptr =
+                                        normal_indexer
+                                                .GetDataPtrFromCoord<float>(
+                                                        idx);
+                                float nx = (1 - ratio) * no[0] + ratio * ni[0];
+                                float ny = (1 - ratio) * no[1] + ratio * ni[1];
+                                float nz = (1 - ratio) * no[2] + ratio * ni[2];
+                                float norm = static_cast<float>(
+                                        sqrt(nx * nx + ny * ny + nz * nz) +
+                                        1e-5);
+                                normal_ptr[0] = nx / norm;
+                                normal_ptr[1] = ny / norm;
+                                normal_ptr[2] = nz / norm;
                             }
                         }
                     }

@@ -55,7 +55,7 @@ Model::Model(float voxel_size,
       T_frame_to_world_(T_init.To(core::Device("CPU:0"))) {}
 
 void Model::SynthesizeModelFrame(Frame& raycast_frame, float depth_scale) {
-    using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
+    using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
     auto result = voxel_grid_.RayCast(
             raycast_frame.GetIntrinsics(), GetCurrentFramePose().Inverse(),
             raycast_frame.GetWidth(), raycast_frame.GetHeight(), 80,
@@ -95,11 +95,6 @@ void Model::Integrate(const Frame& input_frame,
 
 t::geometry::PointCloud Model::ExtractPointCloud(float weight_threshold) {
     return voxel_grid_.ExtractSurfacePoints(weight_threshold);
-}
-
-t::geometry::PointCloud Model::ExtractPointCloud(
-        t::geometry::PointCloud& pcd_buffer, float weight_threshold) {
-    return voxel_grid_.ExtractSurfacePoints(pcd_buffer, weight_threshold);
 }
 
 }  // namespace voxelhashing

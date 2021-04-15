@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
+    using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
 
     // Color and depth
     std::string color_folder = std::string(argv[1]);
@@ -225,7 +225,9 @@ int main(int argc, char** argv) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd = voxel_grid.ExtractSurfacePoints();
+        auto pcd = voxel_grid.ExtractSurfacePoints(
+                3.0f,
+                MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",

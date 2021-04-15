@@ -188,7 +188,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             sdf_trunc_, depth_scale, depth_max);
 }
 
-std::unordered_map<TSDFVoxelGrid::RayCastMaskCode, core::Tensor>
+std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor>
 TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        const core::Tensor &extrinsics,
                        int width,
@@ -203,19 +203,19 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     core::Tensor pose = extrinsics.Inverse();
 
     core::Tensor vertex_map, depth_map, color_map, normal_map;
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
         vertex_map = core::Tensor::Zeros({height, width, 3},
                                          core::Dtype::Float32, device_);
     }
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::DepthMap) {
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::DepthMap) {
         depth_map = core::Tensor::Zeros({height, width, 1},
                                         core::Dtype::Float32, device_);
     }
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::ColorMap) {
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::ColorMap) {
         color_map = core::Tensor::Zeros({height, width, 3},
                                         core::Dtype::Float32, device_);
     }
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::NormalMap) {
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
         normal_map = core::Tensor::Zeros({height, width, 3},
                                          core::Dtype::Float32, device_);
     }
@@ -228,24 +228,29 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                           max_steps, depth_scale, depth_min, depth_max,
                           weight_threshold);
 
-    std::unordered_map<TSDFVoxelGrid::RayCastMaskCode, core::Tensor> results;
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {
-        results.emplace(TSDFVoxelGrid::RayCastMaskCode::VertexMap, vertex_map);
+    std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor> results;
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
+        results.emplace(TSDFVoxelGrid::SurfaceMaskCode::VertexMap, vertex_map);
     }
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::DepthMap) {
-        results.emplace(TSDFVoxelGrid::RayCastMaskCode::DepthMap, depth_map);
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::DepthMap) {
+        results.emplace(TSDFVoxelGrid::SurfaceMaskCode::DepthMap, depth_map);
     }
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::ColorMap) {
-        results.emplace(TSDFVoxelGrid::RayCastMaskCode::ColorMap, color_map);
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::ColorMap) {
+        results.emplace(TSDFVoxelGrid::SurfaceMaskCode::ColorMap, color_map);
     }
-    if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::NormalMap) {
-        results.emplace(TSDFVoxelGrid::RayCastMaskCode::NormalMap, normal_map);
+    if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
+        results.emplace(TSDFVoxelGrid::SurfaceMaskCode::NormalMap, normal_map);
     }
     return results;
 }
 
-PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {
+PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold,
+                                               int surface_mask) {
     // Extract active voxel blocks from the hashmap.
+    if ((surface_mask & SurfaceMaskCode::VertexMap) == 0) {
+        utility::LogError("VertexMap must be specified in Surface extraction.");
+    }
+
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
     core::Tensor active_nb_addrs, active_nb_masks;
@@ -254,46 +259,31 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {
 
     // Extract points around zero-crossings.
     core::Tensor points, normals, colors;
+
     int valid_size = 0;
     kernel::tsdf::ExtractSurfacePoints(
             active_addrs.To(core::Dtype::Int64),
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
-            points, normals, colors, block_resolution_, voxel_size_,
-            weight_threshold, valid_size);
+            points,
+            surface_mask & SurfaceMaskCode::NormalMap
+                    ? utility::optional<std::reference_wrapper<core::Tensor>>(
+                              normals)
+                    : utility::nullopt,
+            surface_mask & SurfaceMaskCode::ColorMap
+                    ? utility::optional<std::reference_wrapper<core::Tensor>>(
+                              colors)
+                    : utility::nullopt,
+            block_resolution_, voxel_size_, weight_threshold, valid_size);
+
     auto pcd = PointCloud(points.Slice(0, 0, valid_size));
-    // pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
-    if (colors.NumElements() != 0) {
+    if (surface_mask & SurfaceMaskCode::ColorMap) {
         pcd.SetPointColors(colors.Slice(0, 0, valid_size));
     }
-
-    return pcd;
-}
-
-PointCloud TSDFVoxelGrid::ExtractSurfacePoints(PointCloud &pcd_buffer,
-                                               float weight_threshold) {
-    // Extract active voxel blocks from the hashmap.
-    core::Tensor active_addrs;
-    block_hashmap_->GetActiveIndices(active_addrs);
-    core::Tensor active_nb_addrs, active_nb_masks;
-    std::tie(active_nb_addrs, active_nb_masks) =
-            BufferRadiusNeighbors(active_addrs);
-
-    // Extract points around zero-crossings.
-    core::Tensor points = pcd_buffer.GetPoints();
-    core::Tensor normals;  // = pcd_buffer.GetPointNormals();
-    core::Tensor colors = pcd_buffer.GetPointColors();
-    int valid_size = 0;
-    kernel::tsdf::ExtractSurfacePoints(
-            active_addrs.To(core::Dtype::Int64),
-            active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
-            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
-            points, normals, colors, block_resolution_, voxel_size_,
-            weight_threshold, valid_size);
-    auto pcd = PointCloud(points.Slice(0, 0, valid_size));
-    if (colors.NumElements() != 0) {
-        pcd.SetPointColors(colors.Slice(0, 0, valid_size));
+    if (surface_mask & SurfaceMaskCode::NormalMap) {
+        pcd.SetPointNormals(normals.Slice(0, 0, valid_size));
     }
+
     return pcd;
 }
 

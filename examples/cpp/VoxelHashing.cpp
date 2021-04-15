@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    using MaskCode = t::geometry::TSDFVoxelGrid::RayCastMaskCode;
+    using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     // Color and depth

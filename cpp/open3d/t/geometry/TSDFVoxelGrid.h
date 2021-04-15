@@ -86,7 +86,7 @@ public:
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
-    enum RayCastMaskCode {
+    enum SurfaceMaskCode {
         VertexMap = 1,
         DepthMap = 2,
         ColorMap = 4,
@@ -100,7 +100,7 @@ public:
     /// interpolated along the ray, but color map is not trilinearly
     /// interpolated due to performance requirements. Colormap is only used for
     /// a reference now.
-    std::unordered_map<RayCastMaskCode, core::Tensor> RayCast(
+    std::unordered_map<SurfaceMaskCode, core::Tensor> RayCast(
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics,
             int width,
@@ -110,19 +110,18 @@ public:
             float depth_min = 0.1f,
             float depth_max = 3.0f,
             float weight_threshold = 3.0f,
-            int ray_cast_mask = RayCastMaskCode::DepthMap |
-                                RayCastMaskCode::VertexMap |
-                                RayCastMaskCode::ColorMap);
+            int ray_cast_mask = SurfaceMaskCode::DepthMap |
+                                SurfaceMaskCode::ColorMap);
 
     /// Extract point cloud near iso-surfaces.
     /// Weight threshold is used to filter outliers. By default we use 3.0,
     /// where we assume a reliable surface point comes from the fusion of at
     /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
     /// observations.
-    PointCloud ExtractSurfacePoints(float weight_threshold = 3.0f);
-
-    PointCloud ExtractSurfacePoints(PointCloud &pcd_buffer,
-                                    float weight_threshold = 3.0f);
+    PointCloud ExtractSurfacePoints(
+            float weight_threshold = 3.0f,
+            int surface_mask = SurfaceMaskCode::VertexMap |
+                               SurfaceMaskCode::ColorMap);
 
     /// Extract mesh near iso-surfaces with Marching Cubes.
     /// Weight threshold is used to filter outliers. By default we use 3.0,

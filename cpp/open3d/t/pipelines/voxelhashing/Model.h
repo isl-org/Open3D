@@ -77,8 +77,6 @@ public:
                    float depth_max);
 
     t::geometry::PointCloud ExtractPointCloud(float weight_threshold = 3.0f);
-    t::geometry::PointCloud ExtractPointCloud(
-            t::geometry::PointCloud& pcd_buffer, float weight_threshold = 3.0f);
 
 public:
     // Maintained volumetric map

@@ -156,18 +156,19 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
     }
 }
 
-void ExtractSurfacePoints(const core::Tensor& block_indices,
-                          const core::Tensor& nb_block_indices,
-                          const core::Tensor& nb_block_masks,
-                          const core::Tensor& block_keys,
-                          const core::Tensor& block_values,
-                          core::Tensor& points,
-                          core::Tensor& normals,
-                          core::Tensor& colors,
-                          int64_t block_resolution,
-                          float voxel_size,
-                          float weight_threshold,
-                          int& valid_size) {
+void ExtractSurfacePoints(
+        const core::Tensor& block_indices,
+        const core::Tensor& nb_block_indices,
+        const core::Tensor& nb_block_masks,
+        const core::Tensor& block_keys,
+        const core::Tensor& block_values,
+        core::Tensor& points,
+        utility::optional<std::reference_wrapper<core::Tensor>> normals,
+        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        int64_t block_resolution,
+        float voxel_size,
+        float weight_threshold,
+        int& valid_size) {
     core::Device device = block_keys.GetDevice();
 
     core::Device::DeviceType device_type = device.GetType();
