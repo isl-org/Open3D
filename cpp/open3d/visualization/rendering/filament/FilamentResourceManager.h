@@ -50,6 +50,12 @@ class VertexBuffer;
 
 namespace open3d {
 
+namespace t {
+namespace geometry {
+class Image;
+}
+}  // namespace t
+
 namespace geometry {
 class Image;
 }
@@ -97,6 +103,7 @@ public:
                                 bool srgb);
     // Slow, will make copy of image data and free it after.
     TextureHandle CreateTexture(const geometry::Image& image, bool srgb);
+    TextureHandle CreateTexture(const t::geometry::Image& image, bool srgb);
     // Creates texture of size 'dimension' filled with color 'color'
     TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
                                       size_t dimension);
@@ -112,6 +119,9 @@ public:
     // the image is not the same size of the texture.
     bool UpdateTexture(TextureHandle texture,
                        const std::shared_ptr<geometry::Image> image,
+                       bool srgb);
+    bool UpdateTexture(TextureHandle texture,
+                       const t::geometry::Image& image,
                        bool srgb);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
@@ -181,6 +191,8 @@ private:
 
     filament::Texture* LoadTextureFromImage(
             const std::shared_ptr<geometry::Image>& image, bool srgb);
+    filament::Texture* LoadTextureFromImage(const t::geometry::Image& image,
+                                            bool srgb);
     filament::Texture* LoadFilledTexture(const Eigen::Vector3f& color,
                                          size_t dimension);
 
