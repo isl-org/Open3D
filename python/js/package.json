@@ -1,6 +1,6 @@
 {
   "name": "open3d",
-  "version": "0.1.0",
+  "version": "@PROJECT_VERSION_THREE_NUMBER@",
   "description": "Open3D: A Modern Library for 3D Data Processing",
   "author": "Open3D.org",
   "main": "lib/index.js",

@@ -24,8 +24,8 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
     _view_name: "WebVisualizerView",
     _model_module: "open3d",
     _view_module: "open3d",
-    _model_module_version: "0.1.0",
-    _view_module_version: "0.1.0",
+    _model_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
+    _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
     value: "Hello World!",
   }),
 });
