@@ -65,7 +65,9 @@ public:
                   float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
                   int64_t block_count = 1000,
-                  const core::Device &device = core::Device("CPU:0"));
+                  const core::Device &device = core::Device("CPU:0"),
+                  const core::HashmapBackend &backend =
+                          core::HashmapBackend::Default);
 
     ~TSDFVoxelGrid(){};
 
@@ -92,7 +94,7 @@ public:
     /// interpolated along the ray, but color map is not trilinearly
     /// interpolated due to performance requirements. Colormap is only used for
     /// a reference now.
-    std::tuple<core::Tensor, core::Tensor> RayCast(
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> RayCast(
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics,
             int width,

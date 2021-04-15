@@ -40,7 +40,9 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
     io::WriteTriangleMesh("tmp.gltf", tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMesh("tmp.gltf", tm_test, false);
+    io::ReadTriangleMeshOptions opt;
+    opt.print_progress = false;
+    io::ReadTriangleMesh("tmp.gltf", tm_test, opt);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);

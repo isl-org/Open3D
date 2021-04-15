@@ -156,8 +156,7 @@ void ShowNativeFileDialog(FileDialog::Mode type,
             if (f.first.empty() || f.first == "*.*") {
                 continue;
             }
-            std::vector<std::string> exts;
-            utility::SplitString(exts, f.first, ", ");
+            std::vector<std::string> exts = utility::SplitString(f.first, ", ");
             for (std::string ext : exts) {  // ext is a copy; might modify it
                 if (ext[0] == '.') {  // macOS assumes the dot in the extension
                     ext = ext.substr(1);
