@@ -55,6 +55,11 @@ ImageWidget::ImageWidget(std::shared_ptr<geometry::Image> image)
     impl_->image_ = std::make_shared<UIImage>(image);
 }
 
+ImageWidget::ImageWidget(std::shared_ptr<t::geometry::Image> image)
+    : impl_(new ImageWidget::Impl()) {
+    impl_->image_ = std::make_shared<UIImage>(image);
+}
+
 ImageWidget::ImageWidget(visualization::rendering::TextureHandle texture_id,
                          float u0 /*= 0.0f*/,
                          float v0 /*= 0.0f*/,
@@ -72,6 +77,10 @@ ImageWidget::ImageWidget(std::shared_ptr<UIImage> image)
 ImageWidget::~ImageWidget() {}
 
 void ImageWidget::UpdateImage(std::shared_ptr<geometry::Image> image) {
+    GetUIImage()->UpdateImage(image);
+}
+
+void ImageWidget::UpdateImage(std::shared_ptr<t::geometry::Image> image) {
     GetUIImage()->UpdateImage(image);
 }
 
