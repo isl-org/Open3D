@@ -114,11 +114,35 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   // Defines how the widget gets rendered into the DOM
   render: function () {
-    this.value_changed();
+    console.log("render");
 
-    // Observe changes in the value traitlet in Python, and define
-    // a custom callback.
-    this.model.on("change:window_uid", this.value_changed, this);
+    this.videoElt = document.createElement("video");
+    this.videoElt.id = "video_tag";
+    this.videoElt.muted = true;
+    this.videoElt.controls = false;
+    this.videoElt.playsinline = true;
+
+    // The `el` property is the DOM element associated with the view
+    this.el.appendChild(this.videoElt);
+
+    // TODO: remove this after switching to purely comms-based communication.
+    var http_server =
+      location.protocol + "//" + window.location.hostname + ":" + 8888;
+
+    // TODO: remove this since the media name should be given by Python
+    // directly. This is only used for developing the pipe.
+    WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
+      .then((response) => response.json())
+      .then((jsonObj) => this.onGetMediaList(jsonObj));
+
+    // Create WebRTC stream
+    this.webRtcClient = new WebRtcStreamer(
+      this.videoElt,
+      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      /*useComms(when supported)=*/ true,
+      /*webVisualizer=*/ this
+    );
+    this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
   value_changed: function () {
