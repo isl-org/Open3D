@@ -33,6 +33,13 @@ class WebVisualizer(widgets.DOMWidget):
     # is automatically synced to the frontend *any* time it changes in Python.
     # It is synced back to Python from the frontend *any* time the model is touched.
     value = Unicode('Hello World!').tag(sync=True)
+    window_uid = Unicode("window_UNDEFINED", help="Window UID").tag(sync=True)
 
     def show(self):
         display(self)
+
+    @validate('window_uid')
+    def _valid_window_uid(self, proposal):
+        if proposal['value'][:7] != "window_":
+            raise TraitError('window_uid must be "window_xxx".')
+        return proposal['value']

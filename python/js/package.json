@@ -8,6 +8,7 @@
     "type": "git",
     "url": "https://github.com/intel-isl/Open3D.git"
   },
+  "license": "MIT",
   "keywords": [
     "jupyter",
     "widgets",
