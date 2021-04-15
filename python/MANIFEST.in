@@ -1,13 +1,18 @@
-graft open3d/nbextension
-graft open3d/labextension
+# Main library
+graft open3d
 
+# Jupyter
 graft js
-graft tests
 prune **/node_modules
 
-include open3d.json
+# Unit tests
+graft test
 
-include LICENSE
+# Misc
+include README.rst
+include LICENSE.txt
+include requirements.txt
+include open3d.json
 include setup.py
 include pyproject.toml
 include install.json
