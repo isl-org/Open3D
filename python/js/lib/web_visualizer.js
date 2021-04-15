@@ -1,6 +1,7 @@
 var widgets = require("@jupyter-widgets/base");
 var _ = require("lodash");
 require("webrtc-adapter");
+var WebRtcStreamer = require("./webrtcstreamer");
 
 // See web_visualizer.py for the kernel counterpart to this file.
 
