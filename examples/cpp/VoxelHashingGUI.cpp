@@ -6,6 +6,9 @@
 
 using namespace open3d;
 using namespace open3d::visualization;
+
+std::mutex pcd_mutex;
+
 std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
         int view_width_px,
         int view_height_px,
@@ -48,7 +51,9 @@ std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
     lines->lines_.push_back({2, 3});
     lines->lines_.push_back({3, 4});
     lines->lines_.push_back({4, 1});
-    lines->PaintUniformColor({0.0f, 0.0f, 1.0f});
+
+    // Tango orange: f57900
+    lines->PaintUniformColor(Eigen::Vector3d(245, 121, 0) / 255.0);
 
     return lines;
 }
@@ -208,7 +213,7 @@ public:
     ExampleWindow(const std::string& dataset_path) {
         dataset_path_ = dataset_path;
         // TODO: AddIntNumber
-        props_->AddNumber("Surface update", &prop_values_.surface_interval, 5.0,
+        props_->AddNumber("Surface update", &prop_values_.surface_interval, 1.0,
                           1.0, 100.);
 
         props_->AddNumber("Depth scale", &prop_values_.depth_scale, 1000.0, 1.0,
@@ -293,6 +298,14 @@ private:
 
         // Odom
         auto traj = std::make_shared<geometry::LineSet>();
+        auto frustum = std::make_shared<geometry::LineSet>();
+        auto color = std::make_shared<geometry::Image>();
+        auto depth = std::make_shared<geometry::Image>();
+        auto depth8 = std::make_shared<geometry::Image>();
+
+        auto raycast_color = std::make_shared<geometry::Image>();
+        auto raycast_depth = std::make_shared<geometry::Image>();
+        auto raycast_depth8 = std::make_shared<geometry::Image>();
 
         t::geometry::PointCloud pcd;
 
@@ -335,47 +348,38 @@ private:
             if (traj->points_.size() > 1) {
                 int n = traj->points_.size();
                 traj->lines_.push_back({n - 1, n - 2});
-                traj->colors_.push_back(Eigen::Vector3d(0, 0, 1));
+
+                // Tango sky blue: 204a87
+                traj->colors_.push_back(Eigen::Vector3d(32, 74, 105) / 255.0);
             }
 
-            auto frustum =
-                    CreateCameraFrustum(640, 480, K_eigen, T_eigen.inverse());
+            frustum = CreateCameraFrustum(640, 480, K_eigen, T_eigen.inverse());
 
             // TODO: update support for timages
             // image conversion
-            auto color = std::make_shared<open3d::geometry::Image>(
+            color = std::make_shared<open3d::geometry::Image>(
                     input_frame.GetDataAsImage("color").ToLegacyImage());
-            auto depth = std::make_shared<open3d::geometry::Image>(
+            depth = std::make_shared<open3d::geometry::Image>(
                     input_frame.GetDataAsImage("depth")
                             .To(core::Dtype::Float32, false, 1.0f)
                             .ToLegacyImage());
-            auto depth8 = ConvertDepthToNormalizedGrey8(*depth);
+            depth8 = ColorizeDepth(*depth, depth_scale, 0.3,
+                                   prop_values_.depth_max);
 
-            auto raycast_color = std::make_shared<open3d::geometry::Image>(
+            raycast_color = std::make_shared<open3d::geometry::Image>(
                     raycast_frame.GetDataAsImage("color")
                             .To(core::Dtype::UInt8, false, 255.0f)
                             .ToLegacyImage());
-            auto raycast_depth = std::make_shared<open3d::geometry::Image>(
+            raycast_depth = std::make_shared<open3d::geometry::Image>(
                     raycast_frame.GetDataAsImage("depth").ToLegacyImage());
-            auto raycast_depth8 = ConvertDepthToNormalizedGrey8(*raycast_depth);
+            raycast_depth8 = ColorizeDepth(*raycast_depth, depth_scale, 0.3,
+                                           prop_values_.depth_max);
 
             // Extract surface on demand
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
-                gui::Application::GetInstance().RunInThread([&]() {
-                    utility::Timer timer;
-                    timer.Start();
-                    pcd = model.ExtractPointCloud();
-                    timer.Stop();
-                    float extraction = timer.GetDuration();
-                    timer.Start();
-                    pcd = pcd.CPU();
-                    timer.Stop();
-                    float to_cpu = timer.GetDuration();
-                    utility::LogInfo("extration takes {}, to_cpu takes {}",
-                                     extraction, to_cpu);
-                    is_scene_updated = true;
-                });
+                pcd = model.ExtractPointCloud(std::min<float>(idx, 3.0f)).CPU();
+                is_scene_updated = true;
             }
 
             gui::Application::GetInstance().PostToMainThread(
@@ -407,14 +411,15 @@ private:
                                     "trajectory");
                             auto mat = rendering::Material();
                             mat.shader = "unlitLine";
-                            mat.line_width = 2.0f;
+                            mat.line_width = 5.0f;
                             this->widget3d_->GetScene()->AddGeometry(
                                     "trajectory", traj.get(), mat);
                         }
 
-                        if (is_scene_updated) {
-                            utility::Timer timer;
-                            timer.Start();
+                        if (is_scene_updated && pcd.HasPoints() &&
+                            pcd.HasPointColors()) {
+                            utility::LogInfo("pcd.length = {}",
+                                             pcd.GetPoints().GetLength());
                             this->widget3d_->GetScene()
                                     ->GetScene()
                                     ->UpdateGeometry(
@@ -423,11 +428,21 @@ private:
                                                             kUpdatePointsFlag |
                                                     rendering::Scene ::
                                                             kUpdateColorsFlag);
-                            timer.Stop();
-                            utility::LogInfo("Update geometry takes {}",
-                                             timer.GetDuration());
                             is_scene_updated = false;
                         }
+                        //}
+
+                        // if (is_scene_updated) {
+                        //     utility::LogInfo("starting update geometry");
+
+                        //     timer.Start();
+                        //     timer.Stop();
+                        //     utility::LogInfo("Update geometry takes {}",
+                        //                      timer.GetDuration());
+                        //     is_scene_updated = false;
+                        //     utility::LogInfo("finished update geometry");
+                        // }
+
                         if (!is_initialized) {
                             int max_points = 3000000;
                             t::geometry::PointCloud pcd_placeholder(
@@ -462,14 +477,36 @@ private:
     // The renderer can only use 8-bit channels currently. Also, we need to
     // convert to RGB because the renderer will display one-channel images
     // in red. Normalize because otherwise it can be hard to see the image.
-    std::shared_ptr<geometry::Image> ConvertDepthToNormalizedGrey8(
-            const geometry::Image& depth) {
-        float* data = depth.PointerAs<float>();
-        float max_val = 0.0f;
-        int n_pixels = depth.width_ * depth.height_;
-        for (int i = 0; i < n_pixels; ++i) {
-            max_val = std::max(max_val, data[i]);
+    inline Eigen::Vector3f Jet(float v, float vmin, float vmax) {
+        Eigen::Vector3f c(1, 1, 1);
+        float dv;
+
+        if (v < vmin) v = vmin;
+        if (v > vmax) v = vmax;
+        dv = vmax - vmin;
+
+        if (v < (vmin + 0.25 * dv)) {
+            c(0) = 0;
+            c(1) = 4 * (v - vmin) / dv;
+        } else if (v < (vmin + 0.5 * dv)) {
+            c(0) = 0;
+            c(2) = 1 + 4 * (vmin + 0.25 * dv - v) / dv;
+        } else if (v < (vmin + 0.75 * dv)) {
+            c(0) = 4 * (v - vmin - 0.5 * dv) / dv;
+            c(2) = 0;
+        } else {
+            c(1) = 1 + 4 * (vmin + 0.75 * dv - v) / dv;
+            c(2) = 0;
         }
+        return c;
+    }
+
+    std::shared_ptr<geometry::Image> ColorizeDepth(const geometry::Image& depth,
+                                                   float depth_scale = 1000.0,
+                                                   float depth_min = 0.3,
+                                                   float depth_max = 3.0) {
+        float* data = depth.PointerAs<float>();
+        int n_pixels = depth.width_ * depth.height_;
 
         auto img888 = std::make_shared<geometry::Image>();
         img888->width_ = depth.width_;
@@ -480,11 +517,11 @@ private:
                               img888->num_of_channels_ *
                               img888->bytes_per_channel_);
         for (int i = 0; i < n_pixels; ++i) {
-            float val = data[i] / max_val * 255.0f;
-            uint8_t px = uint8_t(val);
-            img888->data_.push_back(px);
-            img888->data_.push_back(px);
-            img888->data_.push_back(px);
+            Eigen::Vector3f color =
+                    Jet(data[i] / depth_scale, depth_min, depth_max);
+            img888->data_.push_back(color[0] * 255);
+            img888->data_.push_back(color[1] * 255);
+            img888->data_.push_back(color[2] * 255);
         }
 
         return img888;

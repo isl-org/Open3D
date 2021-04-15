@@ -169,8 +169,6 @@ int main(int argc, char** argv) {
         if (i > 0) {
             utility::LogInfo("Frame-to-model for the frame {}", i);
 
-            model.SynthesizeModelFrame(raycast_frame);
-
             Tensor delta_frame_to_model =
                     model.TrackFrameToModel(input_frame, raycast_frame,
                                             depth_scale, depth_max, depth_diff);
@@ -179,6 +177,8 @@ int main(int argc, char** argv) {
 
         model.UpdateFramePose(i, T_frame_to_model);
         model.Integrate(input_frame, depth_scale, depth_max);
+        model.SynthesizeModelFrame(raycast_frame, depth_scale);
+        auto pcd = model.ExtractPointCloud(std::min<float>(i, 3.0f));
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
