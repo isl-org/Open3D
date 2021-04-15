@@ -36,7 +36,8 @@
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.1 || ^2 || ^3 || ^4",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "webrtc-adapter": "^4.2.2"
   },
   "jupyterlab": {
     "extension": "lib/labplugin",
