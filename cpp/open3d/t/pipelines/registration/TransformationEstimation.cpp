@@ -80,7 +80,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
             source.GetPoints(), target.GetPoints(), corres);
 
-    return t::pipelines::kernel::RtToTransformation(R, t).To(device);
+    return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -134,7 +134,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
             corres);
 
     // Get transformation {4,4} of type Float64 from pose {6}.
-    return pipelines::kernel::PoseToTransformation(pose).To(device);
+    return pipelines::kernel::PoseToTransformation(pose);
 }
 
 }  // namespace registration

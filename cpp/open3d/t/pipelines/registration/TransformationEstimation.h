@@ -79,8 +79,8 @@ public:
     /// Compute RMSE between source and target points cloud given
     /// correspondences.
     ///
-    /// \param source Source point cloud.
-    /// \param target Target point cloud.
+    /// \param source Source point cloud of type Float32.
+    /// \param target Target point cloud of type Float32.
     /// \param corres Correspondence set between source and target point cloud.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
@@ -88,8 +88,8 @@ public:
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
-    /// \param source Source point cloud.
-    /// \param target Target point cloud.
+    /// \param source Source point cloud of type Float32.
+    /// \param target Target point cloud of type Float32.
     /// \param corres Correspondence set between source and target point cloud.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
@@ -124,7 +124,7 @@ public:
                        const CorrespondenceSet &corres) const override;
 
     /// \brief Estimates the transformation matrix for PointToPoint method,
-    /// a tensor of shape {4, 4}, and dtype Float64.
+    /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32.
@@ -166,7 +166,7 @@ public:
                        const CorrespondenceSet &corres) const override;
 
     /// \brief Estimates the transformation matrix for PointToPlane method,
-    /// a tensor of shape {4, 4}, and dtype Float64.
+    /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32. It must contain

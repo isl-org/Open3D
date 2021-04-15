@@ -97,7 +97,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                       static_cast<double>(source.GetPoints().GetLength());
     result.inlier_rmse_ =
             std::sqrt(squared_error / static_cast<double>(num_correspondences));
-    result.transformation_ = transformation;
 
     return result;
 }
@@ -116,13 +115,13 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                 target.GetDevice().ToString(), device.ToString());
     }
     transformation.AssertShape({4, 4});
-    transformation.AssertDtype(dtype);
-    core::Tensor transformation_device = transformation.To(device);
+
+    core::Tensor transformation_device = transformation.To(device, dtype);
+    geometry::PointCloud source_transformed = source.Clone();
+    source_transformed.Transform(transformation_device);
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
-    geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation_device);
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
             transformation_device);

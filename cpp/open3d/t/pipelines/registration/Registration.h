@@ -89,15 +89,9 @@ public:
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Dtype::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
-    /// \brief Parameterized Constructor for device type. The transformation_
-    /// will be initialized with Identity tensor of Float64 on the device.
-    ///
-    /// \param device Device on which RegistrationResult is to be initialized.
-    RegistrationResult(const core::Device &device)
-        : transformation_(core::Tensor::Eye(4, core::Dtype::Float64, device)),
-          inlier_rmse_(0.0),
-          fitness_(0.0){};
+
     ~RegistrationResult() {}
+
     bool IsBetterRANSACThan(const RegistrationResult &other) const {
         return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
                                              inlier_rmse_ < other.inlier_rmse_);
