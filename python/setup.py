@@ -28,10 +28,10 @@ from setuptools import setup, find_packages
 import glob
 
 # Force platform specific wheel
+# https://stackoverflow.com/a/45150383/1255535
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
-    # https://stackoverflow.com/a/45150383/1255535
     class bdist_wheel(_bdist_wheel):
 
         def finalize_options(self):
