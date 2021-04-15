@@ -1,5 +1,6 @@
 import ipywidgets as widgets
-from traitlets import Unicode
+from traitlets import Unicode, validate, TraitError
+from IPython.display import display
 
 # See js/lib/web_visualizer.js for the frontend counterpart to this file.
 
@@ -32,3 +33,6 @@ class WebVisualizer(widgets.DOMWidget):
     # is automatically synced to the frontend *any* time it changes in Python.
     # It is synced back to Python from the frontend *any* time the model is touched.
     value = Unicode('Hello World!').tag(sync=True)
+
+    def show(self):
+        display(self)
