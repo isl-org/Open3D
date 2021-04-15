@@ -157,4 +157,5 @@ def test_member_functions(device):
         dtype, device)
 
     pcd_small_down = pcd.voxel_down_sample(1)
-    assert pcd.point["points"].allclose(o3c.Tensor([[0, 0, 0]], dtype, device))
+    assert pcd_small_down.point["points"].allclose(
+        o3c.Tensor([[0, 0, 0]], dtype, device))
