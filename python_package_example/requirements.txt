@@ -1,0 +1,4 @@
+ipywidgets
+widgetsnbextension
+notebook
+numpy
