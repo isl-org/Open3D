@@ -53,9 +53,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 target.GetDevice().ToString(), device.ToString());
     }
     transformation.AssertShape({4, 4});
-    transformation.AssertDtype(dtype);
 
-    core::Tensor transformation_device = transformation.To(device);
+    core::Tensor transformation_device = transformation.To(device, dtype);
 
     RegistrationResult result(transformation_device);
     if (max_correspondence_distance <= 0.0) {
@@ -203,7 +202,6 @@ RegistrationResult RegistrationMultiScaleICP(
     }
 
     init.AssertShape({4, 4});
-    init.AssertDtype(dtype);
 
     core::Tensor transformation_device = init.To(device, dtype);
 

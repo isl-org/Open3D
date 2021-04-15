@@ -66,8 +66,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
 
     EXPECT_DOUBLE_EQ(reg_result.inlier_rmse_, 0.0);
     EXPECT_DOUBLE_EQ(reg_result.fitness_, 0.0);
-    EXPECT_EQ(reg_result.transformation_.ToFlatVector<float>(),
-              init_trans_t.ToFlatVector<float>());
+    EXPECT_TRUE(reg_result.transformation_.AllClose(init_trans_t));
 }
 
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
