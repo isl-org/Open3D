@@ -54,8 +54,8 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init_
 #                "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/conda_build_config.yaml"
                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/conda_build_config.yaml")
-# configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
-#                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
+               "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
 # configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/web_visualizer.js"
 #                "${PYTHON_PACKAGE_DST_DIR}/js/web_visualizer.js")
 # configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
