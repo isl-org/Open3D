@@ -89,6 +89,22 @@ if (BUILD_JUPYTER_EXTENSION)
                 "Jupyter webpage in any OS with modern WebRTC-enabled browsers.")
     endif()
 
+    find_program(NPM npm)
+    if(NPM)
+        message(STATUS "NPM found at: ${NPM}")
+    else()
+        message(FATAL_ERROR "npm not found. Please install Node.js and npm."
+                            "Visit https://www.npmjs.com/get-npm for details.")
+    endif()
+
+    find_program(YARN yarn)
+    if(YARN)
+        message(STATUS "YARN found at: ${YARN}")
+    else()
+        message(FATAL_ERROR "yarn not found. You may install yarm globally by"
+                            "npm install -g yarn.")
+    endif()
+
     file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR}/open3d/static)
 
     if (WIN32)
