@@ -44,26 +44,26 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
+#                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
+#                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
+#                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
+#                "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/conda_build_config.yaml"
                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/conda_build_config.yaml")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
-               "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/web_visualizer.js"
-               "${PYTHON_PACKAGE_DST_DIR}/js/web_visualizer.js")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
-               "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/../cpp/open3d/visualization/webrtc_server/html/webrtcstreamer.js"
-               "${PYTHON_PACKAGE_DST_DIR}/js/webrtcstreamer.js")
-file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
+#                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/web_visualizer.js"
+#                "${PYTHON_PACKAGE_DST_DIR}/js/web_visualizer.js")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
+#                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
+# configure_file("${PYTHON_PACKAGE_SRC_DIR}/../cpp/open3d/visualization/webrtc_server/html/webrtcstreamer.js"
+#                "${PYTHON_PACKAGE_DST_DIR}/js/webrtcstreamer.js")
+# file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
+#      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     # copy generated files
