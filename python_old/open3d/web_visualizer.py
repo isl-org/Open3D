@@ -25,10 +25,9 @@
 # ----------------------------------------------------------------------------
 
 import ipywidgets as widgets
-from traitlets import Unicode, Bool, validate, TraitError
+from traitlets import Unicode, validate, TraitError
 from IPython.display import display
 import open3d as o3
-import time
 
 
 @widgets.register
