@@ -118,11 +118,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
     // Observe changes in the value traitlet in Python, and define
     // a custom callback.
-    this.model.on("change:value", this.value_changed, this);
+    this.model.on("change:window_uid", this.value_changed, this);
   },
 
   value_changed: function () {
-    this.el.textContent = this.model.get("value");
+    this.el.textContent = this.model.get("window_uid");
   },
 });
 
