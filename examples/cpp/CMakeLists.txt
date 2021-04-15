@@ -89,7 +89,7 @@ add_custom_target(build-examples-iteratively
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
     -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
     -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
-    -DCMAKE_BUILD_TYPE="$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:MinSizeRel>:MinSizeRel>"
+    -DCMAKE_BUILD_TYPE="$<CONFIG>"
     -DNPROC="${NPROC}"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/iterative_build_examples.cmake
 )
