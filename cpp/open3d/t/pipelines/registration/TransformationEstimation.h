@@ -99,7 +99,8 @@ public:
 
 /// \class TransformationEstimationPointToPoint
 ///
-/// Estimate a transformation for point to point distance.
+/// Class to estimate a transformation of shape {4, 4} and dtype Float64 for
+/// point to point distance.
 class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
     // TODO: support with_scaling.
@@ -111,9 +112,23 @@ public:
             const override {
         return type_;
     };
+    /// \brief Computes RMSE (double) for PointToPoint method, between two
+    /// pointclouds of type Float32, given CorrespondenceSet.
+    ///
+    /// \param source Source pointcloud of dtype Float32.
+    /// \param source Target pointcloud of dtype Float32. It must contain
+    /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
+    /// tensor.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
+
+    /// \brief Estimates the transformation matrix for PointToPoint method,
+    /// a tensor of shape {4, 4}, and dtype Float64.
+    ///
+    /// \param source Source pointcloud of dtype Float32.
+    /// \param source Target pointcloud of dtype Float32.
+    /// \param corres CorrespondenceSet: a pair of Int64 {C,} shape tensor.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
@@ -126,7 +141,8 @@ private:
 
 /// \class TransformationEstimationPointToPlane
 ///
-/// Class to estimate a transformation for point to plane distance.
+/// Class to estimate a transformation of shape {4, 4} and dtype Float64 for
+/// point to plane distance.
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
     /// \brief Default constructor.
@@ -138,9 +154,24 @@ public:
             const override {
         return type_;
     };
+    /// \brief Computes RMSE (double) for PointToPlane method, between two
+    /// pointclouds of type Float32, given CorrespondenceSet.
+    ///
+    /// \param source Source pointcloud of dtype Float32.
+    /// \param source Target pointcloud of dtype Float32. It must contain
+    /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
+    /// tensor.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
+
+    /// \brief Estimates the transformation matrix for PointToPlane method,
+    /// a tensor of shape {4, 4}, and dtype Float64.
+    ///
+    /// \param source Source pointcloud of dtype Float32.
+    /// \param source Target pointcloud of dtype Float32. It must contain
+    /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
+    /// tensor.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,

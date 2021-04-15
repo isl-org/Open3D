@@ -84,16 +84,17 @@ class RegistrationResult {
 public:
     /// \brief Parameterized Constructor.
     ///
-    /// \param transformation The estimated transformation matrix.
+    /// \param transformation The estimated transformation matrix of dtype
+    /// Float64.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
-                               4, core::Dtype::Float32, core::Device("CPU:0")))
+                               4, core::Dtype::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     /// \brief Parameterized Constructor for device type. The transformation_
-    /// will be initialized with Identity tensor of Float32 on the device.
+    /// will be initialized with Identity tensor of Float64 on the device.
     ///
     /// \param device Device on which RegistrationResult is to be initialized.
     RegistrationResult(const core::Device &device)
-        : transformation_(core::Tensor::Eye(4, core::Dtype::Float32, device)),
+        : transformation_(core::Tensor::Eye(4, core::Dtype::Float64, device)),
           inlier_rmse_(0.0),
           fitness_(0.0){};
     ~RegistrationResult() {}
@@ -103,7 +104,7 @@ public:
     }
 
 public:
-    /// The estimated transformation matrix.
+    /// The estimated transformation matrix of dtype Float64.
     core::Tensor transformation_;
     /// Correspondence Set. Refer to the definition in
     /// `TransformationEstimation.h`.
@@ -122,13 +123,13 @@ public:
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param transformation The 4x4 transformation matrix to transform
-/// source to target.
+/// source to target of dtype Float64.
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
         const core::Tensor &transformation = core::Tensor::Eye(
-                4, core::Dtype::Float32, core::Device("CPU:0")));
+                4, core::Dtype::Float64, core::Device("CPU:0")));
 
 /// \brief Functions for ICP registration.
 ///
@@ -144,7 +145,7 @@ RegistrationResult RegistrationICP(
         const geometry::PointCloud &target,
         double max_correspondence_distance,
         const core::Tensor &init = core::Tensor::Eye(4,
-                                                     core::Dtype::Float32,
+                                                     core::Dtype::Float64,
                                                      core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
@@ -176,7 +177,7 @@ RegistrationResult RegistrationMultiScaleICP(
         const std::vector<ICPConvergenceCriteria> &criterias,
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init = core::Tensor::Eye(4,
-                                                     core::Dtype::Float32,
+                                                     core::Dtype::Float64,
                                                      core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint());

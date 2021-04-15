@@ -80,7 +80,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
     std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
             source.GetPoints(), target.GetPoints(), corres);
 
-    return t::pipelines::kernel::RtToTransformation(R, t);
+    return t::pipelines::kernel::RtToTransformation(R, t).To(device);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -127,13 +127,14 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    // Get pose {6} from correspondences indexed source and target point cloud.
+    // Get pose {6} of type Float64 from correspondences indexed source and
+    // target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
             corres);
 
-    // Get transformation {4,4} from pose {6}.
-    return pipelines::kernel::PoseToTransformation(pose);
+    // Get transformation {4,4} of type Float64 from pose {6}.
+    return pipelines::kernel::PoseToTransformation(pose).To(device);
 }
 
 }  // namespace registration

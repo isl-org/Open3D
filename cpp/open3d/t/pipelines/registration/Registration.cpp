@@ -148,8 +148,15 @@ RegistrationResult RegistrationMultiScaleICP(
         const core::Tensor &init,
         const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPoints().GetDtype();
-    target.GetPoints().AssertDtype(dtype);
+    core::Dtype dtype = core::Dtype::Float32;
+
+    source.GetPoints().AssertDtype(dtype,
+                                   " RegistrationICP: Only Float32 Point cloud "
+                                   "are supported currently.");
+    target.GetPoints().AssertDtype(dtype,
+                                   " RegistrationICP: Only Float32 Point cloud "
+                                   "are supported currently.");
+
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -199,7 +206,7 @@ RegistrationResult RegistrationMultiScaleICP(
     init.AssertShape({4, 4});
     init.AssertDtype(dtype);
 
-    core::Tensor transformation_device = init.To(device);
+    core::Tensor transformation_device = init.To(device, dtype);
 
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
@@ -224,7 +231,8 @@ RegistrationResult RegistrationMultiScaleICP(
     RegistrationResult result(transformation_device);
 
     for (int64_t i = 0; i < num_iterations; i++) {
-        source_down_pyramid[i].Transform(transformation_device);
+        source_down_pyramid[i].Transform(
+                transformation_device.To(device, dtype));
 
         core::nns::NearestNeighborSearch target_nns(
                 target_down_pyramid[i].GetPoints());
@@ -239,9 +247,14 @@ RegistrationResult RegistrationMultiScaleICP(
                     "{:.4f}",
                     i + 1, j, result.fitness_, result.inlier_rmse_);
 
-            core::Tensor update = estimation.ComputeTransformation(
-                    source_down_pyramid[i], target_down_pyramid[i],
-                    result.correspondence_set_);
+            // ComputeTransformation returns transformation matrix of
+            // dtype Float64.
+            core::Tensor update =
+                    estimation
+                            .ComputeTransformation(source_down_pyramid[i],
+                                                   target_down_pyramid[i],
+                                                   result.correspondence_set_)
+                            .To(device, dtype);
 
             // Multiply the transform to the cumulative transformation (update).
             transformation_device = update.Matmul(transformation_device);
