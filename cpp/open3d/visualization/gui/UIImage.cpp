@@ -47,6 +47,7 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -58,7 +59,8 @@ namespace gui {
 struct UIImage::Impl {
     std::string image_path_;
     UIImage::Scaling scaling_ = UIImage::Scaling::ASPECT;
-    std::shared_ptr<geometry::Image> image_data_;  // temporary storage
+    std::shared_ptr<geometry::Image> image_data_;      // temporary storage
+    std::shared_ptr<t::geometry::Image> timage_data_;  // temporary storage
     float image_width_;
     float image_height_;
     float u0_;
@@ -108,6 +110,22 @@ UIImage::UIImage(std::shared_ptr<geometry::Image> image)
     impl_->renderer_ = nullptr;
 }
 
+UIImage::UIImage(std::shared_ptr<t::geometry::Image> image)
+    : impl_(new UIImage::Impl()) {
+    impl_->timage_data_ = image;
+    if (impl_->timage_data_->IsEmpty()) {
+        impl_->timage_data_.reset();
+    } else {
+        impl_->image_width_ = float(impl_->timage_data_->GetCols());
+        impl_->image_height_ = float(impl_->timage_data_->GetRows());
+    }
+    impl_->u0_ = 0.0f;
+    impl_->v0_ = 0.0f;
+    impl_->u1_ = 1.0f;
+    impl_->v1_ = 1.0f;
+    impl_->renderer_ = nullptr;
+}
+
 UIImage::UIImage(visualization::rendering::TextureHandle texture_id,
                  float u0 /*= 0.0f*/,
                  float v0 /*= 0.0f*/,
@@ -140,6 +158,12 @@ UIImage::~UIImage() {
 
 void UIImage::UpdateImage(std::shared_ptr<geometry::Image> image) {
     impl_->image_data_ = image;
+    impl_->timage_data_.reset();
+}
+
+void UIImage::UpdateImage(std::shared_ptr<t::geometry::Image> image) {
+    impl_->image_data_.reset();
+    impl_->timage_data_ = image;
 }
 
 void UIImage::SetScaling(Scaling scaling) { impl_->scaling_ = scaling; }
@@ -173,7 +197,7 @@ UIImage::DrawParams UIImage::CalcDrawParams(
         visualization::rendering::Renderer& renderer, const Rect& frame) const {
     DrawParams params;
 
-    if (impl_->image_data_) {
+    if (impl_->image_data_) {  // Legacy Image
         if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
             impl_->texture_ = renderer.AddTexture(impl_->image_data_);
             if (impl_->texture_ !=
@@ -195,6 +219,29 @@ UIImage::DrawParams UIImage::CalcDrawParams(
             }
         }
         impl_->image_data_.reset();
+    } else if (impl_->timage_data_) {  // TGeoemetry Image
+        if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
+            impl_->texture_ = renderer.AddTexture(*impl_->timage_data_.get());
+            if (impl_->texture_ !=
+                visualization::rendering::TextureHandle::kBad) {
+                impl_->renderer_ = &renderer;
+                impl_->image_width_ = float(impl_->timage_data_->GetCols());
+                impl_->image_height_ = float(impl_->timage_data_->GetRows());
+                params.image_size_changed = true;
+            } else {
+                impl_->texture_ = visualization::rendering::TextureHandle();
+            }
+        } else {
+            if (!renderer.UpdateTexture(impl_->texture_, *impl_->timage_data_,
+                                        false)) {
+                impl_->texture_ =
+                        renderer.AddTexture(*impl_->timage_data_.get());
+                impl_->image_width_ = float(impl_->timage_data_->GetCols());
+                impl_->image_height_ = float(impl_->timage_data_->GetRows());
+                params.image_size_changed = true;
+            }
+        }
+        impl_->timage_data_.reset();
     }
 
     params.texture = impl_->texture_;

@@ -149,13 +149,7 @@ core::Tensor RGBDOdometryMultiScalePointToPlane(
 
         core::Tensor target_vertex_map =
                 CreateVertexMap(target_depth_curr, intrinsics);
-
-        t::geometry::Image target_depth_smooth =
-                target_depth_curr.FilterBilateral(3, 5.0f);
-        core::Tensor target_vertex_map_smooth =
-                CreateVertexMap(target_depth_smooth, intrinsics);
-        core::Tensor target_normal_map =
-                CreateNormalMap(target_vertex_map_smooth);
+        core::Tensor target_normal_map = CreateNormalMap(target_vertex_map);
 
         source_vertex_maps[n_levels - 1 - i] = source_vertex_map;
         target_vertex_maps[n_levels - 1 - i] = target_vertex_map;
