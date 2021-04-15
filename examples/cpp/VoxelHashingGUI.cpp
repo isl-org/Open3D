@@ -75,6 +75,37 @@ unsigned char turbo_srgb_bytes[256][3] = {
         {158, 16, 1},   {155, 15, 1},   {152, 14, 1},    {149, 13, 1},
         {146, 11, 1},   {142, 10, 1},   {139, 9, 2},     {136, 8, 2},
         {133, 7, 2},    {129, 6, 2},    {126, 5, 2},     {122, 4, 3}};
+// The renderer can only use 8-bit channels currently. Also, we need to
+// convert to RGB because the renderer will display one-channel images
+// in red. Normalize because otherwise it can be hard to see the image.
+std::shared_ptr<geometry::Image> ColorizeDepth(const geometry::Image& depth,
+                                               float depth_scale = 1000.0,
+                                               float depth_min = 0.3,
+                                               float depth_max = 3.0) {
+    float* data = depth.PointerAs<float>();
+    int n_pixels = depth.width_ * depth.height_;
+
+    auto img888 = std::make_shared<geometry::Image>();
+    img888->width_ = depth.width_;
+    img888->height_ = depth.height_;
+    img888->num_of_channels_ = 3;
+    img888->bytes_per_channel_ = 1;
+    img888->data_.reserve(img888->width_ * img888->height_ *
+                          img888->num_of_channels_ *
+                          img888->bytes_per_channel_);
+    for (int i = 0; i < n_pixels; ++i) {
+        float val = data[i] / depth_scale;
+        val = std::max<float>(depth_min, val);
+        val = std::min<float>(depth_max, val);
+        val = (val - depth_min) / (depth_max - depth_min) * 255.0;
+        uint8_t px = uint8_t(val);
+        img888->data_.push_back(turbo_srgb_bytes[px][0]);
+        img888->data_.push_back(turbo_srgb_bytes[px][1]);
+        img888->data_.push_back(turbo_srgb_bytes[px][2]);
+    }
+
+    return img888;
+}
 
 std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
         int view_width_px,
@@ -124,6 +155,7 @@ std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
 
     return lines;
 }
+
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
 public:
@@ -143,16 +175,33 @@ public:
         AddChild(cb);
     }
 
-    void AddNumber(const std::string& name,
-                   std::atomic<double>* num_addr,
-                   double default_val,
-                   double min_val,
-                   double max_val) {
+    void AddFloatSlider(const std::string& name,
+                        std::atomic<double>* num_addr,
+                        double default_val,
+                        double min_val,
+                        double max_val) {
         auto s = std::make_shared<gui::Slider>(gui::Slider::DOUBLE);
         s->SetLimits(min_val, max_val);
         s->SetValue(default_val);
         *num_addr = default_val;
         s->SetOnValueChanged([num_addr, this](double new_val) {
+            *num_addr = new_val;
+            this->NotifyChanged();
+        });
+        AddChild(std::make_shared<gui::Label>(name.c_str()));
+        AddChild(s);
+    }
+
+    void AddIntSlider(const std::string& name,
+                      std::atomic<double>* num_addr,
+                      int default_val,
+                      int min_val,
+                      int max_val) {
+        auto s = std::make_shared<gui::Slider>(gui::Slider::INT);
+        s->SetLimits(min_val, max_val);
+        s->SetValue(default_val);
+        *num_addr = default_val;
+        s->SetOnValueChanged([num_addr, this](int new_val) {
             *num_addr = new_val;
             this->NotifyChanged();
         });
@@ -208,17 +257,23 @@ public:
         AddChild(widget3d_);
         AddChild(output_panel_);
 
-        props_ = std::make_shared<PropertyPanel>(
+        fixed_props_ = std::make_shared<PropertyPanel>(
                 int(std::round(0.25f * float(em))));
-        panel_->AddChild(std::make_shared<gui::Label>("Control"));
-        panel_->AddChild(props_);
+        adjustable_props_ = std::make_shared<PropertyPanel>(
+                int(std::round(0.25f * float(em))));
+
+        panel_->AddChild(std::make_shared<gui::Label>("Preset params"));
+        panel_->AddChild(fixed_props_);
+
+        panel_->AddChild(std::make_shared<gui::Label>("Adjustable params"));
+        panel_->AddChild(adjustable_props_);
         panel_->AddStretch();
 
         panel_->AddChild(std::make_shared<gui::Label>("Input image(s)"));
-        rgb_image_ = std::make_shared<gui::ImageWidget>();
-        depth_image_ = std::make_shared<gui::ImageWidget>();
-        panel_->AddChild(rgb_image_);
-        panel_->AddChild(depth_image_);
+        input_color_image_ = std::make_shared<gui::ImageWidget>();
+        input_depth_image_ = std::make_shared<gui::ImageWidget>();
+        panel_->AddChild(input_color_image_);
+        panel_->AddChild(input_depth_image_);
 
         output_ = std::make_shared<gui::Label>("");
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
@@ -262,10 +317,12 @@ protected:
     std::shared_ptr<gui::Vert> output_panel_;
     std::shared_ptr<gui::Label> output_;
     std::shared_ptr<gui::SceneWidget> widget3d_;
-    std::shared_ptr<PropertyPanel> props_;
-    std::shared_ptr<gui::ImageWidget> rgb_image_;
-    std::shared_ptr<gui::ImageWidget> depth_image_;
 
+    std::shared_ptr<PropertyPanel> fixed_props_;
+    std::shared_ptr<PropertyPanel> adjustable_props_;
+
+    std::shared_ptr<gui::ImageWidget> input_color_image_;
+    std::shared_ptr<gui::ImageWidget> input_depth_image_;
     std::shared_ptr<gui::ImageWidget> raycast_color_image_;
     std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
 
@@ -279,16 +336,19 @@ class ExampleWindow : public ReconstructionWindow {
 public:
     ExampleWindow(const std::string& dataset_path) {
         dataset_path_ = dataset_path;
-        // TODO: AddIntNumber
-        props_->AddNumber("Surface update", &prop_values_.surface_interval, 1.0,
-                          1.0, 100.);
+        // Adjustable
+        adjustable_props_->AddIntSlider(
+                "Surface update", &prop_values_.surface_interval, 50, 1, 100);
+        adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
+                                          3.0, 0.0, 5.0);
+        adjustable_props_->AddFloatSlider(
+                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5);
+        adjustable_props_->AddBool("Raycast color", &prop_values_.raycast_color,
+                                   true);
 
-        props_->AddNumber("Depth scale", &prop_values_.depth_scale, 1000.0, 1.0,
-                          1500.0);
-        props_->AddNumber("Depth max", &prop_values_.depth_max, 3.0, 0.0, 5.0);
-        props_->AddNumber("Depth diff", &prop_values_.depth_diff, 0.07, 0.03,
-                          0.5);
-        props_->AddBool("Color points", &prop_values_.color_points, true);
+        // Fixed
+        fixed_props_->AddFloatSlider("Depth scale", &prop_values_.depth_scale,
+                                     1000.0, 1.0, 5000.0);
 
         is_done_ = false;
         SetOnClose([this]() {
@@ -308,7 +368,7 @@ private:
         std::atomic<double> depth_scale;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
-        std::atomic<bool> color_points;
+        std::atomic<bool> raycast_color;
     } prop_values_;
     std::atomic<bool> is_done_;
     std::thread update_thread_;
@@ -363,7 +423,7 @@ private:
         bool is_initialized = false;
         size_t idx = 0;
 
-        // Odom
+        // Odometry
         auto traj = std::make_shared<geometry::LineSet>();
         auto frustum = std::make_shared<geometry::LineSet>();
         auto color = std::make_shared<geometry::Image>();
@@ -375,8 +435,11 @@ private:
         auto raycast_depth8 = std::make_shared<geometry::Image>();
 
         t::geometry::PointCloud pcd;
+        this->fixed_props_->GetChildren()[1]->SetEnabled(false);
 
         while (!is_done_) {
+            this->raycast_color_image_->SetVisible(prop_values_.raycast_color);
+
             // Input
             t::geometry::Image input_depth =
                     *t::io::CreateImageFromFile(depth_files[idx]);
@@ -422,8 +485,7 @@ private:
 
             frustum = CreateCameraFrustum(640, 480, K_eigen, T_eigen.inverse());
 
-            // TODO: update support for timages
-            // image conversion
+            // TODO: update support for timages-image conversion
             color = std::make_shared<open3d::geometry::Image>(
                     input_frame.GetDataAsImage("color").ToLegacyImage());
             depth = std::make_shared<open3d::geometry::Image>(
@@ -433,10 +495,13 @@ private:
             depth8 = ColorizeDepth(*depth, depth_scale, 0.3,
                                    prop_values_.depth_max);
 
-            raycast_color = std::make_shared<open3d::geometry::Image>(
-                    raycast_frame.GetDataAsImage("color")
-                            .To(core::Dtype::UInt8, false, 255.0f)
-                            .ToLegacyImage());
+            if (prop_values_.raycast_color) {
+                raycast_color = std::make_shared<open3d::geometry::Image>(
+                        raycast_frame.GetDataAsImage("color")
+                                .To(core::Dtype::UInt8, false, 255.0f)
+                                .ToLegacyImage());
+            }
+
             raycast_depth = std::make_shared<open3d::geometry::Image>(
                     raycast_frame.GetDataAsImage("depth").ToLegacyImage());
             raycast_depth8 = ColorizeDepth(*raycast_depth, depth_scale, 0.3,
@@ -457,10 +522,13 @@ private:
                                 {0, 0, 0, 1});
 
                         this->SetOutput(out);
-                        this->rgb_image_->UpdateImage(color);
-                        this->depth_image_->UpdateImage(depth8);
+                        this->input_color_image_->UpdateImage(color);
+                        this->input_depth_image_->UpdateImage(depth8);
 
-                        this->raycast_color_image_->UpdateImage(raycast_color);
+                        if (prop_values_.raycast_color) {
+                            this->raycast_color_image_->UpdateImage(
+                                    raycast_color);
+                        }
                         this->raycast_depth_image_->UpdateImage(raycast_depth8);
 
                         this->widget3d_->GetScene()->RemoveGeometry("frustum");
@@ -527,38 +595,6 @@ private:
                         }
                     });
         }
-    }
-
-    // The renderer can only use 8-bit channels currently. Also, we need to
-    // convert to RGB because the renderer will display one-channel images
-    // in red. Normalize because otherwise it can be hard to see the image.
-    std::shared_ptr<geometry::Image> ColorizeDepth(const geometry::Image& depth,
-                                                   float depth_scale = 1000.0,
-                                                   float depth_min = 0.3,
-                                                   float depth_max = 3.0) {
-        float* data = depth.PointerAs<float>();
-        int n_pixels = depth.width_ * depth.height_;
-
-        auto img888 = std::make_shared<geometry::Image>();
-        img888->width_ = depth.width_;
-        img888->height_ = depth.height_;
-        img888->num_of_channels_ = 3;
-        img888->bytes_per_channel_ = 1;
-        img888->data_.reserve(img888->width_ * img888->height_ *
-                              img888->num_of_channels_ *
-                              img888->bytes_per_channel_);
-        for (int i = 0; i < n_pixels; ++i) {
-            float val = data[i] / depth_scale;
-            val = std::max<float>(depth_min, val);
-            val = std::min<float>(depth_max, val);
-            val = (val - depth_min) / (depth_max - depth_min) * 255.0;
-            uint8_t px = uint8_t(val);
-            img888->data_.push_back(turbo_srgb_bytes[px][0]);
-            img888->data_.push_back(turbo_srgb_bytes[px][1]);
-            img888->data_.push_back(turbo_srgb_bytes[px][2]);
-        }
-
-        return img888;
     }
 };
 
