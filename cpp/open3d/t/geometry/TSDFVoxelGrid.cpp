@@ -194,6 +194,7 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        int width,
                        int height,
                        int max_steps,
+                       float depth_scale,
                        float depth_min,
                        float depth_max,
                        float weight_threshold,
@@ -224,7 +225,8 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, depth_map,
                           color_map, normal_map, intrinsics, pose, height,
                           width, block_resolution_, voxel_size_, sdf_trunc_,
-                          max_steps, depth_min, depth_max, weight_threshold);
+                          max_steps, depth_scale, depth_min, depth_max,
+                          weight_threshold);
 
     std::unordered_map<TSDFVoxelGrid::RayCastMaskCode, core::Tensor> results;
     if (ray_cast_mask & TSDFVoxelGrid::RayCastMaskCode::VertexMap) {

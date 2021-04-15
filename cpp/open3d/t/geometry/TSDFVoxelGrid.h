@@ -106,6 +106,7 @@ public:
             int width,
             int height,
             int max_steps = 50,
+            float depth_scale = 1000.0f,
             float depth_min = 0.1f,
             float depth_max = 3.0f,
             float weight_threshold = 3.0f,

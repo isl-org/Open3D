@@ -362,7 +362,7 @@ private:
             // Integrate
             model.UpdateFramePose(idx, T_frame_to_model);
             model.Integrate(input_frame, depth_scale, prop_values_.depth_max);
-            model.SynthesizeModelFrame(raycast_frame);
+            model.SynthesizeModelFrame(raycast_frame, depth_scale);
 
             idx++;
             is_done_ = (idx >= 1000);

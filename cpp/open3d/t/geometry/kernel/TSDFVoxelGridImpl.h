@@ -857,6 +857,7 @@ void RayCastCPU
          float voxel_size,
          float sdf_trunc,
          int max_steps,
+         float depth_scale,
          float depth_min,
          float depth_max,
          float weight_threshold) {
@@ -1039,7 +1040,7 @@ void RayCastCPU
                                         depth_map_indexer
                                                 .GetDataPtrFromCoord<float>(x,
                                                                             y);
-                                *depth = t_intersect * 4000.0;
+                                *depth = t_intersect * depth_scale;
                             }
                             if (enable_vertex) {
                                 float* vertex =
