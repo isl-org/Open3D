@@ -364,9 +364,6 @@ public:
         // Adjustable
         adjustable_props_->AddIntSlider(
                 "Surface update", &prop_values_.surface_interval, 50, 1, 100);
-        adjustable_props_->AddIntSlider("Pointcloud estimate",
-                                        &prop_values_.pointcloud_size, 3000000,
-                                        500000, 8000000);
 
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
                                           3.0, 0.0, 5.0);
@@ -378,6 +375,9 @@ public:
         // Fixed
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
                                    1000, 1, 5000);
+        fixed_props_->AddIntSlider("Pointcloud size estimate",
+                                   &prop_values_.pointcloud_size, 3000000,
+                                   500000, 8000000);
 
         is_done_ = false;
         SetOnClose([this]() {
@@ -454,7 +454,6 @@ private:
                                                 T_frame_to_model, device);
 
         bool is_scene_updated = false;
-        bool is_initialized = false;
         size_t idx = 0;
 
         // Odometry
@@ -493,18 +492,41 @@ private:
         // Render once to refresh
         gui::Application::GetInstance().PostToMainThread(
                 this, [this, color, depth8, raycast_color, raycast_depth8]() {
-                    this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
                     this->input_color_image_->UpdateImage(color);
                     this->input_depth_image_->UpdateImage(depth8);
                     this->raycast_color_image_->UpdateImage(raycast_color);
                     this->raycast_depth_image_->UpdateImage(raycast_depth8);
+
+                    int max_points = prop_values_.pointcloud_size;
+                    t::geometry::PointCloud pcd_placeholder(
+                            core::Tensor({max_points, 3}, core::Dtype::Float32,
+                                         core::Device("CPU:0")));
+                    pcd_placeholder.SetPointColors(
+                            core::Tensor({max_points, 3}, core::Dtype::Float32,
+                                         core::Device("CPU:0")));
+
+                    auto mat = rendering::Material();
+                    mat.shader = "defaultUnlit";
+                    this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                            "points", pcd_placeholder, mat);
+
+                    geometry::AxisAlignedBoundingBox bbox(
+                            Eigen::Vector3d(-5, -5, -5),
+                            Eigen::Vector3d(5, 5, 5));
+                    auto center = bbox.GetCenter().cast<float>();
+                    this->widget3d_->SetupCamera(60, bbox, center);
+                    this->widget3d_->LookAt(center,
+                                            center - Eigen::Vector3f{0, 1, 3},
+                                            {0.0f, -1.0f, 0.0f});
                 });
 
+        Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
         while (!is_done_) {
             if (!prop_values_.is_running) continue;
 
-            // Disable depth_scale change
+            // Disable depth_scale and pcd buffer size change
             this->fixed_props_->GetChildren()[1]->SetEnabled(false);
+            this->fixed_props_->GetChildren()[3]->SetEnabled(false);
 
             this->raycast_color_image_->SetVisible(prop_values_.raycast_color);
 
@@ -540,8 +562,9 @@ private:
                     T_frame_to_model);
             std::stringstream out;
             out << "Frame " << idx << "\n";
-            out << T_eigen << "\n";
+            out << T_eigen.format(CleanFmt) << "\n";
             out << "Active voxel blocks: " << model.GetHashmapSize() << "\n";
+            std::cout << out.str() << "\n";
 
             int64_t len = pcd.HasPoints() ? pcd.GetPoints().GetLength() : 0;
             out << "Surface points: " << len << "\n";
@@ -589,12 +612,9 @@ private:
             }
 
             gui::Application::GetInstance().PostToMainThread(
-                    this, [this, color, depth8, raycast_color, raycast_depth8,
-                           pcd, traj, frustum, &is_initialized,
-                           &is_scene_updated, out = out.str()]() {
-                        this->widget3d_->GetScene()->SetBackground(
-                                {0, 0, 0, 1});
-
+                    this,
+                    [this, color, depth8, raycast_color, raycast_depth8, pcd,
+                     traj, frustum, &is_scene_updated, out = out.str()]() {
                         this->SetOutput(out);
                         this->input_color_image_->UpdateImage(color);
                         this->input_depth_image_->UpdateImage(depth8);
@@ -636,34 +656,6 @@ private:
                                                     rendering::Scene ::
                                                             kUpdateColorsFlag);
                             is_scene_updated = false;
-                        }
-
-                        if (!is_initialized) {
-                            int max_points = 3000000;
-                            t::geometry::PointCloud pcd_placeholder(
-                                    core::Tensor({max_points, 3},
-                                                 core::Dtype::Float32,
-                                                 core::Device("CPU:0")));
-                            pcd_placeholder.SetPointColors(core::Tensor(
-                                    {max_points, 3}, core::Dtype::Float32,
-                                    core::Device("CPU:0")));
-
-                            auto mat = rendering::Material();
-                            mat.shader = "defaultUnlit";
-                            this->widget3d_->GetScene()
-                                    ->GetScene()
-                                    ->AddGeometry("points", pcd_placeholder,
-                                                  mat);
-                            is_initialized = true;
-
-                            geometry::AxisAlignedBoundingBox bbox(
-                                    Eigen::Vector3d(-5, -5, -5),
-                                    Eigen::Vector3d(5, 5, 5));
-                            auto center = bbox.GetCenter().cast<float>();
-                            this->widget3d_->SetupCamera(60, bbox, center);
-                            this->widget3d_->LookAt(
-                                    center, center - Eigen::Vector3f{0, 1, 3},
-                                    {0.0f, -1.0f, 0.0f});
                         }
                     });
         }
