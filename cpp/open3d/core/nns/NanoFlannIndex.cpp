@@ -31,7 +31,7 @@
 
 #include <nanoflann.hpp>
 
-#include "open3d/core/CoreUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/ParallelScan.h"
 
@@ -59,7 +59,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     int dimension = GetDimension();
     Dtype dtype = GetDtype();
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t *data_ptr = dataset_points.GetDataPtr<scalar_t>();
         holder_.reset(new NanoFlannIndexHolder<L2, scalar_t>(
                 dataset_size, dimension, data_ptr));
@@ -85,7 +85,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 
     Tensor indices;
     Tensor distances;
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         Tensor batch_indices =
                 Tensor::Full({num_query_points, knn}, -1, Dtype::Int64);
         Tensor batch_distances =
@@ -146,7 +146,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     Tensor distances;
     Tensor neighbors_row_splits;
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         std::vector<std::vector<size_t>> batch_indices(num_query_points);
         std::vector<std::vector<scalar_t>> batch_distances(num_query_points);
         std::vector<int64_t> batch_nums;
@@ -223,7 +223,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         Tensor radii(std::vector<scalar_t>(num_query_points,
                                            static_cast<scalar_t>(radius)),
                      {num_query_points}, dtype);
@@ -253,7 +253,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     Tensor indices, distances;
     Dtype dtype = GetDtype();
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         indices = Tensor::Empty({num_query_points, max_knn}, Dtype::Int64);
         auto indices_ptr = indices.GetDataPtr<int64_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);

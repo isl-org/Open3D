@@ -83,3 +83,16 @@
             DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, __VA_ARGS__); \
         }                                                   \
     }()
+
+#define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
+    [&] {                                                   \
+        if (DTYPE == open3d::core::Dtype::Float32) {        \
+            using scalar_t = float;                         \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Float64) { \
+            using scalar_t = double;                        \
+            return __VA_ARGS__();                           \
+        } else {                                            \
+            utility::LogError("Unsupported data type.");    \
+        }                                                   \
+    }()
