@@ -217,9 +217,80 @@ void ExtractSurfacePointsCPU
 #else
     core::kernel::CPULauncher launcher;
 #endif
+    if (valid_size < 0) {
+        utility::LogWarning(
+                "No estimated max point cloud size provided, using a 2-pass "
+                "estimation. Surface extraction could be slow.");
+        // This pass determines valid number of points.
+        DISPATCH_BYTESIZE_TO_VOXEL(
+                voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                    launcher.LaunchGeneralKernel(
+                            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                                auto GetVoxelAt = [&] OPEN3D_DEVICE(
+                                                          int xo, int yo,
+                                                          int zo,
+                                                          int curr_block_idx)
+                                        -> voxel_t* {
+                                    return DeviceGetVoxelAt<voxel_t>(
+                                            xo, yo, zo, curr_block_idx,
+                                            static_cast<int>(resolution),
+                                            nb_block_masks_indexer,
+                                            nb_block_indices_indexer,
+                                            voxel_block_buffer_indexer);
+                                };
 
-    // WARNING: UNSAFE!
-    int max_count = 6000000;
+                                // Natural index (0, N) -> (block_idx,
+                                // voxel_idx)
+                                int64_t workload_block_idx =
+                                        workload_idx / resolution3;
+                                int64_t block_idx =
+                                        indices_ptr[workload_block_idx];
+                                int64_t voxel_idx = workload_idx % resolution3;
+
+                                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                                int64_t xv, yv, zv;
+                                voxel_indexer.WorkloadToCoord(voxel_idx, &xv,
+                                                              &yv, &zv);
+
+                                voxel_t* voxel_ptr =
+                                        voxel_block_buffer_indexer
+                                                .GetDataPtrFromCoord<voxel_t>(
+                                                        xv, yv, zv, block_idx);
+                                float tsdf_o = voxel_ptr->GetTSDF();
+                                float weight_o = voxel_ptr->GetWeight();
+                                if (weight_o <= weight_threshold) return;
+
+                                // Enumerate x-y-z directions
+                                for (int i = 0; i < 3; ++i) {
+                                    voxel_t* ptr = GetVoxelAt(
+                                            static_cast<int>(xv) + (i == 0),
+                                            static_cast<int>(yv) + (i == 1),
+                                            static_cast<int>(zv) + (i == 2),
+                                            static_cast<int>(
+                                                    workload_block_idx));
+                                    if (ptr == nullptr) continue;
+
+                                    float tsdf_i = ptr->GetTSDF();
+                                    float weight_i = ptr->GetWeight();
+
+                                    if (weight_i > weight_threshold &&
+                                        tsdf_i * tsdf_o < 0) {
+                                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                                    }
+                                }
+                            });
+                });
+
+#if defined(__CUDACC__)
+        valid_size = count.Item<int>();
+        count[0] = 0;
+#else
+        valid_size = (*count_ptr).load();
+        (*count_ptr) = 0;
+#endif
+    }
+
+    int max_count = valid_size;
     if (points.GetLength() == 0) {
         points = core::Tensor({max_count, 3}, core::Dtype::Float32,
                               block_values.GetDevice());
@@ -332,6 +403,12 @@ void ExtractSurfacePointsCPU
                             float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
                             int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                            if (idx >= valid_size) {
+                                printf("Point cloud size larger than "
+                                       "estimated, please increase the "
+                                       "estimation!\n");
+                                return;
+                            }
 
                             float* point_ptr =
                                     point_indexer.GetDataPtrFromCoord<float>(

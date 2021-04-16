@@ -364,6 +364,10 @@ public:
         // Adjustable
         adjustable_props_->AddIntSlider(
                 "Surface update", &prop_values_.surface_interval, 50, 1, 100);
+        adjustable_props_->AddIntSlider("Pointcloud estimate",
+                                        &prop_values_.pointcloud_size, 3000000,
+                                        500000, 8000000);
+
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
                                           3.0, 0.0, 5.0);
         adjustable_props_->AddFloatSlider(
@@ -390,6 +394,7 @@ private:
 
     struct {
         std::atomic<int> surface_interval;
+        std::atomic<int> pointcloud_size;
         std::atomic<int> depth_scale;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
@@ -535,7 +540,11 @@ private:
                     T_frame_to_model);
             std::stringstream out;
             out << "Frame " << idx << "\n";
-            out << T_eigen;
+            out << T_eigen << "\n";
+            out << "Active voxel blocks: " << model.GetHashmapSize() << "\n";
+
+            int64_t len = pcd.HasPoints() ? pcd.GetPoints().GetLength() : 0;
+            out << "Surface points: " << len << "\n";
 
             traj->points_.push_back(T_eigen.block<3, 1>(0, 3));
             if (traj->points_.size() > 1) {
@@ -573,7 +582,9 @@ private:
             // Extract surface on demand
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
-                pcd = model.ExtractPointCloud(std::min<float>(idx, 3.0f)).CPU();
+                pcd = model.ExtractPointCloud(prop_values_.pointcloud_size,
+                                              std::min<float>(idx, 3.0f))
+                              .CPU();
                 is_scene_updated = true;
             }
 
@@ -616,8 +627,6 @@ private:
 
                         if (is_scene_updated && pcd.HasPoints() &&
                             pcd.HasPointColors()) {
-                            utility::LogInfo("pcd.length = {}",
-                                             pcd.GetPoints().GetLength());
                             this->widget3d_->GetScene()
                                     ->GetScene()
                                     ->UpdateGeometry(

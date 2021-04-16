@@ -76,7 +76,10 @@ public:
                    float depth_scale,
                    float depth_max);
 
-    t::geometry::PointCloud ExtractPointCloud(float weight_threshold = 3.0f);
+    t::geometry::PointCloud ExtractPointCloud(int estimated_number = 3000000,
+                                              float weight_threshold = 3.0f);
+
+    int64_t GetHashmapSize();
 
 public:
     // Maintained volumetric map

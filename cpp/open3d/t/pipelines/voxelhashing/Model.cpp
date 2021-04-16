@@ -93,10 +93,14 @@ void Model::Integrate(const Frame& input_frame,
             GetCurrentFramePose().Inverse(), depth_scale, depth_max);
 }
 
-t::geometry::PointCloud Model::ExtractPointCloud(float weight_threshold) {
-    return voxel_grid_.ExtractSurfacePoints(weight_threshold);
+t::geometry::PointCloud Model::ExtractPointCloud(int estimated_number,
+                                                 float weight_threshold) {
+    return voxel_grid_.ExtractSurfacePoints(estimated_number, weight_threshold);
 }
 
+int64_t Model::GetHashmapSize() {
+    return voxel_grid_.GetBlockHashmap()->Size();
+}
 }  // namespace voxelhashing
 }  // namespace pipelines
 }  // namespace t
