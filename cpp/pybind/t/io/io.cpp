@@ -33,7 +33,8 @@ namespace t {
 namespace io {
 
 void pybind_io(py::module& m) {
-    py::module m_io = m.def_submodule("io");
+    py::module m_io =
+            m.def_submodule("io", "Tensor-based input-output handling module.");
     pybind_class_io(m_io);
     pybind_sensor(m_io);
 }

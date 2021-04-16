@@ -26,7 +26,10 @@
 
 #include "pybind/visualization/gui/gui.h"
 
+#include <pybind11/detail/common.h>
+
 #include "open3d/geometry/Image.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
@@ -802,6 +805,10 @@ void pybind_gui_classes(py::module &m) {
                      return new ImageWidget(image);
                  }),
                  "Creates an ImageWidget from the provided image")
+            .def(py::init<>([](std::shared_ptr<t::geometry::Image> image) {
+                     return new ImageWidget(image);
+                 }),
+                 "Creates an ImageWidget from the provided tgeometry image")
             .def("__repr__",
                  [](const ImageWidget &il) {
                      std::stringstream s;
@@ -810,7 +817,21 @@ void pybind_gui_classes(py::module &m) {
                        << " x " << il.GetFrame().height;
                      return s.str();
                  })
-            .def("update_image", &ImageWidget::UpdateImage,
+            .def("update_image",
+                 py::overload_cast<std::shared_ptr<geometry::Image>>(
+                         &ImageWidget::UpdateImage),
+                 "Mostly a convenience function for ui_image.update_image(). "
+                 "If 'image' is the same size as the current image, will "
+                 "update the texture with the contents of 'image'. This is "
+                 "the fastest path for setting an image, and is recommended "
+                 "if you are displaying video. If 'image' is a different size, "
+                 "it will allocate a new texture, which is essentially the "
+                 "same as creating a new UIImage and calling SetUIImage(). "
+                 "This is the slow path, and may eventually exhaust internal "
+                 "texture resources.")
+            .def("update_image",
+                 py::overload_cast<std::shared_ptr<t::geometry::Image>>(
+                         &ImageWidget::UpdateImage),
                  "Mostly a convenience function for ui_image.update_image(). "
                  "If 'image' is the same size as the current image, will "
                  "update the texture with the contents of 'image'. This is "
@@ -1454,10 +1475,12 @@ void pybind_gui_classes(py::module &m) {
                  "First argument is the heading text, the second is the "
                  "spacing between widgets, and the third is the margins. "
                  "Both the spacing and the margins default to 0.")
-            .def("set_is_open", &CollapsableVert::SetIsOpen,
+            .def("set_is_open", &CollapsableVert::SetIsOpen, "is_open"_a,
                  "Sets to collapsed (False) or open (True). Requires a call to "
                  "Window.SetNeedsLayout() afterwards, unless calling before "
-                 "window is visible");
+                 "window is visible")
+            .def("get_is_open", &CollapsableVert::GetIsOpen,
+                 "Check if widget is open.");
 
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(

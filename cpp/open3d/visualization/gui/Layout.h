@@ -163,6 +163,9 @@ public:
     /// the window is shown.)
     void SetIsOpen(bool is_open);
 
+    /// Check if widget is open.
+    bool GetIsOpen();
+
     Size CalcPreferredSize(const Theme& theme,
                            const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;

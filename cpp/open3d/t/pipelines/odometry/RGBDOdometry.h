@@ -49,7 +49,7 @@ enum class Method {
 // in an option, similar to Registration.
 
 /// \brief Create an RGBD image pyramid given the original source and target
-/// RGBD images, and perform hierarchical odometry using specified \param
+/// RGBD images, and perform hierarchical odometry using specified \p
 /// method.
 /// Can be used for offline odometry where we do not expect to push performance
 /// to the extreme and not reuse vertex/normal map computed before.
@@ -84,8 +84,8 @@ core::Tensor RGBDOdometryMultiScale(
 /// \f$ V_p \f$ denotes the vertex at pixel p in the source,
 /// \f$ V_q \f$ denotes the vertex at pixel q in the target,
 /// \f$ N_p \f$ denotes the normal at pixel p in the source.
-/// q is obtained by transforming p with \param init_source_to_target then
-/// projecting with \param intrinsics.
+/// q is obtained by transforming p with \p init_source_to_target then
+/// projecting with \p intrinsics.
 /// KinectFusion, ISMAR 2011
 ///
 /// \param source_vertex_map (H, W, 3) Float32 source vertex image obtained by
@@ -112,8 +112,8 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
 /// \f$(I_p - I_q)^2\f$, where
 /// \f$ I_p \f$ denotes the intensity at pixel p in the source,
 /// \f$ I_q \f$ denotes the intensity at pixel q in the target.
-/// q is obtained by transforming p with \param init_source_to_target then
-/// projecting with \param intrinsics.
+/// q is obtained by transforming p with \p init_source_to_target then
+/// projecting with \p intrinsics.
 /// Real-time visual odometry from dense RGB-D images, ICCV Workshops, 2011
 ///
 /// \param source_depth_map (H, W, 1) Float32 source depth image obtained by
@@ -154,8 +154,8 @@ core::Tensor ComputePoseIntensity(const core::Tensor& source_depth_map,
 /// \f$ I_q \f$ denotes the intensity at pixel q in the target.
 /// \f$ D_p \f$ denotes the depth pixel p in the source,
 /// \f$ D_q \f$ denotes the depth pixel q in the target.
-/// q is obtained by transforming p with \param init_source_to_target then
-/// projecting with \param intrinsics.
+/// q is obtained by transforming p with \p init_source_to_target then
+/// projecting with \p intrinsics.
 /// Colored ICP Revisited, ICCV 2017
 ///
 /// \param source_depth_map (H, W, 1) Float32 source depth image obtained by
