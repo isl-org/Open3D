@@ -75,6 +75,8 @@ public:
 
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
+    void Clear() override;
+
     int64_t Size() const override;
 
     int64_t GetBucketCount() const override;
@@ -237,6 +239,11 @@ int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
                       ValueExtractor<Key>());
 
     return impl_.size();
+}
+
+template <typename Key, typename Hash>
+void StdGPUHashmap<Key, Hash>::Clear() {
+    impl_.clear();
 }
 
 template <typename Key, typename Hash>
