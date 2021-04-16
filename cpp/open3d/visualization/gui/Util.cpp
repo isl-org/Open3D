@@ -196,9 +196,9 @@ std::string FindFontPath(std::string font, FontStyle style) {
             filename == font_otf) {
             return true;
         }
-//        if (filename.find(font) == 0) {
-//            return true;
-//        }
+        if (filename.find(font) == 0) {
+            return true;
+        }
         return false;
     };
 
