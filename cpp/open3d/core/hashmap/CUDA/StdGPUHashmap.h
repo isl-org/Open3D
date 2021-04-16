@@ -258,6 +258,7 @@ void StdGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
     float avg_capacity_per_bucket =
             float(this->capacity_) / float(GetBucketCount());
 
+    Free();
     int64_t new_capacity =
             int64_t(std::ceil(buckets * avg_capacity_per_bucket));
     Allocate(new_capacity);

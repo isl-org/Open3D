@@ -53,7 +53,7 @@ static const std::unordered_map<std::string, std::string>
                  "stride>1."}};
 
 void pybind_pointcloud(py::module& m) {
-    py::class_<PointCloud, PyGeometry<PointCloud>, std::unique_ptr<PointCloud>,
+    py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
                Geometry>
             pointcloud(m, "PointCloud",
                        "A pointcloud contains a set of 3D points.");

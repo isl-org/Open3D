@@ -44,6 +44,8 @@ public:
     explicit ImageWidget(const char* image_path);
     /// Uses existing image. Each ImageWidget will use one draw call.
     explicit ImageWidget(std::shared_ptr<geometry::Image> image);
+    /// Uses existing image. Each ImageWidget will use one draw call.
+    explicit ImageWidget(std::shared_ptr<t::geometry::Image> image);
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
@@ -64,6 +66,7 @@ public:
     /// SetUIImage(). This is the slow path, and may eventually exhaust internal
     /// texture resources.
     void UpdateImage(std::shared_ptr<geometry::Image> image);
+    void UpdateImage(std::shared_ptr<t::geometry::Image> image);
 
     std::shared_ptr<UIImage> GetUIImage() const;
     void SetUIImage(std::shared_ptr<UIImage> image);

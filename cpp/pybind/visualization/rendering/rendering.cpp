@@ -104,10 +104,11 @@ void pybind_rendering_classes(py::module &m) {
                  "is True if the image is in the sRGB colorspace and False "
                  "otherwise")
             .def("update_texture",
-                 (TextureHandle(Renderer::*)(
-                         const std::shared_ptr<geometry::Image>, bool)) &
+                 (bool (Renderer::*)(TextureHandle,
+                                     const std::shared_ptr<geometry::Image>,
+                                     bool)) &
                          Renderer::UpdateTexture,
-                 "image"_a, "is_sRGB"_a = false,
+                 "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
                  "returns False and does nothing if the image is a different "
                  "size. It is more efficient to call update_texture() rather "

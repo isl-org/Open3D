@@ -66,6 +66,21 @@ option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON 
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
 
+# Default build type on single-config generators.
+# For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
+# will be set, and we don't specify a default CMAKE_BUILD_TYPE.
+# https://blog.kitware.com/cmake-and-the-default-build-type/
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting build type to RelWithDebInfo as none was specified.")
+        set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
+        # Set the possible values of build type for cmake-gui.
+        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+                    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+    endif()
+    message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}.")
+endif()
+
 find_program(CCACHE "ccache")
 if (CCACHE)
     message(STATUS "ccache found at ${CCACHE}")
@@ -102,12 +117,6 @@ set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation
 one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
 set_property(CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
 set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
-
-# Default build type
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No CMAKE_BUILD_TYPE specified, default to RelWithDebInfo")
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-endif()
 
 # Set OpenGL policy
 if(NOT USE_SYSTEM_GLFW)

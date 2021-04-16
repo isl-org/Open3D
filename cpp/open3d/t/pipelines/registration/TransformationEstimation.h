@@ -46,10 +46,10 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 
-/// \brief CorrespondenceSet: pair of 2 tensors of shape {C,1},
+/// \brief CorrespondenceSet: pair of 2x Int64 tensors of shape {C,1},
 /// where C is the number of good correspondences between source and
-/// target pointcloud. The first tensor is the source indexes, and
-/// the second tensor is target indexes. Such that,
+/// target pointcloud. The first tensor is the source indices, and
+/// the second tensor is corresponding target indices. Such that,
 /// source[correspondence.first] and target[correspondence.second]
 /// is a correspondence pair.
 typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
