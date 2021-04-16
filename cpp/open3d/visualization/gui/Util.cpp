@@ -31,6 +31,8 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Color.h"
 
+#include <iostream> // debugging; remove
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -47,17 +49,11 @@ uint32_t colorToImguiRGBA(const Color &color) {
                     int(std::round(255.0f * color.GetAlpha())));
 }
 
-std::string FindFontPath(const std::string &font, FontStyle style) {
+std::string FindFontPath(std::string font, FontStyle style) {
     using namespace open3d::utility::filesystem;
 
-    if (FileExists(font)) {
-        return font;
-    }
-
-    std::vector<std::string> suffixes;
-    switch (style) {
-        case FontStyle::NORMAL:
-            suffixes = {" Regular.ttf", " Regular.ttc", " Regular.otf",
+    std::vector<std::string> kNormalSuffixes = {
+                        " Regular.ttf", " Regular.ttc", " Regular.otf",
                         " Normal.ttf",  " Normal.ttc",  " Normal.otf",
                         " Medium.ttf",  " Medium.ttc",  " Medium.otf",
                         " Narrow.ttf",  " Narrow.ttc",  " Narrow.otf",
@@ -69,11 +65,20 @@ std::string FindFontPath(const std::string &font, FontStyle style) {
                         "Normal.ttf",   "Normal.ttc",   "Normal.otf",
                         "Medium.ttf",   "Medium.ttc",   "Medium.otf",
                         "Narrow.ttf",   "Narrow.ttc",   "Narrow.otf"};
+
+    std::vector<std::string> suffixes;
+    switch (style) {
+        case FontStyle::NORMAL:
+            suffixes = kNormalSuffixes;
             break;
         case FontStyle::BOLD:
             suffixes = {" Bold.ttf", " Bold.ttc", " Bold.otf",
                         "-Bold.ttf", "-Bold.ttc", "-Bold.otf",
-                        "Bold.ttf",  "Bold.ttc",  "Bold.oft"};
+                        "Bold.ttf",  "Bold.ttc",  "Bold.oft"
+#if _WIN32
+                        , "b.ttf",   "b.ttc",   "b.otf"
+#endif  // _WIN32
+                       };
             break;
         case FontStyle::ITALIC:
             suffixes = {" Italic.ttf",        " Italic.ttc",
@@ -89,15 +94,55 @@ std::string FindFontPath(const std::string &font, FontStyle style) {
                         "Oblique.otf",        "-MediumOblique.ttf",
                         "-MediumOblique.ttc", "-MediumOblique.otf",
                         "MediumOblique.ttf",  "MediumOblique.ttc",
-                        "MediumOblique.otf"};
+                        "MediumOblique.otf"
+#if _WIN32
+                        , "i.ttf",   "i.ttc",   "i.otf"
+#endif  // _WIN32
+                       };
             break;
         case FontStyle::BOLD_ITALIC:
             suffixes = {
                     " Bold Italic.ttf", " Bold Italic.ttc", " Bold Italic.otf",
                     "-BoldItalic.ttf",  "-BoldItalic.ttc",  "-BoldItalic.otf",
-                    "BoldItalic.ttf",   "BoldItalic.ttc",   "BoldItalic.oft"};
+                    "BoldItalic.ttf",   "BoldItalic.ttc",   "BoldItalic.oft"
+#if _WIN32
+                    , "bi.ttf",   "bi.ttc",   "bi.otf"
+#endif  // _WIN32
+                    };
             break;
     }
+
+
+    if (FileExists(font)) {
+        if (style == FontStyle::NORMAL) {
+            return font;
+        } else {
+            // The user provided an actual font file, not just a
+            // font name. Since we are looking for bold and/or italic,
+            // we need to "stem" the font file and attempt to look for
+            // the bold and/or italicized versions.
+            for (auto& suf : kNormalSuffixes) {
+                if (font.rfind(suf) != std::string::npos) {
+                    font = font.substr(0, font.size() - suf.size());
+                    break;
+                }
+            }
+            // The font name doesn't have any of the suffixes,
+            // so just remove the extension
+            font = font.substr(0, font.size() - 4);
+
+            // Check if any of the stylized suffixes work
+            for (auto &suf : suffixes) {
+                std::string candidate = font + suf;
+                if (FileExists(candidate)) {
+                    return candidate;
+                }
+            }
+            // Otherwise fail
+            return "";
+        }
+    }
+    std::cout << "[o3d] finding font: " << font << std::endl;
 
     std::string home;
     char *raw_home = getenv("HOME");
@@ -151,9 +196,9 @@ std::string FindFontPath(const std::string &font, FontStyle style) {
             filename == font_otf) {
             return true;
         }
-        if (filename.find(font) == 0) {
-            return true;
-        }
+//        if (filename.find(font) == 0) {
+//            return true;
+//        }
         return false;
     };
 
@@ -163,15 +208,19 @@ std::string FindFontPath(const std::string &font, FontStyle style) {
             for (auto &m : matches) {
                 if (GetFileNameWithoutExtension(
                             GetFileNameWithoutDirectory(m)) == font) {
+                    std::cout << "[o3d] found font" << std::endl;
                     return m;
                 }
             }
         }
         for (auto &m : matches) {
+            std::cout << "[o3d] font match: " << m << std::endl;
             auto dir = GetFileParentDirectory(m);  // has trailing slash
             for (auto &suf : suffixes) {
                 std::string candidate = dir + font + suf;
+                std::cout << "[o3d]    trying " << candidate << std::endl;
                 if (m == candidate) {
+                    std::cout << "[o3d]     found!" << std::endl;
                     return candidate;
                 }
             }

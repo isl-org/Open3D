@@ -47,7 +47,7 @@ class Color;
 ImVec4 colorToImgui(const Color& color);
 uint32_t colorToImguiRGBA(const Color& color);
 
-std::string FindFontPath(const std::string& font, FontStyle style);
+std::string FindFontPath(std::string font, FontStyle style);
 
 }  // namespace gui
 }  // namespace visualization

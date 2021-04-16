@@ -417,7 +417,7 @@ Size FileDialog::CalcPreferredSize(const LayoutContext &context,
     auto em = context.theme.font_size;
     auto width = std::max(
             25 * em,
-            Super::CalcPreferredSize(context.theme, constraints).width);
+            Super::CalcPreferredSize(context, constraints).width);
     return Size(width, 30 * em);
 }
 
