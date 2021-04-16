@@ -192,6 +192,7 @@ int64_t TBBHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::Clear() {
     impl_->clear();
+    buffer_ctx_->Reset();
 }
 
 template <typename Key, typename Hash>

@@ -37,7 +37,8 @@ namespace geometry {
 namespace kernel {
 namespace tsdf {
 
-void Touch(const core::Tensor& points,
+void Touch(std::shared_ptr<core::Hashmap>& hashmap,
+           const core::Tensor& points,
            core::Tensor& voxel_block_coords,
            int64_t voxel_grid_resolution,
            float voxel_size,
@@ -97,7 +98,8 @@ void ExtractSurfaceMesh(const core::Tensor& block_indices,
                         float voxel_size,
                         float weight_threshold);
 
-void TouchCPU(const core::Tensor& points,
+void TouchCPU(std::shared_ptr<core::Hashmap>& hashmap,
+              const core::Tensor& points,
               core::Tensor& voxel_block_coords,
               int64_t voxel_grid_resolution,
               float voxel_size,
@@ -158,7 +160,8 @@ void ExtractSurfaceMeshCPU(const core::Tensor& block_indices,
                            float weight_threshold);
 
 #ifdef BUILD_CUDA_MODULE
-void TouchCUDA(const core::Tensor& points,
+void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
+               const core::Tensor& points,
                core::Tensor& voxel_block_coords,
                int64_t voxel_grid_resolution,
                float voxel_size,

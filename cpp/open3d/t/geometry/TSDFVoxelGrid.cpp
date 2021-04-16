@@ -131,12 +131,26 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Create a point cloud from a low-resolution depth input to roughly
     // estimate surfaces.
+    int down_factor = 8;
     PointCloud pcd = PointCloud::CreateFromDepthImage(
-            depth, intrinsics, extrinsics, depth_scale, depth_max, 4);
+            depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
+
+    int64_t capacity = (depth.GetCols() / down_factor) *
+                       (depth.GetRows() / down_factor) * 8;
+
+    if (point_hashmap_ == nullptr) {
+        point_hashmap_ = std::make_shared<core::Hashmap>(
+                capacity, core::Dtype::Int32, core::Dtype::UInt8,
+                core::SizeVector{3}, core::SizeVector{1}, device_,
+                core::HashmapBackend::StdGPU);
+    } else {
+        point_hashmap_->Clear();
+    }
 
     core::Tensor block_coords;
-    kernel::tsdf::Touch(pcd.GetPoints().Contiguous(), block_coords,
-                        block_resolution_, voxel_size_, sdf_trunc_);
+    kernel::tsdf::Touch(point_hashmap_, pcd.GetPoints().Contiguous(),
+                        block_coords, block_resolution_, voxel_size_,
+                        sdf_trunc_);
 
     // Active voxel blocks in the block hashmap.
     core::Tensor addrs, masks;

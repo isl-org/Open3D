@@ -161,6 +161,7 @@ protected:
     core::Device device_ = core::Device("CPU:0");
 
     std::shared_ptr<core::Hashmap> block_hashmap_;
+    std::shared_ptr<core::Hashmap> point_hashmap_;
 
     std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 };

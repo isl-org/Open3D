@@ -244,6 +244,7 @@ int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Clear() {
     impl_.clear();
+    buffer_accessor_.Reset(this->device_);
 }
 
 template <typename Key, typename Hash>
