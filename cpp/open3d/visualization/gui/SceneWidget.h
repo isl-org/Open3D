@@ -174,7 +174,6 @@ public:
     void RemoveLabel(std::shared_ptr<Label3D> label);
     void ClearLabels();
 
-    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;
