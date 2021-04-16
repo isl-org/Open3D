@@ -31,8 +31,6 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Color.h"
 
-#include <iostream> // debugging; remove
-
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -53,18 +51,15 @@ std::string FindFontPath(std::string font, FontStyle style) {
     using namespace open3d::utility::filesystem;
 
     std::vector<std::string> kNormalSuffixes = {
-                        " Regular.ttf", " Regular.ttc", " Regular.otf",
-                        " Normal.ttf",  " Normal.ttc",  " Normal.otf",
-                        " Medium.ttf",  " Medium.ttc",  " Medium.otf",
-                        " Narrow.ttf",  " Narrow.ttc",  " Narrow.otf",
-                        "-Regular.ttf", "-Regular.ttc", "-Regular.otf",
-                        "-Normal.ttf",  "-Normal.ttc",  "-Normal.otf",
-                        "-Medium.ttf",  "-Medium.ttc",  "-Medium.otf",
-                        "-Narrow.ttf",  "-Narrow.ttc",  "-Narrow.otf",
-                        "Regular.ttf",  "-Regular.ttc", "-Regular.otf",
-                        "Normal.ttf",   "Normal.ttc",   "Normal.otf",
-                        "Medium.ttf",   "Medium.ttc",   "Medium.otf",
-                        "Narrow.ttf",   "Narrow.ttc",   "Narrow.otf"};
+            " Regular.ttf", " Regular.ttc", " Regular.otf", " Normal.ttf",
+            " Normal.ttc",  " Normal.otf",  " Medium.ttf",  " Medium.ttc",
+            " Medium.otf",  " Narrow.ttf",  " Narrow.ttc",  " Narrow.otf",
+            "-Regular.ttf", "-Regular.ttc", "-Regular.otf", "-Normal.ttf",
+            "-Normal.ttc",  "-Normal.otf",  "-Medium.ttf",  "-Medium.ttc",
+            "-Medium.otf",  "-Narrow.ttf",  "-Narrow.ttc",  "-Narrow.otf",
+            "Regular.ttf",  "-Regular.ttc", "-Regular.otf", "Normal.ttf",
+            "Normal.ttc",   "Normal.otf",   "Medium.ttf",   "Medium.ttc",
+            "Medium.otf",   "Narrow.ttf",   "Narrow.ttc",   "Narrow.otf"};
 
     std::vector<std::string> suffixes;
     switch (style) {
@@ -72,46 +67,81 @@ std::string FindFontPath(std::string font, FontStyle style) {
             suffixes = kNormalSuffixes;
             break;
         case FontStyle::BOLD:
-            suffixes = {" Bold.ttf", " Bold.ttc", " Bold.otf",
-                        "-Bold.ttf", "-Bold.ttc", "-Bold.otf",
-                        "Bold.ttf",  "Bold.ttc",  "Bold.oft"
+            suffixes = {
+                " Bold.ttf",
+                " Bold.ttc",
+                " Bold.otf",
+                "-Bold.ttf",
+                "-Bold.ttc",
+                "-Bold.otf",
+                "Bold.ttf",
+                "Bold.ttc",
+                "Bold.oft"
 #if _WIN32
-                        , "b.ttf",   "b.ttc",   "b.otf"
+                ,
+                "b.ttf",
+                "b.ttc",
+                "b.otf"
 #endif  // _WIN32
-                       };
+            };
             break;
         case FontStyle::ITALIC:
-            suffixes = {" Italic.ttf",        " Italic.ttc",
-                        " Italic.otf",        "-Italic.ttf",
-                        "-Italic.ttc",        "-Italic.otf",
-                        "Italic.ttf",         "Italic.ttc",
-                        "Italic.otf",         "-MediumItalic.ttf",
-                        "-MediumItalic.ttc",  "-MediumItalic.otf",
-                        "MediumItalic.ttf",   "MediumItalic.ttc",
-                        "MediumItalic.otf",   "-Oblique.ttf",
-                        "-Oblique.ttc",       "-Oblique.otf",
-                        "Oblique.ttf",        "Oblique.ttc",
-                        "Oblique.otf",        "-MediumOblique.ttf",
-                        "-MediumOblique.ttc", "-MediumOblique.otf",
-                        "MediumOblique.ttf",  "MediumOblique.ttc",
-                        "MediumOblique.otf"
+            suffixes = {
+                " Italic.ttf",
+                " Italic.ttc",
+                " Italic.otf",
+                "-Italic.ttf",
+                "-Italic.ttc",
+                "-Italic.otf",
+                "Italic.ttf",
+                "Italic.ttc",
+                "Italic.otf",
+                "-MediumItalic.ttf",
+                "-MediumItalic.ttc",
+                "-MediumItalic.otf",
+                "MediumItalic.ttf",
+                "MediumItalic.ttc",
+                "MediumItalic.otf",
+                "-Oblique.ttf",
+                "-Oblique.ttc",
+                "-Oblique.otf",
+                "Oblique.ttf",
+                "Oblique.ttc",
+                "Oblique.otf",
+                "-MediumOblique.ttf",
+                "-MediumOblique.ttc",
+                "-MediumOblique.otf",
+                "MediumOblique.ttf",
+                "MediumOblique.ttc",
+                "MediumOblique.otf"
 #if _WIN32
-                        , "i.ttf",   "i.ttc",   "i.otf"
+                ,
+                "i.ttf",
+                "i.ttc",
+                "i.otf"
 #endif  // _WIN32
-                       };
+            };
             break;
         case FontStyle::BOLD_ITALIC:
             suffixes = {
-                    " Bold Italic.ttf", " Bold Italic.ttc", " Bold Italic.otf",
-                    "-BoldItalic.ttf",  "-BoldItalic.ttc",  "-BoldItalic.otf",
-                    "BoldItalic.ttf",   "BoldItalic.ttc",   "BoldItalic.oft"
+                " Bold Italic.ttf",
+                " Bold Italic.ttc",
+                " Bold Italic.otf",
+                "-BoldItalic.ttf",
+                "-BoldItalic.ttc",
+                "-BoldItalic.otf",
+                "BoldItalic.ttf",
+                "BoldItalic.ttc",
+                "BoldItalic.oft"
 #if _WIN32
-                    , "bi.ttf",   "bi.ttc",   "bi.otf"
+                ,
+                "bi.ttf",
+                "bi.ttc",
+                "bi.otf"
 #endif  // _WIN32
-                    };
+            };
             break;
     }
-
 
     if (FileExists(font)) {
         if (style == FontStyle::NORMAL) {
@@ -121,7 +151,7 @@ std::string FindFontPath(std::string font, FontStyle style) {
             // font name. Since we are looking for bold and/or italic,
             // we need to "stem" the font file and attempt to look for
             // the bold and/or italicized versions.
-            for (auto& suf : kNormalSuffixes) {
+            for (auto &suf : kNormalSuffixes) {
                 if (font.rfind(suf) != std::string::npos) {
                     font = font.substr(0, font.size() - suf.size());
                     break;
@@ -142,7 +172,6 @@ std::string FindFontPath(std::string font, FontStyle style) {
             return "";
         }
     }
-    std::cout << "[o3d] finding font: " << font << std::endl;
 
     std::string home;
     char *raw_home = getenv("HOME");
@@ -208,19 +237,15 @@ std::string FindFontPath(std::string font, FontStyle style) {
             for (auto &m : matches) {
                 if (GetFileNameWithoutExtension(
                             GetFileNameWithoutDirectory(m)) == font) {
-                    std::cout << "[o3d] found font" << std::endl;
                     return m;
                 }
             }
         }
         for (auto &m : matches) {
-            std::cout << "[o3d] font match: " << m << std::endl;
             auto dir = GetFileParentDirectory(m);  // has trailing slash
             for (auto &suf : suffixes) {
                 std::string candidate = dir + font + suf;
-                std::cout << "[o3d]    trying " << candidate << std::endl;
                 if (m == candidate) {
-                    std::cout << "[o3d]     found!" << std::endl;
                     return candidate;
                 }
             }

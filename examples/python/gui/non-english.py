@@ -153,7 +153,6 @@ class ExampleWindow:
         # bottom margins. (This acts like the 'padding' property in CSS.)
         collapse = gui.CollapsableVert("Widgets", 0.33 * em,
                                        gui.Margins(em, 0, 0, 0))
-        collapse.font_style = gui.FontStyle.BOLD_ITALIC
         if mode == MODE_CUSTOM_CHARS:
             self._label = gui.Label("♔♕♖♗♘♙")
         elif mode == MODE_ALL_HANYU:

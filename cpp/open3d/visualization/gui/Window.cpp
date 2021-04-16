@@ -116,8 +116,6 @@ struct ImguiWindowContext : public FontContext {
         int textureW, textureH, bytesPerPx;
         io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                      &bytesPerPx);
-        std::cout << "[o3d] font texture: " << textureW << ", " << textureH
-                  << std::endl;
         // Some fonts seem to result in 0x0 textures (maybe if the font does
         // not contain any of the code points?), which cause Filament to
         // panic. Handle this gracefully.
@@ -141,8 +139,6 @@ struct ImguiWindowContext : public FontContext {
     }
 
     ImFont* AddFont(FontStyle style, const std::string& font_path) {
-        std::cout << "[o3d] AddFont(" << int(style) << ", " << font_path << ")"
-                  << std::endl;
         ImFont* imfont = nullptr;
         bool can_add_cjk = (style == FontStyle::NORMAL);
 
@@ -154,17 +150,12 @@ struct ImguiWindowContext : public FontContext {
             int en_fonts = 0;
             for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
                 if (custom.lang == "en") {
-                    std::cout << "[o3d]    custom path: " << custom.path
-                              << std::endl;
                     auto custom_path = FindFontPath(custom.path, style);
-                    std::cout << "[o3d]    -> " << custom_path << std::endl;
                     if (custom_path == "") {
                         // This should not fail, since we would have complained
                         // about it in Application::SetFont...().
                         custom_path =
                                 FindFontPath(custom.path, FontStyle::NORMAL);
-                        std::cout << "[o3d]    custom path failed, using "
-                                  << custom_path << std::endl;
                     }
                     imfont = io.Fonts->AddFontFromFileTTF(
                             custom_path.c_str(), float(this->theme->font_size),

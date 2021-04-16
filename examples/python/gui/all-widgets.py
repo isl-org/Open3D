@@ -87,7 +87,6 @@ class ExampleWindow:
                                        gui.Margins(em, 0, 0, 0))
         self._label = gui.Label("Lorem ipsum dolor")
         self._label.text_color = gui.Color(1.0, 0.5, 0.0)
-        self._label.font_style = gui.FontStyle.BOLD_ITALIC
         collapse.add_child(self._label)
 
         # Create a checkbox. Checking or unchecking would usually be used to set
