@@ -393,6 +393,24 @@ TEST_P(PointCloudPermuteDevices, Has) {
     EXPECT_TRUE(pcd.HasPointColors());
 }
 
+TEST_P(PointCloudPermuteDevices, DeletePointAttr) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud pcd({
+            {"points", core::Tensor::Ones({2, 3}, dtype, device)},
+            {"colors", core::Tensor::Ones({2, 3}, dtype, device) * 2},
+            {"labels", core::Tensor::Ones({2, 3}, dtype, device) * 3},
+    });
+
+    EXPECT_NO_THROW(pcd.GetPointAttr("labels"));
+    pcd.DeletePointAttr("labels");
+    EXPECT_ANY_THROW(pcd.GetPointAttr("labels"));
+
+    // Not allowed to delete "points" attribute.
+    EXPECT_ANY_THROW(pcd.DeletePointAttr("points"));
+}
+
 TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
     using ::testing::ElementsAre;
     using ::testing::UnorderedElementsAreArray;

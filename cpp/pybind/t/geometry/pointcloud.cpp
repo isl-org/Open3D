@@ -29,7 +29,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "open3d/core/hashmap/Hashmap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -103,14 +102,11 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
-    pointcloud.def(
-            "voxel_down_sample",
-            [](const PointCloud& pointcloud, const double voxel_size) {
-                return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashmapBackend::Default);
-            },
-            "Downsamples a point cloud with a specified voxel size.",
-            "voxel_size"_a);
+    pointcloud.def("voxel_down_sample", &PointCloud::VoxelDownSample,
+                   "Function to downsample input pointcloud into output "
+                   "pointcloud with a voxel. Normals and colors are averaged "
+                   "if they exist.",
+                   "voxel_size"_a, "backend"_a = core::HashmapBackend::Default);
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
