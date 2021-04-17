@@ -109,17 +109,18 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
             if (i == trajectory->parameters_.size() - 1) {
                 if (backend == core::HashmapBackend::Slab) {
-                    EXPECT_THROW(voxel_grid.RayCast(
-                                         intrinsic_t, extrinsic_t,
-                                         depth.GetCols(), depth.GetRows(), 50,
-                                         0.1, 3.0, std::min(i * 1.0f, 3.0f)),
-                                 std::runtime_error);
+                    EXPECT_THROW(
+                            voxel_grid.RayCast(intrinsic_t, extrinsic_t,
+                                               depth.GetCols(), depth.GetRows(),
+                                               50, 1000.0, 0.1, 3.0,
+                                               std::min(i * 1.0f, 3.0f)),
+                            std::runtime_error);
                 } else {
                     using MaskCode =
                             t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
                     auto result = voxel_grid.RayCast(
                             intrinsic_t, extrinsic_t, depth.GetCols(),
-                            depth.GetRows(), 50, 0.1, 3.0,
+                            depth.GetRows(), 50, 1000.0, 0.1, 3.0,
                             std::min(i * 1.0f, 3.0f),
                             MaskCode::VertexMap | MaskCode::ColorMap |
                                     MaskCode::NormalMap);

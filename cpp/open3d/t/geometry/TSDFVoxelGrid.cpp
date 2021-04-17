@@ -131,7 +131,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Create a point cloud from a low-resolution depth input to roughly
     // estimate surfaces.
-    int down_factor = 8;
+    int down_factor = 4;
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
 
@@ -142,7 +142,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
         point_hashmap_ = std::make_shared<core::Hashmap>(
                 capacity, core::Dtype::Int32, core::Dtype::UInt8,
                 core::SizeVector{3}, core::SizeVector{1}, device_,
-                core::HashmapBackend::StdGPU);
+                core::HashmapBackend::Default);
     } else {
         point_hashmap_->Clear();
     }
