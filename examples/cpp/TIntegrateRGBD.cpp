@@ -57,6 +57,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
+
     // Color and depth
     std::string color_folder = std::string(argv[1]);
     std::string depth_folder = std::string(argv[2]);
@@ -167,33 +169,38 @@ int main(int argc, char** argv) {
         time_int += int_timer.GetDuration();
 
         if (enable_raycast) {
-            core::Tensor vertex_map, color_map, normal_map;
-
             utility::Timer ray_timer;
             ray_timer.Start();
 
-            float scale = 4.0;
+            float scale = 1.0;
             Tensor intrinsic_t_down = intrinsic_t / scale;
             intrinsic_t_down[2][2] = 1.0;
-            std::tie(vertex_map, color_map, normal_map) = voxel_grid.RayCast(
+            auto result = voxel_grid.RayCast(
                     intrinsic_t_down, extrinsic_t, depth.GetCols() / scale,
                     depth.GetRows() / scale, 80, 0.1, 3.0,
-                    std::min(i * 1.0f, 3.0f));
+                    std::min(i * 1.0f, 3.0f),
+                    MaskCode::DepthMap | MaskCode::VertexMap |
+                            MaskCode::ColorMap);
             ray_timer.Stop();
+
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
             if (i % 500 == 0) {
-                t::geometry::Image vertex(vertex_map);
+                t::geometry::Image depth(result[MaskCode::DepthMap]);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                depth.ToLegacyImage())});
+                t::geometry::Image vertex(result[MaskCode::VertexMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 vertex.ToLegacyImage())});
-                t::geometry::Image normal(normal_map);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                normal.ToLegacyImage())});
-                t::geometry::Image color(color_map);
+                // t::geometry::Image normal(result[MaskCode::NormalMap]);
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 normal.ToLegacyImage())});
+                t::geometry::Image color(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 color.ToLegacyImage())});
@@ -218,7 +225,9 @@ int main(int argc, char** argv) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd = voxel_grid.ExtractSurfacePoints();
+        auto pcd = voxel_grid.ExtractSurfacePoints(
+                3.0f,
+                MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",

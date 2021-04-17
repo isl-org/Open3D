@@ -112,39 +112,43 @@ void Integrate(const core::Tensor& depth,
 void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& block_values,
              core::Tensor& vertex_map,
+             core::Tensor& depth_map,
              core::Tensor& color_map,
              core::Tensor& normal_map,
              const core::Tensor& intrinsics,
              const core::Tensor& pose,
+             int h,
+             int w,
              int64_t block_resolution,
              float voxel_size,
              float sdf_trunc,
              int max_steps,
+             float depth_scale,
              float depth_min,
              float depth_max,
              float weight_threshold) {
     core::Device device = hashmap->GetDevice();
-    if (vertex_map.GetDevice() != device) {
-        utility::LogError("Vertex map\'s device mismatches with hashmap");
-    }
-    if (color_map.GetDevice() != device) {
-        utility::LogError("Vertex map\'s device mismatches with hashmap");
-    }
+    // if (vertex_map.GetDevice() != device) {
+    //     utility::LogError("Vertex map\'s device mismatches with hashmap");
+    // }
+    // if (color_map.GetDevice() != device) {
+    //     utility::LogError("Vertex map\'s device mismatches with hashmap");
+    // }
     core::Tensor intrinsicsf32 = intrinsics.To(device, core::Dtype::Float32);
     core::Tensor posef32 = pose.To(device, core::Dtype::Float32);
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        RayCastCPU(hashmap, block_values, vertex_map, color_map, normal_map,
-                   intrinsicsf32, posef32, block_resolution, voxel_size,
-                   sdf_trunc, max_steps, depth_min, depth_max,
-                   weight_threshold);
+        RayCastCPU(hashmap, block_values, vertex_map, depth_map, color_map,
+                   normal_map, intrinsicsf32, posef32, h, w, block_resolution,
+                   voxel_size, sdf_trunc, max_steps, depth_scale, depth_min,
+                   depth_max, weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        RayCastCUDA(hashmap, block_values, vertex_map, color_map, normal_map,
-                    intrinsicsf32, posef32, block_resolution, voxel_size,
-                    sdf_trunc, max_steps, depth_min, depth_max,
-                    weight_threshold);
+        RayCastCUDA(hashmap, block_values, vertex_map, depth_map, color_map,
+                    normal_map, intrinsicsf32, posef32, h, w, block_resolution,
+                    voxel_size, sdf_trunc, max_steps, depth_scale, depth_min,
+                    depth_max, weight_threshold);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -153,17 +157,19 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
     }
 }
 
-void ExtractSurfacePoints(const core::Tensor& block_indices,
-                          const core::Tensor& nb_block_indices,
-                          const core::Tensor& nb_block_masks,
-                          const core::Tensor& block_keys,
-                          const core::Tensor& block_values,
-                          core::Tensor& points,
-                          core::Tensor& normals,
-                          core::Tensor& colors,
-                          int64_t block_resolution,
-                          float voxel_size,
-                          float weight_threshold) {
+void ExtractSurfacePoints(
+        const core::Tensor& block_indices,
+        const core::Tensor& nb_block_indices,
+        const core::Tensor& nb_block_masks,
+        const core::Tensor& block_keys,
+        const core::Tensor& block_values,
+        core::Tensor& points,
+        utility::optional<std::reference_wrapper<core::Tensor>> normals,
+        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        int64_t block_resolution,
+        float voxel_size,
+        float weight_threshold,
+        int& valid_size) {
     core::Device device = block_keys.GetDevice();
 
     core::Device::DeviceType device_type = device.GetType();
@@ -171,13 +177,13 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
         ExtractSurfacePointsCPU(block_indices, nb_block_indices, nb_block_masks,
                                 block_keys, block_values, points, normals,
                                 colors, block_resolution, voxel_size,
-                                weight_threshold);
+                                weight_threshold, valid_size);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         ExtractSurfacePointsCUDA(block_indices, nb_block_indices,
                                  nb_block_masks, block_keys, block_values,
                                  points, normals, colors, block_resolution,
-                                 voxel_size, weight_threshold);
+                                 voxel_size, weight_threshold, valid_size);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
