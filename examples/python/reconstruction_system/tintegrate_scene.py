@@ -125,10 +125,17 @@ if __name__ == '__main__':
         volume.integrate(depth, rgb, intrinsic, extrinsic, args.depth_scale,
                          args.max_depth)
         if args.raycast and i % 100 == 0:
-            vertexmap, colormap = volume.raycast(intrinsic, extrinsic,
-                                                 depth.columns, depth.rows, 50,
-                                                 0.1, args.max_depth,
-                                                 min(i * 1.0, 3.0))
+            colormap_code = int(o3d.t.geometry.SurfaceMaskCode.ColorMap)
+            vertexmap_code = int(o3d.t.geometry.SurfaceMaskCode.VertexMap)
+
+            result = volume.raycast(intrinsic, extrinsic, depth.columns,
+                                    depth.rows, 50,
+                                    args.depth_scale, 0.1, args.max_depth,
+                                    min(i * 1.0,
+                                        3.0), colormap_code | vertexmap_code)
+            vertexmap = result[o3d.t.geometry.SurfaceMaskCode.VertexMap]
+            colormap = result[o3d.t.geometry.SurfaceMaskCode.ColorMap]
+
             o3d.visualization.draw_geometries(
                 [o3d.t.geometry.Image(vertexmap).to_legacy_image()])
             o3d.visualization.draw_geometries(

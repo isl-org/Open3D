@@ -204,7 +204,7 @@ void ExtractSurfacePointsCPU
 
     // Output
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
+    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
                        block_values.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -282,7 +282,7 @@ void ExtractSurfacePointsCPU
                 });
 
 #if defined(__CUDACC__)
-        valid_size = count.Item<int>();
+        valid_size = count[0].Item<int>();
         count[0] = 0;
 #else
         valid_size = (*count_ptr).load();

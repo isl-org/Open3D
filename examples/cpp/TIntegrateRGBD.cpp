@@ -40,7 +40,7 @@ void PrintHelp() {
     utility::LogInfo("     --voxel_size [=0.0058 (m)]");
     utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("     --depth_scale [=1000.0]");
-    utility::LogInfo("     --max_depth [=3.0]");
+    utility::LogInfo("     --depth_max [=3.0]");
     utility::LogInfo("     --sdf_trunc [=0.04]");
     utility::LogInfo("     --device [CPU:0]");
     utility::LogInfo("     --raycast");
@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
             argc, argv, "--voxel_size", 3.f / 512.f));
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_scale", 1000.f));
-    float max_depth = static_cast<float>(
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float depth_max = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
     float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc", 0.04f));
 
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
         utility::Timer int_timer;
         int_timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
-                             depth_scale, max_depth);
+                             depth_scale, depth_max);
         int_timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i,
                          int_timer.GetDuration());
@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
             intrinsic_t_down[2][2] = 1.0;
             auto result = voxel_grid.RayCast(
                     intrinsic_t_down, extrinsic_t, depth.GetCols() / scale,
-                    depth.GetRows() / scale, 80, 0.1, 3.0,
+                    depth.GetRows() / scale, 80, depth_scale, 0.1, depth_max,
                     std::min(i * 1.0f, 3.0f),
                     MaskCode::DepthMap | MaskCode::VertexMap |
                             MaskCode::ColorMap);
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd = voxel_grid.ExtractSurfacePoints(
-                3.0f,
+                -1, 3.0f,
                 MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
