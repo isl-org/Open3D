@@ -244,13 +244,20 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
 
     core::Tensor range_minmax_map;
     int down_factor = 8;
-    kernel::tsdf::EstimateRange(block_keys, range_minmax_map, intrinsics, pose,
-                                height, width, down_factor, block_resolution_,
-                                voxel_size_, depth_min, depth_max);
-    t::geometry::Image im(
-            range_minmax_map.Slice(0, 0, height).Slice(1, 0, width)[1]);
-    visualization::DrawGeometries(
-            {std::make_shared<open3d::geometry::Image>(im.ToLegacyImage())});
+    kernel::tsdf::EstimateRange(active_block_keys, range_minmax_map, intrinsics,
+                                pose, height, width, down_factor,
+                                block_resolution_, voxel_size_, depth_min,
+                                depth_max);
+    /// utility::LogInfo("{}", range_minmax_map.ToString());
+    t::geometry::Image im_near(range_minmax_map.Slice(2, 0, 1).Contiguous() /
+                               depth_max);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            im_near.ToLegacyImage())});
+
+    t::geometry::Image im_far(range_minmax_map.Slice(2, 1, 2).Contiguous() /
+                              depth_max);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            im_far.ToLegacyImage())});
 
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();

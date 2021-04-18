@@ -992,29 +992,29 @@ void EstimateRangeCPU
 
                 int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
                     v_max = 0;
-                float min_z = depth_max, max_z = depth_min;
+                float z_min = depth_max, z_max = depth_min;
 
                 float xc, yc, zc, u, v;
 
                 // Project 8 corners to low-res image and form a rectangle
                 for (int i = 0; i < 8; ++i) {
-                    float xw = (key[0] + ((i & 1) == 1) * block_resolution) *
+                    float xw = (key[0] + ((i & 1) > 0)) * block_resolution *
                                voxel_size;
-                    float yw = (key[1] + ((i & 2) == 1) * block_resolution) *
+                    float yw = (key[1] + ((i & 2) > 0)) * block_resolution *
                                voxel_size;
-                    float zw = (key[2] + ((i & 4) == 1) * block_resolution) *
+                    float zw = (key[2] + ((i & 4) > 0)) * block_resolution *
                                voxel_size;
 
                     w2c_transform_indexer.RigidTransform(xw, yw, zw, &xc, &yc,
                                                          &zc);
-                    if (zc < 0) continue;
+                    if (zc <= 0) continue;
 
                     // Project to the down sampled image buffer
                     w2c_transform_indexer.Project(xc, yc, zc, &u, &v);
                     u /= down_factor;
                     v /= down_factor;
 
-                    printf("%f %f %f -> %f %f %f\n", xw, yw, zw, v, u, zc);
+                    // printf("%f %f %f -> %f %f %f\n", xw, yw, zw, v, u, zc);
 
                     v_min = min(static_cast<int>(floor(v)), v_min);
                     v_max = max(static_cast<int>(ceil(v)), v_max);
@@ -1022,17 +1022,21 @@ void EstimateRangeCPU
                     u_min = min(static_cast<int>(floor(u)), u_min);
                     u_max = max(static_cast<int>(ceil(u)), u_max);
 
-                    min_z = min(min_z, zc);
-                    max_z = max(max_z, zc);
+                    z_min = min(z_min, zc);
+                    z_max = max(z_max, zc);
                 }
 
                 v_min = max(0, v_min);
-                v_max = min(h_down - 1, v_min);
+                v_max = min(h_down - 1, v_max);
 
                 u_min = max(0, u_min);
-                u_max = min(w_down - 1, u_min);
+                u_max = min(w_down - 1, u_max);
 
-                if (v_min >= v_max || u_min >= u_max || min_z >= max_z) return;
+                // printf("block %ld:v(%d %d), u(%d %d), z(%f %f)\n",
+                // workload_idx,
+                //        v_min, v_max, u_min, u_max, z_min, z_max);
+
+                if (v_min >= v_max || u_min >= u_max || z_min >= z_max) return;
 
                 // Divide the rectangle into small 16x16 fragments
                 int frag_v_count =
@@ -1053,10 +1057,10 @@ void EstimateRangeCPU
                          ++frag_u, ++offset) {
                         float* frag_ptr =
                                 frag_buffer_indexer.GetDataPtrFromCoord<float>(
-                                        offset);
+                                        frag_count_start + offset);
                         // zmin, zmax
-                        frag_ptr[0] = min_z;
-                        frag_ptr[1] = max_z;
+                        frag_ptr[0] = z_min;
+                        frag_ptr[1] = z_max;
 
                         // vmin, umin
                         frag_ptr[2] = v_min + frag_v * fragment_size;
@@ -1067,15 +1071,17 @@ void EstimateRangeCPU
                                           static_cast<float>(v_max));
                         frag_ptr[5] = min(frag_ptr[3] + fragment_size - 1,
                                           static_cast<float>(u_max));
+                        // printf("frag %d:v(%d %d), u(%d %d), z(%f %f)\n",
+                        //        workload_idx, v_min, v_max, u_min, u_max,
+                        //        z_min, z_max);
                     }
                 }
             });
 #if defined(__CUDACC__)
-    int buffer_count = count[0].Item<int>();
+    int frag_count = count[0].Item<int>();
 #else
-    int buffer_count = (*count_ptr).load();
+    int frag_count = (*count_ptr).load();
 #endif
-
     // Pass 0.5: Fill in range map to prepare for atomic min/max
     launcher.LaunchGeneralKernel(
             h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -1089,12 +1095,14 @@ void EstimateRangeCPU
 
     // Pass 1: iterate over rendering fragment array, fill-in range
     launcher.LaunchGeneralKernel(
-            buffer_count * fragment_size * fragment_size,
+            frag_count * fragment_size * fragment_size,
             [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
                 int local_idx = workload_idx % (fragment_size * fragment_size);
                 int dv = local_idx / fragment_size;
                 int du = local_idx % fragment_size;
+                // printf("%ld -> %d/%d - %d %d\n", workload_idx, frag_idx,
+                //        frag_count, dv, du);
 
                 float* frag_ptr =
                         frag_buffer_indexer.GetDataPtrFromCoord<float>(
@@ -1108,18 +1116,18 @@ void EstimateRangeCPU
                 int u = u_min + du;
                 if (v > v_max || u > u_max) return;
 
-                float min_z = frag_ptr[0];
-                float max_z = frag_ptr[1];
+                float z_min = frag_ptr[0];
+                float z_max = frag_ptr[1];
                 float* range_ptr =
                         range_map_indexer.GetDataPtrFromCoord<float>(u, v);
 #ifdef __CUDACC__
-                atomicMinf(&(range_ptr[0]), min_z);
-                atomicMaxf(&(range_ptr[1]), max_z);
+                atomicMinf(&(range_ptr[0]), z_min);
+                atomicMaxf(&(range_ptr[1]), z_max);
 #else
 #pragma omp critical
                 {
-                    range_ptr[0] = min(min_z, range_ptr[0]);
-                    range_ptr[1] = max(max_z, range_ptr[1]);
+                    range_ptr[0] = min(z_min, range_ptr[0]);
+                    range_ptr[1] = max(z_max, range_ptr[1]);
                 }
 #endif
             });
