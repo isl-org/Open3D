@@ -90,7 +90,8 @@ public:
         VertexMap = 1,
         DepthMap = 2,
         ColorMap = 4,
-        NormalMap = 8
+        NormalMap = 8,
+        RangeMap = 16
     };
     /// Use volumetric ray casting to obtain vertex and color maps, mainly for
     /// dense visual odometry.

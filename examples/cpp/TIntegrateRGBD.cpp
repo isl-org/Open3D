@@ -187,7 +187,20 @@ int main(int argc, char** argv) {
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 500 == 0) {
+            if (i % 20 == 0) {
+                core::Tensor range_map = result[MaskCode::RangeMap];
+                t::geometry::Image im_near(
+                        range_map.Slice(2, 0, 1).Contiguous() / depth_max);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                im_near.ToLegacyImage())});
+
+                t::geometry::Image im_far(
+                        range_map.Slice(2, 1, 2).Contiguous() / depth_max);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                im_far.ToLegacyImage())});
+
                 t::geometry::Image depth(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(

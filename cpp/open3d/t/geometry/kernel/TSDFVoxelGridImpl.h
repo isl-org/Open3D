@@ -1140,6 +1140,7 @@ void RayCastCPU
 #endif
         (std::shared_ptr<core::DeviceHashmap>& hashmap,
          core::Tensor& block_values,
+         const core::Tensor& range_map,
          core::Tensor& vertex_map,
          core::Tensor& depth_map,
          core::Tensor& color_map,
@@ -1174,6 +1175,7 @@ void RayCastCPU
 #endif
 
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
+    NDArrayIndexer range_map_indexer(range_map, 2);
 
     NDArrayIndexer vertex_map_indexer;
     NDArrayIndexer depth_map_indexer;
@@ -1284,7 +1286,12 @@ void RayCastCPU
                     int64_t y = workload_idx / cols;
                     int64_t x = workload_idx % cols;
 
-                    float t = depth_min;
+                    const float* range =
+                            range_map_indexer.GetDataPtrFromCoord<float>(x / 8,
+                                                                         y / 8);
+                    float t = range[0];
+                    const float t_max = range[1];
+                    if (t >= t_max) return;
 
                     // Coordinates in camera and global
                     float x_c = 0, y_c = 0, z_c = 0;
@@ -1309,7 +1316,7 @@ void RayCastCPU
                     float y_d = (y_g - y_o);
                     float z_d = (z_g - z_o);
 
-                    for (int step = 0; step < max_steps; ++step) {
+                    while (t < t_max) {
                         voxel_t* voxel_ptr =
                                 GetVoxelAtT(x_o, y_o, z_o, x_d, y_d, z_d, t);
                         if (!voxel_ptr) {

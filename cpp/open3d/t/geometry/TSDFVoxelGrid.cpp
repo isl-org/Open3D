@@ -248,20 +248,10 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                                 pose, height, width, down_factor,
                                 block_resolution_, voxel_size_, depth_min,
                                 depth_max);
-    /// utility::LogInfo("{}", range_minmax_map.ToString());
-    t::geometry::Image im_near(range_minmax_map.Slice(2, 0, 1).Contiguous() /
-                               depth_max);
-    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            im_near.ToLegacyImage())});
-
-    t::geometry::Image im_far(range_minmax_map.Slice(2, 1, 2).Contiguous() /
-                              depth_max);
-    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            im_far.ToLegacyImage())});
 
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
-    kernel::tsdf::RayCast(device_hashmap, block_values,  // range_minmax_map,
+    kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
                           vertex_map, depth_map, color_map, normal_map,
                           intrinsics, pose, height, width, block_resolution_,
                           voxel_size_, sdf_trunc_, max_steps, depth_scale,
@@ -280,6 +270,7 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
         results.emplace(TSDFVoxelGrid::SurfaceMaskCode::NormalMap, normal_map);
     }
+    results.emplace(TSDFVoxelGrid::SurfaceMaskCode::RangeMap, range_minmax_map);
     return results;
 }
 
