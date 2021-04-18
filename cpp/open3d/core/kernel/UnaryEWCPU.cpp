@@ -92,18 +92,20 @@ static void CPUAbsElementKernel(const void* src, void* dst) {
 
 template <typename scalar_t>
 static void CPUIsNanElementKernel(const void* src, void* dst) {
-    *static_cast<bool*>(dst) = std::isnan(*static_cast<const scalar_t*>(src));
+    *static_cast<bool*>(dst) =
+            std::isnan(static_cast<float>(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static void CPUIsInfElementKernel(const void* src, void* dst) {
-    *static_cast<bool*>(dst) = std::isinf(*static_cast<const scalar_t*>(src));
+    *static_cast<bool*>(dst) =
+            std::isinf(static_cast<float>(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static void CPUIsFiniteElementKernel(const void* src, void* dst) {
-    *static_cast<bool*>(dst) =
-            std::isfinite(*static_cast<const scalar_t*>(src));
+    *static_cast<bool*>(dst) = std::isfinite(
+            static_cast<float>(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
