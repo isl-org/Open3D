@@ -218,30 +218,42 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        float weight_threshold,
                        int ray_cast_mask) {
     // Extrinsic: world to camera -> pose: camera to world
-    core::Tensor pose = extrinsics.Inverse();
+    utility::Timer timer;
 
+    timer.Start();
+    core::Tensor pose = extrinsics.Inverse();
+    timer.Stop();
+    utility::LogInfo("Inverse takes {}", timer.GetDuration());
+
+    timer.Start();
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
-        vertex_map = core::Tensor::Zeros({height, width, 3},
+        vertex_map = core::Tensor::Empty({height, width, 3},
                                          core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::DepthMap) {
-        depth_map = core::Tensor::Zeros({height, width, 1},
+        depth_map = core::Tensor::Empty({height, width, 1},
                                         core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::ColorMap) {
-        color_map = core::Tensor::Zeros({height, width, 3},
+        color_map = core::Tensor::Empty({height, width, 3},
                                         core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
-        normal_map = core::Tensor::Zeros({height, width, 3},
+        normal_map = core::Tensor::Empty({height, width, 3},
                                          core::Dtype::Float32, device_);
     }
+    timer.Stop();
+    utility::LogInfo("Caller prepration takes {}", timer.GetDuration());
 
+    timer.Start();
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     core::Tensor active_block_keys =
             block_keys.IndexGet({active_block_indices_});
+    timer.Stop();
+    utility::LogInfo("IndexGet takes {}", timer.GetDuration());
 
+    timer.Start();
     core::Tensor range_minmax_map;
     int down_factor = 8;
     kernel::tsdf::EstimateRange(active_block_keys, range_minmax_map, intrinsics,
@@ -256,7 +268,10 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                           intrinsics, pose, height, width, block_resolution_,
                           voxel_size_, sdf_trunc_, max_steps, depth_scale,
                           depth_min, depth_max, weight_threshold);
+    timer.Stop();
+    utility::LogInfo("Raycast totally takes {}", timer.GetDuration());
 
+    timer.Start();
     std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor> results;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
         results.emplace(TSDFVoxelGrid::SurfaceMaskCode::VertexMap, vertex_map);
@@ -271,6 +286,10 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
         results.emplace(TSDFVoxelGrid::SurfaceMaskCode::NormalMap, normal_map);
     }
     results.emplace(TSDFVoxelGrid::SurfaceMaskCode::RangeMap, range_minmax_map);
+    timer.Stop();
+    utility::LogInfo("Raycast result preparation takes {}",
+                     timer.GetDuration());
+
     return results;
 }
 

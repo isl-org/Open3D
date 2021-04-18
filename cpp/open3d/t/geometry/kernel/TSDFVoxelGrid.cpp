@@ -32,6 +32,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -120,10 +121,14 @@ void EstimateRange(const core::Tensor& block_keys,
                    float voxel_size,
                    float depth_min,
                    float depth_max) {
+    utility::Timer timer;
     core::Device device = block_keys.GetDevice();
+    timer.Start();
     core::Tensor intrinsicsf32 =
             intrinsics.To(device, core::Dtype::Float32).Clone();
     core::Tensor posef32 = pose.To(device, core::Dtype::Float32).Clone();
+    timer.Stop();
+    utility::LogInfo("raycast clone pose takes {}", timer.GetDuration());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
@@ -169,9 +174,13 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
     // if (color_map.GetDevice() != device) {
     //     utility::LogError("Vertex map\'s device mismatches with hashmap");
     // }
+    utility::Timer timer;
+    timer.Start();
     core::Tensor intrinsicsf32 =
             intrinsics.To(device, core::Dtype::Float32).Clone();
     core::Tensor posef32 = pose.To(device, core::Dtype::Float32).Clone();
+    timer.Stop();
+    utility::LogInfo("raycast clone pose takes {}", timer.GetDuration());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

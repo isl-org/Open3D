@@ -175,6 +175,12 @@ int main(int argc, char** argv) {
             float scale = 1.0;
             Tensor intrinsic_t_down = intrinsic_t / scale;
             intrinsic_t_down[2][2] = 1.0;
+
+            ray_timer.Stop();
+            utility::LogInfo("intrinsic down takes {}",
+                             ray_timer.GetDuration());
+
+            ray_timer.Start();
             auto result = voxel_grid.RayCast(
                     intrinsic_t_down, extrinsic_t, depth.GetCols() / scale,
                     depth.GetRows() / scale, 80, depth_scale, 0.1, depth_max,

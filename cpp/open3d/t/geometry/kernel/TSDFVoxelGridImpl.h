@@ -37,6 +37,7 @@
 #include "open3d/t/geometry/kernel/TSDFVoxel.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -949,6 +950,8 @@ void EstimateRangeCPU
     // TODO(wei): reserve it in a reusable buffer
 
     // Every 2 channels: (min, max)
+    utility::Timer timer;
+    timer.Start();
     int h_down = h / down_factor;
     int w_down = w / down_factor;
     range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Dtype::Float32,
@@ -983,7 +986,14 @@ void EstimateRangeCPU
     using std::max;
     using std::min;
 #endif
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 
+    timer.Stop();
+    utility::LogInfo("EstimateRange prepration takes {}", timer.GetDuration());
+
+    timer.Start();
     // Pass 0: iterate over blocks, fill-in an rendering fragment array
     launcher.LaunchGeneralKernel(
             block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -1082,6 +1092,14 @@ void EstimateRangeCPU
 #else
     int frag_count = (*count_ptr).load();
 #endif
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
+
+    timer.Stop();
+    utility::LogInfo("EstimateRange pass 0 takes {}", timer.GetDuration());
+
+    timer.Start();
     // Pass 0.5: Fill in range map to prepare for atomic min/max
     launcher.LaunchGeneralKernel(
             h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -1092,7 +1110,14 @@ void EstimateRangeCPU
                 range_ptr[0] = depth_max;
                 range_ptr[1] = depth_min;
             });
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 
+    timer.Stop();
+    utility::LogInfo("EstimateRange pass 0.5 takes {}", timer.GetDuration());
+
+    timer.Start();
     // Pass 1: iterate over rendering fragment array, fill-in range
     launcher.LaunchGeneralKernel(
             frag_count * fragment_size * fragment_size,
@@ -1131,7 +1156,34 @@ void EstimateRangeCPU
                 }
 #endif
             });
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
+
+    timer.Stop();
+    utility::LogInfo("EstimateRange pass 1 takes {}", timer.GetDuration());
 }
+
+struct BlockCache {
+    int x;
+    int y;
+    int z;
+    int block_idx;
+
+    inline int OPEN3D_DEVICE Check(int xin, int yin, int zin) {
+        return (xin == x && yin == y && zin == z) ? block_idx : -1;
+    }
+
+    inline void OPEN3D_DEVICE Update(int xin,
+                                     int yin,
+                                     int zin,
+                                     int block_idx_in) {
+        x = xin;
+        y = yin;
+        z = zin;
+        block_idx = block_idx_in;
+    }
+};
 
 #if defined(__CUDACC__)
 void RayCastCUDA
@@ -1160,6 +1212,8 @@ void RayCastCPU
     using Key = core::Block<int, 3>;
     using Hash = core::BlockHash<int, 3>;
 
+    utility::Timer timer;
+    timer.Start();
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     auto cuda_hashmap =
             std::dynamic_pointer_cast<core::StdGPUHashmap<Key, Hash>>(hashmap);
@@ -1216,15 +1270,22 @@ void RayCastCPU
 #else
     core::kernel::CPULauncher launcher;
 #endif
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 
+    timer.Stop();
+    utility::LogInfo("Raycast preparation takes {}", timer.GetDuration());
+
+    timer.Start();
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
         launcher.LaunchGeneralKernel(
                 rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    auto GetVoxelAtP =
-                            [&] OPEN3D_DEVICE(
-                                    int x_b, int y_b, int z_b, int x_v, int y_v,
-                                    int z_v,
-                                    core::addr_t block_addr) -> voxel_t* {
+                    auto GetVoxelAtP = [&] OPEN3D_DEVICE(
+                                               int x_b, int y_b, int z_b,
+                                               int x_v, int y_v, int z_v,
+                                               core::addr_t block_addr,
+                                               BlockCache& cache) -> voxel_t* {
                         int x_vn = (x_v + block_resolution) % block_resolution;
                         int y_vn = (y_v + block_resolution) % block_resolution;
                         int z_vn = (z_v + block_resolution) % block_resolution;
@@ -1243,19 +1304,25 @@ void RayCastCPU
                             key(1) = y_b + dy_b;
                             key(2) = z_b + dz_b;
 
-                            auto iter = hashmap_impl.find(key);
-                            if (iter == hashmap_impl.end()) return nullptr;
+                            int block_addr = cache.Check(x_b, y_b, z_b);
+                            if (block_addr < 0) {
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return nullptr;
+                                block_addr = iter->second;
+                                cache.Update(x_b, y_b, z_b, block_addr);
+                            }
 
                             return voxel_block_buffer_indexer
                                     .GetDataPtrFromCoord<voxel_t>(
-                                            x_vn, y_vn, z_vn, iter->second);
+                                            x_vn, y_vn, z_vn, block_addr);
                         }
                     };
 
-                    auto GetVoxelAtT = [&] OPEN3D_DEVICE(float x_o, float y_o,
-                                                         float z_o, float x_d,
-                                                         float y_d, float z_d,
-                                                         float t) -> voxel_t* {
+                    auto GetVoxelAtT = [&] OPEN3D_DEVICE(
+                                               float x_o, float y_o, float z_o,
+                                               float x_d, float y_d, float z_d,
+                                               float t,
+                                               BlockCache& cache) -> voxel_t* {
                         float x_g = x_o + t * x_d;
                         float y_g = y_o + t * y_d;
                         float z_g = z_o + t * z_d;
@@ -1269,10 +1336,14 @@ void RayCastCPU
                         key(0) = x_b;
                         key(1) = y_b;
                         key(2) = z_b;
-                        auto iter = hashmap_impl.find(key);
-                        if (iter == hashmap_impl.end()) return nullptr;
 
-                        core::addr_t block_addr = iter->second;
+                        int block_addr = cache.Check(x_b, y_b, z_b);
+                        if (block_addr < 0) {
+                            auto iter = hashmap_impl.find(key);
+                            if (iter == hashmap_impl.end()) return nullptr;
+                            block_addr = iter->second;
+                            cache.Update(x_b, y_b, z_b, block_addr);
+                        }
 
                         // Voxel coordinate and look up
                         int x_v = int((x_g - x_b * block_size) / voxel_size);
@@ -1316,9 +1387,10 @@ void RayCastCPU
                     float y_d = (y_g - y_o);
                     float z_d = (z_g - z_o);
 
+                    BlockCache cache{0, 0, 0, -1};
                     while (t < t_max) {
-                        voxel_t* voxel_ptr =
-                                GetVoxelAtT(x_o, y_o, z_o, x_d, y_d, z_d, t);
+                        voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
+                                                         y_d, z_d, t, cache);
                         if (!voxel_ptr) {
                             t_prev = t;
                             t += block_size;
@@ -1375,10 +1447,14 @@ void RayCastCPU
                                 key(0) = x_b;
                                 key(1) = y_b;
                                 key(2) = z_b;
-                                auto iter = hashmap_impl.find(key);
-                                if (iter == hashmap_impl.end()) break;
 
-                                core::addr_t block_addr = iter->second;
+                                int block_addr = cache.Check(x_b, y_b, z_b);
+                                if (block_addr < 0) {
+                                    auto iter = hashmap_impl.find(key);
+                                    if (iter == hashmap_impl.end()) break;
+                                    block_addr = iter->second;
+                                    cache.Update(x_b, y_b, z_b, block_addr);
+                                }
 
                                 int x_v_floor = static_cast<int>(floor(x_v));
                                 int y_v_floor = static_cast<int>(floor(y_v));
@@ -1426,7 +1502,7 @@ void RayCastCPU
                                     voxel_t* voxel_ptr_k = GetVoxelAtP(
                                             x_b, y_b, z_b, x_v_floor + dx_v,
                                             y_v_floor + dy_v, z_v_floor + dz_v,
-                                            block_addr);
+                                            block_addr, cache);
 
                                     if (enable_color && voxel_ptr_k &&
                                         voxel_ptr_k->GetWeight() > 0) {
@@ -1447,7 +1523,7 @@ void RayCastCPU
                                                                     (dim == 1),
                                                             z_v_floor + dz_v +
                                                                     (dim == 2),
-                                                            block_addr);
+                                                            block_addr, cache);
                                             voxel_t* voxel_ptr_k_minus =
                                                     GetVoxelAtP(
                                                             x_b, y_b, z_b,
@@ -1457,7 +1533,7 @@ void RayCastCPU
                                                                     (dim == 1),
                                                             z_v_floor + dz_v -
                                                                     (dim == 2),
-                                                            block_addr);
+                                                            block_addr, cache);
 
                                             bool valid = false;
                                             if (voxel_ptr_k_plus &&
@@ -1520,6 +1596,8 @@ void RayCastCPU
 #if defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
+    timer.Stop();
+    utility::LogInfo("Raycast kernel takes {}", timer.GetDuration());
 }
 
 }  // namespace tsdf
