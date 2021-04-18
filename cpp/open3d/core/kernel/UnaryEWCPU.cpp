@@ -130,8 +130,8 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
                               src.GetDataPtr(), src.GetDevice(),
                               src_dtype.ByteSize() * shape.NumElements());
-    } else if (dst.IsContiguous() && src.NumElements() == 1 &&
-               !src_dtype.IsObject()) {
+    } else if (dst.NumElements() > 1 && dst.IsContiguous() &&
+               src.NumElements() == 1 && !src_dtype.IsObject()) {
         int64_t num_elements = dst.NumElements();
 
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
