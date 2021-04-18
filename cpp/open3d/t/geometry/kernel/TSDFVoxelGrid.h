@@ -57,6 +57,18 @@ void Integrate(const core::Tensor& depth,
                float depth_scale,
                float depth_max);
 
+void EstimateRange(const core::Tensor& block_keys,
+                   core::Tensor& range_minmax_map,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& pose,
+                   int h,
+                   int w,
+                   int down_factor,
+                   int64_t block_resolution,
+                   float voxel_size,
+                   float depth_min,
+                   float depth_max);
+
 void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& block_values,
              core::Tensor& vertex_map,
@@ -123,6 +135,18 @@ void IntegrateCPU(const core::Tensor& depth,
                   float sdf_trunc,
                   float depth_scale,
                   float depth_max);
+
+void EstimateRangeCPU(const core::Tensor& block_keys,
+                      core::Tensor& range_minmax_map,
+                      const core::Tensor& intrinsics,
+                      const core::Tensor& pose,
+                      int h,
+                      int w,
+                      int down_factor,
+                      int64_t block_resolution,
+                      float voxel_size,
+                      float depth_min,
+                      float depth_max);
 
 void RayCastCPU(std::shared_ptr<core::DeviceHashmap>& hashmap,
                 core::Tensor& block_values,
@@ -191,6 +215,18 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float sdf_trunc,
                    float depth_scale,
                    float depth_max);
+
+void EstimateRangeCUDA(const core::Tensor& block_keys,
+                       core::Tensor& range_minmax_map,
+                       const core::Tensor& intrinsics,
+                       const core::Tensor& pose,
+                       int h,
+                       int w,
+                       int down_factor,
+                       int64_t block_resolution,
+                       float voxel_size,
+                       float depth_min,
+                       float depth_max);
 
 void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
                  core::Tensor& block_values,

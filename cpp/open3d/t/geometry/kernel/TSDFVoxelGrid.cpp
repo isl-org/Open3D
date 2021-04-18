@@ -109,6 +109,39 @@ void Integrate(const core::Tensor& depth,
     }
 }
 
+void EstimateRange(const core::Tensor& block_keys,
+                   core::Tensor& range_minmax_map,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& pose,
+                   int h,
+                   int w,
+                   int down_factor,
+                   int64_t block_resolution,
+                   float voxel_size,
+                   float depth_min,
+                   float depth_max) {
+    core::Device device = block_keys.GetDevice();
+    core::Tensor intrinsicsf32 = intrinsics.To(device, core::Dtype::Float32);
+    core::Tensor posef32 = pose.To(device, core::Dtype::Float32);
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        EstimateRangeCPU(block_keys, range_minmax_map, intrinsicsf32, posef32,
+                         h, w, down_factor, block_resolution, voxel_size,
+                         depth_min, depth_max);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsicsf32, posef32,
+                          h, w, down_factor, block_resolution, voxel_size,
+                          depth_min, depth_max);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& block_values,
              core::Tensor& vertex_map,

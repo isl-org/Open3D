@@ -170,6 +170,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Collect voxel blocks in the viewing frustum. Note we cannot directly
     // reuse addrs from Activate, since some blocks might have been activated in
     // previous launches and return false.
+
+    // TODO(wei): support one-pass operation ActivateAndFind.
     block_hashmap_->Find(block_coords, addrs, masks);
 
     core::Tensor depth_tensor = depth.AsTensor().Contiguous();
@@ -195,8 +197,10 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     core::Tensor dst = block_hashmap_->GetValueTensor();
-    kernel::tsdf::Integrate(depth_tensor, color_tensor,
-                            addrs.To(core::Dtype::Int64).IndexGet({masks}),
+
+    // TODO(wei): use a fixed buffer.
+    active_block_indices_ = addrs.To(core::Dtype::Int64).IndexGet({masks});
+    kernel::tsdf::Integrate(depth_tensor, color_tensor, active_block_indices_,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
@@ -234,13 +238,27 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                                          core::Dtype::Float32, device_);
     }
 
+    core::Tensor block_keys = block_hashmap_->GetKeyTensor();
+    core::Tensor active_block_keys =
+            block_keys.IndexGet({active_block_indices_});
+
+    core::Tensor range_minmax_map;
+    int down_factor = 8;
+    kernel::tsdf::EstimateRange(block_keys, range_minmax_map, intrinsics, pose,
+                                height, width, down_factor, block_resolution_,
+                                voxel_size_, depth_min, depth_max);
+    t::geometry::Image im(
+            range_minmax_map.Slice(0, 0, height).Slice(1, 0, width)[1]);
+    visualization::DrawGeometries(
+            {std::make_shared<open3d::geometry::Image>(im.ToLegacyImage())});
+
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
-    kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, depth_map,
-                          color_map, normal_map, intrinsics, pose, height,
-                          width, block_resolution_, voxel_size_, sdf_trunc_,
-                          max_steps, depth_scale, depth_min, depth_max,
-                          weight_threshold);
+    kernel::tsdf::RayCast(device_hashmap, block_values,  // range_minmax_map,
+                          vertex_map, depth_map, color_map, normal_map,
+                          intrinsics, pose, height, width, block_resolution_,
+                          voxel_size_, sdf_trunc_, max_steps, depth_scale,
+                          depth_min, depth_max, weight_threshold);
 
     std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor> results;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {

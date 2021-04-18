@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <atomic>
+#include <cmath>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -926,6 +927,202 @@ void ExtractSurfaceMeshCPU
 #endif
     utility::LogInfo("Total triangle count = {}", total_tri_count);
     triangles = triangles.Slice(0, 0, total_tri_count);
+}
+
+#if defined(__CUDACC__)
+void EstimateRangeCUDA
+#else
+void EstimateRangeCPU
+#endif
+        (const core::Tensor& block_keys,
+         core::Tensor& range_minmax_map,
+         const core::Tensor& intrinsics,
+         const core::Tensor& pose,
+         int h,
+         int w,
+         int down_factor,
+         int64_t block_resolution,
+         float voxel_size,
+         float depth_min,
+         float depth_max) {
+
+    // TODO(wei): reserve it in a reusable buffer
+
+    // Every 2 channels: (min, max)
+    int h_down = h / down_factor;
+    int w_down = w / down_factor;
+    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Dtype::Float32,
+                                    block_keys.GetDevice());
+    NDArrayIndexer range_map_indexer(range_minmax_map, 2);
+
+    // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
+    const int fragment_size = 16;
+    const int frag_buffer_size = 65535;
+    core::Tensor fragment_buffer({frag_buffer_size, 6}, core::Dtype::Float32,
+                                 block_keys.GetDevice());
+    NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
+
+    NDArrayIndexer block_keys_indexer(block_keys, 1);
+    TransformIndexer w2c_transform_indexer(intrinsics, pose.Inverse());
+
+#if defined(__CUDACC__)
+    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
+                       block_keys.GetDevice());
+    int* count_ptr = count.GetDataPtr<int>();
+#else
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
+#endif
+
+#if defined(__CUDACC__)
+    core::kernel::CUDALauncher launcher;
+#else
+    core::kernel::CPULauncher launcher;
+    using std::ceil;
+    using std::floor;
+    using std::max;
+    using std::min;
+#endif
+
+    // Pass 0: iterate over blocks, fill-in an rendering fragment array
+    launcher.LaunchGeneralKernel(
+            block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int* key = block_keys_indexer.GetDataPtrFromCoord<int>(
+                        workload_idx);
+
+                int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
+                    v_max = 0;
+                float min_z = depth_max, max_z = depth_min;
+
+                float xc, yc, zc, u, v;
+
+                // Project 8 corners to low-res image and form a rectangle
+                for (int i = 0; i < 8; ++i) {
+                    float xw = (key[0] + ((i & 1) == 1) * block_resolution) *
+                               voxel_size;
+                    float yw = (key[1] + ((i & 2) == 1) * block_resolution) *
+                               voxel_size;
+                    float zw = (key[2] + ((i & 4) == 1) * block_resolution) *
+                               voxel_size;
+
+                    w2c_transform_indexer.RigidTransform(xw, yw, zw, &xc, &yc,
+                                                         &zc);
+                    if (zc < 0) continue;
+
+                    // Project to the down sampled image buffer
+                    w2c_transform_indexer.Project(xc, yc, zc, &u, &v);
+                    u /= down_factor;
+                    v /= down_factor;
+
+                    printf("%f %f %f -> %f %f %f\n", xw, yw, zw, v, u, zc);
+
+                    v_min = min(static_cast<int>(floor(v)), v_min);
+                    v_max = max(static_cast<int>(ceil(v)), v_max);
+
+                    u_min = min(static_cast<int>(floor(u)), u_min);
+                    u_max = max(static_cast<int>(ceil(u)), u_max);
+
+                    min_z = min(min_z, zc);
+                    max_z = max(max_z, zc);
+                }
+
+                v_min = max(0, v_min);
+                v_max = min(h_down - 1, v_min);
+
+                u_min = max(0, u_min);
+                u_max = min(w_down - 1, u_min);
+
+                if (v_min >= v_max || u_min >= u_max || min_z >= max_z) return;
+
+                // Divide the rectangle into small 16x16 fragments
+                int frag_v_count =
+                        ceil(float(v_max - v_min + 1) / float(fragment_size));
+                int frag_u_count =
+                        ceil(float(u_max - u_min + 1) / float(fragment_size));
+
+                int frag_count = frag_v_count * frag_u_count;
+                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                int frag_count_end = frag_count_start + frag_count;
+                if (frag_count_end >= frag_buffer_size) {
+                    printf("Fragment count exceeding buffer size, abort!\n");
+                }
+
+                int offset = 0;
+                for (int frag_v = 0; frag_v < frag_v_count; ++frag_v) {
+                    for (int frag_u = 0; frag_u < frag_u_count;
+                         ++frag_u, ++offset) {
+                        float* frag_ptr =
+                                frag_buffer_indexer.GetDataPtrFromCoord<float>(
+                                        offset);
+                        // zmin, zmax
+                        frag_ptr[0] = min_z;
+                        frag_ptr[1] = max_z;
+
+                        // vmin, umin
+                        frag_ptr[2] = v_min + frag_v * fragment_size;
+                        frag_ptr[3] = u_min + frag_u * fragment_size;
+
+                        // vmax, umax
+                        frag_ptr[4] = min(frag_ptr[2] + fragment_size - 1,
+                                          static_cast<float>(v_max));
+                        frag_ptr[5] = min(frag_ptr[3] + fragment_size - 1,
+                                          static_cast<float>(u_max));
+                    }
+                }
+            });
+#if defined(__CUDACC__)
+    int buffer_count = count[0].Item<int>();
+#else
+    int buffer_count = (*count_ptr).load();
+#endif
+
+    // Pass 0.5: Fill in range map to prepare for atomic min/max
+    launcher.LaunchGeneralKernel(
+            h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int v = workload_idx / w_down;
+                int u = workload_idx % w_down;
+                float* range_ptr =
+                        range_map_indexer.GetDataPtrFromCoord<float>(u, v);
+                range_ptr[0] = depth_max;
+                range_ptr[1] = depth_min;
+            });
+
+    // Pass 1: iterate over rendering fragment array, fill-in range
+    launcher.LaunchGeneralKernel(
+            buffer_count * fragment_size * fragment_size,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int frag_idx = workload_idx / (fragment_size * fragment_size);
+                int local_idx = workload_idx % (fragment_size * fragment_size);
+                int dv = local_idx / fragment_size;
+                int du = local_idx % fragment_size;
+
+                float* frag_ptr =
+                        frag_buffer_indexer.GetDataPtrFromCoord<float>(
+                                frag_idx);
+                int v_min = static_cast<int>(frag_ptr[2]);
+                int u_min = static_cast<int>(frag_ptr[3]);
+                int v_max = static_cast<int>(frag_ptr[4]);
+                int u_max = static_cast<int>(frag_ptr[5]);
+
+                int v = v_min + dv;
+                int u = u_min + du;
+                if (v > v_max || u > u_max) return;
+
+                float min_z = frag_ptr[0];
+                float max_z = frag_ptr[1];
+                float* range_ptr =
+                        range_map_indexer.GetDataPtrFromCoord<float>(u, v);
+#ifdef __CUDACC__
+                atomicMinf(&(range_ptr[0]), min_z);
+                atomicMaxf(&(range_ptr[1]), max_z);
+#else
+#pragma omp critical
+                {
+                    range_ptr[0] = min(min_z, range_ptr[0]);
+                    range_ptr[1] = max(max_z, range_ptr[1]);
+                }
+#endif
+            });
 }
 
 #if defined(__CUDACC__)

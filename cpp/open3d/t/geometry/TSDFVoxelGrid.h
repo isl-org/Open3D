@@ -174,8 +174,12 @@ protected:
 
     core::Device device_ = core::Device("CPU:0");
 
+    // Global hashmap
     std::shared_ptr<core::Hashmap> block_hashmap_;
+
+    // Local hashmap for the `unique` operation of input points
     std::shared_ptr<core::Hashmap> point_hashmap_;
+    core::Tensor active_block_indices_;
 
     std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 };
