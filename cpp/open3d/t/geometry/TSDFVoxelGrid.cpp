@@ -174,6 +174,10 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // TODO(wei): support one-pass operation ActivateAndFind.
     block_hashmap_->Find(block_coords, addrs, masks);
 
+    // TODO(wei): directly reuse it.
+    // Reserved for raycasting
+    active_block_coords_ = block_coords;
+
     core::Tensor depth_tensor = depth.AsTensor().Contiguous();
     core::Tensor color_tensor;
     if (color.IsEmpty()) {
@@ -199,8 +203,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     core::Tensor dst = block_hashmap_->GetValueTensor();
 
     // TODO(wei): use a fixed buffer.
-    active_block_indices_ = addrs.To(core::Dtype::Int64).IndexGet({masks});
-    kernel::tsdf::Integrate(depth_tensor, color_tensor, active_block_indices_,
+    kernel::tsdf::Integrate(depth_tensor, color_tensor,
+                            addrs.To(core::Dtype::Int64).IndexGet({masks}),
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
@@ -228,36 +232,29 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     timer.Start();
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
-        vertex_map = core::Tensor::Empty({height, width, 3},
+        vertex_map = core::Tensor::Zeros({height, width, 3},
                                          core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::DepthMap) {
-        depth_map = core::Tensor::Empty({height, width, 1},
+        depth_map = core::Tensor::Zeros({height, width, 1},
                                         core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::ColorMap) {
-        color_map = core::Tensor::Empty({height, width, 3},
+        color_map = core::Tensor::Zeros({height, width, 3},
                                         core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
-        normal_map = core::Tensor::Empty({height, width, 3},
+        normal_map = core::Tensor::Zeros({height, width, 3},
                                          core::Dtype::Float32, device_);
     }
     timer.Stop();
     utility::LogInfo("Caller prepration takes {}", timer.GetDuration());
 
     timer.Start();
-    core::Tensor block_keys = block_hashmap_->GetKeyTensor();
-    core::Tensor active_block_keys =
-            block_keys.IndexGet({active_block_indices_});
-    timer.Stop();
-    utility::LogInfo("IndexGet takes {}", timer.GetDuration());
-
-    timer.Start();
     core::Tensor range_minmax_map;
     int down_factor = 8;
-    kernel::tsdf::EstimateRange(active_block_keys, range_minmax_map, intrinsics,
-                                pose, height, width, down_factor,
+    kernel::tsdf::EstimateRange(active_block_coords_, range_minmax_map,
+                                intrinsics, pose, height, width, down_factor,
                                 block_resolution_, voxel_size_, depth_min,
                                 depth_max);
 

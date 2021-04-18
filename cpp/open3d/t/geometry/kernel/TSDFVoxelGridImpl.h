@@ -1304,12 +1304,14 @@ void RayCastCPU
                             key(1) = y_b + dy_b;
                             key(2) = z_b + dz_b;
 
-                            int block_addr = cache.Check(x_b, y_b, z_b);
+                            int block_addr =
+                                    cache.Check(key(0), key(1), key(2));
                             if (block_addr < 0) {
                                 auto iter = hashmap_impl.find(key);
                                 if (iter == hashmap_impl.end()) return nullptr;
                                 block_addr = iter->second;
-                                cache.Update(x_b, y_b, z_b, block_addr);
+                                cache.Update(key(0), key(1), key(2),
+                                             block_addr);
                             }
 
                             return voxel_block_buffer_indexer
