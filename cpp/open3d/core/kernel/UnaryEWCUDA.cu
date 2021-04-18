@@ -146,6 +146,19 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             MemoryManager::Memcpy(dst.GetDataPtr(), dst_device,
                                   src.GetDataPtr(), src_device,
                                   src_dtype.ByteSize() * shape.NumElements());
+        } else if (dst.NumElements() > 1 && dst.IsContiguous() &&
+                   src.NumElements() == 1 && !src_dtype.IsObject()) {
+            int64_t num_elements = dst.NumElements();
+
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
+                scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
+                CUDALauncher::LaunchGeneralKernel(
+                        num_elements,
+                        [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+                            dst_ptr[workload_idx] = scalar_element;
+                        });
+            });
         } else if (src_device == dst_device) {
             // For more optimized version, one can check if P2P from src to
             // dst is enabled, then put synchronization with streams on both
