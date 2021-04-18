@@ -38,6 +38,7 @@ mark_as_advanced(
 
 
 set(BENCHMARK_SOURCE_FILES
+    core/Hashmap.cpp
     core/Reduction.cpp
     core/Zeros.cpp
     geometry/KDTreeFlann.cpp

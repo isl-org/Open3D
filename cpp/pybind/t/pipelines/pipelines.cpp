@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,49 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "pybind/t/pipelines/pipelines.h"
 
-#include "open3d/visualization/gui/Widget.h"
-
-#include "open3d/visualization/gui/UIImage.h"
+#include "pybind/open3d_pybind.h"
+#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace t {
+namespace pipelines {
 
-class ImageLabel : public Widget {
-    using Super = Widget;
+void pybind_pipelines(py::module& m) {
+    py::module m_pipelines = m.def_submodule(
+            "pipelines", "Tensor-based geometry processing pipelines.");
+    registration::pybind_registration(m_pipelines);
+}
 
-public:
-    ImageLabel();
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
-    explicit ImageLabel(const char* image_path);
-    /// Uses an existing texture, using texture coordinates
-    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
-    /// This is useful for using an icon atlas to reduce draw calls.
-    explicit ImageLabel(visualization::rendering::TextureHandle texture_id,
-                        float u0 = 0.0f,
-                        float v0 = 0.0f,
-                        float u1 = 1.0f,
-                        float v1 = 1.0f);
-    ImageLabel(std::shared_ptr<UIImage> image);
-    ~ImageLabel();
-
-    std::shared_ptr<UIImage> GetImage() const;
-    void SetImage(std::shared_ptr<UIImage> image);
-
-    Size CalcPreferredSize(const Theme& theme) const override;
-
-    void Layout(const Theme& theme) override;
-
-    DrawResult Draw(const DrawContext& context) override;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

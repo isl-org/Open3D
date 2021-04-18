@@ -47,14 +47,9 @@ INSTANTIATE_TEST_SUITE_P(
         testing::ValuesIn(RegistrationPermuteDevicePairs::TestCases()));
 
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
-    core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
-
-    // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
-
+    // Constructor.
     t::pipelines::registration::ICPConvergenceCriteria convergence_criteria;
-
+    // Default values.
     EXPECT_EQ(convergence_criteria.max_iteration_, 30);
     EXPECT_DOUBLE_EQ(convergence_criteria.relative_fitness_, 1e-6);
     EXPECT_DOUBLE_EQ(convergence_criteria.relative_rmse_, 1e-6);

@@ -65,6 +65,7 @@ public:
 
     static void debug_PrintPreferredSizes(Layout1D* layout,
                                           const Theme& theme,
+                                          const Constraints& constraints,
                                           int depth = 0);
 
     /// Spacing is in pixels; see the comment in Margin(). 1em is typically
@@ -84,7 +85,8 @@ public:
     /// before a layout that will happen, such as before adding as a child).
     void SetMargins(const Margins& margins);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
 
     /// Adds a fixed number of pixels after the previously added widget.
@@ -99,7 +101,8 @@ public:
     class Fixed : public Widget {
     public:
         Fixed(int size, Dir dir);
-        Size CalcPreferredSize(const Theme& theme) const override;
+        Size CalcPreferredSize(const Theme& theme,
+                               const Constraints& constraints) const override;
 
     private:
         int size_;
@@ -107,10 +110,14 @@ public:
     };
 
     class Stretch : public Widget {
-        Size CalcPreferredSize(const Theme& theme) const override;
+        Size CalcPreferredSize(const Theme& theme,
+                               const Constraints& constraints) const override;
     };
 
 protected:
+    int GetMinorAxisPreferredSize() const;
+    void SetMinorAxisPreferredSize(int size);
+
     Margins& GetMutableMargins();
 
 private:
@@ -132,6 +139,9 @@ public:
          const Margins& margins,
          const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Vert();
+
+    int GetPreferredWidth() const;
+    void SetPreferredWidth(int w);
 };
 
 /// This is a vertical layout with a twisty + title that can be clicked on
@@ -153,7 +163,11 @@ public:
     /// the window is shown.)
     void SetIsOpen(bool is_open);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    /// Check if widget is open.
+    bool GetIsOpen();
+
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
@@ -177,6 +191,9 @@ public:
           const Margins& margins,
           const std::vector<std::shared_ptr<Widget>>& children);
     ~Horiz();
+
+    int GetPreferredHeight() const;
+    void SetPreferredHeight(int h);
 };
 
 /// Lays out widgets in a grid. The widgets are assigned to the next
@@ -192,7 +209,11 @@ public:
     int GetSpacing() const;
     const Margins& GetMargins() const;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    int GetPreferredWidth() const;
+    void SetPreferredWidth(int w);
+
+    Size CalcPreferredSize(const Theme& theme,
+                           const Constraints& constraints) const override;
     void Layout(const Theme& theme) override;
 
 private:
