@@ -938,7 +938,7 @@ void EstimateRangeCPU
         (const core::Tensor& block_keys,
          core::Tensor& range_minmax_map,
          const core::Tensor& intrinsics,
-         const core::Tensor& pose,
+         const core::Tensor& extrinsics,
          int h,
          int w,
          int down_factor,
@@ -966,7 +966,7 @@ void EstimateRangeCPU
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
 
     NDArrayIndexer block_keys_indexer(block_keys, 1);
-    TransformIndexer w2c_transform_indexer(intrinsics, pose.Inverse());
+    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
 
 #if defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
@@ -1197,7 +1197,7 @@ void RayCastCPU
          core::Tensor& color_map,
          core::Tensor& normal_map,
          const core::Tensor& intrinsics,
-         const core::Tensor& pose,
+         const core::Tensor& extrinsics,
          int h,
          int w,
          int64_t block_resolution,
@@ -1257,8 +1257,13 @@ void RayCastCPU
         normal_map_indexer = NDArrayIndexer(normal_map, 2);
     }
 
-    TransformIndexer c2w_transform_indexer(intrinsics, pose);
-    TransformIndexer w2c_transform_indexer(intrinsics, pose.Inverse());
+    timer.Stop();
+    utility::LogInfo("Raycast misc preparation takes {}", timer.GetDuration());
+
+    timer.Start();
+
+    TransformIndexer c2w_transform_indexer(intrinsics, extrinsics.Inverse());
+    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
 
     int64_t rows = h;
     int64_t cols = w;
@@ -1274,7 +1279,8 @@ void RayCastCPU
 #endif
 
     timer.Stop();
-    utility::LogInfo("Raycast preparation takes {}", timer.GetDuration());
+    utility::LogInfo("Raycast transform indexer preparation takes {}",
+                     timer.GetDuration());
 
     timer.Start();
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {

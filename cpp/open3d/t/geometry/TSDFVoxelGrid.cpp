@@ -225,11 +225,6 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     utility::Timer timer;
 
     timer.Start();
-    core::Tensor pose = extrinsics.Inverse();
-    timer.Stop();
-    utility::LogInfo("Inverse takes {}", timer.GetDuration());
-
-    timer.Start();
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
         vertex_map =
@@ -254,17 +249,17 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     core::Tensor range_minmax_map;
     int down_factor = 8;
     kernel::tsdf::EstimateRange(active_block_coords_, range_minmax_map,
-                                intrinsics, pose, height, width, down_factor,
-                                block_resolution_, voxel_size_, depth_min,
-                                depth_max);
+                                intrinsics, extrinsics, height, width,
+                                down_factor, block_resolution_, voxel_size_,
+                                depth_min, depth_max);
 
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
     kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
                           vertex_map, depth_map, color_map, normal_map,
-                          intrinsics, pose, height, width, block_resolution_,
-                          voxel_size_, sdf_trunc_, max_steps, depth_scale,
-                          depth_min, depth_max, weight_threshold);
+                          intrinsics, extrinsics, height, width,
+                          block_resolution_, voxel_size_, sdf_trunc_, max_steps,
+                          depth_scale, depth_min, depth_max, weight_threshold);
     timer.Stop();
     utility::LogInfo("Raycast totally takes {}", timer.GetDuration());
 

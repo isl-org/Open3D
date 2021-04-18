@@ -113,7 +113,7 @@ void Integrate(const core::Tensor& depth,
 void EstimateRange(const core::Tensor& block_keys,
                    core::Tensor& range_minmax_map,
                    const core::Tensor& intrinsics,
-                   const core::Tensor& pose,
+                   const core::Tensor& extrinsics,
                    int h,
                    int w,
                    int down_factor,
@@ -126,20 +126,21 @@ void EstimateRange(const core::Tensor& block_keys,
     timer.Start();
     core::Tensor intrinsicsf32 =
             intrinsics.To(device, core::Dtype::Float32).Clone();
-    core::Tensor posef32 = pose.To(device, core::Dtype::Float32).Clone();
+    core::Tensor extrinsicsf32 =
+            extrinsics.To(device, core::Dtype::Float32).Clone();
     timer.Stop();
     utility::LogInfo("raycast clone pose takes {}", timer.GetDuration());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        EstimateRangeCPU(block_keys, range_minmax_map, intrinsicsf32, posef32,
-                         h, w, down_factor, block_resolution, voxel_size,
-                         depth_min, depth_max);
+        EstimateRangeCPU(block_keys, range_minmax_map, intrinsicsf32,
+                         extrinsicsf32, h, w, down_factor, block_resolution,
+                         voxel_size, depth_min, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsicsf32, posef32,
-                          h, w, down_factor, block_resolution, voxel_size,
-                          depth_min, depth_max);
+        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsicsf32,
+                          extrinsicsf32, h, w, down_factor, block_resolution,
+                          voxel_size, depth_min, depth_max);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -156,7 +157,7 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              core::Tensor& color_map,
              core::Tensor& normal_map,
              const core::Tensor& intrinsics,
-             const core::Tensor& pose,
+             const core::Tensor& extrinsics,
              int h,
              int w,
              int64_t block_resolution,
@@ -178,20 +179,21 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
     timer.Start();
     core::Tensor intrinsicsf32 =
             intrinsics.To(device, core::Dtype::Float32).Clone();
-    core::Tensor posef32 = pose.To(device, core::Dtype::Float32).Clone();
+    core::Tensor extrinsicsf32 =
+            extrinsics.To(device, core::Dtype::Float32).Clone();
     timer.Stop();
     utility::LogInfo("raycast clone pose takes {}", timer.GetDuration());
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         RayCastCPU(hashmap, block_values, range_map, vertex_map, depth_map,
-                   color_map, normal_map, intrinsicsf32, posef32, h, w,
+                   color_map, normal_map, intrinsicsf32, extrinsicsf32, h, w,
                    block_resolution, voxel_size, sdf_trunc, max_steps,
                    depth_scale, depth_min, depth_max, weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         RayCastCUDA(hashmap, block_values, range_map, vertex_map, depth_map,
-                    color_map, normal_map, intrinsicsf32, posef32, h, w,
+                    color_map, normal_map, intrinsicsf32, extrinsicsf32, h, w,
                     block_resolution, voxel_size, sdf_trunc, max_steps,
                     depth_scale, depth_min, depth_max, weight_threshold);
 #else
