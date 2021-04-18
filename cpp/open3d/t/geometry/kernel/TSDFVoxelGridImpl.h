@@ -1163,7 +1163,6 @@ void EstimateRangeCPU
     timer.Stop();
     utility::LogInfo("EstimateRange pass 1 takes {}", timer.GetDuration());
 }
-
 struct BlockCache {
     int x;
     int y;
@@ -1359,6 +1358,39 @@ void RayCastCPU
                     int64_t y = workload_idx / cols;
                     int64_t x = workload_idx % cols;
 
+                    float *depth_ptr = nullptr, *vertex_ptr = nullptr,
+                          *normal_ptr = nullptr, *color_ptr = nullptr;
+                    if (enable_depth) {
+                        depth_ptr =
+                                depth_map_indexer.GetDataPtrFromCoord<float>(x,
+                                                                             y);
+                        *depth_ptr = 0;
+                    }
+                    if (enable_vertex) {
+                        vertex_ptr =
+                                vertex_map_indexer.GetDataPtrFromCoord<float>(
+                                        x, y);
+                        vertex_ptr[0] = 0;
+                        vertex_ptr[1] = 0;
+                        vertex_ptr[2] = 0;
+                    }
+                    if (enable_color) {
+                        color_ptr =
+                                color_map_indexer.GetDataPtrFromCoord<float>(x,
+                                                                             y);
+                        color_ptr[0] = 0;
+                        color_ptr[1] = 0;
+                        color_ptr[2] = 0;
+                    }
+                    if (enable_normal) {
+                        normal_ptr =
+                                normal_map_indexer.GetDataPtrFromCoord<float>(
+                                        x, y);
+                        normal_ptr[0] = 0;
+                        normal_ptr[1] = 0;
+                        normal_ptr[2] = 0;
+                    }
+
                     const float* range =
                             range_map_indexer.GetDataPtrFromCoord<float>(x / 8,
                                                                          y / 8);
@@ -1412,20 +1444,12 @@ void RayCastCPU
 
                             // Trivial vertex assignment
                             if (enable_depth) {
-                                float* depth =
-                                        depth_map_indexer
-                                                .GetDataPtrFromCoord<float>(x,
-                                                                            y);
-                                *depth = t_intersect * depth_scale;
+                                *depth_ptr = t_intersect * depth_scale;
                             }
                             if (enable_vertex) {
-                                float* vertex =
-                                        vertex_map_indexer
-                                                .GetDataPtrFromCoord<float>(x,
-                                                                            y);
-                                vertex[0] = x_g;
-                                vertex[1] = y_g;
-                                vertex[2] = z_g;
+                                vertex_ptr[0] = x_g;
+                                vertex_ptr[1] = y_g;
+                                vertex_ptr[2] = z_g;
                             }
 
                             // Trilinear interpolation
@@ -1466,28 +1490,6 @@ void RayCastCPU
                                 float ratio_y = y_v - float(y_v_floor);
                                 float ratio_z = z_v - float(z_v_floor);
 
-                                float* color = nullptr;
-                                float* normal = nullptr;
-                                // Color inteprolation
-                                if (enable_color) {
-                                    color = color_map_indexer
-                                                    .GetDataPtrFromCoord<float>(
-                                                            x, y);
-                                    color[0] = 0;
-                                    color[1] = 0;
-                                    color[2] = 0;
-                                }
-
-                                if (enable_normal) {
-                                    normal =
-                                            normal_map_indexer
-                                                    .GetDataPtrFromCoord<float>(
-                                                            x, y);
-                                    normal[0] = 0;
-                                    normal[1] = 0;
-                                    normal[2] = 0;
-                                }
-
                                 float sum_weight_color = 0.0;
                                 float sum_weight_normal = 0.0;
                                 for (int k = 0; k < 8; ++k) {
@@ -1509,9 +1511,12 @@ void RayCastCPU
                                     if (enable_color && voxel_ptr_k &&
                                         voxel_ptr_k->GetWeight() > 0) {
                                         sum_weight_color += ratio;
-                                        color[0] += ratio * voxel_ptr_k->GetR();
-                                        color[1] += ratio * voxel_ptr_k->GetG();
-                                        color[2] += ratio * voxel_ptr_k->GetB();
+                                        color_ptr[0] +=
+                                                ratio * voxel_ptr_k->GetR();
+                                        color_ptr[1] +=
+                                                ratio * voxel_ptr_k->GetG();
+                                        color_ptr[2] +=
+                                                ratio * voxel_ptr_k->GetB();
                                     }
 
                                     if (enable_normal) {
@@ -1541,7 +1546,7 @@ void RayCastCPU
                                             if (voxel_ptr_k_plus &&
                                                 voxel_ptr_k_plus->GetWeight() >
                                                         0) {
-                                                normal[dim] +=
+                                                normal_ptr[dim] +=
                                                         ratio *
                                                         voxel_ptr_k_plus
                                                                 ->GetTSDF() /
@@ -1552,7 +1557,7 @@ void RayCastCPU
                                             if (voxel_ptr_k_minus &&
                                                 voxel_ptr_k_minus->GetWeight() >
                                                         0) {
-                                                normal[dim] -=
+                                                normal_ptr[dim] -=
                                                         ratio *
                                                         voxel_ptr_k_minus
                                                                 ->GetTSDF() /
@@ -1567,21 +1572,24 @@ void RayCastCPU
 
                                 if (enable_color && sum_weight_color > 0) {
                                     sum_weight_color *= 255.0;
-                                    color[0] /= sum_weight_color;
-                                    color[1] /= sum_weight_color;
-                                    color[2] /= sum_weight_color;
+                                    color_ptr[0] /= sum_weight_color;
+                                    color_ptr[1] /= sum_weight_color;
+                                    color_ptr[2] /= sum_weight_color;
                                 }
                                 if (enable_normal && sum_weight_normal > 0) {
-                                    normal[0] /= sum_weight_normal;
-                                    normal[1] /= sum_weight_normal;
-                                    normal[2] /= sum_weight_normal;
-                                    float norm = sqrt(normal[0] * normal[0] +
-                                                      normal[1] * normal[1] +
-                                                      normal[2] * normal[2]);
+                                    normal_ptr[0] /= sum_weight_normal;
+                                    normal_ptr[1] /= sum_weight_normal;
+                                    normal_ptr[2] /= sum_weight_normal;
+                                    float norm =
+                                            sqrt(normal_ptr[0] * normal_ptr[0] +
+                                                 normal_ptr[1] * normal_ptr[1] +
+                                                 normal_ptr[2] * normal_ptr[2]);
                                     w2c_transform_indexer.Rotate(
-                                            normal[0] / norm, normal[1] / norm,
-                                            normal[2] / norm, normal + 0,
-                                            normal + 1, normal + 2);
+                                            normal_ptr[0] / norm,
+                                            normal_ptr[1] / norm,
+                                            normal_ptr[2] / norm,
+                                            normal_ptr + 0, normal_ptr + 1,
+                                            normal_ptr + 2);
                                 }
                             }  // if (color or normal)
                             break;

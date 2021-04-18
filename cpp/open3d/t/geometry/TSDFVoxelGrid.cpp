@@ -232,20 +232,20 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     timer.Start();
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
-        vertex_map = core::Tensor::Zeros({height, width, 3},
-                                         core::Dtype::Float32, device_);
+        vertex_map =
+                core::Tensor({height, width, 3}, core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::DepthMap) {
-        depth_map = core::Tensor::Zeros({height, width, 1},
-                                        core::Dtype::Float32, device_);
+        depth_map =
+                core::Tensor({height, width, 1}, core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::ColorMap) {
-        color_map = core::Tensor::Zeros({height, width, 3},
-                                        core::Dtype::Float32, device_);
+        color_map =
+                core::Tensor({height, width, 3}, core::Dtype::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
-        normal_map = core::Tensor::Zeros({height, width, 3},
-                                         core::Dtype::Float32, device_);
+        normal_map =
+                core::Tensor({height, width, 3}, core::Dtype::Float32, device_);
     }
     timer.Stop();
     utility::LogInfo("Caller prepration takes {}", timer.GetDuration());
