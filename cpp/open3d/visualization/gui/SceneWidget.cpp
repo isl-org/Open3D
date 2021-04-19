@@ -40,6 +40,7 @@
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/PickPointsInteractor.h"
+#include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/CameraInteractorLogic.h"
 #include "open3d/visualization/rendering/CameraSphereInteractorLogic.h"
@@ -49,9 +50,6 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
-
-// Once render target is available, please remove the #ifdefs
-#define NO_RENDER_TARGET 0
 
 namespace open3d {
 namespace visualization {
@@ -546,6 +544,19 @@ public:
         pick_->SetOnPointsPicked(on_picked);
     }
 
+    void SetOnInteractorUIUpdated(
+            std::function<void(const std::vector<Eigen::Vector2i>&)> on_ui) {
+        pick_->SetOnUIChanged(on_ui);
+    }
+
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick) {
+        pick_->SetOnStartedPolygonPicking(on_poly_pick);
+    }
+
+    void DoPolygonPick() { pick_->DoPick(); }
+
+    void ClearPolygonPick() { pick_->ClearPick(); }
+
     void SetNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
     void Mouse(const MouseEvent& e) override {
@@ -556,6 +567,8 @@ public:
             pick_->SetNeedsRedraw();
         }
     }
+
+    void Key(const KeyEvent& e) override { pick_->Key(e); }
 
 private:
     std::unique_ptr<PickPointsInteractor> pick_;
@@ -638,7 +651,20 @@ public:
         pick_->SetOnPointsPicked(on_picked);
     }
 
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick) {
+        pick_->SetOnStartedPolygonPicking(on_poly_pick);
+    }
+
+    void DoPolygonPick() { pick_->DoPolygonPick(); }
+
+    void ClearPolygonPick() { pick_->ClearPolygonPick(); }
+
     void SetPickNeedsRedraw() { pick_->SetNeedsRedraw(); }
+
+    void SetOnInteractorUIUpdated(
+            std::function<void(const std::vector<Eigen::Vector2i>&)> on_ui) {
+        pick_->SetOnInteractorUIUpdated(on_ui);
+    }
 
     SceneWidget::Controls GetControls() const {
         if (current_ == rotate_sphere_.get()) {
@@ -751,9 +777,7 @@ struct SceneWidget::Impl {
     bool frame_rect_changed_ = false;
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
     bool scene_caching_enabled_ = false;
-#ifdef NO_RENDER_TARGET
-    bool is_picking_ = false;
-#endif  // NO_RENDER_TARGET
+    std::vector<Eigen::Vector2i> ui_lines_;
 
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
 
@@ -880,7 +904,28 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
         auto view = impl_->scene_->GetView();
         impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
+        impl_->controls_->SetOnInteractorUIUpdated(
+                [this](const std::vector<Eigen::Vector2i>& lines) {
+                    impl_->ui_lines_ = lines;
+                    ForceRedraw();
+                });
     }
+}
+
+void SceneWidget::SetOnStartedPolygonPicking(
+        std::function<void()> on_poly_pick) {
+    impl_->controls_->SetOnStartedPolygonPicking(on_poly_pick);
+}
+
+void SceneWidget::DoPolygonPick(PolygonPickAction action) {
+    switch (action) {
+        case PolygonPickAction::CANCEL:
+            impl_->controls_->ClearPolygonPick();
+            break;
+        case PolygonPickAction::SELECT:
+            impl_->controls_->DoPolygonPick();
+            break;
+    };
 }
 
 std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
@@ -915,22 +960,10 @@ void SceneWidget::SetViewControls(Controls mode) {
     } else {
         impl_->controls_->SetControls(mode);
     }
-
-#if NO_RENDER_TARGET
-    if (mode == Controls::PICK_POINTS) {
-        impl_->is_picking_ = true;
-    }
-    EnableSceneCaching(impl_->scene_caching_enabled_);
-#endif  // NO_RENDER_TARGET
 }
 
 void SceneWidget::EnableSceneCaching(bool enable) {
     impl_->scene_caching_enabled_ = enable;
-#if NO_RENDER_TARGET
-    if (impl_->is_picking_) {
-        enable = false;
-    }
-#endif
     if (!enable) {
         impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
                                                  true);
@@ -939,11 +972,7 @@ void SceneWidget::EnableSceneCaching(bool enable) {
 
 void SceneWidget::ForceRedraw() {
     // ForceRedraw only applies when scene caching is enabled
-#if NO_RENDER_TARGET
-    if (!impl_->scene_caching_enabled_ || impl_->is_picking_) return;
-#else
     if (!impl_->scene_caching_enabled_) return;
-#endif  // NO_RENDER_TARGET
 
     impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
     impl_->controls_->SetPickNeedsRedraw();
@@ -955,21 +984,13 @@ void SceneWidget::SetRenderQuality(Quality quality) {
         impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
-#if NO_RENDER_TARGET
-            if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
-#else
             if (impl_->scene_caching_enabled_) {
-#endif  // NO_RENDER_TARGET
                 impl_->scene_->GetScene()->SetViewActive(
                         impl_->scene_->GetViewId(), true);
             }
         } else {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
-#if NO_RENDER_TARGET
-            if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
-#else
             if (impl_->scene_caching_enabled_) {
-#endif  // NO_RENDER_TARGET
                 impl_->scene_->GetScene()->SetRenderOnce(
                         impl_->scene_->GetViewId());
             }
@@ -1092,6 +1113,18 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
             ImGui::TextColored({color.GetRed(), color.GetGreen(),
                                 color.GetBlue(), color.GetAlpha()},
                                "%s", l->GetText());
+        }
+    }
+
+    // Draw any interactor UI
+    if (!impl_->ui_lines_.empty()) {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        auto ui_color = colorToImguiRGBA(Color(1.0f, 0.0f, 1.0f, 1.0f));
+        for (size_t i = 0; i < impl_->ui_lines_.size() - 1; i += 2) {
+            auto& p0 = impl_->ui_lines_[i];
+            auto& p1 = impl_->ui_lines_[i + 1];
+            draw_list->AddLine({float(p0.x()), float(p0.y())},
+                               {float(p1.x()), float(p1.y())}, ui_color, 2);
         }
     }
 
