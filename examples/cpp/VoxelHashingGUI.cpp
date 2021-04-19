@@ -9,8 +9,13 @@ using namespace open3d::visualization;
 
 std::mutex pcd_mutex;
 
-// https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
-unsigned char turbo_srgb_bytes[256][3] = {
+// Tanglo colorscheme (see https://en.wikipedia.org/wiki/Tango_Desktop_Project)
+static const Eigen::Vector3d kTangoOrange(0.961, 0.475, 0.000);
+static const Eigen::Vector3d kTangoSkyBlueDark(0.125, 0.290, 0.529);
+
+// Turbo colormap
+//   https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
+static const unsigned char turbo_srgb_bytes[256][3] = {
         {48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
         {53, 30, 88},   {54, 33, 95},   {55, 36, 102},   {56, 39, 109},
         {57, 42, 115},  {58, 45, 121},  {59, 47, 128},   {60, 50, 134},
@@ -75,6 +80,7 @@ unsigned char turbo_srgb_bytes[256][3] = {
         {158, 16, 1},   {155, 15, 1},   {152, 14, 1},    {149, 13, 1},
         {146, 11, 1},   {142, 10, 1},   {139, 9, 2},     {136, 8, 2},
         {133, 7, 2},    {129, 6, 2},    {126, 5, 2},     {122, 4, 3}};
+
 // The renderer can only use 8-bit channels currently. Also, we need to
 // convert to RGB because the renderer will display one-channel images
 // in red. Normalize because otherwise it can be hard to see the image.
@@ -150,45 +156,31 @@ std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
     lines->lines_.push_back({3, 4});
     lines->lines_.push_back({4, 1});
 
-    // Tango orange: f57900
-    lines->PaintUniformColor(Eigen::Vector3d(245, 121, 0) / 255.0);
+    lines->PaintUniformColor(kTangoOrange);
 
     return lines;
 }
 
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
+    using Super = gui::VGrid;
 public:
-    PropertyPanel(int spacing) : gui::VGrid(2, spacing) {}
-
-    void AddButton(const std::string& name, std::atomic<bool>* is_running) {
-        auto cb = std::make_shared<gui::Button>(name.c_str());
-        cb->SetText("Start");
-        *is_running = false;
-
-        cb->SetOnClicked([is_running, cb, this]() {
-            *is_running = !(*is_running);
-            if (*is_running) {
-                cb->SetText("Pause");
-            } else {
-                cb->SetText("Resume");
-            }
-            this->NotifyChanged();
-        });
-        AddChild(cb);
+    PropertyPanel(int spacing, int left_margin)
+        : gui::VGrid(2, spacing, gui::Margins(left_margin, 0, 0, 0)) {
+        default_label_color_ = std::make_shared<gui::Label>("temp")->GetTextColor();
     }
 
     void AddBool(const std::string& name,
                  std::atomic<bool>* bool_addr,
                  bool default_val) {
-        auto cb = std::make_shared<gui::Checkbox>(name.c_str());
+        auto cb = std::make_shared<gui::Checkbox>("");
         cb->SetChecked(default_val);
         *bool_addr = default_val;
         cb->SetOnChecked([bool_addr, this](bool is_checked) {
             *bool_addr = is_checked;
             this->NotifyChanged();
         });
-        AddChild(std::make_shared<gui::Label>(""));  // checkbox has name in it
+        AddChild(std::make_shared<gui::Label>(name.c_str()));
         AddChild(cb);
     }
 
@@ -245,9 +237,25 @@ public:
         AddChild(combo);
     }
 
+    void SetEnabled(bool enable) override {
+        Super::SetEnabled(enable);
+        for (auto child : GetChildren()) {
+            child->SetEnabled(enable);
+            auto label = std::dynamic_pointer_cast<gui::Label>(child);
+            if (label) {
+                if (enable) {
+                    label->SetTextColor(default_label_color_);
+                } else {
+                    label->SetTextColor(gui::Color(0.5f, 0.5f, 0.5f, 1.0f));
+                }
+            }
+        }
+    }
+
     void SetOnChanged(std::function<void()> f) { on_changed_ = f; }
 
 private:
+    gui::Color default_label_color_;
     std::function<void()> on_changed_;
 
     void NotifyChanged() {
@@ -262,10 +270,13 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow() : gui::Window("Open3D - Reconstruction", 1600, 900) {
+    ReconstructionWindow()
+        : gui::Window("Open3D - Reconstruction", 1600, 900), is_running_(false) {
         auto& theme = GetTheme();
         int em = theme.font_size;
-        int spacing = int(std::round(0.5f * float(em)));
+        int spacing = int(std::round(0.25f * float(em)));
+        int left_margin = em;
+        int vspacing = int(std::round(0.5f * float(em)));
         gui::Margins margins(int(std::round(0.5f * float(em))));
         panel_ = std::make_shared<gui::Vert>(spacing, margins);
         widget3d_ = std::make_shared<gui::SceneWidget>();
@@ -274,22 +285,35 @@ public:
         AddChild(widget3d_);
         AddChild(output_panel_);
 
-        control_props_ = std::make_shared<PropertyPanel>(
-                int(std::round(0.25f * float(em))));
+        fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
+        adjustable_props_ = std::make_shared<PropertyPanel>(spacing,
+                                                            left_margin);
 
-        fixed_props_ = std::make_shared<PropertyPanel>(
-                int(std::round(0.25f * float(em))));
-        adjustable_props_ = std::make_shared<PropertyPanel>(
-                int(std::round(0.25f * float(em))));
-
-        panel_->AddChild(std::make_shared<gui::Label>("Control"));
-        panel_->AddChild(control_props_);
-
-        panel_->AddChild(std::make_shared<gui::Label>("Preset params"));
+        panel_->AddChild(std::make_shared<gui::Label>("Starting settings"));
         panel_->AddChild(fixed_props_);
 
-        panel_->AddChild(std::make_shared<gui::Label>("Adjustable params"));
+        panel_->AddFixed(vspacing);
+        panel_->AddChild(std::make_shared<gui::Label>("Reconstruction settings"));
         panel_->AddChild(adjustable_props_);
+        panel_->SetEnabled(false);
+
+        auto b = std::make_shared<gui::Button>(" Start ");
+        b->SetOnClicked([b, this]() {
+            this->is_running_ = !(this->is_running_);
+            if (this->is_running_) {
+                b->SetText("Pause");
+            } else {
+                b->SetText("Resume");
+            }
+            this->adjustable_props_->SetEnabled(true);
+        });
+        auto h = std::make_shared<gui::Horiz>();
+        h->AddStretch();
+        h->AddChild(b);
+        h->AddStretch();
+        panel_->AddFixed(vspacing);
+        panel_->AddChild(h);
+
         panel_->AddStretch();
 
         panel_->AddChild(std::make_shared<gui::Label>("Input image(s)"));
@@ -336,11 +360,12 @@ public:
     }
 
 protected:
+    std::atomic<bool> is_running_;
+
     std::shared_ptr<gui::Vert> panel_;
     std::shared_ptr<gui::Vert> output_panel_;
     std::shared_ptr<gui::Label> output_;
     std::shared_ptr<gui::SceneWidget> widget3d_;
-    std::shared_ptr<PropertyPanel> control_props_;
     std::shared_ptr<PropertyPanel> fixed_props_;
     std::shared_ptr<PropertyPanel> adjustable_props_;
 
@@ -359,7 +384,13 @@ class ExampleWindow : public ReconstructionWindow {
 public:
     ExampleWindow(const std::string& dataset_path) {
         dataset_path_ = dataset_path;
-        control_props_->AddButton("Toggle", &prop_values_.is_running);
+
+        // Fixed
+        fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
+                                   1000, 1, 5000);
+        fixed_props_->AddIntSlider("Pointcloud size estimate",
+                                   &prop_values_.pointcloud_size, 3000000,
+                                   500000, 8000000);
 
         // Adjustable
         adjustable_props_->AddIntSlider(
@@ -372,12 +403,8 @@ public:
         adjustable_props_->AddBool("Raycast color", &prop_values_.raycast_color,
                                    true);
 
-        // Fixed
-        fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
-                                   1000, 1, 5000);
-        fixed_props_->AddIntSlider("Pointcloud size estimate",
-                                   &prop_values_.pointcloud_size, 3000000,
-                                   500000, 8000000);
+        // Set adjustable disabled to make the Start button clearer
+        adjustable_props_->SetEnabled(false);
 
         is_done_ = false;
         SetOnClose([this]() {
@@ -399,7 +426,6 @@ private:
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
-        std::atomic<bool> is_running;
     } prop_values_;
     std::atomic<bool> is_done_;
     std::thread update_thread_;
@@ -438,7 +464,7 @@ private:
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor intrinsic_t = core::Tensor::Init<float>(
                 {{525.0, 0, 319.5}, {0, 525.0, 239.5}, {0, 0, 1}});
-        core::Device device("CUDA:0");
+        core::Device device("CPU:0");
 
         t::geometry::Image ref_depth =
                 *t::io::CreateImageFromFile(depth_files[0]);
@@ -522,13 +548,12 @@ private:
 
         Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
         while (!is_done_) {
-            if (!prop_values_.is_running) continue;
-
-            // Disable depth_scale and pcd buffer size change
-            this->fixed_props_->GetChildren()[1]->SetEnabled(false);
-            this->fixed_props_->GetChildren()[3]->SetEnabled(false);
-
-            this->raycast_color_image_->SetVisible(prop_values_.raycast_color);
+            if (!is_running_) {
+                // If we aren't running, sleep a little bit so that we don't
+                // use 100% of the CPU just checking if we need to run.
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                continue;
+            }
 
             // Input
             t::geometry::Image input_depth =
@@ -573,9 +598,7 @@ private:
             if (traj->points_.size() > 1) {
                 int n = traj->points_.size();
                 traj->lines_.push_back({n - 1, n - 2});
-
-                // Tango sky blue: 204a87
-                traj->colors_.push_back(Eigen::Vector3d(32, 74, 105) / 255.0);
+                traj->colors_.push_back(kTangoSkyBlueDark);
             }
 
             frustum = CreateCameraFrustum(640, 480, K_eigen, T_eigen.inverse());
@@ -615,6 +638,11 @@ private:
                     this,
                     [this, color, depth8, raycast_color, raycast_depth8, pcd,
                      traj, frustum, &is_scene_updated, out = out.str()]() {
+                        // Disable depth_scale and pcd buffer size change
+                        this->fixed_props_->SetEnabled(false);
+
+                        this->raycast_color_image_->SetVisible(this->prop_values_.raycast_color);
+
                         this->SetOutput(out);
                         this->input_color_image_->UpdateImage(color);
                         this->input_depth_image_->UpdateImage(depth8);
