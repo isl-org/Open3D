@@ -83,15 +83,17 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
                 device.ToString(), target.depth_.GetDevice().ToString());
     }
 
-    core::Tensor intrinsics_d = intrinsics.To(device, true);
-
     // 4x4 transformations are always float64 and stay on CPU.
     core::Device host("CPU:0");
-    core::Tensor trans_d = init_source_to_target.To(host, core::Dtype::Float64);
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Clone();
+    core::Tensor trans_d =
+            init_source_to_target.To(host, core::Dtype::Float64).Clone();
 
     core::Tensor source_depth_processed;
     core::Tensor target_depth_processed;
 
+    utility::LogInfo("Preprocess depth\n");
     kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
                                       source_depth_processed, depth_scale,
                                       depth_max);
@@ -174,7 +176,7 @@ core::Tensor RGBDOdometryMultiScalePointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
                     target_normal_maps[i], intrinsic_matrices[i], trans,
                     depth_diff);
-            trans = delta_source_to_target.Matmul(trans);
+            trans = delta_source_to_target.Matmul(trans).Contiguous();
         }
     }
 

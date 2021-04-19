@@ -32,6 +32,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -63,7 +64,7 @@ void UnprojectCPU
     NDArrayIndexer depth_indexer(depth, 2);
     NDArrayIndexer image_colors_indexer;
 
-    core::Tensor pose = InverseTransformation(extrinsics);
+    core::Tensor pose = t::geometry::InverseTransformation(extrinsics);
     TransformIndexer ti(intrinsics, pose, 1.0f);
 
     // Output

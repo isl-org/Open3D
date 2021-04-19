@@ -269,7 +269,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
 
     core::Device device = source_vertex_map.GetDevice();
 
-    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
@@ -339,7 +339,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
     core::Device device = source_vertex_map.GetDevice();
-    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
@@ -414,7 +414,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
     core::Device device = source_vertex_map.GetDevice();
-    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);

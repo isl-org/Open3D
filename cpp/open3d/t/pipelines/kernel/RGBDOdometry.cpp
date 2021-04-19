@@ -88,11 +88,6 @@ void CreateVertexMap(const core::Tensor &depth_map,
                      const core::Tensor &intrinsics,
                      core::Tensor &vertex_map) {
     core::Device device = depth_map.GetDevice();
-    if (device != intrinsics.GetDevice()) {
-        utility::LogError(
-                "Inconsistent device between depth_map ({}) vs intrinsics ({})",
-                device.ToString(), intrinsics.GetDevice().ToString());
-    }
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
         CreateVertexMapCPU(depth_map, intrinsics, vertex_map);

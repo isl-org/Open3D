@@ -118,12 +118,10 @@ int main(int argc, char** argv) {
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     Tensor intrinsic_t = Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, Dtype::Float32, device);
+            std::vector<double>({focal_length.first, 0, principal_point.first,
+                                 0, focal_length.second, principal_point.second,
+                                 0, 0, 1}),
+            {3, 3}, Dtype::Float64);
 
     // VoxelBlock configurations
     float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
@@ -172,7 +170,8 @@ int main(int argc, char** argv) {
             Tensor delta_frame_to_model =
                     model.TrackFrameToModel(input_frame, raycast_frame,
                                             depth_scale, depth_max, depth_diff);
-            T_frame_to_model = T_frame_to_model.Matmul(delta_frame_to_model);
+            T_frame_to_model =
+                    T_frame_to_model.Matmul(delta_frame_to_model).Contiguous();
         }
 
         model.UpdateFramePose(i, T_frame_to_model);

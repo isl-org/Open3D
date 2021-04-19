@@ -32,6 +32,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxel.h"
@@ -1223,8 +1224,8 @@ void RayCastCPU
         normal_map_indexer = NDArrayIndexer(normal_map, 2);
     }
 
-    TransformIndexer c2w_transform_indexer(intrinsics,
-                                           InverseTransformation(extrinsics));
+    TransformIndexer c2w_transform_indexer(
+            intrinsics, t::geometry::InverseTransformation(extrinsics));
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
 
     int64_t rows = h;
