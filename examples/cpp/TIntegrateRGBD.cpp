@@ -96,12 +96,10 @@ int main(int argc, char** argv) {
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     Tensor intrinsic_t = Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, Dtype::Float32);
+            std::vector<double>({focal_length.first, 0, principal_point.first,
+                                 0, focal_length.second, principal_point.second,
+                                 0, 0, 1}),
+            {3, 3}, Dtype::Float64);
 
     int block_count =
             utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
@@ -153,11 +151,9 @@ int main(int argc, char** argv) {
         timer_io.Stop();
         utility::LogInfo("Conversion takes {}", timer_io.GetDuration());
 
-        Eigen::Matrix4f extrinsic =
-                trajectory->parameters_[i].extrinsic_.cast<float>();
+        Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
         Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
-                        device);
+                core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
         utility::Timer int_timer;
         int_timer.Start();
@@ -170,21 +166,11 @@ int main(int argc, char** argv) {
 
         if (enable_raycast) {
             utility::Timer ray_timer;
-            ray_timer.Start();
-
-            float scale = 1.0;
-            Tensor intrinsic_t_down = intrinsic_t / scale;
-            intrinsic_t_down[2][2] = 1.0;
-
-            ray_timer.Stop();
-            utility::LogInfo("intrinsic down takes {}",
-                             ray_timer.GetDuration());
 
             ray_timer.Start();
             auto result = voxel_grid.RayCast(
-                    intrinsic_t_down, extrinsic_t, depth.GetCols() / scale,
-                    depth.GetRows() / scale, 80, depth_scale, 0.1, depth_max,
-                    std::min(i * 1.0f, 3.0f),
+                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                    80, depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
                     MaskCode::DepthMap | MaskCode::VertexMap |
                             MaskCode::ColorMap);
             ray_timer.Stop();
@@ -193,7 +179,7 @@ int main(int argc, char** argv) {
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 20 == 0) {
+            if (false) {
                 core::Tensor range_map = result[MaskCode::RangeMap];
                 t::geometry::Image im_near(
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);

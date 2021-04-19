@@ -139,7 +139,9 @@ void CreateVertexMapCPU(const core::Tensor& depth_map,
                         const core::Tensor& intrinsics,
                         core::Tensor& vertex_map) {
     NDArrayIndexer depth_indexer(depth_map, 2);
-    t::geometry::kernel::TransformIndexer ti(intrinsics);
+    t::geometry::kernel::TransformIndexer ti(
+            intrinsics,
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
 
     // Output
     int64_t rows = depth_indexer.GetShape(0);

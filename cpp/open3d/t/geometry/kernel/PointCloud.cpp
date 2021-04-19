@@ -54,17 +54,14 @@ void Unproject(const core::Tensor& depth,
     }
     core::Device device = depth.GetDevice();
 
-    core::Tensor intrinsics_d = intrinsics.To(device, core::Dtype::Float32);
-    core::Tensor extrinsics_d = extrinsics.To(device, core::Dtype::Float32);
-
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
-                     extrinsics_d, depth_scale, depth_max, stride);
+        UnprojectCPU(depth, image_colors, points, colors, intrinsics,
+                     extrinsics, depth_scale, depth_max, stride);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        UnprojectCUDA(depth, image_colors, points, colors, intrinsics_d,
-                      extrinsics_d, depth_scale, depth_max, stride);
+        UnprojectCUDA(depth, image_colors, points, colors, intrinsics,
+                      extrinsics, depth_scale, depth_max, stride);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

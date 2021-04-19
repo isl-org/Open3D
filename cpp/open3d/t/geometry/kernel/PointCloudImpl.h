@@ -36,6 +36,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -57,10 +58,13 @@ void UnprojectCPU
          float depth_scale,
          float depth_max,
          int64_t stride) {
+
     const bool have_colors = image_colors.has_value();
     NDArrayIndexer depth_indexer(depth, 2);
     NDArrayIndexer image_colors_indexer;
-    TransformIndexer ti(intrinsics, extrinsics.Inverse(), 1.0f);
+
+    core::Tensor pose = InverseTransformation(extrinsics);
+    TransformIndexer ti(intrinsics, pose, 1.0f);
 
     // Output
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
@@ -131,6 +135,10 @@ void UnprojectCPU
     int total_pts_count = count.Item<int>();
 #else
     int total_pts_count = (*count_ptr).load();
+#endif
+
+#ifdef __CUDACC__
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {

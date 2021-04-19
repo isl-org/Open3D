@@ -166,6 +166,9 @@ void IntegrateCPU
                     }
                 });
             });
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 }
 
 #if defined(__CUDACC__)
@@ -950,8 +953,6 @@ void EstimateRangeCPU
     // TODO(wei): reserve it in a reusable buffer
 
     // Every 2 channels: (min, max)
-    utility::Timer timer;
-    timer.Start();
     int h_down = h / down_factor;
     int w_down = w / down_factor;
     range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Dtype::Float32,
@@ -961,13 +962,15 @@ void EstimateRangeCPU
     // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
     const int fragment_size = 16;
     const int frag_buffer_size = 65535;
-    core::Tensor fragment_buffer({frag_buffer_size, 6}, core::Dtype::Float32,
-                                 block_keys.GetDevice());
-    NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
 
+    // TODO(wei): explicit buffer
+    core::Tensor fragment_buffer =
+            core::Tensor({frag_buffer_size, 6}, core::Dtype::Float32,
+                         block_keys.GetDevice());
+
+    NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
-
 #if defined(__CUDACC__)
     core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
                        block_keys.GetDevice());
@@ -976,7 +979,6 @@ void EstimateRangeCPU
     std::atomic<int> count_atomic(0);
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
-
 #if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
@@ -986,14 +988,7 @@ void EstimateRangeCPU
     using std::max;
     using std::min;
 #endif
-#if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-#endif
 
-    timer.Stop();
-    utility::LogInfo("EstimateRange prepration takes {}", timer.GetDuration());
-
-    timer.Start();
     // Pass 0: iterate over blocks, fill-in an rendering fragment array
     launcher.LaunchGeneralKernel(
             block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -1024,8 +1019,6 @@ void EstimateRangeCPU
                     u /= down_factor;
                     v /= down_factor;
 
-                    // printf("%f %f %f -> %f %f %f\n", xw, yw, zw, v, u, zc);
-
                     v_min = min(static_cast<int>(floor(v)), v_min);
                     v_max = max(static_cast<int>(ceil(v)), v_max);
 
@@ -1041,10 +1034,6 @@ void EstimateRangeCPU
 
                 u_min = max(0, u_min);
                 u_max = min(w_down - 1, u_max);
-
-                // printf("block %ld:v(%d %d), u(%d %d), z(%f %f)\n",
-                // workload_idx,
-                //        v_min, v_max, u_min, u_max, z_min, z_max);
 
                 if (v_min >= v_max || u_min >= u_max || z_min >= z_max) return;
 
@@ -1081,9 +1070,6 @@ void EstimateRangeCPU
                                           static_cast<float>(v_max));
                         frag_ptr[5] = min(frag_ptr[3] + fragment_size - 1,
                                           static_cast<float>(u_max));
-                        // printf("frag %d:v(%d %d), u(%d %d), z(%f %f)\n",
-                        //        workload_idx, v_min, v_max, u_min, u_max,
-                        //        z_min, z_max);
                     }
                 }
             });
@@ -1092,14 +1078,7 @@ void EstimateRangeCPU
 #else
     int frag_count = (*count_ptr).load();
 #endif
-#if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-#endif
 
-    timer.Stop();
-    utility::LogInfo("EstimateRange pass 0 takes {}", timer.GetDuration());
-
-    timer.Start();
     // Pass 0.5: Fill in range map to prepare for atomic min/max
     launcher.LaunchGeneralKernel(
             h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -1110,14 +1089,7 @@ void EstimateRangeCPU
                 range_ptr[0] = depth_max;
                 range_ptr[1] = depth_min;
             });
-#if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-#endif
 
-    timer.Stop();
-    utility::LogInfo("EstimateRange pass 0.5 takes {}", timer.GetDuration());
-
-    timer.Start();
     // Pass 1: iterate over rendering fragment array, fill-in range
     launcher.LaunchGeneralKernel(
             frag_count * fragment_size * fragment_size,
@@ -1126,8 +1098,6 @@ void EstimateRangeCPU
                 int local_idx = workload_idx % (fragment_size * fragment_size);
                 int dv = local_idx / fragment_size;
                 int du = local_idx % fragment_size;
-                // printf("%ld -> %d/%d - %d %d\n", workload_idx, frag_idx,
-                //        frag_count, dv, du);
 
                 float* frag_ptr =
                         frag_buffer_indexer.GetDataPtrFromCoord<float>(
@@ -1159,10 +1129,8 @@ void EstimateRangeCPU
 #if defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
-
-    timer.Stop();
-    utility::LogInfo("EstimateRange pass 1 takes {}", timer.GetDuration());
 }
+
 struct BlockCache {
     int x;
     int y;
@@ -1211,8 +1179,6 @@ void RayCastCPU
     using Key = core::Block<int, 3>;
     using Hash = core::BlockHash<int, 3>;
 
-    utility::Timer timer;
-    timer.Start();
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     auto cuda_hashmap =
             std::dynamic_pointer_cast<core::StdGPUHashmap<Key, Hash>>(hashmap);
@@ -1257,12 +1223,8 @@ void RayCastCPU
         normal_map_indexer = NDArrayIndexer(normal_map, 2);
     }
 
-    timer.Stop();
-    utility::LogInfo("Raycast misc preparation takes {}", timer.GetDuration());
-
-    timer.Start();
-
-    TransformIndexer c2w_transform_indexer(intrinsics, extrinsics.Inverse());
+    TransformIndexer c2w_transform_indexer(intrinsics,
+                                           InverseTransformation(extrinsics));
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
 
     int64_t rows = h;
@@ -1274,15 +1236,7 @@ void RayCastCPU
 #else
     core::kernel::CPULauncher launcher;
 #endif
-#if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-#endif
 
-    timer.Stop();
-    utility::LogInfo("Raycast transform indexer preparation takes {}",
-                     timer.GetDuration());
-
-    timer.Start();
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
         launcher.LaunchGeneralKernel(
                 rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -1612,8 +1566,6 @@ void RayCastCPU
 #if defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
-    timer.Stop();
-    utility::LogInfo("Raycast kernel takes {}", timer.GetDuration());
 }
 
 }  // namespace tsdf

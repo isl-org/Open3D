@@ -31,11 +31,54 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
+
+inline core::Tensor InverseTransformation(const core::Tensor& T) {
+    T.AssertShape({4, 4});
+    T.AssertDevice(core::Device("CPU:0"));
+    T.AssertDtype(core::Dtype::Float64);
+
+    core::Tensor Tinv({4, 4}, core::Dtype::Float64, core::Device("CPU:0"));
+    const double* T_ptr = static_cast<const double*>(T.GetDataPtr());
+    double* Tinv_ptr = static_cast<double*>(Tinv.GetDataPtr());
+
+    // R' = R.T
+    Tinv_ptr[0 * 4 + 0] = T_ptr[0 * 4 + 0];
+    Tinv_ptr[0 * 4 + 1] = T_ptr[1 * 4 + 0];
+    Tinv_ptr[0 * 4 + 2] = T_ptr[2 * 4 + 0];
+
+    Tinv_ptr[1 * 4 + 0] = T_ptr[0 * 4 + 1];
+    Tinv_ptr[1 * 4 + 1] = T_ptr[1 * 4 + 1];
+    Tinv_ptr[1 * 4 + 2] = T_ptr[2 * 4 + 1];
+
+    Tinv_ptr[2 * 4 + 0] = T_ptr[0 * 4 + 2];
+    Tinv_ptr[2 * 4 + 1] = T_ptr[1 * 4 + 2];
+    Tinv_ptr[2 * 4 + 2] = T_ptr[2 * 4 + 2];
+
+    // t' = -R.T @ t = -R' @ t
+    Tinv_ptr[0 * 4 + 3] = -(Tinv_ptr[0 * 4 + 0] * T_ptr[0 * 4 + 3] +
+                            Tinv_ptr[0 * 4 + 1] * T_ptr[1 * 4 + 3] +
+                            Tinv_ptr[0 * 4 + 2] * T_ptr[2 * 4 + 3]);
+    Tinv_ptr[1 * 4 + 3] = -(Tinv_ptr[1 * 4 + 0] * T_ptr[0 * 4 + 3] +
+                            Tinv_ptr[1 * 4 + 1] * T_ptr[1 * 4 + 3] +
+                            Tinv_ptr[1 * 4 + 2] * T_ptr[2 * 4 + 3]);
+    Tinv_ptr[2 * 4 + 3] = -(Tinv_ptr[2 * 4 + 0] * T_ptr[0 * 4 + 3] +
+                            Tinv_ptr[2 * 4 + 1] * T_ptr[1 * 4 + 3] +
+                            Tinv_ptr[2 * 4 + 2] * T_ptr[2 * 4 + 3]);
+
+    // Remaining part
+    Tinv_ptr[3 * 4 + 0] = 0;
+    Tinv_ptr[3 * 4 + 1] = 0;
+    Tinv_ptr[3 * 4 + 2] = 0;
+    Tinv_ptr[3 * 4 + 3] = 1;
+
+    return Tinv;
+}
 
 /// Helper class for converting coordinates/indices between 3D/3D, 3D/2D, 2D/3D.
 class TransformIndexer {
@@ -43,25 +86,35 @@ public:
     /// intrinsic: simple pinhole camera matrix, stored in fx, fy, cx, cy
     /// extrinsic: world to camera transform, stored in a 3x4 matrix
     TransformIndexer(const core::Tensor& intrinsic,
-                     const core::Tensor& extrinsic = core::Tensor::Eye(
-                             4, core::Dtype::Float32, core::Device("CPU:0")),
+                     const core::Tensor& extrinsic,
                      float scale = 1.0f) {
         intrinsic.AssertShape({3, 3});
+        intrinsic.AssertDevice(core::Device("CPU:0"));
+        intrinsic.AssertDtype(core::Dtype::Float64);
+        if (!intrinsic.IsContiguous()) {
+            utility::LogError("Intrinsics must be contiguous.");
+        }
         extrinsic.AssertShape({4, 4});
-        intrinsic.AssertDtype(core::Dtype::Float32);
-        extrinsic.AssertDtype(core::Dtype::Float32);
+        extrinsic.AssertDevice(core::Device("CPU:0"));
+        extrinsic.AssertDtype(core::Dtype::Float64);
+        if (!extrinsic.IsContiguous()) {
+            utility::LogError("Extrinsics must be contiguous.");
+        }
 
+        const double* intrinsic_ptr =
+                static_cast<const double*>(intrinsic.GetDataPtr());
+        const double* extrinsic_ptr =
+                static_cast<const double*>(extrinsic.GetDataPtr());
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
-                extrinsic_[i][j] = extrinsic[i][j].Item<float>();
+                extrinsic_[i][j] = extrinsic_ptr[i * 4 + j];
             }
         }
 
-        fx_ = intrinsic[0][0].Item<float>();
-        fy_ = intrinsic[1][1].Item<float>();
-        cx_ = intrinsic[0][2].Item<float>();
-        cy_ = intrinsic[1][2].Item<float>();
-
+        fx_ = intrinsic_ptr[0 * 3 + 0];
+        fy_ = intrinsic_ptr[1 * 3 + 1];
+        cx_ = intrinsic_ptr[0 * 3 + 2];
+        cy_ = intrinsic_ptr[1 * 3 + 2];
         scale_ = scale;
     }
 
