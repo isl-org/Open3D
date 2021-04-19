@@ -56,6 +56,7 @@ PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Matrix3d>);
 PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
 PYBIND11_MAKE_OPAQUE(temp_eigen_vector4i);
 PYBIND11_MAKE_OPAQUE(

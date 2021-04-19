@@ -45,6 +45,7 @@ PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
+    covariances_.clear();
     return *this;
 }
 
@@ -71,6 +72,7 @@ OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, points_);
     TransformNormals(transformation, normals_);
+    TransformCovariances(transformation, covariances_);
     return *this;
 }
 
@@ -90,6 +92,7 @@ PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R,
                                const Eigen::Vector3d &center) {
     RotatePoints(R, points_, center);
     RotateNormals(R, normals_);
+    RotateCovariances(R, covariances_);
     return *this;
 }
 
@@ -113,6 +116,13 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
             colors_[old_vert_num + i] = cloud.colors_[i];
     } else {
         colors_.clear();
+    }
+    if ((!HasPoints() || HasCovariances()) && cloud.HasCovariances()) {
+        covariances_.resize(new_vert_num);
+        for (size_t i = 0; i < add_vert_num; i++)
+            covariances_[old_vert_num + i] = cloud.covariances_[i];
+    } else {
+        covariances_.clear();
     }
     points_.resize(new_vert_num);
     for (size_t i = 0; i < add_vert_num; i++)
@@ -149,6 +159,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
+    bool has_covariance = HasCovariances();
     size_t old_point_num = points_.size();
     size_t k = 0;                                 // new index
     for (size_t i = 0; i < old_point_num; i++) {  // old index
@@ -162,12 +173,14 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             points_[k] = points_[i];
             if (has_normal) normals_[k] = normals_[i];
             if (has_color) colors_[k] = colors_[i];
+            if (has_covariance) covariances_[k] = covariances_[i];
             k++;
         }
     }
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
+    if (has_covariance) covariances_.resize(k);
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
@@ -179,6 +192,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     auto output = std::make_shared<PointCloud>();
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_covariance = HasCovariances();
 
     std::vector<bool> mask = std::vector<bool>(points_.size(), invert);
     for (size_t i : indices) {
@@ -190,6 +204,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             output->points_.push_back(points_[i]);
             if (has_normals) output->normals_.push_back(normals_[i]);
             if (has_colors) output->colors_.push_back(colors_[i]);
+            if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
     utility::LogDebug(
@@ -202,13 +217,6 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
 namespace {
 class AccumulatedPoint {
 public:
-    AccumulatedPoint()
-        : num_of_points_(0),
-          point_(0.0, 0.0, 0.0),
-          normal_(0.0, 0.0, 0.0),
-          color_(0.0, 0.0, 0.0) {}
-
-public:
     void AddPoint(const PointCloud &cloud, int index) {
         point_ += cloud.points_[index];
         if (cloud.HasNormals()) {
@@ -220,6 +228,9 @@ public:
         }
         if (cloud.HasColors()) {
             color_ += cloud.colors_[index];
+        }
+        if (cloud.HasCovariances()) {
+            covariance_ += cloud.covariances_[index];
         }
         num_of_points_++;
     }
@@ -237,11 +248,16 @@ public:
         return color_ / double(num_of_points_);
     }
 
+    Eigen::Matrix3d GetAverageCovariance() const {
+        return covariance_ / double(num_of_points_);
+    }
+
 public:
-    int num_of_points_;
-    Eigen::Vector3d point_;
-    Eigen::Vector3d normal_;
-    Eigen::Vector3d color_;
+    int num_of_points_ = 0;
+    Eigen::Vector3d point_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
 };
 
 class point_cubic_id {
@@ -274,6 +290,9 @@ public:
             } else {
                 color_ += cloud.colors_[index];
             }
+        }
+        if (cloud.HasCovariances()) {
+            covariance_ += cloud.covariances_[index];
         }
         point_cubic_id new_id;
         new_id.point_id = index;
@@ -331,6 +350,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     }
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_covariances = HasCovariances();
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
@@ -338,6 +358,10 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         }
         if (has_colors) {
             output->colors_.push_back(accpoint.second.GetAverageColor());
+        }
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
     }
     utility::LogDebug(
@@ -386,6 +410,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     }
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_covariances = HasCovariances();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -402,6 +427,10 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             } else {
                 output->colors_.push_back(accpoint.second.GetAverageColor());
             }
+        }
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
         auto original_id = accpoint.second.GetOriginalID();
         for (int i = 0; i < (int)original_id.size(); i++) {
@@ -547,6 +576,37 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         }
     }
     return std::make_tuple(SelectByIndex(indices), indices);
+}
+
+std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
+        const PointCloud &input,
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+    const auto &points = input.points_;
+    std::vector<Eigen::Matrix3d> covariances;
+    covariances.resize(points.size());
+
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(input);
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < (int)points.size(); i++) {
+        std::vector<int> indices;
+        std::vector<double> distance2;
+        if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
+            auto covariance = utility::ComputeCovariance(points, indices);
+            if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
+                covariances[i] = input.covariances_[i];
+            } else {
+                covariances[i] = covariance;
+            }
+        } else {
+            covariances[i] = Eigen::Matrix3d::Identity();
+        }
+    }
+    return covariances;
+}
+void PointCloud::EstimateCovariances(
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+    this->covariances_ = EstimatePerPointCovariances(*this, search_param);
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>

@@ -63,6 +63,8 @@ void pybind_pointcloud(py::module &m) {
                  "Returns ``True`` if the point cloud contains point normals.")
             .def("has_colors", &PointCloud::HasColors,
                  "Returns ``True`` if the point cloud contains point colors.")
+            .def("has_covariances", &PointCloud::HasCovariances,
+                 "Returns ``True`` if the point cloud contains covariances.")
             .def("normalize_normals", &PointCloud::NormalizeNormals,
                  "Normalize point normals to length 1.")
             .def("paint_uniform_color", &PointCloud::PaintUniformColor,
@@ -146,6 +148,17 @@ void pybind_pointcloud(py::module &m) {
                  "distance to "
                  "the target point cloud.",
                  "target"_a)
+            .def_static(
+                    "estimate_point_covariances",
+                    &PointCloud::EstimatePerPointCovariances,
+                    "Static function to compute the covariance matrix for "
+                    "each "
+                    "point in the given point cloud, doesn't change the input",
+                    "input"_a, "search_param"_a = KDTreeSearchParamKNN())
+            .def("estimate_covariances", &PointCloud::EstimateCovariances,
+                 "Function to compute the covariance matrix for each point "
+                 "in the point cloud",
+                 "search_param"_a = KDTreeSearchParamKNN())
             .def("compute_mean_and_covariance",
                  &PointCloud::ComputeMeanAndCovariance,
                  "Function to compute the mean and covariance matrix of a "
@@ -219,7 +232,11 @@ void pybind_pointcloud(py::module &m) {
                     "colors", &PointCloud::colors_,
                     "``float64`` array of shape ``(num_points, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
-                    "data: RGB colors of points.");
+                    "data: RGB colors of points.")
+            .def_readwrite("covariances", &PointCloud::covariances_,
+                           "``float64`` array of shape ``(num_points, 3, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "covariances.");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
@@ -290,6 +307,15 @@ void pybind_pointcloud(py::module &m) {
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_point_cloud_distance",
                                     {{"target", "The target point cloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "estimate_point_covariances",
+            {{"input", "The input point cloud."},
+             {"search_param",
+              "The KDTree search parameters for neighborhood search."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "estimate_covariances",
+            {{"search_param",
+              "The KDTree search parameters for neighborhood search."}});
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_mean_and_covariance");
     docstring::ClassMethodDocInject(m, "PointCloud",
