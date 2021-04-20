@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
         model.UpdateFramePose(i, T_frame_to_model);
         model.Integrate(input_frame, depth_scale, depth_max);
-        model.SynthesizeModelFrame(raycast_frame, depth_scale);
+        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.3, depth_max);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {

@@ -54,13 +54,16 @@ Model::Model(float voxel_size,
                   device),
       T_frame_to_world_(T_init.To(core::Device("CPU:0"))) {}
 
-void Model::SynthesizeModelFrame(Frame& raycast_frame, float depth_scale) {
+void Model::SynthesizeModelFrame(Frame& raycast_frame,
+                                 float depth_scale,
+                                 float depth_min,
+                                 float depth_max) {
     using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
     auto result = voxel_grid_.RayCast(
             raycast_frame.GetIntrinsics(),
             t::geometry::InverseTransformation(GetCurrentFramePose()),
-            raycast_frame.GetWidth(), raycast_frame.GetHeight(), 80,
-            depth_scale, 0.1, 4.0, std::min(frame_id_ * 1.0f, 3.0f),
+            raycast_frame.GetWidth(), raycast_frame.GetHeight(), depth_scale,
+            depth_min, depth_max, std::min(frame_id_ * 1.0f, 3.0f),
             MaskCode::DepthMap | MaskCode::ColorMap);
     raycast_frame.SetData("depth", result[MaskCode::DepthMap]);
     raycast_frame.SetData("color", result[MaskCode::ColorMap]);

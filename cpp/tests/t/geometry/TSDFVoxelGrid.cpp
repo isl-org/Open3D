@@ -33,6 +33,8 @@
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/Registration.h"
+#include "open3d/t/io/ImageIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -83,20 +85,16 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
         for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
             // Load image
-            std::shared_ptr<geometry::Image> depth_legacy =
-                    io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/depth/{:05d}.png",
-                                        std::string(TEST_DATA_DIR), i));
-
-            std::shared_ptr<geometry::Image> color_legacy =
-                    io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                        std::string(TEST_DATA_DIR), i));
-
             t::geometry::Image depth =
-                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
+                    t::io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/depth/{:05d}.png",
+                                        std::string(TEST_DATA_DIR), i))
+                            ->To(device);
             t::geometry::Image color =
-                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
+                    t::io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/color/{:05d}.jpg",
+                                        std::string(TEST_DATA_DIR), i))
+                            ->To(device);
 
             Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
             core::Tensor extrinsic_t =
@@ -119,7 +117,6 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
     }
 }
 
-// Disabled since Raycast is still subject to changes
 TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
     core::Device device = GetParam();
     std::vector<core::HashmapBackend> backends;
@@ -131,7 +128,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
     }
 
     for (auto backend : backends) {
-        float voxel_size = 0.008;
+        float voxel_size = 3.0f / 512.0f;
         t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                                {"weight", core::Dtype::UInt16},
                                                {"color", core::Dtype::UInt16}},
@@ -154,39 +151,39 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
 
         // Extrinsics
         std::string trajectory_path =
-                std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+                std::string(TEST_DATA_DIR) + "/RGBD/trajectory.log";
         auto trajectory =
                 io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
+        float depth_scale = 1000.0f;
+        float depth_max = 3.0f;
+
         for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
             // Load image
-            std::shared_ptr<geometry::Image> depth_legacy =
-                    io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/depth/{:05d}.png",
-                                        std::string(TEST_DATA_DIR), i));
-
-            std::shared_ptr<geometry::Image> color_legacy =
-                    io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                        std::string(TEST_DATA_DIR), i));
-
             t::geometry::Image depth =
-                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
+                    t::io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/depth/{:05d}.png",
+                                        std::string(TEST_DATA_DIR), i))
+                            ->To(device);
             t::geometry::Image color =
-                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
+                    t::io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/color/{:05d}.jpg",
+                                        std::string(TEST_DATA_DIR), i))
+                            ->To(device);
 
             Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
             core::Tensor extrinsic_t =
                     core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
-            voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
+            voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
+                                 depth_scale, depth_max);
 
             if (i == trajectory->parameters_.size() - 1) {
                 if (backend == core::HashmapBackend::Slab) {
                     EXPECT_THROW(
                             voxel_grid.RayCast(intrinsic_t, extrinsic_t,
                                                depth.GetCols(), depth.GetRows(),
-                                               50, 1000.0, 0.1, 3.0,
+                                               depth_scale, 0.1, depth_max,
                                                std::min(i * 1.0f, 3.0f)),
                             std::runtime_error);
                 } else {
@@ -194,13 +191,18 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
                             t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
                     auto result = voxel_grid.RayCast(
                             intrinsic_t, extrinsic_t, depth.GetCols(),
-                            depth.GetRows(), 50, 1000.0, 0.1, 3.0,
+                            depth.GetRows(), depth_scale, 0.1, depth_max,
                             std::min(i * 1.0f, 3.0f),
                             MaskCode::VertexMap | MaskCode::ColorMap |
                                     MaskCode::NormalMap);
                     core::Tensor vertex_map = result[MaskCode::VertexMap];
                     core::Tensor color_map = result[MaskCode::ColorMap];
                     core::Tensor normal_map = result[MaskCode::NormalMap];
+
+                    t::geometry::Image vertex(result[MaskCode::VertexMap]);
+                    visualization::DrawGeometries(
+                            {std::make_shared<open3d::geometry::Image>(
+                                    vertex.ToLegacyImage())});
 
                     // There are CPU/CUDA numerical differences around edges, so
                     // we need to be tolerant.

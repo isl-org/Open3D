@@ -1159,7 +1159,7 @@ void RayCastCUDA
 void RayCastCPU
 #endif
         (std::shared_ptr<core::DeviceHashmap>& hashmap,
-         core::Tensor& block_values,
+         const core::Tensor& block_values,
          const core::Tensor& range_map,
          core::Tensor& vertex_map,
          core::Tensor& depth_map,
@@ -1172,7 +1172,6 @@ void RayCastCPU
          int64_t block_resolution,
          float voxel_size,
          float sdf_trunc,
-         int max_steps,
          float depth_scale,
          float depth_min,
          float depth_max,
@@ -1236,6 +1235,7 @@ void RayCastCPU
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
+    using std::max;
 #endif
 
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
@@ -1408,9 +1408,9 @@ void RayCastCPU
                                 *depth_ptr = t_intersect * depth_scale;
                             }
                             if (enable_vertex) {
-                                vertex_ptr[0] = x_g;
-                                vertex_ptr[1] = y_g;
-                                vertex_ptr[2] = z_g;
+                                w2c_transform_indexer.RigidTransform(
+                                        x_g, y_g, z_g, vertex_ptr + 0,
+                                        vertex_ptr + 1, vertex_ptr + 2);
                             }
 
                             // Trilinear interpolation

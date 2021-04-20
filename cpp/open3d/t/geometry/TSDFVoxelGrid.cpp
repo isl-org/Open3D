@@ -234,7 +234,6 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        const core::Tensor &extrinsics,
                        int width,
                        int height,
-                       int max_steps,
                        float depth_scale,
                        float depth_min,
                        float depth_max,
@@ -282,7 +281,7 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
                           vertex_map, depth_map, color_map, normal_map,
                           intrinsics, extrinsics, height, width,
-                          block_resolution_, voxel_size_, sdf_trunc_, max_steps,
+                          block_resolution_, voxel_size_, sdf_trunc_,
                           depth_scale, depth_min, depth_max, weight_threshold);
     timer.Stop();
     utility::LogInfo("[Raycast] kernel takes {}", timer.GetDuration());

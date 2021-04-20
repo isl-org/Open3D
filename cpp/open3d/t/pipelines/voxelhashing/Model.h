@@ -62,7 +62,10 @@ public:
 
     /// Apply ray casting to obtain a synthesized model frame at the down
     /// sampled resolution.
-    void SynthesizeModelFrame(Frame& raycast_frame, float depth_scale);
+    void SynthesizeModelFrame(Frame& raycast_frame,
+                              float depth_scale,
+                              float depth_min,
+                              float depth_max);
 
     /// Track using RGBD odometry
     core::Tensor TrackFrameToModel(const Frame& input_frame,
