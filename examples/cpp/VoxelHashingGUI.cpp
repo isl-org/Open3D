@@ -339,8 +339,6 @@ public:
     ~ReconstructionWindow() {}
 
     void Layout(const gui::Theme& theme) override {
-        Super::Layout(theme);
-
         int em = theme.font_size;
         int panel_width = 20 * em;
         // The usable part of the window may not be the full size if there
@@ -352,6 +350,10 @@ public:
         widget3d_->SetFrame(gui::Rect(x, content_rect.y,
                                       content_rect.GetRight() - x,
                                       content_rect.height));
+
+        // Now that all the children are sized correctly, we can super to
+        // layout all their children.
+        Super::Layout(theme);
     }
 
 protected:
@@ -520,6 +522,7 @@ private:
                     this->input_depth_image_->UpdateImage(depth8);
                     this->raycast_color_image_->UpdateImage(raycast_color);
                     this->raycast_depth_image_->UpdateImage(raycast_depth8);
+                    this->SetNeedsLayout();  // size of image changed
 
                     int max_points = prop_values_.pointcloud_size;
                     t::geometry::PointCloud pcd_placeholder(
@@ -601,7 +604,8 @@ private:
                 traj->colors_.push_back(kTangoSkyBlueDark);
             }
 
-            frustum = CreateCameraFrustum(640, 480, K_eigen, T_eigen.inverse());
+            frustum = CreateCameraFrustum(depth->width_, depth->height_,
+                                          K_eigen, T_eigen.inverse());
 
             // TODO: update support for timages-image conversion
             color = std::make_shared<open3d::geometry::Image>(
