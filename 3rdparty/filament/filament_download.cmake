@@ -28,7 +28,7 @@ else()
                 "Google Filament binary.")
         else()
             set(DOWNLOAD_URL_PRIMARY
-                "https://storage.googleapis.com/open3d-releases/filament/filament-v1.9.19-linux.tgz")
+                "https://github.com/intel-isl/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz")
             message(STATUS "GLIBC version ${glibc_version} found: Downloading "
                 "Open3D Filament binary.")
         endif()
