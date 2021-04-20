@@ -129,7 +129,7 @@ if __name__ == '__main__':
             vertexmap_code = int(o3d.t.geometry.SurfaceMaskCode.VertexMap)
 
             result = volume.raycast(intrinsic, extrinsic, depth.columns,
-                                    depth.rows, 50,
+                                    depth.rows,
                                     args.depth_scale, 0.1, args.max_depth,
                                     min(i * 1.0,
                                         3.0), colormap_code | vertexmap_code)

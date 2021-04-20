@@ -81,7 +81,7 @@ void pybind_tsdf_voxelgrid(py::module& m) {
     // TODO(wei): expose mask code as a python class
     tsdf_voxelgrid.def(
             "raycast", &TSDFVoxelGrid::RayCast, "intrinsics"_a, "extrinsics"_a,
-            "width"_a, "height"_a, "max_steps"_a = 50, "depth_scale"_a = 1000.0,
+            "width"_a, "height"_a, "depth_scale"_a = 1000.0,
             "depth_min"_a = 0.1f, "depth_max"_a = 3.0f,
             "weight_threshold"_a = 3.0f,
             "raycast_result_mask"_a = TSDFVoxelGrid::SurfaceMaskCode::DepthMap |

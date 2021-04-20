@@ -32,7 +32,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -44,6 +44,7 @@ namespace t {
 namespace geometry {
 namespace kernel {
 namespace pointcloud {
+
 #if defined(__CUDACC__)
 void UnprojectCUDA
 #else

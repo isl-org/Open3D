@@ -30,6 +30,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/Utility.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/t/pipelines/voxelhashing/Frame.h"
 

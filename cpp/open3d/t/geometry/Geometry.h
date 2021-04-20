@@ -32,52 +32,6 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-/// TODO(wei): find a proper place for such functionalities
-inline core::Tensor InverseTransformation(const core::Tensor& T) {
-    T.AssertShape({4, 4});
-    T.AssertDtype(core::Dtype::Float64);
-    T.AssertDevice(core::Device("CPU:0"));
-    if (!T.IsContiguous()) {
-        utility::LogError("T is expected to be contiguous");
-    }
-
-    core::Tensor Tinv({4, 4}, core::Dtype::Float64, core::Device("CPU:0"));
-    const double* T_ptr = static_cast<const double*>(T.GetDataPtr());
-    double* Tinv_ptr = static_cast<double*>(Tinv.GetDataPtr());
-
-    // R' = R.T
-    Tinv_ptr[0 * 4 + 0] = T_ptr[0 * 4 + 0];
-    Tinv_ptr[0 * 4 + 1] = T_ptr[1 * 4 + 0];
-    Tinv_ptr[0 * 4 + 2] = T_ptr[2 * 4 + 0];
-
-    Tinv_ptr[1 * 4 + 0] = T_ptr[0 * 4 + 1];
-    Tinv_ptr[1 * 4 + 1] = T_ptr[1 * 4 + 1];
-    Tinv_ptr[1 * 4 + 2] = T_ptr[2 * 4 + 1];
-
-    Tinv_ptr[2 * 4 + 0] = T_ptr[0 * 4 + 2];
-    Tinv_ptr[2 * 4 + 1] = T_ptr[1 * 4 + 2];
-    Tinv_ptr[2 * 4 + 2] = T_ptr[2 * 4 + 2];
-
-    // t' = -R.T @ t = -R' @ t
-    Tinv_ptr[0 * 4 + 3] = -(Tinv_ptr[0 * 4 + 0] * T_ptr[0 * 4 + 3] +
-                            Tinv_ptr[0 * 4 + 1] * T_ptr[1 * 4 + 3] +
-                            Tinv_ptr[0 * 4 + 2] * T_ptr[2 * 4 + 3]);
-    Tinv_ptr[1 * 4 + 3] = -(Tinv_ptr[1 * 4 + 0] * T_ptr[0 * 4 + 3] +
-                            Tinv_ptr[1 * 4 + 1] * T_ptr[1 * 4 + 3] +
-                            Tinv_ptr[1 * 4 + 2] * T_ptr[2 * 4 + 3]);
-    Tinv_ptr[2 * 4 + 3] = -(Tinv_ptr[2 * 4 + 0] * T_ptr[0 * 4 + 3] +
-                            Tinv_ptr[2 * 4 + 1] * T_ptr[1 * 4 + 3] +
-                            Tinv_ptr[2 * 4 + 2] * T_ptr[2 * 4 + 3]);
-
-    // Remaining part
-    Tinv_ptr[3 * 4 + 0] = 0;
-    Tinv_ptr[3 * 4 + 1] = 0;
-    Tinv_ptr[3 * 4 + 2] = 0;
-    Tinv_ptr[3 * 4 + 3] = 1;
-
-    return Tinv;
-}
-
 /// \class Geometry
 ///
 /// \brief The base geometry class.

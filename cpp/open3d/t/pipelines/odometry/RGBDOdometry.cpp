@@ -93,7 +93,6 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
     core::Tensor source_depth_processed;
     core::Tensor target_depth_processed;
 
-    utility::LogInfo("Preprocess depth\n");
     kernel::odometry::PreprocessDepth(source.depth_.AsTensor(),
                                       source_depth_processed, depth_scale,
                                       depth_max);
