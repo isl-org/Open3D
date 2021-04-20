@@ -5,7 +5,7 @@ macro(TOOL TOOL_NAME)
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${TOOL_NAME} ${DEPENDENCY})
+        target_link_libraries(${TOOL_NAME} PRIVATE ${DEPENDENCY})
     endforeach()
 
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
