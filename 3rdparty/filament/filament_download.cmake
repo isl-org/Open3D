@@ -1,7 +1,7 @@
 include(FetchContent)
 
 set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer vkshaders smol-v utils)
-if(UNIX OR WIN32)
+if(WIN32)
     list(APPEND filament_LIBRARIES bluevk)
 endif()
 
