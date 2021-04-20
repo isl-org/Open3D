@@ -35,10 +35,10 @@ namespace geometry {
 /// TODO(wei): find a proper place for such functionalities
 inline core::Tensor InverseTransformation(const core::Tensor& T) {
     T.AssertShape({4, 4});
-    T.AssertDevice(core::Device("CPU:0"));
     T.AssertDtype(core::Dtype::Float64);
+    T.AssertDevice(core::Device("CPU:0"));
     if (!T.IsContiguous()) {
-        utility::LogError("T has to be contiguous");
+        utility::LogError("T is expected to be contiguous");
     }
 
     core::Tensor Tinv({4, 4}, core::Dtype::Float64, core::Device("CPU:0"));

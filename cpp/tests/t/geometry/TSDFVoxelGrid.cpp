@@ -69,12 +69,11 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
         auto focal_length = intrinsic.GetFocalLength();
         auto principal_point = intrinsic.GetPrincipalPoint();
         core::Tensor intrinsic_t = core::Tensor(
-                std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                    static_cast<float>(principal_point.first),
-                                    0, static_cast<float>(focal_length.second),
-                                    static_cast<float>(principal_point.second),
-                                    0, 0, 1}),
-                {3, 3}, core::Dtype::Float32);
+                std::vector<double>({(focal_length.first), 0,
+                                     (principal_point.first), 0,
+                                     (focal_length.second),
+                                     (principal_point.second), 0, 0, 1}),
+                {3, 3}, core::Dtype::Float64);
 
         // Extrinsics
         std::string trajectory_path =
@@ -99,11 +98,86 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
             t::geometry::Image color =
                     t::geometry::Image::FromLegacyImage(*color_legacy, device);
 
-            Eigen::Matrix4f extrinsic =
-                    trajectory->parameters_[i].extrinsic_.cast<float>();
+            Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
             core::Tensor extrinsic_t =
-                    core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
-                            device);
+                    core::eigen_converter::EigenMatrixToTensor(extrinsic);
+
+            voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
+        }
+
+        auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
+        auto pcd_gt = *io::CreatePointCloudFromFile(
+                std::string(TEST_DATA_DIR) + "/RGBD/example_tsdf_pcd.ply");
+        auto result = pipelines::registration::EvaluateRegistration(pcd, pcd_gt,
+                                                                    voxel_size);
+
+        EXPECT_EQ(pcd.points_.size(), pcd_gt.points_.size());
+
+        // Allow some numerical noise
+        EXPECT_NEAR(result.fitness_, 1.0, 1e-5);
+        EXPECT_NEAR(result.inlier_rmse_, 0, 1e-5);
+    }
+}
+
+// Disabled since Raycast is still subject to changes
+TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
+    core::Device device = GetParam();
+    std::vector<core::HashmapBackend> backends;
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
+    } else {
+        backends.push_back(core::HashmapBackend::TBB);
+    }
+
+    for (auto backend : backends) {
+        float voxel_size = 0.008;
+        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
+                                               {"weight", core::Dtype::UInt16},
+                                               {"color", core::Dtype::UInt16}},
+                                              voxel_size, 0.04f, 16, 1000,
+                                              device, backend);
+
+        // Intrinsics
+        camera::PinholeCameraIntrinsic intrinsic =
+                camera::PinholeCameraIntrinsic(
+                        camera::PinholeCameraIntrinsicParameters::
+                                PrimeSenseDefault);
+        auto focal_length = intrinsic.GetFocalLength();
+        auto principal_point = intrinsic.GetPrincipalPoint();
+        core::Tensor intrinsic_t = core::Tensor(
+                std::vector<double>({(focal_length.first), 0,
+                                     (principal_point.first), 0,
+                                     (focal_length.second),
+                                     (principal_point.second), 0, 0, 1}),
+                {3, 3}, core::Dtype::Float64);
+
+        // Extrinsics
+        std::string trajectory_path =
+                std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+        auto trajectory =
+                io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
+
+        for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
+            // Load image
+            std::shared_ptr<geometry::Image> depth_legacy =
+                    io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/depth/{:05d}.png",
+                                        std::string(TEST_DATA_DIR), i));
+
+            std::shared_ptr<geometry::Image> color_legacy =
+                    io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/color/{:05d}.jpg",
+                                        std::string(TEST_DATA_DIR), i));
+
+            t::geometry::Image depth =
+                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
+            t::geometry::Image color =
+                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
+
+            Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
+            core::Tensor extrinsic_t =
+                    core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
             voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
 
@@ -130,9 +204,11 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
                     // There are CPU/CUDA numerical differences around edges, so
                     // we need to be tolerant.
-                    core::Tensor vertex_map_gt = core::Tensor::Load(fmt::format(
-                            "{}/open3d_downloads/RGBD/raycast_vtx_{:03d}.npy",
-                            std::string(TEST_DATA_DIR), i));
+                    core::Tensor vertex_map_gt = core::Tensor::Load(
+                            fmt::format("{}/open3d_downloads/RGBD/"
+                                        "raycast_vtx_{:03d}.npy",
+                                        std::string(TEST_DATA_DIR), i));
+                    vertex_map.Save(fmt::format("raycast_vtx_{:03d}.npy", i));
                     int64_t discrepancy_count =
                             ((vertex_map.To(core::Device("CPU:0")) -
                               vertex_map_gt)
@@ -147,18 +223,6 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
                 }
             }
         }
-
-        auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
-        auto pcd_gt = *io::CreatePointCloudFromFile(
-                std::string(TEST_DATA_DIR) + "/RGBD/example_tsdf_pcd.ply");
-        auto result = pipelines::registration::EvaluateRegistration(pcd, pcd_gt,
-                                                                    voxel_size);
-
-        EXPECT_EQ(pcd.points_.size(), pcd_gt.points_.size());
-
-        // Allow some numerical noise
-        EXPECT_NEAR(result.fitness_, 1.0, 1e-5);
-        EXPECT_NEAR(result.inlier_rmse_, 0, 1e-5);
     }
 }
 }  // namespace tests

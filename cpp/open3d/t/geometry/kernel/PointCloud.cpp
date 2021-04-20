@@ -52,16 +52,23 @@ void Unproject(const core::Tensor& depth,
                 "[Unproject] Both or none of image_colors and colors must have "
                 "values.");
     }
-    core::Device device = depth.GetDevice();
 
+    core::Device device = depth.GetDevice();
     core::Device::DeviceType device_type = device.GetType();
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor extrinsics_d =
+            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+
     if (device_type == core::Device::DeviceType::CPU) {
-        UnprojectCPU(depth, image_colors, points, colors, intrinsics,
-                     extrinsics, depth_scale, depth_max, stride);
+        UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
+                     extrinsics_d, depth_scale, depth_max, stride);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        UnprojectCUDA(depth, image_colors, points, colors, intrinsics,
-                      extrinsics, depth_scale, depth_max, stride);
+        UnprojectCUDA(depth, image_colors, points, colors, intrinsics_d,
+                      extrinsics_d, depth_scale, depth_max, stride);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

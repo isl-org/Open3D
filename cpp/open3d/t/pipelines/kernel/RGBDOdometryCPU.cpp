@@ -253,8 +253,7 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
 
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
-    core::Tensor trans = init_source_to_target.To(source_vertex_map.GetDevice(),
-                                                  core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     // Output
@@ -331,8 +330,7 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
     NDArrayIndexer target_normal_indexer(target_normal_map, 2);
 
-    core::Tensor trans = init_source_to_target.To(source_vertex_map.GetDevice(),
-                                                  core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     // Output
@@ -421,8 +419,7 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
 
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
-    core::Tensor trans = init_source_to_target.To(source_vertex_map.GetDevice(),
-                                                  core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     // Output

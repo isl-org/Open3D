@@ -124,12 +124,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                               const core::Tensor &extrinsics,
                               float depth_scale,
                               float depth_max) {
-    intrinsics.AssertDevice(core::Device("CPU:0"));
-    intrinsics.AssertDtype(core::Dtype::Float64);
-
-    extrinsics.AssertDevice(core::Device("CPU:0"));
-    extrinsics.AssertDtype(core::Dtype::Float64);
-
     if (depth.IsEmpty()) {
         utility::LogError(
                 "[TSDFVoxelGrid] input depth is empty for integration.");
@@ -140,7 +134,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // TODO(wei): merge CreateFromDepth and Touch in one kernel.
     utility::Timer timer;
     timer.Start();
-    int down_factor = 16;
+    int down_factor = 4;
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
     timer.Stop();
@@ -246,12 +240,6 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        float depth_max,
                        float weight_threshold,
                        int ray_cast_mask) {
-    intrinsics.AssertDevice(core::Device("CPU:0"));
-    intrinsics.AssertDtype(core::Dtype::Float64);
-
-    extrinsics.AssertDevice(core::Device("CPU:0"));
-    extrinsics.AssertDtype(core::Dtype::Float64);
-
     // Extrinsic: world to camera -> pose: camera to world
     utility::Timer timer;
 

@@ -90,15 +90,21 @@ void Integrate(const core::Tensor& depth,
     core::Tensor depthf32 = depth.To(core::Dtype::Float32);
     core::Tensor colorf32 = color.To(core::Dtype::Float32);
 
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor extrinsics_d =
+            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         IntegrateCPU(depthf32, colorf32, block_indices, block_keys,
-                     block_values, intrinsics, extrinsics, resolution,
+                     block_values, intrinsics_d, extrinsics_d, resolution,
                      voxel_size, sdf_trunc, depth_scale, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         IntegrateCUDA(depthf32, colorf32, block_indices, block_keys,
-                      block_values, intrinsics, extrinsics, resolution,
+                      block_values, intrinsics_d, extrinsics_d, resolution,
                       voxel_size, sdf_trunc, depth_scale, depth_max);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
@@ -119,18 +125,23 @@ void EstimateRange(const core::Tensor& block_keys,
                    float voxel_size,
                    float depth_min,
                    float depth_max) {
-    core::Device device = block_keys.GetDevice();
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor extrinsics_d =
+            extrinsics.To(host, core::Dtype::Float64).Contiguous();
 
+    core::Device device = block_keys.GetDevice();
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        EstimateRangeCPU(block_keys, range_minmax_map, intrinsics, extrinsics,
-                         h, w, down_factor, block_resolution, voxel_size,
-                         depth_min, depth_max);
+        EstimateRangeCPU(block_keys, range_minmax_map, intrinsics_d,
+                         extrinsics_d, h, w, down_factor, block_resolution,
+                         voxel_size, depth_min, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsics, extrinsics,
-                          h, w, down_factor, block_resolution, voxel_size,
-                          depth_min, depth_max);
+        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsics_d,
+                          extrinsics_d, h, w, down_factor, block_resolution,
+                          voxel_size, depth_min, depth_max);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -158,17 +169,23 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              float depth_min,
              float depth_max,
              float weight_threshold) {
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor extrinsics_d =
+            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+
     core::Device device = hashmap->GetDevice();
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         RayCastCPU(hashmap, block_values, range_map, vertex_map, depth_map,
-                   color_map, normal_map, intrinsics, extrinsics, h, w,
+                   color_map, normal_map, intrinsics_d, extrinsics_d, h, w,
                    block_resolution, voxel_size, sdf_trunc, max_steps,
                    depth_scale, depth_min, depth_max, weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         RayCastCUDA(hashmap, block_values, range_map, vertex_map, depth_map,
-                    color_map, normal_map, intrinsics, extrinsics, h, w,
+                    color_map, normal_map, intrinsics_d, extrinsics_d, h, w,
                     block_resolution, voxel_size, sdf_trunc, max_steps,
                     depth_scale, depth_min, depth_max, weight_threshold);
 #else

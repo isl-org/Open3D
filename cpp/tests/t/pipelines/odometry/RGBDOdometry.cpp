@@ -55,11 +55,9 @@ core::Tensor CreateIntrisicTensor() {
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    return core::Tensor::Init<float>(
-            {{static_cast<float>(focal_length.first), 0,
-              static_cast<float>(principal_point.first)},
-             {0, static_cast<float>(focal_length.second),
-              static_cast<float>(principal_point.second)},
+    return core::Tensor::Init<double>(
+            {{focal_length.first, 0, principal_point.first},
+             {0, focal_length.second, principal_point.second},
              {0, 0, 1}});
 }
 
@@ -80,7 +78,7 @@ TEST_P(OdometryPermuteDevices, DISABLED_CreateVertexMap) {
     core::Tensor depth_processed =
             t::pipelines::odometry::PreprocessDepth(depth, 1000.0);
     core::Tensor vertex_map = t::pipelines::odometry::CreateVertexMap(
-            depth_processed, intrinsic_t.To(device));
+            depth_processed, intrinsic_t);
     core::Tensor vertex_map_gt = core::Tensor::Load(fmt::format(
             "{}/open3d_downloads/RGBD/vertex_map.npy", TEST_DATA_DIR));
 
@@ -140,22 +138,23 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     core::Tensor src_depth_processed =
             t::pipelines::odometry::PreprocessDepth(src_depth, depth_scale);
     core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
-            src_depth_processed, intrinsic_t.To(device));
+            src_depth_processed, intrinsic_t);
     core::Tensor src_normal_map =
             t::pipelines::odometry::CreateNormalMap(src_vertex_map);
 
     core::Tensor dst_depth_processed =
             t::pipelines::odometry::PreprocessDepth(dst_depth, depth_scale);
     core::Tensor dst_vertex_map = t::pipelines::odometry::CreateVertexMap(
-            dst_depth_processed, intrinsic_t.To(device));
+            dst_depth_processed, intrinsic_t);
 
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     for (int i = 0; i < 20; ++i) {
+        utility::LogInfo("{}: trans {}", i, trans.GetDtype().ToString());
         core::Tensor delta_src_to_dst =
                 t::pipelines::odometry::ComputePosePointToPlane(
                         src_vertex_map, dst_vertex_map, src_normal_map,
-                        intrinsic_t, trans.To(device), depth_diff);
+                        intrinsic_t, trans, depth_diff);
         trans = delta_src_to_dst.Matmul(trans);
     }
 

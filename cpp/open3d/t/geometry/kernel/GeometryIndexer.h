@@ -43,26 +43,27 @@ class TransformIndexer {
 public:
     /// intrinsic: simple pinhole camera matrix, stored in fx, fy, cx, cy
     /// extrinsic: world to camera transform, stored in a 3x4 matrix
-    TransformIndexer(const core::Tensor& intrinsic,
-                     const core::Tensor& extrinsic,
+    TransformIndexer(const core::Tensor& intrinsics,
+                     const core::Tensor& extrinsics,
                      float scale = 1.0f) {
-        intrinsic.AssertShape({3, 3});
-        intrinsic.AssertDevice(core::Device("CPU:0"));
-        intrinsic.AssertDtype(core::Dtype::Float64);
-        if (!intrinsic.IsContiguous()) {
-            utility::LogError("Intrinsics must be contiguous.");
+        intrinsics.AssertShape({3, 3});
+        intrinsics.AssertDtype(core::Dtype::Float64);
+        intrinsics.AssertDevice(core::Device("CPU:0"));
+        if (!intrinsics.IsContiguous()) {
+            utility::LogError("Intrinsics is not contiguous");
         }
-        extrinsic.AssertShape({4, 4});
-        extrinsic.AssertDevice(core::Device("CPU:0"));
-        extrinsic.AssertDtype(core::Dtype::Float64);
-        if (!extrinsic.IsContiguous()) {
-            utility::LogError("Extrinsics must be contiguous.");
+
+        extrinsics.AssertShape({4, 4});
+        extrinsics.AssertDtype(core::Dtype::Float64);
+        extrinsics.AssertDevice(core::Device("CPU:0"));
+        if (!extrinsics.IsContiguous()) {
+            utility::LogError("Extrinsics is not contiguous");
         }
 
         const double* intrinsic_ptr =
-                static_cast<const double*>(intrinsic.GetDataPtr());
+                static_cast<const double*>(intrinsics.GetDataPtr());
         const double* extrinsic_ptr =
-                static_cast<const double*>(extrinsic.GetDataPtr());
+                static_cast<const double*>(extrinsics.GetDataPtr());
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
                 extrinsic_[i][j] = extrinsic_ptr[i * 4 + j];
