@@ -153,6 +153,11 @@ public:
     /// This is for internal use in rare circumstances when the destructor
     /// will not be called in a timely fashion.
     void DestroyWindow();
+    
+    /// Functions to change between fullscreen and windowed modes
+    void SetFullScreen(bool fullscreen);
+    void ToggleFullScreen();
+    bool IsFullScreen();
 
 protected:
     /// Returns the preferred size of the window. The window is not

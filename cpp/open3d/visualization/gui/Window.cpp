@@ -193,6 +193,9 @@ struct Window::Impl {
     bool needs_redraw_ = true;  // set by PostRedraw to defer if already drawing
     bool is_resizing_ = false;
     bool is_drawing_ = false;
+    
+    Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
+    Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -550,6 +553,35 @@ void Window::SetSize(const Size& size) {
         this->OnResize();
     };
     impl_->deferred_until_before_draw_.push(resize);
+}
+
+void Window::SetFullScreen(bool fullscreen)
+{
+    if (!fullscreen) {
+        glfwSetWindowMonitor(impl_->window_, NULL, impl_->saved_window_pos_(0),
+                             impl_->saved_window_pos_(1), impl_->saved_window_size_(0),
+                             impl_->saved_window_size_(1), GLFW_DONT_CARE);
+    } else {
+        glfwGetWindowSize(impl_->window_, &impl_->saved_window_size_(0),
+                          &impl_->saved_window_size_(1));
+        glfwGetWindowPos(impl_->window_, &impl_->saved_window_pos_(0), &impl_->saved_window_pos_(1));
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor(impl_->window_, monitor, 0, 0, mode->width, mode->height,
+                             mode->refreshRate);
+    }
+}
+
+void Window::ToggleFullScreen() {
+    if (IsFullScreen()) {
+        SetFullScreen(false);
+    } else {
+        SetFullScreen(true);
+    }
+}
+
+bool Window::IsFullScreen() {
+    return glfwGetWindowMonitor(impl_->window_) != nullptr;
 }
 
 Size Window::GetSize() const {
