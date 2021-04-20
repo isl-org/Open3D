@@ -1,7 +1,7 @@
 include(FetchContent)
 
 set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer vkshaders smol-v utils)
-if(WIN32)
+if(UNIX OR WIN32)
     list(APPEND filament_LIBRARIES bluevk)
 endif()
 
@@ -15,7 +15,7 @@ else()
     set(lib_dir lib)
     # Setup download links
     if(WIN32)
-        set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.9.19/filament-v1.9.19-windows.tgz")
+        set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-windows.tgz")
     elseif(APPLE)
         set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.9.19/filament-v1.9.19-mac.tgz")
     else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
