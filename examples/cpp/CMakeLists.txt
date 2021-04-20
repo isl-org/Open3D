@@ -15,7 +15,7 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
+        target_link_libraries(${EXAMPLE_CPP_NAME} PRIVATE ${DEPENDENCY})
     endforeach()
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
