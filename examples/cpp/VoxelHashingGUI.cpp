@@ -280,10 +280,8 @@ public:
         gui::Margins margins(int(std::round(0.5f * float(em))));
         panel_ = std::make_shared<gui::Vert>(spacing, margins);
         widget3d_ = std::make_shared<gui::SceneWidget>();
-        output_panel_ = std::make_shared<gui::Vert>(spacing, margins);
         AddChild(panel_);
         AddChild(widget3d_);
-        AddChild(output_panel_);
 
         fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
         adjustable_props_ = std::make_shared<PropertyPanel>(spacing,
@@ -297,42 +295,40 @@ public:
         panel_->AddChild(adjustable_props_);
         panel_->SetEnabled(false);
 
-        auto b = std::make_shared<gui::Button>(" Start ");
-        b->SetOnClicked([b, this]() {
+        auto b = std::make_shared<gui::ToggleSwitch>("Resume/Pause");
+        b->SetOnClicked([b, this](bool is_on) {
             this->is_running_ = !(this->is_running_);
-            if (this->is_running_) {
-                b->SetText("Pause");
-            } else {
-                b->SetText("Resume");
-            }
             this->adjustable_props_->SetEnabled(true);
         });
-        auto h = std::make_shared<gui::Horiz>();
-        h->AddStretch();
-        h->AddChild(b);
-        h->AddStretch();
+        panel_->AddChild(b);
         panel_->AddFixed(vspacing);
-        panel_->AddChild(h);
 
         panel_->AddStretch();
 
-        panel_->AddChild(std::make_shared<gui::Label>("Input image(s)"));
+        gui::Margins tab_margins(0, int(std::round(0.5f * float(em))), 0, 0);
+        auto tabs = std::make_shared<gui::TabControl>();
+        panel_->AddChild(tabs);
+        auto tab1 = std::make_shared<gui::Vert>(0, tab_margins);
         input_color_image_ = std::make_shared<gui::ImageWidget>();
         input_depth_image_ = std::make_shared<gui::ImageWidget>();
-        panel_->AddChild(input_color_image_);
-        panel_->AddChild(input_depth_image_);
+        tab1->AddChild(input_color_image_);
+        tab1->AddFixed(vspacing);
+        tab1->AddChild(input_depth_image_);
+        tabs->AddTab("Input images", tab1);
 
+        auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
         output_ = std::make_shared<gui::Label>("");
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
-        output_panel_->AddChild(std::make_shared<gui::Label>("Tracking"));
-        output_panel_->AddChild(output_);
-        output_panel_->AddStretch();
 
-        output_panel_->AddChild(
-                std::make_shared<gui::Label>("Ray casted image(s)"));
-        output_panel_->AddChild(raycast_color_image_);
-        output_panel_->AddChild(raycast_depth_image_);
+        tab2->AddChild(raycast_color_image_);
+        tab2->AddFixed(vspacing);
+        tab2->AddChild(raycast_depth_image_);
+        tabs->AddTab("Raycast images", tab2);
+
+        auto tab3 = std::make_shared<gui::Vert>(0, tab_margins);
+        tab3->AddChild(output_);
+        tabs->AddTab("Tracking", tab3);
 
         widget3d_->SetScene(
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
@@ -350,12 +346,9 @@ public:
         auto content_rect = GetContentRect();
         panel_->SetFrame(gui::Rect(content_rect.x, content_rect.y, panel_width,
                                    content_rect.height));
-        output_panel_->SetFrame(gui::Rect(content_rect.GetRight() - panel_width,
-                                          content_rect.y, panel_width,
-                                          content_rect.height));
         int x = panel_->GetFrame().GetRight();
         widget3d_->SetFrame(gui::Rect(x, content_rect.y,
-                                      output_panel_->GetFrame().x - x,
+                                      content_rect.GetRight() - x,
                                       content_rect.height));
     }
 
@@ -363,7 +356,6 @@ protected:
     std::atomic<bool> is_running_;
 
     std::shared_ptr<gui::Vert> panel_;
-    std::shared_ptr<gui::Vert> output_panel_;
     std::shared_ptr<gui::Label> output_;
     std::shared_ptr<gui::SceneWidget> widget3d_;
     std::shared_ptr<PropertyPanel> fixed_props_;
@@ -388,13 +380,13 @@ public:
         // Fixed
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
                                    1000, 1, 5000);
-        fixed_props_->AddIntSlider("Pointcloud size estimate",
+        fixed_props_->AddIntSlider("Estimated points",
                                    &prop_values_.pointcloud_size, 3000000,
                                    500000, 8000000);
 
         // Adjustable
         adjustable_props_->AddIntSlider(
-                "Surface update", &prop_values_.surface_interval, 50, 1, 100);
+                "Update interval", &prop_values_.surface_interval, 50, 1, 100);
 
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
                                           3.0, 0.0, 5.0);
@@ -464,7 +456,7 @@ private:
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor intrinsic_t = core::Tensor::Init<float>(
                 {{525.0, 0, 319.5}, {0, 525.0, 239.5}, {0, 0, 1}});
-        core::Device device("CPU:0");
+        core::Device device("CUDA:0");
 
         t::geometry::Image ref_depth =
                 *t::io::CreateImageFromFile(depth_files[0]);
@@ -479,7 +471,6 @@ private:
                                                 block_resolution, block_count,
                                                 T_frame_to_model, device);
 
-        bool is_scene_updated = false;
         size_t idx = 0;
 
         // Odometry
@@ -493,7 +484,12 @@ private:
         auto raycast_depth = std::make_shared<geometry::Image>();
         auto raycast_depth8 = std::make_shared<geometry::Image>();
 
-        t::geometry::PointCloud pcd;
+        struct {
+            std::mutex lock;
+            t::geometry::PointCloud pcd;
+        } surface;
+        std::atomic<bool> is_scene_updated;
+        is_scene_updated = false;
 
         color = std::make_shared<open3d::geometry::Image>(
                 ref_color.ToLegacyImage());
@@ -578,9 +574,6 @@ private:
             model.Integrate(input_frame, depth_scale, prop_values_.depth_max);
             model.SynthesizeModelFrame(raycast_frame, depth_scale);
 
-            idx++;
-            is_done_ = (idx >= depth_files.size());
-
             auto K_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
                     intrinsic_t);
             auto T_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
@@ -591,8 +584,12 @@ private:
             out << "Active voxel blocks: " << model.GetHashmapSize() << "\n";
             std::cout << out.str() << "\n";
 
-            int64_t len = pcd.HasPoints() ? pcd.GetPoints().GetLength() : 0;
+            {
+            std::lock_guard<std::mutex> locker(surface.lock);
+            int64_t len = surface.pcd.HasPoints()
+                                 ? surface.pcd.GetPoints().GetLength() : 0;
             out << "Surface points: " << len << "\n";
+            }
 
             traj->points_.push_back(T_eigen.block<3, 1>(0, 3));
             if (traj->points_.size() > 1) {
@@ -625,19 +622,28 @@ private:
             raycast_depth8 = ColorizeDepth(*raycast_depth, depth_scale, 0.3,
                                            prop_values_.depth_max);
 
-            // Extract surface on demand
+            // Extract surface on demand (do before we increment idx, so that
+            // we see something immediately, on interation 0)
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
-                pcd = model.ExtractPointCloud(prop_values_.pointcloud_size,
+                std::lock_guard<std::mutex> locker(surface.lock);
+                surface.pcd = model.ExtractPointCloud(
+                                              prop_values_.pointcloud_size,
                                               std::min<float>(idx, 3.0f))
                               .CPU();
                 is_scene_updated = true;
             }
 
+            idx++;
+            // Note that the user might have closed the window, in which case we
+            // want to maintain a value of true.
+            is_done_ = is_done_ | (idx >= depth_files.size());
+
             gui::Application::GetInstance().PostToMainThread(
                     this,
-                    [this, color, depth8, raycast_color, raycast_depth8, pcd,
-                     traj, frustum, &is_scene_updated, out = out.str()]() {
+                    [this, color, depth8, raycast_color, raycast_depth8,
+                     traj, frustum, &is_scene_updated, &surface,
+                     out = out.str()]() {
                         // Disable depth_scale and pcd buffer size change
                         this->fixed_props_->SetEnabled(false);
 
@@ -673,16 +679,18 @@ private:
                                     "trajectory", traj.get(), mat);
                         }
 
-                        if (is_scene_updated && pcd.HasPoints() &&
-                            pcd.HasPointColors()) {
-                            this->widget3d_->GetScene()
-                                    ->GetScene()
-                                    ->UpdateGeometry(
-                                            "points", pcd,
-                                            rendering::Scene::
-                                                            kUpdatePointsFlag |
-                                                    rendering::Scene ::
-                                                            kUpdateColorsFlag);
+                        if (is_scene_updated) {
+                            using namespace rendering;
+                            std::lock_guard<std::mutex> locker(surface.lock);
+                            if (surface.pcd.HasPoints() &&
+                                surface.pcd.HasPointColors()) {
+                                auto *scene = this->widget3d_->GetScene()
+                                                             ->GetScene();
+                                scene->UpdateGeometry("points",
+                                                      surface.pcd,
+                                                      Scene::kUpdatePointsFlag |
+                                                      Scene::kUpdateColorsFlag);
+                            }
                             is_scene_updated = false;
                         }
                     });
