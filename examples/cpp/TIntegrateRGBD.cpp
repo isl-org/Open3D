@@ -172,14 +172,14 @@ int main(int argc, char** argv) {
                     intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
                     depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
                     MaskCode::DepthMap | MaskCode::VertexMap |
-                            MaskCode::ColorMap);
+                            MaskCode::ColorMap | MaskCode::NormalMap);
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 1 == 0) {
+            if (i % 20 == 0) {
                 core::Tensor range_map = result[MaskCode::RangeMap];
                 t::geometry::Image im_near(
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);
@@ -201,10 +201,10 @@ int main(int argc, char** argv) {
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 vertex.ToLegacyImage())});
-                // t::geometry::Image normal(result[MaskCode::NormalMap]);
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 normal.ToLegacyImage())});
+                t::geometry::Image normal(result[MaskCode::NormalMap]);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                normal.ToLegacyImage())});
                 t::geometry::Image color(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
     }
 
     size_t n = trajectory->parameters_.size();
-    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
+    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}}",
                      time_total / n, time_raycasting / n, time_int / n);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {

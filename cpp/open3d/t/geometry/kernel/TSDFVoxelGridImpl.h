@@ -1366,7 +1366,10 @@ void RayCastCPU
 
                     // Iterative ray intersection check
                     float t_prev = t;
+
                     float tsdf_prev = 1.0f;
+                    float tsdf = 1.0;
+                    float w = 0.0;
 
                     // Camera origin
                     c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o,
@@ -1384,117 +1387,114 @@ void RayCastCPU
 
                     BlockCache cache{0, 0, 0, -1};
                     while (t < t_max) {
+                        t_prev = t;
                         voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
                                                          y_d, z_d, t, cache);
+
                         if (!voxel_ptr) {
-                            t_prev = t;
                             t += block_size;
-                            continue;
+                        } else {
+                            tsdf_prev = tsdf;
+                            tsdf = voxel_ptr->GetTSDF();
+                            w = voxel_ptr->GetWeight();
+                            float delta = tsdf * sdf_trunc;
+                            t += delta < voxel_size ? voxel_size : delta;
                         }
-                        float tsdf = voxel_ptr->GetTSDF();
-                        float w = voxel_ptr->GetWeight();
 
-                        if (tsdf_prev > 0 && w >= weight_threshold &&
+                        if (tsdf_prev > 0 && w > weight_threshold &&
                             tsdf <= 0) {
-                            float t_intersect =
-                                    (t * tsdf_prev - t_prev * tsdf) /
-                                    (tsdf_prev - tsdf);
-                            x_g = x_o + t_intersect * x_d;
-                            y_g = y_o + t_intersect * y_d;
-                            z_g = z_o + t_intersect * z_d;
+                            break;
+                        }
+                    }
 
-                            // Trivial vertex assignment
-                            if (enable_depth) {
-                                *depth_ptr = t_intersect * depth_scale;
+                    if (tsdf <= 0) {
+                        float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
+                                            (tsdf_prev - tsdf);
+                        x_g = x_o + t_intersect * x_d;
+                        y_g = y_o + t_intersect * y_d;
+                        z_g = z_o + t_intersect * z_d;
+
+                        // Trivial vertex assignment
+                        if (enable_depth) {
+                            *depth_ptr = t_intersect * depth_scale;
+                        }
+                        if (enable_vertex) {
+                            w2c_transform_indexer.RigidTransform(
+                                    x_g, y_g, z_g, vertex_ptr + 0,
+                                    vertex_ptr + 1, vertex_ptr + 2);
+                        }
+
+                        // Trilinear interpolation
+                        // TODO(wei): simplify the flow by splitting the
+                        // functions given what is enabled
+                        if (enable_color || enable_normal) {
+                            int x_b = static_cast<int>(floor(x_g / block_size));
+                            int y_b = static_cast<int>(floor(y_g / block_size));
+                            int z_b = static_cast<int>(floor(z_g / block_size));
+                            float x_v = (x_g - float(x_b) * block_size) /
+                                        voxel_size;
+                            float y_v = (y_g - float(y_b) * block_size) /
+                                        voxel_size;
+                            float z_v = (z_g - float(z_b) * block_size) /
+                                        voxel_size;
+
+                            Key key;
+                            key(0) = x_b;
+                            key(1) = y_b;
+                            key(2) = z_b;
+
+                            int block_addr = cache.Check(x_b, y_b, z_b);
+                            if (block_addr < 0) {
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return;
+                                block_addr = iter->second;
+                                cache.Update(x_b, y_b, z_b, block_addr);
                             }
-                            if (enable_vertex) {
-                                w2c_transform_indexer.RigidTransform(
-                                        x_g, y_g, z_g, vertex_ptr + 0,
-                                        vertex_ptr + 1, vertex_ptr + 2);
-                            }
 
-                            // Trilinear interpolation
-                            // TODO(wei): simplify the flow by splitting the
-                            // functions given what is enabled
-                            if (enable_color || enable_normal) {
-                                int x_b = static_cast<int>(
-                                        floor(x_g / block_size));
-                                int y_b = static_cast<int>(
-                                        floor(y_g / block_size));
-                                int z_b = static_cast<int>(
-                                        floor(z_g / block_size));
-                                float x_v = (x_g - float(x_b) * block_size) /
-                                            voxel_size;
-                                float y_v = (y_g - float(y_b) * block_size) /
-                                            voxel_size;
-                                float z_v = (z_g - float(z_b) * block_size) /
-                                            voxel_size;
+                            int x_v_floor = static_cast<int>(floor(x_v));
+                            int y_v_floor = static_cast<int>(floor(y_v));
+                            int z_v_floor = static_cast<int>(floor(z_v));
 
-                                Key key;
-                                key(0) = x_b;
-                                key(1) = y_b;
-                                key(2) = z_b;
+                            float ratio_x = x_v - float(x_v_floor);
+                            float ratio_y = y_v - float(y_v_floor);
+                            float ratio_z = z_v - float(z_v_floor);
 
-                                int block_addr = cache.Check(x_b, y_b, z_b);
-                                if (block_addr < 0) {
-                                    auto iter = hashmap_impl.find(key);
-                                    if (iter == hashmap_impl.end()) break;
-                                    block_addr = iter->second;
-                                    cache.Update(x_b, y_b, z_b, block_addr);
+                            float sum_weight_color = 0.0;
+                            float sum_weight_normal = 0.0;
+                            for (int k = 0; k < 8; ++k) {
+                                int dx_v = (k & 1) > 0 ? 1 : 0;
+                                int dy_v = (k & 2) > 0 ? 1 : 0;
+                                int dz_v = (k & 4) > 0 ? 1 : 0;
+                                float ratio = (dx_v * (ratio_x) +
+                                               (1 - dx_v) * (1 - ratio_x)) *
+                                              (dy_v * (ratio_y) +
+                                               (1 - dy_v) * (1 - ratio_y)) *
+                                              (dz_v * (ratio_z) +
+                                               (1 - dz_v) * (1 - ratio_z));
+
+                                voxel_t* voxel_ptr_k = GetVoxelAtP(
+                                        x_b, y_b, z_b, x_v_floor + dx_v,
+                                        y_v_floor + dy_v, z_v_floor + dz_v,
+                                        block_addr, cache);
+
+                                if (enable_color && voxel_ptr_k &&
+                                    voxel_ptr_k->GetWeight() > 0) {
+                                    sum_weight_color += ratio;
+                                    color_ptr[0] += ratio * voxel_ptr_k->GetR();
+                                    color_ptr[1] += ratio * voxel_ptr_k->GetG();
+                                    color_ptr[2] += ratio * voxel_ptr_k->GetB();
                                 }
 
-                                int x_v_floor = static_cast<int>(floor(x_v));
-                                int y_v_floor = static_cast<int>(floor(y_v));
-                                int z_v_floor = static_cast<int>(floor(z_v));
-
-                                float ratio_x = x_v - float(x_v_floor);
-                                float ratio_y = y_v - float(y_v_floor);
-                                float ratio_z = z_v - float(z_v_floor);
-
-                                float sum_weight_color = 0.0;
-                                float sum_weight_normal = 0.0;
-                                for (int k = 0; k < 8; ++k) {
-                                    int dx_v = (k & 1) > 0 ? 1 : 0;
-                                    int dy_v = (k & 2) > 0 ? 1 : 0;
-                                    int dz_v = (k & 4) > 0 ? 1 : 0;
-                                    float ratio = (dx_v * (ratio_x) +
-                                                   (1 - dx_v) * (1 - ratio_x)) *
-                                                  (dy_v * (ratio_y) +
-                                                   (1 - dy_v) * (1 - ratio_y)) *
-                                                  (dz_v * (ratio_z) +
-                                                   (1 - dz_v) * (1 - ratio_z));
-
-                                    voxel_t* voxel_ptr_k = GetVoxelAtP(
-                                            x_b, y_b, z_b, x_v_floor + dx_v,
-                                            y_v_floor + dy_v, z_v_floor + dz_v,
-                                            block_addr, cache);
-
-                                    if (enable_color && voxel_ptr_k &&
-                                        voxel_ptr_k->GetWeight() > 0) {
-                                        sum_weight_color += ratio;
-                                        color_ptr[0] +=
-                                                ratio * voxel_ptr_k->GetR();
-                                        color_ptr[1] +=
-                                                ratio * voxel_ptr_k->GetG();
-                                        color_ptr[2] +=
-                                                ratio * voxel_ptr_k->GetB();
-                                    }
-
-                                    if (enable_normal) {
-                                        for (int dim = 0; dim < 3; ++dim) {
-                                            voxel_t* voxel_ptr_k_plus =
-                                                    GetVoxelAtP(
-                                                            x_b, y_b, z_b,
-                                                            x_v_floor + dx_v +
-                                                                    (dim == 0),
-                                                            y_v_floor + dy_v +
-                                                                    (dim == 1),
-                                                            z_v_floor + dz_v +
-                                                                    (dim == 2),
-                                                            block_addr, cache);
-                                            voxel_t* voxel_ptr_k_minus =
-                                                    GetVoxelAtP(
-                                                            x_b, y_b, z_b,
+                                if (enable_normal) {
+                                    for (int dim = 0; dim < 3; ++dim) {
+                                        voxel_t* voxel_ptr_k_plus = GetVoxelAtP(
+                                                x_b, y_b, z_b,
+                                                x_v_floor + dx_v + (dim == 0),
+                                                y_v_floor + dy_v + (dim == 1),
+                                                z_v_floor + dz_v + (dim == 2),
+                                                block_addr, cache);
+                                        voxel_t* voxel_ptr_k_minus =
+                                                GetVoxelAtP(x_b, y_b, z_b,
                                                             x_v_floor + dx_v -
                                                                     (dim == 0),
                                                             y_v_floor + dy_v -
@@ -1503,64 +1503,54 @@ void RayCastCPU
                                                                     (dim == 2),
                                                             block_addr, cache);
 
-                                            bool valid = false;
-                                            if (voxel_ptr_k_plus &&
-                                                voxel_ptr_k_plus->GetWeight() >
-                                                        0) {
-                                                normal_ptr[dim] +=
-                                                        ratio *
-                                                        voxel_ptr_k_plus
-                                                                ->GetTSDF() /
-                                                        (2 * voxel_size);
-                                                valid = true;
-                                            }
-
-                                            if (voxel_ptr_k_minus &&
-                                                voxel_ptr_k_minus->GetWeight() >
-                                                        0) {
-                                                normal_ptr[dim] -=
-                                                        ratio *
-                                                        voxel_ptr_k_minus
-                                                                ->GetTSDF() /
-                                                        (2 * voxel_size);
-                                                valid = true;
-                                            }
-                                            sum_weight_normal +=
-                                                    valid ? ratio : 0;
+                                        bool valid = false;
+                                        if (voxel_ptr_k_plus &&
+                                            voxel_ptr_k_plus->GetWeight() > 0) {
+                                            normal_ptr[dim] +=
+                                                    ratio *
+                                                    voxel_ptr_k_plus
+                                                            ->GetTSDF() /
+                                                    (2 * voxel_size);
+                                            valid = true;
                                         }
-                                    }  // if (enable_normal)
-                                }      // loop over 8 neighbors
 
-                                if (enable_color && sum_weight_color > 0) {
-                                    sum_weight_color *= 255.0;
-                                    color_ptr[0] /= sum_weight_color;
-                                    color_ptr[1] /= sum_weight_color;
-                                    color_ptr[2] /= sum_weight_color;
-                                }
-                                if (enable_normal && sum_weight_normal > 0) {
-                                    normal_ptr[0] /= sum_weight_normal;
-                                    normal_ptr[1] /= sum_weight_normal;
-                                    normal_ptr[2] /= sum_weight_normal;
-                                    float norm =
-                                            sqrt(normal_ptr[0] * normal_ptr[0] +
-                                                 normal_ptr[1] * normal_ptr[1] +
-                                                 normal_ptr[2] * normal_ptr[2]);
-                                    w2c_transform_indexer.Rotate(
-                                            normal_ptr[0] / norm,
-                                            normal_ptr[1] / norm,
-                                            normal_ptr[2] / norm,
-                                            normal_ptr + 0, normal_ptr + 1,
-                                            normal_ptr + 2);
-                                }
-                            }  // if (color or normal)
-                            break;
-                        }
+                                        if (voxel_ptr_k_minus &&
+                                            voxel_ptr_k_minus->GetWeight() >
+                                                    0) {
+                                            normal_ptr[dim] -=
+                                                    ratio *
+                                                    voxel_ptr_k_minus
+                                                            ->GetTSDF() /
+                                                    (2 * voxel_size);
+                                            valid = true;
+                                        }
+                                        sum_weight_normal += valid ? ratio : 0;
+                                    }
+                                }  // if (enable_normal)
+                            }      // loop over 8 neighbors
 
-                        tsdf_prev = tsdf;
-                        t_prev = t;
-                        float delta = tsdf * sdf_trunc;
-                        t += delta < voxel_size ? voxel_size : delta;
-                    }
+                            if (enable_color && sum_weight_color > 0) {
+                                sum_weight_color *= 255.0;
+                                color_ptr[0] /= sum_weight_color;
+                                color_ptr[1] /= sum_weight_color;
+                                color_ptr[2] /= sum_weight_color;
+                            }
+                            if (enable_normal && sum_weight_normal > 0) {
+                                normal_ptr[0] /= sum_weight_normal;
+                                normal_ptr[1] /= sum_weight_normal;
+                                normal_ptr[2] /= sum_weight_normal;
+                                float norm =
+                                        sqrt(normal_ptr[0] * normal_ptr[0] +
+                                             normal_ptr[1] * normal_ptr[1] +
+                                             normal_ptr[2] * normal_ptr[2]);
+                                w2c_transform_indexer.Rotate(
+                                        normal_ptr[0] / norm,
+                                        normal_ptr[1] / norm,
+                                        normal_ptr[2] / norm, normal_ptr + 0,
+                                        normal_ptr + 1, normal_ptr + 2);
+                            }
+                        }  // if (color or normal)
+                    }      // if (tsdf < 0)
                 });
     });
 

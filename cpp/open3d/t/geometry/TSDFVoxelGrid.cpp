@@ -183,14 +183,15 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Collect voxel blocks in the viewing frustum. Note we cannot directly
     // reuse addrs from Activate, since some blocks might have been activated in
     // previous launches and return false.
-
     // TODO(wei): support one-pass operation ActivateAndFind.
+    // TODO(wei): set point_hashmap_[block_coords] = addrs and use the small
+    // hashmap for raycasting
     block_hashmap_->Find(block_coords, addrs, masks);
     timer.Stop();
     utility::LogInfo("[Integrate] Activate and find takes {}",
                      timer.GetDuration());
 
-    // TODO(wei): directly reuse it.
+    // TODO(wei): directly reuse it without intermediate variables.
     // Reserved for raycasting
     timer.Start();
     active_block_coords_ = block_coords;
