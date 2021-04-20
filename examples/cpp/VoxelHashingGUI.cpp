@@ -7,8 +7,6 @@
 using namespace open3d;
 using namespace open3d::visualization;
 
-std::mutex pcd_mutex;
-
 // Tanglo colorscheme (see https://en.wikipedia.org/wiki/Tango_Desktop_Project)
 static const Eigen::Vector3d kTangoOrange(0.961, 0.475, 0.000);
 static const Eigen::Vector3d kTangoSkyBlueDark(0.125, 0.290, 0.529);
@@ -164,10 +162,12 @@ std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
     using Super = gui::VGrid;
+
 public:
     PropertyPanel(int spacing, int left_margin)
         : gui::VGrid(2, spacing, gui::Margins(left_margin, 0, 0, 0)) {
-        default_label_color_ = std::make_shared<gui::Label>("temp")->GetTextColor();
+        default_label_color_ =
+                std::make_shared<gui::Label>("temp")->GetTextColor();
     }
 
     void AddBool(const std::string& name,
@@ -271,7 +271,8 @@ class ReconstructionWindow : public gui::Window {
 
 public:
     ReconstructionWindow()
-        : gui::Window("Open3D - Reconstruction", 1600, 900), is_running_(false) {
+        : gui::Window("Open3D - Reconstruction", 1600, 900),
+          is_running_(false) {
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.25f * float(em)));
@@ -284,14 +285,15 @@ public:
         AddChild(widget3d_);
 
         fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
-        adjustable_props_ = std::make_shared<PropertyPanel>(spacing,
-                                                            left_margin);
+        adjustable_props_ =
+                std::make_shared<PropertyPanel>(spacing, left_margin);
 
         panel_->AddChild(std::make_shared<gui::Label>("Starting settings"));
         panel_->AddChild(fixed_props_);
 
         panel_->AddFixed(vspacing);
-        panel_->AddChild(std::make_shared<gui::Label>("Reconstruction settings"));
+        panel_->AddChild(
+                std::make_shared<gui::Label>("Reconstruction settings"));
         panel_->AddChild(adjustable_props_);
         panel_->SetEnabled(false);
 
@@ -585,10 +587,11 @@ private:
             std::cout << out.str() << "\n";
 
             {
-            std::lock_guard<std::mutex> locker(surface.lock);
-            int64_t len = surface.pcd.HasPoints()
-                                 ? surface.pcd.GetPoints().GetLength() : 0;
-            out << "Surface points: " << len << "\n";
+                std::lock_guard<std::mutex> locker(surface.lock);
+                int64_t len = surface.pcd.HasPoints()
+                                      ? surface.pcd.GetPoints().GetLength()
+                                      : 0;
+                out << "Surface points: " << len << "\n";
             }
 
             traj->points_.push_back(T_eigen.block<3, 1>(0, 3));
@@ -627,10 +630,10 @@ private:
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
                 std::lock_guard<std::mutex> locker(surface.lock);
-                surface.pcd = model.ExtractPointCloud(
-                                              prop_values_.pointcloud_size,
-                                              std::min<float>(idx, 3.0f))
-                              .CPU();
+                surface.pcd =
+                        model.ExtractPointCloud(prop_values_.pointcloud_size,
+                                                std::min<float>(idx, 3.0f))
+                                .CPU();
                 is_scene_updated = true;
             }
 
@@ -641,13 +644,13 @@ private:
 
             gui::Application::GetInstance().PostToMainThread(
                     this,
-                    [this, color, depth8, raycast_color, raycast_depth8,
-                     traj, frustum, &is_scene_updated, &surface,
-                     out = out.str()]() {
+                    [this, color, depth8, raycast_color, raycast_depth8, traj,
+                     frustum, &is_scene_updated, &surface, out = out.str()]() {
                         // Disable depth_scale and pcd buffer size change
                         this->fixed_props_->SetEnabled(false);
 
-                        this->raycast_color_image_->SetVisible(this->prop_values_.raycast_color);
+                        this->raycast_color_image_->SetVisible(
+                                this->prop_values_.raycast_color);
 
                         this->SetOutput(out);
                         this->input_color_image_->UpdateImage(color);
@@ -684,12 +687,12 @@ private:
                             std::lock_guard<std::mutex> locker(surface.lock);
                             if (surface.pcd.HasPoints() &&
                                 surface.pcd.HasPointColors()) {
-                                auto *scene = this->widget3d_->GetScene()
-                                                             ->GetScene();
-                                scene->UpdateGeometry("points",
-                                                      surface.pcd,
-                                                      Scene::kUpdatePointsFlag |
-                                                      Scene::kUpdateColorsFlag);
+                                auto* scene =
+                                        this->widget3d_->GetScene()->GetScene();
+                                scene->UpdateGeometry(
+                                        "points", surface.pcd,
+                                        Scene::kUpdatePointsFlag |
+                                                Scene::kUpdateColorsFlag);
                             }
                             is_scene_updated = false;
                         }
