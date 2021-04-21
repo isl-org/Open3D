@@ -859,16 +859,22 @@ TEST_P(ImagePermuteDevices, CreateNormalMap) {
     // We have to apply a bilateral filter, otherwise normals would be too
     // noisy.
     auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
-    auto depth_bilateral = depth_clipped.FilterBilateral(5, 5.0, 10.0);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(depth_clipped.FilterBilateral(5, 5.0, 10.0),
+                     std::runtime_error);
+    } else {
+        auto depth_bilateral = depth_clipped.FilterBilateral(5, 5.0, 10.0);
+        auto vertex_map_for_normal =
+                depth_bilateral.CreateVertexMap(intrinsic_t, invalid_fill);
+        auto normal_map = vertex_map_for_normal.CreateNormalMap(invalid_fill);
 
-    auto vertex_map_for_normal =
-            depth_bilateral.CreateVertexMap(intrinsic_t, invalid_fill);
-    auto normal_map = vertex_map_for_normal.CreateNormalMap(invalid_fill);
-
-    // Use abs for better visualization
-    normal_map.AsTensor() = normal_map.AsTensor().Abs();
-    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            normal_map.ToLegacyImage())});
+        // Use abs for better visualization
+        normal_map.AsTensor() = normal_map.AsTensor().Abs();
+        visualization::DrawGeometries(
+                {std::make_shared<open3d::geometry::Image>(
+                        normal_map.ToLegacyImage())});
+    }
 }
 
 TEST_P(ImagePermuteDevices, PyrDownDepth) {
