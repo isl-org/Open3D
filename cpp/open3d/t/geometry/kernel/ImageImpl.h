@@ -76,6 +76,8 @@ void ClipTransformCPU
     });
 }
 
+// Reimplementation of the reference:
+// https://github.com/mp3guy/ICPCUDA/blob/master/Cuda/pyrdown.cu#L41
 #ifdef __CUDACC__
 void PyrDownDepthCUDA
 #else
@@ -96,9 +98,10 @@ void PyrDownDepthCPU
     int n = rows_down * cols_down;
 
     // Gaussian filter window size
-    const int D = 5;
     // Gaussian filter weights
-    const float weights[3] = {0.375f, 0.25f, 0.0625f};
+    const int gkernel_size = 5;
+    const int gkernel_size_2 = gkernel_size / 2;
+    const float gweights[3] = {0.375f, 0.25f, 0.0625f};
 
 #if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
@@ -109,38 +112,42 @@ void PyrDownDepthCPU
     using std::min;
 #endif
 
-    // Reference:
-    // https://github.com/mp3guy/ICPCUDA/blob/master/Cuda/pyrdown.cu#L41
     launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         int y = workload_idx / cols_down;
         int x = workload_idx % cols_down;
 
-        float center = *src_indexer.GetDataPtrFromCoord<float>(2 * x, 2 * y);
-        if (center == invalid_fill) {
+        int y_src = 2 * y;
+        int x_src = 2 * x;
+
+        float v_center = *src_indexer.GetDataPtrFromCoord<float>(x_src, y_src);
+        if (v_center == invalid_fill) {
             *dst_indexer.GetDataPtrFromCoord<float>(x, y) = invalid_fill;
             return;
         }
 
-        int x_min = max(0, 2 * x - D / 2) - 2 * x;
-        int y_min = max(0, 2 * y - D / 2) - 2 * y;
+        int x_min = max(0, x_src - gkernel_size_2);
+        int y_min = max(0, y_src - gkernel_size_2);
 
-        int x_max = min(cols, 2 * x - D / 2 + D) - 2 * x;
-        int y_max = min(rows, 2 * y - D / 2 + D) - 2 * y;
+        int x_max = min(cols - 1, x_src + gkernel_size_2);
+        int y_max = min(rows - 1, y_src + gkernel_size_2);
 
-        float sum = 0;
-        float sum_weight = 0;
-        for (int yi = y_min; yi < y_max; ++yi) {
-            for (int xi = x_min; xi < x_max; ++xi) {
-                float val = *src_indexer.GetDataPtrFromCoord<float>(2 * x + xi,
-                                                                    2 * y + yi);
-                if (val != invalid_fill && abs(val - center) < depth_diff) {
-                    sum += val * weights[abs(xi)] * weights[abs(yi)];
-                    sum_weight += weights[abs(xi)] * weights[abs(yi)];
+        float v_sum = 0;
+        float w_sum = 0;
+        for (int yk = y_min; yk <= y_max; ++yk) {
+            for (int xk = x_min; xk <= x_max; ++xk) {
+                float v = *src_indexer.GetDataPtrFromCoord<float>(xk, yk);
+                int dy = abs(yk - y_src);
+                int dx = abs(xk - x_src);
+
+                if (v != invalid_fill && abs(v - v_center) < depth_diff) {
+                    float w = gweights[dx] * gweights[dy];
+                    v_sum += w * v;
+                    w_sum += w;
                 }
             }
         }
 
-        *dst_indexer.GetDataPtrFromCoord<float>(x, y) = sum / sum_weight;
+        *dst_indexer.GetDataPtrFromCoord<float>(x, y) = v_sum / w_sum;
     });
 }
 
