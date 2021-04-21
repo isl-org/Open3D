@@ -46,10 +46,10 @@ public:
     /// Returns the index of the selected child.
     int GetSelectedIndex() const;
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
     Widget::DrawResult Draw(const DrawContext& context) override;
 
