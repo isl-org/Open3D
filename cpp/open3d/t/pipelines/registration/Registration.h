@@ -85,7 +85,7 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix of dtype
-    /// Float64.
+    /// Float64 on CPU device.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Dtype::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
@@ -98,7 +98,7 @@ public:
     }
 
 public:
-    /// The estimated transformation matrix of dtype Float64.
+    /// The estimated transformation matrix of dtype Float64 on CPU device.
     core::Tensor transformation_;
     /// Correspondence Set. Refer to the definition in
     /// `TransformationEstimation.h`.
@@ -117,7 +117,7 @@ public:
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param transformation The 4x4 transformation matrix to transform
-/// source to target of dtype Float64.
+/// source to target of dtype Float64 on CPU device.
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -131,7 +131,7 @@ RegistrationResult EvaluateRegistration(
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
-/// \param init Initial transformation estimation.
+/// \param init Initial transformation estimation of type Float64 on CPU.
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
 RegistrationResult RegistrationICP(
@@ -162,7 +162,7 @@ RegistrationResult RegistrationICP(
 /// \param max_correspondence_distances VectorDouble of maximum correspondence
 /// points-pair distances of type double, for each iteration. Must be of same
 /// length as voxel_sizes and criterias.
-/// \param init Initial transformation estimation.
+/// \param init Initial transformation estimation of type Float64 on CPU.
 /// \param estimation Estimation method.
 RegistrationResult RegistrationMultiScaleICP(
         const geometry::PointCloud &source,

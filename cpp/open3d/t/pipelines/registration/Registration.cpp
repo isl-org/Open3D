@@ -54,9 +54,10 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
     transformation.AssertShape({4, 4});
 
-    core::Tensor transformation_device = transformation.To(device, dtype);
+    core::Tensor transformation_host =
+            transformation.To(core::Device("CPU:0"), core::Dtype::Float64);
 
-    RegistrationResult result(transformation_device);
+    RegistrationResult result(transformation_host);
     if (max_correspondence_distance <= 0.0) {
         return result;
     }
@@ -115,15 +116,14 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     }
     transformation.AssertShape({4, 4});
 
-    core::Tensor transformation_device = transformation.To(device, dtype);
     geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation_device);
+    source_transformed.Transform(transformation.To(device, dtype));
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
-            transformation_device);
+            transformation);
 }
 
 RegistrationResult RegistrationICP(const geometry::PointCloud &source,
@@ -203,7 +203,8 @@ RegistrationResult RegistrationMultiScaleICP(
 
     init.AssertShape({4, 4});
 
-    core::Tensor transformation_device = init.To(device, dtype);
+    core::Tensor transformation =
+            init.To(core::Device("CPU:0"), core::Dtype::Float64);
 
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
@@ -225,18 +226,17 @@ RegistrationResult RegistrationMultiScaleICP(
                 target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
     }
 
-    RegistrationResult result(transformation_device);
+    RegistrationResult result(transformation);
 
     for (int64_t i = 0; i < num_iterations; i++) {
-        source_down_pyramid[i].Transform(
-                transformation_device.To(device, dtype));
+        source_down_pyramid[i].Transform(transformation.To(device, dtype));
 
         core::nns::NearestNeighborSearch target_nns(
                 target_down_pyramid[i].GetPoints());
 
         result = GetRegistrationResultAndCorrespondences(
                 source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                max_correspondence_distances[i], transformation_device);
+                max_correspondence_distances[i], transformation);
 
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
             utility::LogDebug(
@@ -246,24 +246,21 @@ RegistrationResult RegistrationMultiScaleICP(
 
             // ComputeTransformation returns transformation matrix of
             // dtype Float64.
-            core::Tensor update =
-                    estimation
-                            .ComputeTransformation(source_down_pyramid[i],
-                                                   target_down_pyramid[i],
-                                                   result.correspondence_set_)
-                            .To(device, dtype);
+            core::Tensor update = estimation.ComputeTransformation(
+                    source_down_pyramid[i], target_down_pyramid[i],
+                    result.correspondence_set_);
 
             // Multiply the transform to the cumulative transformation (update).
-            transformation_device = update.Matmul(transformation_device);
+            transformation = update.Matmul(transformation);
             // Apply the transform on source pointcloud.
-            source_down_pyramid[i].Transform(update);
+            source_down_pyramid[i].Transform(update.To(device, dtype));
 
             double prev_fitness_ = result.fitness_;
             double prev_inliner_rmse_ = result.inlier_rmse_;
 
             result = GetRegistrationResultAndCorrespondences(
                     source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                    max_correspondence_distances[i], transformation_device);
+                    max_correspondence_distances[i], transformation);
 
             // ICPConvergenceCriteria, to terminate iteration.
             if (j != 0 &&

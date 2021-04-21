@@ -91,6 +91,8 @@ public:
     /// \param source Source point cloud of type Float32.
     /// \param target Target point cloud of type Float32.
     /// \param corres Correspondence set between source and target point cloud.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
@@ -129,6 +131,8 @@ public:
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32.
     /// \param corres CorrespondenceSet: a pair of Int64 {C,} shape tensor.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
@@ -172,6 +176,8 @@ public:
     /// \param source Target pointcloud of dtype Float32. It must contain
     /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
     /// tensor.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
