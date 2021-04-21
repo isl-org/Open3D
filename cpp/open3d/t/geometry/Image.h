@@ -239,6 +239,49 @@ public:
     /// resize (ratio = 0.5) operation.
     Image PyrDown() const;
 
+    /// Preprocess a image of (H, W, 1), typically used for a depth image.
+    /// Each pixel will be transformed by
+    /// x = x / scale
+    /// x = x < min_value ? clip_fill : x
+    /// x = x > max_value ? clip_fill : x
+    Image ClipTransform(float scale,
+                        float min_value,
+                        float max_value,
+                        float clip_fill = 0.0f);
+
+    /// Specific PyrDown operation for depth to reduce noise. The input is
+    /// expected to be the output of ClipTransform.
+    /// Perform a chained modified Gaussian filter (kernel_size = 5, sigma
+    /// = 1.0) and a resize (ratio = 0.5) operation. In the modified kernel, the
+    /// neighbor pixels whose value is invalid, or value difference to the
+    /// center pixel is larger than the diff_threshold will not be counted. This
+    /// specific operation reduces noise at edges.
+    /// \param diff_threshold Threshold used in the modified Gaussian kernel.
+    /// \param invalid_fill Value to check invalid depths. Must be
+    /// consistent with \p clip_fill in ClipTransform.
+    Image PyrDownDepth(float diff_threshold, float invalid_fill);
+
+    /// Create a vertex map (H, W, 3) in Float32 from an image of (H, W, 1) in
+    /// Float32 using unprojection. The input depth is expected to be the output
+    /// of ClipTransform.
+    /// \param intrinsics Pinhole camera model of (3, 3) in Float64.
+    /// \param invalid_fill Value to fill in for invalid depths. Must be
+    /// consistent with \p clip_fill in ClipTransform
+    Image CreateVertexMap(const core::Tensor &intrinsics, float invalid_fill);
+
+    /// Create a normal map (H, W, 3) in Float32 from an image of (H, W, 3)
+    /// in Float32 using cross product of V(u, v+1)-V(u, v) and V(u+1, v)-V(u,
+    /// v). The input vertex map is expected to be the output of
+    /// CreateVertexMap.
+    /// \param invalid_mask Condition to check if a point is invalid in
+    /// vertexmap, and to fill-in if no valid neighbor is found. Must be
+    /// consistent with CreateVertexMap.
+    Image CreateNormalMap(float invalid_fill);
+
+    /// Colorize an input depth image with the Turbo colormap, rescaled within
+    /// (min_range, max_range)
+    Image ColorizeDepth(float scale, float min_range, float max_range);
+
     /// Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);

@@ -300,6 +300,7 @@ struct O3DVisualizer::Impl {
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
+    bool polygon_selection_unselects_ = false;
     bool selections_need_update_ = true;
     std::function<void(double)> on_animation_;
     std::function<bool()> on_animation_tick_;
@@ -332,6 +333,7 @@ struct O3DVisualizer::Impl {
         SceneWidget::Controls view_mouse_mode;
         std::map<SceneWidget::Controls, Button *> mouse_buttons;
         Vert *pick_panel;
+        Horiz *polygon_selection_panel;
         Button *new_selection_set;
         Button *delete_selection_set;
         ListView *selection_sets;
@@ -392,11 +394,13 @@ struct O3DVisualizer::Impl {
                                std::vector<std::pair<size_t, Eigen::Vector3d>>>
                                &indices,
                        int keymods) {
-                    if (keymods & int(KeyModifier::SHIFT)) {
+                    if ((keymods & int(KeyModifier::SHIFT)) ||
+                        polygon_selection_unselects_) {
                         selections_->UnselectIndices(indices);
                     } else {
                         selections_->SelectIndices(indices);
                     }
+                    polygon_selection_unselects_ = false;
                 });
         w->AddChild(GiveOwnership(scene_));
 
@@ -493,15 +497,44 @@ struct O3DVisualizer::Impl {
         });
 
 #if __APPLE__
-        const char *selection_help = "Cmd-click to select a point";
+        const char *selection_help =
+                "Cmd-click to select a point\nCmd-ctrl-click to polygon select";
 #else
-        const char *selection_help = "Ctrl-click to select a point";
+        const char *selection_help =
+                "Ctrl-click to select a point\nCmd-alt-click to polygon select";
 #endif  // __APPLE__
         h = new Horiz();
         h->AddStretch();
         h->AddChild(std::make_shared<Label>(selection_help));
         h->AddStretch();
         settings.pick_panel->AddChild(GiveOwnership(h));
+
+        h = new Horiz(int(std::round(0.25f * float(em))));
+        settings.polygon_selection_panel = h;
+        h->AddStretch();
+        auto b = std::make_shared<SmallButton>("Select");
+        b->SetOnClicked([this]() {
+            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
+            settings.polygon_selection_panel->SetVisible(false);
+        });
+        h->AddChild(b);
+        b = std::make_shared<SmallButton>("Unselect");
+        b->SetOnClicked([this]() {
+            polygon_selection_unselects_ = true;
+            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
+            settings.polygon_selection_panel->SetVisible(false);
+        });
+        h->AddChild(b);
+        b = std::make_shared<SmallButton>("Cancel");
+        b->SetOnClicked([this]() {
+            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::CANCEL);
+            settings.polygon_selection_panel->SetVisible(false);
+        });
+        h->AddChild(b);
+        h->AddStretch();
+        h->SetVisible(false);
+        settings.pick_panel->AddChild(GiveOwnership(h));
+
         h = new Horiz(v_spacing);
         h->AddChild(std::make_shared<Label>("Selection Sets"));
         h->AddStretch();
@@ -775,6 +808,11 @@ struct O3DVisualizer::Impl {
 
         settings.actions = new ButtonList(v_spacing);
         settings.actions_panel->AddChild(GiveOwnership(settings.actions));
+
+        // Picking callbacks
+        scene_->SetOnStartedPolygonPicking([this]() {
+            settings.polygon_selection_panel->SetVisible(true);
+        });
     }
 
     void AddGeometry(const std::string &name,
