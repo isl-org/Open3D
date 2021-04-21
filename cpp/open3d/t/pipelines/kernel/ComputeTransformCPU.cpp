@@ -223,7 +223,7 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
             },
             // TBB: Defining reduction operation.
             [&](std::vector<float> a, std::vector<float> b) {
-                std::vector<float> result(6);
+                std::vector<float> result(9);
                 for (int j = 0; j < 9; j++) {
                     result[j] = a[j] + b[j];
                 }
