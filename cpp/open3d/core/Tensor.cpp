@@ -52,6 +52,74 @@
 namespace open3d {
 namespace core {
 
+static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
+    if (dtype == Dtype::Float32) return DLDataTypeCode::kDLFloat;
+    if (dtype == Dtype::Float64) return DLDataTypeCode::kDLFloat;
+    if (dtype == Dtype::Int8) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int16) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int32) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int64) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::UInt8) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt16) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt32) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt64) return DLDataTypeCode::kDLUInt;
+    utility::LogError("Unsupported data type");
+    return DLDataTypeCode();
+}
+
+static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
+    if (dltype.lanes != 1) {
+        utility::LogError("Only supports lanes == 1, but lanes == {}",
+                          dltype.lanes);
+    }
+    switch (dltype.code) {
+        case DLDataTypeCode::kDLUInt:
+            switch (dltype.bits) {
+                case 8:
+                    return Dtype::UInt8;
+                case 16:
+                    return Dtype::UInt16;
+                case 32:
+                    return Dtype::UInt32;
+                case 64:
+                    return Dtype::UInt64;
+                default:
+                    utility::LogError("Unsupported kDLUInt bits {}",
+                                      dltype.bits);
+            }
+            break;
+        case DLDataTypeCode::kDLInt:
+            switch (dltype.bits) {
+                case 8:
+                    return Dtype::Int8;
+                case 16:
+                    return Dtype::Int16;
+                case 32:
+                    return Dtype::Int32;
+                case 64:
+                    return Dtype::Int64;
+                default:
+                    utility::LogError("Unsupported kDLInt bits {}",
+                                      dltype.bits);
+            }
+            break;
+        case DLDataTypeCode::kDLFloat:
+            switch (dltype.bits) {
+                case 32:
+                    return Dtype::Float32;
+                case 64:
+                    return Dtype::Float64;
+                default:
+                    utility::LogError("Unsupported kDLFloat bits {}",
+                                      dltype.bits);
+            }
+            break;
+        default:
+            utility::LogError("Unsupported dtype code {}", dltype.code);
+    }
+    return Dtype::Undefined;
+}
+
 /// Open3D DLPack Tensor manager.
 class Open3DDLManagedTensor {
 private:
@@ -82,24 +150,7 @@ private:
         DLDataType dl_data_type;
         Dtype dtype = o3d_tensor_.GetDtype();
 
-        if (dtype == Dtype::Float32) {
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-        } else if (dtype == Dtype::Float64) {
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-        } else if (dtype == Dtype::Int16) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::Int32) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::Int64) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::UInt8) {
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-        } else if (dtype == Dtype::UInt16) {
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-        } else {
-            utility::LogError("Unsupported data type");
-        }
-
+        dl_data_type.code = DtypeToDLDataTypeCode(dtype);
         dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
@@ -1127,58 +1178,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                               src->dl_tensor.ctx.device_type);
     }
 
-    Dtype dtype;
-    if (src->dl_tensor.dtype.lanes != 1) {
-        utility::LogError("Only supports lanes == 1, but lanes == {}",
-                          src->dl_tensor.dtype.lanes);
-    }
-    switch (src->dl_tensor.dtype.code) {
-        case DLDataTypeCode::kDLUInt:
-            switch (src->dl_tensor.dtype.bits) {
-                case 8:
-                    dtype = Dtype::UInt8;
-                    break;
-                case 16:
-                    dtype = Dtype::UInt16;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLUInt bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        case DLDataTypeCode::kDLInt:
-            switch (src->dl_tensor.dtype.bits) {
-                case 16:
-                    dtype = Dtype::Int16;
-                    break;
-                case 32:
-                    dtype = Dtype::Int32;
-                    break;
-                case 64:
-                    dtype = Dtype::Int64;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLInt bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        case DLDataTypeCode::kDLFloat:
-            switch (src->dl_tensor.dtype.bits) {
-                case 32:
-                    dtype = Dtype::Float32;
-                    break;
-                case 64:
-                    dtype = Dtype::Float64;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLFloat bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        default:
-            utility::LogError("Unsupported dtype code {}",
-                              src->dl_tensor.dtype.code);
-    }
+    Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);
 
     // Open3D Blob's expects an std::function<void(void*)> deleter.
     auto deleter = [src](void* dummy) -> void {
