@@ -166,13 +166,16 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
 #pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
+
                     float J_ij[6];
                     float r;
 
                     bool valid = GetJacobianPointToPlane(
-                            workload_idx, cols, depth_diff,
-                            source_vertex_indexer, target_vertex_indexer,
-                            target_normal_indexer, ti, J_ij, r);
+                            x, y, depth_diff, source_vertex_indexer,
+                            target_vertex_indexer, target_normal_indexer, ti,
+                            J_ij, r);
 
                     if (valid) {
                         for (int i = 0, j = 0; j < 6; j++) {

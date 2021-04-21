@@ -45,11 +45,9 @@ static core::Tensor CreateIntrisicTensor() {
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    return core::Tensor::Init<float>(
-            {{static_cast<float>(focal_length.first), 0,
-              static_cast<float>(principal_point.first)},
-             {0, static_cast<float>(focal_length.second),
-              static_cast<float>(principal_point.second)},
+    return core::Tensor::Init<double>(
+            {{(focal_length.first), 0, (principal_point.first)},
+             {0, (focal_length.second), (principal_point.second)},
              {0, 0, 1}});
 }
 
@@ -68,22 +66,20 @@ static void ComputePosePointToPlane(benchmark::State& state,
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
             std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
-
-    src_depth = src_depth.To(device).To(core::Dtype::Float32, false, 1.0);
-    dst_depth = dst_depth.To(device).To(core::Dtype::Float32, false, 1.0);
+    src_depth = src_depth.To(device);
+    dst_depth = dst_depth.To(device);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
-    core::Tensor src_depth_processed = t::pipelines::odometry::PreprocessDepth(
-            src_depth, depth_scale, depth_max);
-    core::Tensor src_vertex_map = t::pipelines::odometry::CreateVertexMap(
-            src_depth_processed, intrinsic_t.To(device));
-    core::Tensor src_normal_map =
-            t::pipelines::odometry::CreateNormalMap(src_vertex_map);
+    t::geometry::Image src_depth_processed =
+            src_depth.ClipTransform(depth_scale, 0.0, depth_max, NAN);
+    t::geometry::Image src_vertex_map =
+            src_depth_processed.CreateVertexMap(intrinsic_t, NAN);
+    t::geometry::Image src_normal_map = src_vertex_map.CreateNormalMap(NAN);
 
-    core::Tensor dst_depth_processed = t::pipelines::odometry::PreprocessDepth(
-            dst_depth, depth_scale, depth_max);
-    core::Tensor dst_vertex_map = t::pipelines::odometry::CreateVertexMap(
-            dst_depth_processed, intrinsic_t.To(device));
+    t::geometry::Image dst_depth_processed =
+            dst_depth.ClipTransform(depth_scale, 0.0, depth_max, NAN);
+    t::geometry::Image dst_vertex_map =
+            dst_depth_processed.CreateVertexMap(intrinsic_t, NAN);
 
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
@@ -91,9 +87,10 @@ static void ComputePosePointToPlane(benchmark::State& state,
     for (int i = 0; i < 20; ++i) {
         core::Tensor delta_src_to_dst =
                 t::pipelines::odometry::ComputePosePointToPlane(
-                        src_vertex_map, dst_vertex_map, src_normal_map,
-                        intrinsic_t, trans.To(device), depth_diff);
-        trans = delta_src_to_dst.Matmul(trans);
+                        src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
+                        src_normal_map.AsTensor(), intrinsic_t, trans,
+                        depth_diff);
+        trans = delta_src_to_dst.Matmul(trans).Contiguous();
     }
 
     for (auto _ : state) {
@@ -103,9 +100,11 @@ static void ComputePosePointToPlane(benchmark::State& state,
         for (int i = 0; i < 20; ++i) {
             core::Tensor delta_src_to_dst =
                     t::pipelines::odometry::ComputePosePointToPlane(
-                            src_vertex_map, dst_vertex_map, src_normal_map,
-                            intrinsic_t, trans.To(device), depth_diff);
-            trans = delta_src_to_dst.Matmul(trans);
+                            src_vertex_map.AsTensor(),
+                            dst_vertex_map.AsTensor(),
+                            src_normal_map.AsTensor(), intrinsic_t, trans,
+                            depth_diff);
+            trans = delta_src_to_dst.Matmul(trans).Contiguous();
         }
     }
 }
