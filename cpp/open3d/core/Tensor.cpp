@@ -907,9 +907,22 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
-Tensor Tensor::Clip(double min_val, double max_val) const {
+Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
+    if (dtype_ == core::Dtype::Bool) {
+        utility::LogError("Not implemented for dtype Boolean.");
+    }
+    // TODO: Implement with kernel.
     Tensor dst_tensor(shape_, dtype_, GetDevice());
-    utility::LogError("Not Implemented!");
+    kernel::Copy(*this, dst_tensor);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
+        scalar_t min = min_val.To<scalar_t>();
+        dst_tensor.SetItem(TensorKey::IndexTensor(dst_tensor.Le(min)),
+                           Full({}, min, dtype_, GetDevice()));
+
+        scalar_t max = max_val.To<scalar_t>();
+        dst_tensor.SetItem(TensorKey::IndexTensor(dst_tensor.Ge(max)),
+                           Full({}, max, dtype_, GetDevice()));
+    });
     return dst_tensor;
 }
 
