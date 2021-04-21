@@ -2085,6 +2085,48 @@ TEST_P(TensorPermuteDevices, Abs) {
     EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
 }
 
+TEST_P(TensorPermuteDevices, IsNan) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isnan(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsNan();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsInf) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isinf(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsInf();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsFinite) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isfinite(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsFinite();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
 TEST_P(TensorPermuteDevices, Floor) {
     core::Device device = GetParam();
 

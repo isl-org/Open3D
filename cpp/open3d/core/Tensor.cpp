@@ -907,6 +907,36 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
+Tensor Tensor::IsNan() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::IsInf() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::IsFinite() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
+        return dst_tensor;
+    } else {
+        return Tensor::Ones(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
 Tensor Tensor::Clip(double min_val, double max_val) const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     utility::LogError("Not Implemented!");
