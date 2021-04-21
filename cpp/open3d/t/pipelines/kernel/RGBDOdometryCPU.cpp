@@ -89,13 +89,16 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
 #pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
+
                     float J_I[6];
                     float r_I;
 
                     bool valid = GetJacobianIntensity(
-                            workload_idx, cols, depth_diff,
-                            source_depth_indexer, target_depth_indexer,
-                            source_intensity_indexer, target_intensity_indexer,
+                            x, y, depth_diff, source_depth_indexer,
+                            target_depth_indexer, source_intensity_indexer,
+                            target_intensity_indexer,
                             target_intensity_dx_indexer,
                             target_intensity_dy_indexer, source_vertex_indexer,
                             ti, J_I, r_I);
@@ -258,14 +261,17 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
 #pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
+
                     float J_I[6], J_D[6];
                     float r_I, r_D;
 
                     bool valid = GetJacobianHybrid(
-                            workload_idx, cols, depth_diff,
-                            source_depth_indexer, target_depth_indexer,
-                            source_intensity_indexer, target_intensity_indexer,
-                            target_depth_dx_indexer, target_depth_dy_indexer,
+                            x, y, depth_diff, source_depth_indexer,
+                            target_depth_indexer, source_intensity_indexer,
+                            target_intensity_indexer, target_depth_dx_indexer,
+                            target_depth_dy_indexer,
                             target_intensity_dx_indexer,
                             target_intensity_dy_indexer, source_vertex_indexer,
                             ti, J_I, J_D, r_I, r_D);
