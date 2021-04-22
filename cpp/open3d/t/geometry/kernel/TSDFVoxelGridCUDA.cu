@@ -39,6 +39,7 @@
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGridImpl.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -56,7 +57,8 @@ struct Coord3i {
     int64_t z_;
 };
 
-void TouchCUDA(const core::Tensor& points,
+void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
+               const core::Tensor& points,
                core::Tensor& voxel_block_coords,
                int64_t voxel_grid_resolution,
                float voxel_size,
@@ -73,6 +75,8 @@ void TouchCUDA(const core::Tensor& points,
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32, device);
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
+    utility::Timer timer;
+    timer.Start();
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 float x = pcd_ptr[3 * workload_idx + 0];
@@ -103,7 +107,12 @@ void TouchCUDA(const core::Tensor& points,
                     }
                 }
             });
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    timer.Stop();
+    utility::LogInfo("[Touch kernel] Genrate coords take {}",
+                     timer.GetDuration());
 
+    timer.Start();
     int total_block_count = count.Item<int>();
     if (total_block_count == 0) {
         utility::LogError(
@@ -112,12 +121,16 @@ void TouchCUDA(const core::Tensor& points,
                 "especially depth_scale and voxel_size");
     }
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
-    core::Hashmap pcd_block_hashmap(total_block_count, core::Dtype::Int32,
-                                    core::Dtype::Int32, {3}, {1}, device);
     core::Tensor block_addrs, block_masks;
-    pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
-                               block_addrs, block_masks);
+    hashmap->Activate(block_coordi.Slice(0, 0, count.Item<int>()), block_addrs,
+                      block_masks);
+    timer.Stop();
+    utility::LogInfo("[Touch kernel] Activate takes {}", timer.GetDuration());
+
+    timer.Start();
     voxel_block_coords = block_coordi.IndexGet({block_masks});
+    timer.Stop();
+    utility::LogInfo("[Touch kernel] IndexGet takes {}", timer.GetDuration());
 }
 
 }  // namespace tsdf

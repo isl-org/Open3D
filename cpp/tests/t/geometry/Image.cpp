@@ -31,10 +31,28 @@
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/PinholeCameraTrajectoryIO.h"
+#include "open3d/t/io/ImageIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
+
+core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+
+    return core::Tensor(
+            std::vector<double>({(focal_length.first / down_factor), 0,
+                                 (principal_point.first / down_factor), 0,
+                                 (focal_length.second / down_factor),
+                                 (principal_point.second / down_factor), 0, 0,
+                                 1}),
+            {3, 3}, core::Dtype::Float64);
+}
 
 class ImagePermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Image,
@@ -808,5 +826,94 @@ TEST_P(ImagePermuteDevices, ToLegacyImage) {
                           *leg_im_3ch.PointerAt<uint16_t>(c, r, ch));
 }
 
+TEST_P(ImagePermuteDevices, CreateVertexMap) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    float invalid_fill = 0.0f;
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
+
+    core::Tensor intrinsic_t = CreateIntrinsics();
+    auto vertex_map = depth_clipped.CreateVertexMap(intrinsic_t, invalid_fill);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            vertex_map.ToLegacyImage())});
+}
+
+TEST_P(ImagePermuteDevices, CreateNormalMap) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    float invalid_fill = 0.0f;
+    core::Tensor intrinsic_t = CreateIntrinsics();
+
+    // We have to apply a bilateral filter, otherwise normals would be too
+    // noisy.
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(depth_clipped.FilterBilateral(5, 5.0, 10.0),
+                     std::runtime_error);
+    } else {
+        auto depth_bilateral = depth_clipped.FilterBilateral(5, 5.0, 10.0);
+        auto vertex_map_for_normal =
+                depth_bilateral.CreateVertexMap(intrinsic_t, invalid_fill);
+        auto normal_map = vertex_map_for_normal.CreateNormalMap(invalid_fill);
+
+        // Use abs for better visualization
+        normal_map.AsTensor() = normal_map.AsTensor().Abs();
+        visualization::DrawGeometries(
+                {std::make_shared<open3d::geometry::Image>(
+                        normal_map.ToLegacyImage())});
+    }
+}
+
+TEST_P(ImagePermuteDevices, PyrDownDepth) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    float invalid_fill = 0.0f;
+    core::Tensor intrinsics_down = CreateIntrinsics(2.0f);
+
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
+    auto depth_down = depth_clipped.PyrDownDepth(0.25, invalid_fill);
+
+    auto vertex_map = depth_down.CreateVertexMap(intrinsics_down, invalid_fill);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            vertex_map.ToLegacyImage())});
+}
+
+TEST_P(ImagePermuteDevices, ColorizeDepth) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            color_depth.ToLegacyImage())});
+
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, 0.0);
+    auto color_depth_clipped = depth_clipped.ColorizeDepth(1.0, 0.0, 3.0);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            color_depth_clipped.ToLegacyImage())});
+}
 }  // namespace tests
 }  // namespace open3d

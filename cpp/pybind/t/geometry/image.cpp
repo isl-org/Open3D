@@ -175,6 +175,28 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "linear_transform",
                                     map_shared_argument_docstrings);
 
+    // Depth utilities.
+    image.def("clip_transform", &Image::ClipTransform,
+              "Preprocess a image of (H, W, 1), typically used for a depth "
+              "image. Each pixel will be transformed by x = x / scale; x = x < "
+              "min_value ? clip_fill : x; x = x > max_value ? clip_fill : x",
+              "scale"_a, "min_value"_a, "max_value"_a, "clip_fill"_a = 0.0f);
+    image.def("pyrdown_depth", &Image::PyrDownDepth,
+              "Specific PyrDown operation for depth to reduce noise",
+              "diff_threshold"_a, "invalid_fill"_a = 0.0f);
+    image.def("create_vertex_map", &Image::CreateVertexMap,
+              "Create a vertex map (H, W, 3) in Float32 from an image of (H, "
+              "W, 1) in Float32 using unprojection",
+              "intrinsics"_a, "invalid_fill"_a = 0.0f);
+    image.def("create_normal_map", &Image::CreateNormalMap,
+              "Create a normal map (H, W, 3) in Float32 from a vertex map of "
+              "(H, W, 1) in Float32 using cross product",
+              "invalid_fill"_a = 0.0f);
+    image.def("colorize_depth", &Image::ColorizeDepth,
+              " Colorize an input depth image with the Turbo colormap, "
+              "rescaled within (min_range, max_range)",
+              "scale"_a, "min_range"_a, "max_range"_a);
+
     // Device transfers.
     image.def("to",
               py::overload_cast<const core::Device &, bool>(&Image::To,
