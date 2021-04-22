@@ -1367,7 +1367,7 @@ void RayCastCPU
                     // Iterative ray intersection check
                     float t_prev = t;
 
-                    float tsdf_prev = 1.0f;
+                    float tsdf_prev = -1.0f;
                     float tsdf = 1.0;
                     float w = 0.0;
 

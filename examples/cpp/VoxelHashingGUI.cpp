@@ -285,7 +285,7 @@ public:
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
                                    1000, 1, 5000);
         fixed_props_->AddIntSlider("Estimated points",
-                                   &prop_values_.pointcloud_size, 3000000,
+                                   &prop_values_.pointcloud_size, 6000000,
                                    500000, 8000000);
 
         // Adjustable
@@ -325,6 +325,11 @@ private:
     } prop_values_;
     std::atomic<bool> is_done_;
     std::thread update_thread_;
+    struct {
+        std::mutex lock;
+        t::geometry::PointCloud pcd;
+    } surface_;
+    std::atomic<bool> is_scene_updated_;
 
     void UpdateMain() {
         // Note that we cannot update the GUI on this thread, we must post to
@@ -360,7 +365,7 @@ private:
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor intrinsic_t = core::Tensor::Init<float>(
                 {{525.0, 0, 319.5}, {0, 525.0, 239.5}, {0, 0, 1}});
-        core::Device device("CPU:0");
+        core::Device device("CUDA:0");
 
         t::geometry::Image ref_depth =
                 *t::io::CreateImageFromFile(depth_files[0]);
@@ -375,7 +380,8 @@ private:
                                                 block_resolution, block_count,
                                                 T_frame_to_model, device);
 
-        size_t idx = 0;
+        size_t idx;
+        idx = 0;
 
         // Odometry
         auto traj = std::make_shared<geometry::LineSet>();
@@ -386,12 +392,7 @@ private:
         auto raycast_color = std::make_shared<geometry::Image>();
         auto raycast_depth_colored = std::make_shared<geometry::Image>();
 
-        struct {
-            std::mutex lock;
-            t::geometry::PointCloud pcd;
-        } surface;
-        std::atomic<bool> is_scene_updated;
-        is_scene_updated = false;
+        is_scene_updated_ = false;
 
         color = std::make_shared<open3d::geometry::Image>(
                 ref_color.ToLegacyImage());
@@ -505,9 +506,9 @@ private:
             std::cout << out.str() << "\n";
 
             {
-                std::lock_guard<std::mutex> locker(surface.lock);
-                int64_t len = surface.pcd.HasPoints()
-                                      ? surface.pcd.GetPoints().GetLength()
+                std::lock_guard<std::mutex> locker(surface_.lock);
+                int64_t len = surface_.pcd.HasPoints()
+                                      ? surface_.pcd.GetPoints().GetLength()
                                       : 0;
                 out << "Surface points: " << len << "\n";
 
@@ -550,23 +551,19 @@ private:
             // we see something immediately, on interation 0)
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
-                std::lock_guard<std::mutex> locker(surface.lock);
-                surface.pcd =
+                std::lock_guard<std::mutex> locker(surface_.lock);
+                printf("lock acquired for surface\n");
+                surface_.pcd =
                         model.ExtractPointCloud(prop_values_.pointcloud_size,
                                                 std::min<float>(idx, 3.0f))
                                 .CPU();
-                is_scene_updated = true;
+                is_scene_updated_ = true;
             }
 
-            idx++;
-            // Note that the user might have closed the window, in which case we
-            // want to maintain a value of true.
-            is_done_ = is_done_ | (idx >= depth_files.size());
-
             gui::Application::GetInstance().PostToMainThread(
-                    this, [this, color, depth_colored, raycast_color,
-                           raycast_depth_colored, traj, frustum,
-                           &is_scene_updated, &surface, out = out.str()]() {
+                    this,
+                    [this, color, depth_colored, raycast_color,
+                     raycast_depth_colored, traj, frustum, out = out.str()]() {
                         // Disable depth_scale and pcd buffer size change
                         this->fixed_props_->SetEnabled(false);
 
@@ -604,21 +601,29 @@ private:
                                     "trajectory", traj.get(), mat);
                         }
 
-                        if (is_scene_updated) {
+                        if (is_scene_updated_) {
                             using namespace rendering;
-                            std::lock_guard<std::mutex> locker(surface.lock);
-                            if (surface.pcd.HasPoints() &&
-                                surface.pcd.HasPointColors()) {
+                            std::lock_guard<std::mutex> locker(surface_.lock);
+                            printf("lock acquired for rendering\n");
+                            if (surface_.pcd.HasPoints() &&
+                                surface_.pcd.HasPointColors()) {
+                                printf("obtain scene\n");
                                 auto* scene =
                                         this->widget3d_->GetScene()->GetScene();
+                                printf("update geometry\n");
                                 scene->UpdateGeometry(
-                                        "points", surface.pcd,
+                                        "points", surface_.pcd,
                                         Scene::kUpdatePointsFlag |
                                                 Scene::kUpdateColorsFlag);
                             }
-                            is_scene_updated = false;
+                            is_scene_updated_ = false;
                         }
                     });
+
+            // Note that the user might have closed the window, in which case we
+            // want to maintain a value of true.
+            idx++;
+            is_done_ = is_done_ | (idx >= depth_files.size());
         }
     }
 };
