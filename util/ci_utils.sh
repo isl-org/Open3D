@@ -29,6 +29,8 @@ CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
 TENSORFLOW_VER="2.4.1"
 TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+PYTHON_VER=$(python -c "import sys; ver=f'{sys.version_info.major}{sys.version_info.minor}'; print(f'cp{ver}-cp{ver}{sys.abiflags}')")
+TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
 # Python
@@ -151,7 +153,7 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U torch=="$TORCH_ARCH_GLNX_VER" -f https://download.pytorch.org/whl/torch_stable.html
+            python -m pip install -U "${TORCH_CUDA_GLNX_URL}"
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_MACOS_VER"
         else
