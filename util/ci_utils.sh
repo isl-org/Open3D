@@ -207,7 +207,7 @@ build_all() {
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
-        -DCUDA_ARCH=BasicPTX
+        -DBUILD_COMMON_CUDA_ARCHS=ON
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
@@ -296,7 +296,7 @@ build_pip_conda_package() {
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
-        cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
+        cmake -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON "${cmakeOptions[@]}" ..
     fi
     echo
 
