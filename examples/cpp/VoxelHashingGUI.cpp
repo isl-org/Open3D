@@ -477,6 +477,13 @@ private:
                 core::Tensor delta_frame_to_model = model.TrackFrameToModel(
                         input_frame, raycast_frame, depth_scale,
                         prop_values_.depth_max, prop_values_.depth_diff);
+
+                core::Tensor trans =
+                        delta_frame_to_model.Slice(0, 0, 3).Slice(1, 3, 4);
+                double trans_norm =
+                        std::sqrt((trans * trans).Sum({0, 1}).Item<double>());
+                utility::LogInfo("trans norm = {}", trans_norm);
+
                 T_frame_to_model =
                         T_frame_to_model.Matmul(delta_frame_to_model);
             }
