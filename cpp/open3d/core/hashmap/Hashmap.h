@@ -102,6 +102,9 @@ public:
     /// indexing in Tensor key/value buffers.
     void GetActiveIndices(Tensor& output_indices) const;
 
+    /// Clear stored map without reallocating memory.
+    void Clear();
+
     Hashmap Clone() const;
     Hashmap To(const Device& device, bool copy = false) const;
     Hashmap CPU() const;

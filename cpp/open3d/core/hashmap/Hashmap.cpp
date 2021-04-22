@@ -192,6 +192,8 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
 
+void Hashmap::Clear() { device_hashmap_->Clear(); }
+
 Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 Hashmap Hashmap::To(const Device& device, bool copy) const {

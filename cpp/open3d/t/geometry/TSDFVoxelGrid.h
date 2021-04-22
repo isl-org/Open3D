@@ -90,7 +90,8 @@ public:
         VertexMap = 1,
         DepthMap = 2,
         ColorMap = 4,
-        NormalMap = 8
+        NormalMap = 8,
+        RangeMap = 16
     };
     /// Use volumetric ray casting to obtain vertex and color maps, mainly for
     /// dense visual odometry.
@@ -105,7 +106,6 @@ public:
             const core::Tensor &extrinsics,
             int width,
             int height,
-            int max_steps = 50,
             float depth_scale = 1000.0f,
             float depth_min = 0.1f,
             float depth_max = 3.0f,
@@ -174,7 +174,12 @@ protected:
 
     core::Device device_ = core::Device("CPU:0");
 
+    // Global hashmap
     std::shared_ptr<core::Hashmap> block_hashmap_;
+
+    // Local hashmap for the `unique` operation of input points
+    std::shared_ptr<core::Hashmap> point_hashmap_;
+    core::Tensor active_block_coords_;
 
     std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 };

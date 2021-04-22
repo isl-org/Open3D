@@ -30,6 +30,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/Utility.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/t/pipelines/voxelhashing/Frame.h"
 
@@ -54,12 +55,16 @@ Model::Model(float voxel_size,
                   device),
       T_frame_to_world_(T_init.To(core::Device("CPU:0"))) {}
 
-void Model::SynthesizeModelFrame(Frame& raycast_frame, float depth_scale) {
+void Model::SynthesizeModelFrame(Frame& raycast_frame,
+                                 float depth_scale,
+                                 float depth_min,
+                                 float depth_max) {
     using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
     auto result = voxel_grid_.RayCast(
-            raycast_frame.GetIntrinsics(), GetCurrentFramePose().Inverse(),
-            raycast_frame.GetWidth(), raycast_frame.GetHeight(), 80,
-            depth_scale, 0.1, 4.0, std::min(frame_id_ * 1.0f, 3.0f),
+            raycast_frame.GetIntrinsics(),
+            t::geometry::InverseTransformation(GetCurrentFramePose()),
+            raycast_frame.GetWidth(), raycast_frame.GetHeight(), depth_scale,
+            depth_min, depth_max, std::min(frame_id_ * 1.0f, 3.0f),
             MaskCode::DepthMap | MaskCode::ColorMap);
     raycast_frame.SetData("depth", result[MaskCode::DepthMap]);
     raycast_frame.SetData("color", result[MaskCode::ColorMap]);
@@ -71,7 +76,7 @@ core::Tensor Model::TrackFrameToModel(const Frame& input_frame,
                                       float depth_max,
                                       float depth_diff) {
     const static core::Tensor identity =
-            core::Tensor::Eye(4, core::Dtype::Float32, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
     // TODO: more customized / optimized
     return t::pipelines::odometry::RGBDOdometryMultiScale(
@@ -90,7 +95,8 @@ void Model::Integrate(const Frame& input_frame,
     voxel_grid_.Integrate(
             input_frame.GetDataAsImage("depth"),
             input_frame.GetDataAsImage("color"), input_frame.GetIntrinsics(),
-            GetCurrentFramePose().Inverse(), depth_scale, depth_max);
+            t::geometry::InverseTransformation(GetCurrentFramePose()),
+            depth_scale, depth_max);
 }
 
 t::geometry::PointCloud Model::ExtractPointCloud(int estimated_number,

@@ -57,12 +57,15 @@ public:
                                 frame_id - (frame_id_ + 1));
         }
         frame_id_ = frame_id;
-        T_frame_to_world_ = T_frame_to_world;
+        T_frame_to_world_ = T_frame_to_world.Contiguous();
     }
 
     /// Apply ray casting to obtain a synthesized model frame at the down
     /// sampled resolution.
-    void SynthesizeModelFrame(Frame& raycast_frame, float depth_scale);
+    void SynthesizeModelFrame(Frame& raycast_frame,
+                              float depth_scale,
+                              float depth_min,
+                              float depth_max);
 
     /// Track using RGBD odometry
     core::Tensor TrackFrameToModel(const Frame& input_frame,

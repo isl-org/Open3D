@@ -40,7 +40,7 @@ void PrintHelp() {
     utility::LogInfo("     --voxel_size [=0.0058 (m)]");
     utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("     --depth_scale [=1000.0]");
-    utility::LogInfo("     --max_depth [=3.0]");
+    utility::LogInfo("     --depth_max [=3.0]");
     utility::LogInfo("     --sdf_trunc [=0.04]");
     utility::LogInfo("     --device [CPU:0]");
     utility::LogInfo("     --raycast");
@@ -96,12 +96,10 @@ int main(int argc, char** argv) {
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     Tensor intrinsic_t = Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, Dtype::Float32);
+            std::vector<double>({focal_length.first, 0, principal_point.first,
+                                 0, focal_length.second, principal_point.second,
+                                 0, 0, 1}),
+            {3, 3}, Dtype::Float64);
 
     int block_count =
             utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
@@ -110,8 +108,8 @@ int main(int argc, char** argv) {
             argc, argv, "--voxel_size", 3.f / 512.f));
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_scale", 1000.f));
-    float max_depth = static_cast<float>(
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float depth_max = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
     float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc", 0.04f));
 
@@ -153,16 +151,14 @@ int main(int argc, char** argv) {
         timer_io.Stop();
         utility::LogInfo("Conversion takes {}", timer_io.GetDuration());
 
-        Eigen::Matrix4f extrinsic =
-                trajectory->parameters_[i].extrinsic_.cast<float>();
+        Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
         Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
-                        device);
+                core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
         utility::Timer int_timer;
         int_timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
-                             depth_scale, max_depth);
+                             depth_scale, depth_max);
         int_timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i,
                          int_timer.GetDuration());
@@ -170,24 +166,33 @@ int main(int argc, char** argv) {
 
         if (enable_raycast) {
             utility::Timer ray_timer;
-            ray_timer.Start();
 
-            float scale = 1.0;
-            Tensor intrinsic_t_down = intrinsic_t / scale;
-            intrinsic_t_down[2][2] = 1.0;
+            ray_timer.Start();
             auto result = voxel_grid.RayCast(
-                    intrinsic_t_down, extrinsic_t, depth.GetCols() / scale,
-                    depth.GetRows() / scale, 80, 0.1, 3.0,
-                    std::min(i * 1.0f, 3.0f),
+                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                    depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
                     MaskCode::DepthMap | MaskCode::VertexMap |
-                            MaskCode::ColorMap);
+                            MaskCode::ColorMap | MaskCode::NormalMap);
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 500 == 0) {
+            if (i % 20 == 0) {
+                core::Tensor range_map = result[MaskCode::RangeMap];
+                t::geometry::Image im_near(
+                        range_map.Slice(2, 0, 1).Contiguous() / depth_max);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                im_near.ToLegacyImage())});
+
+                t::geometry::Image im_far(
+                        range_map.Slice(2, 1, 2).Contiguous() / depth_max);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                im_far.ToLegacyImage())});
+
                 t::geometry::Image depth(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
@@ -196,10 +201,10 @@ int main(int argc, char** argv) {
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 vertex.ToLegacyImage())});
-                // t::geometry::Image normal(result[MaskCode::NormalMap]);
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 normal.ToLegacyImage())});
+                t::geometry::Image normal(result[MaskCode::NormalMap]);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                normal.ToLegacyImage())});
                 t::geometry::Image color(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
@@ -213,7 +218,7 @@ int main(int argc, char** argv) {
     }
 
     size_t n = trajectory->parameters_.size();
-    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
+    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}}",
                      time_total / n, time_raycasting / n, time_int / n);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
@@ -226,7 +231,7 @@ int main(int argc, char** argv) {
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd = voxel_grid.ExtractSurfacePoints(
-                3.0f,
+                -1, 3.0f,
                 MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
