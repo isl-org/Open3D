@@ -53,6 +53,7 @@ static const Color DEFAULT_COLOR(0, 0, 0, 0);
 struct Label::Impl {
     std::string text_;
     Color color_ = DEFAULT_COLOR;
+    FontStyle style_ = FontStyle::NORMAL;
     bool is_single_line = true;
 };
 
@@ -75,18 +76,25 @@ Color Label::GetTextColor() const { return impl_->color_; }
 
 void Label::SetTextColor(const Color& color) { impl_->color_ = color; }
 
-Size Label::CalcPreferredSize(const Theme& theme,
+FontStyle Label::GetFontStyle() const { return impl_->style_; }
+
+void Label::SetFontStyle(const FontStyle style) { impl_->style_ = style; }
+
+Size Label::CalcPreferredSize(const LayoutContext& context,
                               const Constraints& constraints) const {
-    auto em = theme.font_size;
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+
+    auto em = context.theme.font_size;
     auto padding = ImGui::GetStyle().FramePadding;
     auto* font = ImGui::GetFont();
+    Size pref;
 
     if (impl_->is_single_line) {
         float wrap_width = float(constraints.width);
-        auto size = font->CalcTextSizeA(float(theme.font_size),
+        auto size = font->CalcTextSizeA(float(context.theme.font_size),
                                         float(constraints.width), wrap_width,
                                         impl_->text_.c_str());
-        return Size(int(std::ceil(size.x + 2.0f * padding.x)),
+        pref = Size(int(std::ceil(size.x + 2.0f * padding.x)),
                     int(std::ceil(size.y + 2.0f * padding.y)));
     } else {
         ImVec2 size(0, 0);
@@ -99,13 +107,13 @@ Size Label::CalcPreferredSize(const Theme& theme,
         do {
             ImVec2 sz;
             if (line_end == std::string::npos) {
-                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
-                                         wrap_width,
+                sz = font->CalcTextSizeA(float(context.theme.font_size),
+                                         FLT_MAX, wrap_width,
                                          impl_->text_.c_str() + line_start);
                 line_start = line_end;
             } else {
-                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
-                                         wrap_width,
+                sz = font->CalcTextSizeA(float(context.theme.font_size),
+                                         FLT_MAX, wrap_width,
                                          impl_->text_.c_str() + line_start,
                                          impl_->text_.c_str() + line_end);
                 line_start = line_end + 1;
@@ -115,10 +123,13 @@ Size Label::CalcPreferredSize(const Theme& theme,
             size.y += sz.y + spacing;
         } while (line_start != std::string::npos);
 
-        return Size(int(std::ceil(size.x)) + int(std::ceil(2.0f * padding.x)),
+        pref = Size(int(std::ceil(size.x)) + int(std::ceil(2.0f * padding.x)),
                     int(std::ceil(size.y - spacing)) +
                             int(std::ceil(2.0f * padding.y)));
     }
+
+    ImGui::PopFont();
+    return pref;
 }
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
@@ -129,6 +140,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
 
     auto padding = ImGui::GetStyle().FramePadding;
     float wrapX = ImGui::GetCursorPos().x + frame.width - padding.x;
@@ -136,6 +148,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     ImGui::TextWrapped("%s", impl_->text_.c_str());
     ImGui::PopTextWrapPos();
 
+    ImGui::PopFont();
     if (!is_default_color) {
         ImGui::PopStyleColor();
     }

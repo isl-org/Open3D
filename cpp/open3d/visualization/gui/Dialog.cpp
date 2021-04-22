@@ -43,23 +43,23 @@ Dialog::Dialog(const char *title) : impl_(new Dialog::Impl()) {}
 
 Dialog::~Dialog() {}
 
-Size Dialog::CalcPreferredSize(const Theme &theme,
+Size Dialog::CalcPreferredSize(const LayoutContext &context,
                                const Constraints &constraints) const {
     if (GetChildren().size() == 1) {
         auto child = GetChildren()[0];
-        return child->CalcPreferredSize(theme, constraints);
+        return child->CalcPreferredSize(context, constraints);
     } else {
-        return Super::CalcPreferredSize(theme, constraints);
+        return Super::CalcPreferredSize(context, constraints);
     }
 }
 
-void Dialog::Layout(const Theme &theme) {
+void Dialog::Layout(const LayoutContext &context) {
     if (GetChildren().size() == 1) {
         auto child = GetChildren()[0];
         child->SetFrame(GetFrame());
-        child->Layout(theme);
+        child->Layout(context);
     } else {
-        Super::Layout(theme);
+        Super::Layout(context);
     }
 }
 

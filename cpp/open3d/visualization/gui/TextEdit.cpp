@@ -95,7 +95,7 @@ void TextEdit::SetOnValueChanged(
 
 bool TextEdit::ValidateNewText(const char *text) { return true; }
 
-Size TextEdit::CalcPreferredSize(const Theme &theme,
+Size TextEdit::CalcPreferredSize(const LayoutContext &context,
                                  const Constraints &constraints) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;

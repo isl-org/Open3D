@@ -68,7 +68,7 @@ void ColorEdit::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size ColorEdit::CalcPreferredSize(const Theme& theme,
+Size ColorEdit::CalcPreferredSize(const LayoutContext& context,
                                   const Constraints& constraints) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;

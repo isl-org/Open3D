@@ -37,7 +37,7 @@ namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
     py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
-               std::unique_ptr<TriangleMesh>, Geometry>
+               std::shared_ptr<TriangleMesh>, Geometry>
             triangle_mesh(
                     m, "TriangleMesh",
                     "A triangle mesh contains a set of 3d vertices and faces.");

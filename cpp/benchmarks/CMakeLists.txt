@@ -38,8 +38,9 @@ mark_as_advanced(
 
 
 set(BENCHMARK_SOURCE_FILES
-    core/Reduction.cpp
     core/Hashmap.cpp
+    core/Reduction.cpp
+    core/Zeros.cpp
     geometry/KDTreeFlann.cpp
     geometry/SamplePoints.cpp
     io/PointCloudIO.cpp

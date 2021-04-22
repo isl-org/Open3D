@@ -64,7 +64,7 @@ public:
     enum Dir { VERT, HORIZ };
 
     static void debug_PrintPreferredSizes(Layout1D* layout,
-                                          const Theme& theme,
+                                          const LayoutContext& context,
                                           const Constraints& constraints,
                                           int depth = 0);
 
@@ -85,9 +85,9 @@ public:
     /// before a layout that will happen, such as before adding as a child).
     void SetMargins(const Margins& margins);
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
     /// Adds a fixed number of pixels after the previously added widget.
     void AddFixed(int size);
@@ -101,7 +101,7 @@ public:
     class Fixed : public Widget {
     public:
         Fixed(int size, Dir dir);
-        Size CalcPreferredSize(const Theme& theme,
+        Size CalcPreferredSize(const LayoutContext& context,
                                const Constraints& constraints) const override;
 
     private:
@@ -110,7 +110,7 @@ public:
     };
 
     class Stretch : public Widget {
-        Size CalcPreferredSize(const Theme& theme,
+        Size CalcPreferredSize(const LayoutContext& context,
                                const Constraints& constraints) const override;
     };
 
@@ -163,9 +163,15 @@ public:
     /// the window is shown.)
     void SetIsOpen(bool is_open);
 
-    Size CalcPreferredSize(const Theme& theme,
+    /// Returns true if open and false if collapsed.
+    bool GetIsOpen();
+
+    FontStyle GetFontStyle() const;
+    void SetFontStyle(FontStyle style);
+
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
@@ -209,9 +215,9 @@ public:
     int GetPreferredWidth() const;
     void SetPreferredWidth(int w);
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
 private:
     struct Impl;

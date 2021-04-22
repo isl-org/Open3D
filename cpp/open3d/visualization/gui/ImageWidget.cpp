@@ -55,6 +55,11 @@ ImageWidget::ImageWidget(std::shared_ptr<geometry::Image> image)
     impl_->image_ = std::make_shared<UIImage>(image);
 }
 
+ImageWidget::ImageWidget(std::shared_ptr<t::geometry::Image> image)
+    : impl_(new ImageWidget::Impl()) {
+    impl_->image_ = std::make_shared<UIImage>(image);
+}
+
 ImageWidget::ImageWidget(visualization::rendering::TextureHandle texture_id,
                          float u0 /*= 0.0f*/,
                          float v0 /*= 0.0f*/,
@@ -75,6 +80,10 @@ void ImageWidget::UpdateImage(std::shared_ptr<geometry::Image> image) {
     GetUIImage()->UpdateImage(image);
 }
 
+void ImageWidget::UpdateImage(std::shared_ptr<t::geometry::Image> image) {
+    GetUIImage()->UpdateImage(image);
+}
+
 std::shared_ptr<UIImage> ImageWidget::GetUIImage() const {
     return impl_->image_;
 }
@@ -83,21 +92,23 @@ void ImageWidget::SetUIImage(std::shared_ptr<UIImage> image) {
     impl_->image_ = image;
 }
 
-Size ImageWidget::CalcPreferredSize(const Theme& theme,
+Size ImageWidget::CalcPreferredSize(const LayoutContext& context,
                                     const Constraints& constraints) const {
     Size pref;
     if (impl_->image_) {
-        pref = impl_->image_->CalcPreferredSize(theme, constraints);
+        pref = impl_->image_->CalcPreferredSize(context, constraints);
     }
 
     if (pref.width != 0 && pref.height != 0) {
         return pref;
     } else {
-        return Size(5 * theme.font_size, 5 * theme.font_size);
+        return Size(5 * context.theme.font_size, 5 * context.theme.font_size);
     }
 }
 
-void ImageWidget::Layout(const Theme& theme) { Super::Layout(theme); }
+void ImageWidget::Layout(const LayoutContext& context) {
+    Super::Layout(context);
+}
 
 Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
