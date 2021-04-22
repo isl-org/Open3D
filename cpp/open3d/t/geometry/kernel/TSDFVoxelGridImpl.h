@@ -1388,11 +1388,11 @@ void RayCastCPU
                     BlockCache cache{0, 0, 0, -1};
                     bool surface_found = false;
                     while (t < t_max) {
-                        t_prev = t;
                         voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
                                                          y_d, z_d, t, cache);
 
                         if (!voxel_ptr) {
+                            t_prev = t;
                             t += block_size;
                         } else {
                             tsdf_prev = tsdf;
@@ -1403,6 +1403,7 @@ void RayCastCPU
                                 surface_found = true;
                                 break;
                             }
+                            t_prev = t;
                             float delta = tsdf * sdf_trunc;
                             t += delta < voxel_size ? voxel_size : delta;
                         }

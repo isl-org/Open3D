@@ -360,7 +360,7 @@ private:
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor intrinsic_t = core::Tensor::Init<float>(
                 {{525.0, 0, 319.5}, {0, 525.0, 239.5}, {0, 0, 1}});
-        core::Device device("CUDA:0");
+        core::Device device("CPU:0");
 
         t::geometry::Image ref_depth =
                 *t::io::CreateImageFromFile(depth_files[0]);
