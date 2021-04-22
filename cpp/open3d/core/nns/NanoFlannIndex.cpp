@@ -291,7 +291,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
                         while (neighbour_idx < max_knn) {
                             indices_ptr[result_idx + neighbour_idx] = -1;
-                            distances_ptr[result_idx + neighbour_idx] = -1;
+                            distances_ptr[result_idx + neighbour_idx] = 0;
                             neighbour_idx += 1;
                         }
                     }
