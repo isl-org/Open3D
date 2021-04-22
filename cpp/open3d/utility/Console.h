@@ -168,8 +168,8 @@ public:
 
     /// Set global verbosity level of Open3D.
     ///
-    /// \param level Messages with equal or less than verbosity_level verbosity
-    /// will be printed.
+    /// \param verbosity_level Messages with equal or less than verbosity_level
+    /// verbosity will be printed.
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
 
     /// Get global verbosity level of Open3D.
@@ -181,7 +181,7 @@ public:
                                         const char *function_name,
                                         bool force_console_log,
                                         const char *format,
-                                        Args &&... args) {
+                                        Args &&...args) {
         Logger::GetInstance().VError(file_name, line_number, function_name,
                                      force_console_log, format,
                                      fmt::make_format_args(args...));
@@ -192,7 +192,7 @@ public:
                             const char *function_name,
                             bool force_console_log,
                             const char *format,
-                            Args &&... args) {
+                            Args &&...args) {
         Logger::GetInstance().VWarning(file_name, line_number, function_name,
                                        force_console_log, format,
                                        fmt::make_format_args(args...));
@@ -203,7 +203,7 @@ public:
                          const char *function_name,
                          bool force_console_log,
                          const char *format,
-                         Args &&... args) {
+                         Args &&...args) {
         Logger::GetInstance().VInfo(file_name, line_number, function_name,
                                     force_console_log, format,
                                     fmt::make_format_args(args...));
@@ -214,7 +214,7 @@ public:
                           const char *function_name,
                           bool force_console_log,
                           const char *format,
-                          Args &&... args) {
+                          Args &&...args) {
         Logger::GetInstance().VDebug(file_name, line_number, function_name,
                                      force_console_log, format,
                                      fmt::make_format_args(args...));

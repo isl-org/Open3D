@@ -40,7 +40,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
-#include "open3d/core/FuncionTraits.h"
+#include "open3d/core/FunctionTraits.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
