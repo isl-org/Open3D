@@ -46,24 +46,24 @@ void StackedWidget::SetSelectedIndex(int index) {
 
 int StackedWidget::GetSelectedIndex() const { return impl_->selected_index_; }
 
-Size StackedWidget::CalcPreferredSize(const Theme& theme,
+Size StackedWidget::CalcPreferredSize(const LayoutContext& context,
                                       const Constraints& constraints) const {
     Size size(0, 0);
     for (auto child : GetChildren()) {
-        auto sz = child->CalcPreferredSize(theme, constraints);
+        auto sz = child->CalcPreferredSize(context, constraints);
         size.width = std::max(size.width, sz.width);
         size.height = std::max(size.height, sz.height);
     }
     return size;
 }
 
-void StackedWidget::Layout(const Theme& theme) {
+void StackedWidget::Layout(const LayoutContext& context) {
     auto& frame = GetFrame();
     for (auto child : GetChildren()) {
         child->SetFrame(frame);
     }
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 Widget::DrawResult StackedWidget::Draw(const DrawContext& context) {

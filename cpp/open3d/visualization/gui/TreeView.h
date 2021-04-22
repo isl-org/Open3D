@@ -54,9 +54,9 @@ public:
     std::shared_ptr<Checkbox> GetCheckbox();
     std::shared_ptr<Label> GetLabel();
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
 private:
     struct Impl;
@@ -76,9 +76,9 @@ public:
     std::shared_ptr<Label> GetLabel();
     std::shared_ptr<ColorEdit> GetColorEdit();
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
 private:
     struct Impl;
@@ -96,9 +96,9 @@ public:
     std::shared_ptr<NumberEdit> GetNumberEdit();
     std::shared_ptr<ColorEdit> GetColorEdit();
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
 private:
     struct Impl;
@@ -140,10 +140,10 @@ public:
     /// Selects the indicated item of the list. Does not call onValueChanged.
     void SetSelectedItemId(ItemId item_id);
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
     DrawResult Draw(const DrawContext& context) override;
 

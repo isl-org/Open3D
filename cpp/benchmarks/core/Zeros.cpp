@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,36 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <benchmark/benchmark.h>
 
-#include "open3d/visualization/gui/Widget.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace core {
 
-class Window;
+void Zeros(benchmark::State& state, const Device& device) {
+    int64_t large_dim = (1ULL << 27) + 10;
+    SizeVector shape{2, large_dim};
 
-/// Base class for dialogs.
-class Dialog : public Widget {
-    using Super = Widget;
+    Tensor warm_up = Tensor::Zeros(shape, Dtype::Float32, device);
+    (void)warm_up;
+    for (auto _ : state) {
+        Tensor dst = Tensor::Zeros(shape, Dtype::Float32, device);
+    }
+}
 
-public:
-    explicit Dialog(const char* title);
-    virtual ~Dialog();
+BENCHMARK_CAPTURE(Zeros, CPU, Device("CPU:0"))->Unit(benchmark::kMillisecond);
 
-    Size CalcPreferredSize(const LayoutContext& context,
-                           const Constraints& constraints) const override;
-    void Layout(const LayoutContext& context) override;
-    DrawResult Draw(const DrawContext& context) override;
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(Zeros, CUDA, Device("CUDA:0"))->Unit(benchmark::kMillisecond);
+#endif
 
-    virtual void OnWillShow();
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace core
 }  // namespace open3d

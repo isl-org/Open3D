@@ -83,7 +83,7 @@ public:
     ///   "vi" (Vietnamese)
     ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
     ///   "zh_all" (Chinese, all characters, ~200 MB per window)
-    //  All other languages will be assumed to be Cyrillic.
+    /// All other languages will be assumed to be Cyrillic.
     void SetFontForLanguage(const char *font, const char *lang_code);
 
     /// Sets the font for the specified code points. The font can be a path to
