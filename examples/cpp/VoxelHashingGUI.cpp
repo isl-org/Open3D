@@ -534,7 +534,7 @@ private:
             }
 
             raycast_depth_colored = std::make_shared<open3d::geometry::Image>(
-                    input_frame.GetDataAsImage("depth")
+                    raycast_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
                             .ToLegacyImage());
