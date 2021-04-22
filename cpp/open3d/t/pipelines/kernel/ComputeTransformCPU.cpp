@@ -51,54 +51,43 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                                 const core::Dtype &dtype,
                                 const core::Device &device) {
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
-    // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
-    // with [0:21] elements as ATA and [21:27] elements as ATB.
-    std::vector<float> A_1x27(27, 0.0);
+    // ATB is of shape {6,1}. Combining both, A_1x29 is a temp. storage
+    // with [0:20] elements as ATA and [21:26] elements as ATB.
+    // [27] is for residual (TODO @rishabh, use residual for robust kernel
+    // support), [28] is for inlier count.
+    std::vector<float> A_1x29(29, 0.0);
 
 #ifdef _WIN32
-    std::vector<float> zeros_27(27, 0.0);
-    A_1x27 = tbb::parallel_reduce(
-            tbb::blocked_range<int>(0, n), zeros_27,
+    std::vector<float> zeros_29(29, 0.0);
+    A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
 #else
-    float *A_reduction = A_1x27.data();
-#pragma omp parallel for reduction(+ : A_reduction[:27]) schedule(static)
+    float *A_reduction = A_1x29.data();
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
-                    const int64_t &source_idx =
-                            3 * correspondences_first[workload_idx];
-                    const int64_t &target_idx =
-                            3 * correspondences_second[workload_idx];
+                    float J[6] = {0};
+                    float r = 0;
 
-                    const float &sx = source_points_ptr[source_idx + 0];
-                    const float &sy = source_points_ptr[source_idx + 1];
-                    const float &sz = source_points_ptr[source_idx + 2];
-                    const float &tx = target_points_ptr[target_idx + 0];
-                    const float &ty = target_points_ptr[target_idx + 1];
-                    const float &tz = target_points_ptr[target_idx + 2];
-                    const float &nx = target_normals_ptr[target_idx + 0];
-                    const float &ny = target_normals_ptr[target_idx + 1];
-                    const float &nz = target_normals_ptr[target_idx + 2];
+                    bool valid = GetJacobianPointToPlane(
+                            workload_idx, source_points_ptr, target_points_ptr, target_normals_ptr,
+                            correspondences_first, correspondences_second, J, r);
 
-                    const float bi_neg =
-                            (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                    const float ai[] = {(nz * sy - ny * sz),
-                                        (nx * sz - nz * sx),
-                                        (ny * sx - nx * sy),
-                                        nx,
-                                        ny,
-                                        nz};
-
-                    for (int i = 0, j = 0; j < 6; j++) {
-                        for (int k = 0; k <= j; k++) {
-                            // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
-                            A_reduction[i] += ai[j] * ai[k];
-                            i++;
+                    if(valid) {
+                        for (int i = 0, j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
+                                A_reduction[i] += J[j] * J[k];
+                                i++;
+                            }
+                            // ATB {6,1}.
+                            A_reduction[21 + j] += J[j] * r;
                         }
-                        // ATB {6,1}.
-                        A_reduction[21 + j] += ai[j] * bi_neg;
+                        A_reduction[27] = r * r;
+                        A_reduction[28] = 1;
                     }
                 }
 #ifdef _WIN32
@@ -106,37 +95,18 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             },
             // TBB: Defining reduction operation.
             [&](std::vector<float> a, std::vector<float> b) {
-                std::vector<float> result(27);
-                for (int j = 0; j < 27; j++) {
+                std::vector<float> result(29);
+                for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
 #endif
 
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32, device);
+    core::Tensor residual;
     // Compute linear system on CPU as Float64.
-    core::Device host("CPU:0");
-    core::Tensor ATA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    double *ata_ptr = ATA.GetDataPtr<double>();
-
-    // ATB_neg is -(ATB), as bi_neg is used in kernel instead of bi,
-    // where  bi = [source_points - target_points].(target_normals).
-    core::Tensor ATB_neg =
-            core::Tensor::Empty({6, 1}, core::Dtype::Float64, host);
-    double *atb_ptr = ATB_neg.GetDataPtr<double>();
-
-    // ATA_ {1,21} to ATA {6,6}.
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            ata_ptr[j * 6 + k] = A_1x27[i];
-            ata_ptr[k * 6 + j] = A_1x27[i];
-            i++;
-        }
-        atb_ptr[j] = A_1x27[21 + j];
-    }
-
-    // ATA(6,6) . Pose(6,1) = -ATB(6,1).
-    pose = ATA.Solve(ATB_neg).Reshape({-1});
+    DecodeAndSolve6x6(A_reduction_tensor, pose, residual);
 }
 
 void ComputeRtPointToPointCPU(const float *source_points_ptr,
