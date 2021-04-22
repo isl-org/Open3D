@@ -35,6 +35,8 @@ namespace open3d {
 namespace t {
 namespace io {
 
+using open3d::io::ReadTriangleMeshOptions;
+
 /// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
 /// Return an empty mesh if fail to read the file.
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
@@ -45,8 +47,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      bool enable_post_processing = false,
-                      bool print_progress = false);
+                      ReadTriangleMeshOptions params = {});
 
 /// The general entrance for writing a TriangleMesh to a file
 /// The function calls write functions based on the extension name of filename.

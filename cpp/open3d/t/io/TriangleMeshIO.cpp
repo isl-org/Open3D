@@ -37,11 +37,12 @@ namespace io {
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(
-                const std::string &, geometry::TriangleMesh &, bool, bool)>>
+        std::function<bool(const std::string &,
+                           geometry::TriangleMesh &,
+                           const ReadTriangleMeshOptions &)>>
         file_extension_to_trianglemesh_read_function{};
 
-static const std::unordered_map<
+static const std::unordered_map< 
         std::string,
         std::function<bool(const std::string &,
                            const geometry::TriangleMesh &,
@@ -56,7 +57,9 @@ static const std::unordered_map<
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    ReadTriangleMesh(filename, *mesh, print_progress);
+    ReadTriangleMeshOptions opt;
+    opt.print_progress = print_progress;
+    ReadTriangleMesh(filename, *mesh, opt);
     return mesh;
 }
 
@@ -75,8 +78,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      bool enable_post_processing /* = false */,
-                      bool print_progress /* = false */) {
+                      ReadTriangleMeshOptions params) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -91,15 +93,13 @@ bool ReadTriangleMesh(const std::string &filename,
     bool success = false;
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         open3d::geometry::TriangleMesh legacy_mesh;
-        success = open3d::io::ReadTriangleMesh(
-                filename, legacy_mesh, enable_post_processing, print_progress);
+        success = open3d::io::ReadTriangleMesh( filename, legacy_mesh, params);
         if (!success) {
             return false;
         }
         mesh = geometry::TriangleMesh::FromLegacyTriangleMesh(legacy_mesh);
     } else {
-        success = map_itr->second(filename, mesh, enable_post_processing,
-                                  print_progress);
+        success = map_itr->second(filename, mesh, params);
         utility::LogDebug(
                 "Read geometry::TriangleMesh: {:d} triangles and {:d} "
                 "vertices.",
