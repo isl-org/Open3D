@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -98,9 +98,13 @@ public:
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up);
+
     void SetOnCameraChanged(
             std::function<void(visualization::rendering::Camera*)>
                     on_cam_changed);
+
+    Eigen::Vector3f GetCenterOfRotation() const;
+    void SetCenterOfRotation(const Eigen::Vector3f& center);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
@@ -163,13 +167,16 @@ public:
                             std::string,
                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
                     int)> on_picked);
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick);
+    enum class PolygonPickAction { CANCEL = 0, SELECT };
+    void DoPolygonPick(PolygonPickAction action);
 
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
                                       const char* text);
     void RemoveLabel(std::shared_ptr<Label3D> label);
+    void ClearLabels();
 
-    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

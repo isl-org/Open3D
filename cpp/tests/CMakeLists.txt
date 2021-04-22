@@ -28,6 +28,7 @@ set(UNIT_TEST_SOURCE_FILES
     core/MemoryManager.cpp
     core/Tensor.cpp
     core/SizeVector.cpp
+    core/EigenConverter.cpp
     geometry/PointCloud.cpp
     geometry/TriangleMesh.cpp
     geometry/VoxelGrid.cpp
@@ -83,6 +84,7 @@ set(UNIT_TEST_SOURCE_FILES
     pipelines/odometry/OdometryOption.cpp
     t/io/PointCloudIO.cpp
     t/io/ImageIO.cpp
+    t/pipelines/odometry/RGBDOdometry.cpp
     t/pipelines/registration/Registration.cpp
     t/pipelines/registration/TransformationEstimation.cpp
     t/pipelines/TransformationConverter.cpp
@@ -158,8 +160,7 @@ endif()
 
 if (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.
-    # See: https://stackoverflow.com/a/48540499/1255535.
     # Consider removing dependencies of cuda headers in the future.
-    target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
-    target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    find_package(CUDAToolkit REQUIRED)
+    target_link_libraries(tests PRIVATE CUDA::cudart)
 endif()

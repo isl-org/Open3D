@@ -37,7 +37,7 @@ PIP_VER="20.2.4"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
-SCIPY_VER="1.4.1"
+SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
 
 # Documentation
@@ -65,16 +65,19 @@ install_cuda_toolkit() {
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
     fi
     $SUDO apt-get install --yes --no-install-recommends \
-        "cuda-minimal-build-${CUDA_VERSION[0]}" \
-        "cuda-nvrtc-dev-${CUDA_VERSION[0]}" \
-        "cuda-nvtx-${CUDA_VERSION[0]}" \
-        "cuda-nvprof-${CUDA_VERSION[0]}" \
-        "libcusolver-dev-${CUDA_VERSION[0]}" \
-        "libcusparse-dev-${CUDA_VERSION[0]}" \
-        "libcurand-dev-${CUDA_VERSION[0]}" \
-        "libcufft-dev-${CUDA_VERSION[0]}" \
-        "libnpp-dev-${CUDA_VERSION[0]}" \
-        "libcublas-dev-${CUDA_VERSION[0]}"
+        "cuda-toolkit-${CUDA_VERSION[0]}" \
+        libcublas-dev
+    if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
+        echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
+        dpkg -L libcublas10 libcublas-dev | while read -r cufile; do
+            if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ]; then
+                set -x
+                $SUDO ln -s "$cufile" "${cufile/10.2/10.1}"
+                set +x
+            fi
+        done
+    fi
+    options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
         # The repository method can cause "File has unexpected size" error so
         # we use a tar file copy approach instead. The scripts are taken from
@@ -202,25 +205,25 @@ install_azure_kinect_dependencies() {
 
 build_all() {
 
-    echo "Using cmake: $(which cmake)"
+    echo "Using cmake: $(command -v cmake)"
     cmake --version
 
     mkdir -p build
     cd build
 
-    cmakeOptions=("-DBUILD_SHARED_LIBS=$SHARED"
-        "-DCMAKE_BUILD_TYPE=Release"
-        "-DBUILD_LIBREALSENSE=ON"
-        "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
-        "-DCUDA_ARCH=BasicPTX"
-        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
-        "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
-        "-DBUILD_RPC_INTERFACE=$BUILD_RPC_INTERFACE"
-        "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
-        "-DPYTHON_EXECUTABLE=$(command -v python)"
-        "-DBUILD_UNIT_TESTS=ON"
-        "-DBUILD_BENCHMARKS=ON"
-        "-DBUILD_EXAMPLES=OFF"
+    cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED"
+        -DCMAKE_BUILD_TYPE=Release
+        -DBUILD_LIBREALSENSE=ON
+        -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
+        -DBUILD_COMMON_CUDA_ARCHS=ON
+        -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
+        -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
+        -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
+        -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
+        -DPYTHON_EXECUTABLE="$(command -v python)"
+        -DBUILD_UNIT_TESTS=ON
+        -DBUILD_BENCHMARKS=ON
+        -DBUILD_EXAMPLES=OFF
     )
 
     echo
@@ -301,7 +304,7 @@ build_pip_conda_package() {
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
-        cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
+        cmake -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON "${cmakeOptions[@]}" ..
     fi
     echo
 
@@ -328,7 +331,7 @@ test_wheel() {
     source open3d_test.venv/bin/activate
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
-    echo "Using python: $(which python)"
+    echo "Using python: $(command -v python)"
     python --version
     echo -n "Using pip: "
     python -m pip --version
@@ -396,17 +399,20 @@ run_cpp_unit_tests() {
 # test_cpp_example runExample
 # Need variable OPEN3D_INSTALL_DIR
 test_cpp_example() {
-
-    cd ../docs/_static/C++
-    mkdir -p build
+    # Now I am in Open3D/build/
+    cd ..
+    git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+    cd open3d-cmake-find-package
+    mkdir build
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
     make -j"$NPROC" VERBOSE=1
     runExample="$1"
     if [ "$runExample" == ON ]; then
-        ./TestVisualizer
+        ./Draw --skip-for-unit-test
     fi
-    cd ../../../../build
+    # Now I am in Open3D/open3d-cmake-find-package/build/
+    cd ../../build
 }
 
 # Install dependencies needed for building documentation (on Ubuntu 18.04)
@@ -427,7 +433,7 @@ install_docs_dependencies() {
     sudo apt-get install --yes ccache
     echo
     echo Install Python dependencies for building docs
-    which python
+    command -v python
     python -V
     python -m pip install -U -q \
         "wheel==$WHEEL_VER" \
@@ -512,36 +518,6 @@ build_docs() {
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
-}
-
-install_arm64_dependencies() {
-    apt-get update -q -y
-    apt-get install -y apt-utils build-essential git wget
-    apt-get install -y python3 python3-dev python3-pip python3-virtualenv
-    apt-get install -y xorg-dev libglu1-mesa-dev ccache
-    apt-get install -y libblas-dev liblapack-dev liblapacke-dev libssl-dev
-    apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
-    apt-get install -y libudev-dev autoconf libtool # librealsense
-    apt-get install -y clang-7
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
-    update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
-    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
-    /usr/sbin/update-ccache-symlinks
-    echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
-    virtualenv --python=$(which python) ${HOME}/venv
-    source ${HOME}/venv/bin/activate
-    which python
-    python --version
-    pip install pytest=="$PYTEST_VER" -U
-    pip install wheel=="$WHEEL_VER" -U
-    # Get pre-compiled CMake
-    wget https://github.com/intel-isl/Open3D/releases/download/v0.11.0/cmake-3.18-aarch64.tar.gz
-    tar -xvf cmake-3.18-aarch64.tar.gz
-    cp -ar cmake-3.18-aarch64 ${HOME}
-    PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
-    which cmake
-    cmake --version
 }
 
 maximize_ubuntu_github_actions_build_space() {

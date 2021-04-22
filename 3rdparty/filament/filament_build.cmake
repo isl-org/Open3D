@@ -3,7 +3,7 @@ include(ExternalProject)
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
 set(FILAMENT_GIT_REPOSITORY "https://github.com/intel-isl/filament.git")
-set(FILAMENT_GIT_TAG "release")
+set(FILAMENT_GIT_TAG "13ad8e25289cb173a4f8e71e85cb4e0d026eacdc")
 
 set(filament_LIBRARIES
     filameshio

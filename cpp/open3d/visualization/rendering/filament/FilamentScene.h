@@ -222,6 +222,9 @@ public:
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
+    void RenderToDepthImage(
+            std::function<void(std::shared_ptr<geometry::Image>)> callback)
+            override;
 
     void Draw(filament::Renderer& renderer);
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ public:
     ///   "vi" (Vietnamese)
     ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
     ///   "zh_all" (Chinese, all characters, ~200 MB per window)
-    //  All other languages will be assumed to be Cyrillic.
+    /// All other languages will be assumed to be Cyrillic.
     void SetFontForLanguage(const char *font, const char *lang_code);
 
     /// Sets the font for the specified code points. The font can be a path to
@@ -107,8 +107,8 @@ public:
     /// using lambdas, capture by copy and make sure whatever you use will
     /// still be alive).
     void RunInThread(std::function<void()> f);
-    /// Runs \param f on the main thread at some point in the near future.
-    /// Proper context will be setup for \param window. \p f will block the
+    /// Runs \p f on the main thread at some point in the near future.
+    /// Proper context will be setup for \p window. \p f will block the
     /// UI, so it should run quickly. If you need to do something slow
     /// (e.g. load a file) consider using RunInThread() and have the function
     /// pass off UI calls to PostToMainThread().

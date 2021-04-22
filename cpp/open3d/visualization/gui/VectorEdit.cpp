@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,8 @@ void VectorEdit::SetOnValueChanged(
     impl_->on_changed_ = on_changed;
 }
 
-Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
+Size VectorEdit::CalcPreferredSize(const LayoutContext& context,
+                                   const Constraints& constraints) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
     return Size(Widget::DIM_GROW, int(std::ceil(em + 2.0f * padding.y)));

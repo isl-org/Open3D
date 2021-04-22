@@ -105,7 +105,9 @@ void RecreateAxis(Scene* scene,
     }
     axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
-    scene->AddGeometry(kAxisObjectName, *mesh, Material());
+    Material mat;
+    mat.shader = "defaultUnlit";
+    scene->AddGeometry(kAxisObjectName, *mesh, mat);
     // It looks awkward to have the axis cast a a shadow, and even stranger
     // to receive a shadow.
     scene->GeometryShadows(kAxisObjectName, false, false);
@@ -118,16 +120,11 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    scene->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
+    SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
     RecreateAxis(scene, bounds_, false);
-
-    window_scene_ = renderer_.CreateScene();
-    auto window_scene = renderer_.GetScene(window_scene_);
-    window_view_ = window_scene->AddView(0, 0, 1, 1);
-    window_scene->SetBackground({0.f, 1.f, 0.f, 1.f});
 }
 
 Open3DScene::~Open3DScene() {
@@ -142,23 +139,19 @@ View* Open3DScene::GetView() const {
     return scene->GetView(view_);
 }
 
-View* Open3DScene::GetWindowView() const {
-    auto scene = renderer_.GetScene(window_scene_);
-    return scene->GetView(window_view_);
-}
-
 void Open3DScene::SetViewport(std::int32_t x,
                               std::int32_t y,
                               std::uint32_t width,
                               std::uint32_t height) {
+    // Setup the view in which we render to a texture. Since this is just a
+    // texture, we want our viewport to be the entire texture.
     auto view = GetView();
-    view->SetViewport(x, y, width, height);
+    // Since we are rendering into a texture (EnableViewCaching(true) below),
+    // we need to use the entire texture; the viewport passed in is the viewport
+    // with respect to the window, and we are setting the viewport with respect
+    // to the render target here.
+    view->SetViewport(0, 0, width, height);
     view->EnableViewCaching(true);
-    auto window_view = GetWindowView();
-    window_view->SetViewport(x, y, width, height);
-    window_view->ConfigureForColorPicking();
-    auto window_scene = renderer_.GetScene(window_scene_);
-    window_scene->SetBackground(view->GetColorBuffer());
 }
 
 void Open3DScene::ShowSkybox(bool enable) {
@@ -179,6 +172,11 @@ void Open3DScene::SetBackground(const Eigen::Vector4f& color,
                                 std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
     scene->SetBackground(color, image);
+    background_color = color;
+}
+
+const Eigen::Vector4f Open3DScene::GetBackgroundColor() const {
+    return background_color;
 }
 
 void Open3DScene::ShowGroundPlane(bool enable, Scene::GroundPlane plane) {

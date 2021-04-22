@@ -115,14 +115,14 @@ public:
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
-                     rendering::Material* material = nullptr,
+                     const rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     rendering::Material* material = nullptr,
+                     const rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
@@ -132,6 +132,9 @@ public:
     void ShowGeometry(const std::string& name, bool show);
 
     DrawObject GetGeometry(const std::string& name) const;
+
+    void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
+    void Clear3DLabels();
 
     void SetupCamera(float fov,
                      const Eigen::Vector3f& center,
@@ -183,7 +186,7 @@ public:
     void StopRPCInterface();
 
 protected:
-    void Layout(const gui::Theme& theme);
+    void Layout(const gui::LayoutContext& context);
 
 private:
     struct Impl;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/PickPointsInteractor.h"
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
@@ -235,13 +236,7 @@ void PickPointsInteractor::SetPickableGeometry(
     }
 }
 
-void PickPointsInteractor::SetNeedsRedraw() {
-    dirty_ = true;
-    // std::queue::clear() seems to not exist
-    while (!pending_.empty()) {
-        pending_.pop();
-    }
-}
+void PickPointsInteractor::SetNeedsRedraw() { dirty_ = true; }
 
 rendering::MatrixInteractorLogic &PickPointsInteractor::GetMatrixInteractor() {
     return matrix_logic_;
@@ -256,36 +251,90 @@ void PickPointsInteractor::SetOnPointsPicked(
     on_picked_ = f;
 }
 
+void PickPointsInteractor::SetOnUIChanged(
+        std::function<void(const std::vector<Eigen::Vector2i> &)> on_ui) {
+    on_ui_changed_ = on_ui;
+}
+
+void PickPointsInteractor::SetOnStartedPolygonPicking(
+        std::function<void()> on_poly_pick) {
+    on_started_poly_pick_ = on_poly_pick;
+}
+
 void PickPointsInteractor::Mouse(const MouseEvent &e) {
     if (e.type == MouseEvent::BUTTON_UP) {
-        gui::Rect pick_rect(e.x, e.y, 1, 1);
-        if (dirty_) {
-            SetNeedsRedraw();  // note: clears pending_
-            pending_.push({pick_rect, e.modifiers});
-            auto *view = picking_scene_->GetView();
-            view->SetViewport(0, 0,  // in case scene widget changed size
-                              matrix_logic_.GetViewWidth(),
-                              matrix_logic_.GetViewHeight());
-            view->GetCamera()->CopyFrom(camera_);
-            picking_scene_->GetRenderer().RenderToImage(
-                    view, picking_scene_->GetScene(),
-                    [this](std::shared_ptr<geometry::Image> img) {
-#if WANT_DEBUG_IMAGE
-                        std::cout << "[debug] Writing pick image to "
-                                  << "/tmp/debug.png" << std::endl;
-                        io::WriteImage("/tmp/debug.png", *img);
-#endif  // WANT_DEBUG_IMAGE
-                        this->OnPickImageDone(img);
-                    });
+        if (e.modifiers & int(KeyModifier::ALT)) {
+            if (pending_.empty() || pending_.back().keymods == 0) {
+                pending_.push({{gui::Point(e.x, e.y)}, int(KeyModifier::ALT)});
+                if (on_ui_changed_) {
+                    on_ui_changed_({});
+                }
+            } else {
+                pending_.back().polygon.push_back(gui::Point(e.x, e.y));
+                if (on_started_poly_pick_) {
+                    on_started_poly_pick_();
+                }
+                if (on_ui_changed_) {
+                    std::vector<Eigen::Vector2i> lines;
+                    auto &polygon = pending_.back().polygon;
+                    for (size_t i = 1; i < polygon.size(); ++i) {
+                        auto &p0 = polygon[i - 1];
+                        auto &p1 = polygon[i];
+                        lines.push_back({p0.x, p0.y});
+                        lines.push_back({p1.x, p1.y});
+                    }
+                    lines.push_back({polygon.back().x, polygon.back().y});
+                    lines.push_back({polygon[0].x, polygon[0].y});
+                    on_ui_changed_(lines);
+                }
+            }
         } else {
-            pending_.push({pick_rect, e.modifiers});
-            OnPickImageDone(pick_image_);
+            pending_.push({{gui::Point(e.x, e.y)}, 0});
+            DoPick();
         }
     }
 }
 
-// TODO: do we need this?
-void PickPointsInteractor::Key(const KeyEvent &e) {}
+void PickPointsInteractor::Key(const KeyEvent &e) {
+    if (e.type == KeyEvent::UP) {
+        if (e.key == KEY_ESCAPE) {
+            ClearPick();
+        }
+    }
+}
+
+void PickPointsInteractor::DoPick() {
+    if (dirty_) {
+        SetNeedsRedraw();
+        auto *view = picking_scene_->GetView();
+        view->SetViewport(0, 0,  // in case scene widget changed size
+                          matrix_logic_.GetViewWidth(),
+                          matrix_logic_.GetViewHeight());
+        view->GetCamera()->CopyFrom(camera_);
+        picking_scene_->GetRenderer().RenderToImage(
+                view, picking_scene_->GetScene(),
+                [this](std::shared_ptr<geometry::Image> img) {
+#if WANT_DEBUG_IMAGE
+                    std::cout << "[debug] Writing pick image to "
+                              << "/tmp/debug.png" << std::endl;
+                    io::WriteImage("/tmp/debug.png", *img);
+#endif  // WANT_DEBUG_IMAGE
+                    this->OnPickImageDone(img);
+                });
+    } else {
+        OnPickImageDone(pick_image_);
+    }
+}
+
+void PickPointsInteractor::ClearPick() {
+    while (!pending_.empty()) {
+        pending_.pop();
+    }
+    if (on_ui_changed_) {
+        on_ui_changed_({});
+    }
+    SetNeedsRedraw();
+}
 
 rendering::Material PickPointsInteractor::MakeMaterial() {
     rendering::Material mat;
@@ -304,17 +353,19 @@ void PickPointsInteractor::OnPickImageDone(
         dirty_ = false;
     }
 
+    if (on_ui_changed_) {
+        on_ui_changed_({});
+    }
+
     std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>
             indices;
     while (!pending_.empty()) {
         PickInfo &info = pending_.back();
-        const int x0 = info.rect.x;
-        const int x1 = info.rect.GetRight();
-        const int y0 = info.rect.y;
-        const int y1 = info.rect.GetBottom();
         auto *img = pick_image_.get();
         indices.clear();
-        if (x1 - x0 == 1 && y1 - y0 == 1) {
+        if (info.polygon.size() == 1) {
+            const int x0 = info.polygon[0].x;
+            const int y0 = info.polygon[0].y;
             struct Score {  // this is a struct to force a default value
                 float score = 0;
             };
@@ -363,19 +414,153 @@ void PickPointsInteractor::OnPickImageDone(
                         obj_idx, points_[best_idx]));
             }
         } else {
-            for (int y = y0; y < y1; ++y) {
-                for (int x = x0; x < x1; ++x) {
-                    unsigned int idx = GetIndexForColor(img, x, y);
-                    if (IsValidIndex(idx)) {
-                        auto &o = lookup_->ObjectForIndex(idx);
-                        size_t obj_idx = idx - o.start_index;
-                        indices[o.name].push_back(
-                                std::pair<size_t, Eigen::Vector3d>(
-                                        obj_idx, points_[idx]));
-                    }
+            // Use polygon fill algorithm to find the pixels that need to be
+            // checked.
+            // Good test cases:  ______________             /|
+            //                  |             /    |\      / |
+            //                  |            /     |  \   /  |
+            //                  |   /\      /      |    \/   |
+            //                  |  /  \    /      |          |
+            //                  | /    \  /       |     _____|
+            //                  |/      \/        |____/
+            std::unordered_set<unsigned int> raw_indices;
+
+            // Find the min/max y, so we can avoid excess looping.
+            int minY = 1000000, maxY = -1000000;
+            for (auto &p : info.polygon) {
+                minY = std::min(minY, p.y);
+                maxY = std::max(maxY, p.y);
+            }
+            // Duplicate the first point so for easy indexing
+            info.polygon.push_back(info.polygon[0]);
+            // Precalculate m and b (of y = mx + b)
+            const double kInf = 1e18;
+            std::vector<double> m, b;
+            m.reserve(info.polygon.size() - 1);
+            b.reserve(info.polygon.size() - 1);
+            for (size_t i = 1; i < info.polygon.size(); ++i) {
+                int m_denom = info.polygon[i].x - info.polygon[i - 1].x;
+                if (m_denom == 0) {  // vertical line (x doesn't change)
+                    m.push_back(kInf);
+                    b.push_back(0.0);
+                    continue;
+                }
+                m.push_back(double(info.polygon[i].y - info.polygon[i - 1].y) /
+                            double(m_denom));
+                if (m.back() == 0.0) {  // horiz line (y doesn't change)
+                    b.push_back(info.polygon[i].y);
+                } else {
+                    b.push_back(info.polygon[i].y -
+                                m.back() * info.polygon[i].x);
                 }
             }
+            // Loop through the rows of the polygon.
+            std::vector<bool> is_vert_corner(info.polygon.size(), false);
+            for (size_t i = 0; i < info.polygon.size() - 1; ++i) {
+                int prev = i - 1;
+                if (prev < 0) {
+                    prev = info.polygon.size() - 2;
+                }
+                int next = i + 1;
+                int lastY = info.polygon[prev].y;
+                int thisY = info.polygon[i].y;
+                int nextY = info.polygon[next].y;
+                if ((thisY > lastY && thisY > nextY) ||
+                    (thisY < lastY && thisY < nextY)) {
+                    is_vert_corner[i] = true;
+                }
+            }
+            is_vert_corner.back() = is_vert_corner[0];
+            std::unordered_set<int> intersectionsX;
+            std::vector<int> sortedX;
+            intersectionsX.reserve(32);
+            sortedX.reserve(32);
+            for (int y = minY; y <= maxY; ++y) {
+                for (size_t i = 0; i < m.size(); ++i) {
+                    if ((y < info.polygon[i].y && y < info.polygon[i + 1].y) ||
+                        (y > info.polygon[i].y && y > info.polygon[i + 1].y)) {
+                        continue;
+                    }
+                    if (m[i] == 0.0) {  // horizontal
+                        intersectionsX.insert({info.polygon[i].x});
+                        intersectionsX.insert({info.polygon[i + 1].x});
+                    } else if (m[i] == kInf) {  // vertical
+                        bool is_corner = (y == info.polygon[i].y);
+                        intersectionsX.insert({info.polygon[i].x});
+                        if (is_corner) {
+                            intersectionsX.insert({info.polygon[i].x});
+                        }
+                    } else {
+                        double x = (double(y) - b[i]) / m[i];
+                        bool is_corner0 =
+                                (y == info.polygon[i].y &&
+                                 std::abs(x - double(info.polygon[i].x)) < 0.5);
+                        bool is_corner1 =
+                                (y == info.polygon[i + 1].y &&
+                                 std::abs(x - double(info.polygon[i + 1].x)) <
+                                         0.5);
+                        if ((is_corner0 && is_vert_corner[i]) ||
+                            (is_corner1 && is_vert_corner[i + 1])) {
+                            // We hit the corner, don't add, otherwise we will
+                            // get half a segment.
+                        } else {
+                            intersectionsX.insert(int(std::round(x)));
+                        }
+                    }
+                }
+                for (auto x : intersectionsX) {
+                    sortedX.push_back(x);
+                }
+                std::sort(sortedX.begin(), sortedX.end());
+
+                // sortedX contains the horizontal line segment(s). This should
+                // be an even number, otherwise there is a problem. (Probably
+                // a corner got included)
+                if (sortedX.size() % 2 == 1) {
+                    std::stringstream s;
+                    for (size_t i = 0; i < info.polygon.size() - 1; ++i) {
+                        s << "(" << info.polygon[i].x << ", "
+                          << info.polygon[i].y << ") ";
+                    }
+                    utility::LogWarning(
+                            "Internal error: Odd number of points for row "
+                            "segments (should be even).");
+                    utility::LogWarning("Polygon is: {}", s.str());
+                    s.str("");
+                    s << "{ ";
+                    for (size_t i = 0; i < sortedX.size(); ++i) {
+                        s << sortedX[i] << " ";
+                    }
+                    s << "}";
+                    utility::LogWarning("y: {}, sortedX: {}", y, s.str());
+                    // Recover: this is likely to give the wrong result, but
+                    // better than the alternative of crashing.
+                    sortedX.push_back(sortedX.back());
+                }
+
+                // "Fill" the pixels on this row
+                for (size_t i = 0; i < sortedX.size(); i += 2) {
+                    int startX = sortedX[i];
+                    int endX = sortedX[i + 1];
+                    for (int x = startX; x <= endX; ++x) {
+                        unsigned int idx = GetIndexForColor(img, x, y);
+                        if (IsValidIndex(idx) && idx < points_.size()) {
+                            raw_indices.insert(idx);
+                        }
+                    }
+                }
+                intersectionsX.clear();
+                sortedX.clear();
+            }
+            // Now add everything that was "filled"
+            for (auto idx : raw_indices) {
+                auto &o = lookup_->ObjectForIndex(idx);
+                size_t obj_idx = idx - o.start_index;
+                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
+                        obj_idx, points_[idx]));
+            }
         }
+
         pending_.pop();
 
         if (on_picked_ && !indices.empty()) {

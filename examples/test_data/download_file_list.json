@@ -1,0 +1,17 @@
+{
+    "RGBD/raycast_vtx_004.npy": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/RGBD/raycast_vtx_004.npy",
+        "path": "RGBD/raycast_vtx_004.npy",
+        "sha256": "ca5d94ee3306d922f6967369def4793b12aa94e95a05550857f47a8f17ab83e6"
+    },
+    "RGBD/normal_map.npy": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/RGBD/normal_map.npy",
+        "path": "RGBD/normal_map.npy",
+        "sha256": "ce3eb60bef47179e9099bad2efecf76dac5cdb305c3c1dc45bd8dfd34502586f"
+    },
+    "RGBD/vertex_map.npy": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/RGBD/vertex_map.npy",
+        "path": "RGBD/vertex_map.npy",
+        "sha256": "74237c2977476f27636be6f40feb703fd39f32e9952efac4358a886740be6148"
+    }
+}

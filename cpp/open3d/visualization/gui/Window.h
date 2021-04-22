@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -182,7 +182,9 @@ protected:
     /// Lays out all the widgets in the window. If all children
     /// of the window are layouts, this function does not need to
     /// be overriden.
-    virtual void Layout(const Theme& theme);
+    virtual void Layout(const LayoutContext& context);
+
+    LayoutContext GetLayoutContext();
 
     const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
 

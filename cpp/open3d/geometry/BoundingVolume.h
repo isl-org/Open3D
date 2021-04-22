@@ -88,7 +88,7 @@ public:
     double Volume() const;
 
     /// Returns the eight points that define the bounding box.
-    ///
+    /// \verbatim
     ///      ------- x
     ///     /|
     ///    / |
@@ -106,6 +106,7 @@ public:
     ///   | /               | /
     ///   |/                |/
     /// 5 ------------------- 4
+    /// \endverbatim
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,8 @@ void FileDialog::SetOnDone(std::function<void(const char *)> on_done) {
     impl_->on_done_ = on_done;
 }
 
-Size FileDialog::CalcPreferredSize(const Theme &theme) const {
+Size FileDialog::CalcPreferredSize(const LayoutContext &context,
+                                   const Constraints &constraints) const {
     return Size(0, 0);
 }
 

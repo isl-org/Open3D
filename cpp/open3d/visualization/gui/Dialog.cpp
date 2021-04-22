@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,22 +43,23 @@ Dialog::Dialog(const char *title) : impl_(new Dialog::Impl()) {}
 
 Dialog::~Dialog() {}
 
-Size Dialog::CalcPreferredSize(const Theme &theme) const {
+Size Dialog::CalcPreferredSize(const LayoutContext &context,
+                               const Constraints &constraints) const {
     if (GetChildren().size() == 1) {
         auto child = GetChildren()[0];
-        return child->CalcPreferredSize(theme);
+        return child->CalcPreferredSize(context, constraints);
     } else {
-        return Super::CalcPreferredSize(theme);
+        return Super::CalcPreferredSize(context, constraints);
     }
 }
 
-void Dialog::Layout(const Theme &theme) {
+void Dialog::Layout(const LayoutContext &context) {
     if (GetChildren().size() == 1) {
         auto child = GetChildren()[0];
         child->SetFrame(GetFrame());
-        child->Layout(theme);
+        child->Layout(context);
     } else {
-        Super::Layout(theme);
+        Super::Layout(context);
     }
 }
 

@@ -12,7 +12,7 @@ set(GUI_SOURCE_FILES
     FileDialogNative.cpp
     GLFWWindowSystem.cpp
     Gui.cpp
-    ImageLabel.cpp
+    ImageWidget.cpp
     ImguiFilamentBridge.cpp
     Label.cpp
     Label3D.cpp
@@ -30,6 +30,7 @@ set(GUI_SOURCE_FILES
     Task.cpp
     TextEdit.cpp
     Theme.cpp
+    ToggleSwitch.cpp
     TreeView.cpp
     UIImage.cpp
     Util.cpp

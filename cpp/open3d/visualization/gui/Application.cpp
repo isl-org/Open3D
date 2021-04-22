@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -107,90 +108,6 @@ std::string FindResourcePath(int argc, const char *argv[]) {
         return path + "/../resources";  // building with Xcode
     }
     return resource_path;
-}
-
-std::string FindFontPath(const std::string &font) {
-    using namespace open3d::utility::filesystem;
-
-    if (FileExists(font)) {
-        return font;
-    }
-
-    std::string home;
-    char *raw_home = getenv("HOME");
-    if (raw_home) {  // std::string(nullptr) is undefined
-        home = raw_home;
-    }
-    std::vector<std::string> system_font_paths = {
-#ifdef __APPLE__
-            "/System/Library/Fonts", "/Library/Fonts", home + "/Library/Fonts"
-#elif _WIN32
-            "c:/Windows/Fonts"
-#else
-            "/usr/share/fonts",
-            home + "/.fonts",
-#endif  // __APPLE__
-    };
-
-#ifdef __APPLE__
-    std::vector<std::string> font_ext = {".ttf", ".ttc", ".otf"};
-    for (auto &font_path : system_font_paths) {
-        for (auto &ext : font_ext) {
-            std::string candidate = font_path + "/" + font + ext;
-            if (FileExists(candidate)) {
-                return candidate;
-            }
-        }
-    }
-    return "";
-#else
-    std::string font_ttf = font + ".ttf";
-    std::string font_ttc = font + ".ttc";
-    std::string font_otf = font + ".otf";
-    auto is_match = [font, &font_ttf, &font_ttc,
-                     &font_otf](const std::string &path) {
-        auto filename = GetFileNameWithoutDirectory(path);
-        auto ext = GetFileExtensionInLowerCase(filename);
-        if (ext != "ttf" && ext != "ttc" && ext != "otf") {
-            return false;
-        }
-        if (filename == font_ttf || filename == font_ttc ||
-            filename == font_otf) {
-            return true;
-        }
-        if (filename.find(font) == 0) {
-            return true;
-        }
-        return false;
-    };
-
-    for (auto &font_dir : system_font_paths) {
-        auto matches = FindFilesRecursively(font_dir, is_match);
-        for (auto &m : matches) {
-            if (GetFileNameWithoutExtension(GetFileNameWithoutDirectory(m)) ==
-                font) {
-                return m;
-            }
-        }
-        std::vector<std::string> suffixes = {
-                "-Regular.ttf", "-Regular.ttc", "-Regular.otf", "-Normal.ttf",
-                "-Normal.ttc",  "-Normal.otf",  "-Medium.ttf",  "-Medium.ttc",
-                "-Medium.otf",  "-Narrow.ttf",  "-Narrow.ttc",  "-Narrow.otf",
-                "Regular.ttf",  "-Regular.ttc", "-Regular.otf", "Normal.ttf",
-                "Normal.ttc",   "Normal.otf",   "Medium.ttf",   "Medium.ttc",
-                "Medium.otf",   "Narrow.ttf",   "Narrow.ttc",   "Narrow.otf"};
-        for (auto &m : matches) {
-            auto dir = GetFileParentDirectory(m);  // has trailing slash
-            for (auto &suf : suffixes) {
-                std::string candidate = dir + font + suf;
-                if (m == candidate) {
-                    return candidate;
-                }
-            }
-        }
-    }
-    return "";
-#endif  // __APPLE__
 }
 
 }  // namespace
@@ -293,9 +210,12 @@ Application::Application() : impl_(new Application::Impl()) {
 
     // Note that any values here need to be scaled by the scale factor in Window
     impl_->theme_.font_path =
-            "Roboto-Medium.ttf";   // full path will be added in Initialize()
-    impl_->theme_.font_size = 16;  // 1 em (font size is em in digital type)
-    impl_->theme_.default_margin = 8;          // 0.5 * em
+            "Roboto-Medium.ttf";  // full path will be added in Initialize()
+    impl_->theme_.font_bold_path = "Roboto-Bold.ttf";
+    impl_->theme_.font_italic_path = "Roboto-MediumItalic.ttf";
+    impl_->theme_.font_bold_italic_path = "Roboto-BoldItalic.ttf";
+    impl_->theme_.font_size = 16;      // 1 em (font size is em in digital type)
+    impl_->theme_.default_margin = 8;  // 0.5 * em
     impl_->theme_.default_layout_spacing = 6;  // 0.333 * em
 
     impl_->theme_.background_color = Color(0.175f, 0.175f, 0.175f);
@@ -316,7 +236,15 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.checkbox_background_hover_off_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.checkbox_background_hover_on_color =
             highlight_color.Lightened(0.15f);
-    impl_->theme_.checkbox_check_color = Color(1, 1, 1);
+    impl_->theme_.checkbox_check_color = Color(0.9f, 0.9f, 0.9f);
+    impl_->theme_.toggle_background_off_color =
+            impl_->theme_.checkbox_background_off_color;
+    impl_->theme_.toggle_background_on_color = Color(0.666f, 0.666f, 0.666f);
+    impl_->theme_.toggle_background_hover_off_color =
+            impl_->theme_.checkbox_background_hover_off_color;
+    impl_->theme_.toggle_background_hover_on_color =
+            impl_->theme_.toggle_background_on_color.Lightened(0.15f);
+    impl_->theme_.toggle_thumb_color = Color(1, 1, 1);
     impl_->theme_.combobox_background_color = Color(0.4f, 0.4f, 0.4f);
     impl_->theme_.combobox_hover_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
@@ -372,6 +300,15 @@ void Application::Initialize(const char *resource_path) {
 
     impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
                               impl_->theme_.font_path;
+    impl_->theme_.font_bold_path = std::string(resource_path) +
+                                   std::string("/") +
+                                   impl_->theme_.font_bold_path;
+    impl_->theme_.font_italic_path = std::string(resource_path) +
+                                     std::string("/") +
+                                     impl_->theme_.font_italic_path;
+    impl_->theme_.font_bold_italic_path = std::string(resource_path) +
+                                          std::string("/") +
+                                          impl_->theme_.font_bold_italic_path;
     impl_->is_initialized_ = true;
 }
 
@@ -403,22 +340,28 @@ void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
 }
 
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {
-    auto font_path = FindFontPath(font);
+    // Find the font path so we can report to the user if there is a problem,
+    // but we need to store the raw value since we may need to get bold and
+    // italic versions as well when we create the font texture atlas later.
+    auto font_path = FindFontPath(font, FontStyle::NORMAL);
     if (font_path.empty()) {
         utility::LogWarning("Could not find font '{}'", font);
         return;
     }
-    impl_->fonts_.push_back({font_path, lang_code, {}});
+    impl_->fonts_.push_back({std::string(font), lang_code, {}});
 }
 
 void Application::SetFontForCodePoints(
         const char *font, const std::vector<uint32_t> &code_points) {
-    auto font_path = FindFontPath(font);
+    // Attempt to find the path so that we can report to the user.
+    // But just store the name because we will need to look up the files
+    // for the different styles when we create the font texture atlas.
+    auto font_path = FindFontPath(font, FontStyle::NORMAL);
     if (font_path.empty()) {
         utility::LogWarning("Could not find font '{}'", font);
         return;
     }
-    impl_->fonts_.push_back({font_path, "", code_points});
+    impl_->fonts_.push_back({std::string(font), "", code_points});
 }
 
 const std::vector<Application::UserFontInfo> &Application::GetUserFontInfo()

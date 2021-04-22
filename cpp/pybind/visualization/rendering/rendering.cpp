@@ -93,11 +93,38 @@ void pybind_rendering_classes(py::module &m) {
     renderer.def("set_clear_color", &Renderer::SetClearColor,
                  "Sets the background color for the renderer, [r, g, b, a]. "
                  "Applies to everything being rendered, so it essentially acts "
-                 "as the background color of the window");
+                 "as the background color of the window")
+            .def("add_texture",
+                 (TextureHandle(Renderer::*)(
+                         const std::shared_ptr<geometry::Image>, bool)) &
+                         Renderer::AddTexture,
+                 "image"_a, "is_sRGB"_a = false,
+                 "Adds a texture: add_texture(geometry.Image, bool). The first "
+                 "parameter is the image, the second parameter is optional and "
+                 "is True if the image is in the sRGB colorspace and False "
+                 "otherwise")
+            .def("update_texture",
+                 (bool (Renderer::*)(TextureHandle,
+                                     const std::shared_ptr<geometry::Image>,
+                                     bool)) &
+                         Renderer::UpdateTexture,
+                 "texture"_a, "image"_a, "is_sRGB"_a = false,
+                 "Updates the contents of the texture to be the new image, or "
+                 "returns False and does nothing if the image is a different "
+                 "size. It is more efficient to call update_texture() rather "
+                 "than removing and adding a new texture, especially when "
+                 "changes happen frequently, such as when implmenting video. "
+                 "add_texture(geometry.Image, bool). The first parameter is "
+                 "the image, the second parameter is optional and is True "
+                 "if the image is in the sRGB colorspace and False otherwise")
+            .def("remove_texture", &Renderer::RemoveTexture,
+                 "Deletes the texture. This does not remove the texture from "
+                 "any existing materials or GUI widgets, and must be done "
+                 "prior to this call.");
 
     // It would be nice to have this inherit from Renderer, but the problem is
     // that Python needs to own this class and Python needs to not own Renderer,
-    // and pybind does not let us mix the two styls of ownership.
+    // and pybind does not let us mix the two styles of ownership.
     py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
             offscreen(m, "OffscreenRenderer",
                       "Renderer instance that can be used for rendering to an "
@@ -188,12 +215,26 @@ void pybind_rendering_classes(py::module &m) {
             .def("get_field_of_view_type", &Camera::GetFieldOfViewType,
                  "Returns the field of view type. Only valid if it was passed "
                  "to set_projection().")
-            .def("get_projection_matrix", &Camera::GetProjectionMatrix,
-                 "Returns the projection matrix of the camera")
-            .def("get_view_matrix", &Camera::GetViewMatrix,
-                 "Returns the view matrix of the camera")
-            .def("get_model_matrix", &Camera::GetModelMatrix,
-                 "Returns the model matrix of the camera");
+            .def(
+                    "get_projection_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        // GetProjectionMatrix() returns Eigen::Transform which
+                        // doesn't have a conversion to a Python object
+                        return cam.GetProjectionMatrix().matrix();
+                    },
+                    "Returns the projection matrix of the camera")
+            .def(
+                    "get_view_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        return cam.GetViewMatrix().matrix();
+                    },
+                    "Returns the view matrix of the camera")
+            .def(
+                    "get_model_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        return cam.GetModelMatrix().matrix();
+                    },
+                    "Returns the model matrix of the camera");
 
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
@@ -262,7 +303,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("absorption_distance",
                            &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width)
+            .def_readwrite("line_width", &Material::line_width,
+                           "Requires 'shader' to be 'unlitLine'")
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -308,6 +350,27 @@ void pybind_rendering_classes(py::module &m) {
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(
             m, "ColorGrading", "Parameters to control color grading options");
+
+    py::enum_<ColorGradingParams::Quality> cgp_quality(
+            color_grading, "Quality",
+            "Quality level of color grading operations");
+    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+            .value("MEDIUM", ColorGradingParams::Quality::kMedium)
+            .value("HIGH", ColorGradingParams::Quality::kHigh)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra);
+
+    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
+            color_grading, "ToneMapping",
+            "Specifies the tone-mapping algorithm");
+    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
+            .value("ACES", ColorGradingParams::ToneMapping::kAces)
+            .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
+            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
+            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
+            .value("DISPLAY_RANGE",
+                   ColorGradingParams::ToneMapping::kDisplayRange);
+
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
                              ColorGradingParams::ToneMapping algorithm) {
@@ -418,7 +481,12 @@ void pybind_rendering_classes(py::module &m) {
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_image");
+                 "Application.render_to_image")
+            .def("render_to_depth_image", &Scene::RenderToDepthImage,
+                 "Renders the scene to a depth image. This can only be used in "
+                 "GUI app. To render without a window, use "
+                 "Application.render_to_depth_image. Pixels range from "
+                 "0.0 (near plane) to 1.0 (far plane)");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);
@@ -503,15 +571,19 @@ void pybind_rendering_classes(py::module &m) {
                     "Sets the view size. This should not be used except for "
                     "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,
-                                   "The low-level rendering scene object")
+                                   "The low-level rendering scene object "
+                                   "(read-only)")
             .def_property_readonly("camera", &Open3DScene::GetCamera,
-                                   "The camera object")
+                                   "The camera object (read-only)")
             .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(
-                    "get_view", &Open3DScene::GetView,
+                    "view", &Open3DScene::GetView,
                     "The low level view associated with the scene")
+            .def_property_readonly("background_color",
+                                   &Open3DScene::GetBackgroundColor,
+                                   "The background color (read-only)")
             .def_property("downsample_threshold",
                           &Open3DScene::GetDownsampleThreshold,
                           &Open3DScene::SetDownsampleThreshold,

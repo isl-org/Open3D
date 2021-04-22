@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,14 +84,16 @@ void ListView::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size ListView::CalcPreferredSize(const Theme &theme) const {
+Size ListView::CalcPreferredSize(const LayoutContext &context,
+                                 const Constraints &constraints) const {
     auto padding = ImGui::GetStyle().FramePadding;
     auto *font = ImGui::GetFont();
     ImVec2 size(0, 0);
 
     for (auto &item : impl_->items_) {
-        auto item_size = font->CalcTextSizeA(
-                float(theme.font_size), Widget::DIM_GROW, 0.0, item.c_str());
+        auto item_size = font->CalcTextSizeA(float(context.theme.font_size),
+                                             float(constraints.width), 0.0,
+                                             item.c_str());
         size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }

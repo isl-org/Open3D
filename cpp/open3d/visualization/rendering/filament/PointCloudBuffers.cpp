@@ -60,7 +60,11 @@ namespace rendering {
 namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::float4 color = {1.0f, 1.0f, 1.0f, 1.f};
+    // Default to mid-gray which provides good separation from the two most
+    // common background colors: white and black. Otherwise, point clouds
+    // without per-vertex colors may appear is if they are not rendering because
+    // they blend with the background.
+    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float2 uv = {0.f, 0.f};
 

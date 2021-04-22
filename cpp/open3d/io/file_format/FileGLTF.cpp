@@ -93,7 +93,7 @@ FileGeometry ReadFileGeometryTypeGLTF(const std::string& path) {
 
 bool ReadTriangleMeshFromGLTF(const std::string& filename,
                               geometry::TriangleMesh& mesh,
-                              bool print_progress) {
+                              const ReadTriangleMeshOptions& params /*={}*/) {
     tinygltf::Model model;
     tinygltf::TinyGLTF loader;
     std::string warn;

@@ -72,10 +72,10 @@ static const std::unordered_map<std::string, std::string>
                  "Standard deviation for the image pixel positions."}};
 
 void pybind_image(py::module &m) {
-    py::class_<Image, PyGeometry<Image>, Geometry> image(
-            m, "Image", py::buffer_protocol(),
-            "The Image class stores image with customizable rols, cols, "
-            "channels, dtype and device.");
+    py::class_<Image, PyGeometry<Image>, std::shared_ptr<Image>, Geometry>
+            image(m, "Image", py::buffer_protocol(),
+                  "The Image class stores image with customizable rols, cols, "
+                  "channels, dtype and device.");
 
     py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
@@ -179,8 +179,10 @@ void pybind_image(py::module &m) {
     image.def("to",
               py::overload_cast<const core::Device &, bool>(&Image::To,
                                                             py::const_),
-              "Transfer the Image to a specified device.", "device"_a,
-              "copy"_a = false);
+              "Transfer the Image to a specified device.  A new image is "
+              "always created if copy is true, else it is avoided when the "
+              "original image is already on the target device.",
+              "device"_a, "copy"_a = false);
     image.def("clone", &Image::Clone,
               "Returns a copy of the Image on the same device.");
     image.def("cpu", &Image::CPU,
@@ -222,11 +224,14 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
     docstring::ClassMethodDocInject(m, "Image", "to_legacy_image");
 
-    py::class_<RGBDImage, PyGeometry<RGBDImage>, Geometry> rgbd_image(
-            m, "RGBDImage",
-            "RGBDImage is a pair of color and depth images. For most "
-            "procesing, the image pair should be aligned (same viewpoint and  "
-            "resolution).");
+    py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
+               Geometry>
+            rgbd_image(
+                    m, "RGBDImage",
+                    "RGBDImage is a pair of color and depth images. For most "
+                    "procesing, the image pair should be aligned (same "
+                    "viewpoint and  "
+                    "resolution).");
     rgbd_image
             // Constructors.
             .def(py::init<>(), "Construct an empty RGBDImage.")
@@ -249,6 +254,22 @@ void pybind_image(py::module &m) {
                  "Compute min 2D coordinates for the data (always {0, 0}).")
             .def("get_max_bound", &RGBDImage::GetMaxBound,
                  "Compute max 2D coordinates for the data.")
+            // Device transfers.
+            .def("to",
+                 py::overload_cast<const core::Device &, bool>(&RGBDImage::To,
+                                                               py::const_),
+                 "Transfer the RGBDImage to a specified device.", "device"_a,
+                 "copy"_a = false)
+            .def("clone", &RGBDImage::Clone,
+                 "Returns a copy of the RGBDImage on the same device.")
+            .def("cpu", &RGBDImage::CPU,
+                 "Transfer the RGBDImage to CPU. If the RGBDImage is "
+                 "already on CPU, no copy will be performed.")
+            .def("cuda", &RGBDImage::CUDA,
+                 "Transfer the RGBDImage to a CUDA device. If the RGBDImage is "
+                 "already on the specified CUDA device, no copy will be "
+                 "performed.",
+                 "device_id"_a = 0)
             // Conversion.
             .def("to_legacy_rgbd_image", &RGBDImage::ToLegacyRGBDImage,
                  "Convert to legacy RGBDImage type.")
