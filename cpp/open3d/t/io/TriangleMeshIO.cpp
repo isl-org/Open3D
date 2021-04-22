@@ -42,7 +42,7 @@ static const std::unordered_map<
                            const ReadTriangleMeshOptions &)>>
         file_extension_to_trianglemesh_read_function{};
 
-static const std::unordered_map< 
+static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
                            const geometry::TriangleMesh &,
@@ -93,7 +93,7 @@ bool ReadTriangleMesh(const std::string &filename,
     bool success = false;
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         open3d::geometry::TriangleMesh legacy_mesh;
-        success = open3d::io::ReadTriangleMesh( filename, legacy_mesh, params);
+        success = open3d::io::ReadTriangleMesh(filename, legacy_mesh, params);
         if (!success) {
             return false;
         }
