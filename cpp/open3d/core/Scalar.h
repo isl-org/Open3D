@@ -67,6 +67,11 @@ public:
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
+
+    // This constructor is required to ensure long input support where int64_t
+    // is not equal to long (e.g. mac os where int64_t is long long).
+    // The template argument with enable_if ensures that this constructor is
+    // enabled only when int64_t is not equal to long.
     template <typename T = int64_t>
     Scalar(long v,
            typename std::enable_if<!std::is_same<T, long>::value>::type* = 0) {
