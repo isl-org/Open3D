@@ -72,20 +72,20 @@ void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
 
-Size TabControl::CalcPreferredSize(const Theme& theme,
+Size TabControl::CalcPreferredSize(const LayoutContext& context,
                                    const Constraints& constraints) const {
     int width = 0, height = 0;
     for (auto& child : GetChildren()) {
-        auto size = child->CalcPreferredSize(theme, constraints);
+        auto size = child->CalcPreferredSize(context, constraints);
         width = std::max(width, size.width);
         height = std::max(height, size.height);
     }
 
-    return Size(width, height + CalcTabHeight(theme) + 2);
+    return Size(width, height + CalcTabHeight(context.theme) + 2);
 }
 
-void TabControl::Layout(const Theme& theme) {
-    auto tabHeight = CalcTabHeight(theme);
+void TabControl::Layout(const LayoutContext& context) {
+    auto tabHeight = CalcTabHeight(context.theme);
     auto frame = GetFrame();
     auto child_rect = Rect(frame.x, frame.y + tabHeight, frame.width,
                            frame.height - tabHeight);
@@ -94,7 +94,7 @@ void TabControl::Layout(const Theme& theme) {
         child->SetFrame(child_rect);
     }
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {

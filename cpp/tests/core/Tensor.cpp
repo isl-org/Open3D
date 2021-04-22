@@ -2085,6 +2085,48 @@ TEST_P(TensorPermuteDevices, Abs) {
     EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
 }
 
+TEST_P(TensorPermuteDevices, IsNan) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isnan(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsNan();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsInf) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isinf(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsInf();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsFinite) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isfinite(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsFinite();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
 TEST_P(TensorPermuteDevices, Floor) {
     core::Device device = GetParam();
 
@@ -2915,6 +2957,15 @@ TEST_P(TensorPermuteDevices, Clip) {
     // device); t_ref = core::Tensor::Init<int64_t>({{2.0, 2.0, 2.0, 2.0, 2.0}},
     // device); t_clip = t.Clip(5.2, 9223372036854775807);
     // EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check with large int64_t value
+    t = core::Tensor::Init<int64_t>(1, device);
+    utility::LogWarning("{}", t.Le(0).ToString());
+    utility::LogWarning("{}", core::TensorKey::IndexTensor(t.Le(0)).ToString());
+    utility::LogWarning("{}", t.ToString());
+    t.SetItem(core::TensorKey::IndexTensor(t.Le(0)),
+              core::Tensor::Full({}, 0, t.GetDtype(), t.GetDevice()));
+    utility::LogWarning("{}", t.ToString());
 }
 
 }  // namespace tests

@@ -1,4 +1,3 @@
-
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -29,13 +28,31 @@
 
 #include "pybind/open3d_pybind.h"
 
+namespace open3d {
+namespace core {
+
 void pybind_core_scalar(py::module& m) {
-    py::class_<Scalar> scalar(m, "Scalar",
-                              "A Scalar stores one of {double, int64, bool}");
+    py::class_<Scalar> scalar(
+            m, "Scalar", "A Scalar can store one of {double, int64, bool}.");
 
     // o3c.Scalar(1).
-    // Default to Int64, CPU:0.
     scalar.def(
-            py::init([](int64_t scalar_value) { return Scalar(scalar_value); }),
-            "scalar_value"_a);
+            py::init([](float scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(
+            py::init([](double scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(py::init(
+            [](int16_t scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(py::init(
+            [](int32_t scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(py::init(
+            [](int64_t scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(py::init(
+            [](uint8_t scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(py::init(
+            [](uint16_t scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(
+            py::init([](bool scalar_value) { return Scalar(scalar_value); }));
 }
+
+}  // namespace core
+}  // namespace open3d

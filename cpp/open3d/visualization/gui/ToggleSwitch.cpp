@@ -60,13 +60,13 @@ void ToggleSwitch::SetOnClicked(std::function<void(bool)> on_clicked) {
     impl_->on_clicked_ = on_clicked;
 }
 
-Size ToggleSwitch::CalcPreferredSize(const Theme& theme,
+Size ToggleSwitch::CalcPreferredSize(const LayoutContext& context,
                                      const Constraints& constraints) const {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding;
-    auto text_size = ImGui::GetFont()->CalcTextSizeA(float(theme.font_size),
-                                                     constraints.width, 10000,
-                                                     impl_->name_.c_str());
+    auto text_size = ImGui::GetFont()->CalcTextSizeA(
+            float(context.theme.font_size), constraints.width, 10000,
+            impl_->name_.c_str());
     int height = int(std::ceil(em + 2.0f * padding.y));
     auto switch_width = CalcSwitchWidth(height);
     return Size(int(switch_width + std::ceil(text_size.x + 2.0f * padding.x)),

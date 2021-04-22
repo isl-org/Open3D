@@ -907,11 +907,38 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
-Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
-    if (dtype_ == core::Dtype::Bool) {
-        utility::LogError("Not implemented for dtype Boolean.");
+// TODO: Implement with kernel.
+Tensor Tensor::IsNan() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
     }
-    // TODO: Implement with kernel.
+}
+
+Tensor Tensor::IsInf() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::IsFinite() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
+        return dst_tensor;
+    } else {
+        return Tensor::Ones(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     kernel::Copy(*this, dst_tensor);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {

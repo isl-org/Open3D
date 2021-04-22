@@ -551,12 +551,21 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
     tensor.def("abs_", &Tensor::Abs_);
+    tensor.def("isnan", &Tensor::IsNan);
+    tensor.def("isinf", &Tensor::IsInf);
+    tensor.def("isfinite", &Tensor::IsFinite);
     tensor.def("floor", &Tensor::Floor);
     tensor.def("ceil", &Tensor::Ceil);
     tensor.def("round", &Tensor::Round);
     tensor.def("trunc", &Tensor::Trunc);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
+    tensor.def(
+            "clip",
+            [](const Tensor& tensor, Scalar min_val, Scalar max_val) {
+                return tensor.Clip(min_val, max_val);
+            },
+            "min_val"_a, "max_val"_a);
 
     // Boolean.
     tensor.def(
