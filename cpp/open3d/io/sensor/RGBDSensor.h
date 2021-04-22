@@ -45,9 +45,9 @@ public:
     virtual ~RGBDSensor(){};
 
     /// Capture one frame, return an RGBDImage.
-    /// If \param enable_align_depth_to_color is true, the depth image will be
+    /// If \p enable_align_depth_to_color is true, the depth image will be
     /// warped to align with the color image; otherwise the raw depth image
-    /// output will be saved. Setting \param enable_align_depth_to_color to
+    /// output will be saved. Setting \p enable_align_depth_to_color to
     /// false is useful when capturing at high resolution with high frame rates.
     virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame(
             bool enable_align_depth_to_color) const = 0;
