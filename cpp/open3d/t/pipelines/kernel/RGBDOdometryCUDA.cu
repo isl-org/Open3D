@@ -43,6 +43,8 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
+#define sign(x) (x < 0 ? -1 : (x > 0 ? 1 : 0))
+
 __global__ void ComputePosePointToPlaneCUDAKernel(
         NDArrayIndexer source_vertex_indexer,
         NDArrayIndexer target_vertex_indexer,
@@ -74,6 +76,10 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
             target_normal_indexer, ti, J, r);
 
     // Dump J, r into JtJ and Jtr
+    const float h = 0.04;
+    float huber_r = abs(r) < h ? 0.5 * r * r : h * abs(r) - 0.5 * h * h;
+    float deriv_r = abs(r) < h ? r : h * sign(r);
+
     int offset = 0;
     for (int i = 0; i < 6; ++i) {
         for (int j = 0; j <= i; ++j) {
@@ -81,9 +87,10 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
+        reduction[offset++] = J[i] * deriv_r;
     }
-    reduction[offset++] = r * r;
+
+    reduction[offset++] = huber_r;
     reduction[offset++] = valid;
 
     ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
