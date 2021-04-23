@@ -73,13 +73,15 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                     float r = 0;
 
                     bool valid = GetJacobianPointToPlane(
-                            workload_idx, source_points_ptr, target_points_ptr, target_normals_ptr,
-                            correspondences_first, correspondences_second, J, r);
+                            workload_idx, source_points_ptr, target_points_ptr,
+                            target_normals_ptr, correspondences_first,
+                            correspondences_second, J, r);
 
-                    if(valid) {
+                    if (valid) {
                         for (int i = 0, j = 0; j < 6; j++) {
                             for (int k = 0; k <= j; k++) {
-                                // ATA_ {1,21}, as ATA {6,6} is a symmetric matrix.
+                                // ATA_ {1,21}, as ATA {6,6} is a symmetric
+                                // matrix.
                                 A_reduction[i] += J[j] * J[k];
                                 i++;
                             }
@@ -103,7 +105,8 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             });
 #endif
 
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32, device);
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
+                                    device);
     core::Tensor residual;
     // Compute linear system on CPU as Float64.
     DecodeAndSolve6x6(A_reduction_tensor, pose, residual);

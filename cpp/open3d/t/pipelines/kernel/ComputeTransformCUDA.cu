@@ -52,20 +52,23 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
     __shared__ float local_sum1[THREAD_1D_UNIT];
     __shared__ float local_sum2[THREAD_1D_UNIT];
 
-    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
-
-    if (tid >= n) return;
+    const int tid = threadIdx.x;
 
     local_sum0[tid] = 0;
     local_sum1[tid] = 0;
     local_sum2[tid] = 0;
 
-    float J[6] = {0}, reduction[21 + 6];
+    const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (workload_idx >= n) return;
+
+    float J[6] = {0}, reduction[21 + 6 + 2];
     float r = 0;
 
-    bool valid = GetJacobianPointToPlane(
-            tid, source_points_ptr, target_points_ptr, target_normals_ptr,
-            correspondences_first, correspondences_second, J, r);
+    bool valid = GetJacobianPointToPlane(workload_idx, source_points_ptr,
+                                         target_points_ptr, target_normals_ptr,
+                                         correspondences_first,
+                                         correspondences_second, J, r);
 
     // Dump J, r into JtJ and Jtr
     int offset = 0;
@@ -80,9 +83,9 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
     reduction[offset++] = r * r;
     reduction[offset++] = valid;
 
-    ReduceSum6x6LinearSystem<float, THREAD_1D_UNIT>(
-            tid, valid, reduction, local_sum0, local_sum1, local_sum2,
-            global_sum);
+    ReduceSum6x6LinearSystem<float, THREAD_1D_UNIT>(tid, valid, reduction,
+                                                    local_sum0, local_sum1,
+                                                    local_sum2, global_sum);
 }
 
 void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
@@ -108,7 +111,7 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
 
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 
-	// TODO (@rishabh), residual will be used for adding robust kernel support.
+    // TODO (@rishabh), residual will be used for adding robust kernel support.
     core::Tensor residual;
     DecodeAndSolve6x6(global_sum, pose, residual);
 }

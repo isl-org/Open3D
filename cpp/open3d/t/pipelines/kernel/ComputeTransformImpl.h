@@ -28,9 +28,9 @@
 
 #pragma once
 
-#include "open3d/core/Tensor.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/CoreUtil.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace t {
