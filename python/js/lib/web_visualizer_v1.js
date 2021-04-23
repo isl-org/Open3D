@@ -142,7 +142,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   // Defines how the widget gets rendered into the DOM
   render: function () {
-    console.log("render");
+    console.log("Entered render() function.");
 
     this.videoElt = document.createElement("video");
     this.videoElt.id = "video_tag";
