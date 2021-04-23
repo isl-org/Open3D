@@ -33,6 +33,84 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
 
 // Custom View. Renders the widget model.
 var WebVisualizerView = widgets.DOMWidgetView.extend({
+  onGetMediaList: function (mediaList) {
+    console.log("!!!!onGetMediaList mediaList: ", mediaList);
+  },
+
+  /**
+   * https://stackoverflow.com/a/52347011/1255535
+   */
+  executePython: function (python_code) {
+    return new Promise((resolve, reject) => {
+      var callbacks = {
+        iopub: {
+          output: (data) => resolve(data.content.text.trim()),
+        },
+      };
+      Jupyter.notebook.kernel.execute(python_code, callbacks);
+    });
+  },
+
+  /**
+   * https://stackoverflow.com/a/736970/1255535
+   * parseUrl(url).hostname
+   * parseUrl(url).entryPoint
+   */
+  parseUrl: function (url) {
+    var l = document.createElement("a");
+    l.href = url;
+    return l;
+  },
+
+  logAndReturn: function (value) {
+    console.log("!!! logAndReturn: ", value);
+    return value;
+  },
+
+  /**
+   * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
+   * interface.
+   */
+  commsCall: function (url, data = {}) {
+    entryPoint = this.parseUrl(url).pathname;
+    queryString = this.parseUrl(url).search;
+    console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
+    console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
+    console.log("WebVisualizerView.commsCall with queryString: ", queryString);
+    console.log(
+      'WebVisualizerView.commsCall with data["body"]: ',
+      data["body"]
+    );
+    var command_prefix =
+      "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_http_request(";
+    // entry_point
+    var command_args = '"' + entryPoint + '"';
+    // query_string
+    if (queryString) {
+      command_args += ', "' + queryString + '"';
+    } else {
+      command_args += ', ""';
+    }
+    // data
+    var dataStr = data["body"];
+    command_args += ", '" + dataStr + "'";
+    var command_suffix = "))";
+    var command = command_prefix + command_args + command_suffix;
+    console.log("commsCall command: " + command);
+    return this.executePython(command)
+      .then((jsonStr) => JSON.parse(jsonStr))
+      .then((val) => this.logAndReturn(val))
+      .then(
+        (jsonObj) =>
+          new Response(
+            new Blob([JSON.stringify(jsonObj)], {
+              type: "application/json",
+            })
+          )
+      )
+      .then((val) => this.logAndReturn(val));
+  },
+
   sleep: function (time_ms) {
     return new Promise((resolve) => setTimeout(resolve, time_ms));
   },
