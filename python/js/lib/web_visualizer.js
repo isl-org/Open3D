@@ -200,10 +200,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     return json_result;
   },
 
-  callPythonWrapper: function (func, args = []) {
-    return callPython(func, args).then((result) => result);
-  },
-
   render: function () {
     console.log("Entered render() function.");
     this.model.set("pyjs_channel", "{}");
