@@ -179,6 +179,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   render: function () {
     console.log("Entered render() function.");
+
+    // Python call registry
+    this.callId = 0;
+    this.callResultMap = {};
     this.new_pyjs_message = false;
 
     this.videoElt = document.createElement("video");
