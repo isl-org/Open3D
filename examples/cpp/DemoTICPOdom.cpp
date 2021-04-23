@@ -20,10 +20,6 @@ float verticalFoV = 25;
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
 const std::string CURRENT_CLOUD = "current_scan";
 
-std::vector<float> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-                                             0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-                                             0.0, 0.0, 0.0, 1.0};
-
 //------------------------------------------------------------------------------
 class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
@@ -55,8 +51,8 @@ public:
 
     void Layout(const gui::LayoutContext& context) override {
         int em = context.theme.font_size;
-        int panel_width = 8 * em;
-        int panel_height = 60;
+        int panel_width = 15 * em;
+        int panel_height = 100;
         // The usable part of the window may not be the full size if there
         // is a menu.
         auto content_rect = GetContentRect();
@@ -105,8 +101,14 @@ public:
         max_visualization_scalar_offset_ =
                 -0.2 * max_visualization_scalar_;
 
-        transformation_ =
-                core::Tensor(initial_transform_flat, {4, 4}, dtype_, device_);
+        mat_ = rendering::Material();
+        mat_.shader = "defaultUnlit";
+        mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+        mat_.point_size = 5.0f;
+
+        pointcloud_mat_ = GetPointCloudMaterial();
+
+        transformation_ = core::Tensor::Eye(4, dtype_, device_);
 
         SetOnClose([this]() {
             is_done_ = true;
@@ -124,17 +126,6 @@ private:
         core::Tensor initial_transform = core::Tensor::Eye(4, dtype_, device_);
         core::Tensor cumulative_transform = initial_transform.Clone();
 
-        // geometry::AxisAlignedBoundingBox bounds;
-        mat_ = rendering::Material();
-
-        // mat.shader = "unlitSolidColor";
-
-        mat_.shader = "defaultUnlit";
-        mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-        // mat.point_size = 5.0f;
-
-        pointcloud_mat_ = GetPointCloudMaterial();
-
         if (visualize_output_) {
             {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
@@ -148,8 +139,13 @@ private:
                 this->widget3d_->GetScene()->AddGeometry(
                         filenames_[0], &pcd_current_, pointcloud_mat_);
 
+                int max_points = 15000;
+                t::geometry::PointCloud pcd_placeholder(
+                        core::Tensor({max_points, 3}, core::Dtype::Float32,
+                                        core::Device("CPU:0")));
+
                 this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                        CURRENT_CLOUD, pcd_current_, mat_);
+                        CURRENT_CLOUD, pcd_placeholder, mat_);
 
                 auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
                 auto center = bbox.GetCenter().cast<float>();
@@ -171,6 +167,7 @@ private:
 
         // Global variable for storing total runtime till i-th iteration.
         double total_time_i = 0;
+        int64_t total_points_in_frame = 0;
 
         for (int i = 0; i < end_range_ - 1; i++) {
             utility::Timer time_total;
@@ -192,13 +189,16 @@ private:
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     pcd_current_ = target.Transform(cumulative_transform).CPU();
+                    total_points_in_frame += pcd_current_.GetPoints().GetLength();
                     // pcd_current_.DeletePointAttr("normals");
                 }
 
                 if (i != 0) {
                     out << std::setprecision(4)
                         << 1000.0 * (i - 1) / total_time_i << " FPS "
-                        << std::endl;
+                        << std::endl << std::endl
+                        << "Total Points: "
+                        << total_points_in_frame;
                 }
 
                 gui::Application::GetInstance().PostToMainThread(
@@ -367,10 +367,18 @@ private:
 
     // To perform required dtype conversion, normal estimation.
     std::vector<t::geometry::PointCloud> LoadTensorPointClouds() {
-        for (int i = 0; i < end_range_; i++) {
-            filenames_.push_back(path_dataset + std::to_string(i) +
-                                 std::string(".pcd"));
+
+        utility::filesystem::ListFilesInDirectoryWithExtension(path_dataset, "pcd",
+                                                               filenames_);
+        if (filenames_.size() == 0) {
+            utility::filesystem::ListFilesInDirectoryWithExtension(
+                    path_dataset, "ply", filenames_);
         }
+
+        std::sort(filenames_.begin(), filenames_.end());
+
+        filenames_.resize(end_range_);
+        utility::LogInfo(" Number of frames: {}", filenames_.size());
 
         std::vector<t::geometry::PointCloud> pointclouds_device(
                 filenames_.size(), t::geometry::PointCloud(device_));
@@ -379,8 +387,8 @@ private:
             int i = 0;
             t::geometry::PointCloud pointcloud_local;
             for (auto& path : filenames_) {
-                std::cout << " \rLOADING DATA... " << i * 100 / end_range_
-                          << "%" << std::flush;
+                std::cout << " \rPre-fetching Data... " << i * 100 / end_range_
+                          << "%" << " " << std::flush;
 
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
@@ -417,10 +425,8 @@ private:
                     pointcloud_local.SetPointNormals(pointcloud_normals);
                 }
                 // Adding it to our vector of pointclouds.
-                auto pointcloud_downsampled =
-                        pointcloud_local.To(device_).VoxelDownSample(
-                                voxel_sizes_[icp_scale_levels_ - 1]);
-                pointclouds_device[i++] = pointcloud_downsampled;
+
+                pointclouds_device[i++] = pointcloud_local.To(device_).VoxelDownSample(voxel_sizes_[icp_scale_levels_ - 1]);
 
                 // When reading the dataset inside compute loop (avoiding data
                 // pre-fetching, either set this manually, or define it w.r.t.
@@ -428,26 +434,24 @@ private:
                 min_visualization_scalar_ = std::min(
                         min_visualization_scalar_,
                         static_cast<double>(
-                                pointcloud_downsampled
+                                pointclouds_device[i - 1]
                                         .GetPointAttr("__visualization_scalar")
                                         .Min({0})
                                         .Item<float>()));
                 max_visualization_scalar_ = std::max(
                         max_visualization_scalar_,
                         static_cast<double>(
-                                pointcloud_downsampled
+                                pointclouds_device[i - 1]
                                         .GetPointAttr("__visualization_scalar")
                                         .Max({0})
                                         .Item<float>()));
                 total_approximate_points_in_dataset_ +=
-                        pointcloud_downsampled.GetPoints().GetLength();
-
-            utility::LogInfo(" min_val: {}, max_val: {}, total_points: {}",
-                            min_visualization_scalar_,
-                            max_visualization_scalar_,
-                            total_approximate_points_in_dataset_);            
-            
+                        pointclouds_device[i - 1].GetPoints().GetLength();           
             }
+            utility::LogInfo(" min_val: {}, max_val: {}, total_points: {}",
+                min_visualization_scalar_,
+                max_visualization_scalar_,
+                total_approximate_points_in_dataset_); 
 
             std::cout << std::endl;
         } catch (...) {
