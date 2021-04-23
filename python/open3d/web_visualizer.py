@@ -92,6 +92,9 @@ class WebVisualizer(widgets.DOMWidget):
 
     @observe('jspy_channel')
     def on_jspy_message(self, change):
+        if not hasattr(self, "result_map"):
+            self.result_map = dict()
+
         jspy_message = change["new"]
         print(f"js->py message received: {jspy_message}")
         try:
