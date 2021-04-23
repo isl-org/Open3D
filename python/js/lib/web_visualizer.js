@@ -116,7 +116,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var supportedAPI = [
       "/api/getMediaList",
       "/api/getIceServers",
-      // "/api/hangup",
+      "/api/hangup",
       // "/api/call",
       // "/api/getIceCandidate",
       // "/api/addIceCandidate",
