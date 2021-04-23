@@ -167,6 +167,25 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     ]).then((result) => {
       console.log("callPython.then()", result);
     });
+
+    // TODO: remove this after switching to purely comms-based communication.
+    var http_server =
+      location.protocol + "//" + window.location.hostname + ":" + 8888;
+
+    // TODO: remove this since the media name should be given by Python
+    // directly. This is only used for developing the pipe.
+    WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
+      .then((response) => response.json())
+      .then((jsonObj) => this.onGetMediaList(jsonObj));
+
+    // Create WebRTC stream
+    this.webRtcClient = new WebRtcStreamer(
+      this.videoElt,
+      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      /*useComms(when supported)=*/ true,
+      /*webVisualizer=*/ this
+    );
+    this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
   on_pyjs_message: function () {
