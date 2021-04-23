@@ -66,7 +66,17 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   render: function () {
+    console.log("Entered render() function.");
     this.new_pyjs_message = false;
+
+    this.videoElt = document.createElement("video");
+    this.videoElt.id = "video_tag";
+    this.videoElt.muted = true;
+    this.videoElt.controls = false;
+    this.videoElt.playsinline = true;
+
+    // The `el` property is the DOM element associated with the view
+    this.el.appendChild(this.videoElt);
 
     // Listen for py->js message.
     this.model.on("change:pyjs_channel", this.on_pyjs_message, this);
