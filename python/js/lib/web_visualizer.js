@@ -71,7 +71,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
    * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
    * interface.
    */
-  commsCall: function (url, data = {}) {
+  commsCallLegacy: function (url, data = {}) {
     entryPoint = this.parseUrl(url).pathname;
     queryString = this.parseUrl(url).search;
     console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
@@ -111,6 +111,40 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((val) => this.logAndReturn(val));
   },
 
+  commsCall: function (url, data = {}) {
+    var entryPoint = this.parseUrl(url).pathname;
+    var queryString = this.parseUrl(url).search;
+    if (!queryString) {
+      queryString = "";
+    }
+    var dataStr = data["body"];
+    if (!queryString) {
+      dataStr = "";
+    }
+
+    console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
+    console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
+    console.log("WebVisualizerView.commsCall with queryString: ", queryString);
+    console.log('WebVisualizerView.commsCall with data["body"]: ', dataStr);
+
+    return this.callPython("call_http_request", [
+      entryPoint,
+      queryString,
+      dataStr,
+    ])
+      .then((jsonStr) => JSON.parse(jsonStr))
+      .then((val) => this.logAndReturn(val))
+      .then(
+        (jsonObj) =>
+          new Response(
+            new Blob([JSON.stringify(jsonObj)], {
+              type: "application/json",
+            })
+          )
+      )
+      .then((val) => this.logAndReturn(val));
+  },
+
   sleep: function (time_ms) {
     return new Promise((resolve) => setTimeout(resolve, time_ms));
   },
@@ -131,7 +165,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var count = 0;
     while (!this.new_pyjs_message) {
       console.log("callPython await:", count++);
-      await this.sleep(10);
+      await this.sleep(100);
     }
     console.log("callPython await done");
     this.new_pyjs_message = false;
@@ -160,13 +194,13 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.model.on("change:pyjs_channel", this.on_pyjs_message, this);
 
     // Send js->py message for testing.
-    this.callPython("call_http_request", [
-      "my_entry_point",
-      "my_query_string",
-      "my_data",
-    ]).then((result) => {
-      console.log("callPython.then()", result);
-    });
+    // this.callPython("call_http_request", [
+    //   "my_entry_point",
+    //   "my_query_string",
+    //   "my_data",
+    // ]).then((result) => {
+    //   console.log("callPython.then()", result);
+    // });
 
     // TODO: remove this after switching to purely comms-based communication.
     var http_server =
@@ -178,14 +212,14 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((response) => response.json())
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
-    // Create WebRTC stream
-    this.webRtcClient = new WebRtcStreamer(
-      this.videoElt,
-      location.protocol + "//" + window.location.hostname + ":" + 8888,
-      /*useComms(when supported)=*/ true,
-      /*webVisualizer=*/ this
-    );
-    this.webRtcClient.connect(this.model.get("window_uid"));
+    // // Create WebRTC stream
+    // this.webRtcClient = new WebRtcStreamer(
+    //   this.videoElt,
+    //   location.protocol + "//" + window.location.hostname + ":" + 8888,
+    //   /*useComms(when supported)=*/ true,
+    //   /*webVisualizer=*/ this
+    // );
+    // this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
   on_pyjs_message: function () {

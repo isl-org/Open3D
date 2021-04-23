@@ -2,6 +2,7 @@ import ipywidgets as widgets
 from traitlets import validate, observe, Unicode, TraitError
 from IPython.display import display
 import json
+import open3d as o3d
 
 
 @widgets.register
@@ -45,9 +46,14 @@ class WebVisualizer(widgets.DOMWidget):
     def pyjs_send(self, message):
         self.pyjs_channel = message
 
-    # TODO: Forward call to WebRTC server's call_http_request.
     def call_http_request(self, entry_point, query_string, data):
-        return f"Called Http Request: {entry_point}, {query_string}, {data}!"
+        webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
+        result = webrtc_server.call_http_request(entry_point, query_string,
+                                                 data)
+        print(
+            f"call_http_request({entry_point}, {query_string}, {query_string})"
+            f"->{result}")
+        return result
 
     @validate('window_uid')
     def _valid_window_uid(self, proposal):
