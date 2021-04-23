@@ -67,8 +67,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   render: function () {
     this.new_pyjs_message = false;
-    this.email_input = document.createElement("p");
-    this.el.appendChild(this.email_input);
 
     // Listen for py->js message.
     this.model.on("change:pyjs_channel", this.on_pyjs_message, this);
@@ -85,8 +83,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   on_pyjs_message: function () {
     var message = this.model.get("pyjs_channel");
-    message = "pyjs_message received: " + message;
-    this.email_input.innerText = this.email_input.innerText + "\n" + message;
+    console.log("pyjs_message received: " + message);
     this.new_pyjs_message = true;
   },
 });
