@@ -29,7 +29,7 @@ CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
 TENSORFLOW_VER="2.4.1"
 TORCH_CUDA_GLNX_VER="1.7.1+cu110"
-PYTHON_VER=$(python -c "import sys; ver=f'{sys.version_info.major}{sys.version_info.minor}'; print(f'cp{ver}-cp{ver}{sys.abiflags}')")
+PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")')
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
@@ -66,9 +66,7 @@ install_cuda_toolkit() {
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
     fi
-    $SUDO apt-get install --yes --no-install-recommends \
-        "cuda-toolkit-${CUDA_VERSION[0]}" \
-        libcublas-dev
+    $SUDO apt-get install --yes --no-install-recommends "cuda-toolkit-${CUDA_VERSION[0]}"
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
         echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
         dpkg -L libcublas10 libcublas-dev | while read -r cufile; do
