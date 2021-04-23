@@ -212,14 +212,14 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((response) => response.json())
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
-    // // Create WebRTC stream
-    // this.webRtcClient = new WebRtcStreamer(
-    //   this.videoElt,
-    //   location.protocol + "//" + window.location.hostname + ":" + 8888,
-    //   /*useComms(when supported)=*/ true,
-    //   /*webVisualizer=*/ this
-    // );
-    // this.webRtcClient.connect(this.model.get("window_uid"));
+    // Create WebRTC stream
+    this.webRtcClient = new WebRtcStreamer(
+      this.videoElt,
+      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      /*useComms(when supported)=*/ true,
+      /*webVisualizer=*/ this
+    );
+    this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
   on_pyjs_message: function () {
