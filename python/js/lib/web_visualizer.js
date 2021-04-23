@@ -186,12 +186,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     };
     this.jspy_send(JSON.stringify(message));
     var count = 0;
-    while (!(callId in this.callResultMap)) {
+    while (!this.callResultReady(callId)) {
       console.log("callPython await, id: " + callId + ", count: " + count++);
       await this.sleep(100);
     }
-    var json_result = this.callResultMap[callId];
-    delete this.callResultMap[callId];
+    var json_result = this.extractCallResult(callId);
     console.log(
       "callPython await done, id:",
       callId,
@@ -207,11 +206,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   render: function () {
     console.log("Entered render() function.");
+    this.model.set("pyjs_channel", "{}");
+    this.touch();
 
     // Python call registry
     this.callId = 0;
-    this.callResultMap = {};
-    this.new_pyjs_message = false;
 
     this.videoElt = document.createElement("video");
     this.videoElt.id = "video_tag";
@@ -223,7 +222,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.el.appendChild(this.videoElt);
 
     // Listen for py->js message.
-    this.model.on("change:pyjs_channel", this.on_pyjs_message, this);
+    // this.model.on("change:pyjs_channel", this.on_pyjs_message, this);
 
     // Send js->py message for testing.
     // this.callPython("call_http_request", [
@@ -254,15 +253,30 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
-  on_pyjs_message: function () {
-    var message = this.model.get("pyjs_channel");
-    console.log("pyjs_message received: " + message);
-
-    var result_obj = JSON.parse(message);
-    var call_id = result_obj["call_id"];
-    var json_result = result_obj["json_result"];
-    this.callResultMap[call_id] = json_result;
+  callResultReady: function (callId) {
+    var pyjs_channel = this.model.get("pyjs_channel");
+    console.log("Current pyjs_channel:", pyjs_channel);
+    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
+    return callId in callResultMap;
   },
+
+  extractCallResult: function (callId) {
+    if (!this.callResultReady(callId)) {
+      throw "extractCallResult not ready yet.";
+    }
+    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
+    return callResultMap[callId];
+  },
+
+  // on_pyjs_message: function () {
+  //   var message = this.model.get("pyjs_channel");
+  //   console.log("pyjs_message received: " + message);
+
+  //   var result_obj = JSON.parse(message);
+  //   var call_id = result_obj["call_id"];
+  //   var json_result = result_obj["json_result"];
+  //   this.callResultMap[call_id] = json_result;
+  // },
 });
 
 module.exports = {

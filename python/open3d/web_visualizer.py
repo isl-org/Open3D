@@ -44,7 +44,36 @@ class WebVisualizer(widgets.DOMWidget):
         display(self)
 
     def pyjs_send(self, message):
-        self.pyjs_channel = message
+        # message = json.dumps({
+        #   "call_id"    : "my_id_00",
+        #   "json_result": "my_result_00"
+        # })
+        #
+        # self.pyjs_channel = json.dumps({
+        #   "my_id_00": "my_result_00",
+        #   "my_id_01": "my_result_01",
+        #   "my_id_02": "my_result_02"
+        # })
+        #
+        # pyjs_send() never clears self.pyjs_channel, instead, it adds a dict
+        # entry to self.pyjs_channel.
+        #
+        # self.pyjs_channel is cleared at javascript's render() call.
+
+        # Parse input
+        message_dict = json.loads(message)
+        if "call_id" not in message_dict:
+            raise ValueError(f"pyjs_send call_id not in message: {message}")
+        call_id = message_dict["call_id"]
+        if "json_result" not in message_dict:
+            raise ValueError(f"json_result call_id not in message: {message}")
+        json_result = message_dict["json_result"]
+
+        # Insert new entry to channel_dict
+        channel_dict = json.loads(self.pyjs_channel)
+        channel_dict[call_id] = json_result
+
+        self.pyjs_channel = json.dumps(channel_dict)
 
     def call_http_request(self, entry_point, query_string, data):
         webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
@@ -87,4 +116,6 @@ class WebVisualizer(widgets.DOMWidget):
             print(f"py->js sending: {result}")
             self.pyjs_send(result)
         except:
-            print(f"jspy message is not a valid function call: {jspy_message}")
+            print(
+                f"js->py message is not a function call, ignored: {jspy_message}"
+            )
