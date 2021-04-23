@@ -113,12 +113,12 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
   commsCall: function (url, data = {}) {
     var supportedAPI = [
-      "/api/getMediaList",
-      "/api/getIceServers",
-      "/api/hangup",
+      "/api/getMediaList", // Works
+      "/api/getIceServers", // Works
+      "/api/hangup", // Works
       // "/api/call",
       // "/api/getIceCandidate",
-      // "/api/addIceCandidate",
+      "/api/addIceCandidate",
     ];
     if (supportedAPI.indexOf(entryPoint) >= 0) {
       var entryPoint = this.parseUrl(url).pathname;
