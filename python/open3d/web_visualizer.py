@@ -92,33 +92,41 @@ class WebVisualizer(widgets.DOMWidget):
 
     @observe('jspy_channel')
     def on_jspy_message(self, change):
+
+        # self.result_map = {"0": "result0", "1": "result1"};
         if not hasattr(self, "result_map"):
             self.result_map = dict()
 
         jspy_message = change["new"]
         print(f"js->py message received: {jspy_message}")
+        new_call = False
         try:
-            # Hard-coded to call call_http_request.
-            jspy_request = json.loads(jspy_message)
-            if "func" not in jspy_request or jspy_request[
-                    "func"] != "call_http_request":
-                raise ValueError(f"Invalid jspy function: {jspy_message}")
-            if "args" not in jspy_request or len(jspy_request["args"]) != 3:
-                raise ValueError(
-                    f"Invalid jspy function arguments: {jspy_message}")
-            if "call_id" not in jspy_request:
-                raise ValueError(
-                    f"Invalid jspy function arguments: {jspy_message}")
-            json_result = self.call_http_request(jspy_request["args"][0],
-                                                 jspy_request["args"][1],
-                                                 jspy_request["args"][2])
-            result = json.dumps({
-                "json_result": json_result,
-                "call_id": jspy_request["call_id"]
-            })
-            print(f"py->js sending: {result}")
-            self.pyjs_send(result)
+            jspy_requests = json.loads(jspy_message)
+            print(f"!!! jspy_message: {jspy_message}")
+            print(f"!!! jspy_requests: {jspy_requests}")
+            print(f"!!! type(jspy_requests): {type(jspy_requests)}")
+
+            for call_id, payload in jspy_requests.items():
+                print(f"!!! ONE call_id: {payload}")
+                print(f"!!! ONE payload: {payload}")
+                if "func" not in payload or payload[
+                        "func"] != "call_http_request":
+                    raise ValueError(f"Invalid jspy function: {jspy_requests}")
+                if "args" not in payload or len(payload["args"]) != 3:
+                    raise ValueError(
+                        f"Invalid jspy function arguments: {jspy_requests}")
+
+                # Check if already in result
+                if not call_id in self.result_map:
+                    json_result = self.call_http_request(
+                        payload["args"][0], payload["args"][1],
+                        payload["args"][2])
+                    self.result_map[call_id] = json_result
+                    new_call = True
         except:
             print(
                 f"js->py message is not a function call, ignored: {jspy_message}"
             )
+        else:
+            print(f"py->js sending: {self.result_map}")
+            self.pyjs_channel = json.dumps(self.result_map)

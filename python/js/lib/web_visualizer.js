@@ -116,10 +116,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var supportedAPI = [
       "/api/getMediaList",
       "/api/getIceServers",
-      // "/api/hangup",
-      // "/api/call",
-      // "/api/getIceCandidate",
-      // "/api/addIceCandidate",
+      "/api/hangup",
+      "/api/call",
+      "/api/getIceCandidate",
+      "/api/addIceCandidate",
     ];
     if (supportedAPI.indexOf(entryPoint) >= 0) {
       var queryString = this.parseUrl(url).search;
@@ -184,7 +184,14 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       args: args,
       call_id: callId,
     };
-    this.jspy_send(JSON.stringify(message));
+
+    // Append message to current jspy_channel
+    var jspyChannel = this.model.get("jspy_channel");
+    var jspyChannelObj = JSON.parse(jspyChannel);
+    jspyChannelObj[callId] = message;
+    jspyChannel = JSON.stringify(jspyChannelObj);
+    this.jspy_send(jspyChannel);
+
     var count = 0;
     while (!this.callResultReady(callId)) {
       console.log("callPython await, id: " + callId + ", count: " + count++);
@@ -203,6 +210,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   render: function () {
     console.log("Entered render() function.");
     this.model.set("pyjs_channel", "{}");
+    this.model.set("jspy_channel", "{}");
     this.touch();
 
     // Python call registry
@@ -239,14 +247,14 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((response) => response.json())
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
-    // // Create WebRTC stream
-    // this.webRtcClient = new WebRtcStreamer(
-    //   this.videoElt,
-    //   location.protocol + "//" + window.location.hostname + ":" + 8888,
-    //   /*useComms(when supported)=*/ true,
-    //   /*webVisualizer=*/ this
-    // );
-    // this.webRtcClient.connect(this.model.get("window_uid"));
+    // Create WebRTC stream
+    this.webRtcClient = new WebRtcStreamer(
+      this.videoElt,
+      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      /*useComms(when supported)=*/ true,
+      /*webVisualizer=*/ this
+    );
+    this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
   callResultReady: function (callId) {
