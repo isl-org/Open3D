@@ -58,7 +58,7 @@ class WebVisualizer(widgets.DOMWidget):
     @observe('jspy_channel')
     def on_jspy_message(self, change):
         jspy_message = change["new"]
-        print(f"jspy message: {jspy_message}")
+        print(f"js->py message received: {jspy_message}")
         try:
             # Hard-coded to call call_http_request.
             jspy_request = json.loads(jspy_message)
@@ -71,6 +71,7 @@ class WebVisualizer(widgets.DOMWidget):
             result = self.call_http_request(jspy_request["args"][0],
                                             jspy_request["args"][1],
                                             jspy_request["args"][2])
+            print(f"py->js sending: {result}")
             self.pyjs_send(result)
         except:
             print(f"jspy message is not a valid function call: {jspy_message}")
