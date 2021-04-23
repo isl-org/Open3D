@@ -157,7 +157,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   // args must be all strings.
   // TODO: kwargs and sanity check
   callPython: async function (func, args = []) {
-    var callIdStr = str(this.callId), // Everything is string for convenience.
+    var callIdStr = str(this.callId); // Everything is string for convenience.
     this.callId++;
     var message = {
       func: func,
