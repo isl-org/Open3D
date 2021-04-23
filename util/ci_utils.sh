@@ -29,7 +29,7 @@ CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
 TENSORFLOW_VER="2.4.1"
 TORCH_CUDA_GLNX_VER="1.7.1+cu110"
-PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")')
+PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
