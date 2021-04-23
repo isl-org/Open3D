@@ -47,7 +47,6 @@ static const std::unordered_map<
         file_extension_to_pointcloud_read_function{
                 {"xyzi", ReadPointCloudFromXYZI},
                 {"ply", ReadPointCloudFromPLY},
-                {"pts", ReadPointCloudFromPTS},
         };
 
 static const std::unordered_map<
@@ -58,7 +57,6 @@ static const std::unordered_map<
         file_extension_to_pointcloud_write_function{
                 {"xyzi", WritePointCloudToXYZI},
                 {"ply", WritePointCloudToPLY},
-                {"pts", WritePointCloudToPTS},
         };
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
@@ -138,13 +136,8 @@ bool WritePointCloud(const std::string &filename,
     }
 
     bool success = map_itr->second(filename, pointcloud, params);
-
-    if (!pointcloud.IsEmpty()) {
-        utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetLength());
-    } else {
-        utility::LogDebug("Write geometry::PointCloud: 0 vertices.");
-    }
+    utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
+                      (int)pointcloud.GetPoints().GetLength());
     return success;
 }
 

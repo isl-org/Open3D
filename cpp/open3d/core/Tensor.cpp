@@ -907,7 +907,6 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
-// TODO: Implement with kernel.
 Tensor Tensor::IsNan() const {
     if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
         Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
@@ -938,6 +937,7 @@ Tensor Tensor::IsFinite() const {
     }
 }
 
+// TODO: Implement with kernel.
 Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     kernel::Copy(*this, dst_tensor);
@@ -953,8 +953,16 @@ Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
     return dst_tensor;
 }
 
-Tensor Tensor::Clip_(double min_val, double max_val) {
-    utility::LogError("Not Implemented!");
+Tensor Tensor::Clip_(Scalar min_val, Scalar max_val) {
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
+        scalar_t min = min_val.To<scalar_t>();
+        this->SetItem(TensorKey::IndexTensor(this->Le(min)),
+                      Full({}, min, dtype_, GetDevice()));
+
+        scalar_t max = max_val.To<scalar_t>();
+        this->SetItem(TensorKey::IndexTensor(this->Ge(max)),
+                      Full({}, max, dtype_, GetDevice()));
+    });
     return *this;
 }
 

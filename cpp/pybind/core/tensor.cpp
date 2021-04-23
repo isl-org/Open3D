@@ -566,6 +566,12 @@ void pybind_core_tensor(py::module& m) {
                 return tensor.Clip(min_val, max_val);
             },
             "min_val"_a, "max_val"_a);
+    tensor.def(
+            "clip_",
+            [](Tensor& tensor, Scalar min_val, Scalar max_val) {
+                return tensor.Clip_(min_val, max_val);
+            },
+            "min_val"_a, "max_val"_a);
 
     // Boolean.
     tensor.def(
