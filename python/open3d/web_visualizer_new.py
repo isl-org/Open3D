@@ -44,6 +44,19 @@ class WebVisualizer(widgets.DOMWidget):
         display(self)
 
     def pyjs_send(self, message):
+        # message = json.dumps({
+        #   "call_id"    : "my_id_00",
+        #   "json_result": "my_result_00"
+        # })
+        #
+        # self.pyjs_channel = json.dumps({
+        #   "my_id_00": "my_result_00",
+        #   "my_id_01": "my_result_01",
+        #   "my_id_02": "my_result_02"
+        # })
+        #
+        # pyjs_send() never clears self.pyjs_channel, instead, it adds a dict
+        # entry to self.pyjs_channel.
         self.pyjs_channel = message
 
     def call_http_request(self, entry_point, query_string, data):
