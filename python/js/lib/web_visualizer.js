@@ -116,10 +116,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var supportedAPI = [
       "/api/getMediaList",
       "/api/getIceServers",
-      "/api/hangup",
-      "/api/call",
-      "/api/getIceCandidate",
-      "/api/addIceCandidate",
+      // "/api/hangup",
+      // "/api/call",
+      // "/api/getIceCandidate",
+      // "/api/addIceCandidate",
     ];
     if (supportedAPI.indexOf(entryPoint) >= 0) {
       var queryString = this.parseUrl(url).search;
