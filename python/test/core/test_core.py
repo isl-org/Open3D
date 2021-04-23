@@ -1033,6 +1033,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, True]))
 
     # clip
+    dtype = o3d.core.Dtype.Int64
     a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
     np.testing.assert_equal(a.clip(0, 1).cpu().numpy(), np.array([1, 0, 1]))
     np.testing.assert_equal(a.clip(0.5, 1.2).cpu().numpy(), np.array([1, 0, 1]))
