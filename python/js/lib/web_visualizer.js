@@ -112,37 +112,57 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   commsCall: function (url, data = {}) {
-    var entryPoint = this.parseUrl(url).pathname;
-    var queryString = this.parseUrl(url).search;
-    if (!queryString) {
-      queryString = "";
-    }
-    var dataStr = data["body"];
-    if (!queryString) {
-      dataStr = "";
-    }
+    var supportedAPI = [
+      "/api/getMediaList",
+      // "/api/getIceServers",
+      // "/api/hangup",
+      // "/api/call",
+      // "/api/getIceCandidate",
+      // "/api/addIceCandidate",
+    ];
+    if (supportedAPI.indexOf(entryPoint) >= 0) {
+      var entryPoint = this.parseUrl(url).pathname;
+      var queryString = this.parseUrl(url).search;
+      if (!queryString) {
+        queryString = "";
+      }
+      var dataStr = data["body"];
+      if (!queryString) {
+        dataStr = "";
+      }
 
-    console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
-    console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
-    console.log("WebVisualizerView.commsCall with queryString: ", queryString);
-    console.log('WebVisualizerView.commsCall with data["body"]: ', dataStr);
+      console.log(
+        "WebVisualizerView.commsCall with url: ",
+        url,
+        " data: ",
+        data
+      );
+      console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
+      console.log(
+        "WebVisualizerView.commsCall with queryString: ",
+        queryString
+      );
+      console.log('WebVisualizerView.commsCall with data["body"]: ', dataStr);
 
-    return this.callPython("call_http_request", [
-      entryPoint,
-      queryString,
-      dataStr,
-    ])
-      .then((jsonStr) => JSON.parse(jsonStr))
-      .then((val) => this.logAndReturn(val))
-      .then(
-        (jsonObj) =>
-          new Response(
-            new Blob([JSON.stringify(jsonObj)], {
-              type: "application/json",
-            })
-          )
-      )
-      .then((val) => this.logAndReturn(val));
+      return this.callPython("call_http_request", [
+        entryPoint,
+        queryString,
+        dataStr,
+      ])
+        .then((jsonStr) => JSON.parse(jsonStr))
+        .then((val) => this.logAndReturn(val))
+        .then(
+          (jsonObj) =>
+            new Response(
+              new Blob([JSON.stringify(jsonObj)], {
+                type: "application/json",
+              })
+            )
+        )
+        .then((val) => this.logAndReturn(val));
+    } else {
+      return this.commsCallLegacy(url, data);
+    }
   },
 
   sleep: function (time_ms) {
@@ -224,14 +244,14 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       .then((response) => response.json())
       .then((jsonObj) => this.onGetMediaList(jsonObj));
 
-    // // Create WebRTC stream
-    // this.webRtcClient = new WebRtcStreamer(
-    //   this.videoElt,
-    //   location.protocol + "//" + window.location.hostname + ":" + 8888,
-    //   /*useComms(when supported)=*/ true,
-    //   /*webVisualizer=*/ this
-    // );
-    // this.webRtcClient.connect(this.model.get("window_uid"));
+    // Create WebRTC stream
+    this.webRtcClient = new WebRtcStreamer(
+      this.videoElt,
+      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      /*useComms(when supported)=*/ true,
+      /*webVisualizer=*/ this
+    );
+    this.webRtcClient.connect(this.model.get("window_uid"));
   },
 
   on_pyjs_message: function () {
