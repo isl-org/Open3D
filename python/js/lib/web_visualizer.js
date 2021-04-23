@@ -112,16 +112,16 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   commsCall: function (url, data = {}) {
+    var entryPoint = this.parseUrl(url).pathname;
     var supportedAPI = [
-      "/api/getMediaList", // Works
-      "/api/getIceServers", // Works
-      "/api/hangup", // Works
+      "/api/getMediaList",
+      // "/api/getIceServers",
+      // "/api/hangup",
       // "/api/call",
       // "/api/getIceCandidate",
-      "/api/addIceCandidate",
+      // "/api/addIceCandidate",
     ];
     if (supportedAPI.indexOf(entryPoint) >= 0) {
-      var entryPoint = this.parseUrl(url).pathname;
       var queryString = this.parseUrl(url).search;
       if (!queryString) {
         queryString = "";
