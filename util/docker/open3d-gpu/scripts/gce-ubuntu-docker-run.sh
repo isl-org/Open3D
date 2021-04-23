@@ -141,7 +141,7 @@ create-vm)
 
 run-ci)
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
-        "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
+        "sudo docker run --detach --name open3d_gpu_ci --gpus all \
             --env NPROC=$NPROC \
             --env SHARED=${SHARED[$CI_CONFIG_ID]} \
             --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \
@@ -150,8 +150,7 @@ run-ci)
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
             --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
             $DC_IMAGE_TAG; \
-            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh; \
-            sudo docker commit -m 'Debug' open3d_gpu_ci ${DC_IMAGE_TAG}_debug"
+            sudo docker exec open3d_gpu_ci util/run_ci.sh"
     ;;
 
 delete-image)
@@ -162,7 +161,7 @@ delete-image)
     ;;
 
 delete-vm)
-    echo Skipping: gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
+    gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
     ;;
 
 ssh-vm)
