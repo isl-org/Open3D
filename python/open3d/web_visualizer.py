@@ -22,16 +22,26 @@ class WebVisualizer(widgets.DOMWidget):
         sync=True)
 
     # Attributes
+    window_uid = Unicode("window_UNDEFINED", help="Window UID").tag(sync=True)
     pyjs_channel = Unicode("Empty pyjs_channel.",
                            help="Python->JS message channel.").tag(sync=True)
     jspy_channel = Unicode("Empty jspy_channel.",
                            help="JS->Python message channel.").tag(sync=True)
+
+    def show(self):
+        display(self)
 
     def pyjs_send(self, message):
         self.pyjs_channel = message
 
     def call_http_request(self, entry_point, query_string, data):
         return f"Called Http Request: {entry_point}, {query_string}, {data}!"
+
+    @validate('window_uid')
+    def _valid_window_uid(self, proposal):
+        if proposal['value'][:7] != "window_":
+            raise TraitError('window_uid must be "window_xxx".')
+        return proposal['value']
 
     @observe('jspy_channel')
     def on_jspy_message(self, change):
