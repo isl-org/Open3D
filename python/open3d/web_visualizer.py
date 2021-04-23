@@ -1,8 +1,7 @@
 import ipywidgets as widgets
-from traitlets import Unicode, validate, TraitError
+from traitlets import validate, observe, Unicode, TraitError
 from IPython.display import display
-
-# See js/lib/web_visualizer.js for the frontend counterpart to this file.
+import json
 
 
 @widgets.register
@@ -34,11 +33,44 @@ class WebVisualizer(widgets.DOMWidget):
     # It is synced back to Python from the frontend *any* time the model is touched.
     window_uid = Unicode("window_UNDEFINED", help="Window UID").tag(sync=True)
 
+    # Two-way communication channels. It is possible to just use one channel.3
+    pyjs_channel = Unicode("Empty pyjs_channel.",
+                           help="Python->JS message channel.").tag(sync=True)
+    jspy_channel = Unicode("Empty jspy_channel.",
+                           help="JS->Python message channel.").tag(sync=True)
+
     def show(self):
         display(self)
+
+    def pyjs_send(self, message):
+        self.pyjs_channel = message
+
+    # TODO: Forward call to WebRTC server's call_http_request.
+    def call_http_request(self, entry_point, query_string, data):
+        return f"Called Http Request: {entry_point}, {query_string}, {data}!"
 
     @validate('window_uid')
     def _valid_window_uid(self, proposal):
         if proposal['value'][:7] != "window_":
             raise TraitError('window_uid must be "window_xxx".')
         return proposal['value']
+
+    @observe('jspy_channel')
+    def on_jspy_message(self, change):
+        jspy_message = change["new"]
+        print(f"jspy message: {jspy_message}")
+        try:
+            # Hard-coded to call call_http_request.
+            jspy_request = json.loads(jspy_message)
+            if "func" not in jspy_request or jspy_request[
+                    "func"] != "call_http_request":
+                raise ValueError(f"Invalid jspy function: {jspy_message}")
+            if "args" not in jspy_request or len(jspy_request["args"]) != 3:
+                raise ValueError(
+                    f"Invalid jspy function arguments: {jspy_message}")
+            result = self.call_http_request(jspy_request["args"][0],
+                                            jspy_request["args"][1],
+                                            jspy_request["args"][2])
+            self.pyjs_send(result)
+        except:
+            print(f"jspy message is not a valid function call: {jspy_message}")
