@@ -166,14 +166,19 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     };
     this.jspy_send(JSON.stringify(message));
     var count = 0;
-    while (!this.new_pyjs_message) {
+    while (!(callIdStr in this.callResultMap)) {
       console.log("callPython await, id: " + callIdStr + ", count: " + count++);
       await this.sleep(100);
     }
-    console.log("callPython await done, id: " + callIdStr);
-    this.new_pyjs_message = false;
-    var message = this.model.get("pyjs_channel");
-    return message;
+    var json_result = this.callResultMap[callIdStr];
+    delete this.callResultMap[callIdStr];
+    console.log(
+      "callPython await done, id:",
+      callIdStr,
+      "json_result:",
+      json_result
+    );
+    return json_result;
   },
 
   callPythonWrapper: function (func, args = []) {
@@ -232,7 +237,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   on_pyjs_message: function () {
     var message = this.model.get("pyjs_channel");
     console.log("pyjs_message received: " + message);
-    this.new_pyjs_message = true;
+
+    var result_obj = JSON.parse(message);
+    var call_id = result_obj["call_id"];
+    var json_result = result_obj["json_result"];
+    this.callResultMap[call_id] = json_result;
   },
 });
 

@@ -74,9 +74,16 @@ class WebVisualizer(widgets.DOMWidget):
             if "args" not in jspy_request or len(jspy_request["args"]) != 3:
                 raise ValueError(
                     f"Invalid jspy function arguments: {jspy_message}")
-            result = self.call_http_request(jspy_request["args"][0],
-                                            jspy_request["args"][1],
-                                            jspy_request["args"][2])
+            if "call_id" not in jspy_request:
+                raise ValueError(
+                    f"Invalid jspy function arguments: {jspy_message}")
+            json_result = self.call_http_request(jspy_request["args"][0],
+                                                 jspy_request["args"][1],
+                                                 jspy_request["args"][2])
+            result = json.dumps({
+                "json_result": json_result,
+                "call_id": jspy_request["call_id"]
+            })
             print(f"py->js sending: {result}")
             self.pyjs_send(result)
         except:
