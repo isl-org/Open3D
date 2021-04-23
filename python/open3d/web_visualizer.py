@@ -6,9 +6,19 @@ import json
 
 @widgets.register
 class WebVisualizer(widgets.DOMWidget):
+    # Name of the widget view class in front-end
     _view_name = Unicode('WebVisualizerView').tag(sync=True)
+    # Name of the widget model class in front-end
+    _model_name = Unicode('WebVisualizerModel').tag(sync=True)
+    # Name of the front-end module containing widget view
     _view_module = Unicode('open3d').tag(sync=True)
+    # Name of the front-end module containing widget model
+    _model_module = Unicode('open3d').tag(sync=True)
+    # Version of the front-end module containing widget view
     _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
+        sync=True)
+    # Version of the front-end module containing widget model
+    _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)
 
     # Attributes

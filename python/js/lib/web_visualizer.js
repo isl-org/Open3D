@@ -22,8 +22,11 @@ var WebRtcStreamer = require("./webrtcstreamer");
 // differ from the defaults will be specified.
 var WebVisualizerModel = widgets.DOMWidgetModel.extend({
   defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
+    _model_name: "WebVisualizerModel",
     _view_name: "WebVisualizerView",
+    _model_module: "open3d",
     _view_module: "open3d",
+    _model_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
     _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
   }),
 });
