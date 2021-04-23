@@ -658,7 +658,7 @@ endif()
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
 if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE)
-    warning("PyTorch Ops with CUDA needs a custom PyTorch install from
+    message(WARNING "PyTorch Ops with CUDA needs a custom PyTorch install from
     https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1 The
     official PyTorch v1.7.1 wheel will not work due to issue #52663")
 endif()
