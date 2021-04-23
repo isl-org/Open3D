@@ -157,24 +157,24 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   // args must be all strings.
   // TODO: kwargs and sanity check
   callPython: async function (func, args = []) {
-    var callIdStr = this.callId.toString();
+    var callId = this.callId.toString();
     this.callId++;
     var message = {
       func: func,
       args: args,
-      call_id: callIdStr,
+      call_id: callId,
     };
     this.jspy_send(JSON.stringify(message));
     var count = 0;
-    while (!(callIdStr in this.callResultMap)) {
-      console.log("callPython await, id: " + callIdStr + ", count: " + count++);
+    while (!(callId in this.callResultMap)) {
+      console.log("callPython await, id: " + callId + ", count: " + count++);
       await this.sleep(100);
     }
-    var json_result = this.callResultMap[callIdStr];
-    delete this.callResultMap[callIdStr];
+    var json_result = this.callResultMap[callId];
+    delete this.callResultMap[callId];
     console.log(
       "callPython await done, id:",
-      callIdStr,
+      callId,
       "json_result:",
       json_result
     );
