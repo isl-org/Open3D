@@ -62,7 +62,7 @@ if(NOT Pytorch_FOUND)
         set_target_properties( torch_cuda PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
         set_target_properties( torch_cpu PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
 
-        if( CUDA_VERSION VERSION_GREATER_EQUAL "11.0" AND
+        if( CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" AND
             Pytorch_VERSION GREATER_EQUAL "1.7" AND Pytorch_VERSION VERSION_LESS "1.9")
             message( WARNING
                 "================================================================================\n"
