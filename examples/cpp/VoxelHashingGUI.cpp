@@ -453,6 +453,8 @@ private:
         utility::Timer timer;
         timer.Start();
         while (!is_done_) {
+            float depth_scale = prop_values_.depth_scale;
+
             if (!is_running_) {
                 // If we aren't running, sleep a little bit so that we don't
                 // use 100% of the CPU just checking if we need to run.
@@ -484,9 +486,10 @@ private:
                 double trans_norm =
                         std::sqrt((trans * trans).Sum({0, 1}).Item<double>());
                 utility::LogInfo("trans norm = {}", trans_norm);
-
-                T_frame_to_model =
-                        T_frame_to_model.Matmul(delta_frame_to_model);
+                if (trans_norm < 0.15) {
+                    T_frame_to_model =
+                            T_frame_to_model.Matmul(delta_frame_to_model);
+                }
             }
 
             // Integrate

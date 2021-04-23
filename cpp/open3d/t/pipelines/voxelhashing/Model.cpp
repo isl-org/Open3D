@@ -85,7 +85,7 @@ core::Tensor Model::TrackFrameToModel(const Frame& input_frame,
             t::geometry::RGBDImage(raycast_frame.GetDataAsImage("color"),
                                    raycast_frame.GetDataAsImage("depth")),
             raycast_frame.GetIntrinsics(), identity, depth_scale, depth_max,
-            depth_diff, {10, 5, 3},
+            depth_diff, {6, 3, 1},
             t::pipelines::odometry::Method::PointToPlane);
 }
 

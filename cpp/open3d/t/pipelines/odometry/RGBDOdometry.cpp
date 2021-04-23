@@ -146,8 +146,13 @@ core::Tensor RGBDOdometryMultiScalePointToPlane(
                 source_depth_curr.CreateVertexMap(intrinsics, NAN);
         t::geometry::Image target_vertex_map =
                 target_depth_curr.CreateVertexMap(intrinsics, NAN);
+
+        t::geometry::Image target_depth_curr_smooth =
+                target_depth_curr.FilterBilateral(5, 5, 10);
+        t::geometry::Image target_vertex_map_smooth =
+                target_depth_curr_smooth.CreateVertexMap(intrinsics, NAN);
         t::geometry::Image target_normal_map =
-                target_vertex_map.CreateNormalMap(NAN);
+                target_vertex_map_smooth.CreateNormalMap(NAN);
 
         source_vertex_maps[n_levels - 1 - i] = source_vertex_map.AsTensor();
         target_vertex_maps[n_levels - 1 - i] = target_vertex_map.AsTensor();
@@ -168,6 +173,7 @@ core::Tensor RGBDOdometryMultiScalePointToPlane(
 
     for (int64_t i = 0; i < n_levels; ++i) {
         for (int iter = 0; iter < iterations[i]; ++iter) {
+            printf("level %02ld, iter %02d", i, iter);
             core::Tensor delta_source_to_target = ComputePosePointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
                     target_normal_maps[i], intrinsic_matrices[i], trans,
@@ -357,7 +363,6 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
     kernel::odometry::ComputePosePointToPlane(
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
             init_source_to_target, se3_delta, residual, depth_diff);
-
     return pipelines::kernel::PoseToTransformation(se3_delta);
 }
 

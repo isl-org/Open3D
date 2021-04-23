@@ -76,7 +76,7 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
             target_normal_indexer, ti, J, r);
 
     // Dump J, r into JtJ and Jtr
-    const float h = 0.04;
+    const float h = 0.05;
     float huber_r = abs(r) < h ? 0.5 * r * r : h * abs(r) - 0.5 * h * h;
     float deriv_r = abs(r) < h ? r : h * sign(r);
 
