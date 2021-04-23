@@ -114,8 +114,8 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   commsCall: function (url, data = {}) {
     var supportedAPI = [
       "/api/getMediaList",
-      // "/api/getIceServers",
-      // "/api/hangup",
+      "/api/getIceServers",
+      "/api/hangup",
       // "/api/call",
       // "/api/getIceCandidate",
       // "/api/addIceCandidate",
