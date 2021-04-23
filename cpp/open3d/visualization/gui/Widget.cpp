@@ -89,7 +89,7 @@ bool Widget::IsEnabled() const { return impl_->is_enabled_; }
 
 void Widget::SetEnabled(bool enabled) { impl_->is_enabled_ = enabled; }
 
-void Widget::SetTooltip(const char *text) { impl_->tooltip_ = text; }
+void Widget::SetTooltip(const char* text) { impl_->tooltip_ = text; }
 
 const char* Widget::GetTooltip() const { return impl_->tooltip_.c_str(); }
 

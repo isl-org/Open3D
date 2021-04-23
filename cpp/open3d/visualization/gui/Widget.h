@@ -96,7 +96,7 @@ public:
     bool IsEnabled() const;
     virtual void SetEnabled(bool enabled);
 
-    void SetTooltip(const char *text);
+    void SetTooltip(const char* text);
     const char* GetTooltip() const;
 
     static constexpr int DIM_GROW = 10000;

@@ -91,7 +91,7 @@ Widget::DrawResult ToggleSwitch::Draw(const DrawContext& context) {
     float radius = height * 0.50f;
 
     ImGui::InvisibleButton(impl_->name_.c_str(), ImVec2(width, height));
-    DrawImGuiTooltip();  // button is separate obj, so needs its own tooltip call
+    DrawImGuiTooltip();  // button is separate obj, so needs its own call
     ImU32 track_color;
     ImU32 thumb_color = colorToImguiRGBA(theme.toggle_thumb_color);
     if (impl_->is_on_) {
