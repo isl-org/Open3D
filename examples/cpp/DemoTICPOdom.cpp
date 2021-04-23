@@ -1,29 +1,3 @@
-// ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
-// ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
-// ----------------------------------------------------------------------------
-
 #include <atomic>
 #include <chrono>
 #include <fstream>
@@ -55,7 +29,9 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow() : gui::Window("Open3D - Reconstruction", 1200, 768) {
+    ReconstructionWindow()
+        : gui::Window(
+                  "Open3D - Frame to Frame Odometry using ICP ", 1200, 768) {
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.5f * float(em)));
@@ -112,7 +88,22 @@ public:
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
+
+        // When reading the dataset inside compute loop (avoiding data
+        // pre-fetching, either set this manually, or define it w.r.t. the first
+        // data input +- % offset deviation).
+        min_visualization_scalar_ = INT32_MAX * 1.0;
+        max_visualization_scalar_ = INT32_MIN * 1.0;
+        total_approximate_points_in_dataset_ = 0;
+
         pointclouds_device_ = LoadTensorPointClouds();
+
+        // Using negative offset: points from min value to 0.2 * min_val will ve
+        // assigned the min. gradient. Similarly for max. gradient.
+        min_visualization_scalar_offset_ =
+                -0.2 * min_visualization_scalar_;
+        max_visualization_scalar_offset_ =
+                -0.2 * max_visualization_scalar_;
 
         transformation_ =
                 core::Tensor(initial_transform_flat, {4, 4}, dtype_, device_);
@@ -134,37 +125,36 @@ private:
         core::Tensor cumulative_transform = initial_transform.Clone();
 
         // geometry::AxisAlignedBoundingBox bounds;
-        auto mat = rendering::Material();
+        mat_ = rendering::Material();
 
         // mat.shader = "unlitSolidColor";
 
-        mat.shader = "defaultUnlit";
-        mat.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+        mat_.shader = "defaultUnlit";
+        mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
         // mat.point_size = 5.0f;
 
-        auto pointcloud_mat = GetPointCloudMaterial();
+        pointcloud_mat_ = GetPointCloudMaterial();
 
         if (visualize_output_) {
-            pcd_current_ = pointclouds_device_[0].CPU();
-            // pcd_current_.DeletePointAttr("normals");
+            {
+                std::lock_guard<std::mutex> lock(cloud_lock_);
+                pcd_current_ = pointclouds_device_[0].CPU();
+                // pcd_current_.DeletePointAttr("normals");
+            }
+            gui::Application::GetInstance().PostToMainThread(this, [&]() {
+                std::lock_guard<std::mutex> lock(cloud_lock_);
+                this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1.0});
 
-            gui::Application::GetInstance().PostToMainThread(
-                    this, [this, &mat, &pointcloud_mat]() {
-                        // std::lock_guard<std::mutex> lock(cloud_lock_);
-                        this->widget3d_->GetScene()->SetBackground(
-                                {0, 0, 0, 1.0});
+                this->widget3d_->GetScene()->AddGeometry(
+                        filenames_[0], &pcd_current_, pointcloud_mat_);
 
-                        this->widget3d_->GetScene()->AddGeometry(
-                                filenames_[0], &pcd_current_, pointcloud_mat);
+                this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                        CURRENT_CLOUD, pcd_current_, mat_);
 
-                        this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                                CURRENT_CLOUD, pcd_current_, mat);
-
-                        auto bbox =
-                                this->widget3d_->GetScene()->GetBoundingBox();
-                        auto center = bbox.GetCenter().cast<float>();
-                        this->widget3d_->SetupCamera(verticalFoV, bbox, center);
-                    });
+                auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
+                auto center = bbox.GetCenter().cast<float>();
+                this->widget3d_->SetupCamera(verticalFoV, bbox, center);
+            });
         }
 
         // Final scale level downsampling is already performed while loading the
@@ -198,9 +188,9 @@ private:
             cumulative_transform = cumulative_transform.Matmul(
                     result.transformation_.Inverse().To(device_, dtype_));
 
-            if (visualize_output_ && i < end_range_ - 3) {
+            if (visualize_output_) {
                 {
-                    // std::lock_guard<std::mutex> lock(cloud_lock_);
+                    std::lock_guard<std::mutex> lock(cloud_lock_);
                     pcd_current_ = target.Transform(cumulative_transform).CPU();
                     // pcd_current_.DeletePointAttr("normals");
                 }
@@ -212,14 +202,13 @@ private:
                 }
 
                 gui::Application::GetInstance().PostToMainThread(
-                        this,
-                        [this, &mat, &pointcloud_mat, &i, out = out.str()]() {
+                        this, [this, i, out = out.str()]() {
                             this->SetOutput(out);
-                            // std::lock_guard<std::mutex> lock(cloud_lock_);
+                            std::lock_guard<std::mutex> lock(cloud_lock_);
 
                             this->widget3d_->GetScene()->AddGeometry(
                                     filenames_[i], &pcd_current_,
-                                    pointcloud_mat);
+                                    pointcloud_mat_);
 
                             this->widget3d_->GetScene()
                                     ->GetScene()
@@ -428,10 +417,38 @@ private:
                     pointcloud_local.SetPointNormals(pointcloud_normals);
                 }
                 // Adding it to our vector of pointclouds.
-                pointclouds_device[i++] =
+                auto pointcloud_downsampled =
                         pointcloud_local.To(device_).VoxelDownSample(
                                 voxel_sizes_[icp_scale_levels_ - 1]);
+                pointclouds_device[i++] = pointcloud_downsampled;
+
+                // When reading the dataset inside compute loop (avoiding data
+                // pre-fetching, either set this manually, or define it w.r.t.
+                // the first data input +- % offset deviation).
+                min_visualization_scalar_ = std::min(
+                        min_visualization_scalar_,
+                        static_cast<double>(
+                                pointcloud_downsampled
+                                        .GetPointAttr("__visualization_scalar")
+                                        .Min({0})
+                                        .Item<float>()));
+                max_visualization_scalar_ = std::max(
+                        max_visualization_scalar_,
+                        static_cast<double>(
+                                pointcloud_downsampled
+                                        .GetPointAttr("__visualization_scalar")
+                                        .Max({0})
+                                        .Item<float>()));
+                total_approximate_points_in_dataset_ +=
+                        pointcloud_downsampled.GetPoints().GetLength();
+
+            utility::LogInfo(" min_val: {}, max_val: {}, total_points: {}",
+                            min_visualization_scalar_,
+                            max_visualization_scalar_,
+                            total_approximate_points_in_dataset_);            
+            
             }
+
             std::cout << std::endl;
         } catch (...) {
             utility::LogError(
@@ -474,10 +491,18 @@ private:
 
     std::atomic<bool> is_done_;
     // std::shared_ptr<visualizer::O3DVisualizer> main_vis_;
+    open3d::visualization::rendering::Material pointcloud_mat_;
+    open3d::visualization::rendering::Material mat_;
 
     std::vector<open3d::t::geometry::PointCloud> pointclouds_device_;
     t::geometry::PointCloud pcd_;
     t::geometry::PointCloud pcd_current_;
+
+    int64_t total_approximate_points_in_dataset_;
+    double min_visualization_scalar_;
+    double max_visualization_scalar_;
+    double min_visualization_scalar_offset_;
+    double max_visualization_scalar_offset_;
 
 private:
     std::string path_dataset;

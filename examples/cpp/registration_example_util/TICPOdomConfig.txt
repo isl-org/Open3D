@@ -18,7 +18,7 @@ verbosity = Info
 dataset_path = ../../open3d_downloads/kitti_samples/
 
 # Range of frames is 0 to end_range - 1.
-end_range = 500
+end_range = 400
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane
