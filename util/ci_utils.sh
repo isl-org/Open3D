@@ -13,6 +13,7 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
         BUILD_CUDA_MODULE=OFF
     fi
 fi
+BUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS:-OFF}
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
@@ -290,7 +291,9 @@ build_pip_conda_package() {
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
     )
+    set -x # Echo commands on
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
+    set +x # Echo commands off
     echo
     make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
@@ -304,7 +307,10 @@ build_pip_conda_package() {
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
-        cmake -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON "${cmakeOptions[@]}" ..
+        set -x # Echo commands on
+        cmake -DBUILD_CUDA_MODULE=ON \
+            -DBUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS} "${cmakeOptions[@]}" ..
+        set +x # Echo commands off
     fi
     echo
 
