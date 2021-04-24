@@ -41,10 +41,11 @@ SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
 
 # Documentation
-SPHINX_VER=3.1.2
-SPHINX_RTD_VER=0.5.0
-NBSPHINX_VER=0.7.1
+SPHINX_VER=3.5.4
+SPHINX_RTD_VER=0.5.1
+NBSPHINX_VER=0.8.3
 MATPLOTLIB_VER=3.3.3
+M2R2_VER=0.2.7
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -435,10 +436,8 @@ install_docs_dependencies() {
         "matplotlib==$MATPLOTLIB_VER" \
         "sphinx==$SPHINX_VER" \
         "sphinx-rtd-theme==$SPHINX_RTD_VER" \
-        "nbsphinx==$NBSPHINX_VER"
-    # m2r needs a patch for sphinx 3
-    # https://github.com/sphinx-doc/sphinx/issues/7420
-    python -m pip install -U -q "git+https://github.com/intel-isl/m2r@dev#egg=m2r"
+        "nbsphinx==$NBSPHINX_VER" \
+        "m2r2==$M2R2_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
     echo
     if [[ -d "$1" ]]; then
