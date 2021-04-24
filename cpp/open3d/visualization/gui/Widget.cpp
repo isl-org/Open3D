@@ -44,6 +44,7 @@ struct Widget::Impl {
     Rect frame_;
     Color bg_color_ = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children_;
+    std::string tooltip_;
     bool is_visible_ = true;
     bool is_enabled_ = true;
     bool pop_disabled_flags_at_end_of_draw_ = false;
@@ -87,6 +88,10 @@ void Widget::SetVisible(bool vis) { impl_->is_visible_ = vis; }
 bool Widget::IsEnabled() const { return impl_->is_enabled_; }
 
 void Widget::SetEnabled(bool enabled) { impl_->is_enabled_ = enabled; }
+
+void Widget::SetTooltip(const char* text) { impl_->tooltip_ = text; }
+
+const char* Widget::GetTooltip() const { return impl_->tooltip_.c_str(); }
 
 Size Widget::CalcPreferredSize(const LayoutContext&,
                                const Constraints& constraints) const {
@@ -137,6 +142,13 @@ void Widget::DrawImGuiPopEnabledState() {
     if (impl_->pop_disabled_flags_at_end_of_draw_) {
         ImGui::PopStyleVar();
         ImGui::PopItemFlag();
+    }
+}
+
+void Widget::DrawImGuiTooltip() {
+    if (!impl_->tooltip_.empty() && IsEnabled() &&
+        (ImGui::IsItemActive() || ImGui::IsItemHovered())) {
+        ImGui::SetTooltip("%s", impl_->tooltip_.c_str());
     }
 }
 

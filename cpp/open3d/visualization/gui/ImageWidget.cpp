@@ -156,6 +156,7 @@ Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
 
         ImGui::PopStyleColor();
     }
+    DrawImGuiTooltip();
 
     if (params.image_size_changed) {
         return Widget::DrawResult::RELAYOUT;

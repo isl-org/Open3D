@@ -153,6 +153,8 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
         ImGui::PopStyleColor();
     }
     ImGui::PopItemWidth();
+    // Tooltip (if it exists) is in the system font, so do after popping font
+    DrawImGuiTooltip();
     return Widget::DrawResult::NONE;
 }
 

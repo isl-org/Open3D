@@ -174,6 +174,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         result = Widget::DrawResult::REDRAW;
     }
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
     if (was_on) {
         ImGui::PopStyleColor(4);
     }
