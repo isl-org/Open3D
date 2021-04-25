@@ -457,6 +457,7 @@ private:
                 total_approximate_points_in_dataset_ +=
                         pointclouds_device[i - 1].GetPoints().GetLength();
             }
+            std::cout << std::endl;
             utility::LogInfo(" min_val: {}, max_val: {}, total_points: {}",
                              min_visualization_scalar_,
                              max_visualization_scalar_,

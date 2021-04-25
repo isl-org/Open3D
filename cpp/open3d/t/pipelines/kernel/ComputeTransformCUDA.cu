@@ -98,7 +98,7 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
                                  const core::Dtype &dtype,
                                  const core::Device &device) {
     core::Tensor global_sum =
-            core::Tensor::Zeros({27}, core::Dtype::Float32, device);
+            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int THREAD_1D_UNIT = 256;
