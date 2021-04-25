@@ -483,7 +483,7 @@ void ExtractSurfacePointsCPU
     int total_count = (*count_ptr).load();
 #endif
 
-    utility::LogInfo("{} vertices extracted", total_count);
+    utility::LogDebug("{} vertices extracted", total_count);
     valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -697,7 +697,7 @@ void ExtractSurfaceMeshCPU
     (*vtx_count_ptr) = 0;
 #endif
 
-    utility::LogInfo("Total vertex count = {}", total_vtx_count);
+    utility::LogDebug("Total vertex count = {}", total_vtx_count);
     vertices = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
                             block_values.GetDevice());
     normals = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
@@ -930,7 +930,7 @@ void ExtractSurfaceMeshCPU
 #else
     int total_tri_count = (*tri_count_ptr).load();
 #endif
-    utility::LogInfo("Total triangle count = {}", total_tri_count);
+    utility::LogDebug("Total triangle count = {}", total_tri_count);
     triangles = triangles.Slice(0, 0, total_tri_count);
 }
 

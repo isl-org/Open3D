@@ -87,11 +87,12 @@ public:
                    float depth_max = 3.0f);
 
     enum SurfaceMaskCode {
-        VertexMap = 1,
-        DepthMap = 2,
-        ColorMap = 4,
-        NormalMap = 8,
-        RangeMap = 16
+        None = 0,
+        VertexMap = (1 << 0),
+        DepthMap = (1 << 1),
+        ColorMap = (1 << 2),
+        NormalMap = (1 << 3),
+        RangeMap = (1 << 4)
     };
     /// Use volumetric ray casting to obtain vertex and color maps, mainly for
     /// dense visual odometry.

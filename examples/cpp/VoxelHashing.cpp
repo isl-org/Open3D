@@ -117,11 +117,10 @@ int main(int argc, char** argv) {
     }
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    Tensor intrinsic_t = Tensor(
-            std::vector<double>({focal_length.first, 0, principal_point.first,
-                                 0, focal_length.second, principal_point.second,
-                                 0, 0, 1}),
-            {3, 3}, Dtype::Float64);
+    Tensor intrinsic_t = Tensor::Init<double>(
+            {{focal_length.first, 0, principal_point.first},
+             {0, focal_length.second, principal_point.second},
+             {0, 0, 1}});
 
     // VoxelBlock configurations
     float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(

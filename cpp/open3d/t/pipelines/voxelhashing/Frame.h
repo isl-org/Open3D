@@ -58,11 +58,7 @@ public:
     core::Tensor GetIntrinsics() const { return intrinsics_; }
 
     void SetData(const std::string& name, const core::Tensor& data) {
-        if (data_.count(name) != 0) {
-            data_.at(name) = data.To(device_);
-        } else {
-            data_.emplace(name, data.To(device_));
-        }
+        data_[name] = data.To(device_);
     }
     core::Tensor GetData(const std::string& name) const {
         if (data_.count(name) == 0) {
