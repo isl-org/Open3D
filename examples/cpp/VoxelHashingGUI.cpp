@@ -238,8 +238,8 @@ public:
 
     ~ReconstructionWindow() {}
 
-    void Layout(const gui::Theme& theme) override {
-        int em = theme.font_size;
+    void Layout(const gui::LayoutContext& context) override {
+        int em = context.theme.font_size;
         int panel_width = 20 * em;
         // The usable part of the window may not be the full size if there
         // is a menu.
@@ -253,7 +253,7 @@ public:
 
         // Now that all the children are sized correctly, we can super to
         // layout all their children.
-        Super::Layout(theme);
+        Super::Layout(context);
     }
 
 protected:
