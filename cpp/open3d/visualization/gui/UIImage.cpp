@@ -170,7 +170,7 @@ void UIImage::SetScaling(Scaling scaling) { impl_->scaling_ = scaling; }
 
 UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
 
-Size UIImage::CalcPreferredSize(const Theme& theme,
+Size UIImage::CalcPreferredSize(const LayoutContext& context,
                                 const Widget::Constraints& constraints) const {
     if (impl_->image_width_ != 0.0f && impl_->image_height_ != 0.0f) {
         if (impl_->scaling_ == Scaling::ASPECT &&
