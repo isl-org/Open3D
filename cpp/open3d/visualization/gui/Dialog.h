@@ -42,9 +42,9 @@ public:
     explicit Dialog(const char* title);
     virtual ~Dialog();
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
     DrawResult Draw(const DrawContext& context) override;
 
     virtual void OnWillShow();

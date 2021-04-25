@@ -46,9 +46,9 @@ namespace geometry {
 
 /// Scalable voxel grid specialized for TSDF integration.
 /// The 3D space is organized in such a way:
-/// Space is first coarsely divided into \blocks that can be indexed by 3D
+/// Space is first coarsely divided into blocks that can be indexed by 3D
 /// coordinates.
-/// Each \block is then further divided into \voxels as a Tensor of shape
+/// Each block is then further divided into voxels as a Tensor of shape
 /// (resolution, resolution, resolution, channel).
 /// For pure geometric TSDF voxels, channel = 2 (TSDF + weight).
 /// For colored TSDF voxels, channel = 5 (TSDF + weight + color).
@@ -87,11 +87,12 @@ public:
                    float depth_max = 3.0f);
 
     enum SurfaceMaskCode {
-        VertexMap = 1,
-        DepthMap = 2,
-        ColorMap = 4,
-        NormalMap = 8,
-        RangeMap = 16
+        None = 0,
+        VertexMap = (1 << 0),
+        DepthMap = (1 << 1),
+        ColorMap = (1 << 2),
+        NormalMap = (1 << 3),
+        RangeMap = (1 << 4)
     };
     /// Use volumetric ray casting to obtain vertex and color maps, mainly for
     /// dense visual odometry.
@@ -155,14 +156,15 @@ public:
     std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }
 
 protected:
-    /// Return  \addrs and \masks for radius (3) neighbor entries.
-    /// We first find all active entries in the hashmap with there
-    /// coordinates. We then query these coordinates and their 3^3
-    /// neighbors. \addrs_nb: indexer used for the internal hashmap to
-    /// access voxel block coordinates in the 3^3 neighbors. \masks_nb: flag
-    /// used for hashmap to indicate whether a query is a success. Currently
-    /// we preserve a dense output (27 x active_entries) without compression
-    /// / reduction.
+    /// Return  addrs and masks for radius (3) neighbor entries.
+    /// We first find all active entries in the hashmap with there coordinates.
+    /// We then query these coordinates and their 3^3 neighbors.
+    /// addrs_nb: indexer used for the internal hashmap to access voxel block
+    /// coordinates in the 3^3 neighbors.
+    /// masks_nb: flag used for hashmap to indicate whether a query is a
+    /// success.
+    /// Currently we preserve a dense output (27 x active_entries) without
+    /// compression / reduction.
     std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
             const core::Tensor &active_addrs);
 

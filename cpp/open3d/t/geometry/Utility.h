@@ -42,8 +42,8 @@ inline core::Tensor InverseTransformation(const core::Tensor& T) {
     }
 
     core::Tensor Tinv({4, 4}, core::Dtype::Float64, core::Device("CPU:0"));
-    const double* T_ptr = static_cast<const double*>(T.GetDataPtr());
-    double* Tinv_ptr = static_cast<double*>(Tinv.GetDataPtr());
+    const double* T_ptr = T.GetDataPtr<double>();
+    double* Tinv_ptr = Tinv.GetDataPtr<double>();
 
     // R' = R.T
     Tinv_ptr[0 * 4 + 0] = T_ptr[0 * 4 + 0];

@@ -70,12 +70,10 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
                                 PrimeSenseDefault);
         auto focal_length = intrinsic.GetFocalLength();
         auto principal_point = intrinsic.GetPrincipalPoint();
-        core::Tensor intrinsic_t = core::Tensor(
-                std::vector<double>({(focal_length.first), 0,
-                                     (principal_point.first), 0,
-                                     (focal_length.second),
-                                     (principal_point.second), 0, 0, 1}),
-                {3, 3}, core::Dtype::Float64);
+        core::Tensor intrinsic_t = core::Tensor::Init<double>(
+                {{focal_length.first, 0, principal_point.first},
+                 {0, focal_length.second, principal_point.second},
+                 {0, 0, 1}});
 
         // Extrinsics
         std::string trajectory_path =
@@ -142,12 +140,10 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
                                 PrimeSenseDefault);
         auto focal_length = intrinsic.GetFocalLength();
         auto principal_point = intrinsic.GetPrincipalPoint();
-        core::Tensor intrinsic_t = core::Tensor(
-                std::vector<double>({(focal_length.first), 0,
-                                     (principal_point.first), 0,
-                                     (focal_length.second),
-                                     (principal_point.second), 0, 0, 1}),
-                {3, 3}, core::Dtype::Float64);
+        core::Tensor intrinsic_t = core::Tensor::Init<double>(
+                {{focal_length.first, 0, principal_point.first},
+                 {0, focal_length.second, principal_point.second},
+                 {0, 0, 1}});
 
         // Extrinsics
         std::string trajectory_path =

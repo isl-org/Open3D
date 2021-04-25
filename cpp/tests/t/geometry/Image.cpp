@@ -826,7 +826,7 @@ TEST_P(ImagePermuteDevices, ToLegacyImage) {
                           *leg_im_3ch.PointerAt<uint16_t>(c, r, ch));
 }
 
-TEST_P(ImagePermuteDevices, CreateVertexMap) {
+TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
@@ -844,7 +844,7 @@ TEST_P(ImagePermuteDevices, CreateVertexMap) {
             vertex_map.ToLegacyImage())});
 }
 
-TEST_P(ImagePermuteDevices, CreateNormalMap) {
+TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
@@ -877,27 +877,7 @@ TEST_P(ImagePermuteDevices, CreateNormalMap) {
     }
 }
 
-TEST_P(ImagePermuteDevices, PyrDownDepth) {
-    core::Device device = GetParam();
-
-    t::geometry::Image depth =
-            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
-                                                   std::string(TEST_DATA_DIR),
-                                                   1))
-                    ->To(device);
-
-    float invalid_fill = 0.0f;
-    core::Tensor intrinsics_down = CreateIntrinsics(2.0f);
-
-    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
-    auto depth_down = depth_clipped.PyrDownDepth(0.25, invalid_fill);
-
-    auto vertex_map = depth_down.CreateVertexMap(intrinsics_down, invalid_fill);
-    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            vertex_map.ToLegacyImage())});
-}
-
-TEST_P(ImagePermuteDevices, ColorizeDepth) {
+TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =

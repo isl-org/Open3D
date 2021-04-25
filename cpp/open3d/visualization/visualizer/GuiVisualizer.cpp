@@ -296,10 +296,10 @@ class DrawTimeLabel : public gui::Label {
 public:
     DrawTimeLabel(gui::Window *w) : Label("0.0 ms") { window_ = w; }
 
-    gui::Size CalcPreferredSize(const gui::Theme &theme,
+    gui::Size CalcPreferredSize(const gui::LayoutContext &context,
                                 const Constraints &constraints) const override {
-        auto h = Super::CalcPreferredSize(theme, constraints).height;
-        return gui::Size(theme.font_size * 5, h);
+        auto h = Super::CalcPreferredSize(context, constraints).height;
+        return gui::Size(context.theme.font_size * 5, h);
     }
 
     DrawResult Draw(const gui::DrawContext &context) override {
@@ -862,34 +862,34 @@ void GuiVisualizer::SetGeometry(
     impl_->scene_wgt_->ForceRedraw();
 }
 
-void GuiVisualizer::Layout(const gui::Theme &theme) {
+void GuiVisualizer::Layout(const gui::LayoutContext &context) {
     auto r = GetContentRect();
-    const auto em = theme.font_size;
+    const auto em = context.theme.font_size;
     impl_->scene_wgt_->SetFrame(r);
 
     // Draw help keys HUD in upper left
     const auto pref = impl_->help_keys_->CalcPreferredSize(
-            theme, gui::Widget::Constraints());
+            context, gui::Widget::Constraints());
     impl_->help_keys_->SetFrame(gui::Rect(0, r.y, pref.width, pref.height));
-    impl_->help_keys_->Layout(theme);
+    impl_->help_keys_->Layout(context);
 
     // Draw camera HUD in lower left
     const auto prefcam = impl_->help_camera_->CalcPreferredSize(
-            theme, gui::Widget::Constraints());
+            context, gui::Widget::Constraints());
     impl_->help_camera_->SetFrame(gui::Rect(0, r.height + r.y - prefcam.height,
                                             prefcam.width, prefcam.height));
-    impl_->help_camera_->Layout(theme);
+    impl_->help_camera_->Layout(context);
 
     // Settings in upper right
     const auto LIGHT_SETTINGS_WIDTH = 18 * em;
     auto light_settings_size = impl_->settings_.wgt_base->CalcPreferredSize(
-            theme, gui::Widget::Constraints());
+            context, gui::Widget::Constraints());
     gui::Rect lightSettingsRect(r.width - LIGHT_SETTINGS_WIDTH, r.y,
                                 LIGHT_SETTINGS_WIDTH,
                                 std::min(r.height, light_settings_size.height));
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
@@ -1103,7 +1103,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
 
             // We need relayout because materials settings pos depends on light
             // settings visibility
-            Layout(GetTheme());
+            this->SetNeedsLayout();
 
             break;
         }

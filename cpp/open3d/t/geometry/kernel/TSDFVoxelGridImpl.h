@@ -483,7 +483,7 @@ void ExtractSurfacePointsCPU
     int total_count = (*count_ptr).load();
 #endif
 
-    utility::LogInfo("{} vertices extracted", total_count);
+    utility::LogDebug("{} vertices extracted", total_count);
     valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -697,7 +697,7 @@ void ExtractSurfaceMeshCPU
     (*vtx_count_ptr) = 0;
 #endif
 
-    utility::LogInfo("Total vertex count = {}", total_vtx_count);
+    utility::LogDebug("Total vertex count = {}", total_vtx_count);
     vertices = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
                             block_values.GetDevice());
     normals = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
@@ -930,7 +930,7 @@ void ExtractSurfaceMeshCPU
 #else
     int total_tri_count = (*tri_count_ptr).load();
 #endif
-    utility::LogInfo("Total triangle count = {}", total_tri_count);
+    utility::LogDebug("Total triangle count = {}", total_tri_count);
     triangles = triangles.Slice(0, 0, total_tri_count);
 }
 
@@ -1367,7 +1367,7 @@ void RayCastCPU
                     // Iterative ray intersection check
                     float t_prev = t;
 
-                    float tsdf_prev = 1.0f;
+                    float tsdf_prev = -1.0f;
                     float tsdf = 1.0;
                     float w = 0.0;
 
@@ -1386,28 +1386,30 @@ void RayCastCPU
                     float z_d = (z_g - z_o);
 
                     BlockCache cache{0, 0, 0, -1};
+                    bool surface_found = false;
                     while (t < t_max) {
-                        t_prev = t;
                         voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
                                                          y_d, z_d, t, cache);
 
                         if (!voxel_ptr) {
+                            t_prev = t;
                             t += block_size;
                         } else {
                             tsdf_prev = tsdf;
                             tsdf = voxel_ptr->GetTSDF();
                             w = voxel_ptr->GetWeight();
+                            if (tsdf_prev > 0 && w >= weight_threshold &&
+                                tsdf <= 0) {
+                                surface_found = true;
+                                break;
+                            }
+                            t_prev = t;
                             float delta = tsdf * sdf_trunc;
                             t += delta < voxel_size ? voxel_size : delta;
                         }
-
-                        if (tsdf_prev > 0 && w > weight_threshold &&
-                            tsdf <= 0) {
-                            break;
-                        }
                     }
 
-                    if (tsdf <= 0) {
+                    if (surface_found) {
                         float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
                                             (tsdf_prev - tsdf);
                         x_g = x_o + t_intersect * x_d;

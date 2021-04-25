@@ -58,12 +58,12 @@ void Checkbox::SetOnChecked(std::function<void(bool)> on_checked) {
     impl_->on_checked_ = on_checked;
 }
 
-Size Checkbox::CalcPreferredSize(const Theme& theme,
+Size Checkbox::CalcPreferredSize(const LayoutContext& context,
                                  const Constraints& constraints) const {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding;
     auto text_size = ImGui::GetFont()->CalcTextSizeA(
-            float(theme.font_size), 10000, 10000, impl_->name_.c_str());
+            float(context.theme.font_size), 10000, 10000, impl_->name_.c_str());
     int height = int(std::ceil(em + 2.0f * padding.y));
     auto checkbox_width = height + padding.x;
     return Size(int(checkbox_width + std::ceil(text_size.x + 2.0f * padding.x)),
@@ -104,6 +104,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(2);
 

@@ -132,18 +132,12 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Create a point cloud from a low-resolution depth input to roughly
     // estimate surfaces.
     // TODO(wei): merge CreateFromDepth and Touch in one kernel.
-    utility::Timer timer;
-    timer.Start();
     int down_factor = 4;
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
-    timer.Stop();
-    utility::LogInfo("[Integrate] Create pcd takes {}", timer.GetDuration());
-
     int64_t capacity = (depth.GetCols() / down_factor) *
                        (depth.GetRows() / down_factor) * 8;
 
-    timer.Start();
     if (point_hashmap_ == nullptr) {
         point_hashmap_ = std::make_shared<core::Hashmap>(
                 capacity, core::Dtype::Int32, core::Dtype::UInt8,
@@ -152,20 +146,13 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     } else {
         point_hashmap_->Clear();
     }
-    timer.Stop();
-    utility::LogInfo("[Integrate] Point hashmap clear takes {}",
-                     timer.GetDuration());
 
-    timer.Start();
     core::Tensor block_coords;
     kernel::tsdf::Touch(point_hashmap_, pcd.GetPoints().Contiguous(),
                         block_coords, block_resolution_, voxel_size_,
                         sdf_trunc_);
-    timer.Stop();
-    utility::LogInfo("[Integrate] Touch takes {}", timer.GetDuration());
 
     // Active voxel blocks in the block hashmap.
-    timer.Start();
     core::Tensor addrs, masks;
     int64_t n = block_hashmap_->Size();
     try {
@@ -187,13 +174,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // TODO(wei): set point_hashmap_[block_coords] = addrs and use the small
     // hashmap for raycasting
     block_hashmap_->Find(block_coords, addrs, masks);
-    timer.Stop();
-    utility::LogInfo("[Integrate] Activate and find takes {}",
-                     timer.GetDuration());
 
     // TODO(wei): directly reuse it without intermediate variables.
     // Reserved for raycasting
-    timer.Start();
     active_block_coords_ = block_coords;
 
     core::Tensor depth_tensor = depth.AsTensor().Contiguous();
@@ -226,8 +209,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
-    timer.Stop();
-    utility::LogInfo("[Integrate] kernel takes {}", timer.GetDuration());
 }
 
 std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor>
@@ -241,9 +222,6 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        float weight_threshold,
                        int ray_cast_mask) {
     // Extrinsic: world to camera -> pose: camera to world
-    utility::Timer timer;
-
-    timer.Start();
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
         vertex_map =
@@ -262,21 +240,13 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                 core::Tensor({height, width, 3}, core::Dtype::Float32, device_);
     }
 
-    timer.Stop();
-    utility::LogInfo("[Raycast] allocation takes {}", timer.GetDuration());
-
-    timer.Start();
     core::Tensor range_minmax_map;
     int down_factor = 8;
     kernel::tsdf::EstimateRange(active_block_coords_, range_minmax_map,
                                 intrinsics, extrinsics, height, width,
                                 down_factor, block_resolution_, voxel_size_,
                                 depth_min, depth_max);
-    timer.Stop();
-    utility::LogInfo("[Raycast] range estimate kernel takes {}",
-                     timer.GetDuration());
 
-    timer.Start();
     core::Tensor block_values = block_hashmap_->GetValueTensor();
     auto device_hashmap = block_hashmap_->GetDeviceHashmap();
     kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
@@ -284,10 +254,7 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                           intrinsics, extrinsics, height, width,
                           block_resolution_, voxel_size_, sdf_trunc_,
                           depth_scale, depth_min, depth_max, weight_threshold);
-    timer.Stop();
-    utility::LogInfo("[Raycast] kernel takes {}", timer.GetDuration());
 
-    timer.Start();
     std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor> results;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
         results.emplace(TSDFVoxelGrid::SurfaceMaskCode::VertexMap, vertex_map);
@@ -302,9 +269,6 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
         results.emplace(TSDFVoxelGrid::SurfaceMaskCode::NormalMap, normal_map);
     }
     results.emplace(TSDFVoxelGrid::SurfaceMaskCode::RangeMap, range_minmax_map);
-    timer.Stop();
-    utility::LogInfo("[Raycast] result preparation takes {}",
-                     timer.GetDuration());
 
     return results;
 }

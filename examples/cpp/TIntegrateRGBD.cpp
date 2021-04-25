@@ -95,11 +95,10 @@ int main(int argc, char** argv) {
 
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    Tensor intrinsic_t = Tensor(
-            std::vector<double>({focal_length.first, 0, principal_point.first,
-                                 0, focal_length.second, principal_point.second,
-                                 0, 0, 1}),
-            {3, 3}, Dtype::Float64);
+    Tensor intrinsic_t = Tensor::Init<double>(
+            {{focal_length.first, 0, principal_point.first},
+             {0, focal_length.second, principal_point.second},
+             {0, 0, 1}});
 
     int block_count =
             utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
@@ -186,13 +185,11 @@ int main(int argc, char** argv) {
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 im_near.ToLegacyImage())});
-
                 t::geometry::Image im_far(
                         range_map.Slice(2, 1, 2).Contiguous() / depth_max);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 im_far.ToLegacyImage())});
-
                 t::geometry::Image depth(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
@@ -218,7 +215,7 @@ int main(int argc, char** argv) {
     }
 
     size_t n = trajectory->parameters_.size();
-    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}}",
+    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
                      time_total / n, time_raycasting / n, time_int / n);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {

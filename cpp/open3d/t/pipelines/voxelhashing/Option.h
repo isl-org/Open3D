@@ -38,8 +38,7 @@ namespace t {
 namespace pipelines {
 namespace voxelhashing {
 
-class Option {
-public:
+struct Option {
     Option() {}
 
     /// TSDF VoxelBlock options

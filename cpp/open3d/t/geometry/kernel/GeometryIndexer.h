@@ -60,10 +60,8 @@ public:
             utility::LogError("Extrinsics is not contiguous");
         }
 
-        const double* intrinsic_ptr =
-                static_cast<const double*>(intrinsics.GetDataPtr());
-        const double* extrinsic_ptr =
-                static_cast<const double*>(extrinsics.GetDataPtr());
+        const double* intrinsic_ptr = intrinsics.GetDataPtr<double>();
+        const double* extrinsic_ptr = extrinsics.GetDataPtr<double>();
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
                 extrinsic_[i][j] = extrinsic_ptr[i * 4 + j];

@@ -1054,8 +1054,6 @@ void SceneWidget::RemoveLabel(std::shared_ptr<Label3D> label) {
 
 void SceneWidget::ClearLabels() { impl_->labels_3d_.clear(); }
 
-void SceneWidget::Layout(const Theme& theme) { Super::Layout(theme); }
-
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     const auto f = GetFrame();
 

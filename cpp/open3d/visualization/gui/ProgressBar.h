@@ -41,7 +41,7 @@ public:
     void SetValue(float value);
     float GetValue() const;
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
     Widget::DrawResult Draw(const DrawContext& context) override;

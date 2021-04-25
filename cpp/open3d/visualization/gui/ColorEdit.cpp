@@ -68,7 +68,7 @@ void ColorEdit::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size ColorEdit::CalcPreferredSize(const Theme& theme,
+Size ColorEdit::CalcPreferredSize(const LayoutContext& context,
                                   const Constraints& constraints) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
@@ -86,6 +86,7 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     ImGui::ColorEdit3(impl_->id_.c_str(), new_value.GetMutablePointer());
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     if (impl_->value_ != new_value) {
         impl_->value_ = new_value;

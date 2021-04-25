@@ -71,10 +71,10 @@ public:
     std::shared_ptr<UIImage> GetUIImage() const;
     void SetUIImage(std::shared_ptr<UIImage> image);
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
-    void Layout(const Theme& theme) override;
+    void Layout(const LayoutContext& context) override;
 
     DrawResult Draw(const DrawContext& context) override;
 

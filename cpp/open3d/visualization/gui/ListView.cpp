@@ -84,14 +84,14 @@ void ListView::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size ListView::CalcPreferredSize(const Theme &theme,
+Size ListView::CalcPreferredSize(const LayoutContext &context,
                                  const Constraints &constraints) const {
     auto padding = ImGui::GetStyle().FramePadding;
     auto *font = ImGui::GetFont();
     ImVec2 size(0, 0);
 
     for (auto &item : impl_->items_) {
-        auto item_size = font->CalcTextSizeA(float(theme.font_size),
+        auto item_size = font->CalcTextSizeA(float(context.theme.font_size),
                                              float(constraints.width), 0.0,
                                              item.c_str());
         size.x = std::max(size.x, item_size.x);
