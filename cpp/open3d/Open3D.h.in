@@ -36,7 +36,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
-#include "open3d/core/FuncionTraits.h"
+#include "open3d/core/FunctionTraits.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
