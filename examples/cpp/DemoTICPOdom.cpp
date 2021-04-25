@@ -96,10 +96,8 @@ public:
 
         // Using negative offset: points from min value to 0.2 * min_val will ve
         // assigned the min. gradient. Similarly for max. gradient.
-        min_visualization_scalar_offset_ =
-                -0.2 * min_visualization_scalar_;
-        max_visualization_scalar_offset_ =
-                -0.2 * max_visualization_scalar_;
+        min_visualization_scalar_offset_ = -0.2 * min_visualization_scalar_;
+        max_visualization_scalar_offset_ = -0.2 * max_visualization_scalar_;
 
         mat_ = rendering::Material();
         mat_.shader = "defaultUnlit";
@@ -123,7 +121,8 @@ private:
     std::thread update_thread_;
 
     void UpdateMain() {
-        core::Tensor initial_transform = core::Tensor::Eye(4, dtype_, device_);
+        core::Tensor initial_transform = core::Tensor::Eye(
+                4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor cumulative_transform = initial_transform.Clone();
 
         if (visualize_output_) {
@@ -136,13 +135,13 @@ private:
                 std::lock_guard<std::mutex> lock(cloud_lock_);
                 this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1.0});
 
-                this->widget3d_->GetScene()->AddGeometry(
-                        filenames_[0], &pcd_current_, pointcloud_mat_);
+                // this->widget3d_->GetScene()->AddGeometry(
+                //         filenames_[0], &pcd_current_, pointcloud_mat_);
 
-                int max_points = 15000;
+                int max_points = 4000000;
                 t::geometry::PointCloud pcd_placeholder(
                         core::Tensor({max_points, 3}, core::Dtype::Float32,
-                                        core::Device("CPU:0")));
+                                     core::Device("CPU:0")));
 
                 this->widget3d_->GetScene()->GetScene()->AddGeometry(
                         CURRENT_CLOUD, pcd_placeholder, mat_);
@@ -163,6 +162,8 @@ private:
                 pointclouds_device_[1].To(device_), voxel_sizes_, criterias_,
                 search_radius_, initial_transform, *estimation_);
 
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
         utility::SetVerbosityLevel(verbosity_);
 
         // Global variable for storing total runtime till i-th iteration.
@@ -182,23 +183,29 @@ private:
                     source, target, voxel_sizes_, criterias_, search_radius_,
                     initial_transform, *estimation_);
 
+            utility::LogInfo(" Transformation: \n{}\n",
+                             result.transformation_.ToString());
+
             cumulative_transform = cumulative_transform.Matmul(
-                    result.transformation_.Inverse().To(device_, dtype_));
+                    result.transformation_.Inverse());
 
             if (visualize_output_) {
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
-                    pcd_current_ = target.Transform(cumulative_transform).CPU();
-                    total_points_in_frame += pcd_current_.GetPoints().GetLength();
+                    pcd_current_ = target.Transform(cumulative_transform.To(
+                                                            device_, dtype_))
+                                           .CPU();
+                    total_points_in_frame +=
+                            pcd_current_.GetPoints().GetLength();
                     // pcd_current_.DeletePointAttr("normals");
                 }
 
                 if (i != 0) {
                     out << std::setprecision(4)
                         << 1000.0 * (i - 1) / total_time_i << " FPS "
-                        << std::endl << std::endl
-                        << "Total Points: "
-                        << total_points_in_frame;
+                        << std::endl
+                        << std::endl
+                        << "Total Points: " << total_points_in_frame;
                 }
 
                 gui::Application::GetInstance().PostToMainThread(
@@ -367,9 +374,8 @@ private:
 
     // To perform required dtype conversion, normal estimation.
     std::vector<t::geometry::PointCloud> LoadTensorPointClouds() {
-
-        utility::filesystem::ListFilesInDirectoryWithExtension(path_dataset, "pcd",
-                                                               filenames_);
+        utility::filesystem::ListFilesInDirectoryWithExtension(
+                path_dataset, "pcd", filenames_);
         if (filenames_.size() == 0) {
             utility::filesystem::ListFilesInDirectoryWithExtension(
                     path_dataset, "ply", filenames_);
@@ -388,7 +394,8 @@ private:
             t::geometry::PointCloud pointcloud_local;
             for (auto& path : filenames_) {
                 std::cout << " \rPre-fetching Data... " << i * 100 / end_range_
-                          << "%" << " " << std::flush;
+                          << "%"
+                          << " " << std::flush;
 
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
@@ -426,7 +433,9 @@ private:
                 }
                 // Adding it to our vector of pointclouds.
 
-                pointclouds_device[i++] = pointcloud_local.To(device_).VoxelDownSample(voxel_sizes_[icp_scale_levels_ - 1]);
+                pointclouds_device[i++] =
+                        pointcloud_local.To(device_).VoxelDownSample(
+                                voxel_sizes_[icp_scale_levels_ - 1]);
 
                 // When reading the dataset inside compute loop (avoiding data
                 // pre-fetching, either set this manually, or define it w.r.t.
@@ -446,12 +455,12 @@ private:
                                         .Max({0})
                                         .Item<float>()));
                 total_approximate_points_in_dataset_ +=
-                        pointclouds_device[i - 1].GetPoints().GetLength();           
+                        pointclouds_device[i - 1].GetPoints().GetLength();
             }
             utility::LogInfo(" min_val: {}, max_val: {}, total_points: {}",
-                min_visualization_scalar_,
-                max_visualization_scalar_,
-                total_approximate_points_in_dataset_); 
+                             min_visualization_scalar_,
+                             max_visualization_scalar_,
+                             total_approximate_points_in_dataset_);
 
             std::cout << std::endl;
         } catch (...) {

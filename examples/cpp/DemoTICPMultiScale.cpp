@@ -26,9 +26,9 @@ const std::string LINE_SET = "correspondences_lines";
 const std::string SRC_CORRES = "source_correspondences_idx";
 const std::string TAR_CORRES = "target_correspondences_idx";
 
-std::vector<float> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-                                             0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-                                             0.0, 0.0, 0.0, 1.0};
+std::vector<double> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+                                              0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+                                              0.0, 0.0, 0.0, 1.0};
 
 class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
@@ -57,26 +57,37 @@ public:
         ReadConfigFile(path_config);
         std::tie(source_, target_) = LoadTensorPointClouds();
 
-        transformation_ =
-                core::Tensor(initial_transform_flat, {4, 4}, dtype_, host_);
+        transformation_ = core::Tensor(initial_transform_flat, {4, 4},
+                                       core::Dtype::Float64, host_);
 
         // Warm Up.
         std::vector<ICPConvergenceCriteria> warm_up_criteria = {
                 ICPConvergenceCriteria(0.01, 0.01, 1)};
         result_ = RegistrationMultiScaleICP(
                 source_.To(device_), target_.To(device_), {1.0},
-                warm_up_criteria, {1.5}, core::Tensor::Eye(4, dtype_, device_),
+                warm_up_criteria, {1.5},
+                core::Tensor::Eye(4, core::Dtype::Float64, host_),
                 *estimation_);
 
         std::cout << " [Debug] Warm up transformation: "
                   << result_.transformation_.ToString() << std::endl;
         is_done_ = false;
 
+        // --------------------- VISUALIZER ---------------------
         gui::Application::GetInstance().Initialize();
 
         mat_ = rendering::Material();
+        mat_.shader = "defaultUnlit";
+        // mat.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+
         src_corres_mat_ = rendering::Material();
+        src_corres_mat_.shader = "defaultUnlit";
+        src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
+
         tar_corres_mat_ = rendering::Material();
+        tar_corres_mat_.shader = "defaultUnlit";
+        tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+        // ------------------------------------------------------
 
         SetOnClose([this]() {
             is_done_ = true;
@@ -91,18 +102,11 @@ private:
     std::thread update_thread_;
 
     void UpdateMain() {
-        core::Tensor initial_transform = core::Tensor::Eye(4, dtype_, device_);
+        core::Tensor initial_transform = core::Tensor::Eye(
+                4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor cumulative_transform = initial_transform.Clone();
 
-        mat_.shader = "defaultUnlit";
-        // mat.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-
-        src_corres_mat_.shader = "defaultUnlit";
-        src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
-
-        tar_corres_mat_.shader = "defaultUnlit";
-        tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-
+        // --------------------- VISUALIZER ---------------------
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             src_pcd_ = source_.CPU();
@@ -112,15 +116,24 @@ private:
         gui::Application::GetInstance().PostToMainThread(this, [this]() {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
-            this->widget3d_->GetScene()->AddGeometry(SRC_CLOUD, &src_pcd_,
-                                                     mat_);
+
             this->widget3d_->GetScene()->AddGeometry(DST_CLOUD, &tar_pcd_,
                                                      mat_);
 
+            this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                    SRC_CLOUD, src_pcd_, mat_);
+            this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                    SRC_CORRES, src_pcd_, src_corres_mat_);
+            this->widget3d_->GetScene()->GetScene()->AddGeometry(
+                    TAR_CORRES, src_pcd_, tar_corres_mat_);
+
             auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
             auto center = bbox.GetCenter().cast<float>();
-            this->widget3d_->SetupCamera(verticalFoV, bbox, center);
+            this->widget3d_->SetupCamera(18, bbox, center);
+            this->widget3d_->LookAt(center, center - Eigen::Vector3f{-10, 5, 8},
+                                    {0.0f, -1.0f, 0.0f});
         });
+        // -----------------------------------------------------
 
         auto transformation_device = transformation_.To(device_);
         auto source_device = source_.To(device_);
@@ -129,25 +142,29 @@ private:
         utility::Timer time_icp;
 
         time_icp.Start();
+
         int64_t num_iterations = int64_t(criterias_.size());
 
-        // Creating pointcloud pyramid with different voxel scale.
+        core::Tensor transformation = initial_transform.To(
+                core::Device("CPU:0"), core::Dtype::Float64);
+
         std::vector<t::geometry::PointCloud> source_down_pyramid(
                 num_iterations);
         std::vector<t::geometry::PointCloud> target_down_pyramid(
                 num_iterations);
 
         if (voxel_sizes_[num_iterations - 1] == -1) {
-            source_down_pyramid[num_iterations - 1] = source_device;
+            source_down_pyramid[num_iterations - 1] = source_device.Clone();
             target_down_pyramid[num_iterations - 1] = target_device;
         } else {
             source_down_pyramid[num_iterations - 1] =
-                    source_device.VoxelDownSample(
+                    source_device.Clone().VoxelDownSample(
                             voxel_sizes_[num_iterations - 1]);
             target_down_pyramid[num_iterations - 1] =
-                    target_device.VoxelDownSample(
+                    target_device.Clone().VoxelDownSample(
                             voxel_sizes_[num_iterations - 1]);
         }
+
         for (int k = num_iterations - 2; k >= 0; k--) {
             source_down_pyramid[k] =
                     source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes_[k]);
@@ -155,103 +172,104 @@ private:
                     target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes_[k]);
         }
 
-        RegistrationResult result_device(transformation_device);
+        RegistrationResult result(transformation);
 
         for (int64_t i = 0; i < num_iterations; i++) {
-            source_down_pyramid[i].Transform(transformation_device);
+            source_down_pyramid[i].Transform(
+                    transformation.To(device_, dtype_));
 
             core::nns::NearestNeighborSearch target_nns(
                     target_down_pyramid[i].GetPoints());
 
-            result_device = GetRegistrationResultAndCorrespondences(
+            result = GetRegistrationResultAndCorrespondences(
                     source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                    search_radius_[i], transformation_device);
+                    max_correspondence_distances_[i], transformation);
 
             for (int j = 0; j < criterias_[i].max_iteration_; j++) {
-                utility::LogInfo(
+                utility::LogDebug(
                         " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, "
-                        "RMSE {:.4f}",
-                        i + 1, j, result_device.fitness_,
-                        result_device.inlier_rmse_);
+                        "RMSE "
+                        "{:.4f}",
+                        i + 1, j, result.fitness_, result.inlier_rmse_);
 
+                // ComputeTransformation returns transformation matrix of
+                // dtype Float64.
                 core::Tensor update = estimation_->ComputeTransformation(
                         source_down_pyramid[i], target_down_pyramid[i],
-                        result_device.correspondence_set_);
+                        result.correspondence_set_);
 
-                utility::LogDebug(" Delta Transformation: {}",
-                                  update.ToString());
-
-                // Multiply the delta transform [n-1 to n] to the cumulative
-                // transformation [0 to n-1] to update cumulative [0 to n].
-                transformation_device = update.Matmul(transformation_device);
+                // Multiply the transform to the cumulative transformation
+                // (update).
+                transformation = update.Matmul(transformation);
                 // Apply the transform on source pointcloud.
-                source_down_pyramid[i].Transform(update);
+                source_down_pyramid[i].Transform(update.To(device_, dtype_));
 
-                double prev_fitness_ = result_device.fitness_;
-                double prev_inliner_rmse_ = result_device.inlier_rmse_;
+                double prev_fitness_ = result.fitness_;
+                double prev_inliner_rmse_ = result.inlier_rmse_;
 
-                result_device = GetRegistrationResultAndCorrespondences(
+                result = GetRegistrationResultAndCorrespondences(
                         source_down_pyramid[i], target_down_pyramid[i],
-                        target_nns, search_radius_[i], transformation_device);
+                        target_nns, max_correspondence_distances_[i],
+                        transformation);
 
-                t::geometry::PointCloud correspondence_src_pcd(host_);
-                t::geometry::PointCloud correspondence_tar_pcd(host_);
-
+                // -------------------- VISUALIZER ----------------------
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     correspondence_src_pcd.SetPoints(
                             source_down_pyramid[i]
                                     .GetPoints()
-                                    .IndexGet({result_device.correspondence_set_
-                                                       .first})
+                                    .IndexGet(
+                                            {result.correspondence_set_.first})
                                     .To(host_));
                     correspondence_tar_pcd.SetPoints(
                             target_down_pyramid[i]
                                     .GetPoints()
-                                    .IndexGet({result_device.correspondence_set_
-                                                       .second})
+                                    .IndexGet(
+                                            {result.correspondence_set_.second})
                                     .To(host_));
-                    src_pcd_ = source_device.Transform(transformation_device)
+                    src_pcd_ = source_device.Clone()
+                                       .Transform(transformation.To(device_,
+                                                                    dtype_))
                                        .CPU();
                 }
 
-                gui::Application::GetInstance().PostToMainThread(
-                        this, [this, i, &correspondence_src_pcd,
-                               &correspondence_tar_pcd]() {
-                            // std::lock_guard<std::mutex> lock(cloud_lock_);
-                            this->widget3d_->GetScene()->RemoveGeometry(
-                                    SRC_CLOUD);
-                            this->widget3d_->GetScene()->RemoveGeometry(
-                                    SRC_CORRES);
-                            this->widget3d_->GetScene()->RemoveGeometry(
-                                    TAR_CORRES);
+                gui::Application::GetInstance().PostToMainThread(this, [this,
+                                                                        i]() {
+                    std::lock_guard<std::mutex> lock(cloud_lock_);
 
-                            this->widget3d_->GetScene()->AddGeometry(
-                                    SRC_CLOUD, &src_pcd_, mat_);
-                            this->widget3d_->GetScene()->AddGeometry(
-                                    SRC_CORRES, &correspondence_src_pcd,
-                                    src_corres_mat_);
-                            this->widget3d_->GetScene()->AddGeometry(
-                                    TAR_CORRES, &correspondence_src_pcd,
-                                    src_corres_mat_);
-
-                            auto bbox = this->widget3d_->GetScene()
-                                                ->GetBoundingBox();
-                            auto center = bbox.GetCenter().cast<float>();
-                            this->widget3d_->SetupCamera(verticalFoV, bbox,
-                                                         center);
-                        });
+                    this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
+                            SRC_CLOUD, src_pcd_,
+                            rendering::Scene::kUpdatePointsFlag |
+                                    rendering::Scene::kUpdateColorsFlag);
+                    this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
+                            SRC_CORRES, correspondence_src_pcd,
+                            rendering::Scene::kUpdatePointsFlag |
+                                    rendering::Scene::kUpdateColorsFlag);
+                    this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
+                            TAR_CORRES, correspondence_tar_pcd,
+                            rendering::Scene::kUpdatePointsFlag |
+                                    rendering::Scene::kUpdateColorsFlag);
+                });
+                // -------------------------------------------------------
 
                 // ICPConvergenceCriteria, to terminate iteration.
                 if (j != 0 &&
-                    std::abs(prev_fitness_ - result_device.fitness_) <
+                    std::abs(prev_fitness_ - result.fitness_) <
                             criterias_[i].relative_fitness_ &&
-                    std::abs(prev_inliner_rmse_ - result_device.inlier_rmse_) <
+                    std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
                             criterias_[i].relative_rmse_) {
                     break;
                 }
             }
         }
+        // ------------------ VISUALIZER ----------------------------
+        gui::Application::GetInstance().PostToMainThread(this, [this]() {
+            std::lock_guard<std::mutex> lock(cloud_lock_);
+
+            this->widget3d_->GetScene()->GetScene()->RemoveGeometry(SRC_CORRES);
+            this->widget3d_->GetScene()->GetScene()->RemoveGeometry(TAR_CORRES);
+        });
+        // ----------------------------------------------------------
     }
 
 private:
@@ -294,7 +312,7 @@ private:
                     voxel_sizes_.push_back(std::stod(value));
                 } else if (name == "search_radii") {
                     std::istringstream is(value);
-                    search_radius_.push_back(std::stod(value));
+                    max_correspondence_distances_.push_back(std::stod(value));
                 } else if (name == "verbosity") {
                     std::istringstream is(value);
                     verb = value;
@@ -323,7 +341,7 @@ private:
         std::cout << std::endl;
 
         std::cout << " Search Radius Sizes: ";
-        for (auto search_radii : search_radius_)
+        for (auto search_radii : max_correspondence_distances_)
             std::cout << search_radii << " ";
         std::cout << std::endl;
 
@@ -339,7 +357,7 @@ private:
         std::cout << std::endl;
 
         size_t length = voxel_sizes_.size();
-        if (search_radius_.size() != length ||
+        if (max_correspondence_distances_.size() != length ||
             max_iterations.size() != length ||
             relative_fitness.size() != length ||
             relative_rmse.size() != length) {
@@ -388,10 +406,10 @@ private:
         //                       {"auto", false, false, true});
 
         core::Tensor temp_transform =
-                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
-                                            {-0.139, 0.967, -0.215, 0.7},
-                                            {0.487, 0.255, 0.835, -1.4},
-                                            {0.0, 0.0, 0.0, 1.0}});
+                core::Tensor::Init<float>({{0.862, 0.011, -0.507, 0.5},
+                                           {-0.139, 0.967, -0.215, 0.7},
+                                           {0.487, 0.255, 0.835, -1.4},
+                                           {0.0, 0.0, 0.0, 1.0}});
         target = source.Clone().Transform(temp_transform);
 
         // Currently only Float32 pointcloud is supported.
@@ -439,11 +457,11 @@ private:
                     target.GetDevice().ToString(), device.ToString());
         }
         transformation.AssertShape({4, 4});
-        transformation.AssertDtype(dtype);
 
-        core::Tensor transformation_device = transformation.To(device);
+        core::Tensor transformation_host =
+                transformation.To(core::Device("CPU:0"), core::Dtype::Float64);
 
-        RegistrationResult result(transformation_device);
+        RegistrationResult result(transformation_host);
         if (max_correspondence_distance <= 0.0) {
             return result;
         }
@@ -485,7 +503,6 @@ private:
                           static_cast<double>(source.GetPoints().GetLength());
         result.inlier_rmse_ = std::sqrt(
                 squared_error / static_cast<double>(num_correspondences));
-        result.transformation_ = transformation;
 
         return result;
     }
@@ -497,12 +514,15 @@ private:
     open3d::visualization::rendering::Material mat_;
     open3d::visualization::rendering::Material src_corres_mat_;
     open3d::visualization::rendering::Material tar_corres_mat_;
-    // std::shared_ptr<visualizer::O3DVisualizer> main_vis_;
+
+    // For Visualization.
+    t::geometry::PointCloud correspondence_src_pcd;
+    t::geometry::PointCloud correspondence_tar_pcd;
+    t::geometry::PointCloud src_pcd_;
+    t::geometry::PointCloud tar_pcd_;
 
     t::geometry::PointCloud source_;
     t::geometry::PointCloud target_;
-    t::geometry::PointCloud src_pcd_;
-    t::geometry::PointCloud tar_pcd_;
 
 private:
     std::string path_source_;
@@ -513,7 +533,7 @@ private:
 
 private:
     std::vector<double> voxel_sizes_;
-    std::vector<double> search_radius_;
+    std::vector<double> max_correspondence_distances_;
     std::vector<ICPConvergenceCriteria> criterias_;
     std::shared_ptr<TransformationEstimation> estimation_;
 

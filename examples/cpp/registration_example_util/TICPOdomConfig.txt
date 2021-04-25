@@ -20,7 +20,7 @@ verbosity = Info
 
 
 # Range of frames is 0 to end_range - 1.
-end_range = 499
+end_range = 200
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane
