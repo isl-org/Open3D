@@ -173,7 +173,6 @@ core::Tensor RGBDOdometryMultiScalePointToPlane(
 
     for (int64_t i = 0; i < n_levels; ++i) {
         for (int iter = 0; iter < iterations[i]; ++iter) {
-            printf("level %02ld, iter %02d", i, iter);
             core::Tensor delta_source_to_target = ComputePosePointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
                     target_normal_maps[i], intrinsic_matrices[i], trans,
