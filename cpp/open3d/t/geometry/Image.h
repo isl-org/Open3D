@@ -249,18 +249,6 @@ public:
                         float max_value,
                         float clip_fill = 0.0f);
 
-    /// Specific PyrDown operation for depth to reduce noise. The input is
-    /// expected to be the output of ClipTransform.
-    /// Perform a chained modified Gaussian filter (kernel_size = 5, sigma
-    /// = 1.0) and a resize (ratio = 0.5) operation. In the modified kernel, the
-    /// neighbor pixels whose value is invalid, or value difference to the
-    /// center pixel is larger than the diff_threshold will not be counted. This
-    /// specific operation reduces noise at edges.
-    /// \param diff_threshold Threshold used in the modified Gaussian kernel.
-    /// \param invalid_fill Value to check invalid depths. Must be
-    /// consistent with \p clip_fill in ClipTransform.
-    Image PyrDownDepth(float diff_threshold, float invalid_fill);
-
     /// Create a vertex map (H, W, 3) in Float32 from an image of (H, W, 1) in
     /// Float32 using unprojection. The input depth is expected to be the output
     /// of ClipTransform.

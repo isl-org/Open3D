@@ -67,7 +67,7 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
                            std::shared_ptr<ConnectionBase>());
 
 /// Function for sending a TriangleMesh.
-/// \param pcd         The TriangleMesh object.
+/// \param mesh         The TriangleMesh object.
 ///
 /// \param path        Path descriptor defining a location in the scene tree.
 /// E.g., 'mygroup/mypoints'.

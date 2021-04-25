@@ -99,9 +99,9 @@ public:
 
     void SetWidth(int width) { width_ = width; }
 
-    Size CalcPreferredSize(const Theme &theme,
+    Size CalcPreferredSize(const LayoutContext &context,
                            const Constraints &constraints) const override {
-        auto frames = CalcFrames(theme, constraints);
+        auto frames = CalcFrames(context, constraints);
         if (!frames.empty()) {
             // Add spacing on the bottom to look like the start of a new row
             return Size(width_,
@@ -111,8 +111,8 @@ public:
         }
     }
 
-    void Layout(const Theme &theme) override {
-        auto frames = CalcFrames(theme, Constraints());
+    void Layout(const LayoutContext &context) override {
+        auto frames = CalcFrames(context, Constraints());
         auto &children = GetChildren();
         for (size_t i = 0; i < children.size(); ++i) {
             children[i]->SetFrame(frames[i]);
@@ -125,7 +125,7 @@ private:
     int spacing_;
     int width_ = 10000;
 
-    std::vector<Rect> CalcFrames(const Theme &theme,
+    std::vector<Rect> CalcFrames(const LayoutContext &context,
                                  const Widget::Constraints &constraints) const {
         auto &f = GetFrame();
         std::vector<Rect> frames;
@@ -133,7 +133,7 @@ private:
         int y = f.y;
         int lineHeight = 0;
         for (auto child : GetChildren()) {
-            auto pref = child->CalcPreferredSize(theme, constraints);
+            auto pref = child->CalcPreferredSize(context, constraints);
             if (x > f.x && x + pref.width > f.x + width_) {
                 y = y + lineHeight + spacing_;
                 x = f.x;
@@ -163,10 +163,10 @@ public:
         needsLayout_ = true;
     }
 
-    Size CalcPreferredSize(const Theme &theme,
+    Size CalcPreferredSize(const LayoutContext &context,
                            const Constraints &constraints) const override {
         if (IsVisible()) {
-            return Super::CalcPreferredSize(theme, constraints);
+            return Super::CalcPreferredSize(context, constraints);
         } else {
             return Size(0, 0);
         }
@@ -231,22 +231,22 @@ public:
     std::shared_ptr<Checkbox> GetCheckbox() { return checkbox_; }
     std::shared_ptr<Label> GetName() { return name_; }
 
-    Size CalcPreferredSize(const Theme &theme,
+    Size CalcPreferredSize(const LayoutContext &context,
                            const Constraints &constraints) const override {
-        auto check_pref = checkbox_->CalcPreferredSize(theme, constraints);
-        auto name_pref = name_->CalcPreferredSize(theme, constraints);
-        int w = check_pref.width + name_pref.width + GroupWidth(theme) +
-                TimeWidth(theme);
+        auto check_pref = checkbox_->CalcPreferredSize(context, constraints);
+        auto name_pref = name_->CalcPreferredSize(context, constraints);
+        int w = check_pref.width + name_pref.width + GroupWidth(context.theme) +
+                TimeWidth(context.theme);
         return Size(w, std::max(check_pref.height, name_pref.height));
     }
 
-    void Layout(const Theme &theme) override {
+    void Layout(const LayoutContext &context) override {
         auto &frame = GetFrame();
         auto check_width =
-                checkbox_->CalcPreferredSize(theme, Constraints()).width;
+                checkbox_->CalcPreferredSize(context, Constraints()).width;
         checkbox_->SetFrame(Rect(frame.x, frame.y, check_width, frame.height));
-        auto group_width = GroupWidth(theme);
-        auto time_width = TimeWidth(theme);
+        auto group_width = GroupWidth(context.theme);
+        auto time_width = TimeWidth(context.theme);
         auto x = checkbox_->GetFrame().GetRight();
         auto name_width = frame.GetRight() - group_width - time_width - x;
         name_->SetFrame(Rect(x, frame.y, name_width, frame.height));
@@ -2000,16 +2000,16 @@ void O3DVisualizer::ExportCurrentImage(const std::string &path) {
     impl_->ExportCurrentImage(path);
 }
 
-void O3DVisualizer::Layout(const Theme &theme) {
-    auto em = theme.font_size;
-    int settings_width = 15 * theme.font_size;
+void O3DVisualizer::Layout(const gui::LayoutContext &context) {
+    auto em = context.theme.font_size;
+    int settings_width = 15 * context.theme.font_size;
 #if !GROUPS_USE_TREE
     if (impl_->added_groups_.size() >= 2) {
-        settings_width += 5 * theme.font_size;
+        settings_width += 5 * context.theme.font_size;
     }
 #endif  // !GROUPS_USE_TREE
     if (impl_->min_time_ != impl_->max_time_) {
-        settings_width += 3 * theme.font_size;
+        settings_width += 3 * context.theme.font_size;
     }
 
     auto f = GetContentRect();
@@ -2024,7 +2024,7 @@ void O3DVisualizer::Layout(const Theme &theme) {
         impl_->scene_->SetFrame(f);
     }
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 }  // namespace visualizer

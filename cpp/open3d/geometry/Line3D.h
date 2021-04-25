@@ -347,7 +347,7 @@ public:
     }
 
     /// \brief Default constructor for Segment3D takes the start and end points
-    /// of the segment \param start_point \param end_point
+    /// of the segment \p start_point \p end_point
     Segment3D(const Eigen::Vector3d& start_point,
               const Eigen::Vector3d& end_point);
 

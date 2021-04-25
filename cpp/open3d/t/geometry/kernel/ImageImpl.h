@@ -178,6 +178,8 @@ void CreateVertexMapCPU
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
+    using std::isinf;
+    using std::isnan;
 #endif
     launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         auto is_invalid = [invalid_fill] OPEN3D_DEVICE(float v) {
@@ -202,7 +204,6 @@ void CreateVertexMapCPU
         }
     });
 }
-
 #ifdef __CUDACC__
 void CreateNormalMapCUDA
 #else

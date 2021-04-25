@@ -186,7 +186,7 @@ public:
     void StopRPCInterface();
 
 protected:
-    void Layout(const gui::Theme& theme);
+    void Layout(const gui::LayoutContext& context);
 
 private:
     struct Impl;

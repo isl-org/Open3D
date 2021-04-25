@@ -181,9 +181,6 @@ void pybind_image(py::module &m) {
               "image. Each pixel will be transformed by x = x / scale; x = x < "
               "min_value ? clip_fill : x; x = x > max_value ? clip_fill : x",
               "scale"_a, "min_value"_a, "max_value"_a, "clip_fill"_a = 0.0f);
-    image.def("pyrdown_depth", &Image::PyrDownDepth,
-              "Specific PyrDown operation for depth to reduce noise",
-              "diff_threshold"_a, "invalid_fill"_a = 0.0f);
     image.def("create_vertex_map", &Image::CreateVertexMap,
               "Create a vertex map (H, W, 3) in Float32 from an image of (H, "
               "W, 1) in Float32 using unprojection",

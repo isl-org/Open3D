@@ -168,8 +168,8 @@ public:
 
     /// Set global verbosity level of Open3D.
     ///
-    /// \param level Messages with equal or less than verbosity_level verbosity
-    /// will be printed.
+    /// \param verbosity_level Messages with equal or less than verbosity_level
+    /// verbosity will be printed.
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
 
     /// Get global verbosity level of Open3D.
