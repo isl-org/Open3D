@@ -496,26 +496,6 @@ Image Image::ClipTransform(float scale,
     return dst_im;
 }
 
-Image Image::PyrDownDepth(float diff_threshold, float invalid_fill) {
-    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
-        utility::LogError(
-                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
-                "{})",
-                GetRows(), GetCols(), GetChannels());
-    }
-    if (GetDtype() != core::Dtype::Float32) {
-        utility::LogError("Expected a Float32 image, but got {}",
-                          GetDtype().ToString());
-    }
-
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows() / 2, GetCols() / 2, 1},
-                                       GetDtype(), GetDevice());
-    kernel::image::PyrDownDepth(data_, dst_im.data_, diff_threshold,
-                                invalid_fill);
-    return dst_im;
-}
-
 Image Image::CreateVertexMap(const core::Tensor &intrinsics,
                              float invalid_fill) {
     if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
