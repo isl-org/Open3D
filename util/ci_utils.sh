@@ -309,7 +309,7 @@ build_pip_conda_package() {
         rm -r "${rebuild_list[@]}" || true
         set -x # Echo commands on
         cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS} "${cmakeOptions[@]}" ..
+            -DBUILD_COMMON_CUDA_ARCHS="${BUILD_COMMON_CUDA_ARCHS}" "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi
     echo
