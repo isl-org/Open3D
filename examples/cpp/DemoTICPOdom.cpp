@@ -20,6 +20,11 @@ float verticalFoV = 25;
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
 const std::string CURRENT_CLOUD = "current_scan";
 
+const double PERCENTAGE_MIN_OFFSET_VISUALIZATION_SCALAR = -0.8;
+const double PERCENTAGE_MAX_OFFSET_VISUALIZATION_SCALAR = -0.3;
+
+//------------------------------------------------------------------------------
+// Creating GUI Layout
 //------------------------------------------------------------------------------
 class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
@@ -77,6 +82,9 @@ protected:
 };
 
 //------------------------------------------------------------------------------
+// Class containing the MultiScaleICP based Frame to Frame Odometry function
+// integrated with visualizer.
+//------------------------------------------------------------------------------
 class ExampleWindow : public ReconstructionWindow {
 public:
     ExampleWindow(const std::string& path_config, const core::Device& device)
@@ -85,29 +93,43 @@ public:
           dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
 
+        // "__visualization_scalar_" is used for color gradient rendering by
+        // the visualizer. We need to set the min and max value.
         // When reading the dataset inside compute loop (avoiding data
         // pre-fetching, either set this manually, or define it w.r.t. the first
         // data input +- % offset deviation).
         min_visualization_scalar_ = INT32_MAX * 1.0;
         max_visualization_scalar_ = INT32_MIN * 1.0;
+        max_points_in_frame_ = 0;
         total_approximate_points_in_dataset_ = 0;
 
+        // Loads the pointcloud, converts to Float32, estimates normals if
+        // required, sets the "__visualization_scalar" parameter and it's min
+        // max values.
         pointclouds_device_ = LoadTensorPointClouds();
 
         // Using negative offset: points from min value to 0.2 * min_val will ve
         // assigned the min. gradient. Similarly for max. gradient.
-        min_visualization_scalar_offset_ = -0.2 * min_visualization_scalar_;
-        max_visualization_scalar_offset_ = -0.2 * max_visualization_scalar_;
+        min_visualization_scalar_offset_ =
+                PERCENTAGE_MIN_OFFSET_VISUALIZATION_SCALAR *
+                min_visualization_scalar_;
+        max_visualization_scalar_offset_ =
+                PERCENTAGE_MAX_OFFSET_VISUALIZATION_SCALAR *
+                max_visualization_scalar_;
 
+        // Rendering Materials for Current Frame.
         mat_ = rendering::Material();
         mat_.shader = "defaultUnlit";
         mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
         mat_.point_size = 5.0f;
-
+        // Rendering Materials for cummulative pointcloud.
         pointcloud_mat_ = GetPointCloudMaterial();
 
+        // Initial transformation guess for each frame.
         transformation_ = core::Tensor::Eye(4, dtype_, device_);
 
+        // When window is closed, it will stop the execute of the code.
+        is_done_ = false;
         SetOnClose([this]() {
             is_done_ = true;
             return true;  // false would cancel the close
@@ -125,23 +147,20 @@ private:
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor cumulative_transform = initial_transform.Clone();
 
+        // ----------------- VISUALIZATION --------------------
         if (visualize_output_) {
             {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
                 pcd_current_ = pointclouds_device_[0].CPU();
-                // pcd_current_.DeletePointAttr("normals");
+                pcd_current_.DeletePointAttr("normals");
             }
             gui::Application::GetInstance().PostToMainThread(this, [&]() {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
                 this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1.0});
 
-                // this->widget3d_->GetScene()->AddGeometry(
-                //         filenames_[0], &pcd_current_, pointcloud_mat_);
-
-                int max_points = 4000000;
-                t::geometry::PointCloud pcd_placeholder(
-                        core::Tensor({max_points, 3}, core::Dtype::Float32,
-                                     core::Device("CPU:0")));
+                t::geometry::PointCloud pcd_placeholder(core::Tensor(
+                        {max_points_in_frame_, 3}, core::Dtype::Float32,
+                        core::Device("CPU:0")));
 
                 this->widget3d_->GetScene()->GetScene()->AddGeometry(
                         CURRENT_CLOUD, pcd_placeholder, mat_);
@@ -151,18 +170,20 @@ private:
                 this->widget3d_->SetupCamera(verticalFoV, bbox, center);
             });
         }
+        // -----------------------------------------------------
 
         // Final scale level downsampling is already performed while loading the
         // data. -1 avoids re-downsampling for the last scale level.
         voxel_sizes_[icp_scale_levels_ - 1] = -1;
 
-        // Warm up:
+        // --------------------- Warm up ------------------------
         auto result = RegistrationMultiScaleICP(
                 pointclouds_device_[0].To(device_),
                 pointclouds_device_[1].To(device_), voxel_sizes_, criterias_,
                 search_radius_, initial_transform, *estimation_);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // -----------------------------------------------------
 
         utility::SetVerbosityLevel(verbosity_);
 
@@ -170,7 +191,7 @@ private:
         double total_time_i = 0;
         int64_t total_points_in_frame = 0;
 
-        for (int i = 0; i < end_range_ - 1; i++) {
+        for (int i = 0; i < end_range_ - 1 && !is_done_; i++) {
             utility::Timer time_total;
             time_total.Start();
 
@@ -183,12 +204,10 @@ private:
                     source, target, voxel_sizes_, criterias_, search_radius_,
                     initial_transform, *estimation_);
 
-            utility::LogInfo(" Transformation: \n{}\n",
-                             result.transformation_.ToString());
-
             cumulative_transform = cumulative_transform.Matmul(
                     result.transformation_.Inverse());
 
+            // ----------------- VISUALIZATION --------------------
             if (visualize_output_) {
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
@@ -197,7 +216,7 @@ private:
                                            .CPU();
                     total_points_in_frame +=
                             pcd_current_.GetPoints().GetLength();
-                    // pcd_current_.DeletePointAttr("normals");
+                    pcd_current_.DeletePointAttr("normals");
                 }
 
                 if (i != 0) {
@@ -233,12 +252,11 @@ private:
                                                          center);
                         });
             }
+            // -----------------------------------------------------
 
             time_total.Stop();
             total_time_i += time_total.GetDuration();
         }
-        utility::LogInfo(" Total average FPS: {}",
-                         1000.0 * (end_range_ - 1) / total_time_i);
     }
 
 private:
@@ -454,15 +472,13 @@ private:
                                         .GetPointAttr("__visualization_scalar")
                                         .Max({0})
                                         .Item<float>()));
-                total_approximate_points_in_dataset_ +=
+                int64_t num_points =
                         pointclouds_device[i - 1].GetPoints().GetLength();
-            }
-            std::cout << std::endl;
-            utility::LogInfo(" min_val: {}, max_val: {}, total_points: {}",
-                             min_visualization_scalar_,
-                             max_visualization_scalar_,
-                             total_approximate_points_in_dataset_);
+                max_points_in_frame_ =
+                        std::max(max_points_in_frame_, num_points);
 
+                total_approximate_points_in_dataset_ += num_points;
+            }
             std::cout << std::endl;
         } catch (...) {
             utility::LogError(
@@ -479,8 +495,10 @@ private:
     rendering::Material GetPointCloudMaterial() {
         auto pointcloud_mat = rendering::Material();
         pointcloud_mat.shader = "unlitGradient";
-        pointcloud_mat.scalar_min = -4.0;
-        pointcloud_mat.scalar_max = 1.0;
+        pointcloud_mat.scalar_min = min_visualization_scalar_ +
+                                    min_visualization_scalar_offset_ /*-4.0*/;
+        pointcloud_mat.scalar_max = max_visualization_scalar_ +
+                                    max_visualization_scalar_offset_ /*1.0*/;
         pointcloud_mat.point_size = 0.1f;
         // pointcloud_mat.base_color =
         //         Eigen::Vector4f(1.f, 1.0f, 1.0f, 0.5f);
@@ -504,7 +522,6 @@ private:
     std::mutex cloud_lock_;
 
     std::atomic<bool> is_done_;
-    // std::shared_ptr<visualizer::O3DVisualizer> main_vis_;
     open3d::visualization::rendering::Material pointcloud_mat_;
     open3d::visualization::rendering::Material mat_;
 
@@ -513,6 +530,7 @@ private:
     t::geometry::PointCloud pcd_current_;
 
     int64_t total_approximate_points_in_dataset_;
+    int64_t max_points_in_frame_;
     double min_visualization_scalar_;
     double max_visualization_scalar_;
     double min_visualization_scalar_offset_;
