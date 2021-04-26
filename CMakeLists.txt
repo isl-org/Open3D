@@ -635,9 +635,9 @@ function(open3d_aligned_print first second)
     message(STATUS "  ${first} ${stars} ${second}")
 endfunction()
 
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Open3D ${PROJECT_VERSION} Configuration Summary")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Enabled Features:")
 open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
@@ -657,10 +657,25 @@ if(BUILD_PYTHON_MODULE)
 endif()
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
-if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE)
-    message(WARNING "PyTorch Ops with CUDA needs a custom PyTorch install from
-    https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1 The
-    official PyTorch v1.7.1 wheel will not work due to issue #52663")
+if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND 
+    CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" AND
+    Pytorch_VERSION GREATER_EQUAL "1.7" AND Pytorch_VERSION VERSION_LESS "1.9")
+    message( WARNING
+        "--------------------------------------------------------------------------------\n"
+        "                                                                                \n"
+        " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
+        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
+        " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
+        " problem.                                                                       \n"
+        "                                                                                \n"
+        " We recommend to compile Pytorch from source with compile flags.                \n"
+        "   '-Xcompiler -fno-gnu-unique'                                                 \n"
+        "                                                                                \n"
+        " or use the PyTorch wheels at                                                   \n"
+        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "                                                                                \n"
+        "--------------------------------------------------------------------------------\n"
+    )
 endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
@@ -671,7 +686,7 @@ else()
     set(usage "0")
 endif()
 open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
@@ -713,4 +728,4 @@ foreach(dep IN ITEMS ${deps})
     endif()
     open3d_aligned_print("${dep}" "${usage}")
 endforeach()
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
