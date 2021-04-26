@@ -32,6 +32,7 @@
 #include <set>
 #include <unordered_set>
 
+#include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Application.h"
@@ -778,14 +779,45 @@ struct SceneWidget::Impl {
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
     bool scene_caching_enabled_ = false;
     std::vector<Eigen::Vector2i> ui_lines_;
-
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
+    struct {
+        Eigen::Matrix3d matrix;
+        float width = 1.0f;
+        float height = 1.0f;
+        bool is_using = false;
+    } intrinsics_;
+
+    void UpdateFromIntrinsicMatrix(const Rect& frame) {
+        float orig_aspect = intrinsics_.width / intrinsics_.height;
+        float aspect = float(frame.width) / float(frame.height);
+        Eigen::Matrix3d scale;
+        if (aspect < 1.0f) {
+            scale << 1.0, 0.0, 0.0,
+                0.0, (aspect / orig_aspect), 0.0,
+                0.0, 0.0, 1.0;
+        } else {
+            scale << (orig_aspect / aspect), 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 1.0;
+        }
+        Eigen::Matrix3d m = intrinsics_.matrix * scale;
+        auto* camera = scene_->GetCamera();
+        camera->SetProjection(m, NEAR_PLANE, CalcFarPlane(frame),
+                              intrinsics_.width, intrinsics_.height);
+    }
 
     void UpdateFarPlane(const Rect& frame, float verticalFoV) {
         float aspect = 1.0f;
         if (frame.height > 0) {
             aspect = float(frame.width) / float(frame.height);
         }
+        auto* camera = scene_->GetCamera();
+        auto far = CalcFarPlane(frame);
+        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
+                              rendering::Camera::FovType::Vertical);
+    }
+
+    double CalcFarPlane(const Rect& frame) {
         // The far plane needs to be the max absolute distance, not just the
         // max extent, so that axes are visible if requested.
         // See also RotationInteractorLogic::UpdateCameraFarPlane().
@@ -797,8 +829,7 @@ struct SceneWidget::Impl {
         auto model_size = 2.0 * bounds_.GetExtent().norm();
         auto far = std::max(MIN_FAR_PLANE,
                             std::max(std::max(far1, far2), far3) + model_size);
-        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
-                              rendering::Camera::FovType::Vertical);
+        return far;
     }
 };
 
@@ -831,6 +862,7 @@ void SceneWidget::SetupCamera(
         float verticalFoV,
         const geometry::AxisAlignedBoundingBox& geometry_bounds,
         const Eigen::Vector3f& center_of_rotation) {
+    impl_->intrinsics_.is_using = false;
     impl_->bounds_ = geometry_bounds;
     impl_->controls_->SetBoundingBox(geometry_bounds);
     impl_->controls_->SetCenterOfRotation(center_of_rotation);
@@ -838,6 +870,55 @@ void SceneWidget::SetupCamera(
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 
     impl_->UpdateFarPlane(GetFrame(), verticalFoV);
+}
+
+void SceneWidget::SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                              const Eigen::Matrix4d& extrinsic,
+                              const geometry::AxisAlignedBoundingBox& geometry_bounds) {
+    SetupCamera(intrinsic.intrinsic_matrix_, extrinsic,
+                intrinsic.width_, intrinsic.height_, geometry_bounds);
+}
+
+void SceneWidget::SetupCamera(const Eigen::Matrix3d& intrinsic,
+                              const Eigen::Matrix4d& extrinsic,
+                              int intrinsic_width_px, int intrinsic_height_px,
+                              const geometry::AxisAlignedBoundingBox& geometry_bounds) {
+    impl_->intrinsics_.is_using = true;
+    impl_->intrinsics_.matrix = intrinsic;
+    impl_->intrinsics_.width = intrinsic_width_px;
+    impl_->intrinsics_.height = intrinsic_height_px;
+    impl_->bounds_ = geometry_bounds;
+    impl_->controls_->SetBoundingBox(geometry_bounds);
+
+    // The intrinsic * extrinsic matrix models projection from the world through
+    // a pinhole onto the projection plane. The instrinsic matrix is the
+    // projection matrix, and extrinsic.inverse() is the camera pose. But the
+    // OpenGL camera has the projection plane in front of the camera, which
+    // essentially inverts all the axes of the projection. (Pinhole camera
+    // mages are flipped horizontally and vertically and the camera is the other
+    // direction.) But the extrinsic matrix is left-handed, so we also need to
+    // convert to OpenGL's right-handed matrices.
+    Eigen::Matrix4d toGLCamera;
+    toGLCamera << 1.0, 0.0, 0.0, 0.0,
+        0.0, -1.0, 0.0, 0.0,
+        0.0, 0.0, -1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0;
+    Eigen::Matrix4f m = (extrinsic.inverse() * toGLCamera).cast<float>();
+    auto *camera = GetCamera();
+    camera->SetModelMatrix(rendering::Camera::Transform(m));
+    camera->SetProjection(impl_->intrinsics_.matrix,
+                          NEAR_PLANE, impl_->CalcFarPlane(GetFrame()),
+                          intrinsic_width_px, intrinsic_height_px);
+
+    // We need to calculate the center of rotation (rather than specifying it
+    // because the intrinsic/extrinsic matrices define a position for the camera
+    // and the center of rotation needs to be visually consistent.
+    Eigen::Vector3f forward = camera->GetForwardVector();
+    Eigen::Vector3f pos = camera->GetPosition();
+    Eigen::Vector3f toCenter = geometry_bounds.GetCenter().cast<float>() - pos;
+    float dist = toCenter.dot(forward);
+    Eigen::Vector3f cor = pos + dist * forward;
+    impl_->controls_->SetCenterOfRotation(cor);
 }
 
 void SceneWidget::LookAt(const Eigen::Vector3f& center,
@@ -1070,14 +1151,20 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 
         impl_->scene_->SetViewport(f.x, y, f.width, f.height);
 
-        auto* camera = GetCamera();
-        float aspect = 1.0f;
-        if (f.height > 0) {
-            aspect = float(f.width) / float(f.height);
+        if (impl_->intrinsics_.is_using) {
+            if (f.height > 0) {
+                impl_->UpdateFromIntrinsicMatrix(f);
+            }
+        } else {
+            float aspect = 1.0f;
+            if (f.height > 0) {
+                aspect = float(f.width) / float(f.height);
+            }
+            auto* camera = GetCamera();
+            camera->SetProjection(camera->GetFieldOfView(), aspect,
+                                  camera->GetNear(), camera->GetFar(),
+                                  camera->GetFieldOfViewType());
         }
-        GetCamera()->SetProjection(camera->GetFieldOfView(), aspect,
-                                   camera->GetNear(), camera->GetFar(),
-                                   camera->GetFieldOfViewType());
 
         impl_->controls_->SetPickNeedsRedraw();
     }
