@@ -89,7 +89,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                             A_reduction[21 + j] += J[j] * r;
                         }
                         A_reduction[27] = r * r;
-                        A_reduction[28] = 1;
+                        A_reduction[28] += 1;
                     }
                 }
 #ifdef _WIN32

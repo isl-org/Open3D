@@ -53,7 +53,9 @@ public:
     ExampleWindow(const std::string& path_config, const core::Device& device)
         : device_(device),
           host_(core::Device("CPU:0")),
-          dtype_(core::Dtype::Float32) {
+          dtype_(core::Dtype::Float32),
+          correspondence_src_pcd(host_),
+          correspondence_tar_pcd(host_) {
         ReadConfigFile(path_config);
         std::tie(source_, target_) = LoadTensorPointClouds();
 
@@ -76,17 +78,23 @@ public:
         // --------------------- VISUALIZER ---------------------
         gui::Application::GetInstance().Initialize();
 
-        mat_ = rendering::Material();
-        mat_.shader = "defaultUnlit";
-        // mat.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+        src_cloud_mat_ = rendering::Material();
+        src_cloud_mat_.shader = "defaultUnlit";
+        // src_cloud_mat_.base_color = Eigen::Vector4f(0.5f, 0.5f, 0.5f, 1.0f);
+
+        tar_cloud_mat_ = rendering::Material();
+        tar_cloud_mat_.shader = "defaultUnlit";
+        // tar_cloud_mat_.base_color = Eigen::Vector4f(0.7f, 0.7f, 0.7f, 1.0f);
 
         src_corres_mat_ = rendering::Material();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
+        src_corres_mat_.point_size = 3.0f;
 
         tar_corres_mat_ = rendering::Material();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+        tar_corres_mat_.point_size = 3.0f;
         // ------------------------------------------------------
 
         SetOnClose([this]() {
@@ -118,10 +126,10 @@ private:
             this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
 
             this->widget3d_->GetScene()->AddGeometry(DST_CLOUD, &tar_pcd_,
-                                                     mat_);
+                                                     tar_cloud_mat_);
 
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    SRC_CLOUD, src_pcd_, mat_);
+                    SRC_CLOUD, src_pcd_, src_cloud_mat_);
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
                     SRC_CORRES, src_pcd_, src_corres_mat_);
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
@@ -135,57 +143,125 @@ private:
         });
         // -----------------------------------------------------
 
-        auto transformation_device = transformation_.To(device_);
-        auto source_device = source_.To(device_);
-        auto target_device = target_.To(device_);
+        // ----- Class members passed to function arguments
+        // ----- in t::pipeline::registration::RegistrationMultiScaleICP
+        const t::geometry::PointCloud source = source_.To(device_);
+        const t::geometry::PointCloud target = target_.To(device_);
+        const std::vector<double> voxel_sizes = voxel_sizes_;
+        const std::vector<ICPConvergenceCriteria> criterias = criterias_;
+        const std::vector<double> max_correspondence_distances =
+                max_correspondence_distances_;
+        const core::Tensor init = transformation_;
+        auto& estimation = *estimation_;
 
-        utility::Timer time_icp;
+        // ----- RegistrationMultiScaleICP Function directly taken from
+        // ----- t::pipelines::registration, and added O3DVisualizer to it.
+        core::Device device = source.GetDevice();
+        core::Dtype dtype = core::Dtype::Float32;
 
-        time_icp.Start();
+        source.GetPoints().AssertDtype(
+                dtype,
+                " RegistrationICP: Only Float32 Point cloud "
+                "are supported currently.");
+        target.GetPoints().AssertDtype(
+                dtype,
+                " RegistrationICP: Only Float32 Point cloud "
+                "are supported currently.");
 
-        int64_t num_iterations = int64_t(criterias_.size());
+        if (target.GetDevice() != device) {
+            utility::LogError(
+                    "Target Pointcloud device {} != Source Pointcloud's device "
+                    "{}.",
+                    target.GetDevice().ToString(), device.ToString());
+        }
 
-        core::Tensor transformation = initial_transform.To(
-                core::Device("CPU:0"), core::Dtype::Float64);
+        int64_t num_iterations = int64_t(criterias.size());
+        if (!(criterias.size() == voxel_sizes.size() &&
+              criterias.size() == max_correspondence_distances.size())) {
+            utility::LogError(
+                    " [RegistrationMultiScaleICP]: Size of criterias, "
+                    "voxel_size,"
+                    " max_correspondence_distances vectors must be same.");
+        }
+
+        if ((estimation.GetTransformationEstimationType() ==
+                     TransformationEstimationType::PointToPlane ||
+             estimation.GetTransformationEstimationType() ==
+                     TransformationEstimationType::ColoredICP) &&
+            (!target.HasPointNormals())) {
+            utility::LogError(
+                    "TransformationEstimationPointToPlane and "
+                    "TransformationEstimationColoredICP "
+                    "require pre-computed normal vectors for target "
+                    "PointCloud.");
+        }
+
+        if (max_correspondence_distances[0] <= 0.0) {
+            utility::LogError(
+                    " Max correspondence distance must be greater than 0, but"
+                    " got {} in scale: {}.",
+                    max_correspondence_distances[0], 0);
+        }
+
+        for (int64_t i = 1; i < num_iterations; i++) {
+            if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
+                utility::LogError(
+                        " [MultiScaleICP] Voxel sizes must be in strictly "
+                        "decreasing order.");
+            }
+            if (max_correspondence_distances[i] <= 0.0) {
+                utility::LogError(
+                        " Max correspondence distance must be greater than 0, "
+                        "but"
+                        " got {} in scale: {}.",
+                        max_correspondence_distances[i], i);
+            }
+        }
+
+        init.AssertShape({4, 4});
+
+        core::Tensor transformation =
+                init.To(core::Device("CPU:0"), core::Dtype::Float64);
 
         std::vector<t::geometry::PointCloud> source_down_pyramid(
                 num_iterations);
         std::vector<t::geometry::PointCloud> target_down_pyramid(
                 num_iterations);
 
-        if (voxel_sizes_[num_iterations - 1] == -1) {
-            source_down_pyramid[num_iterations - 1] = source_device.Clone();
-            target_down_pyramid[num_iterations - 1] = target_device;
+        if (voxel_sizes[num_iterations - 1] == -1) {
+            source_down_pyramid[num_iterations - 1] = source.Clone();
+            target_down_pyramid[num_iterations - 1] = target;
         } else {
             source_down_pyramid[num_iterations - 1] =
-                    source_device.Clone().VoxelDownSample(
-                            voxel_sizes_[num_iterations - 1]);
+                    source.Clone().VoxelDownSample(
+                            voxel_sizes[num_iterations - 1]);
             target_down_pyramid[num_iterations - 1] =
-                    target_device.Clone().VoxelDownSample(
-                            voxel_sizes_[num_iterations - 1]);
+                    target.Clone().VoxelDownSample(
+                            voxel_sizes[num_iterations - 1]);
         }
 
         for (int k = num_iterations - 2; k >= 0; k--) {
             source_down_pyramid[k] =
-                    source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes_[k]);
+                    source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
             target_down_pyramid[k] =
-                    target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes_[k]);
+                    target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
         }
 
         RegistrationResult result(transformation);
 
         for (int64_t i = 0; i < num_iterations; i++) {
-            source_down_pyramid[i].Transform(
-                    transformation.To(device_, dtype_));
+            source_down_pyramid[i].Transform(transformation.To(device, dtype));
 
             core::nns::NearestNeighborSearch target_nns(
                     target_down_pyramid[i].GetPoints());
 
             result = GetRegistrationResultAndCorrespondences(
                     source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                    max_correspondence_distances_[i], transformation);
+                    max_correspondence_distances[i], transformation);
 
-            for (int j = 0; j < criterias_[i].max_iteration_; j++) {
+            for (int j = 0; j < criterias[i].max_iteration_; j++) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
                 utility::LogDebug(
                         " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, "
                         "RMSE "
@@ -194,7 +270,7 @@ private:
 
                 // ComputeTransformation returns transformation matrix of
                 // dtype Float64.
-                core::Tensor update = estimation_->ComputeTransformation(
+                core::Tensor update = estimation.ComputeTransformation(
                         source_down_pyramid[i], target_down_pyramid[i],
                         result.correspondence_set_);
 
@@ -202,14 +278,14 @@ private:
                 // (update).
                 transformation = update.Matmul(transformation);
                 // Apply the transform on source pointcloud.
-                source_down_pyramid[i].Transform(update.To(device_, dtype_));
+                source_down_pyramid[i].Transform(update.To(device, dtype));
 
                 double prev_fitness_ = result.fitness_;
                 double prev_inliner_rmse_ = result.inlier_rmse_;
 
                 result = GetRegistrationResultAndCorrespondences(
                         source_down_pyramid[i], target_down_pyramid[i],
-                        target_nns, max_correspondence_distances_[i],
+                        target_nns, max_correspondence_distances[i],
                         transformation);
 
                 // -------------------- VISUALIZER ----------------------
@@ -227,10 +303,9 @@ private:
                                     .IndexGet(
                                             {result.correspondence_set_.second})
                                     .To(host_));
-                    src_pcd_ = source_device.Clone()
-                                       .Transform(transformation.To(device_,
-                                                                    dtype_))
-                                       .CPU();
+
+                    src_pcd_ = source_.Clone().Transform(
+                            transformation.To(dtype_));
                 }
 
                 gui::Application::GetInstance().PostToMainThread(this, [this,
@@ -406,10 +481,10 @@ private:
         //                       {"auto", false, false, true});
 
         core::Tensor temp_transform =
-                core::Tensor::Init<float>({{0.862, 0.011, -0.507, 0.5},
-                                           {-0.139, 0.967, -0.215, 0.7},
-                                           {0.487, 0.255, 0.835, -1.4},
-                                           {0.0, 0.0, 0.0, 1.0}});
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}});
         target = source.Clone().Transform(temp_transform);
 
         // Currently only Float32 pointcloud is supported.
@@ -508,10 +583,16 @@ private:
     }
 
 private:
+    core::Device device_;
+    core::Device host_;
+    core::Dtype dtype_;
+
+private:
     std::mutex cloud_lock_;
 
     std::atomic<bool> is_done_;
-    open3d::visualization::rendering::Material mat_;
+    open3d::visualization::rendering::Material src_cloud_mat_;
+    open3d::visualization::rendering::Material tar_cloud_mat_;
     open3d::visualization::rendering::Material src_corres_mat_;
     open3d::visualization::rendering::Material tar_corres_mat_;
 
@@ -540,11 +621,6 @@ private:
 private:
     core::Tensor transformation_;
     t::pipelines::registration::RegistrationResult result_;
-
-private:
-    core::Device device_;
-    core::Device host_;
-    core::Dtype dtype_;
 };
 
 //------------------------------------------------------------------------------
