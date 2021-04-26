@@ -117,7 +117,6 @@ void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
     hashmap->Activate(block_coordi.Slice(0, 0, count.Item<int>()), block_addrs,
                       block_masks);
     voxel_block_coords = block_coordi.IndexGet({block_masks});
-
 }
 
 }  // namespace tsdf
