@@ -657,7 +657,7 @@ if(BUILD_PYTHON_MODULE)
 endif()
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
-if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND 
+if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
     CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" AND
     Pytorch_VERSION GREATER_EQUAL "1.7" AND Pytorch_VERSION VERSION_LESS "1.9")
     message( WARNING
@@ -668,7 +668,7 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
         " problem.                                                                       \n"
         "                                                                                \n"
-        " We recommend to compile Pytorch from source with compile flags.                \n"
+        " We recommend to compile PyTorch from source with compile flags.                \n"
         "   '-Xcompiler -fno-gnu-unique'                                                 \n"
         "                                                                                \n"
         " or use the PyTorch wheels at                                                   \n"
