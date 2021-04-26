@@ -72,7 +72,8 @@ public:
 
     void AddBool(const std::string& name,
                  std::atomic<bool>* bool_addr,
-                 bool default_val) {
+                 bool default_val,
+                 const std::string& tooltip = "") {
         auto cb = std::make_shared<gui::Checkbox>("");
         cb->SetChecked(default_val);
         *bool_addr = default_val;
@@ -80,7 +81,9 @@ public:
             *bool_addr = is_checked;
             this->NotifyChanged();
         });
-        AddChild(std::make_shared<gui::Label>(name.c_str()));
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
         AddChild(cb);
     }
 
@@ -88,7 +91,8 @@ public:
                         std::atomic<double>* num_addr,
                         double default_val,
                         double min_val,
-                        double max_val) {
+                        double max_val,
+                        const std::string& tooltip = "") {
         auto s = std::make_shared<gui::Slider>(gui::Slider::DOUBLE);
         s->SetLimits(min_val, max_val);
         s->SetValue(default_val);
@@ -97,7 +101,9 @@ public:
             *num_addr = new_val;
             this->NotifyChanged();
         });
-        AddChild(std::make_shared<gui::Label>(name.c_str()));
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
         AddChild(s);
     }
 
@@ -105,7 +111,8 @@ public:
                       std::atomic<int>* num_addr,
                       int default_val,
                       int min_val,
-                      int max_val) {
+                      int max_val,
+                      const std::string& tooltip = "") {
         auto s = std::make_shared<gui::Slider>(gui::Slider::INT);
         s->SetLimits(min_val, max_val);
         s->SetValue(default_val);
@@ -114,14 +121,17 @@ public:
             *num_addr = new_val;
             this->NotifyChanged();
         });
-        AddChild(std::make_shared<gui::Label>(name.c_str()));
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
         AddChild(s);
     }
 
     void AddValues(const std::string& name,
                    std::atomic<int>* idx_addr,
                    int default_idx,
-                   std::vector<std::string> values) {
+                   std::vector<std::string> values,
+                   const std::string& tooltip = "") {
         auto combo = std::make_shared<gui::Combobox>();
         for (auto& v : values) {
             combo->AddItem(v.c_str());
@@ -133,7 +143,9 @@ public:
                     *idx_addr = new_idx;
                     this->NotifyChanged();
                 });
-        AddChild(std::make_shared<gui::Label>(name.c_str()));
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
         AddChild(combo);
     }
 
@@ -283,21 +295,30 @@ public:
 
         // Fixed
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
-                                   1000, 1, 5000);
-        fixed_props_->AddIntSlider("Estimated points",
-                                   &prop_values_.pointcloud_size, 6000000,
-                                   500000, 8000000);
+                                   1000, 1, 5000,
+                                   "Scale factor applied to the depth values "
+                                   "from the depth image");
+        fixed_props_->AddIntSlider(
+                "Estimated points", &prop_values_.pointcloud_size, 6000000,
+                500000, 8000000,
+                "Estimated number of points in the point cloud; used to speed "
+                "extraction of points into the 3D scene");
 
         // Adjustable
         adjustable_props_->AddIntSlider(
-                "Update interval", &prop_values_.surface_interval, 50, 1, 100);
+                "Update interval", &prop_values_.surface_interval, 50, 1, 100,
+                "The number of iterations between updating the 3D display");
 
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
-                                          3.0, 0.0, 5.0);
+                                          3.0, 0.0, 5.0,
+                                          "Maximum depth before point is "
+                                          "discarded as part of background");
         adjustable_props_->AddFloatSlider(
-                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5);
+                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5, "");
         adjustable_props_->AddBool("Raycast color", &prop_values_.raycast_color,
-                                   true);
+                                   true,
+                                   "Raycast into the color image to "
+                                   "determine point color");
 
         // Set adjustable disabled to make the Start button clearer
         adjustable_props_->SetEnabled(false);
