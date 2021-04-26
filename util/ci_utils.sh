@@ -54,7 +54,6 @@ OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && 
 
 install_cuda_toolkit() {
 
-    set -x
     SUDO=${SUDO:-sudo}
     options="$(echo "$@" | tr ' ' '|')"
 
@@ -62,10 +61,13 @@ install_cuda_toolkit() {
         echo "Installing CUDA ${CUDA_VERSION[1]} with apt from bionic repos..."
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-    else
+    elif [[ $UBUNTU_VERSION == "focal" ]]; then
         echo "Installing CUDA ${CUDA_VERSION[1]} with apt from focal repos..."
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
+    else
+        echo "Unsupported OS or version $UBUNTU_VERSION for CUDA toolkit" \
+            " install." && return 1
     fi
     $SUDO apt-get install --yes --no-install-recommends "cuda-toolkit-${CUDA_VERSION[0]}"
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
@@ -85,13 +87,13 @@ install_cuda_toolkit() {
         # CentOS 6 nvidia-docker scripts. The CUDA version and CUDNN version
         # should be the same as the repository method. Ref:
         # https://gitlab.com/nvidia/container-images/cuda/-/blob/2d67fde701915bd88a15038895203c894b36d3dd/dist/10.1/centos6-x86_64/devel/cudnn7/Dockerfile#L9
-        #$SUDO apt-get install --yes --no-install-recommends curl
-        #CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
-        #curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
-        #echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
-        #$SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
-        #rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
-        #$SUDO ldconfig
+        # $SUDO apt-get install --yes --no-install-recommends curl
+        # CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
+        # curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
+        # echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
+        # $SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
+        # rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
+        # $SUDO ldconfig
         # CUDNN is now part of the main CUDA repo, so re-trying apt install
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
         $SUDO apt-get install --yes --no-install-recommends \
@@ -118,7 +120,6 @@ install_cuda_toolkit() {
         $SUDO apt-get clean
         $SUDO rm -rf /var/lib/apt/lists/*
     fi
-    set +x
 }
 
 install_python_dependencies() {
