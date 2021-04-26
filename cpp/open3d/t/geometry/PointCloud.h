@@ -257,6 +257,11 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
+    /// Adds a pointcloud and returns the resulting pointcloud.
+    PointCloud Add(const PointCloud &other) const;
+
+    PointCloud operator+(const PointCloud &other) const { return Add(other); }
+
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.
     /// Extracts R, t from Transformation

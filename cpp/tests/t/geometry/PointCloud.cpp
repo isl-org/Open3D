@@ -372,6 +372,54 @@ TEST_P(PointCloudPermuteDevices, Setters) {
     }
 }
 
+TEST_P(PointCloudPermuteDevices, Add) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, device);
+
+    t::geometry::PointCloud pcd(device);
+
+    pcd.SetPoints(points);
+    pcd.SetPointColors(colors);
+    pcd.SetPointAttr("labels", labels);
+
+    t::geometry::PointCloud pcd2(device);
+
+    pcd2 = pcd.Clone();
+
+    pcd2 = pcd2 + pcd;
+
+    utility::LogInfo(" PCD2: {}", pcd2.GetPoints().ToString());
+    utility::LogInfo(" PCD2: {}", pcd2.GetPointColors().ToString());
+    utility::LogInfo(" PCD2: {}", pcd2.GetPointAttr("labels").ToString());
+
+    // EXPECT_TRUE(pcd.GetPoints().AllClose(
+    //         core::Tensor::Ones({2, 3}, dtype, device)));
+    // EXPECT_TRUE(pcd.GetPointColors().AllClose(
+    //         core::Tensor::Ones({2, 3}, dtype, device) * 2));
+    // EXPECT_TRUE(pcd.GetPointAttr("labels").AllClose(
+    //         core::Tensor::Ones({2, 3}, dtype, device) * 3));
+    // EXPECT_ANY_THROW(pcd.GetPointNormals());
+
+    // // Mismatched device should throw an exception. This test is only
+    // // effective if device is a CUDA device.
+    // core::Device cpu_device = core::Device("CPU:0");
+    // if (cpu_device != device) {
+    //     core::Tensor cpu_points = core::Tensor::Ones({2, 3}, dtype,
+    //     cpu_device); core::Tensor cpu_colors =
+    //             core::Tensor::Ones({2, 3}, dtype, cpu_device) * 2;
+    //     core::Tensor cpu_labels =
+    //             core::Tensor::Ones({2, 3}, dtype, cpu_device) * 3;
+
+    //     EXPECT_ANY_THROW(pcd.SetPoints(cpu_points));
+    //     EXPECT_ANY_THROW(pcd.SetPointColors(cpu_colors));
+    //     EXPECT_ANY_THROW(pcd.SetPointAttr("labels", cpu_labels));
+    // }
+}
+
 TEST_P(PointCloudPermuteDevices, Has) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
