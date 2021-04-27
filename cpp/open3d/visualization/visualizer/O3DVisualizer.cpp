@@ -941,7 +941,7 @@ struct O3DVisualizer::Impl {
         } else {
             utility::LogWarning(
                     "No valid geometry specified to O3DViewer. Only supported "
-                    "geometries are Geometry3D and TGeometry PointClouds");
+                    "geometries are Geometry3D and TGeometry PointClouds.");
         }
 
         if (no_shadows) {
