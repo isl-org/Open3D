@@ -99,6 +99,14 @@ def test_to_legacy_pointcloud(device):
 def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
+    # get_min_bound, get_max_bound, get_center.
+    pcd = o3d.t.geometry.PointCloud(device)
+    pcd.point["points"] = o3c.Tensor([[1, 10, 20], [30, 2, 40], [50, 60, 3]],
+                                     dtype, device)
+    assert pcd.get_min_bound().allclose(o3c.Tensor([1, 2, 3], dtype, device))
+    assert pcd.get_max_bound().allclose(o3c.Tensor([50, 60, 40], dtype, device))
+    assert pcd.get_center().allclose(o3c.Tensor([27, 24, 21], dtype, device))
+
     # add.
     pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor.ones((2, 3), dtype, device)
