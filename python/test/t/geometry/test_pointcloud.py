@@ -99,21 +99,22 @@ def test_to_legacy_pointcloud(device):
 def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
+    # add.
     pcd = o3d.t.geometry.PointCloud(device)
-    pcd2 = o3d.t.geometry.PointCloud(device)
-    pcd3 = o3d.t.geometry.PointCloud(device)
-
     pcd.point["points"] = o3c.Tensor.ones((2, 3), dtype, device)
     pcd.point["normals"] = o3c.Tensor.ones((2, 3), dtype, device)
 
+    pcd2 = o3d.t.geometry.PointCloud(device)
     pcd2.point["points"] = o3c.Tensor.ones((2, 3), dtype, device)
     pcd2.point["normals"] = o3c.Tensor.ones((2, 3), dtype, device)
     pcd2.point["labels"] = o3c.Tensor.ones((2, 3), dtype, device)
 
+    pcd3 = o3d.t.geometry.PointCloud(device)
     pcd3 = pcd + pcd2
 
-    assert pcd3["points"].allclose(o3c.Tensor.ones((4, 3), dtype, device))
-    assert pcd3["normals"].allclose(o3c.Tensor.ones((4, 3), dtype, device))
+    assert pcd3.point["points"].allclose(o3c.Tensor.ones((4, 3), dtype, device))
+    assert pcd3.point["normals"].allclose(o3c.Tensor.ones((4, 3), dtype,
+                                                          device))
 
     with pytest.raises(RuntimeError) as excinfo:
         pcd3 = pcd2 + pcd
