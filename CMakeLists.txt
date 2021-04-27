@@ -359,11 +359,14 @@ if(BUILD_CUDA_MODULE)
         # Build with all known (and deprecated) architectures.
         # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(CMAKE_CUDA_ARCHITECTURES                 35-real 37-real 50-real 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
+                60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(CMAKE_CUDA_ARCHITECTURES                 35-real 37-real 50-real 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75-real 80)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
+                60-real 61-real 62-real 70-real 72-real 75-real 80)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
-            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
+            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
+                52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
         else()
             message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
         endif()
@@ -632,9 +635,9 @@ function(open3d_aligned_print first second)
     message(STATUS "  ${first} ${stars} ${second}")
 endfunction()
 
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Open3D ${PROJECT_VERSION} Configuration Summary")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Enabled Features:")
 open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
@@ -644,7 +647,7 @@ open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 if(WIN32)
-    open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
+   open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
@@ -654,6 +657,26 @@ if(BUILD_PYTHON_MODULE)
 endif()
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
+if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
+    CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" AND
+    Pytorch_VERSION GREATER_EQUAL "1.7" AND Pytorch_VERSION VERSION_LESS "1.9")
+    message( WARNING
+        "--------------------------------------------------------------------------------\n"
+        "                                                                                \n"
+        " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
+        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
+        " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
+        " problem.                                                                       \n"
+        "                                                                                \n"
+        " We recommend to compile PyTorch from source with compile flags.                \n"
+        "   '-Xcompiler -fno-gnu-unique'                                                 \n"
+        "                                                                                \n"
+        " or use the PyTorch wheels at                                                   \n"
+        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "                                                                                \n"
+        "--------------------------------------------------------------------------------\n"
+    )
+endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
@@ -663,7 +686,7 @@ else()
     set(usage "0")
 endif()
 open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
@@ -705,4 +728,4 @@ foreach(dep IN ITEMS ${deps})
     endif()
     open3d_aligned_print("${dep}" "${usage}")
 endforeach()
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
