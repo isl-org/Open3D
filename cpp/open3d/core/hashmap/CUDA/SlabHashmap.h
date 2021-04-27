@@ -253,6 +253,8 @@ void SlabHashmap<Key, Hash>::Clear() {
     // Clear the linked list heads
     OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
                                  sizeof(Slab) * this->bucket_count_));
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     // Clear the linked list nodes
     node_mgr_->Reset();
