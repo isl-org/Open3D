@@ -99,6 +99,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
     except NameError:
         pass
 
+
 def _jupyter_labextension_paths():
     """Called by Jupyter Lab Server to detect if it is a valid labextension and
     to install the widget
@@ -141,7 +142,6 @@ def _jupyter_nbextension_paths():
         'dest': 'open3d',
         'require': 'open3d/extension'
     }]
-
 
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
