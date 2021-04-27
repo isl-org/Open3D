@@ -135,18 +135,21 @@ static void RGBDOdometryMultiScale(
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
 
+    // Very strict criteria to ensure running most the iterations
+    t::pipelines::odometry::OdometryConvergenceCriteria criteria(1e-12, 1e-12);
+
     // Warp up
     RGBDOdometryMultiScale(
             source, target, intrinsic_t,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")),
-            depth_scale, depth_max, depth_diff, {10, 5, 3}, method);
+            depth_scale, depth_max, depth_diff, {10, 5, 3}, method, criteria);
 
     for (auto _ : state) {
         RGBDOdometryMultiScale(source, target, intrinsic_t,
                                core::Tensor::Eye(4, core::Dtype::Float64,
                                                  core::Device("CPU:0")),
                                depth_scale, depth_max, depth_diff, {10, 5, 3},
-                               method);
+                               method, criteria);
     }
 }
 

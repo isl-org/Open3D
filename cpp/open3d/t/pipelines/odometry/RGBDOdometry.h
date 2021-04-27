@@ -45,6 +45,17 @@ enum class Method {
     Hybrid,        // Implemented and commented in ComputePoseHybrid
 };
 
+class OdometryConvergenceCriteria {
+public:
+    OdometryConvergenceCriteria(double relative_rmse = 1e-6,
+                                double relative_fitness = 1e-6)
+        : relative_rmse_(relative_rmse), relative_fitness_(relative_fitness) {}
+
+public:
+    double relative_rmse_;
+    double relative_fitness_;
+};
+
 class OdometryResult {
 public:
     /// \brief Parameterized Constructor.
@@ -99,7 +110,9 @@ OdometryResult RGBDOdometryMultiScale(
         float depth_max = 3.0f,
         float depth_diff = 0.07f,
         const std::vector<int>& iterations = {10, 5, 3},
-        const Method method = Method::Hybrid);
+        const Method method = Method::Hybrid,
+        const OdometryConvergenceCriteria& criteria =
+                OdometryConvergenceCriteria());
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target.
 /// Performs one iteration of RGBD odometry using loss function
