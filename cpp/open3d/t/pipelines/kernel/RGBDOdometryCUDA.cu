@@ -104,7 +104,8 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  const core::Tensor& intrinsics,
                                  const core::Tensor& init_source_to_target,
                                  core::Tensor& delta,
-                                 core::Tensor& residual,
+                                 float& inlier_residual,
+                                 int& inlier_count,
                                  float depth_diff) {
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
@@ -130,7 +131,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
             ti, global_sum_ptr, rows, cols, depth_diff);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    DecodeAndSolve6x6(global_sum, delta, residual);
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
 __global__ void ComputePoseIntensityCUDAKernel(
@@ -197,7 +198,8 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               const core::Tensor& intrinsics,
                               const core::Tensor& init_source_to_target,
                               core::Tensor& delta,
-                              core::Tensor& residual,
+                              float& inlier_residual,
+                              int& inlier_count,
                               float depth_diff) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
@@ -231,7 +233,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
             source_vertex_indexer, ti, global_sum_ptr, rows, cols, depth_diff);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    DecodeAndSolve6x6(global_sum, delta, residual);
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
 __global__ void ComputePoseHybridCUDAKernel(
@@ -303,7 +305,8 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            const core::Tensor& intrinsics,
                            const core::Tensor& init_source_to_target,
                            core::Tensor& delta,
-                           core::Tensor& residual,
+                           float& inlier_residual,
+                           int& inlier_count,
                            float depth_diff) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
@@ -340,7 +343,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
             source_vertex_indexer, ti, global_sum_ptr, rows, cols, depth_diff);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    DecodeAndSolve6x6(global_sum, delta, residual);
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
 }  // namespace odometry

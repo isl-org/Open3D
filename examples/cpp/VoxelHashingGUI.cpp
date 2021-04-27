@@ -495,27 +495,35 @@ private:
             input_frame.SetDataFromImage("depth", input_depth);
             input_frame.SetDataFromImage("color", input_color);
 
+            bool tracking_success = true;
             if (idx > 0) {
-                utility::LogInfo("Frame-to-model for the frame {}", idx);
-
-                core::Tensor delta_frame_to_model = model.TrackFrameToModel(
+                auto result = model.TrackFrameToModel(
                         input_frame, raycast_frame, depth_scale,
                         prop_values_.depth_max, prop_values_.depth_diff);
 
-                core::Tensor trans =
-                        delta_frame_to_model.Slice(0, 0, 3).Slice(1, 3, 4);
-                double trans_norm =
-                        std::sqrt((trans * trans).Sum({0, 1}).Item<double>());
-                utility::LogInfo("trans norm = {}", trans_norm);
-                if (trans_norm < 0.15) {
+                core::Tensor translation =
+                        result.transformation_.Slice(0, 0, 3).Slice(1, 3, 4);
+                double translation_norm = std::sqrt(
+                        (translation * translation).Sum({0, 1}).Item<double>());
+                if (result.fitness_ >= 0.3 && translation_norm < 0.15) {
                     T_frame_to_model =
-                            T_frame_to_model.Matmul(delta_frame_to_model);
+                            T_frame_to_model.Matmul(result.transformation_);
+                } else {  // Don't update
+                    tracking_success = false;
+                    utility::LogWarning(
+                            "Tracking failed for frame {}, fitness: {:.3f}, "
+                            "translation: {:.3f}. Using previous frame's "
+                            "pose.",
+                            idx, result.fitness_, translation_norm);
                 }
             }
 
             // Integrate
             model.UpdateFramePose(idx, T_frame_to_model);
-            model.Integrate(input_frame, depth_scale, prop_values_.depth_max);
+            if (tracking_success) {
+                model.Integrate(input_frame, depth_scale,
+                                prop_values_.depth_max);
+            }
             model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
                                        prop_values_.depth_max);
 
@@ -527,8 +535,6 @@ private:
             out << "Frame " << idx << "\n";
             out << T_eigen.format(CleanFmt) << "\n";
             out << "Active voxel blocks: " << model.GetHashmapSize() << "\n";
-            std::cout << out.str() << "\n";
-
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len = surface_.pcd.HasPoints()
@@ -576,7 +582,6 @@ private:
             if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
                 idx == depth_files.size() - 1) {
                 std::lock_guard<std::mutex> locker(surface_.lock);
-                printf("lock acquired for surface\n");
                 surface_.pcd =
                         model.ExtractPointCloud(prop_values_.pointcloud_size,
                                                 std::min<float>(idx, 3.0f))
@@ -628,13 +633,11 @@ private:
                         if (is_scene_updated_) {
                             using namespace rendering;
                             std::lock_guard<std::mutex> locker(surface_.lock);
-                            printf("lock acquired for rendering\n");
                             if (surface_.pcd.HasPoints() &&
                                 surface_.pcd.HasPointColors()) {
-                                printf("obtain scene\n");
                                 auto* scene =
                                         this->widget3d_->GetScene()->GetScene();
-                                printf("update geometry\n");
+
                                 scene->UpdateGeometry(
                                         "points", surface_.pcd,
                                         Scene::kUpdatePointsFlag |

@@ -51,7 +51,8 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                              const core::Tensor& intrinsics,
                              const core::Tensor& init_source_to_target,
                              core::Tensor& delta,
-                             core::Tensor& residual,
+                             float& inlier_residual,
+                             int& inlier_count,
                              float depth_diff) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
@@ -129,7 +130,7 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
 #endif
     core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
                                     device);
-    DecodeAndSolve6x6(A_reduction_tensor, delta, residual);
+    DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
 void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
@@ -138,7 +139,8 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 const core::Tensor& intrinsics,
                                 const core::Tensor& init_source_to_target,
                                 core::Tensor& delta,
-                                core::Tensor& residual,
+                                float& inlier_residual,
+                                int& inlier_count,
                                 float depth_diff) {
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
@@ -206,7 +208,7 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
 #endif
     core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
                                     device);
-    DecodeAndSolve6x6(A_reduction_tensor, delta, residual);
+    DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
 void ComputePoseHybridCPU(const core::Tensor& source_depth,
@@ -221,7 +223,8 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                           const core::Tensor& intrinsics,
                           const core::Tensor& init_source_to_target,
                           core::Tensor& delta,
-                          core::Tensor& residual,
+                          float& inlier_residual,
+                          int& inlier_count,
                           float depth_diff) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
@@ -303,7 +306,7 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
 #endif
     core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
                                     device);
-    DecodeAndSolve6x6(A_reduction_tensor, delta, residual);
+    DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
 }  // namespace odometry
