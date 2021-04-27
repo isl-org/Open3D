@@ -393,7 +393,7 @@ TEST_P(PointCloudPermuteDevices, Has) {
     EXPECT_TRUE(pcd.HasPointColors());
 }
 
-TEST_P(PointCloudPermuteDevices, DeletePointAttr) {
+TEST_P(PointCloudPermuteDevices, RemovePointAttr) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
@@ -404,11 +404,11 @@ TEST_P(PointCloudPermuteDevices, DeletePointAttr) {
     });
 
     EXPECT_NO_THROW(pcd.GetPointAttr("labels"));
-    pcd.DeletePointAttr("labels");
+    pcd.RemovePointAttr("labels");
     EXPECT_ANY_THROW(pcd.GetPointAttr("labels"));
 
     // Not allowed to delete "points" attribute.
-    EXPECT_ANY_THROW(pcd.DeletePointAttr("points"));
+    EXPECT_ANY_THROW(pcd.RemovePointAttr("points"));
 }
 
 TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {

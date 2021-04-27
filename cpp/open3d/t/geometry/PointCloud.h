@@ -197,25 +197,11 @@ public:
                GetPointAttr(key).GetLength() == GetPoints().GetLength();
     }
 
-    /// Delete attributes. If attribute key present, then the attribute is
-    /// deleted, otherwise Warning is thrown. Also it is not allowed to delete
-    /// the attribute "points".
+    /// Removes point attribute by key value. Primary attribute {points} cannot
+    /// be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
-    void DeletePointAttr(const std::string &key) {
-        if (HasPointAttr(key) && key != "points") {
-            point_attr_.erase(key);
-        } else if (key == "points") {
-            utility::LogError(
-                    " DeletePointAttr: Not allowed to delete the attribute "
-                    "\"points\". ");
-        } else {
-            utility::LogWarning(
-                    " DeletePointAttr: [Skipped] No key {}, found to be "
-                    "deleted.",
-                    key);
-        }
-    }
+    void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
 
     /// Check if the "points" attribute's value has length > 0.
     /// This is a convenience function.

@@ -203,6 +203,12 @@ public:
         return vertex_attr_.at(key);
     }
 
+    /// Removes vertex attribute by key value. Primary attribute {vertices}
+    /// cannot be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemoveVertexAttr(const std::string &key) { vertex_attr_.Erase(key); }
+
     /// Get the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
     const core::Tensor &GetVertices() const {
@@ -227,6 +233,14 @@ public:
     /// \param key Attribute name.
     const core::Tensor &GetTriangleAttr(const std::string &key) const {
         return triangle_attr_.at(key);
+    }
+
+    /// Removes triangle attribute by key value. Primary attribute {triangles}
+    /// cannot be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemoveTriangleAttr(const std::string &key) {
+        triangle_attr_.Erase(key);
     }
 
     /// Get the value of the "triangles" attribute in triangle_attr_.
