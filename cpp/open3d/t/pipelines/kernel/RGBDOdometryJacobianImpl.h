@@ -98,8 +98,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
-        int64_t workload_idx,
-        int64_t cols,
+        int x,
+        int y,
         float depth_diff,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
@@ -112,9 +112,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         float* J_I,
         float& r_I) {
     const float sobel_scale = 0.125;
-
-    int y = workload_idx / cols;
-    int x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
     if (ISNAN(source_v[0])) {
@@ -173,8 +170,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
-        int64_t workload_idx,
-        int64_t cols,
+        int x,
+        int y,
         float depth_diff,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
@@ -195,9 +192,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     const float sqrt_lambda_intensity = 0.707;
     const float sqrt_lambda_depth = 0.707;
     const float sobel_scale = 0.125;
-
-    int y = workload_idx / cols;
-    int x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
     if (ISNAN(source_v[0])) {
