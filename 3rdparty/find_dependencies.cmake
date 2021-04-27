@@ -1199,3 +1199,22 @@ if (BUILD_CUDA_MODULE)
     add_dependencies(3rdparty_stdgpu ext_stdgpu)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${STDGPU_TARGET}")
 endif ()
+
+# WebRTC
+if(BUILD_WEBRTC)
+    if(BUILD_WEBRTC_FROM_SOURCE)
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
+    else()
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_download.cmake)
+    endif()
+    import_3rdparty_library(3rdparty_webrtc
+        INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
+        LIB_DIR      ${WEBRTC_LIB_DIR}
+        LIBRARIES    ${WEBRTC_LIBRARIES}
+    )
+    set(WEBRTC_TARGET "3rdparty_webrtc")
+    add_dependencies(3rdparty_webrtc ext_webrtc_all)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
+
+    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads dl)
+endif()

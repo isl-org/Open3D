@@ -1,0 +1,27 @@
+From 6f3264eef801f237471494d4b71c8b22c3a00f14 Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Wed, 7 Apr 2021 16:16:34 -0700
+Subject: [PATCH] src: enable rtc_use_cxx11_abi option
+
+---
+ BUILD.gn | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 533262e03b..82ff472243 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -248,6 +248,10 @@ config("common_config") {
+   cflags_objc = []
+   defines = []
+ 
++  if (!rtc_use_cxx11_abi) {
++    defines += [ "_GLIBCXX_USE_CXX11_ABI=0" ]
++  }
++
+   if (rtc_enable_protobuf) {
+     defines += [ "WEBRTC_ENABLE_PROTOBUF=1" ]
+   } else {
+-- 
+2.17.1
+
