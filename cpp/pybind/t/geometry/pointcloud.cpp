@@ -95,6 +95,15 @@ void pybind_pointcloud(py::module& m) {
                    "Returns the max bound for point coordinates.");
     pointcloud.def("get_center", &PointCloud::GetCenter,
                    "Returns the center for point coordinates.");
+
+    pointcloud.def("add", [](const PointCloud& self, const PointCloud& other) {
+        return self.Add(other);
+    });
+    pointcloud.def("__add__",
+                   [](const PointCloud& self, const PointCloud& other) {
+                       return self.Add(other);
+                   });
+
     pointcloud.def("transform", &PointCloud::Transform, "transformation"_a,
                    "Transforms the points and normals (if exist).");
     pointcloud.def("translate", &PointCloud::Translate, "translation"_a,

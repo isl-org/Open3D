@@ -384,40 +384,28 @@ TEST_P(PointCloudPermuteDevices, Add) {
 
     pcd.SetPoints(points);
     pcd.SetPointColors(colors);
-    pcd.SetPointAttr("labels", labels);
 
     t::geometry::PointCloud pcd2(device);
 
     pcd2 = pcd.Clone();
+    pcd2.SetPointAttr("labels", labels);
 
-    pcd2 = pcd2 + pcd;
+    // Here pcd2 is being added to pcd, therefore it must have all the
+    // attributes present in pcd and the resulting pointcloud will contain the
+    // attributes of pcd only.
+    t::geometry::PointCloud pcd3(device);
+    pcd3 = pcd + pcd2;
 
-    utility::LogInfo(" PCD2: {}", pcd2.GetPoints().ToString());
-    utility::LogInfo(" PCD2: {}", pcd2.GetPointColors().ToString());
-    utility::LogInfo(" PCD2: {}", pcd2.GetPointAttr("labels").ToString());
+    EXPECT_TRUE(pcd3.GetPoints().AllClose(
+            core::Tensor::Ones({4, 3}, dtype, device)));
+    EXPECT_TRUE(pcd3.GetPointColors().AllClose(
+            core::Tensor::Ones({4, 3}, dtype, device)));
 
-    // EXPECT_TRUE(pcd.GetPoints().AllClose(
-    //         core::Tensor::Ones({2, 3}, dtype, device)));
-    // EXPECT_TRUE(pcd.GetPointColors().AllClose(
-    //         core::Tensor::Ones({2, 3}, dtype, device) * 2));
-    // EXPECT_TRUE(pcd.GetPointAttr("labels").AllClose(
-    //         core::Tensor::Ones({2, 3}, dtype, device) * 3));
-    // EXPECT_ANY_THROW(pcd.GetPointNormals());
+    EXPECT_ANY_THROW(pcd3.GetPointAttr("labels"));
 
-    // // Mismatched device should throw an exception. This test is only
-    // // effective if device is a CUDA device.
-    // core::Device cpu_device = core::Device("CPU:0");
-    // if (cpu_device != device) {
-    //     core::Tensor cpu_points = core::Tensor::Ones({2, 3}, dtype,
-    //     cpu_device); core::Tensor cpu_colors =
-    //             core::Tensor::Ones({2, 3}, dtype, cpu_device) * 2;
-    //     core::Tensor cpu_labels =
-    //             core::Tensor::Ones({2, 3}, dtype, cpu_device) * 3;
-
-    //     EXPECT_ANY_THROW(pcd.SetPoints(cpu_points));
-    //     EXPECT_ANY_THROW(pcd.SetPointColors(cpu_colors));
-    //     EXPECT_ANY_THROW(pcd.SetPointAttr("labels", cpu_labels));
-    // }
+    // pcd2 has an extra attribute "labels" which is missing in pcd, therefore
+    // adding pcd to pcd2 will throw an error for missing attribute "labels"
+    EXPECT_ANY_THROW(pcd2 + pcd);
 }
 
 TEST_P(PointCloudPermuteDevices, Has) {

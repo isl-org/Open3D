@@ -89,6 +89,11 @@ PointCloud PointCloud::To(const core::Device &device, bool copy) const {
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 PointCloud PointCloud::Add(const PointCloud &other) const {
+    // TODO:
+    // 1. Create Vertical and Horizontal stack op for Tensors.
+    // 2. Create Add operator in TensorMap.
+    // 3. Use this op in PointCloud and TriangularMesh for + and += op.
+
     PointCloud pcd(GetDevice());
 
     int64_t length = GetPoints().GetLength();
