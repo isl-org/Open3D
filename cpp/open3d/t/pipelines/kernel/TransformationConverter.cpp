@@ -28,7 +28,7 @@
 
 #include <cmath>
 
-#include "open3d/core/CoreUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Console.h"
@@ -106,7 +106,7 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         core::Device::DeviceType device_type = device.GetType();
         PoseToTransformationDevice<scalar_t>(transformation, pose_,
                                              device_type);

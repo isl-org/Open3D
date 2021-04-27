@@ -30,7 +30,7 @@
 #include "open3d/core/nns/FixedRadiusSearch.h"
 #endif
 
-#include "open3d/core/CoreUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -77,7 +77,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     void *temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         // Determine temp_size.
         BuildSpatialHashTableCUDA(temp_ptr, temp_size, num_dataset_points,
                                   dataset_points_.GetDataPtr<scalar_t>(),
@@ -142,7 +142,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     Tensor neighbors_row_splits =
             Tensor({num_query_points + 1}, Dtype::Int64, device);
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
         // Determine temp_size.
         FixedRadiusSearchCUDA(
@@ -249,7 +249,7 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
     Tensor neighbors_index, neighbors_distance;
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
         // Determine temp_size.
         HybridSearchCUDA(
