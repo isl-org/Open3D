@@ -85,12 +85,10 @@ static void ComputePosePointToPlane(benchmark::State& state,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
     for (int i = 0; i < 20; ++i) {
-        core::Tensor delta_src_to_dst =
-                t::pipelines::odometry::ComputePosePointToPlane(
-                        src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
-                        src_normal_map.AsTensor(), intrinsic_t, trans,
-                        depth_diff);
-        trans = delta_src_to_dst.Matmul(trans).Contiguous();
+        auto result = t::pipelines::odometry::ComputePosePointToPlane(
+                src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
+                src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff);
+        trans = result.transformation_.Matmul(trans).Contiguous();
     }
 
     for (auto _ : state) {
@@ -98,13 +96,10 @@ static void ComputePosePointToPlane(benchmark::State& state,
                                                core::Device("CPU:0"));
 
         for (int i = 0; i < 20; ++i) {
-            core::Tensor delta_src_to_dst =
-                    t::pipelines::odometry::ComputePosePointToPlane(
-                            src_vertex_map.AsTensor(),
-                            dst_vertex_map.AsTensor(),
-                            src_normal_map.AsTensor(), intrinsic_t, trans,
-                            depth_diff);
-            trans = delta_src_to_dst.Matmul(trans).Contiguous();
+            auto result = t::pipelines::odometry::ComputePosePointToPlane(
+                    src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
+                    src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff);
+            trans = result.transformation_.Matmul(trans).Contiguous();
         }
     }
 }

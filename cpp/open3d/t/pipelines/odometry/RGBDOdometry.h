@@ -45,8 +45,31 @@ enum class Method {
     Hybrid,        // Implemented and commented in ComputePoseHybrid
 };
 
-// TODO (Wei): Encapsule shared params (depth_max, depth_diff, intrinsic, etc)
-// in an option, similar to Registration.
+class OdometryResult {
+public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param transformation The estimated transformation matrix of dtype
+    /// Float64 on CPU device.
+    OdometryResult(const core::Tensor& transformation = core::Tensor::Eye(
+                           4, core::Dtype::Float64, core::Device("CPU:0")),
+                   double inlier_rmse = 0.0,
+                   double fitness = 0.0)
+        : transformation_(transformation),
+          inlier_rmse_(inlier_rmse),
+          fitness_(fitness) {}
+
+    ~OdometryResult() {}
+
+public:
+    /// The estimated transformation matrix of dtype Float64 on CPU device.
+    core::Tensor transformation_;
+    /// RMSE of all inlier correspondences. Lower is better.
+    double inlier_rmse_;
+    /// For ICP: the overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
+    double fitness_;
+};
 
 /// \brief Create an RGBD image pyramid given the original source and target
 /// RGBD images, and perform hierarchical odometry using specified \p
@@ -66,7 +89,7 @@ enum class Method {
 /// associations.
 /// \param iterations Iterations in multiscale odometry, from coarse to fine.
 /// \param method Method used to apply RGBD odometry.
-core::Tensor RGBDOdometryMultiScale(
+OdometryResult RGBDOdometryMultiScale(
         const t::geometry::RGBDImage& source,
         const t::geometry::RGBDImage& target,
         const core::Tensor& intrinsics,
@@ -100,12 +123,13 @@ core::Tensor RGBDOdometryMultiScale(
 /// \param depth_diff Depth difference threshold used to filter projective
 /// associations.
 /// \return (4, 4) optimized transformation matrix from source to target.
-core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
-                                     const core::Tensor& target_vertex_map,
-                                     const core::Tensor& target_normal_map,
-                                     const core::Tensor& intrinsics,
-                                     const core::Tensor& init_source_to_target,
-                                     float depth_diff);
+OdometryResult ComputePosePointToPlane(
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& target_vertex_map,
+        const core::Tensor& target_normal_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        float depth_diff);
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target.
 /// Performs one iteration of RGBD odometry using loss function
@@ -136,16 +160,16 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
 /// \param depth_diff Depth difference threshold used to filter projective
 /// associations.
 /// \return (4, 4) optimized transformation matrix from source to target.
-core::Tensor ComputePoseIntensity(const core::Tensor& source_depth_map,
-                                  const core::Tensor& target_depth_map,
-                                  const core::Tensor& source_intensity,
-                                  const core::Tensor& target_intensity,
-                                  const core::Tensor& target_intensity_dx,
-                                  const core::Tensor& target_intensity_dy,
-                                  const core::Tensor& source_vertex_map,
-                                  const core::Tensor& intrinsics,
-                                  const core::Tensor& init_source_to_target,
-                                  float depth_diff);
+OdometryResult ComputePoseIntensity(const core::Tensor& source_depth_map,
+                                    const core::Tensor& target_depth_map,
+                                    const core::Tensor& source_intensity,
+                                    const core::Tensor& target_intensity,
+                                    const core::Tensor& target_intensity_dx,
+                                    const core::Tensor& target_intensity_dy,
+                                    const core::Tensor& source_vertex_map,
+                                    const core::Tensor& intrinsics,
+                                    const core::Tensor& init_source_to_target,
+                                    float depth_diff);
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target.
 /// Performs one iteration of RGBD odometry using loss function
@@ -182,18 +206,18 @@ core::Tensor ComputePoseIntensity(const core::Tensor& source_depth_map,
 /// \param depth_diff Depth difference threshold used to filter projective
 /// associations.
 /// \return (4, 4) optimized transformation matrix from source to target.
-core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
-                               const core::Tensor& target_depth,
-                               const core::Tensor& source_intensity,
-                               const core::Tensor& target_intensity,
-                               const core::Tensor& source_depth_dx,
-                               const core::Tensor& source_depth_dy,
-                               const core::Tensor& source_intensity_dx,
-                               const core::Tensor& source_intensity_dy,
-                               const core::Tensor& target_vertex_map,
-                               const core::Tensor& intrinsics,
-                               const core::Tensor& init_source_to_target,
-                               float depth_diff);
+OdometryResult ComputePoseHybrid(const core::Tensor& source_depth,
+                                 const core::Tensor& target_depth,
+                                 const core::Tensor& source_intensity,
+                                 const core::Tensor& target_intensity,
+                                 const core::Tensor& source_depth_dx,
+                                 const core::Tensor& source_depth_dy,
+                                 const core::Tensor& source_intensity_dx,
+                                 const core::Tensor& source_intensity_dy,
+                                 const core::Tensor& target_vertex_map,
+                                 const core::Tensor& intrinsics,
+                                 const core::Tensor& init_source_to_target,
+                                 float depth_diff);
 
 }  // namespace odometry
 }  // namespace pipelines

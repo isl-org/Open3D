@@ -166,11 +166,11 @@ int main(int argc, char** argv) {
         if (i > 0) {
             utility::LogInfo("Frame-to-model for the frame {}", i);
 
-            Tensor delta_frame_to_model =
+            auto result =
                     model.TrackFrameToModel(input_frame, raycast_frame,
                                             depth_scale, depth_max, depth_diff);
-            T_frame_to_model =
-                    T_frame_to_model.Matmul(delta_frame_to_model).Contiguous();
+            T_frame_to_model = T_frame_to_model.Matmul(result.transformation_)
+                                       .Contiguous();
         }
 
         model.UpdateFramePose(i, T_frame_to_model);
