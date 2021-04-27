@@ -99,11 +99,11 @@ public:
     /// \return The number of elements deleted. [0 if key was not present].
     std::size_t Erase(const std::string key) {
         if (key == primary_key_) {
-            utility::LogError(" Primary key {} cannot be deleted.",
+            utility::LogError(" Primary key: {} cannot be deleted.",
                               primary_key_);
         } else if (!Contains(key)) {
             utility::LogWarning(
-                    " [TensorMap::Erase Skipped] Key {} is not present.", key);
+                    " [TensorMap::Erase Skipped] Key: {} is not present.", key);
         }
         return this->erase(key);
     }
