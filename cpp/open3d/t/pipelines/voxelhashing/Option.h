@@ -24,37 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/Det.h"
+#pragma once
 
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/linalg/LU.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/RGBDImage.h"
+#include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
+#include "open3d/t/pipelines/voxelhashing/Frame.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace pipelines {
+namespace voxelhashing {
 
-double Det(const Tensor& A) {
-    Tensor ipiv, output;
-    LUIpiv(A, ipiv, output);
-    // Sequential loop to compute determinant from LU output, is more efficient
-    // on CPU.
-    Tensor output_cpu = output.To(core::Device("CPU:0"));
-    Tensor ipiv_cpu = ipiv.To(core::Device("CPU:0"));
-    double det = 1.0;
-    int n = A.GetShape()[0];
+struct Option {
+    Option() {}
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
-        scalar_t* output_ptr = output_cpu.GetDataPtr<scalar_t>();
-        int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+    /// TSDF VoxelBlock options
+    float voxel_size = 3.0 / 512.0;
+    int est_block_count = 40000;
 
-        for (int i = 0; i < n; i++) {
-            det *= output_ptr[i * n + i];
-            if (ipiv_ptr[i] != i) {
-                det *= -1;
-            }
-        }
-    });
-    return det;
-}
+    /// Input options
+    float depth_scale = 1000.0f;
+    float depth_max = 3.0f;
+    float depth_diff = 0.07f;
+};
 
-}  // namespace core
+}  // namespace voxelhashing
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

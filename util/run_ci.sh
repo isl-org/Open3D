@@ -8,7 +8,7 @@ source "$(dirname "$0")"/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 if [ "$BUILD_CUDA_MODULE" == "ON" ] &&
-    ! nvcc --version | grep -q "release ${CUDA_VERSION[1]}" 2>/dev/null; then
+    ! nvcc --version 2>/dev/null | grep -q "release ${CUDA_VERSION[1]}"; then
     install_cuda_toolkit with-cudnn purge-cache
     nvcc --version
 fi
@@ -25,13 +25,16 @@ echo "Building examples iteratively..."
 make VERBOSE=1 -j"$NPROC" build-examples-iteratively
 echo
 
+df -h
+
 echo "Running Open3D C++ unit tests..."
 run_cpp_unit_tests
 
 # Run on GPU only. CPU versions run on Github already
-if nvidia-smi 2>&1 >/dev/null; then
+if nvidia-smi >/dev/null 2>&1; then
     echo "Try importing Open3D Python package"
     test_wheel lib/python_package/pip_package/open3d*.whl
+    df -h
     echo "Running Open3D Python tests..."
     run_python_tests
     echo

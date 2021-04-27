@@ -195,27 +195,6 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
                                const core::Tensor& init_source_to_target,
                                float depth_diff);
 
-/// TODO (Wei): hide the interfaces.
-/// Helper functions exposed temporarily for easier testing.
-///
-/// Rescale depth, clip to max range, and assign NaN to out-of-range pixels.
-core::Tensor PreprocessDepth(const t::geometry::Image& depth,
-                             float depth_scale = 1000.0,
-                             float depth_max = 3.0);
-
-/// Pyramid downsampling depth, with a difference truncation.
-core::Tensor PyrDownDepth(const t::geometry::Image& depth,
-                          float depth_diff = 0.25);
-
-/// Create a vertex map (image) from a preprocessed depth image. Assign NaN to
-/// vertices computed from invalid depths.
-core::Tensor CreateVertexMap(const t::geometry::Image& depth,
-                             const core::Tensor& intrinsics);
-
-/// Create a normal map (image) from a vertex map (image). Assign NaN to normals
-/// computed from invalid vertices.
-core::Tensor CreateNormalMap(const core::Tensor& vertex_map);
-
 }  // namespace odometry
 }  // namespace pipelines
 }  // namespace t

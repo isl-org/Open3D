@@ -34,21 +34,6 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-void PreprocessDepth(const core::Tensor &depth,
-                     core::Tensor &depth_processed,
-                     float depth_scale,
-                     float depth_max);
-
-void PyrDownDepth(const core::Tensor &depth,
-                  core::Tensor &depth_down,
-                  float depth_diff);
-
-void CreateVertexMap(const core::Tensor &depth_map,
-                     const core::Tensor &intrinsics,
-                     core::Tensor &vertex_map);
-
-void CreateNormalMap(const core::Tensor &vertex_map, core::Tensor &normal_map);
-
 void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
                              const core::Tensor &target_vertex_map,
                              const core::Tensor &target_normal_map,
