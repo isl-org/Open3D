@@ -99,8 +99,6 @@ def test_to_legacy_pointcloud(device):
 def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
-    tpoints = o3c.Tensor.ones((2, 3), dtype, device)
-
     pcd = o3d.t.geometry.PointCloud(device)
     pcd2 = o3d.t.geometry.PointCloud(device)
     pcd3 = o3d.t.geometry.PointCloud(device)
