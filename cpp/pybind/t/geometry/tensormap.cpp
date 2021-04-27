@@ -34,7 +34,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_tensormap(py::module& m) {
+void pybind_tensormap(py::module &m) {
     // Bind to the generic dictionary interface such that it works the same as a
     // regular dictionay in Python, except that types are enforced. Supported
     // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
@@ -42,10 +42,13 @@ void pybind_tensormap(py::module& m) {
     auto tm = py::bind_map<TensorMap>(
             m, "TensorMap", "Map of String to Tensor with a primary key.");
 
+    tm.def("erase",
+           [](TensorMap &m, const std::string &k) { return m.Erase(k); });
+
     // Constructors.
-    tm.def(py::init<const std::string&>(), "primary_key"_a);
-    tm.def(py::init<const std::string&,
-                    const std::unordered_map<std::string, core::Tensor>&>(),
+    tm.def(py::init<const std::string &>(), "primary_key"_a);
+    tm.def(py::init<const std::string &,
+                    const std::unordered_map<std::string, core::Tensor> &>(),
            "primary_key"_a, "map_keys_to_tensors"_a);
 
     // Member functions. Some C++ functions are ignored since the
