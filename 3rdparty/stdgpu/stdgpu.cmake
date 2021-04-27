@@ -8,7 +8,7 @@ ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
     GIT_REPOSITORY https://github.com/stotko/stdgpu.git
-    GIT_TAG 0d306f767ec6d395f5a9cb275fc441bab7a67eea
+    GIT_TAG bfb66261b75ebadccd0060448d9ed9290eccc76e
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

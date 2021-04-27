@@ -105,6 +105,46 @@ void HashInsertInt(benchmark::State& state,
     }
 }
 
+void HashEraseInt(benchmark::State& state,
+                  int capacity,
+                  int duplicate_factor,
+                  const Device& device,
+                  const HashmapBackend& backend) {
+    int slots = std::max(1, capacity / duplicate_factor);
+    HashData<int, int> data(capacity, slots);
+
+#ifdef BUILD_CUDA_MODULE
+    CUDACachedMemoryManager::ReleaseCache();
+#endif
+    Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
+    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+
+    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {1}, {1},
+                           device, backend);
+    Tensor addrs, masks;
+    hashmap_warmup.Insert(keys, values, addrs, masks);
+
+    for (auto _ : state) {
+        state.PauseTiming();
+        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
+                        backend);
+        Tensor addrs, masks;
+        hashmap.Insert(keys, values, addrs, masks);
+        state.ResumeTiming();
+
+        hashmap.Erase(keys, masks);
+
+        state.PauseTiming();
+        int64_t s = hashmap.Size();
+        if (s != 0) {
+            utility::LogError(
+                    "Error returning hashmap size, expected {}, but got {}.", 0,
+                    s);
+        }
+        state.ResumeTiming();
+    }
+}
+
 void HashFindInt(benchmark::State& state,
                  int capacity,
                  int duplicate_factor,
@@ -184,6 +224,49 @@ void HashInsertInt3(benchmark::State& state,
     }
 }
 
+void HashEraseInt3(benchmark::State& state,
+                   int capacity,
+                   int duplicate_factor,
+                   const Device& device,
+                   const HashmapBackend& backend) {
+    int slots = std::max(1, capacity / duplicate_factor);
+    HashData<Int3, int> data(capacity, slots);
+
+    std::vector<int> keys_Int3;
+    keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
+                     reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
+#ifdef BUILD_CUDA_MODULE
+    CUDACachedMemoryManager::ReleaseCache();
+#endif
+    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
+    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+
+    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {3}, {1},
+                           device, backend);
+    Tensor addrs, masks;
+    hashmap_warmup.Insert(keys, values, addrs, masks);
+
+    for (auto _ : state) {
+        state.PauseTiming();
+        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
+                        backend);
+        Tensor addrs, masks;
+        hashmap.Insert(keys, values, addrs, masks);
+        state.ResumeTiming();
+
+        hashmap.Erase(keys, masks);
+
+        state.PauseTiming();
+        int64_t s = hashmap.Size();
+        if (s != 0) {
+            utility::LogError(
+                    "Error returning hashmap size, expected {}, but got {}.", 0,
+                    s);
+        }
+        state.ResumeTiming();
+    }
+}
+
 void HashFindInt3(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
@@ -250,6 +333,8 @@ void HashFindInt3(benchmark::State& state,
 
 ENUM_BM_BACKEND(HashInsertInt)
 ENUM_BM_BACKEND(HashInsertInt3)
+ENUM_BM_BACKEND(HashEraseInt)
+ENUM_BM_BACKEND(HashEraseInt3)
 ENUM_BM_BACKEND(HashFindInt)
 ENUM_BM_BACKEND(HashFindInt3)
 
