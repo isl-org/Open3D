@@ -35,6 +35,7 @@ include README.rst
 include LICENSE.txt
 include requirements.txt
 include open3d.json
+include setup.cfg
 include setup.py
 include pyproject.toml
 include install.json

@@ -684,6 +684,19 @@ public:
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
 
+    /// Element-wise check for NaN values in a tensor, returning a new
+    /// Boolean tensor. Non-floating point tensors return all False values.
+    Tensor IsNan() const;
+
+    /// Element-wise check for Infinity values in a tensor, returning a new
+    /// Boolean tensor. Non-floating point tensors return all False values.
+    Tensor IsInf() const;
+
+    /// Element-wise check for finite values (not Inf or NaN) in a tensor,
+    /// returning a new Boolean tensor. Non-floating point tensors return all
+    /// True values.
+    Tensor IsFinite() const;
+
     /// Element-wise clipping of tensor values so that resulting values lie in
     /// the range [\p min_val, \p max_val], returning a new tensor.
     /// \param min_val Lower bound for output values.

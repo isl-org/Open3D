@@ -99,9 +99,9 @@ public:
 
     void SetWidth(int width) { width_ = width; }
 
-    Size CalcPreferredSize(const Theme &theme,
+    Size CalcPreferredSize(const LayoutContext &context,
                            const Constraints &constraints) const override {
-        auto frames = CalcFrames(theme, constraints);
+        auto frames = CalcFrames(context, constraints);
         if (!frames.empty()) {
             // Add spacing on the bottom to look like the start of a new row
             return Size(width_,
@@ -111,8 +111,8 @@ public:
         }
     }
 
-    void Layout(const Theme &theme) override {
-        auto frames = CalcFrames(theme, Constraints());
+    void Layout(const LayoutContext &context) override {
+        auto frames = CalcFrames(context, Constraints());
         auto &children = GetChildren();
         for (size_t i = 0; i < children.size(); ++i) {
             children[i]->SetFrame(frames[i]);
@@ -125,7 +125,7 @@ private:
     int spacing_;
     int width_ = 10000;
 
-    std::vector<Rect> CalcFrames(const Theme &theme,
+    std::vector<Rect> CalcFrames(const LayoutContext &context,
                                  const Widget::Constraints &constraints) const {
         auto &f = GetFrame();
         std::vector<Rect> frames;
@@ -133,7 +133,7 @@ private:
         int y = f.y;
         int lineHeight = 0;
         for (auto child : GetChildren()) {
-            auto pref = child->CalcPreferredSize(theme, constraints);
+            auto pref = child->CalcPreferredSize(context, constraints);
             if (x > f.x && x + pref.width > f.x + width_) {
                 y = y + lineHeight + spacing_;
                 x = f.x;
@@ -163,10 +163,10 @@ public:
         needsLayout_ = true;
     }
 
-    Size CalcPreferredSize(const Theme &theme,
+    Size CalcPreferredSize(const LayoutContext &context,
                            const Constraints &constraints) const override {
         if (IsVisible()) {
-            return Super::CalcPreferredSize(theme, constraints);
+            return Super::CalcPreferredSize(context, constraints);
         } else {
             return Size(0, 0);
         }
@@ -231,22 +231,22 @@ public:
     std::shared_ptr<Checkbox> GetCheckbox() { return checkbox_; }
     std::shared_ptr<Label> GetName() { return name_; }
 
-    Size CalcPreferredSize(const Theme &theme,
+    Size CalcPreferredSize(const LayoutContext &context,
                            const Constraints &constraints) const override {
-        auto check_pref = checkbox_->CalcPreferredSize(theme, constraints);
-        auto name_pref = name_->CalcPreferredSize(theme, constraints);
-        int w = check_pref.width + name_pref.width + GroupWidth(theme) +
-                TimeWidth(theme);
+        auto check_pref = checkbox_->CalcPreferredSize(context, constraints);
+        auto name_pref = name_->CalcPreferredSize(context, constraints);
+        int w = check_pref.width + name_pref.width + GroupWidth(context.theme) +
+                TimeWidth(context.theme);
         return Size(w, std::max(check_pref.height, name_pref.height));
     }
 
-    void Layout(const Theme &theme) override {
+    void Layout(const LayoutContext &context) override {
         auto &frame = GetFrame();
         auto check_width =
-                checkbox_->CalcPreferredSize(theme, Constraints()).width;
+                checkbox_->CalcPreferredSize(context, Constraints()).width;
         checkbox_->SetFrame(Rect(frame.x, frame.y, check_width, frame.height));
-        auto group_width = GroupWidth(theme);
-        auto time_width = TimeWidth(theme);
+        auto group_width = GroupWidth(context.theme);
+        auto time_width = TimeWidth(context.theme);
         auto x = checkbox_->GetFrame().GetRight();
         auto name_width = frame.GetRight() - group_width - time_width - x;
         name_->SetFrame(Rect(x, frame.y, name_width, frame.height));
@@ -300,6 +300,7 @@ struct O3DVisualizer::Impl {
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
+    bool polygon_selection_unselects_ = false;
     bool selections_need_update_ = true;
     std::function<void(double)> on_animation_;
     std::function<bool()> on_animation_tick_;
@@ -332,6 +333,7 @@ struct O3DVisualizer::Impl {
         SceneWidget::Controls view_mouse_mode;
         std::map<SceneWidget::Controls, Button *> mouse_buttons;
         Vert *pick_panel;
+        Horiz *polygon_selection_panel;
         Button *new_selection_set;
         Button *delete_selection_set;
         ListView *selection_sets;
@@ -392,11 +394,13 @@ struct O3DVisualizer::Impl {
                                std::vector<std::pair<size_t, Eigen::Vector3d>>>
                                &indices,
                        int keymods) {
-                    if (keymods & int(KeyModifier::SHIFT)) {
+                    if ((keymods & int(KeyModifier::SHIFT)) ||
+                        polygon_selection_unselects_) {
                         selections_->UnselectIndices(indices);
                     } else {
                         selections_->SelectIndices(indices);
                     }
+                    polygon_selection_unselects_ = false;
                 });
         w->AddChild(GiveOwnership(scene_));
 
@@ -493,15 +497,44 @@ struct O3DVisualizer::Impl {
         });
 
 #if __APPLE__
-        const char *selection_help = "Cmd-click to select a point";
+        const char *selection_help =
+                "Cmd-click to select a point\nCmd-ctrl-click to polygon select";
 #else
-        const char *selection_help = "Ctrl-click to select a point";
+        const char *selection_help =
+                "Ctrl-click to select a point\nCmd-alt-click to polygon select";
 #endif  // __APPLE__
         h = new Horiz();
         h->AddStretch();
         h->AddChild(std::make_shared<Label>(selection_help));
         h->AddStretch();
         settings.pick_panel->AddChild(GiveOwnership(h));
+
+        h = new Horiz(int(std::round(0.25f * float(em))));
+        settings.polygon_selection_panel = h;
+        h->AddStretch();
+        auto b = std::make_shared<SmallButton>("Select");
+        b->SetOnClicked([this]() {
+            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
+            settings.polygon_selection_panel->SetVisible(false);
+        });
+        h->AddChild(b);
+        b = std::make_shared<SmallButton>("Unselect");
+        b->SetOnClicked([this]() {
+            polygon_selection_unselects_ = true;
+            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
+            settings.polygon_selection_panel->SetVisible(false);
+        });
+        h->AddChild(b);
+        b = std::make_shared<SmallButton>("Cancel");
+        b->SetOnClicked([this]() {
+            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::CANCEL);
+            settings.polygon_selection_panel->SetVisible(false);
+        });
+        h->AddChild(b);
+        h->AddStretch();
+        h->SetVisible(false);
+        settings.pick_panel->AddChild(GiveOwnership(h));
+
         h = new Horiz(v_spacing);
         h->AddChild(std::make_shared<Label>("Selection Sets"));
         h->AddStretch();
@@ -775,6 +808,11 @@ struct O3DVisualizer::Impl {
 
         settings.actions = new ButtonList(v_spacing);
         settings.actions_panel->AddChild(GiveOwnership(settings.actions));
+
+        // Picking callbacks
+        scene_->SetOnStartedPolygonPicking([this]() {
+            settings.polygon_selection_panel->SetVisible(true);
+        });
     }
 
     void AddGeometry(const std::string &name,
@@ -1962,16 +2000,16 @@ void O3DVisualizer::ExportCurrentImage(const std::string &path) {
     impl_->ExportCurrentImage(path);
 }
 
-void O3DVisualizer::Layout(const Theme &theme) {
-    auto em = theme.font_size;
-    int settings_width = 15 * theme.font_size;
+void O3DVisualizer::Layout(const gui::LayoutContext &context) {
+    auto em = context.theme.font_size;
+    int settings_width = 15 * context.theme.font_size;
 #if !GROUPS_USE_TREE
     if (impl_->added_groups_.size() >= 2) {
-        settings_width += 5 * theme.font_size;
+        settings_width += 5 * context.theme.font_size;
     }
 #endif  // !GROUPS_USE_TREE
     if (impl_->min_time_ != impl_->max_time_) {
-        settings_width += 3 * theme.font_size;
+        settings_width += 3 * context.theme.font_size;
     }
 
     auto f = GetContentRect();
@@ -1986,7 +2024,7 @@ void O3DVisualizer::Layout(const Theme &theme) {
         impl_->scene_->SetFrame(f);
     }
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 }  // namespace visualizer

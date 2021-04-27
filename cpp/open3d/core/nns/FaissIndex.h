@@ -53,7 +53,8 @@ public:
     FaissIndex();
     /// \brief Parameterized Constructor.
     ///
-    /// \param tensor Provides tensor from which Faiss Index is constructed.
+    /// \param dataset_points Provides tensor from which Faiss Index is
+    /// constructed.
     FaissIndex(const Tensor &dataset_points);
     ~FaissIndex();
     FaissIndex(const FaissIndex &) = delete;

@@ -91,6 +91,24 @@ static void CPUAbsElementKernel(const void* src, void* dst) {
 }
 
 template <typename scalar_t>
+static void CPUIsNanElementKernel(const void* src, void* dst) {
+    *static_cast<bool*>(dst) =
+            std::isnan(static_cast<float>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t>
+static void CPUIsInfElementKernel(const void* src, void* dst) {
+    *static_cast<bool*>(dst) =
+            std::isinf(static_cast<float>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t>
+static void CPUIsFiniteElementKernel(const void* src, void* dst) {
+    *static_cast<bool*>(dst) = std::isfinite(
+            static_cast<float>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t>
 static void CPUFloorElementKernel(const void* src, void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(std::floor(
             static_cast<double>(*static_cast<const scalar_t*>(src))));
@@ -130,6 +148,18 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
                               src.GetDataPtr(), src.GetDevice(),
                               src_dtype.ByteSize() * shape.NumElements());
+    } else if (dst.NumElements() > 1 && dst.IsContiguous() &&
+               src.NumElements() == 1 && !src_dtype.IsObject()) {
+        int64_t num_elements = dst.NumElements();
+
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+            scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
+            scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
+            CPULauncher::LaunchGeneralKernel(
+                    num_elements, [&](int64_t workload_idx) {
+                        dst_ptr[workload_idx] = scalar_element;
+                    });
+        });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
         if (src.GetDtype().IsObject()) {
@@ -181,6 +211,24 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 utility::LogError(
                         "Boolean op's output type must be boolean or the "
                         "same type as the input.");
+            }
+        });
+    } else if (op_code == UnaryEWOpCode::IsNan ||
+               op_code == UnaryEWOpCode::IsInf ||
+               op_code == UnaryEWOpCode::IsFinite) {
+        assert_dtype_is_float(src_dtype);
+        Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            if (op_code == UnaryEWOpCode::IsNan) {
+                CPULauncher::LaunchUnaryEWKernel(
+                        indexer, CPUIsNanElementKernel<scalar_t>);
+            } else if (op_code == UnaryEWOpCode::IsInf) {
+                CPULauncher::LaunchUnaryEWKernel(
+                        indexer, CPUIsInfElementKernel<scalar_t>);
+
+            } else if (op_code == UnaryEWOpCode::IsFinite) {
+                CPULauncher::LaunchUnaryEWKernel(
+                        indexer, CPUIsFiniteElementKernel<scalar_t>);
             }
         });
     } else {

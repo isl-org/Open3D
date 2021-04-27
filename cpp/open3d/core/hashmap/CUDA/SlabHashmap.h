@@ -68,6 +68,7 @@ public:
                int64_t count) override;
 
     int64_t GetActiveIndices(addr_t* output_indices) override;
+    void Clear() override;
 
     int64_t Size() const override;
     int64_t GetBucketCount() const override;
@@ -236,6 +237,19 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
     MemoryManager::Free(iterator_count, this->device_);
 
     return static_cast<int64_t>(ret);
+}
+
+template <typename Key, typename Hash>
+void SlabHashmap<Key, Hash>::Clear() {
+    // Clear the heap
+    buffer_accessor_.Reset(this->device_);
+
+    // Clear the linked list heads
+    OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
+                                 sizeof(Slab) * this->bucket_count_));
+
+    // Clear the linked list nodes
+    node_mgr_->Reset();
 }
 
 template <typename Key, typename Hash>

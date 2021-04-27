@@ -26,9 +26,6 @@
 
 #include "open3d/core/nns/NNSIndex.h"
 
-#include "open3d/core/CoreUtil.h"
-#include "open3d/utility/Console.h"
-
 namespace open3d {
 namespace core {
 namespace nns {

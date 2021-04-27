@@ -68,7 +68,7 @@ public:
 
     void ExportCurrentImage(const std::string& path);
 
-    void Layout(const gui::Theme& theme) override;
+    void Layout(const gui::LayoutContext& context) override;
 
     /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
     void StartRPCInterface(const std::string& address, int timeout);
