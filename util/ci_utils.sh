@@ -227,7 +227,6 @@ build_all() {
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
         -DBUILD_EXAMPLES=OFF
-        -DBUILD_WEBRTC=ON
     )
 
     echo
@@ -293,7 +292,6 @@ build_pip_conda_package() {
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
-        "-DBUILD_WEBRTC=ON"
     )
     set -x # Echo commands on
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
