@@ -44,188 +44,6 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-void PreprocessDepthCUDA(const core::Tensor& depth,
-                         core::Tensor& depth_processed,
-                         float depth_scale,
-                         float depth_max) {
-    NDArrayIndexer depth_in_indexer(depth, 2);
-
-    // Output
-    depth_processed = core::Tensor::Empty(
-            depth.GetShape(), core::Dtype::Float32, depth.GetDevice());
-    NDArrayIndexer depth_out_indexer(depth_processed, 2);
-
-    int64_t rows = depth_in_indexer.GetShape(0);
-    int64_t cols = depth_in_indexer.GetShape(1);
-
-    int64_t n = rows * cols;
-    DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
-                n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    int64_t y = workload_idx / cols;
-                    int64_t x = workload_idx % cols;
-
-                    float d = *depth_in_indexer.GetDataPtrFromCoord<scalar_t>(
-                                      x, y) /
-                              depth_scale;
-                    float* d_out_ptr =
-                            depth_out_indexer.GetDataPtrFromCoord<float>(x, y);
-
-                    bool valid = (d > 0 && d < depth_max);
-                    *d_out_ptr = valid ? d : NAN;
-                });
-    });
-}
-
-void PyrDownDepthCUDA(const core::Tensor& depth,
-                      core::Tensor& depth_down,
-                      float depth_diff) {
-    t::geometry::kernel::NDArrayIndexer depth_indexer(depth, 2);
-    int rows = depth_indexer.GetShape(0);
-    int cols = depth_indexer.GetShape(1);
-
-    int rows_down = rows / 2;
-    int cols_down = cols / 2;
-    depth_down = core::Tensor::Empty({rows_down, cols_down},
-                                     core::Dtype::Float32, depth.GetDevice());
-
-    t::geometry::kernel::NDArrayIndexer depth_down_indexer(depth_down, 2);
-
-    int n = rows_down * cols_down;
-
-    // Gaussian filter window size
-    const int D = 5;
-    // Gaussian filter weights
-    const float weights[3] = {0.375f, 0.25f, 0.0625f};
-
-    // Reference:
-    // https://github.com/mp3guy/ICPCUDA/blob/master/Cuda/pyrdown.cu#L41
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                int y = workload_idx / cols_down;
-                int x = workload_idx % cols_down;
-
-                float center =
-                        *depth_indexer.GetDataPtrFromCoord<float>(2 * x, 2 * y);
-                if (isnan(center)) {
-                    *depth_down_indexer.GetDataPtrFromCoord<float>(x, y) = NAN;
-                    return;
-                }
-
-                int x_min = max(0, 2 * x - D / 2) - 2 * x;
-                int y_min = max(0, 2 * y - D / 2) - 2 * y;
-
-                int x_max = min(cols, 2 * x - D / 2 + D) - 2 * x;
-                int y_max = min(rows, 2 * y - D / 2 + D) - 2 * y;
-
-                float sum = 0;
-                float sum_weight = 0;
-                for (int yi = y_min; yi < y_max; ++yi) {
-                    for (int xi = x_min; xi < x_max; ++xi) {
-                        float val = *depth_indexer.GetDataPtrFromCoord<float>(
-                                2 * x + xi, 2 * y + yi);
-                        if (!isnan(val) && abs(val - center) < depth_diff) {
-                            sum += val * weights[abs(xi)] * weights[abs(yi)];
-                            sum_weight += weights[abs(xi)] * weights[abs(yi)];
-                        }
-                    }
-                }
-
-                *depth_down_indexer.GetDataPtrFromCoord<float>(x, y) =
-                        sum / sum_weight;
-            });
-}
-
-void CreateVertexMapCUDA(const core::Tensor& depth_map,
-                         const core::Tensor& intrinsics,
-                         core::Tensor& vertex_map) {
-    NDArrayIndexer depth_indexer(depth_map, 2);
-    t::geometry::kernel::TransformIndexer ti(intrinsics);
-
-    // Output
-    int64_t rows = depth_indexer.GetShape(0);
-    int64_t cols = depth_indexer.GetShape(1);
-
-    vertex_map = core::Tensor::Empty({rows, cols, 3}, core::Dtype::Float32,
-                                     depth_map.GetDevice());
-    NDArrayIndexer vertex_indexer(vertex_map, 2);
-
-    int64_t n = rows * cols;
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                int64_t y = workload_idx / cols;
-                int64_t x = workload_idx % cols;
-
-                float d = *depth_indexer.GetDataPtrFromCoord<float>(x, y);
-
-                float* vertex = vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-                if (!isnan(d)) {
-                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
-                                 d, vertex + 0, vertex + 1, vertex + 2);
-                } else {
-                    vertex[0] = NAN;
-                }
-            });
-}
-
-void CreateNormalMapCUDA(const core::Tensor& vertex_map,
-                         core::Tensor& normal_map) {
-    NDArrayIndexer vertex_indexer(vertex_map, 2);
-
-    // Output
-    int64_t rows = vertex_indexer.GetShape(0);
-    int64_t cols = vertex_indexer.GetShape(1);
-
-    normal_map =
-            core::Tensor::Empty(vertex_map.GetShape(), vertex_map.GetDtype(),
-                                vertex_map.GetDevice());
-    NDArrayIndexer normal_indexer(normal_map, 2);
-
-    int64_t n = rows * cols;
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                int64_t y = workload_idx / cols;
-                int64_t x = workload_idx % cols;
-
-                float* normal = normal_indexer.GetDataPtrFromCoord<float>(x, y);
-
-                if (y < rows - 1 && x < cols - 1) {
-                    float* v00 =
-                            vertex_indexer.GetDataPtrFromCoord<float>(x, y);
-                    float* v10 =
-                            vertex_indexer.GetDataPtrFromCoord<float>(x + 1, y);
-                    float* v01 =
-                            vertex_indexer.GetDataPtrFromCoord<float>(x, y + 1);
-
-                    if (isnan(v00[0]) || isnan(v10[0]) || isnan(v01[0])) {
-                        normal[0] = NAN;
-                        return;
-                    }
-
-                    float dx0 = v01[0] - v00[0];
-                    float dy0 = v01[1] - v00[1];
-                    float dz0 = v01[2] - v00[2];
-
-                    float dx1 = v10[0] - v00[0];
-                    float dy1 = v10[1] - v00[1];
-                    float dz1 = v10[2] - v00[2];
-
-                    normal[0] = dy0 * dz1 - dz0 * dy1;
-                    normal[1] = dz0 * dx1 - dx0 * dz1;
-                    normal[2] = dx0 * dy1 - dy0 * dx1;
-
-                    float normal_norm =
-                            sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
-                                 normal[2] * normal[2]);
-                    normal[0] /= normal_norm;
-                    normal[1] /= normal_norm;
-                    normal[2] /= normal_norm;
-                } else {
-                    normal[0] = NAN;
-                }
-            });
-}
-
 void ReduceAndSolve6x6(float* A_reduction,
                        core::Tensor& delta,
                        core::Tensor& residual,
@@ -253,6 +71,188 @@ void ReduceAndSolve6x6(float* A_reduction,
     DecodeAndSolve6x6(output_29, delta, residual);
 }
 
+template <typename T>
+__device__ inline void WarpReduceSum(volatile T* local_sum, const int tid) {
+    local_sum[tid] += local_sum[tid + 32];
+    local_sum[tid] += local_sum[tid + 16];
+    local_sum[tid] += local_sum[tid + 8];
+    local_sum[tid] += local_sum[tid + 4];
+    local_sum[tid] += local_sum[tid + 2];
+    local_sum[tid] += local_sum[tid + 1];
+}
+
+template <typename T, size_t BLOCK_SIZE>
+__device__ inline void BlockReduceSum(const int tid, volatile T* local_sum) {
+    if (BLOCK_SIZE >= 512) {
+        if (tid < 256) {
+            local_sum[tid] += local_sum[tid + 256];
+        }
+        __syncthreads();
+    }
+    if (BLOCK_SIZE >= 256) {
+        if (tid < 128) {
+            local_sum[tid] += local_sum[tid + 128];
+        }
+        __syncthreads();
+    }
+    if (BLOCK_SIZE >= 128) {
+        if (tid < 64) {
+            local_sum[tid] += local_sum[tid + 64];
+        }
+        __syncthreads();
+    }
+    if (tid < 32) {
+        WarpReduceSum<T>(local_sum, tid);
+    }
+}
+
+template <typename T, size_t BLOCK_SIZE>
+__device__ inline void BlockReduceSum(const int tid,
+                                      volatile T* local_sum0,
+                                      volatile T* local_sum1) {
+    if (BLOCK_SIZE >= 512) {
+        if (tid < 256) {
+            local_sum0[tid] += local_sum0[tid + 256];
+            local_sum1[tid] += local_sum1[tid + 256];
+        }
+        __syncthreads();
+    }
+    if (BLOCK_SIZE >= 256) {
+        if (tid < 128) {
+            local_sum0[tid] += local_sum0[tid + 128];
+            local_sum1[tid] += local_sum1[tid + 128];
+        }
+        __syncthreads();
+    }
+    if (BLOCK_SIZE >= 128) {
+        if (tid < 64) {
+            local_sum0[tid] += local_sum0[tid + 64];
+            local_sum1[tid] += local_sum1[tid + 64];
+        }
+        __syncthreads();
+    }
+
+    if (tid < 32) {
+        WarpReduceSum<float>(local_sum0, tid);
+        WarpReduceSum<float>(local_sum1, tid);
+    }
+}
+
+template <typename T, size_t BLOCK_SIZE>
+__device__ inline void BlockReduceSum(const int tid,
+                                      volatile T* local_sum0,
+                                      volatile T* local_sum1,
+                                      volatile T* local_sum2) {
+    if (BLOCK_SIZE >= 512) {
+        if (tid < 256) {
+            local_sum0[tid] += local_sum0[tid + 256];
+            local_sum1[tid] += local_sum1[tid + 256];
+            local_sum2[tid] += local_sum2[tid + 256];
+        }
+        __syncthreads();
+    }
+
+    if (BLOCK_SIZE >= 256) {
+        if (tid < 128) {
+            local_sum0[tid] += local_sum0[tid + 128];
+            local_sum1[tid] += local_sum1[tid + 128];
+            local_sum2[tid] += local_sum2[tid + 128];
+        }
+        __syncthreads();
+    }
+
+    if (BLOCK_SIZE >= 128) {
+        if (tid < 64) {
+            local_sum0[tid] += local_sum0[tid + 64];
+            local_sum1[tid] += local_sum1[tid + 64];
+            local_sum2[tid] += local_sum2[tid + 64];
+        }
+        __syncthreads();
+    }
+
+    if (tid < 32) {
+        WarpReduceSum<float>(local_sum0, tid);
+        WarpReduceSum<float>(local_sum1, tid);
+        WarpReduceSum<float>(local_sum2, tid);
+    }
+}
+
+__global__ void ComputePosePointToPlaneCUDAKernel(
+        NDArrayIndexer source_vertex_indexer,
+        NDArrayIndexer target_vertex_indexer,
+        NDArrayIndexer target_normal_indexer,
+        TransformIndexer ti,
+        float* global_sum,
+        int rows,
+        int cols,
+        float depth_diff) {
+    const int kBlockSize = 256;
+    __shared__ float local_sum0[kBlockSize];
+    __shared__ float local_sum1[kBlockSize];
+    __shared__ float local_sum2[kBlockSize];
+
+    const int x = threadIdx.x + blockIdx.x * blockDim.x;
+    const int y = threadIdx.y + blockIdx.y * blockDim.y;
+    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
+
+    local_sum0[tid] = 0;
+    local_sum1[tid] = 0;
+    local_sum2[tid] = 0;
+
+    if (y >= rows || x >= cols) return;
+
+    float J[6] = {0}, reduction[21 + 6 + 2];
+    float r = 0;
+    bool valid = GetJacobianPointToPlane(
+            x, y, depth_diff, source_vertex_indexer, target_vertex_indexer,
+            target_normal_indexer, ti, J, r);
+
+    // Dump J, r into JtJ and Jtr
+    int offset = 0;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j <= i; ++j) {
+            reduction[offset++] = J[i] * J[j];
+        }
+    }
+    for (int i = 0; i < 6; ++i) {
+        reduction[offset++] = J[i] * r;
+    }
+    reduction[offset++] = r * r;
+    reduction[offset++] = valid;
+
+    // Sum reduction: JtJ(21) and Jtr(6)
+    for (size_t i = 0; i < 27; i += 3) {
+        local_sum0[tid] = valid ? reduction[i + 0] : 0;
+        local_sum1[tid] = valid ? reduction[i + 1] : 0;
+        local_sum2[tid] = valid ? reduction[i + 2] : 0;
+        __syncthreads();
+
+        BlockReduceSum<float, kBlockSize>(tid, local_sum0, local_sum1,
+                                          local_sum2);
+
+        if (tid == 0) {
+            atomicAdd(&global_sum[i + 0], local_sum0[0]);
+            atomicAdd(&global_sum[i + 1], local_sum1[0]);
+            atomicAdd(&global_sum[i + 2], local_sum2[0]);
+        }
+        __syncthreads();
+    }
+
+    // Sum reduction: residual(1) and inlier(1)
+    {
+        local_sum0[tid] = valid ? reduction[27] : 0;
+        local_sum1[tid] = valid ? reduction[28] : 0;
+        __syncthreads();
+
+        BlockReduceSum<float, kBlockSize>(tid, local_sum0, local_sum1);
+        if (tid == 0) {
+            atomicAdd(&global_sum[27], local_sum0[0]);
+            atomicAdd(&global_sum[28], local_sum1[0]);
+        }
+        __syncthreads();
+    }
+}
+
 void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  const core::Tensor& target_vertex_map,
                                  const core::Tensor& target_normal_map,
@@ -267,50 +267,29 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
 
     core::Device device = source_vertex_map.GetDevice();
 
-    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
-    t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
+    core::Tensor trans = init_source_to_target;
+    TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
-    const int64_t n = rows * cols;
 
     // A_29xN is a {29, N} shaped tensor, which is later reduced to {29} where
-    // [0, 20] elements are used to construct {6,6} shaped symmetric AtA matrix,
-    // [21, 26] elements are used to construct {6} AtB matrix, element [27]
-    // stores residual and element [28] stores count.
-    core::Tensor A_29xN =
-            core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
-    float* A_reduction = A_29xN.GetDataPtr<float>();
+    // [0, 20] elements are used to construct {6,6} shaped symmetric AtA
+    // matrix, [21, 26] elements are used to construct {6} AtB matrix, element
+    // [27] stores residual and element [28] stores count.
+    core::Tensor global_sum =
+            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                float J_ij[6];
-                float r;
-
-                bool valid = GetJacobianPointToPlane(
-                        workload_idx, cols, depth_diff, source_vertex_indexer,
-                        target_vertex_indexer, target_normal_indexer, ti, J_ij,
-                        r);
-
-                if (valid) {
-                    for (int i = 0, j = 0; j < 6; j++) {
-                        for (int k = 0; k <= j; k++) {
-                            A_reduction[n * i + workload_idx] =
-                                    J_ij[j] * J_ij[k];
-                            i++;
-                        }
-                        A_reduction[n * (21 + j) + workload_idx] = J_ij[j] * r;
-                    }
-                    A_reduction[n * 27 + workload_idx] = r * r;
-                    A_reduction[n * 28 + workload_idx] = 1;
-                } else {
-                    for (int i = 0; i < 29; i++) {
-                        A_reduction[n * i + workload_idx] = 0;
-                    }
-                }
-            });
-
-    ReduceAndSolve6x6(A_reduction, delta, residual, n, device);
+    const int kThreadSize = 16;
+    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
+                      (rows + kThreadSize - 1) / kThreadSize);
+    const dim3 threads(kThreadSize, kThreadSize);
+    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+            source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
+            ti, global_sum_ptr, rows, cols, depth_diff);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    DecodeAndSolve6x6(global_sum, delta, residual);
 }
 
 void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
@@ -337,7 +316,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
     core::Device device = source_vertex_map.GetDevice();
-    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
@@ -345,9 +324,9 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
     const int64_t n = rows * cols;
 
     // A_29xN is a {29, N} shaped tensor, which is later reduced to
-    // {29} where [0, 20] elements are used to construct {6,6} shaped symmetric
-    // AtA matrix, [21, 26] elements are used to construct {6} AtB matrix,
-    // element [27] stores residual and element [28] stores count.
+    // {29} where [0, 20] elements are used to construct {6,6} shaped
+    // symmetric AtA matrix, [21, 26] elements are used to construct {6} AtB
+    // matrix, element [27] stores residual and element [28] stores count.
     core::Tensor A_29xN =
             core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
     float* A_reduction = A_29xN.GetDataPtr<float>();
@@ -412,7 +391,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
 
     core::Device device = source_vertex_map.GetDevice();
-    core::Tensor trans = init_source_to_target.To(device, core::Dtype::Float32);
+    core::Tensor trans = init_source_to_target;
     t::geometry::kernel::TransformIndexer ti(intrinsics, trans);
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
@@ -420,9 +399,9 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
     const int64_t n = rows * cols;
 
     // A_29xN is a {29, N} shaped tensor, which is later reduced to
-    // {29} where [0, 20] elements are used to construct {6,6} shaped symmetric
-    // AtA matrix, [21, 26] elements are used to construct {6} AtB matrix,
-    // element [27] stores residual and element [28] stores count.
+    // {29} where [0, 20] elements are used to construct {6,6} shaped
+    // symmetric AtA matrix, [21, 26] elements are used to construct {6} AtB
+    // matrix, element [27] stores residual and element [28] stores count.
     core::Tensor A_29xN =
             core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
     float* A_reduction = A_29xN.GetDataPtr<float>();

@@ -36,6 +36,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/IPPImage.h"
+#include "open3d/t/geometry/kernel/Image.h"
 #include "open3d/t/geometry/kernel/NPPImage.h"
 #include "open3d/utility/Console.h"
 
@@ -458,6 +459,108 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
 Image Image::PyrDown() const {
     Image blur = FilterGaussian(5, 1.0f);
     return blur.Resize(0.5, InterpType::Nearest);
+}
+
+Image Image::ClipTransform(float scale,
+                           float min_value,
+                           float max_value,
+                           float clip_fill) {
+    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
+        utility::LogError(
+                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
+                "{})",
+                GetRows(), GetCols(), GetChannels());
+    }
+    if (GetDtype() != core::Dtype::UInt16 &&
+        GetDtype() != core::Dtype::Float32) {
+        utility::LogError("Expected a UInt16 or Float32 image, but got {}",
+                          GetDtype().ToString());
+    }
+    if (scale < 0 || min_value < 0 || max_value < 0) {
+        utility::LogError(
+                "Expected positive scale, min_value, and max_value, but got "
+                "{}, {}, and {}",
+                scale, min_value, max_value);
+    }
+    if (!(std::isnan(clip_fill) || std::isinf(clip_fill) || clip_fill == 0)) {
+        utility::LogWarning(
+                "The clip_fill value {} is not recommended Inf, NaN or, 0",
+                clip_fill);
+    }
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
+                                       core::Dtype::Float32, data_.GetDevice());
+    kernel::image::ClipTransform(data_, dst_im.data_, scale, min_value,
+                                 max_value, clip_fill);
+    return dst_im;
+}
+
+Image Image::CreateVertexMap(const core::Tensor &intrinsics,
+                             float invalid_fill) {
+    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
+        utility::LogError(
+                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
+                "{})",
+                GetRows(), GetCols(), GetChannels());
+    }
+    if (GetDtype() != core::Dtype::Float32) {
+        utility::LogError("Expected a Float32 image, but got {}",
+                          GetDtype().ToString());
+    }
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3}, GetDtype(),
+                                       GetDevice());
+    kernel::image::CreateVertexMap(data_, dst_im.data_, intrinsics,
+                                   invalid_fill);
+    return dst_im;
+}
+
+Image Image::CreateNormalMap(float invalid_fill) {
+    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 3) {
+        utility::LogError(
+                "Invalid shape, expected a 3 channel image, but got ({}, {}, "
+                "{})",
+                GetRows(), GetCols(), GetChannels());
+    }
+    if (GetDtype() != core::Dtype::Float32) {
+        utility::LogError("Expected a Float32 image, but got {}",
+                          GetDtype().ToString());
+    }
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3}, GetDtype(),
+                                       GetDevice());
+    kernel::image::CreateNormalMap(data_, dst_im.data_, invalid_fill);
+    return dst_im;
+}
+
+Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
+    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
+        utility::LogError(
+                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
+                "{})",
+                GetRows(), GetCols(), GetChannels());
+    }
+    if (GetDtype() != core::Dtype::UInt16 &&
+        GetDtype() != core::Dtype::Float32) {
+        utility::LogError("Expected a UInt16 or Float32 image, but got {}",
+                          GetDtype().ToString());
+    }
+    if (scale < 0 || min_value < 0 || max_value < 0 || min_value >= max_value) {
+        utility::LogError(
+                "Expected positive scale, min_value, and max_value, but got "
+                "{}, {}, and {}",
+                scale, min_value, max_value);
+    }
+
+    Image dst_im;
+    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3},
+                                       core::Dtype::UInt8, data_.GetDevice());
+    kernel::image::ColorizeDepth(data_, dst_im.data_, scale, min_value,
+                                 max_value);
+    return dst_im;
 }
 
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,

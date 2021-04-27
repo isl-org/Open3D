@@ -36,11 +36,12 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
+using t::geometry::kernel::NDArrayIndexer;
+using t::geometry::kernel::TransformIndexer;
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
-        int64_t workload_idx,
-        int64_t cols,
+        int x,
+        int y,
         float depth_diff,
         const NDArrayIndexer& source_vertex_indexer,
         const NDArrayIndexer& target_vertex_indexer,
@@ -48,9 +49,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         const t::geometry::kernel::TransformIndexer& ti,
         float* J_ij,
         float& r) {
-    int64_t y = workload_idx / cols;
-    int64_t x = workload_idx % cols;
-
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
@@ -71,8 +69,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         return false;
     }
 
-    int64_t ui = static_cast<int64_t>(u);
-    int64_t vi = static_cast<int64_t>(v);
+    int ui = static_cast<int>(u);
+    int vi = static_cast<int>(v);
     float* target_v = target_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
     float* target_n = target_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
     if (ISNAN(target_v[0]) || ISNAN(target_n[0])) {
