@@ -829,6 +829,8 @@ struct O3DVisualizer::Impl {
         bool is_default_color;
         bool no_shadows = false;
         Material mat;
+        t::geometry::PointCloud* valid_tpcd = nullptr;
+
         if (material) {
             mat = *material;
             is_default_color = false;
@@ -859,6 +861,7 @@ struct O3DVisualizer::Impl {
             } else if (t_cloud) {
                 has_colors = t_cloud->HasPointColors();
                 has_normals = t_cloud->HasPointNormals();
+                valid_tpcd = t_cloud.get();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
                 no_shadows = true;
@@ -930,7 +933,17 @@ struct O3DVisualizer::Impl {
         AddObjectToTree(objects_.back());
 
         auto scene = scene_->GetScene();
-        scene->AddGeometry(name, geom.get(), mat);
+        // Do we have a tgeometry or a geometry?
+        if (geom) {
+            scene->AddGeometry(name, geom.get(), mat);
+        } else if (tgeom && valid_tpcd) {
+            scene->AddGeometry(name, valid_tpcd, mat);
+        } else {
+            utility::LogWarning(
+                    "No valid geometry specified to O3DViewer. Only supported "
+                    "geometries are Geometry3D and TGeometry PointClouds");
+        }
+
         if (no_shadows) {
             scene->GetScene()->GeometryShadows(name, false, false);
         }
