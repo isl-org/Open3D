@@ -829,7 +829,7 @@ struct O3DVisualizer::Impl {
         bool is_default_color;
         bool no_shadows = false;
         Material mat;
-        t::geometry::PointCloud* valid_tpcd = nullptr;
+        t::geometry::PointCloud *valid_tpcd = nullptr;
 
         if (material) {
             mat = *material;
