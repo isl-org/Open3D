@@ -11,6 +11,16 @@ set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
 endif()
 set(CMAKE_CXX_STANDARD 14)
 
+if(UNIX AND NOT APPLE)
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
+endif()
+
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
@@ -31,7 +41,7 @@ else()
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT LINUX_AARCH64)
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
@@ -136,16 +146,6 @@ if(NOT USE_SYSTEM_GLFW)
 endif()
 cmake_policy(GET CMP0072 CMP0072_VALUE)
 
-if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
-        OUTPUT_VARIABLE PROCESSOR_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(LINUX_AARCH64 TRUE)
-    endif()
-endif()
-
 # Set BLAS/LAPACK library preference.
 if(LINUX_AARCH64)
     if(NOT USE_BLAS)
@@ -175,20 +175,11 @@ endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
-if((APPLE OR WIN32 OR LINUX_AARCH64) AND BUILD_WEBRTC)
-    set(BUILD_WEBRTC OFF)
-    message(WARNING "WebRTC visualizer is not yet supported on macOS or Windows")
+if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
+    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON, requires setting BUILD_WEBRTC=ON.")
 endif()
-if(BUILD_JUPYTER_EXTENSION)
-    if(UNIX AND NOT APPLE)
-        if(NOT BUILD_WEBRTC)
-            message(WARNING "Jupyter visualizer requires BUILD_WEBRTC=ON. Setting BUILD_WEBRTC=ON")
-            set(BUILD_WEBRTC ON)
-        endif()
-    else()
-        message(WARNING "Jupyter visualizer is only supported on Linux. Setting BUILD_JUPYTER_EXTENSION=OFF")
-        set(BUILD_JUPYTER_EXTENSION OFF)
-    endif()
+if(BUILD_WEBRTC AND (APPLE OR WIN32 OR LINUX_AARCH64))
+    message(FATAL_ERROR "WebRTC visualizer is only supported on Linux (x86).")
 endif()
 
 # Parse Open3D version number
