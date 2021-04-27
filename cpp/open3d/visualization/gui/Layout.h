@@ -64,7 +64,8 @@ public:
     enum Dir { VERT, HORIZ };
 
     static void debug_PrintPreferredSizes(Layout1D* layout,
-                                          const Theme& theme,
+                                          const LayoutContext& context,
+                                          const Constraints& constraints,
                                           int depth = 0);
 
     /// Spacing is in pixels; see the comment in Margin(). 1em is typically
@@ -84,8 +85,9 @@ public:
     /// before a layout that will happen, such as before adding as a child).
     void SetMargins(const Margins& margins);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
-    void Layout(const Theme& theme) override;
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
+    void Layout(const LayoutContext& context) override;
 
     /// Adds a fixed number of pixels after the previously added widget.
     void AddFixed(int size);
@@ -99,7 +101,8 @@ public:
     class Fixed : public Widget {
     public:
         Fixed(int size, Dir dir);
-        Size CalcPreferredSize(const Theme& theme) const override;
+        Size CalcPreferredSize(const LayoutContext& context,
+                               const Constraints& constraints) const override;
 
     private:
         int size_;
@@ -107,10 +110,14 @@ public:
     };
 
     class Stretch : public Widget {
-        Size CalcPreferredSize(const Theme& theme) const override;
+        Size CalcPreferredSize(const LayoutContext& context,
+                               const Constraints& constraints) const override;
     };
 
 protected:
+    int GetMinorAxisPreferredSize() const;
+    void SetMinorAxisPreferredSize(int size);
+
     Margins& GetMutableMargins();
 
 private:
@@ -132,6 +139,9 @@ public:
          const Margins& margins,
          const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Vert();
+
+    int GetPreferredWidth() const;
+    void SetPreferredWidth(int w);
 };
 
 /// This is a vertical layout with a twisty + title that can be clicked on
@@ -153,8 +163,15 @@ public:
     /// the window is shown.)
     void SetIsOpen(bool is_open);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
-    void Layout(const Theme& theme) override;
+    /// Returns true if open and false if collapsed.
+    bool GetIsOpen();
+
+    FontStyle GetFontStyle() const;
+    void SetFontStyle(FontStyle style);
+
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
+    void Layout(const LayoutContext& context) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
@@ -177,6 +194,9 @@ public:
           const Margins& margins,
           const std::vector<std::shared_ptr<Widget>>& children);
     ~Horiz();
+
+    int GetPreferredHeight() const;
+    void SetPreferredHeight(int h);
 };
 
 /// Lays out widgets in a grid. The widgets are assigned to the next
@@ -192,8 +212,12 @@ public:
     int GetSpacing() const;
     const Margins& GetMargins() const;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
-    void Layout(const Theme& theme) override;
+    int GetPreferredWidth() const;
+    void SetPreferredWidth(int w);
+
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
+    void Layout(const LayoutContext& context) override;
 
 private:
     struct Impl;

@@ -14,6 +14,10 @@ set(ODOMETRY_SRC
     odometry/RGBDOdometry.cpp
 )
 
+set(VOXELHASHING_SRC
+    voxelhashing/Model.cpp
+)
+
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
     kernel/FillInLinearSystem.cpp
@@ -35,6 +39,7 @@ set(KERNEL_CUDA_SRC
 set(ALL_PIPELINE_SRC
     ${REGISTRATION_SRC}
     ${SLAC_SRC}
+    ${VOXELHASHING_SRC}
     ${ODOMETRY_SRC}
     ${KERNEL_SRC}
 )
@@ -55,4 +60,6 @@ open3d_link_3rdparty_libraries(tpipelines)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(tpipelines SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    find_package(CUB REQUIRED)
+    target_include_directories(tpipelines SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()

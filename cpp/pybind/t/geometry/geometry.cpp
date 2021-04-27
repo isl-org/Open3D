@@ -35,8 +35,8 @@ namespace geometry {
 
 void pybind_geometry_class(py::module& m) {
     // open3d.t.geometry.Geometry
-    py::class_<Geometry, PyGeometry<Geometry>> geometry(
-            m, "Geometry", "The base geometry class.");
+    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
+            geometry(m, "Geometry", "The base geometry class.");
 
     geometry.def("clear", &Geometry::Clear,
                  "Clear all elements in the geometry.")
@@ -47,7 +47,8 @@ void pybind_geometry_class(py::module& m) {
 }
 
 void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule("geometry");
+    py::module m_submodule = m.def_submodule(
+            "geometry", "Tensor-based geometry defining module.");
 
     pybind_geometry_class(m_submodule);
     pybind_tensormap(m_submodule);

@@ -202,7 +202,7 @@ TEST_P(NNSPermuteDevicesWithFaiss, HybridSearch) {
     core::Tensor distainces = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, -1}));
     ExpectEQ(distainces.ToFlatVector<float>(),
-             std::vector<float>({0.00626358, 0.00747938, -1}));
+             std::vector<float>({0.00626358, 0.00747938, 0}));
 }
 
 }  // namespace tests

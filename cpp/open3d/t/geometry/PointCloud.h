@@ -31,6 +31,7 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
@@ -294,7 +295,9 @@ public:
 
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.
-    PointCloud VoxelDownSample(double voxel_size) const;
+    PointCloud VoxelDownSample(double voxel_size,
+                               const core::HashmapBackend &backend =
+                                       core::HashmapBackend::Default) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
@@ -306,9 +309,9 @@ public:
     /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
     /// / fy\n
     ///
-    /// \param depth The input depth image should be a uint16_t image.
-    /// \param intrinsic Intrinsic parameters of the camera.
-    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth The input depth image should be a uint16_t or float image.
+    /// \param intrinsics Intrinsic parameters of the camera.
+    /// \param extrinsics Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
@@ -332,10 +335,10 @@ public:
     /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
     /// / fy\n
     ///
-    /// \param rgbd_image The input RGBD image should have a uint16_t depth
-    /// image and RGB image with any DType and the same size.
-    /// \param intrinsic Intrinsic parameters of the camera.
-    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param rgbd_image The input RGBD image should have a uint16_t or float
+    /// depth image and RGB image with any DType and the same size.
+    /// \param intrinsics Intrinsic parameters of the camera.
+    /// \param extrinsics Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.

@@ -138,7 +138,7 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
         // LD_LIBRARY_PATH.
         std::vector<std::string> k4a_lib_path_hints;
         if (const char* ld_paths_c = std::getenv("LD_LIBRARY_PATH")) {
-            utility::SplitString(k4a_lib_path_hints, ld_paths_c, ":", true);
+            k4a_lib_path_hints = utility::SplitString(ld_paths_c, ":", true);
         }
         k4a_lib_path_hints.insert(k4a_lib_path_hints.begin(), "");
 

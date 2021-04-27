@@ -56,7 +56,8 @@ public:
     /// to be within [minValue, maxValue].
     void SetLimits(double min_value, double max_value);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const LayoutContext& theme,
+                           const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 

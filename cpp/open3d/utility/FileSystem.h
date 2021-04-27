@@ -125,7 +125,7 @@ public:
 
     /// Read data to a buffer.
     /// \param data The data buffer to be written into.
-    /// \param num_elements Number of elements to be read. The byte size of the
+    /// \param num_elems Number of elements to be read. The byte size of the
     /// element is determined by the size of buffer type.
     template <class T>
     size_t ReadData(T *data, size_t num_elems) {
