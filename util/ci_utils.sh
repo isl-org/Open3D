@@ -496,7 +496,6 @@ build_docs() {
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_RPC_INTERFACE=ON"
         "-DBUNDLE_OPEN3D_ML=ON"
-        "-DBUILD_WEBRTC=ON"
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
