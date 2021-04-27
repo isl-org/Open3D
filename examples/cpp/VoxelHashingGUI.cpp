@@ -505,7 +505,7 @@ private:
                         result.transformation_.Slice(0, 0, 3).Slice(1, 3, 4);
                 double translation_norm = std::sqrt(
                         (translation * translation).Sum({0, 1}).Item<double>());
-                if (result.fitness_ >= 0.3 && translation_norm < 0.15) {
+                if (result.fitness_ >= 0.2 && translation_norm < 0.15) {
                     T_frame_to_model =
                             T_frame_to_model.Matmul(result.transformation_);
                 } else {  // Don't update
