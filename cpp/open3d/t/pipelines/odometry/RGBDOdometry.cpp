@@ -383,10 +383,12 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
                                      float depth_diff) {
     // Delta target_to_source on host.
     core::Tensor se3_delta;
-    core::Tensor residual;
+    float inlier_residual;
+    int inlier_count;
     kernel::odometry::ComputePosePointToPlane(
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
-            init_source_to_target, se3_delta, residual, depth_diff);
+            init_source_to_target, se3_delta, inlier_residual, inlier_count,
+            depth_diff);
 
     return pipelines::kernel::PoseToTransformation(se3_delta);
 }
@@ -403,11 +405,13 @@ core::Tensor ComputePoseIntensity(const core::Tensor& source_depth,
                                   float depth_diff) {
     // Delta target_to_source on host.
     core::Tensor se3_delta;
-    core::Tensor residual;
+    float inlier_residual;
+    int inlier_count;
     kernel::odometry::ComputePoseIntensity(
             source_depth, target_depth, source_intensity, target_intensity,
             target_intensity_dx, target_intensity_dy, source_vertex_map,
-            intrinsics, init_source_to_target, se3_delta, residual, depth_diff);
+            intrinsics, init_source_to_target, se3_delta, inlier_residual,
+            inlier_count, depth_diff);
 
     return pipelines::kernel::PoseToTransformation(se3_delta);
 }
@@ -426,12 +430,14 @@ core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
                                float depth_diff) {
     // Delta target_to_source on host.
     core::Tensor se3_delta;
-    core::Tensor residual;
+    float inlier_residual;
+    int inlier_count;
     kernel::odometry::ComputePoseHybrid(
             source_depth, target_depth, source_intensity, target_intensity,
             target_depth_dx, target_depth_dy, target_intensity_dx,
             target_intensity_dy, source_vertex_map, intrinsics,
-            init_source_to_target, se3_delta, residual, depth_diff);
+            init_source_to_target, se3_delta, inlier_residual, inlier_count,
+            depth_diff);
 
     return pipelines::kernel::PoseToTransformation(se3_delta);
 }
