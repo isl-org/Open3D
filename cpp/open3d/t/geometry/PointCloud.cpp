@@ -92,6 +92,11 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device_);
 
+    if (transformation.AllClose(core::Tensor::Eye(
+                4, transformation.GetDtype(), transformation.GetDevice()))) {
+        return *this;
+    }
+
     core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
     // TODO: Make it more generalised [4x4][4xN] transformation.

@@ -24,34 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <benchmark/benchmark.h>
 
-#include <memory>
-
-#include "open3d/io/sensor/RGBDSensorConfig.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 
-namespace geometry {
-class RGBDImage;
-};
+void Zeros(benchmark::State& state, const Device& device) {
+    int64_t large_dim = (1ULL << 27) + 10;
+    SizeVector shape{2, large_dim};
 
-namespace io {
+    Tensor warm_up = Tensor::Zeros(shape, Dtype::Float32, device);
+    (void)warm_up;
+    for (auto _ : state) {
+        Tensor dst = Tensor::Zeros(shape, Dtype::Float32, device);
+    }
+}
 
-class RGBDSensor {
-public:
-    RGBDSensor() {}
-    virtual bool Connect(size_t sensor_index) = 0;
-    virtual ~RGBDSensor(){};
+BENCHMARK_CAPTURE(Zeros, CPU, Device("CPU:0"))->Unit(benchmark::kMillisecond);
 
-    /// Capture one frame, return an RGBDImage.
-    /// If \p enable_align_depth_to_color is true, the depth image will be
-    /// warped to align with the color image; otherwise the raw depth image
-    /// output will be saved. Setting \p enable_align_depth_to_color to
-    /// false is useful when capturing at high resolution with high frame rates.
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame(
-            bool enable_align_depth_to_color) const = 0;
-};
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(Zeros, CUDA, Device("CUDA:0"))->Unit(benchmark::kMillisecond);
+#endif
 
-}  // namespace io
+}  // namespace core
 }  // namespace open3d

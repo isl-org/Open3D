@@ -51,7 +51,7 @@ public:
     /// Selects the indicated row of the list. Does not call onValueChanged.
     void SetSelectedIndex(int index);
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;

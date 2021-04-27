@@ -48,9 +48,15 @@ struct KeyEvent;
 struct TickEvent;
 struct Theme;
 
+struct LayoutContext {
+    const Theme& theme;
+    FontContext& fonts;
+};
+
 struct DrawContext {
     const Theme& theme;
     visualization::rendering::Renderer& renderer;
+    FontContext& fonts;
     int uiOffsetX;
     int uiOffsetY;
     int screenWidth;
@@ -90,15 +96,18 @@ public:
     bool IsEnabled() const;
     virtual void SetEnabled(bool enabled);
 
+    void SetTooltip(const char* text);
+    const char* GetTooltip() const;
+
     static constexpr int DIM_GROW = 10000;
     struct Constraints {
         int width = DIM_GROW;
         int height = DIM_GROW;
     };
-    virtual Size CalcPreferredSize(const Theme& theme,
+    virtual Size CalcPreferredSize(const LayoutContext& context,
                                    const Constraints& constraints) const;
 
-    virtual void Layout(const Theme& theme);
+    virtual void Layout(const LayoutContext& context);
 
     enum class DrawResult { NONE, REDRAW, RELAYOUT };
     /// Draws the widget. If this is a Dear ImGUI widget, this is where
@@ -128,6 +137,7 @@ public:
 protected:
     void DrawImGuiPushEnabledState();
     void DrawImGuiPopEnabledState();
+    void DrawImGuiTooltip();
 
 private:
     struct Impl;
