@@ -197,7 +197,7 @@ public:
                GetPointAttr(key).GetLength() == GetPoints().GetLength();
     }
 
-    /// Removes point attribute by key value. Primary attribute {points} cannot
+    /// Removes point attribute by key value. Primary attribute "points" cannot
     /// be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.

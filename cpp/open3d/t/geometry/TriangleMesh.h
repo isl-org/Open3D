@@ -203,7 +203,7 @@ public:
         return vertex_attr_.at(key);
     }
 
-    /// Removes vertex attribute by key value. Primary attribute {vertices}
+    /// Removes vertex attribute by key value. Primary attribute "vertices"
     /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
@@ -235,7 +235,7 @@ public:
         return triangle_attr_.at(key);
     }
 
-    /// Removes triangle attribute by key value. Primary attribute {triangles}
+    /// Removes triangle attribute by key value. Primary attribute "triangles"
     /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
