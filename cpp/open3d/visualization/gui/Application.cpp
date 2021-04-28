@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,9 @@
 #include <windows.h>  // so APIENTRY gets defined and GLFW doesn't define it
 #endif                // _MSC_VER
 
-#include <GLFW/glfw3.h>
-
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <list>
 #include <mutex>
 #include <thread>
@@ -45,12 +44,15 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/GLFWWindowSystem.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -108,90 +110,6 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     return resource_path;
 }
 
-std::string FindFontPath(const std::string &font) {
-    using namespace open3d::utility::filesystem;
-
-    if (FileExists(font)) {
-        return font;
-    }
-
-    std::string home;
-    char *raw_home = getenv("HOME");
-    if (raw_home) {  // std::string(nullptr) is undefined
-        home = raw_home;
-    }
-    std::vector<std::string> system_font_paths = {
-#ifdef __APPLE__
-            "/System/Library/Fonts", "/Library/Fonts", home + "/Library/Fonts"
-#elif _WIN32
-            "c:/Windows/Fonts"
-#else
-            "/usr/share/fonts",
-            home + "/.fonts",
-#endif  // __APPLE__
-    };
-
-#ifdef __APPLE__
-    std::vector<std::string> font_ext = {".ttf", ".ttc", ".otf"};
-    for (auto &font_path : system_font_paths) {
-        for (auto &ext : font_ext) {
-            std::string candidate = font_path + "/" + font + ext;
-            if (FileExists(candidate)) {
-                return candidate;
-            }
-        }
-    }
-    return "";
-#else
-    std::string font_ttf = font + ".ttf";
-    std::string font_ttc = font + ".ttc";
-    std::string font_otf = font + ".otf";
-    auto is_match = [font, &font_ttf, &font_ttc,
-                     &font_otf](const std::string &path) {
-        auto filename = GetFileNameWithoutDirectory(path);
-        auto ext = GetFileExtensionInLowerCase(filename);
-        if (ext != "ttf" && ext != "ttc" && ext != "otf") {
-            return false;
-        }
-        if (filename == font_ttf || filename == font_ttc ||
-            filename == font_otf) {
-            return true;
-        }
-        if (filename.find(font) == 0) {
-            return true;
-        }
-        return false;
-    };
-
-    for (auto &font_dir : system_font_paths) {
-        auto matches = FindFilesRecursively(font_dir, is_match);
-        for (auto &m : matches) {
-            if (GetFileNameWithoutExtension(GetFileNameWithoutDirectory(m)) ==
-                font) {
-                return m;
-            }
-        }
-        std::vector<std::string> suffixes = {
-                "-Regular.ttf", "-Regular.ttc", "-Regular.otf", "-Normal.ttf",
-                "-Normal.ttc",  "-Normal.otf",  "-Medium.ttf",  "-Medium.ttc",
-                "-Medium.otf",  "-Narrow.ttf",  "-Narrow.ttc",  "-Narrow.otf",
-                "Regular.ttf",  "-Regular.ttc", "-Regular.otf", "Normal.ttf",
-                "Normal.ttc",   "Normal.otf",   "Medium.ttf",   "Medium.ttc",
-                "Medium.otf",   "Narrow.ttf",   "Narrow.ttc",   "Narrow.otf"};
-        for (auto &m : matches) {
-            auto dir = GetFileParentDirectory(m);  // has trailing slash
-            for (auto &suf : suffixes) {
-                std::string candidate = dir + font + suf;
-                if (m == candidate) {
-                    return candidate;
-                }
-            }
-        }
-    }
-    return "";
-#endif  // __APPLE__
-}
-
 }  // namespace
 
 namespace open3d {
@@ -200,10 +118,11 @@ namespace gui {
 
 struct Application::Impl {
     bool is_initialized_ = false;
+    std::shared_ptr<WindowSystem> window_system_;
     std::vector<Application::UserFontInfo> fonts_;
     Theme theme_;
     double last_time_ = 0.0;
-    bool is_GLFW_initialized_ = false;
+    bool is_ws_initialized_ = false;
     bool is_running_ = false;
     bool should_quit_ = false;
 
@@ -223,26 +142,21 @@ struct Application::Impl {
     std::vector<Posted> posted_;
     // ----
 
-    void InitGLFW() {
-        if (is_GLFW_initialized_) {
-            return;
+    void InitWindowSystem() {
+        if (!window_system_) {
+            window_system_ = std::make_shared<GLFWWindowSystem>();
         }
 
-#if __APPLE__
-        // If we are running from Python we might not be running from a bundle
-        // and would therefore not be a Proper app yet.
-        MacTransformIntoApp();
-
-        glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
-#endif
-        glfwInit();
-        is_GLFW_initialized_ = true;
+        if (!is_ws_initialized_) {
+            window_system_->Initialize();
+            is_ws_initialized_ = true;
+        }
     }
 
     void PrepareForRunning() {
         // We already called this in the constructor, but it is possible
-        // (but unlikely) that the run loop finished and is starting again.
-        InitGLFW();
+        // that the run loop finished and is starting again.
+        InitWindowSystem();
 
         // Initialize rendering
         visualization::rendering::EngineInstance::SelectBackend(
@@ -261,8 +175,10 @@ struct Application::Impl {
         // script finishes.
         visualization::rendering::EngineInstance::DestroyInstance();
 
-        glfwTerminate();
-        is_GLFW_initialized_ = false;
+        if (window_system_) {
+            window_system_->Uninitialize();
+        }
+        is_ws_initialized_ = false;
     }
 };
 
@@ -294,9 +210,12 @@ Application::Application() : impl_(new Application::Impl()) {
 
     // Note that any values here need to be scaled by the scale factor in Window
     impl_->theme_.font_path =
-            "Roboto-Medium.ttf";   // full path will be added in Initialize()
-    impl_->theme_.font_size = 16;  // 1 em (font size is em in digital type)
-    impl_->theme_.default_margin = 8;          // 0.5 * em
+            "Roboto-Medium.ttf";  // full path will be added in Initialize()
+    impl_->theme_.font_bold_path = "Roboto-Bold.ttf";
+    impl_->theme_.font_italic_path = "Roboto-MediumItalic.ttf";
+    impl_->theme_.font_bold_italic_path = "Roboto-BoldItalic.ttf";
+    impl_->theme_.font_size = 16;      // 1 em (font size is em in digital type)
+    impl_->theme_.default_margin = 8;  // 0.5 * em
     impl_->theme_.default_layout_spacing = 6;  // 0.333 * em
 
     impl_->theme_.background_color = Color(0.175f, 0.175f, 0.175f);
@@ -317,7 +236,15 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.checkbox_background_hover_off_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.checkbox_background_hover_on_color =
             highlight_color.Lightened(0.15f);
-    impl_->theme_.checkbox_check_color = Color(1, 1, 1);
+    impl_->theme_.checkbox_check_color = Color(0.9f, 0.9f, 0.9f);
+    impl_->theme_.toggle_background_off_color =
+            impl_->theme_.checkbox_background_off_color;
+    impl_->theme_.toggle_background_on_color = Color(0.666f, 0.666f, 0.666f);
+    impl_->theme_.toggle_background_hover_off_color =
+            impl_->theme_.checkbox_background_hover_off_color;
+    impl_->theme_.toggle_background_hover_on_color =
+            impl_->theme_.toggle_background_on_color.Lightened(0.15f);
+    impl_->theme_.toggle_thumb_color = Color(1, 1, 1);
     impl_->theme_.combobox_background_color = Color(0.4f, 0.4f, 0.4f);
     impl_->theme_.combobox_hover_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
@@ -373,26 +300,68 @@ void Application::Initialize(const char *resource_path) {
 
     impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
                               impl_->theme_.font_path;
+    impl_->theme_.font_bold_path = std::string(resource_path) +
+                                   std::string("/") +
+                                   impl_->theme_.font_bold_path;
+    impl_->theme_.font_italic_path = std::string(resource_path) +
+                                     std::string("/") +
+                                     impl_->theme_.font_italic_path;
+    impl_->theme_.font_bold_italic_path = std::string(resource_path) +
+                                          std::string("/") +
+                                          impl_->theme_.font_bold_italic_path;
     impl_->is_initialized_ = true;
 }
 
+void Application::VerifyIsInitialized() {
+    if (impl_->is_initialized_) {
+        return;
+    }
+
+    // Call LogWarning() first because it is easier to visually parse than the
+    // error message.
+    utility::LogWarning("gui::Initialize() was not called");
+
+    // It would be nice to make this LogWarning() and then call Initialize(),
+    // but Python scripts requires a different heuristic for finding the
+    // resource path than C++.
+    utility::LogError(
+            "gui::Initialize() must be called before creating a window or UI "
+            "element.");
+}
+
+WindowSystem &Application::GetWindowSystem() const {
+    return *impl_->window_system_;
+}
+
+void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
+    assert(!impl_->window_system_);
+    impl_->window_system_ = ws;
+    impl_->is_ws_initialized_ = false;
+}
+
 void Application::SetFontForLanguage(const char *font, const char *lang_code) {
-    auto font_path = FindFontPath(font);
+    // Find the font path so we can report to the user if there is a problem,
+    // but we need to store the raw value since we may need to get bold and
+    // italic versions as well when we create the font texture atlas later.
+    auto font_path = FindFontPath(font, FontStyle::NORMAL);
     if (font_path.empty()) {
         utility::LogWarning("Could not find font '{}'", font);
         return;
     }
-    impl_->fonts_.push_back({font_path, lang_code, {}});
+    impl_->fonts_.push_back({std::string(font), lang_code, {}});
 }
 
 void Application::SetFontForCodePoints(
         const char *font, const std::vector<uint32_t> &code_points) {
-    auto font_path = FindFontPath(font);
+    // Attempt to find the path so that we can report to the user.
+    // But just store the name because we will need to look up the files
+    // for the different styles when we create the font texture atlas.
+    auto font_path = FindFontPath(font, FontStyle::NORMAL);
     if (font_path.empty()) {
         utility::LogWarning("Could not find font '{}'", font);
         return;
     }
-    impl_->fonts_.push_back({font_path, "", code_points});
+    impl_->fonts_.push_back({std::string(font), "", code_points});
 }
 
 const std::vector<Application::UserFontInfo> &Application::GetUserFontInfo()
@@ -400,7 +369,12 @@ const std::vector<Application::UserFontInfo> &Application::GetUserFontInfo()
     return impl_->fonts_;
 }
 
-double Application::Now() const { return glfwGetTime(); }
+double Application::Now() const {
+    static auto g_tzero = std::chrono::steady_clock::now();
+    std::chrono::duration<double> t =
+            std::chrono::steady_clock::now() - g_tzero;
+    return t.count();
+}
 
 std::shared_ptr<Menu> Application::GetMenubar() const {
     return impl_->menubar_;
@@ -489,7 +463,7 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
             // If we post two expose events they get coalesced, but
             // setting needsLayout forces two (for the reason given above).
             w->SetNeedsLayout();
-            Window::UpdateAfterEvent(w.get());
+            w->PostRedraw();
             return;
         }
     }
@@ -560,7 +534,7 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
 Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     unlocker.unlock();  // don't want to be locked while we wait
-    glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
+    impl_->window_system_->WaitEventsTimeout(RUNLOOP_DELAY_SEC);
     unlocker.relock();  // need to relock in case we call any callbacks to
                         // functions in the containing (e.g. Python) environment
 
@@ -568,9 +542,7 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     double now = Now();
     if (now - impl_->last_time_ >= 0.95 * RUNLOOP_DELAY_SEC) {
         for (auto w : impl_->windows_) {
-            if (w->OnTickEvent(TickEvent())) {
-                w->PostRedraw();
-            }
+            w->OnTickEvent(TickEvent());
         }
         impl_->last_time_ = now;
     }
@@ -586,6 +558,21 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
         unlocker.relock();
 
         for (auto &p : impl_->posted_) {
+            // Make sure this window still exists. Unfortunately, p.window
+            // is a pointer but impl_->windows_ is a shared_ptr, so we can't
+            // use find.
+            if (p.window) {
+                bool found = false;
+                for (auto w : impl_->windows_) {
+                    if (w.get() == p.window) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    continue;
+                }
+            }
+
             void *old = nullptr;
             if (p.window) {
                 old = p.window->MakeDrawContextCurrent();
@@ -632,7 +619,7 @@ const char *Application::GetResourcePath() const {
 const Theme &Application::GetTheme() const { return impl_->theme_; }
 
 std::shared_ptr<geometry::Image> Application::RenderToImage(
-        EnvUnlocker &unlocker,
+        rendering::Renderer &renderer,
         rendering::View *view,
         rendering::Scene *scene,
         int width,
@@ -642,29 +629,39 @@ std::shared_ptr<geometry::Image> Application::RenderToImage(
         img = _img;
     };
 
-    auto render = std::make_shared<rendering::FilamentRenderToBuffer>(
-            rendering::EngineInstance::GetInstance());
-    render->Configure(
-            view, scene, width, height,
-            // the shared_ptr (render) is const unless the lambda
-            // is made mutable
-            [render, callback](
-                    const rendering::RenderToBuffer::Buffer &buffer) mutable {
-                auto image = std::make_shared<geometry::Image>();
-                image->width_ = int(buffer.width);
-                image->height_ = int(buffer.height);
-                image->num_of_channels_ = 3;
-                image->bytes_per_channel_ = 1;
-                image->data_ = std::vector<uint8_t>(buffer.bytes,
-                                                    buffer.bytes + buffer.size);
-                callback(image);
-                render = nullptr;
-            });
-    render->Render();
+    // Despite the fact that Renderer is created with a width/height, it is
+    // the View's viewport that actually controls the size when rendering to
+    // an image. Set the viewport here, rather than in the pybinds so that
+    // C++ callers do not need to know do this themselves.
+    view->SetViewport(0, 0, width, height);
 
-    while (!img && RunOneTick(unlocker, false)) {
-        render->RenderTick();
-    }
+    renderer.RenderToImage(view, scene, callback);
+    renderer.BeginFrame();
+    renderer.EndFrame();
+
+    return img;
+}
+
+std::shared_ptr<geometry::Image> Application::RenderToDepthImage(
+        rendering::Renderer &renderer,
+        rendering::View *view,
+        rendering::Scene *scene,
+        int width,
+        int height) {
+    std::shared_ptr<geometry::Image> img;
+    auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
+        img = _img;
+    };
+
+    // Despite the fact that Renderer is created with a width/height, it is
+    // the View's viewport that actually controls the size when rendering to
+    // an image. Set the viewport here, rather than in the pybinds so that
+    // C++ callers do not need to know do this themselves.
+    view->SetViewport(0, 0, width, height);
+
+    renderer.RenderToDepthImage(view, scene, callback);
+    renderer.BeginFrame();
+    renderer.EndFrame();
 
     return img;
 }

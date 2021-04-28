@@ -44,9 +44,6 @@ namespace nns {
 /// \param temp_size    The size of the temporary memory in bytes. This is
 ///        used as an output if temp is nullptr
 ///
-/// \param texture_alignment    The texture alignment in bytes. This is used
-///        for allocating segments within the temporary memory.
-///
 /// \param num_points    The number of points.
 ///
 /// \param points    The array of 3D points.
@@ -78,18 +75,18 @@ namespace nns {
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-template <class TReal, class TIndex>
+template <class T>
 void BuildSpatialHashTableCUDA(void* temp,
                                size_t& temp_size,
                                const size_t num_points,
-                               const TReal* const points,
-                               const TReal radius,
+                               const T* const points,
+                               const T radius,
                                const size_t points_row_splits_size,
                                const int64_t* points_row_splits,
-                               const TIndex* hash_table_splits,
+                               const int64_t* hash_table_splits,
                                const size_t hash_table_cell_splits_size,
-                               TIndex* hash_table_cell_splits,
-                               TIndex* hash_table_index);
+                               int64_t* hash_table_cell_splits,
+                               int64_t* hash_table_index);
 
 /// Fixed radius search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and an exclusive prefix
@@ -111,9 +108,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///
 /// \param temp_size    The size of the temporary memory in bytes. This is
 ///        used as an output if temp is nullptr
-///
-/// \param texture_alignment    The texture alignment in bytes. This is used
-///        for allocating segments within the temporary memory.
 ///
 /// \param query_neighbors_row_splits    This is the output pointer for the
 ///        prefix sum. The length of this array is \p num_queries + 1.
@@ -163,17 +157,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
-///        search.
-///
-/// \param ignore_query_point    If true then points with the same position as
-///        the query point will be ignored.
-///
-/// \param return_distances    If true then this function will return the
-///        distances for each neighbor to its query point in the same format
-///        as the indices.
-///        Note that for the L2 metric the squared distances will be returned!!
-///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
 ///         AllocIndices(int32_t** ptr, size_t size) and
@@ -182,7 +165,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         Argument size specifies the size of the array as the number of
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
-///
 template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
@@ -196,11 +178,137 @@ void FixedRadiusSearchCUDA(void* temp,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const uint32_t* const hash_table_splits,
+                           const int64_t* const hash_table_splits,
                            size_t hash_table_cell_splits_size,
-                           const uint32_t* const hash_table_cell_splits,
-                           const uint32_t* const hash_table_index,
+                           const int64_t* const hash_table_cell_splits,
+                           const int64_t* const hash_table_index,
                            NeighborSearchAllocator<T>& output_allocator);
+
+/// Hybrid search. This function computes a list of neighbor indices and
+/// distances for each query point. The lists are stored linearly per each query
+/// point. If the neighbors within radius is not enough, neighbor indices and
+/// distances are padded with -1.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \tparam OUTPUT_ALLOCATOR    Type of the output_allocator. See
+///         \p output_allocator for more information.
+///
+///
+/// \param num_points    The number of points.
+///
+/// \param points    Array with the 3D point positions. This may be the same
+///        array as \p queries.
+///
+/// \param num_queries    The number of query points.
+///
+/// \param queries    Array with the 3D query positions. This may be the same
+///                   array as \p points.
+///
+/// \param radius    The search radius.
+///
+/// \param max_knn    The maximum number of neighbors to search for each query.
+///
+/// \param points_row_splits_size    The size of the points_row_splits array.
+///        The size of the array is batch_size+1.
+///
+/// \param points_row_splits    This pointer points to host memory.
+///        Defines the start and end of the points in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_points]
+///
+/// \param queries_row_splits_size    The size of the queries_row_splits array.
+///        The size of the array is batch_size+1.
+///
+/// \param queries_row_splits    This pointer points to host memory.
+///        Defines the start and end of the queries in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_queries]
+///
+/// \param hash_table_splits    This pointer points to host memory.
+///        Array defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_cell_splits_size    This is the length of the
+///        hash_table_cell_splits array.
+///
+/// \param hash_table_cell_splits    This is an output of the function
+///        BuildSpatialHashTableCUDA. The row splits array describing the start
+///        and end of each cell.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCUDA. This is array storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        array must be equal to the number of points.
+///
+/// \param output_allocator    An object that implements functions for
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
+template <class T>
+void HybridSearchCUDA(size_t num_points,
+                      const T* const points,
+                      size_t num_queries,
+                      const T* const queries,
+                      const T radius,
+                      const int max_knn,
+                      const size_t points_row_splits_size,
+                      const int64_t* const points_row_splits,
+                      const size_t queries_row_splits_size,
+                      const int64_t* const queries_row_splits,
+                      const int64_t* const hash_table_splits,
+                      size_t hash_table_cell_splits_size,
+                      const int64_t* const hash_table_cell_splits,
+                      const int64_t* const hash_table_index,
+                      NeighborSearchAllocator<T>& output_allocator);
+
+/// This function sorts a list of neighbor indices and distances in
+/// descending order of distance.
+///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+///
+/// \param temp    Pointer to temporary memory. If nullptr then the required
+///        size of temporary memory will be written to \p temp_size and no
+///        work is done.
+///
+/// \param temp_size    The size of the temporary memory in bytes. This is
+///        used as an output if temp is nullptr
+///
+/// \param num_indices    The number of indices to sort.
+///
+/// \param num_segments    The number of segments to sort.
+///
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param indices_unsorted    Pointer to unsorted indices.
+///
+/// \param distances_unsorted    Pointer to unsorted distances.
+///
+/// \param indices_sorted    Pointer to sorted indices.
+///
+/// \param distances_sorted    Pointer to sorted distances.
+///
+template <class T>
+void SortPairs(void* temp,
+               size_t& temp_size,
+               int64_t num_indices,
+               int64_t num_segments,
+               const int64_t* query_neighbors_row_splits,
+               int64_t* indices_unsorted,
+               T* distances_unsorted,
+               int64_t* indices_sorted,
+               T* distances_sorted);
 
 }  // namespace nns
 }  // namespace core

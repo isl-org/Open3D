@@ -27,7 +27,9 @@
 #include "open3d/geometry/PointCloud.h"
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <numeric>
+#include <random>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -428,6 +430,22 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     return SelectByIndex(indices);
 }
 
+std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
+        double sampling_ratio) const {
+    if (sampling_ratio < 0 || sampling_ratio > 1) {
+        utility::LogError(
+                "[RandomDownSample] Illegal sampling_ratio {}, sampling_ratio "
+                "must be between 0 and 1.");
+    }
+    std::vector<size_t> indices(points_.size());
+    std::iota(std::begin(indices), std::end(indices), (size_t)0);
+    std::random_device rd;
+    std::mt19937 prng(rd());
+    std::shuffle(indices.begin(), indices.end(), prng);
+    indices.resize((int)(sampling_ratio * points_.size()));
+    return SelectByIndex(indices);
+}
+
 std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
@@ -615,8 +633,9 @@ PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
     size_t origin_vidx = pt_map.size();
     for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
         size_t pidx = pt_map[vidx];
-        visible_mesh->vertices_[vidx] = points_[pidx];
-        if (pidx == origin_pidx) {
+        if (pidx != origin_pidx) {
+            visible_mesh->vertices_[vidx] = points_[pidx];
+        } else {
             origin_vidx = vidx;
             visible_mesh->vertices_[vidx] = camera_location;
         }

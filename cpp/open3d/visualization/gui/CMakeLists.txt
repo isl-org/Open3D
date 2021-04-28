@@ -1,21 +1,56 @@
 # build
-file(GLOB_RECURSE GUI_SOURCE_FILES "*.cpp")
-file(GLOB_RECURSE GUI_HEADER_FILES "*.h")
+set(GUI_SOURCE_FILES
+    Application.cpp
+    BitmapWindowSystem.cpp
+    Button.cpp
+    Checkbox.cpp
+    Color.cpp
+    ColorEdit.cpp
+    Combobox.cpp
+    Dialog.cpp
+    FileDialog.cpp
+    FileDialogNative.cpp
+    GLFWWindowSystem.cpp
+    Gui.cpp
+    ImageWidget.cpp
+    ImguiFilamentBridge.cpp
+    Label.cpp
+    Label3D.cpp
+    Layout.cpp
+    ListView.cpp
+    Menu.cpp
+    MenuImgui.cpp
+    NumberEdit.cpp
+    PickPointsInteractor.cpp
+    ProgressBar.cpp
+    SceneWidget.cpp
+    Slider.cpp
+    StackedWidget.cpp
+    TabControl.cpp
+    Task.cpp
+    TextEdit.cpp
+    Theme.cpp
+    ToggleSwitch.cpp
+    TreeView.cpp
+    UIImage.cpp
+    Util.cpp
+    VectorEdit.cpp
+    Widget.cpp
+    Window.cpp
+    )
 
-list(REMOVE_ITEM GUI_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Native.h)
 if (WIN32)
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
+    list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)
 elseif (APPLE)
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
-    list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeMacOS.mm)
-    list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/MenuMacOS.mm)
+    list(APPEND GUI_SOURCE_FILES NativeMacOS.mm)
+    list(APPEND GUI_HEADER_FILES MenuMacOS.h)
+    list(APPEND GUI_SOURCE_FILES MenuMacOS.mm)
 else ()
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
+    list(APPEND GUI_SOURCE_FILES NativeLinux.cpp)
 endif()
 
 # create object library
-add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
+add_library(GUI OBJECT ${GUI_SOURCE_FILES})
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)
 open3d_link_3rdparty_libraries(GUI)
@@ -56,4 +91,3 @@ set(GUI_RESOURCE_FILES
     ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES}
     PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
-

@@ -286,6 +286,12 @@ endfunction()
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
+# CUDAToolkit
+if(BUILD_CUDA_MODULE)
+    find_package(CUDAToolkit REQUIRED)
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
+endif()
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
@@ -491,7 +497,7 @@ if(NOT USE_SYSTEM_JPEG)
     import_3rdparty_library(3rdparty_jpeg
         INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/include/
         LIBRARIES ${JPEG_TURBO_LIBRARIES}
-        LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/lib
+        LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/${Open3D_INSTALL_LIB_DIR}
     )
     add_dependencies(3rdparty_jpeg ext_turbojpeg)
     set(JPEG_TARGET "3rdparty_jpeg")
@@ -540,20 +546,42 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
 # librealsense SDK
 if (BUILD_LIBREALSENSE)
-    include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
-    import_3rdparty_library(3rdparty_librealsense
-        INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
-        LIBRARIES    ${LIBREALSENSE_LIBRARIES}
-        LIB_DIR      ${LIBREALSENSE_LIB_DIR}
-    )
-    add_dependencies(3rdparty_librealsense ext_librealsense)
-    set(LIBREALSENSE_TARGET "3rdparty_librealsense")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
-
-    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
-        find_library(UDEV_LIBRARY udev REQUIRED
-            DOC "Library provided by the deb package libudev-dev")
-        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+    if(USE_SYSTEM_LIBREALSENSE AND NOT GLIBCXX_USE_CXX11_ABI)
+        # Turn off USE_SYSTEM_LIBREALSENSE.
+        # Because it is affected by libraries built with different CXX ABIs.
+        # See details: https://github.com/intel-isl/Open3D/pull/2876
+        message(STATUS "Set USE_SYSTEM_LIBREALSENSE=OFF, because GLIBCXX_USE_CXX11_ABI is OFF.")
+        set(USE_SYSTEM_LIBREALSENSE OFF)
+    endif()
+    if(USE_SYSTEM_LIBREALSENSE)
+        find_package(realsense2)
+        if(TARGET realsense2::realsense2)
+            message(STATUS "Using installed third-party library librealsense")
+            if(NOT BUILD_SHARED_LIBS)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
+            endif()
+            set(LIBREALSENSE_TARGET  "realsense2::realsense2")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+        else()
+            message(STATUS "Unable to find installed third-party library librealsense")
+            set(USE_SYSTEM_LIBREALSENSE OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_LIBREALSENSE)
+        include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+        import_3rdparty_library(3rdparty_librealsense
+            INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
+            LIBRARIES    ${LIBREALSENSE_LIBRARIES}
+            LIB_DIR      ${LIBREALSENSE_LIB_DIR}
+        )
+        add_dependencies(3rdparty_librealsense ext_librealsense)
+        set(LIBREALSENSE_TARGET "3rdparty_librealsense")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+        if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+            find_library(UDEV_LIBRARY udev REQUIRED
+                DOC "Library provided by the deb package libudev-dev")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+        endif()
     endif()
 endif()
 
@@ -566,6 +594,9 @@ if(USE_SYSTEM_PNG)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "PNG")
         endif()
         set(PNG_TARGET "PNG::PNG")
+        set(ZLIB_TARGET "ZLIB::ZLIB")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
     else()
         message(STATUS "Unable to find installed third-party library libpng")
         set(USE_SYSTEM_PNG OFF)
@@ -587,12 +618,12 @@ if(NOT USE_SYSTEM_PNG)
         LIB_DIR      ${LIBPNG_LIB_DIR}
         LIBRARIES    ${LIBPNG_LIBRARIES}
     )
-    set(LIBPNG_TARGET "3rdparty_libpng")
+    set(PNG_TARGET "3rdparty_libpng")
     add_dependencies(3rdparty_libpng ext_libpng)
     add_dependencies(ext_libpng ext_zlib)
 
     # Putting zlib after libpng somehow works for Ubuntu.
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
 endif()
 
@@ -1017,6 +1048,11 @@ set(TBB_TARGET "3rdparty_tbb")
 add_dependencies(3rdparty_tbb ext_tbb)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
 
+# parallelstl
+build_3rdparty_library(3rdparty_parallelstl DIRECTORY parallelstl INCLUDE_DIRS include/ INCLUDE_ALL)
+set(PARALLELSTL_TARGET "3rdparty_parallelstl")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PARALLELSTL_TARGET}")
+
 if(USE_BLAS)
     # Try to locate system BLAS/LAPACK
     find_package(BLAS)
@@ -1028,8 +1064,8 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
         if(BUILD_CUDA_MODULE)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_cusolver_LIBRARY}")
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_CUBLAS_LIBRARIES}")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas)
         endif()
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
@@ -1046,9 +1082,7 @@ if(USE_BLAS)
         add_dependencies(3rdparty_openblas ext_openblas)
         target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
         if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_openblas INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
+            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver CUDA::cublas)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
@@ -1070,16 +1104,13 @@ else()
     message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
     message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
     if(UNIX)
-        target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+        target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
         target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-        # cuSOLVER and cuBLAS
-        if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_mkl INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
-        endif()
-    elseif(MSVC)
-        target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+    endif()
+    target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver CUDA::cublas)
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
@@ -1116,3 +1147,54 @@ if (WITH_FAISS)
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
+
+# NPP
+if (BUILD_CUDA_MODULE)
+    # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
+    add_library(3rdparty_CUDA_NPP INTERFACE)
+    target_link_libraries(3rdparty_CUDA_NPP INTERFACE CUDA::nppc CUDA::nppicc CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial)
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS 3rdparty_CUDA_NPP EXPORT ${PROJECT_NAME}Targets)
+    endif()
+    set(CUDA_NPP_TARGET 3rdparty_CUDA_NPP)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${CUDA_NPP_TARGET})
+endif ()
+
+# IPP
+if (WITH_IPPICV)
+    # Ref: https://stackoverflow.com/a/45125525
+    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
+        set(WITH_IPPICV OFF)
+        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    else ()
+        include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
+        if (WITH_IPPICV)
+            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
+            import_3rdparty_library(3rdparty_ippicv
+                INCLUDE_DIRS "${IPPICV_INCLUDE_DIR}"
+                LIBRARIES     ${IPPICV_LIBRARIES}
+                LIB_DIR      "${IPPICV_LIB_DIR}"
+                )
+            add_dependencies(3rdparty_ippicv ext_ippicv)
+            target_compile_definitions(3rdparty_ippicv INTERFACE
+                ${IPPICV_DEFINITIONS})
+            set(IPPICV_TARGET "3rdparty_ippicv")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IPPICV_TARGET}")
+        endif()
+    endif()
+endif ()
+
+# Stdgpu
+if (BUILD_CUDA_MODULE)
+    include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+    import_3rdparty_library(3rdparty_stdgpu
+        INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+        LIB_DIR      ${STDGPU_LIB_DIR}
+        LIBRARIES    ${STDGPU_LIBRARIES}
+    )
+    set(STDGPU_TARGET "3rdparty_stdgpu")
+    add_dependencies(3rdparty_stdgpu ext_stdgpu)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${STDGPU_TARGET}")
+endif ()

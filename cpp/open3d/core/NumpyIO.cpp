@@ -80,12 +80,17 @@ static char DtypeToChar(const Dtype& dtype) {
     // '?': object
     if (dtype == Dtype::Float32) return 'f';
     if (dtype == Dtype::Float64) return 'f';
+    if (dtype == Dtype::Int8) return 'i';
+    if (dtype == Dtype::Int16) return 'i';
     if (dtype == Dtype::Int32) return 'i';
     if (dtype == Dtype::Int64) return 'i';
     if (dtype == Dtype::UInt8) return 'u';
     if (dtype == Dtype::UInt16) return 'u';
+    if (dtype == Dtype::UInt32) return 'u';
+    if (dtype == Dtype::UInt64) return 'u';
     if (dtype == Dtype::Bool) return 'b';
     utility::LogError("Unsupported dtype: {}", dtype.ToString());
+    return '\0';
 }
 
 template <typename T>
@@ -248,23 +253,19 @@ NumpyArray::NumpyArray(const Tensor& t)
 }
 
 Dtype NumpyArray::GetDtype() const {
-    Dtype dtype(Dtype::DtypeCode::Undefined, 1, "undefined");
-    if (type_ == 'f' && word_size_ == 4) {
-        dtype = Dtype::Float32;
-    } else if (type_ == 'f' && word_size_ == 8) {
-        dtype = Dtype::Float64;
-    } else if (type_ == 'i' && word_size_ == 4) {
-        dtype = Dtype::Int32;
-    } else if (type_ == 'i' && word_size_ == 8) {
-        dtype = Dtype::Int64;
-    } else if (type_ == 'u' && word_size_ == 1) {
-        dtype = Dtype::UInt8;
-    } else if (type_ == 'u' && word_size_ == 2) {
-        dtype = Dtype::UInt16;
-    } else if (type_ == 'b') {
-        dtype = Dtype::Bool;
-    }
-    return dtype;
+    if (type_ == 'f' && word_size_ == 4) return Dtype::Float32;
+    if (type_ == 'f' && word_size_ == 8) return Dtype::Float64;
+    if (type_ == 'i' && word_size_ == 1) return Dtype::Int8;
+    if (type_ == 'i' && word_size_ == 2) return Dtype::Int16;
+    if (type_ == 'i' && word_size_ == 4) return Dtype::Int32;
+    if (type_ == 'i' && word_size_ == 8) return Dtype::Int64;
+    if (type_ == 'u' && word_size_ == 1) return Dtype::UInt8;
+    if (type_ == 'u' && word_size_ == 2) return Dtype::UInt16;
+    if (type_ == 'u' && word_size_ == 4) return Dtype::UInt32;
+    if (type_ == 'u' && word_size_ == 8) return Dtype::UInt64;
+    if (type_ == 'b') return Dtype::Bool;
+
+    return Dtype::Undefined;
 }
 
 Tensor NumpyArray::ToTensor() const {

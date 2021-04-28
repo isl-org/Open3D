@@ -52,6 +52,10 @@ void MatrixInteractorLogic::SetBoundingBox(
     model_bounds_ = bounds;
 }
 
+Eigen::Vector3f MatrixInteractorLogic::GetCenterOfRotation() const {
+    return center_of_rotation_;
+}
+
 void MatrixInteractorLogic::SetMouseDownInfo(
         const Camera::Transform& matrix,
         const Eigen::Vector3f& center_of_rotation) {
@@ -177,11 +181,12 @@ float MatrixInteractorLogic::CalcRotateZRadians(int dx, int dy) {
     return float(4.0 * M_PI * dy / view_height_);
 }
 
-void MatrixInteractorLogic::Dolly(int dy, DragType drag_type) {
-    float dist = CalcDollyDist(dy, drag_type);
+void MatrixInteractorLogic::Dolly(float dy, DragType drag_type) {
     if (drag_type == DragType::MOUSE) {
+        float dist = CalcDollyDist(dy, drag_type, matrix_at_mouse_down_);
         Dolly(dist, matrix_at_mouse_down_);  // copies the matrix
     } else {
+        float dist = CalcDollyDist(dy, drag_type, matrix_);
         Dolly(dist, matrix_);
     }
 }
@@ -202,21 +207,27 @@ void MatrixInteractorLogic::Dolly(float z_dist, Camera::Transform matrix) {
     matrix_ = matrix;
 }
 
-float MatrixInteractorLogic::CalcDollyDist(int dy, DragType drag_type) {
+float MatrixInteractorLogic::CalcDollyDist(float dy,
+                                           DragType drag_type,
+                                           const Camera::Transform& matrix) {
+    float length =
+            (center_of_rotation_ - matrix * Eigen::Vector3f(0.0f, 0.0f, 0.0f))
+                    .norm();
+    length = std::max(float(0.02 * model_size_), length);
     float dist = 0.0f;  // initialize to make GCC happy
     switch (drag_type) {
         case DragType::MOUSE:
             // Zoom out is "push away" or up, is a negative value for
             // mousing
-            dist = float(dy) * 0.0025f * float(model_size_);
+            dist = float(dy) * 0.0025f * float(length);
             break;
         case DragType::TWO_FINGER:
             // Zoom out is "push away" or up, is a positive value for
             // two-finger scrolling, so we need to invert dy.
-            dist = float(-dy) * 0.01f * float(model_size_);
+            dist = float(-dy) * 0.01f * float(length);
             break;
         case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
-            dist = float(-dy) * 0.1f * float(model_size_);
+            dist = float(-dy) * 0.05f * float(length);
             break;
     }
     return dist;

@@ -24,25 +24,32 @@ set(KERNEL_CUDA_SRC
 )
 
 set(LINALG_SRC
+    linalg/Det.cpp
     linalg/Matmul.cpp
     linalg/MatmulCPU.cpp
     linalg/LeastSquares.cpp
     linalg/LeastSquaresCPU.cpp
+    linalg/LU.cpp
+    linalg/LUCPU.cpp
     linalg/Solve.cpp
     linalg/SolveCPU.cpp
     linalg/Inverse.cpp
     linalg/InverseCPU.cpp
     linalg/SVD.cpp
     linalg/SVDCPU.cpp
+    linalg/Tri.cpp
+    linalg/TriCPU.cpp
 )
 
 set(LINALG_CUDA_SRC
     linalg/LinalgUtils.cpp
     linalg/MatmulCUDA.cpp
     linalg/LeastSquaresCUDA.cpp
+    linalg/LUCUDA.cpp
     linalg/SolveCUDA.cpp
     linalg/InverseCUDA.cpp
     linalg/SVDCUDA.cpp
+    linalg/TriCUDA.cu
 )
 
 set(CORE_SRC
@@ -68,12 +75,14 @@ set(CORE_CUDA_SRC
 set(HASHMAP_SRC
   hashmap/Hashmap.cpp
   hashmap/DeviceHashmap.cpp
-  hashmap/CPU/DefaultHashmapCPU.cpp
+  hashmap/CPU/CreateCPUHashmap.cpp
 )
 
 set(HASHMAP_CUDA_SRC
-  hashmap/CUDA/DefaultHashmapCUDA.cu
-  )
+  hashmap/CUDA/CreateCUDAHashmap.cu
+  hashmap/CUDA/CUDAHashmapBufferAccessor.cu
+  hashmap/CUDA/SlabNodeManager.cu
+)
 
 set(CORE_NNS_SRC
     nns/NNSIndex.cpp

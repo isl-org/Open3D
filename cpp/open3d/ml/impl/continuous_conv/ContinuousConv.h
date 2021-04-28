@@ -56,13 +56,13 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                               const TFeat* inp_features,
                               const TFeat* inp_importance,
                               size_t neighbors_index_size,
-                              const TIndex* neighbor_index,
-                              const TFeat* neighbor_importance,
+                              const TIndex* neighbors_index,
+                              const TFeat* neighbors_importance,
                               const int64_t* neighbors_row_splits,
                               const TReal* extents,
                               const TReal* offsets,
                               bool normalize) {
-    const bool NEIGHBOR_IMPORTANCE = neighbor_importance != nullptr;
+    const bool NEIGHBORS_IMPORTANCE = neighbors_importance != nullptr;
     const int VECSIZE = 32;
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;
@@ -137,7 +137,7 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                     y.setZero();
                     z.setZero();
                     for (size_t n = neighbor_start; n < neighbor_end; ++n) {
-                        const size_t inp_idx = neighbor_index[n];
+                        const size_t inp_idx = neighbors_index[n];
                         const int i = vec_valid_count;
                         x(i) = inp_positions[inp_idx * 3 + 0] -
                                out_positions[out_idx * 3 + 0];
@@ -147,9 +147,9 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                                out_positions[out_idx * 3 + 2];
 
                         const TFeat n_importance =
-                                (NEIGHBOR_IMPORTANCE ? neighbor_importance[n]
-                                                     : TFeat(1));
-                        normalizers(out_col) += TOut(n_importance);
+                                (NEIGHBORS_IMPORTANCE ? neighbors_importance[n]
+                                                      : TFeat(1));
+                        normalizers(out_col) += n_importance;
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
@@ -158,9 +158,9 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                         TFeat importance(1.0);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
-                        if (NEIGHBOR_IMPORTANCE) importance *= n_importance;
+                        if (NEIGHBORS_IMPORTANCE) importance *= n_importance;
 
-                        if (POINT_IMPORTANCE || NEIGHBOR_IMPORTANCE) {
+                        if (POINT_IMPORTANCE || NEIGHBORS_IMPORTANCE) {
                             for (int ic = 0; ic < in_channels; ++ic)
                                 infeat(i, ic) *= importance;
                         }
@@ -306,8 +306,8 @@ void CConvComputeFeaturesCPU(TOut* out_features,
                              const TFeat* inp_features,
                              const TFeat* inp_importance,
                              size_t neighbors_index_size,
-                             const TIndex* neighbor_index,
-                             const TFeat* neighbor_importance,
+                             const TIndex* neighbors_index,
+                             const TFeat* neighbors_importance,
                              const int64_t* neighbors_row_splits,
                              const TReal* extents,
                              const TReal* offsets,
@@ -323,7 +323,7 @@ void CConvComputeFeaturesCPU(TOut* out_features,
 #define FN_PARAMETERS                                                          \
     out_features, filter_dims, filter, num_out, out_positions, num_inp,        \
             inp_positions, inp_features, inp_importance, neighbors_index_size, \
-            neighbor_index, neighbor_importance, neighbors_row_splits,         \
+            neighbors_index, neighbors_importance, neighbors_row_splits,       \
             extents, offsets, normalize
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,                \

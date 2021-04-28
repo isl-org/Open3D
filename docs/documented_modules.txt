@@ -6,6 +6,8 @@ open3d.io
 open3d.t
 open3d.t.geometry
 open3d.t.io
+open3d.t.pipelines
+open3d.t.pipelines.registration
 open3d.ml
 open3d.ml.tf
 open3d.ml.tf.layers

@@ -46,9 +46,9 @@ namespace geometry {
 
 /// Scalable voxel grid specialized for TSDF integration.
 /// The 3D space is organized in such a way:
-/// Space is first coarsely divided into \blocks that can be indexed by 3D
+/// Space is first coarsely divided into blocks that can be indexed by 3D
 /// coordinates.
-/// Each \block is then further divided into \voxels as a Tensor of shape
+/// Each block is then further divided into voxels as a Tensor of shape
 /// (resolution, resolution, resolution, channel).
 /// For pure geometric TSDF voxels, channel = 2 (TSDF + weight).
 /// For colored TSDF voxels, channel = 5 (TSDF + weight + color).
@@ -65,7 +65,9 @@ public:
                   float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
                   int64_t block_count = 1000,
-                  const core::Device &device = core::Device("CPU:0"));
+                  const core::Device &device = core::Device("CPU:0"),
+                  const core::HashmapBackend &backend =
+                          core::HashmapBackend::Default);
 
     ~TSDFVoxelGrid(){};
 
@@ -84,11 +86,37 @@ public:
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
+    /// Use volumetric ray casting to obtain vertex and color maps, mainly for
+    /// dense visual odometry.
+    /// intrinsics and extrinsics defines the camera properties for image
+    /// generation. width and height defines the image size.
+    /// Note: vertex map is
+    /// interpolated along the ray, but color map is not trilinearly
+    /// interpolated due to performance requirements. Colormap is only used for
+    /// a reference now.
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> RayCast(
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics,
+            int width,
+            int height,
+            int max_steps = 50,
+            float depth_min = 0.1f,
+            float depth_max = 3.0f,
+            float weight_threshold = 3.0f);
+
     /// Extract point cloud near iso-surfaces.
-    PointCloud ExtractSurfacePoints();
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    PointCloud ExtractSurfacePoints(float weight_threshold = 3.0f);
 
     /// Extract mesh near iso-surfaces with Marching Cubes.
-    TriangleMesh ExtractSurfaceMesh();
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    TriangleMesh ExtractSurfaceMesh(float weight_threshold = 3.0f);
 
     /// Convert TSDFVoxelGrid to the target device.
     /// \param device The targeted device to convert to.
@@ -112,12 +140,12 @@ public:
     core::Device GetDevice() const { return device_; }
 
 protected:
-    /// Return  \addrs and \masks for radius (3) neighbor entries.
+    /// Return  addrs and masks for radius (3) neighbor entries.
     /// We first find all active entries in the hashmap with there coordinates.
     /// We then query these coordinates and their 3^3 neighbors.
-    /// \addrs_nb: indexer used for the internal hashmap to access voxel block
+    /// addrs_nb: indexer used for the internal hashmap to access voxel block
     /// coordinates in the 3^3 neighbors.
-    /// \masks_nb: flag used for hashmap to indicate whether a query is a
+    /// masks_nb: flag used for hashmap to indicate whether a query is a
     /// success.
     /// Currently we preserve a dense output (27 x active_entries) without
     /// compression / reduction.

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,8 @@
 #include <string>
 #include <vector>
 
+#include "open3d/visualization/gui/Gui.h"
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -44,6 +46,8 @@ class Color;
 // in Color or it would pull in imgui.h pretty much everywhere that gui is used.
 ImVec4 colorToImgui(const Color& color);
 uint32_t colorToImguiRGBA(const Color& color);
+
+std::string FindFontPath(std::string font, FontStyle style);
 
 }  // namespace gui
 }  // namespace visualization

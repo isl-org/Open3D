@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ImageLabel.h"
+#include "open3d/visualization/gui/UIImage.h"
 
 // 4293:  Filament's utils/algorithm.h utils::details::clz() does strange
 //        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
@@ -47,8 +47,7 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/io/ImageIO.h"
-#include "open3d/visualization/gui/ImageLabel.h"
-#include "open3d/visualization/gui/Theme.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -60,7 +59,8 @@ namespace gui {
 struct UIImage::Impl {
     std::string image_path_;
     UIImage::Scaling scaling_ = UIImage::Scaling::ASPECT;
-    std::shared_ptr<geometry::Image> image_data_;  // temporary storage
+    std::shared_ptr<geometry::Image> image_data_;      // temporary storage
+    std::shared_ptr<t::geometry::Image> timage_data_;  // temporary storage
     float image_width_;
     float image_height_;
     float u0_;
@@ -75,12 +75,49 @@ struct UIImage::Impl {
 UIImage::UIImage(const char* image_path) : impl_(new UIImage::Impl()) {
     impl_->image_path_ = image_path;
     impl_->image_data_ = io::CreateImageFromFile(image_path);
-    if (impl_->image_data_ && impl_->image_data_->width_ == 0 &&
-        impl_->image_data_->height_ == 0) {
-        impl_->image_data_.reset();
+    if (impl_->image_data_) {
+        if (impl_->image_data_ && impl_->image_data_->width_ == 0 &&
+            impl_->image_data_->height_ == 0) {
+            impl_->image_data_.reset();
+        } else {
+            impl_->image_width_ = float(impl_->image_data_->width_);
+            impl_->image_height_ = float(impl_->image_data_->height_);
+        }
+    }
+    impl_->u0_ = 0.0f;
+    impl_->v0_ = 0.0f;
+    impl_->u1_ = 1.0f;
+    impl_->v1_ = 1.0f;
+    impl_->renderer_ = nullptr;
+}
+
+UIImage::UIImage(std::shared_ptr<geometry::Image> image)
+    : impl_(new UIImage::Impl()) {
+    impl_->image_data_ = image;
+    if (impl_->image_data_) {
+        if (impl_->image_data_ && impl_->image_data_->width_ == 0 &&
+            impl_->image_data_->height_ == 0) {
+            impl_->image_data_.reset();
+        } else {
+            impl_->image_width_ = float(impl_->image_data_->width_);
+            impl_->image_height_ = float(impl_->image_data_->height_);
+        }
+    }
+    impl_->u0_ = 0.0f;
+    impl_->v0_ = 0.0f;
+    impl_->u1_ = 1.0f;
+    impl_->v1_ = 1.0f;
+    impl_->renderer_ = nullptr;
+}
+
+UIImage::UIImage(std::shared_ptr<t::geometry::Image> image)
+    : impl_(new UIImage::Impl()) {
+    impl_->timage_data_ = image;
+    if (impl_->timage_data_->IsEmpty()) {
+        impl_->timage_data_.reset();
     } else {
-        impl_->image_width_ = float(impl_->image_data_->width_);
-        impl_->image_height_ = float(impl_->image_data_->height_);
+        impl_->image_width_ = float(impl_->timage_data_->GetCols());
+        impl_->image_height_ = float(impl_->timage_data_->GetRows());
     }
     impl_->u0_ = 0.0f;
     impl_->v0_ = 0.0f;
@@ -119,14 +156,38 @@ UIImage::~UIImage() {
     }
 }
 
+void UIImage::UpdateImage(std::shared_ptr<geometry::Image> image) {
+    impl_->image_data_ = image;
+    impl_->timage_data_.reset();
+}
+
+void UIImage::UpdateImage(std::shared_ptr<t::geometry::Image> image) {
+    impl_->image_data_.reset();
+    impl_->timage_data_ = image;
+}
+
 void UIImage::SetScaling(Scaling scaling) { impl_->scaling_ = scaling; }
 
 UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
 
-Size UIImage::CalcPreferredSize(const Theme& theme) const {
+Size UIImage::CalcPreferredSize(const LayoutContext& context,
+                                const Widget::Constraints& constraints) const {
     if (impl_->image_width_ != 0.0f && impl_->image_height_ != 0.0f) {
-        return Size(int(std::round(impl_->image_width_)),
-                    int(std::round(impl_->image_height_)));
+        if (impl_->scaling_ == Scaling::ASPECT &&
+            (constraints.width < impl_->image_width_ ||
+             constraints.height < impl_->image_height_)) {
+            float aspect = impl_->image_width_ / impl_->image_height_;
+            float w_at_height = float(constraints.height) * aspect;
+            float h_at_width = float(constraints.width) / aspect;
+            if (w_at_height <= constraints.width) {
+                return Size(int(std::round(w_at_height)), constraints.height);
+            } else {
+                return Size(constraints.width, int(std::round(h_at_width)));
+            }
+        } else {
+            return Size(int(std::round(impl_->image_width_)),
+                        int(std::round(impl_->image_height_)));
+        }
     } else {
         return Size(0, 0);
     }
@@ -134,18 +195,55 @@ Size UIImage::CalcPreferredSize(const Theme& theme) const {
 
 UIImage::DrawParams UIImage::CalcDrawParams(
         visualization::rendering::Renderer& renderer, const Rect& frame) const {
-    if (impl_->image_data_ &&
-        impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
-        impl_->texture_ = renderer.AddTexture(impl_->image_data_);
-        if (impl_->texture_ != visualization::rendering::TextureHandle::kBad) {
-            impl_->renderer_ = &renderer;
+    DrawParams params;
+
+    if (impl_->image_data_) {  // Legacy Image
+        if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
+            impl_->texture_ = renderer.AddTexture(impl_->image_data_);
+            if (impl_->texture_ !=
+                visualization::rendering::TextureHandle::kBad) {
+                impl_->renderer_ = &renderer;
+                impl_->image_width_ = float(impl_->image_data_->width_);
+                impl_->image_height_ = float(impl_->image_data_->height_);
+                params.image_size_changed = true;
+            } else {
+                impl_->texture_ = visualization::rendering::TextureHandle();
+            }
         } else {
-            impl_->texture_ = visualization::rendering::TextureHandle();
+            if (!renderer.UpdateTexture(impl_->texture_, impl_->image_data_,
+                                        false)) {
+                impl_->texture_ = renderer.AddTexture(impl_->image_data_);
+                impl_->image_width_ = float(impl_->image_data_->width_);
+                impl_->image_height_ = float(impl_->image_data_->height_);
+                params.image_size_changed = true;
+            }
         }
         impl_->image_data_.reset();
+    } else if (impl_->timage_data_) {  // TGeoemetry Image
+        if (impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
+            impl_->texture_ = renderer.AddTexture(*impl_->timage_data_.get());
+            if (impl_->texture_ !=
+                visualization::rendering::TextureHandle::kBad) {
+                impl_->renderer_ = &renderer;
+                impl_->image_width_ = float(impl_->timage_data_->GetCols());
+                impl_->image_height_ = float(impl_->timage_data_->GetRows());
+                params.image_size_changed = true;
+            } else {
+                impl_->texture_ = visualization::rendering::TextureHandle();
+            }
+        } else {
+            if (!renderer.UpdateTexture(impl_->texture_, *impl_->timage_data_,
+                                        false)) {
+                impl_->texture_ =
+                        renderer.AddTexture(*impl_->timage_data_.get());
+                impl_->image_width_ = float(impl_->timage_data_->GetCols());
+                impl_->image_height_ = float(impl_->timage_data_->GetRows());
+                params.image_size_changed = true;
+            }
+        }
+        impl_->timage_data_.reset();
     }
 
-    DrawParams params;
     params.texture = impl_->texture_;
 
     float width_px = impl_->image_width_;

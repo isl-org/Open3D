@@ -51,7 +51,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Matmul test
+    // Matmul test.
     core::Tensor A(std::vector<float>{1, 2, 3, 4, 5, 6}, {2, 3}, dtype, device);
     core::Tensor B(
             std::vector<float>{7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18},
@@ -65,7 +65,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
         EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
     }
 
-    // Non-contiguous matmul test
+    // Non-contiguous matmul test.
     core::Tensor A_slice = A.GetItem(
             {core::TensorKey::Slice(core::None, core::None, core::None),
              core::TensorKey::Slice(1, core::None, core::None)});
@@ -82,10 +82,254 @@ TEST_P(LinalgPermuteDevices, Matmul) {
         EXPECT_TRUE(std::abs(C_slice_data[i] - C_slice_gt[i]) < EPSILON);
     }
 
-    // Incompatible shape test
+    // Incompatible shape test.
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({3, 4, 5}, dtype)));
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({3, 0}, dtype)));
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({2, 4}, dtype)));
+}
+
+TEST_P(LinalgPermuteDevices, LU) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // LU test for 3x4 const 2D tensor of dtype Float32.
+    const core::Tensor A_3x4cf = core::Tensor::Init<float>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}, {2, 1, 3}}, device);
+
+    // Default parameter for permute_l (false).
+    core::Tensor permutationcf0, lowercf0, uppercf0;
+    std::tie(permutationcf0, lowercf0, uppercf0) = A_3x4cf.LU();
+    core::Tensor outputcf0 =
+            permutationcf0.Matmul(lowercf0.Matmul(uppercf0)).Contiguous();
+    EXPECT_TRUE(A_3x4cf.AllClose(outputcf0, FLT_EPSILON, FLT_EPSILON));
+
+    // "permute_l = true": L must be P*L. So, output = L*U.
+    core::Tensor permutationcf1, lowercf1, uppercf1;
+    std::tie(permutationcf1, lowercf1, uppercf1) =
+            A_3x4cf.LU(/*permute_l=*/true);
+    core::Tensor outputcf1 = lowercf1.Matmul(uppercf1).Contiguous();
+    EXPECT_TRUE(A_3x4cf.AllClose(outputcf1, FLT_EPSILON, FLT_EPSILON));
+
+    // LU test for 3x3 const square 2D tensor of dtype Float64.
+    const core::Tensor A_3x3cd = core::Tensor::Init<double>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+    core::Tensor permutationcd0, lowercd0, uppercd0;
+    std::tie(permutationcd0, lowercd0, uppercd0) = A_3x3cd.LU();
+    core::Tensor outputcd0 =
+            permutationcd0.Matmul(lowercd0.Matmul(uppercd0)).Contiguous();
+    EXPECT_TRUE(A_3x3cd.AllClose(outputcd0, DBL_EPSILON, DBL_EPSILON));
+
+    // Singular test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
+
+    // Shape test.
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
+}
+
+TEST_P(LinalgPermuteDevices, LUIpiv) {
+    const float EPSILON = 1e-6;
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // LU test for 3x3 square 2D tensor of dtype Float32.
+    const core::Tensor A_3x3f = core::Tensor::Init<float>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+
+    core::Tensor ipiv3f, A3f;
+    std::tie(ipiv3f, A3f) = A_3x3f.LUIpiv();
+
+    EXPECT_TRUE(
+            A3f.AllClose(core::Tensor::Init<float>({{3.0, 3.0, 1.0},
+                                                    {0.666667, 2.0, 0.333333},
+                                                    {0.666667, 0.5, 0.166667}},
+                                                   device),
+                         EPSILON, EPSILON));
+    EXPECT_TRUE(ipiv3f.To(core::Dtype::Int32)
+                        .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
+                                  EPSILON));
+
+    // LU test for 3x3 square 2D tensor of dtype Float64.
+    core::Tensor A_3x3d = core::Tensor::Init<double>(
+            {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device);
+
+    core::Tensor ipiv3d, A3d;
+    std::tie(ipiv3d, A3d) = A_3x3d.LUIpiv();
+
+    EXPECT_TRUE(
+            A3d.AllClose(core::Tensor::Init<double>({{3.0, 3.0, 1.0},
+                                                     {0.666667, 2.0, 0.333333},
+                                                     {0.666667, 0.5, 0.166667}},
+                                                    device),
+                         EPSILON, EPSILON));
+    EXPECT_TRUE(ipiv3d.To(core::Dtype::Int32)
+                        .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
+                                  EPSILON));
+
+    // Singular test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).LU());
+
+    // Shape test.
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).LU());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).LU());
+}
+
+TEST_P(LinalgPermuteDevices, Triu) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // Input 2D matrix of dtype Float32.
+    const core::Tensor A_4x5f =
+            core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                       {6, 7, 8, 9, 10},
+                                       {11, 12, 13, 14, 15},
+                                       {16, 17, 18, 19, 20}},
+                                      device);
+
+    // Get upper triangle matrix from main diagonal (= 0).
+    core::Tensor Uf0 = A_4x5f.Triu();
+    EXPECT_TRUE(Uf0.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                        {0, 7, 8, 9, 10},
+                                                        {0, 0, 13, 14, 15},
+                                                        {0, 0, 0, 19, 20}},
+                                                       device)));
+
+    // Get upper triangle matrix from diagonal (= 1).
+    core::Tensor Uf1 = A_4x5f.Triu(1);
+    EXPECT_TRUE(Uf1.AllClose(core::Tensor::Init<float>({{0, 2, 3, 4, 5},
+                                                        {0, 0, 8, 9, 10},
+                                                        {0, 0, 0, 14, 15},
+                                                        {0, 0, 0, 0, 20}},
+                                                       device)));
+
+    // Get upper triangle matrix from diagonal (= -1).
+    core::Tensor Uf1_ = A_4x5f.Triu(-1);
+    EXPECT_TRUE(Uf1_.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                         {6, 7, 8, 9, 10},
+                                                         {0, 12, 13, 14, 15},
+                                                         {0, 0, 18, 19, 20}},
+                                                        device)));
+
+    // Boundary test.
+    EXPECT_ANY_THROW(A_4x5f.Triu(-4));
+    EXPECT_ANY_THROW(A_4x5f.Triu(5));
+
+    // Shape test.
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Triu());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Triu());
+}
+
+TEST_P(LinalgPermuteDevices, Tril) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // Input 2D matrix of dtype Float32.
+    const core::Tensor A_4x5f =
+            core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                       {6, 7, 8, 9, 10},
+                                       {11, 12, 13, 14, 15},
+                                       {16, 17, 18, 19, 20}},
+                                      device);
+
+    // Get lower triangle matrix from main diagonal (= 0).
+    core::Tensor Lf0 = A_4x5f.Tril();
+    EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>({{1, 0, 0, 0, 0},
+                                                        {6, 7, 0, 0, 0},
+                                                        {11, 12, 13, 0, 0},
+                                                        {16, 17, 18, 19, 0}},
+                                                       device)));
+
+    // Get lower triangle matrix from diagonal (= 1).
+    core::Tensor Lf1 = A_4x5f.Tril(1);
+    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>({{1, 2, 0, 0, 0},
+                                                        {6, 7, 8, 0, 0},
+                                                        {11, 12, 13, 14, 0},
+                                                        {16, 17, 18, 19, 20}},
+                                                       device)));
+
+    // Get lower triangle matrix from diagonal (= -1).
+    core::Tensor Lf1_ = A_4x5f.Tril(-1);
+    EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>({{0, 0, 0, 0, 0},
+                                                         {6, 0, 0, 0, 0},
+                                                         {11, 12, 0, 0, 0},
+                                                         {16, 17, 18, 0, 0}},
+                                                        device)));
+
+    core::Tensor Lf4 = A_4x5f.Tril(4);
+    EXPECT_TRUE(Lf4.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                        {6, 7, 8, 9, 10},
+                                                        {11, 12, 13, 14, 15},
+                                                        {16, 17, 18, 19, 20}},
+                                                       device)));
+
+    // Boundary test.
+    EXPECT_ANY_THROW(A_4x5f.Tril(-5));
+    EXPECT_ANY_THROW(A_4x5f.Tril(6));
+
+    // Shape test.
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Tril());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Tril());
+}
+
+TEST_P(LinalgPermuteDevices, Triul) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    // Input 2D matrix of dtype Float32.
+    const core::Tensor A_4x5f =
+            core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                       {6, 7, 8, 9, 10},
+                                       {11, 12, 13, 14, 15},
+                                       {16, 17, 18, 19, 20}},
+                                      device);
+
+    // Get lower triangle matrix from main diagonal (= 0).
+    core::Tensor Uf0, Lf0;
+    std::tie(Uf0, Lf0) = A_4x5f.Triul();
+    EXPECT_TRUE(Uf0.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                        {0, 7, 8, 9, 10},
+                                                        {0, 0, 13, 14, 15},
+                                                        {0, 0, 0, 19, 20}},
+                                                       device)));
+    EXPECT_TRUE(Lf0.AllClose(core::Tensor::Init<float>({{1, 0, 0, 0, 0},
+                                                        {6, 1, 0, 0, 0},
+                                                        {11, 12, 1, 0, 0},
+                                                        {16, 17, 18, 1, 0}},
+                                                       device)));
+
+    core::Tensor Uf1, Lf1;
+    std::tie(Uf1, Lf1) = A_4x5f.Triul(1);
+    EXPECT_TRUE(Uf1.AllClose(core::Tensor::Init<float>({{0, 2, 3, 4, 5},
+                                                        {0, 0, 8, 9, 10},
+                                                        {0, 0, 0, 14, 15},
+                                                        {0, 0, 0, 0, 20}},
+                                                       device)));
+    EXPECT_TRUE(Lf1.AllClose(core::Tensor::Init<float>({{1, 1, 0, 0, 0},
+                                                        {6, 7, 1, 0, 0},
+                                                        {11, 12, 13, 1, 0},
+                                                        {16, 17, 18, 19, 1}},
+                                                       device)));
+
+    core::Tensor Uf1_, Lf1_;
+    std::tie(Uf1_, Lf1_) = A_4x5f.Triul(-1);
+    EXPECT_TRUE(Uf1_.AllClose(core::Tensor::Init<float>({{1, 2, 3, 4, 5},
+                                                         {6, 7, 8, 9, 10},
+                                                         {0, 12, 13, 14, 15},
+                                                         {0, 0, 18, 19, 20}},
+                                                        device)));
+    EXPECT_TRUE(Lf1_.AllClose(core::Tensor::Init<float>({{0, 0, 0, 0, 0},
+                                                         {1, 0, 0, 0, 0},
+                                                         {11, 1, 0, 0, 0},
+                                                         {16, 17, 1, 0, 0}},
+                                                        device)));
+
+    // Boundary test.
+    EXPECT_ANY_THROW(A_4x5f.Triul(-4));
+    EXPECT_ANY_THROW(A_4x5f.Triul(5));
+
+    // Shape test.
+    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Triul());
+    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Triul());
 }
 
 TEST_P(LinalgPermuteDevices, Inverse) {
@@ -94,7 +338,7 @@ TEST_P(LinalgPermuteDevices, Inverse) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Inverse test
+    // Inverse test.
     core::Tensor A(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3}, dtype,
                    device);
 
@@ -107,10 +351,10 @@ TEST_P(LinalgPermuteDevices, Inverse) {
         EXPECT_TRUE(std::abs(A_inv_data[i] - A_inv_gt[i]) < EPSILON);
     }
 
-    // Singular test
+    // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Inverse());
 
-    // Shape test
+    // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Inverse());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Inverse());
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Inverse());
@@ -122,7 +366,7 @@ TEST_P(LinalgPermuteDevices, SVD) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // matmul test
+    // Matmul test.
     core::Tensor A(std::vector<float>{2, 4, 1, 3, 0, 0, 0, 0}, {4, 2}, dtype,
                    device);
 
@@ -167,7 +411,7 @@ TEST_P(LinalgPermuteDevices, Solve) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Solve test
+    // Solve test.
     core::Tensor A(std::vector<float>{3, 1, 1, 2}, {2, 2}, dtype, device);
     core::Tensor B(std::vector<float>{9, 8}, {2}, dtype, device);
     core::Tensor X = A.Solve(B);
@@ -179,10 +423,10 @@ TEST_P(LinalgPermuteDevices, Solve) {
         EXPECT_TRUE(std::abs(X_data[i] - X_gt[i]) < EPSILON);
     }
 
-    // Singular test
+    // Singular test.
     EXPECT_ANY_THROW(core::Tensor::Zeros({2, 2}, dtype, device).Solve(B));
 
-    // Shape test
+    // Shape test.
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 3}, dtype, device).Solve(B));
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Solve(B));
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 0}, dtype, device).Solve(B));
@@ -195,7 +439,7 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Solve test
+    // Solve test.
     core::Tensor A(std::vector<float>{1.44,  -7.84, -4.39, 4.53,  -9.96, -0.28,
                                       -3.24, 3.83,  -7.55, 3.24,  6.27,  -6.64,
                                       8.34,  8.09,  5.28,  2.06,  7.08,  2.52,

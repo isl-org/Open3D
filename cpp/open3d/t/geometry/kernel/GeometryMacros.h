@@ -26,12 +26,16 @@
 
 #pragma once
 
+#include <cmath>
+
 #include "open3d/core/CUDAUtils.h"
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#define ISNAN(X) std::isnan(X)
 #endif
 
 OPEN3D_HOST_DEVICE inline int sign(int x) {
@@ -367,6 +371,4 @@ OPEN3D_DEVICE const int edge_to_vert[12][2] = {
         {0, 1}, {1, 2}, {3, 2}, {0, 3}, {4, 5}, {5, 6},
         {7, 6}, {4, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
-
-OPEN3D_DEVICE const float kWeightThreshold = 3.0;
 }  // unnamed namespace

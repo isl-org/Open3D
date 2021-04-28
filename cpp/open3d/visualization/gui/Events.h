@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,16 +63,19 @@ struct MouseEvent {
         } move;           // includes drag
         struct {
             MouseButton button;
+            int count;
         } button;
         struct {
-            int dx;
-            int dy;
+            float dx;  // macOS gives fractional values, and is required
+            float dy;  //   for the buttery-smooth trackpad scrolling on macOS
             bool isTrackpad;
         } wheel;
     };
 };
 
-struct TickEvent {};
+struct TickEvent {
+    double dt;
+};
 
 enum KeyName {
     KEY_NONE = 0,

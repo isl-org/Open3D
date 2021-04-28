@@ -26,7 +26,7 @@ if(CLANG_FORMAT)
     message(STATUS "clang-format found at: ${CLANG_FORMAT}")
     execute_process(COMMAND ${CLANG_FORMAT} --version)
 else()
-    message("See http://www.open3d.org/docs/release/contribute.html#automated-style-checker for help on style checker")
+    message("See http://www.open3d.org/docs/release/contribute/styleguide.html#style-guide for help on style checker")
     message(FATAL_ERROR "clang-format not found, style not available")
 endif()
 

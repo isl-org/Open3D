@@ -51,10 +51,14 @@ void pybind_core_dtype(py::module &m) {
     dtype.def_readonly_static("Undefined", &Dtype::Undefined);
     dtype.def_readonly_static("Float32", &Dtype::Float32);
     dtype.def_readonly_static("Float64", &Dtype::Float64);
+    dtype.def_readonly_static("Int8", &Dtype::Int8);
+    dtype.def_readonly_static("Int16", &Dtype::Int16);
     dtype.def_readonly_static("Int32", &Dtype::Int32);
     dtype.def_readonly_static("Int64", &Dtype::Int64);
     dtype.def_readonly_static("UInt8", &Dtype::UInt8);
     dtype.def_readonly_static("UInt16", &Dtype::UInt16);
+    dtype.def_readonly_static("UInt32", &Dtype::UInt32);
+    dtype.def_readonly_static("UInt64", &Dtype::UInt64);
     dtype.def_readonly_static("Bool", &Dtype::Bool);
     dtype.def("byte_size", &Dtype::ByteSize);
     dtype.def("byte_code", &Dtype::GetDtypeCode);

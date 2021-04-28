@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,6 +83,23 @@ enum class Alignment : unsigned int {
 constexpr Alignment operator|(Alignment x, Alignment y) {
     return Alignment((unsigned int)(x) | (unsigned int)(y));
 }
+
+/// BOLD, ITALIC, and BOLD_ITALIC are not supported for CJK characters
+/// due to the large of amount of GPU memory it would take, and also because
+/// these styles offer limited utility for CJK characters.
+enum class FontStyle {
+    NORMAL = 0,
+    BOLD = 1,
+    ITALIC = 2,
+    BOLD_ITALIC = 3  /// BOLD | ITALIC
+};
+
+class FontContext {
+public:
+    virtual ~FontContext(){};
+
+    virtual void* GetFont(FontStyle style) = 0;
+};
 
 }  // namespace gui
 }  // namespace visualization

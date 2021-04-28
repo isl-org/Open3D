@@ -31,11 +31,13 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/CPU/TBBHashmap.h"
+#include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
-#include "open3d/t/geometry/kernel/TSDFVoxelGridShared.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGridImpl.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -124,6 +126,7 @@ void TouchCPU(const core::Tensor& points,
         block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
     }
 }
+
 }  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry

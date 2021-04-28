@@ -59,12 +59,12 @@ void _CConvTransposeComputeFeaturesCPU(
         const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_row_splits,
         size_t neighbors_index_size,
-        const TIndex* neighbor_index,
-        const TFeat* neighbor_importance,
+        const TIndex* neighbors_index,
+        const TFeat* neighbors_importance,
         const int64_t* neighbors_row_splits,
         const TReal* extents,
         const TReal* offsets) {
-    const bool NEIGHBOR_IMPORTANCE = inp_neighbors_importance_sum;
+    const bool NEIGHBORS_IMPORTANCE = inp_neighbors_importance_sum;
     const int VECSIZE = 32;
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;
@@ -127,7 +127,7 @@ void _CConvTransposeComputeFeaturesCPU(
                     y.setZero();
                     z.setZero();
                     for (size_t n = neighbor_start; n < neighbor_end; ++n) {
-                        const size_t inp_idx = neighbor_index[n];
+                        const size_t inp_idx = neighbors_index[n];
 
                         const int i = vec_valid_count;
                         x(i) = out_positions[out_idx * 3 + 0] -
@@ -150,8 +150,8 @@ void _CConvTransposeComputeFeaturesCPU(
                             }
                         }
 
-                        TFeat n_importance = NEIGHBOR_IMPORTANCE
-                                                     ? neighbor_importance[n]
+                        TFeat n_importance = NEIGHBORS_IMPORTANCE
+                                                     ? neighbors_importance[n]
                                                      : TFeat(1);
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
@@ -160,9 +160,8 @@ void _CConvTransposeComputeFeaturesCPU(
 
                         if (NORMALIZE) {
                             TFeat normalizer(1);
-                            if (NEIGHBOR_IMPORTANCE) {
-                                if (inp_neighbors_importance_sum[inp_idx] !=
-                                    TFeat(0))
+                            if (NEIGHBORS_IMPORTANCE) {
+                                if (inp_neighbors_importance_sum[inp_idx] != 0)
                                     normalizer /= inp_neighbors_importance_sum
                                             [inp_idx];
                             } else {
@@ -314,8 +313,8 @@ void CConvTransposeComputeFeaturesCPU(TOut* out_features,
                                       const TFeat* inp_neighbors_importance_sum,
                                       const int64_t* inp_neighbors_row_splits,
                                       size_t neighbors_index_size,
-                                      const TIndex* neighbor_index,
-                                      const TFeat* neighbor_importance,
+                                      const TIndex* neighbors_index,
+                                      const TFeat* neighbors_importance,
                                       const int64_t* neighbors_row_splits,
                                       const TReal* extents,
                                       const TReal* offsets,
@@ -329,7 +328,7 @@ void CConvTransposeComputeFeaturesCPU(TOut* out_features,
     out_features, filter_dims, filter, num_out, out_positions, out_importance, \
             num_inp, inp_positions, inp_features,                              \
             inp_neighbors_importance_sum, inp_neighbors_row_splits,            \
-            neighbors_index_size, neighbor_index, neighbor_importance,         \
+            neighbors_index_size, neighbors_index, neighbors_importance,       \
             neighbors_row_splits, extents, offsets
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,                \

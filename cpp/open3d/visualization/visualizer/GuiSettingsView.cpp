@@ -100,6 +100,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(show_axes_);
 
+    // Show ground plane
+    show_ground_ = std::make_shared<gui::Checkbox>("Show ground");
+    show_ground_->SetOnChecked(
+            [this](bool is_checked) { model_.SetShowGround(is_checked); });
+    view_ctrls->AddFixed(separation_height);
+    view_ctrls->AddChild(show_ground_);
+
     // Lighting profiles
     lighting_profile_ = std::make_shared<gui::Combobox>();
     for (auto &lp : GuiSettingsModel::lighting_profiles_) {
@@ -108,6 +115,9 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     lighting_profile_->AddItem(CUSTOM_LIGHTING);
     lighting_profile_->SetOnValueChanged([this](const char *, int index) {
         if (index < int(GuiSettingsModel::lighting_profiles_.size())) {
+            sun_follows_camera_->SetChecked(false);
+            sun_dir_->SetEnabled(true);
+            model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
                     GuiSettingsModel::lighting_profiles_[index]);
         }
@@ -204,6 +214,12 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetCustomLighting(lighting);
     });
 
+    sun_follows_camera_ = std::make_shared<gui::Checkbox>(" ");
+    sun_follows_camera_->SetOnChecked([this](bool checked) {
+        sun_dir_->SetEnabled(!checked);
+        model_.SetSunFollowsCamera(checked);
+    });
+
     sun_color_ = std::make_shared<gui::ColorEdit>();
     sun_color_->SetOnValueChanged([this](const gui::Color &new_color) {
         auto lighting = model_.GetLighting();  // copy
@@ -217,6 +233,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     sun_layout->AddChild(sun_intensity_);
     sun_layout->AddChild(std::make_shared<gui::Label>("Direction"));
     sun_layout->AddChild(sun_dir_);
+    sun_layout->AddChild(sun_follows_camera_);
+    sun_layout->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
     sun_layout->AddChild(std::make_shared<gui::Label>("Color"));
     sun_layout->AddChild(sun_color_);
 

@@ -24,12 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// High level non-templated hashmap interface for basic usages.
-
-// If BUILD_CUDA_MODULE, link DefaultHashmap.cu that contains everything, and
-// disable code inside DefaultHashmap.cpp
-// Else, link DefaultHashmap.cpp and disregard DefaultHashmap.cu
-
 #include "open3d/core/hashmap/Hashmap.h"
 
 #include "open3d/core/Tensor.h"
@@ -45,13 +39,14 @@ Hashmap::Hashmap(int64_t init_capacity,
                  const Dtype& dtype_value,
                  const SizeVector& element_shape_key,
                  const SizeVector& element_shape_value,
-                 const Device& device)
+                 const Device& device,
+                 const HashmapBackend& backend)
     : dtype_key_(dtype_key),
       dtype_value_(dtype_value),
       element_shape_key_(element_shape_key),
       element_shape_value_(element_shape_value) {
     if (dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined ||
-        dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
+        dtype_value_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
         utility::LogError(
                 "[Hashmap] DtypeCore::Undefined is not supported for input "
                 "key/value.");
@@ -63,12 +58,9 @@ Hashmap::Hashmap(int64_t init_capacity,
                 "key/value.");
     }
 
-    device_hashmap_ = CreateDefaultDeviceHashmap(
-            std::max(init_capacity / kDefaultElemsPerBucket, int64_t(1)),
-            init_capacity,
-            dtype_key.ByteSize() * element_shape_key_.NumElements(),
-            dtype_value.ByteSize() * element_shape_value_.NumElements(),
-            device);
+    device_hashmap_ = CreateDeviceHashmap(init_capacity, dtype_key, dtype_value,
+                                          element_shape_key,
+                                          element_shape_value, device, backend);
 }
 
 void Hashmap::Rehash(int64_t buckets) {
@@ -113,8 +105,7 @@ void Hashmap::Insert(const Tensor& input_keys,
 
     device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
                             static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                            static_cast<bool*>(output_masks.GetDataPtr()),
-                            count);
+                            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
@@ -141,8 +132,7 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     device_hashmap_->Activate(input_keys.GetDataPtr(),
                               static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                              static_cast<bool*>(output_masks.GetDataPtr()),
-                              count);
+                              output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
@@ -169,7 +159,7 @@ void Hashmap::Find(const Tensor& input_keys,
 
     device_hashmap_->Find(input_keys.GetDataPtr(),
                           static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                          static_cast<bool*>(output_masks.GetDataPtr()), count);
+                          output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
@@ -191,8 +181,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     device_hashmap_->Erase(input_keys.GetDataPtr(),
-                           static_cast<bool*>(output_masks.GetDataPtr()),
-                           count);
+                           output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
@@ -236,10 +225,13 @@ Hashmap Hashmap::CUDA(int device_id) const {
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
 
 int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }
+
 int64_t Hashmap::GetBucketCount() const {
     return device_hashmap_->GetBucketCount();
 }
+
 Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
+
 int64_t Hashmap::GetKeyBytesize() const {
     return device_hashmap_->GetKeyBytesize();
 }
@@ -308,6 +300,5 @@ void Hashmap::AssertValueDtype(const Dtype& dtype_value,
                 stored_elem_byte_size, elem_byte_size);
     }
 }
-
 }  // namespace core
 }  // namespace open3d

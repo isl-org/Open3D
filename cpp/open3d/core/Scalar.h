@@ -27,6 +27,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <string>
 
 #include "open3d/core/Dtype.h"
@@ -50,7 +51,15 @@ public:
         scalar_type_ = ScalarType::Double;
         value_.d = static_cast<double>(v);
     }
-    Scalar(int v) {
+    Scalar(int8_t v) {
+        scalar_type_ = ScalarType::Int64;
+        value_.i = static_cast<int64_t>(v);
+    }
+    Scalar(int16_t v) {
+        scalar_type_ = ScalarType::Int64;
+        value_.i = static_cast<int64_t>(v);
+    }
+    Scalar(int32_t v) {
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
     }
@@ -65,6 +74,26 @@ public:
     Scalar(uint16_t v) {
         scalar_type_ = ScalarType::Int64;
         value_.i = static_cast<int64_t>(v);
+    }
+    Scalar(uint32_t v) {
+        scalar_type_ = ScalarType::Int64;
+        value_.i = static_cast<int64_t>(v);
+    }
+    Scalar(uint64_t v) {
+        scalar_type_ = ScalarType::Int64;
+        // Conversion uint64_t -> int64_t is undefined behaviour until C++20.
+        // Compilers optimize this to a single cast.
+        if (v <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+            value_.i = static_cast<int64_t>(v);
+        } else {
+            // Safe conversion to two's complement:
+            // - Compute x = uint_max - v such that x <= int_max
+            // - Safely cast x from unsigned to signed
+            // - Map x to y such that casting y to signed leads y = v
+            value_.i = -static_cast<int64_t>(
+                               std::numeric_limits<uint64_t>::max() - v) -
+                       1;
+        }
     }
     Scalar(bool v) {
         scalar_type_ = ScalarType::Bool;

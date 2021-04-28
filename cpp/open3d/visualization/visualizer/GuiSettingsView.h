@@ -64,6 +64,7 @@ private:
 
     std::shared_ptr<gui::Combobox> lighting_profile_;
     std::shared_ptr<gui::Checkbox> show_axes_;
+    std::shared_ptr<gui::Checkbox> show_ground_;
     std::shared_ptr<gui::ColorEdit> bg_color_;
     std::shared_ptr<gui::Checkbox> show_skybox_;
 
@@ -74,6 +75,7 @@ private:
     std::shared_ptr<gui::Slider> ibl_intensity_;
     std::shared_ptr<gui::Slider> sun_intensity_;
     std::shared_ptr<gui::VectorEdit> sun_dir_;
+    std::shared_ptr<gui::Checkbox> sun_follows_camera_;
     std::shared_ptr<gui::ColorEdit> sun_color_;
 
     std::shared_ptr<gui::Combobox> material_type_;

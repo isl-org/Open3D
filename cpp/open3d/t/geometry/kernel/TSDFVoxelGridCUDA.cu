@@ -29,12 +29,15 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/CUDA/StdGPUHashmap.h"
+#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
-#include "open3d/t/geometry/kernel/TSDFVoxelGridShared.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGridImpl.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -77,17 +80,17 @@ void TouchCUDA(const core::Tensor& points,
                 float z = pcd_ptr[3 * workload_idx + 2];
 
                 int xb_lo =
-                        static_cast<int>(floor((x - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((x - sdf_trunc) / block_size));
                 int xb_hi =
-                        static_cast<int>(floor((x + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((x + sdf_trunc) / block_size));
                 int yb_lo =
-                        static_cast<int>(floor((y - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((y - sdf_trunc) / block_size));
                 int yb_hi =
-                        static_cast<int>(floor((y + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((y + sdf_trunc) / block_size));
                 int zb_lo =
-                        static_cast<int>(floor((z - sdf_trunc) / block_size));
+                        static_cast<int>(floorf((z - sdf_trunc) / block_size));
                 int zb_hi =
-                        static_cast<int>(floor((z + sdf_trunc) / block_size));
+                        static_cast<int>(floorf((z + sdf_trunc) / block_size));
 
                 for (int xb = xb_lo; xb <= xb_hi; ++xb) {
                     for (int yb = yb_lo; yb <= yb_hi; ++yb) {
@@ -116,6 +119,7 @@ void TouchCUDA(const core::Tensor& points,
                                block_addrs, block_masks);
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
+
 }  // namespace tsdf
 }  // namespace kernel
 }  // namespace geometry

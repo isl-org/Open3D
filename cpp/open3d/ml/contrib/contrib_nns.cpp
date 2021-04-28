@@ -32,13 +32,6 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-/// TOOD: This is a temporary wrapper for 3DML repository use. In the future,
-/// the native Open3D Python API should be improved and used.
-///
-/// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
-/// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.
-/// \param knn Int.
-/// \return Tensor of shape (n_query_points, knn), dtype Int32.
 const core::Tensor KnnSearch(const core::Tensor& query_points,
                              const core::Tensor& dataset_points,
                              int knn) {
@@ -72,20 +65,6 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
     return indices.To(core::Dtype::Int32);
 }
 
-/// TOOD: This is a temporary wrapper for 3DML repository use. In the future,
-/// the native Open3D Python API should be improved and used.
-///
-/// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
-/// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.
-/// \param query_batches Tensor of shape {n_batches,}, dtype Int32. It is
-/// required that sum(query_batches) == n_query_points.
-/// \param dataset_batches Tensor of shape {n_batches,}, dtype Int32. It is
-/// required that that sum(dataset_batches) == n_dataset_points.
-/// \param radius The radius to search.
-/// \return Tensor of shape {n_query_points, max_neighbor}, dtype Int32, where
-/// max_neighbor is the maximum number neighbor of neighbors for all query
-/// points. For query points with less than max_neighbor neighbors, the neighbor
-/// index will be padded by -1.
 const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                 const core::Tensor& dataset_points,
                                 const core::Tensor& query_batches,
@@ -181,10 +160,15 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         nns.FixedRadiusIndex();
         core::Tensor indices;
         core::Tensor distances;
-        core::Tensor num_neighbors;
-        std::tie(indices, distances, num_neighbors) =
+        core::Tensor neighbors_row_splits;
+        std::tie(indices, distances, neighbors_row_splits) =
                 nns.FixedRadiusSearch(current_query_points, radius);
         batched_indices[batch_idx] = indices;
+        int64_t current_num_query_points = current_query_points.GetShape()[0];
+        core::Tensor num_neighbors =
+                neighbors_row_splits.Slice(0, 1, current_num_query_points + 1)
+                        .Sub(neighbors_row_splits.Slice(
+                                0, 0, current_num_query_points));
         batched_num_neighbors[batch_idx] = num_neighbors;
     }
 

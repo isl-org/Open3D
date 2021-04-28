@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,23 +33,23 @@
 #include <unordered_set>
 
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/PickPointsInteractor.h"
+#include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/CameraInteractorLogic.h"
+#include "open3d/visualization/rendering/CameraSphereInteractorLogic.h"
 #include "open3d/visualization/rendering/IBLRotationInteractorLogic.h"
 #include "open3d/visualization/rendering/LightDirectionInteractorLogic.h"
 #include "open3d/visualization/rendering/ModelInteractorLogic.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
-
-// Once render target is available, please remove the #ifdefs
-#define NO_RENDER_TARGET 1
 
 namespace open3d {
 namespace visualization {
@@ -310,6 +310,10 @@ public:
         return *interactor_;
     }
 
+    Eigen::Vector3f GetCenterOfRotation() const {
+        return interactor_->GetCenterOfRotation();
+    }
+
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         interactor_->SetCenterOfRotation(center);
     }
@@ -367,7 +371,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                interactor_->Dolly(2 * e.wheel.dy,
+                interactor_->Dolly(2.0f * e.wheel.dy,
                                    e.wheel.isTrackpad
                                            ? rendering::MatrixInteractorLogic::
                                                      DragType::TWO_FINGER
@@ -417,15 +421,31 @@ class RotateCameraInteractor : public RotationInteractor {
     using Super = RotationInteractor;
 
 public:
-    explicit RotateCameraInteractor(rendering::Camera* camera)
+    explicit RotateCameraInteractor(rendering::Open3DScene* scene,
+                                    rendering::Camera* camera)
         : camera_controls_(std::make_unique<rendering::CameraInteractorLogic>(
-                  camera, MIN_FAR_PLANE)) {
+                  camera, MIN_FAR_PLANE)),
+          scene_(scene) {
         SetInteractor(camera_controls_.get());
     }
 
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
-            case MouseEvent::BUTTON_DOWN:
+            case MouseEvent::BUTTON_DOWN: {
+                if (e.button.count == 2 &&
+                    e.button.button == MouseButton::LEFT) {
+                    int x = e.x;
+                    int y = e.y;
+                    scene_->GetRenderer().RenderToDepthImage(
+                            scene_->GetView(), scene_->GetScene(),
+                            [x, y, this](std::shared_ptr<geometry::Image> img) {
+                                ChangeCenterOfRotation(img, x, y);
+                            });
+                } else {
+                    Super::Mouse(e);
+                }
+                break;
+            }
             case MouseEvent::DRAG:
             case MouseEvent::BUTTON_UP:
             default:
@@ -450,6 +470,49 @@ public:
 
 private:
     std::unique_ptr<rendering::CameraInteractorLogic> camera_controls_;
+    rendering::Open3DScene* scene_;
+
+    void ChangeCenterOfRotation(std::shared_ptr<geometry::Image> depth_img,
+                                int x,
+                                int y) {
+        const int radius_px = 2;  // should be even;  total size is 2*r+1
+        float far_z = 0.999999f;  // 1.0 - epsilon
+        float win_z = *depth_img->PointerAt<float>(x, y);
+        if (win_z >= far_z) {
+            for (int v = y - radius_px; v < y + radius_px; ++v) {
+                for (int u = x - radius_px; u < x + radius_px; ++u) {
+                    float z = *depth_img->PointerAt<float>(x, y);
+                    win_z = std::min(win_z, z);
+                }
+            }
+        }
+
+        if (win_z < far_z) {
+            auto vp = scene_->GetView()->GetViewport();
+            auto point = scene_->GetCamera()->Unproject(
+                    float(x), float(vp[3] - y), win_z, float(vp[2]),
+                    float(vp[3]));
+            SetCenterOfRotation(point);
+            interactor_->Rotate(0, 0);  // update now
+        }
+    }
+};
+
+class RotateCameraSphereInteractor : public RotateCameraInteractor {
+    using Super = RotationInteractor;
+
+public:
+    explicit RotateCameraSphereInteractor(rendering::Open3DScene* scene,
+                                          rendering::Camera* camera)
+        : RotateCameraInteractor(scene, camera),
+          camera_controls_(
+                  std::make_unique<rendering::CameraSphereInteractorLogic>(
+                          camera, MIN_FAR_PLANE)) {
+        SetInteractor(camera_controls_.get());
+    }
+
+private:
+    std::unique_ptr<rendering::CameraInteractorLogic> camera_controls_;
 };
 
 class PickInteractor : public RotateCameraInteractor {
@@ -457,7 +520,8 @@ class PickInteractor : public RotateCameraInteractor {
 
 public:
     PickInteractor(rendering::Open3DScene* scene, rendering::Camera* camera)
-        : Super(camera), pick_(new PickPointsInteractor(scene, camera)) {}
+        : Super(scene, camera),
+          pick_(new PickPointsInteractor(scene, camera)) {}
 
     void SetViewSize(const Size& size) {
         GetMatrixInteractor().SetViewSize(size.width, size.height);
@@ -480,6 +544,19 @@ public:
         pick_->SetOnPointsPicked(on_picked);
     }
 
+    void SetOnInteractorUIUpdated(
+            std::function<void(const std::vector<Eigen::Vector2i>&)> on_ui) {
+        pick_->SetOnUIChanged(on_ui);
+    }
+
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick) {
+        pick_->SetOnStartedPolygonPicking(on_poly_pick);
+    }
+
+    void DoPolygonPick() { pick_->DoPick(); }
+
+    void ClearPolygonPick() { pick_->ClearPick(); }
+
     void SetNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
     void Mouse(const MouseEvent& e) override {
@@ -491,6 +568,8 @@ public:
         }
     }
 
+    void Key(const KeyEvent& e) override { pick_->Key(e); }
+
 private:
     std::unique_ptr<PickPointsInteractor> pick_;
 };
@@ -499,7 +578,9 @@ private:
 class Interactors {
 public:
     Interactors(rendering::Open3DScene* scene, rendering::Camera* camera)
-        : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
+        : rotate_(std::make_unique<RotateCameraInteractor>(scene, camera)),
+          rotate_sphere_(std::make_unique<RotateCameraSphereInteractor>(
+                  scene, camera)),
           fly_(std::make_unique<FlyInteractor>(camera)),
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
           ibl_(std::make_unique<RotateIBLInteractor>(scene->GetScene(),
@@ -511,6 +592,8 @@ public:
 
     void SetViewSize(const Size& size) {
         rotate_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+        rotate_sphere_->GetMatrixInteractor().SetViewSize(size.width,
+                                                          size.height);
         fly_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         sun_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         ibl_->GetMatrixInteractor().SetViewSize(size.width, size.height);
@@ -520,6 +603,7 @@ public:
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
         rotate_->GetMatrixInteractor().SetBoundingBox(bounds);
+        rotate_sphere_->GetMatrixInteractor().SetBoundingBox(bounds);
         fly_->GetMatrixInteractor().SetBoundingBox(bounds);
         sun_->GetMatrixInteractor().SetBoundingBox(bounds);
         ibl_->GetMatrixInteractor().SetBoundingBox(bounds);
@@ -527,8 +611,17 @@ public:
         pick_->GetMatrixInteractor().SetBoundingBox(bounds);
     }
 
+    Eigen::Vector3f GetCenterOfRotation() const {
+        if (GetControls() == SceneWidget::Controls::ROTATE_CAMERA_SPHERE) {
+            return rotate_sphere_->GetCenterOfRotation();
+        } else {
+            return rotate_->GetCenterOfRotation();
+        }
+    }
+
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
         rotate_->SetCenterOfRotation(center);
+        rotate_sphere_->SetCenterOfRotation(center);
     }
 
     void SetOnSunLightChanged(
@@ -537,6 +630,10 @@ public:
     }
 
     void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
+
+    void SetSunInteractorEnabled(bool enable) {
+        sun_interactor_enabled_ = enable;
+    }
 
     void SetPickableGeometry(
             const std::vector<SceneWidget::PickableGeometry>& geometry) {
@@ -554,10 +651,25 @@ public:
         pick_->SetOnPointsPicked(on_picked);
     }
 
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick) {
+        pick_->SetOnStartedPolygonPicking(on_poly_pick);
+    }
+
+    void DoPolygonPick() { pick_->DoPolygonPick(); }
+
+    void ClearPolygonPick() { pick_->ClearPolygonPick(); }
+
     void SetPickNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
+    void SetOnInteractorUIUpdated(
+            std::function<void(const std::vector<Eigen::Vector2i>&)> on_ui) {
+        pick_->SetOnInteractorUIUpdated(on_ui);
+    }
+
     SceneWidget::Controls GetControls() const {
-        if (current_ == fly_.get()) {
+        if (current_ == rotate_sphere_.get()) {
+            return SceneWidget::Controls::ROTATE_CAMERA_SPHERE;
+        } else if (current_ == fly_.get()) {
             return SceneWidget::Controls::FLY;
         } else if (current_ == sun_.get()) {
             return SceneWidget::Controls::ROTATE_SUN;
@@ -576,6 +688,9 @@ public:
         switch (mode) {
             case SceneWidget::Controls::ROTATE_CAMERA:
                 current_ = rotate_.get();
+                break;
+            case SceneWidget::Controls::ROTATE_CAMERA_SPHERE:
+                current_ = rotate_sphere_.get();
                 break;
             case SceneWidget::Controls::FLY:
                 current_ = fly_.get();
@@ -596,7 +711,7 @@ public:
     }
 
     void Mouse(const MouseEvent& e) {
-        if (current_ == rotate_.get()) {
+        if (current_ == rotate_.get() && sun_interactor_enabled_) {
             if (e.type == MouseEvent::Type::BUTTON_DOWN &&
                 (e.button.button == MouseButton::MIDDLE ||
                  e.modifiers == int(KeyModifier::ALT))) {
@@ -631,7 +746,10 @@ public:
     }
 
 private:
+    bool sun_interactor_enabled_ = true;
+
     std::unique_ptr<RotateCameraInteractor> rotate_;
+    std::unique_ptr<RotateCameraSphereInteractor> rotate_sphere_;
     std::unique_ptr<FlyInteractor> fly_;
     std::unique_ptr<RotateSunInteractor> sun_;
     std::unique_ptr<RotateIBLInteractor> ibl_;
@@ -643,7 +761,12 @@ private:
 };
 
 // ----------------------------------------------------------------------------
+namespace {
+static int g_next_button_id = 1;
+}  // namespace
+
 struct SceneWidget::Impl {
+    std::string id_;
     std::shared_ptr<rendering::Open3DScene> scene_;
     geometry::AxisAlignedBoundingBox bounds_;
     std::shared_ptr<Interactors> controls_;
@@ -654,20 +777,46 @@ struct SceneWidget::Impl {
     bool frame_rect_changed_ = false;
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
     bool scene_caching_enabled_ = false;
-#ifdef NO_RENDER_TARGET
-    bool is_picking_ = false;
-#endif  // NO_RENDER_TARGET
+    std::vector<Eigen::Vector2i> ui_lines_;
 
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
+
+    void UpdateFarPlane(const Rect& frame, float verticalFoV) {
+        float aspect = 1.0f;
+        if (frame.height > 0) {
+            aspect = float(frame.width) / float(frame.height);
+        }
+        // The far plane needs to be the max absolute distance, not just the
+        // max extent, so that axes are visible if requested.
+        // See also RotationInteractorLogic::UpdateCameraFarPlane().
+        auto* camera = scene_->GetCamera();
+        auto far1 = bounds_.GetMinBound().norm();
+        auto far2 = bounds_.GetMaxBound().norm();
+        auto far3 =
+                camera->GetModelMatrix().translation().cast<double>().norm();
+        auto model_size = 2.0 * bounds_.GetExtent().norm();
+        auto far = std::max(MIN_FAR_PLANE,
+                            std::max(std::max(far1, far2), far3) + model_size);
+        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
+                              rendering::Camera::FovType::Vertical);
+    }
 };
 
-SceneWidget::SceneWidget() : impl_(new Impl()) {}
+SceneWidget::SceneWidget() : impl_(new Impl()) {
+    impl_->id_ = std::string("SceneWidget##widget3d_") +
+                 std::to_string(g_next_button_id++);
+}
 
 SceneWidget::~SceneWidget() {
     SetScene(nullptr);  // will do any necessary cleanup
 }
 
 void SceneWidget::SetFrame(const Rect& f) {
+    // Early exit if frame hasn't changed because changing frame size causes GPU
+    // memory re-allocations that are best avoided if unecessary
+    auto old_frame = GetFrame();
+    if (f.width == old_frame.width && f.height == old_frame.height) return;
+
     Super::SetFrame(f);
 
     impl_->controls_->SetViewSize(Size(f.width, f.height));
@@ -684,26 +833,27 @@ void SceneWidget::SetupCamera(
         const Eigen::Vector3f& center_of_rotation) {
     impl_->bounds_ = geometry_bounds;
     impl_->controls_->SetBoundingBox(geometry_bounds);
+    impl_->controls_->SetCenterOfRotation(center_of_rotation);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 
-    auto f = GetFrame();
-    float aspect = 1.0f;
-    if (f.height > 0) {
-        aspect = float(f.width) / float(f.height);
-    }
-    // The far plane needs to be the max absolute distance, not just the
-    // max extent, so that axes are visible if requested.
-    // See also RotationInteractorLogic::UpdateCameraFarPlane().
-    auto far1 = impl_->bounds_.GetMinBound().norm();
-    auto far2 = impl_->bounds_.GetMaxBound().norm();
-    auto far3 =
-            GetCamera()->GetModelMatrix().translation().cast<double>().norm();
-    auto model_size = 2.0 * impl_->bounds_.GetExtent().norm();
-    auto far = std::max(MIN_FAR_PLANE,
-                        std::max(std::max(far1, far2), far3) + model_size);
-    GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
-                               rendering::Camera::FovType::Vertical);
+    impl_->UpdateFarPlane(GetFrame(), verticalFoV);
+}
+
+void SceneWidget::LookAt(const Eigen::Vector3f& center,
+                         const Eigen::Vector3f& eye,
+                         const Eigen::Vector3f& up) {
+    GetCamera()->LookAt(center, eye, up);
+    impl_->controls_->SetCenterOfRotation(center);
+    impl_->UpdateFarPlane(GetFrame(), GetCamera()->GetFieldOfView());
+}
+
+Eigen::Vector3f SceneWidget::GetCenterOfRotation() const {
+    return impl_->controls_->GetCenterOfRotation();
+}
+
+void SceneWidget::SetCenterOfRotation(const Eigen::Vector3f& center) {
+    impl_->controls_->SetCenterOfRotation(center);
 }
 
 void SceneWidget::SetOnCameraChanged(
@@ -724,6 +874,10 @@ void SceneWidget::SetOnSunDirectionChanged(
 
 void SceneWidget::ShowSkybox(bool is_on) {
     impl_->controls_->ShowSkybox(is_on);
+}
+
+void SceneWidget::SetSunInteractorEnabled(bool enable) {
+    impl_->controls_->SetSunInteractorEnabled(enable);
 }
 
 void SceneWidget::SetPickableGeometry(
@@ -750,7 +904,28 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
         auto view = impl_->scene_->GetView();
         impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
+        impl_->controls_->SetOnInteractorUIUpdated(
+                [this](const std::vector<Eigen::Vector2i>& lines) {
+                    impl_->ui_lines_ = lines;
+                    ForceRedraw();
+                });
     }
+}
+
+void SceneWidget::SetOnStartedPolygonPicking(
+        std::function<void()> on_poly_pick) {
+    impl_->controls_->SetOnStartedPolygonPicking(on_poly_pick);
+}
+
+void SceneWidget::DoPolygonPick(PolygonPickAction action) {
+    switch (action) {
+        case PolygonPickAction::CANCEL:
+            impl_->controls_->ClearPolygonPick();
+            break;
+        case PolygonPickAction::SELECT:
+            impl_->controls_->DoPolygonPick();
+            break;
+    };
 }
 
 std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
@@ -785,24 +960,11 @@ void SceneWidget::SetViewControls(Controls mode) {
     } else {
         impl_->controls_->SetControls(mode);
     }
-
-#if NO_RENDER_TARGET
-    if (mode == Controls::PICK_POINTS) {
-        impl_->is_picking_ = true;
-    }
-    EnableSceneCaching(impl_->scene_caching_enabled_);
-#endif  // NO_RENDER_TARGET
 }
 
 void SceneWidget::EnableSceneCaching(bool enable) {
     impl_->scene_caching_enabled_ = enable;
-#if NO_RENDER_TARGET
-    if (impl_->is_picking_) {
-        enable = false;
-    }
-#endif
     if (!enable) {
-        impl_->scene_->GetRenderer().EnableCaching(false);
         impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
                                                  true);
     }
@@ -810,13 +972,8 @@ void SceneWidget::EnableSceneCaching(bool enable) {
 
 void SceneWidget::ForceRedraw() {
     // ForceRedraw only applies when scene caching is enabled
-#if NO_RENDER_TARGET
-    if (!impl_->scene_caching_enabled_ || impl_->is_picking_) return;
-#else
     if (!impl_->scene_caching_enabled_) return;
-#endif  // NO_RENDER_TARGET
 
-    impl_->scene_->GetRenderer().EnableCaching(true);
     impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
     impl_->controls_->SetPickNeedsRedraw();
 }
@@ -827,23 +984,13 @@ void SceneWidget::SetRenderQuality(Quality quality) {
         impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
-#if NO_RENDER_TARGET
-            if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
-#else
             if (impl_->scene_caching_enabled_) {
-#endif  // NO_RENDER_TARGET
-                impl_->scene_->GetRenderer().EnableCaching(false);
                 impl_->scene_->GetScene()->SetViewActive(
                         impl_->scene_->GetViewId(), true);
             }
         } else {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
-#if NO_RENDER_TARGET
-            if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
-#else
             if (impl_->scene_caching_enabled_) {
-#endif  // NO_RENDER_TARGET
-                impl_->scene_->GetRenderer().EnableCaching(true);
                 impl_->scene_->GetScene()->SetRenderOnce(
                         impl_->scene_->GetViewId());
             }
@@ -905,29 +1052,23 @@ void SceneWidget::RemoveLabel(std::shared_ptr<Label3D> label) {
     }
 }
 
-void SceneWidget::Layout(const Theme& theme) {
-    Super::Layout(theme);
-    // The UI may have changed size such that the scene has been exposed. Need
-    // to force a redraw in that case.
-
-    ForceRedraw();
-}
+void SceneWidget::ClearLabels() { impl_->labels_3d_.clear(); }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
+    const auto f = GetFrame();
+
     // If the widget has changed size we need to update the viewport and the
     // camera. We can't do it in SetFrame() because we need to know the height
     // of the window to convert to OpenGL coordinates for the viewport.
     if (impl_->frame_rect_changed_) {
         impl_->frame_rect_changed_ = false;
 
-        auto f = GetFrame();
         impl_->controls_->SetViewSize(Size(f.width, f.height));
         // GUI has origin of Y axis at top, but renderer has it at bottom
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView();
-        view->SetViewport(f.x, y, f.width, f.height);
+        impl_->scene_->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
         float aspect = 1.0f;
@@ -941,16 +1082,22 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         impl_->controls_->SetPickNeedsRedraw();
     }
 
-    if (!impl_->labels_3d_.empty()) {
-        const auto f = GetFrame();
-        // Setup ImGUI
-        ImGui::SetNextWindowPos(ImVec2(float(f.x), float(f.y)));
-        ImGui::SetNextWindowSize(ImVec2(float(f.width), float(f.height)));
-        ImGui::Begin("3D Labels", nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
-                             ImGuiWindowFlags_NoNav |
-                             ImGuiWindowFlags_NoBackground);
+    // The scene will be rendered to texture, so all we need to do is
+    // draw the image. This is just a pass-through, and the ImGuiFilamentBridge
+    // will blit the texture.
+    ImGui::SetNextWindowPos(ImVec2(float(f.x), float(f.y)));
+    ImGui::SetNextWindowSize(ImVec2(float(f.width), float(f.height)));
+    ImGui::Begin(impl_->id_.c_str(), nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                         ImGuiWindowFlags_NoNav |
+                         ImGuiWindowFlags_NoBackground);
 
+    auto render_tex = impl_->scene_->GetView()->GetColorBuffer();
+    ImTextureID image_id = reinterpret_cast<ImTextureID>(render_tex.GetId());
+    ImGui::Image(image_id, ImVec2(f.width, f.height), ImVec2(0.0f, 1.0f),
+                 ImVec2(1.0f, 0.0f));
+
+    if (!impl_->labels_3d_.empty()) {
         // Draw each text label
         for (const auto& l : impl_->labels_3d_) {
             auto ndc = GetCamera()->GetNDC(l->GetPosition());
@@ -965,14 +1112,22 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
                                 color.GetBlue(), color.GetAlpha()},
                                "%s", l->GetText());
         }
-
-        ImGui::End();
     }
 
-    // The actual drawing is done later, at the end of drawing in
-    // Window::OnDraw(), in FilamentRenderer::Draw(). We can always
-    // return NONE because any changes this frame will automatically
-    // be rendered (unlike the ImGUI parts).
+    // Draw any interactor UI
+    if (!impl_->ui_lines_.empty()) {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        auto ui_color = colorToImguiRGBA(Color(1.0f, 0.0f, 1.0f, 1.0f));
+        for (size_t i = 0; i < impl_->ui_lines_.size() - 1; i += 2) {
+            auto& p0 = impl_->ui_lines_[i];
+            auto& p1 = impl_->ui_lines_[i + 1];
+            draw_list->AddLine({float(p0.x()), float(p0.y())},
+                               {float(p1.x()), float(p1.y())}, ui_color, 2);
+        }
+    }
+
+    ImGui::End();
+
     return Widget::DrawResult::NONE;
 }
 

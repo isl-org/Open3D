@@ -245,9 +245,8 @@ std::string FunctionDoc::ToGoogleDocString() const {
                 rc << ": " << argument_doc.body_;
             }
             if (argument_doc.long_default_ != "") {
-                std::vector<std::string> lines;
-                utility::SplitString(lines, argument_doc.long_default_, "\n",
-                                     true);
+                std::vector<std::string> lines = utility::SplitString(
+                        argument_doc.long_default_, "\n", true);
                 rc << " Default value:" << std::endl << std::endl;
                 bool prev_line_is_listing = false;
                 for (std::string& line : lines) {

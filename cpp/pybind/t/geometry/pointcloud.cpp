@@ -29,14 +29,32 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/hashmap/Hashmap.h"
+#include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
+// Image functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"rgbd_image",
+                 "The input RGBD image should have a uint16_t depth image and  "
+                 "RGB image with any DType and the same size."},
+                {"depth", "The input depth image should be a uint16_t image."},
+                {"intrinsic", "Intrinsic parameters of the camera."},
+                {"extrinsic", "Extrinsic parameters of the camera."},
+                {"depth_scale", "The depth is scaled by 1 / depth_scale."},
+                {"depth_max", "Truncated at depth_max distance."},
+                {"stride",
+                 "Sampling factor to support coarse point cloud extraction. "
+                 "There is no low pass filtering, so aliasing is possible for "
+                 "stride>1."}};
+
 void pybind_pointcloud(py::module& m) {
-    py::class_<PointCloud, PyGeometry<PointCloud>, std::unique_ptr<PointCloud>,
+    py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
                Geometry>
             pointcloud(m, "PointCloud",
                        "A pointcloud contains a set of 3D points.");
@@ -48,20 +66,19 @@ void pybind_pointcloud(py::module& m) {
                                                    core::Tensor>&>(),
                  "map_keys_to_tensors"_a);
 
-    // Point's attributes: points, colors, normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     pointcloud.def_property_readonly(
-            "point",
-            py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
+            "point", py::overload_cast<>(&PointCloud::GetPointAttr, py::const_),
+            "Point's attributes: points, colors, normals, etc.");
 
     // Device transfers.
     pointcloud.def("to", &PointCloud::To,
                    "Transfer the point cloud to a specified device.",
                    "device"_a, "copy"_a = false);
     pointcloud.def("clone", &PointCloud::Clone,
-                   "Returns copy of the point cloud on the same device.");
+                   "Returns a copy of the point cloud on the same device.");
     pointcloud.def("cpu", &PointCloud::CPU,
                    "Transfer the point cloud to CPU. If the point cloud is "
                    "already on CPU, no copy will be performed.");
@@ -86,12 +103,36 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
+    pointcloud.def(
+            "voxel_down_sample",
+            [](const PointCloud& pointcloud, const double voxel_size) {
+                return pointcloud.VoxelDownSample(
+                        voxel_size, core::HashmapBackend::Default);
+            },
+            "Downsamples a point cloud with a specified voxel size.",
+            "voxel_size"_a);
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
-            "depth"_a, "intrinsics"_a,
+            py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
-            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1);
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "Factory function to create a pointcloud (with only 'points') from "
+            "a depth image and a camera model.\n\n Given depth value d at (u, "
+            "v) image coordinate, the corresponding 3d point is:\n z = d / "
+            "depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z / fy");
+    pointcloud.def_static(
+            "create_from_rgbd_image", &PointCloud::CreateFromRGBDImage,
+            py::call_guard<py::gil_scoped_release>(), "rgbd_image"_a,
+            "intrinsics"_a,
+            "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                               core::Device("CPU:0")),
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "Factory function to create a pointcloud (with properties "
+            "{'points', 'colors'}) from an RGBD image and a camera model.\n\n "
+            "Given depth value d at (u, v) image coordinate, the corresponding "
+            "3d point is:\n z = d / depth_scale\n x = (u - cx) * z / fx\n y = "
+            "(v - cy) * z / fy");
     pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,
@@ -99,6 +140,11 @@ void pybind_pointcloud(py::module& m) {
             "Create a PointCloud from a legacy Open3D PointCloud.");
     pointcloud.def("to_legacy_pointcloud", &PointCloud::ToLegacyPointCloud,
                    "Convert to a legacy Open3D PointCloud.");
+
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
+                                    map_shared_argument_docstrings);
 }
 
 }  // namespace geometry

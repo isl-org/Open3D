@@ -47,6 +47,8 @@ public:
     const geometry::AxisAlignedBoundingBox& GetBoundingBox() const;
     virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds);
 
+    Eigen::Vector3f GetCenterOfRotation() const;
+
     void SetMouseDownInfo(const Camera::Transform& matrix,
                           const Eigen::Vector3f& center_of_rotation);
 
@@ -74,7 +76,7 @@ public:
 
     /// Moves the matrix along the forward axis. (This is one type
     /// of zoom.)
-    virtual void Dolly(int dy, DragType drag_type);
+    virtual void Dolly(float dy, DragType drag_type);
     virtual void Dolly(float z_dist, Camera::Transform matrix);
 
 private:
@@ -93,7 +95,9 @@ protected:
     void SetMatrix(const Camera::Transform& matrix);
     float CalcRotateRadians(int dx, int dy);
     float CalcRotateZRadians(int dx, int dy);
-    float CalcDollyDist(int dy, DragType drag_type);
+    float CalcDollyDist(float dy,
+                        DragType drag_type,
+                        const Camera::Transform& matrix);
 };
 
 }  // namespace rendering

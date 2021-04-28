@@ -39,6 +39,7 @@
 #include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorInit.h"
 #include "open3d/core/TensorKey.h"
 
 namespace open3d {
@@ -48,7 +49,7 @@ namespace core {
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
 public:
-    Tensor(){};
+    Tensor() {}
 
     /// Constructor for creating a contiguous Tensor
     Tensor(const SizeVector& shape,
@@ -144,23 +145,14 @@ public:
     /// An actual copy of the data will be performed.
     Tensor& operator=(Tensor&& other) &&;
 
-    /// Tensor assignment rvalue = rvalue_scalar, e.g. `tensor_a[0] = 100`
+    /// Tensor assignment rvalue = scalar, e.g. `tensor_a[0] = 100`
     /// Implicit casting is performed to the underlying dtype.
     ///
-    /// Note that we don't have lvalue = rvalue_scalar, e.g. we don't support
+    /// Note that we don't have lvalue = scalar, e.g. we don't support
     /// Tensor a_slice = tensor_a[0]; a_slice = 100;
     template <typename T>
-    Tensor& operator=(const T& v) && {
-        if (shape_.size() != 0) {
-            utility::LogError(
-                    "Assignment with scalar only works for scalar Tensor of "
-                    "shape ()");
-        }
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
-            scalar_t casted_v = static_cast<scalar_t>(v);
-            MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
-                                          sizeof(scalar_t));
-        });
+    Tensor& operator=(const T v) && {
+        this->Fill(v);
         return *this;
     }
 
@@ -220,112 +212,42 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    /// Create a 0-D tensor (scalar) with given value.
-    /// For example,
-    /// core::Tensor::Init<float>(1);
+    /// Create a 0-D tensor (scalar) with given value,
+    /// e.g., core::Tensor::Init<float>(0);
     template <typename T>
     static Tensor Init(const T val, const Device& device = Device("CPU:0")) {
         Dtype type = Dtype::FromType<T>();
         std::vector<T> ele_list{val};
         SizeVector shape;
         return Tensor(ele_list, shape, type, device);
-    };
+    }
 
-    /// Create a 1-D tensor with initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({1,2,3});
+    /// Create a 1-D tensor with initializer list,
+    /// e.g., core::Tensor::Init<float>({0, 1, 2});
     template <typename T>
-    static Tensor Init(const std::initializer_list<T> in_list,
+    static Tensor Init(const std::initializer_list<T>& in_list,
                        const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
+        return InitWithInitializerList<T, 1>(in_list, device);
+    }
 
-        SizeVector shape{static_cast<int64_t>(in_list.size())};
-        return Tensor(ele_list, shape, type, device);
-    };
-
-    /// Create a 2-D tensor with nested initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
+    /// Create a 2-D tensor with nested initializer list,
+    /// e.g., core::Tensor::Init<float>({{0, 1, 2}, {3, 4, 5}});
     template <typename T>
     static Tensor Init(
-            const std::initializer_list<std::initializer_list<T>> in_list,
+            const std::initializer_list<std::initializer_list<T>>& in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        int64_t dim1_size = -1;
-        for (const auto& ele0 : in_list) {
-            if (dim1_size == -1) {
-                dim1_size = static_cast<int64_t>(ele0.size());
-            } else {
-                if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    utility::LogError(
-                            "Cannot create Tensor with ragged nested sequences "
-                            "(nested lists with unequal sizes or shapes).");
-                }
-            }
-            ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
-        }
+        return InitWithInitializerList<T, 2>(in_list, device);
+    }
 
-        SizeVector shape{dim0_size, dim1_size};
-        return Tensor(ele_list, shape, type, device);
-    };
-
-    /// Create a 3-D tensor with nested initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
+    /// Create a 3-D tensor with nested initializer list,
+    /// e.g., core::Tensor::Init<float>({{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}});
     template <typename T>
     static Tensor Init(
             const std::initializer_list<
-                    std::initializer_list<std::initializer_list<T>>> in_list,
+                    std::initializer_list<std::initializer_list<T>>>& in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        int64_t dim1_size = -1;
-        int64_t dim2_size = -1;
-
-        for (const auto& ele1 : in_list) {
-            if (dim1_size == -1) {
-                dim1_size = static_cast<int64_t>(ele1.size());
-            } else {
-                if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    utility::LogError(
-                            "Cannot create Tensor with ragged nested sequences "
-                            "(nested lists with unequal sizes or shapes).");
-                }
-            }
-
-            for (const auto& ele0 : ele1) {
-                if (dim2_size == -1) {
-                    dim2_size = static_cast<int64_t>(ele0.size());
-                } else {
-                    if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        utility::LogError(
-                                "Cannot create Tensor with ragged nested "
-                                "sequences (nested lists with unequal sizes or "
-                                "shapes).");
-                    }
-                }
-
-                ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
-            }
-        }
-
-        // Handles 0-sized input lists.
-        SizeVector shape;
-        if (dim1_size == -1) {
-            shape = {dim0_size};
-        } else if (dim2_size == -1) {
-            shape = {dim0_size, dim1_size};
-        } else {
-            shape = {dim0_size, dim1_size, dim2_size};
-        }
-
-        return Tensor(ele_list, shape, type, device);
-    };
+        return InitWithInitializerList<T, 3>(in_list, device);
+    }
 
     /// Create a identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
@@ -339,6 +261,9 @@ public:
                          Scalar step = 1,
                          Dtype dtype = Dtype::Int64,
                          const Device& device = core::Device("CPU:0"));
+
+    /// Reverse a Tensor's elements by viewing the tensor as a 1D array.
+    Tensor Reverse() const;
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -558,7 +483,7 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 3x3 Matrix.
+    /// \brief Compute the determinant of a 2D square tensor.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
@@ -757,6 +682,31 @@ public:
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+
+    /// Element-wise check for NaN values in a tensor, returning a new
+    /// Boolean tensor. Non-floating point tensors return all False values.
+    Tensor IsNan() const;
+
+    /// Element-wise check for Infinity values in a tensor, returning a new
+    /// Boolean tensor. Non-floating point tensors return all False values.
+    Tensor IsInf() const;
+
+    /// Element-wise check for finite values (not Inf or NaN) in a tensor,
+    /// returning a new Boolean tensor. Non-floating point tensors return all
+    /// True values.
+    Tensor IsFinite() const;
+
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val], returning a new tensor.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
+    Tensor Clip(double min_val, double max_val) const;
+
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val]. In-place version.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
+    Tensor Clip_(double min_val, double max_val);
 
     /// Element-wise floor value of a tensor, returning a new tensor.
     Tensor Floor() const;
@@ -1046,7 +996,7 @@ public:
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
         return shape_util::DefaultStrides(shape_) == strides_;
-    };
+    }
 
     /// Returns a contiguous Tensor containing the same data in the same device.
     /// If self tensor is already contiguous, the same underlying memory will be
@@ -1057,13 +1007,71 @@ public:
     /// result.
     Tensor Matmul(const Tensor& rhs) const;
 
-    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// Solves the linear system AX = B with LU decomposition and returns X.
     /// A must be a square matrix.
     Tensor Solve(const Tensor& rhs) const;
 
     /// Solves the linear system AX = B with QR decomposition and returns X.
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple (P, L, U).
+    ///
+    /// \param permute_l [optional input] If true: returns L as P * L.
+    /// \return Tuple (P, L, U).
+    std::tuple<Tensor, Tensor, Tensor> LU(const bool permute_l = false) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple `output` tensor of shape
+    /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of input
+    /// tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
+    ///
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
+    /// tensor. It contains the pivot indices, indicating row i of the matrix
+    /// was interchanged with row ipiv(i)); and output it has L as
+    /// lower triangular values and U as upper triangle values including the
+    /// main diagonal (diagonal elements of L to be taken as unity).
+    std::tuple<Tensor, Tensor> LUIpiv() const;
+
+    /// \brief Returns the upper triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] for a {m,n} shaped tensor.
+    ///
+    /// \param diagonal value of [col - row], above which the elements are to be
+    /// taken for upper triangular matrix.
+    Tensor Triu(const int diagonal = 0) const;
+
+    /// \brief Returns the lower triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] where {m, n} is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], below which the elements are to be
+    /// taken for lower triangular matrix.
+    Tensor Tril(const int diagonal = 0) const;
+
+    /// \brief Returns the tuple of upper and lower triangular matrix
+    /// of the 2D tensor, above and below the given diagonal index.
+    /// The diagonal elements of lower triangular matrix are taken to be unity.
+    /// [The value of diagonal = col - row, therefore 0 is the main diagonal
+    /// (row = col), and it shifts towards right for positive values
+    /// (for diagonal = 1, col - row = 1), and towards left for negative values.
+    /// The value of the diagonal parameter must be between [-m, n] where {m, n}
+    /// is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], above and below which the elements
+    /// are to be taken for upper (diag. included) and lower triangular matrix.
+    std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
@@ -1091,6 +1099,23 @@ public:
 
     inline int64_t GetStride(int64_t dim) const {
         return strides_[shape_util::WrapDim(dim, NumDims())];
+    }
+
+    template <typename T>
+    inline T* GetDataPtr() {
+        return const_cast<T*>(const_cast<const Tensor*>(this)->GetDataPtr<T>());
+    }
+
+    template <typename T>
+    inline const T* GetDataPtr() const {
+        if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
+            utility::LogError(
+                    "Requested values have type {} but Tensor has type {}. "
+                    "Please use non templated GetDataPtr() with manual "
+                    "casting.",
+                    Dtype::FromType<T>().ToString(), dtype_.ToString());
+        }
+        return static_cast<T*>(data_ptr_);
     }
 
     inline void* GetDataPtr() { return data_ptr_; }
@@ -1150,6 +1175,18 @@ public:
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
+
+private:
+    /// Create a n-D tensor with initializer list.
+    template <typename T, size_t D>
+    static Tensor InitWithInitializerList(
+            const tensor_init::NestedInitializerList<T, D>& nested_list,
+            const Device& device = Device("CPU:0")) {
+        SizeVector shape = tensor_init::InferShape(nested_list);
+        std::vector<T> values =
+                tensor_init::ToFlatVector<T, D>(shape, nested_list);
+        return Tensor(values, shape, Dtype::FromType<T>(), device);
+    }
 
 protected:
     /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension

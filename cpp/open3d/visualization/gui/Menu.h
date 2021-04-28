@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,7 @@
 
 #pragma once
 
-#include <memory>
-
-#include "open3d/visualization/gui/Events.h"
-
-#define GUI_USE_NATIVE_MENUS 1
+#include "open3d/visualization/gui/MenuBase.h"
 
 namespace open3d {
 namespace visualization {
@@ -44,51 +40,51 @@ struct Theme;
 /// because on macOS the menubar is global over all application windows, so any
 /// callback would need to go find the data object corresponding to the active
 /// window.
-class Menu {
+class Menu : public MenuBase {
     friend class Application;
 
 public:
-    using ItemId = int;
-    static constexpr ItemId NO_ITEM = -1;
-
     Menu();
     virtual ~Menu();
 
     void AddItem(const char* name,
                  ItemId item_id = NO_ITEM,
-                 KeyName key = KEY_NONE);
-    void AddMenu(const char* name, std::shared_ptr<Menu> submenu);
-    void AddSeparator();
+                 KeyName key = KEY_NONE) override;
+    void AddMenu(const char* name, std::shared_ptr<MenuBase> submenu) override;
+    void AddSeparator() override;
 
     void InsertItem(int index,
                     const char* name,
                     ItemId item_id = NO_ITEM,
-                    KeyName key = KEY_NONE);
-    void InsertMenu(int index, const char* name, std::shared_ptr<Menu> submenu);
-    void InsertSeparator(int index);
+                    KeyName key = KEY_NONE) override;
+    void InsertMenu(int index,
+                    const char* name,
+                    std::shared_ptr<MenuBase> submenu) override;
+    void InsertSeparator(int index) override;
 
-    int GetNumberOfItems() const;
+    int GetNumberOfItems() const override;
 
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.
-    bool IsEnabled(ItemId item_id) const;
+    bool IsEnabled(ItemId item_id) const override;
     /// Searches the menu hierarchy down from this menu to find the item
     /// and set it enabled according to \p enabled.
-    void SetEnabled(ItemId item_id, bool enabled);
+    void SetEnabled(ItemId item_id, bool enabled) override;
 
-    bool IsChecked(ItemId item_id) const;
-    void SetChecked(ItemId item_id, bool checked);
+    bool IsChecked(ItemId item_id) const override;
+    void SetChecked(ItemId item_id, bool checked) override;
 
-    int CalcHeight(const Theme& theme) const;
+    int CalcHeight(const Theme& theme) const override;
 
     /// Returns true if submenu visibility changed on last call to DrawMenuBar
-    bool CheckVisibilityChange() const;
+    bool CheckVisibilityChange() const override;
 
-    ItemId DrawMenuBar(const DrawContext& context, bool is_enabled);
-    ItemId Draw(const DrawContext& context, const char* name, bool is_enabled);
+    ItemId DrawMenuBar(const DrawContext& context, bool is_enabled) override;
+    ItemId Draw(const DrawContext& context,
+                const char* name,
+                bool is_enabled) override;
 
-protected:
-    void* GetNativePointer();  // nullptr if not using native menus
+    void* GetNativePointer() override;  // nullptr if not using native menus
 
 private:
     struct Impl;

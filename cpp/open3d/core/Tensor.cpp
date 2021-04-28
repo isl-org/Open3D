@@ -39,15 +39,86 @@
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
+#include "open3d/core/linalg/Tri.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
+
+static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
+    if (dtype == Dtype::Float32) return DLDataTypeCode::kDLFloat;
+    if (dtype == Dtype::Float64) return DLDataTypeCode::kDLFloat;
+    if (dtype == Dtype::Int8) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int16) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int32) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int64) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::UInt8) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt16) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt32) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt64) return DLDataTypeCode::kDLUInt;
+    utility::LogError("Unsupported data type");
+    return DLDataTypeCode();
+}
+
+static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
+    if (dltype.lanes != 1) {
+        utility::LogError("Only supports lanes == 1, but lanes == {}",
+                          dltype.lanes);
+    }
+    switch (dltype.code) {
+        case DLDataTypeCode::kDLUInt:
+            switch (dltype.bits) {
+                case 8:
+                    return Dtype::UInt8;
+                case 16:
+                    return Dtype::UInt16;
+                case 32:
+                    return Dtype::UInt32;
+                case 64:
+                    return Dtype::UInt64;
+                default:
+                    utility::LogError("Unsupported kDLUInt bits {}",
+                                      dltype.bits);
+            }
+            break;
+        case DLDataTypeCode::kDLInt:
+            switch (dltype.bits) {
+                case 8:
+                    return Dtype::Int8;
+                case 16:
+                    return Dtype::Int16;
+                case 32:
+                    return Dtype::Int32;
+                case 64:
+                    return Dtype::Int64;
+                default:
+                    utility::LogError("Unsupported kDLInt bits {}",
+                                      dltype.bits);
+            }
+            break;
+        case DLDataTypeCode::kDLFloat:
+            switch (dltype.bits) {
+                case 32:
+                    return Dtype::Float32;
+                case 64:
+                    return Dtype::Float64;
+                default:
+                    utility::LogError("Unsupported kDLFloat bits {}",
+                                      dltype.bits);
+            }
+            break;
+        default:
+            utility::LogError("Unsupported dtype code {}", dltype.code);
+    }
+    return Dtype::Undefined;
+}
 
 /// Open3D DLPack Tensor manager.
 class Open3DDLManagedTensor {
@@ -79,22 +150,7 @@ private:
         DLDataType dl_data_type;
         Dtype dtype = o3d_tensor_.GetDtype();
 
-        if (dtype == Dtype::Float32) {
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-        } else if (dtype == Dtype::Float64) {
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-        } else if (dtype == Dtype::Int32) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::Int64) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::UInt8) {
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-        } else if (dtype == Dtype::UInt16) {
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-        } else {
-            utility::LogError("Unsupported data type");
-        }
-
+        dl_data_type.code = DtypeToDLDataTypeCode(dtype);
         dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
@@ -238,6 +294,14 @@ Tensor Tensor::Arange(Scalar start,
     });
 
     return kernel::Arange(t_start, t_stop, t_step);
+}
+
+Tensor Tensor::Reverse() const {
+    // TODO: Unoptimized with ai. Can be improved when negative step in Slice is
+    // implemented.
+    int64_t n = NumElements();
+    Tensor reverse_idx = Tensor::Arange(n - 1, -1, -1);
+    return View({n}).IndexGet({reverse_idx}).View(GetShape());
 }
 
 Tensor Tensor::GetItem(const TensorKey& tk) const {
@@ -718,16 +782,7 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det() const {
-    // TODO: Create a proper op for Determinant.
-    this->AssertShape({3, 3});
-    this->AssertDtype(core::Dtype::Float32);
-    core::Tensor D_ = this->Clone();
-    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]) -
-               D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]) +
-               D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
-    return static_cast<double>(D_[0][0].Item<float>());
-}
+double Tensor::Det() const { return core::Det(*this); }
 
 Tensor Tensor::Add(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
@@ -900,6 +955,47 @@ Tensor Tensor::Abs() const {
 
 Tensor Tensor::Abs_() {
     kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Abs);
+    return *this;
+}
+
+Tensor Tensor::IsNan() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::IsInf() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::IsFinite() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
+        return dst_tensor;
+    } else {
+        return Tensor::Ones(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::Clip(double min_val, double max_val) const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    utility::LogError("Not Implemented!");
+    return dst_tensor;
+}
+
+Tensor Tensor::Clip_(double min_val, double max_val) {
+    utility::LogError("Not Implemented!");
     return *this;
 }
 
@@ -1112,55 +1208,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                               src->dl_tensor.ctx.device_type);
     }
 
-    Dtype dtype;
-    if (src->dl_tensor.dtype.lanes != 1) {
-        utility::LogError("Only supports lanes == 1, but lanes == {}",
-                          src->dl_tensor.dtype.lanes);
-    }
-    switch (src->dl_tensor.dtype.code) {
-        case DLDataTypeCode::kDLUInt:
-            switch (src->dl_tensor.dtype.bits) {
-                case 8:
-                    dtype = Dtype::UInt8;
-                    break;
-                case 16:
-                    dtype = Dtype::UInt16;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLUInt bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        case DLDataTypeCode::kDLInt:
-            switch (src->dl_tensor.dtype.bits) {
-                case 32:
-                    dtype = Dtype::Int32;
-                    break;
-                case 64:
-                    dtype = Dtype::Int64;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLInt bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        case DLDataTypeCode::kDLFloat:
-            switch (src->dl_tensor.dtype.bits) {
-                case 32:
-                    dtype = Dtype::Float32;
-                    break;
-                case 64:
-                    dtype = Dtype::Float64;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLFloat bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        default:
-            utility::LogError("Unsupported dtype code {}",
-                              src->dl_tensor.dtype.code);
-    }
+    Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);
 
     // Open3D Blob's expects an std::function<void(void*)> deleter.
     auto deleter = [src](void* dummy) -> void {
@@ -1290,13 +1338,43 @@ Tensor Tensor::Solve(const Tensor& rhs) const {
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
-};
+}
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
-};
+}
+
+std::tuple<Tensor, Tensor, Tensor> Tensor::LU(const bool permute_l) const {
+    core::Tensor permutation, lower, upper;
+    core::LU(*this, permutation, lower, upper, permute_l);
+    return std::make_tuple(permutation, lower, upper);
+}
+
+std::tuple<Tensor, Tensor> Tensor::LUIpiv() const {
+    core::Tensor ipiv, output;
+    core::LUIpiv(*this, ipiv, output);
+    return std::make_tuple(ipiv, output);
+}
+
+Tensor Tensor::Triu(const int diagonal) const {
+    Tensor output;
+    core::Triu(*this, output, diagonal);
+    return output;
+}
+
+Tensor Tensor::Tril(const int diagonal) const {
+    Tensor output;
+    core::Tril(*this, output, diagonal);
+    return output;
+}
+
+std::tuple<Tensor, Tensor> Tensor::Triul(const int diagonal) const {
+    Tensor upper, lower;
+    core::Triul(*this, upper, lower, diagonal);
+    return std::make_tuple(upper, lower);
+}
 
 Tensor Tensor::Inverse() const {
     Tensor output;

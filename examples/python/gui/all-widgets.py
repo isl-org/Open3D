@@ -112,8 +112,17 @@ class ExampleWindow:
         combo.set_on_selection_changed(self._on_combo)
         collapse.add_child(combo)
 
+        # This is a toggle switch, which is similar to a checkbox. To my way of
+        # thinking the difference is subtle: a checkbox toggles properties
+        # (for example, purely visual changes like enabling lighting) while a
+        # toggle switch is better for changing the behavior of the app (for
+        # example, turning on processing from the camera).
+        switch = gui.ToggleSwitch("Continuously update from camera")
+        switch.set_on_clicked(self._on_switch)
+        collapse.add_child(switch)
+
         # Add a simple image
-        logo = gui.ImageLabel(basedir + "/icon-32.png")
+        logo = gui.ImageWidget(basedir + "/icon-32.png")
         collapse.add_child(logo)
 
         # Add a list of items
@@ -260,6 +269,12 @@ class ExampleWindow:
             text = "Good choice"
 
         self.show_message_dialog("There might be a problem...", text)
+
+    def _on_switch(self, is_on):
+        if is_on:
+            print("Camera would now be running")
+        else:
+            print("Camera would now be off")
 
     # This function is essentially the same as window.show_message_box(),
     # so for something this simple just use that, but it illustrates making a

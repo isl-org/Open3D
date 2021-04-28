@@ -41,7 +41,8 @@ TSDFVoxelGrid::TSDFVoxelGrid(
         float sdf_trunc,
         int64_t block_resolution,
         int64_t block_count,
-        const core::Device &device)
+        const core::Device &device,
+        const core::HashmapBackend &backend)
     : voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
@@ -104,7 +105,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
             core::SizeVector{3},
             core::SizeVector{block_resolution_, block_resolution_,
                              block_resolution_, total_bytes},
-            device);
+            device, backend);
 }
 
 void TSDFVoxelGrid::Integrate(const Image &depth,
@@ -187,7 +188,34 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             sdf_trunc_, depth_scale, depth_max);
 }
 
-PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
+std::tuple<core::Tensor, core::Tensor, core::Tensor> TSDFVoxelGrid::RayCast(
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        int width,
+        int height,
+        int max_steps,
+        float depth_min,
+        float depth_max,
+        float weight_threshold) {
+    // Extrinsic: world to camera -> pose: camera to world
+    core::Tensor pose = extrinsics.Inverse();
+
+    core::Tensor vertex_map = core::Tensor::Zeros(
+            {height, width, 3}, core::Dtype::Float32, device_);
+    core::Tensor color_map = core::Tensor::Zeros({height, width, 3},
+                                                 core::Dtype::Float32, device_);
+    core::Tensor normal_map = core::Tensor::Zeros(
+            {height, width, 3}, core::Dtype::Float32, device_);
+    core::Tensor block_values = block_hashmap_->GetValueTensor();
+    auto device_hashmap = block_hashmap_->GetDeviceHashmap();
+    kernel::tsdf::RayCast(device_hashmap, block_values, vertex_map, color_map,
+                          normal_map, intrinsics, pose, block_resolution_,
+                          voxel_size_, sdf_trunc_, max_steps, depth_min,
+                          depth_max, weight_threshold);
+    return std::make_tuple(vertex_map, color_map, normal_map);
+}
+
+PointCloud TSDFVoxelGrid::ExtractSurfacePoints(float weight_threshold) {
     // Extract active voxel blocks from the hashmap.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
@@ -201,7 +229,8 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
             active_addrs.To(core::Dtype::Int64),
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
-            points, normals, colors, block_resolution_, voxel_size_);
+            points, normals, colors, block_resolution_, voxel_size_,
+            weight_threshold);
     auto pcd = PointCloud(points);
     pcd.SetPointNormals(normals);
     if (colors.NumElements() != 0) {
@@ -211,7 +240,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
     return pcd;
 }
 
-TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
+TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh(float weight_threshold) {
     // Query active blocks and their nearest neighbors to handle boundary cases.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
@@ -235,7 +264,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
             vertices, triangles, vertex_normals, vertex_colors,
-            block_resolution_, voxel_size_);
+            block_resolution_, voxel_size_, weight_threshold);
 
     TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexNormals(vertex_normals);

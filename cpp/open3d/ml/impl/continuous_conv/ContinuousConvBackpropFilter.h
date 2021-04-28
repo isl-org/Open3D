@@ -55,7 +55,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                             const TReal* inp_positions,
                             const TFeat* inp_features,
                             const TFeat* inp_importance,
-                            size_t num_indices,
+                            size_t neighbors_index_size,
                             const TIndex* neighbors_index,
                             const TFeat* neighbors_importance,
                             const int64_t* neighbors_row_splits,
@@ -63,7 +63,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                             const TReal* offsets,
                             const TFeat* out_features_gradient,
                             bool normalize) {
-    const bool NEIGHBOR_IMPORTANCE = neighbors_importance;
+    const bool NEIGHBORS_IMPORTANCE = neighbors_importance;
     const int VECSIZE = 32;
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;
@@ -150,9 +150,9 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                                out_positions[out_idx * 3 + 2];
 
                         const TFeat n_importance =
-                                (NEIGHBOR_IMPORTANCE ? neighbors_importance[n]
-                                                     : TFeat(1));
-                        normalizer += TOut(n_importance);
+                                (NEIGHBORS_IMPORTANCE ? neighbors_importance[n]
+                                                      : TFeat(1));
+                        normalizer += n_importance;
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
@@ -161,9 +161,9 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                         TFeat importance = TFeat(1);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
-                        if (NEIGHBOR_IMPORTANCE) importance *= n_importance;
+                        if (NEIGHBORS_IMPORTANCE) importance *= n_importance;
 
-                        if (POINT_IMPORTANCE || NEIGHBOR_IMPORTANCE) {
+                        if (POINT_IMPORTANCE || NEIGHBORS_IMPORTANCE) {
                             for (int ic = 0; ic < in_channels; ++ic)
                                 infeat(i, ic) *= importance;
                         }
@@ -237,23 +237,8 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
 /// \tparam TReal    Type for point positions and extents
 /// \tparam TIndex   Type for neighbor indexing
 ///
-/// \param temp    Pointer to temporary memory. If nullptr then the required
-///        size of temporary memory will be written to \p temp_size and no
-///        work is done. This function can make use of more memory and
-///        returns the maximum size that can be used in max_temp_size.
-///
-/// \param temp_size    The size of the temporary memory in bytes. This is
-///        used as an output if temp is nullptr and returns the minimum temp
-///        size required.
-///
-/// \param max_temp_size    This is used as an output if temp is nullptr and
-///        returns the maximum temp size that can be used.
-///
-/// \param texture_alignment    The texture alignment in bytes. This is used
-///        for allocating segments within the temporary memory.
-///
-/// \param filter_backrop    Output array for the computed filter gradient
-///        with shape [depth,height,witdth, inp channels, out channels]
+/// \param filter_backprop    Output array for the computed filter gradient
+///        with shape [depth,height,width, inp channels, out channels]
 ///
 /// \param filter_dims    The sizes of the filter dimensions. The size of
 ///        filter_dims must be 5. The order is
@@ -326,7 +311,7 @@ void CConvBackpropFilterCPU(TOut* filter_backprop,
                             const TReal* inp_positions,
                             const TFeat* inp_features,
                             const TFeat* inp_importance,
-                            size_t num_indices,
+                            size_t neighbors_index_size,
                             const TIndex* neighbors_index,
                             const TFeat* neighbors_importance,
                             const int64_t* neighbors_row_splits,
@@ -341,10 +326,10 @@ void CConvBackpropFilterCPU(TOut* filter_backprop,
                             bool normalize) {
     bool has_importance = inp_importance;
 
-#define FN_PARAMETERS                                                    \
-    filter_backprop, filter_dims, num_out, out_positions, num_inp,       \
-            inp_positions, inp_features, inp_importance, num_indices,    \
-            neighbors_index, neighbors_importance, neighbors_row_splits, \
+#define FN_PARAMETERS                                                          \
+    filter_backprop, filter_dims, num_out, out_positions, num_inp,             \
+            inp_positions, inp_features, inp_importance, neighbors_index_size, \
+            neighbors_index, neighbors_importance, neighbors_row_splits,       \
             extents, offsets, out_features_gradient, normalize
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,               \

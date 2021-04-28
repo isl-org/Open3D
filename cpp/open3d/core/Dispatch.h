@@ -29,7 +29,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/utility/Console.h"
 
-/// Call a numerical templated funciton based on Dtype. Warp the function to
+/// Call a numerical templated function based on Dtype. Warp the function to
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
 ///
 /// Before:
@@ -54,6 +54,12 @@
         } else if (DTYPE == open3d::core::Dtype::Float64) { \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Int8) {    \
+            using scalar_t = int8_t;                        \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Int16) {   \
+            using scalar_t = int16_t;                       \
+            return __VA_ARGS__();                           \
         } else if (DTYPE == open3d::core::Dtype::Int32) {   \
             using scalar_t = int32_t;                       \
             return __VA_ARGS__();                           \
@@ -65,6 +71,12 @@
             return __VA_ARGS__();                           \
         } else if (DTYPE == open3d::core::Dtype::UInt16) {  \
             using scalar_t = uint16_t;                      \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::UInt32) {  \
+            using scalar_t = uint32_t;                      \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::UInt64) {  \
+            using scalar_t = uint64_t;                      \
             return __VA_ARGS__();                           \
         } else {                                            \
             utility::LogError("Unsupported data type.");    \

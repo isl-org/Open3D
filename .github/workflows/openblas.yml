@@ -1,5 +1,5 @@
 # Minium test for Open3D with OpenBLAS/LAPACK on both x86_64 and aarch64.
-# This test is intentially kept minimal and self-contained.
+# This test is intentionally kept minimal and self-contained.
 
 name: Ubuntu OpenBLAS CI
 
@@ -15,10 +15,14 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  x86_64:
+  openblas_x86_64:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+    env:
+      BASE_IMAGE: ubuntu:20.04
+      CMAKE_VER: cmake-3.19.7-Linux-x86_64
+      CCACHE_TAR_NAME: open3d-x86_64-ci-ccache
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -29,66 +33,36 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-openblas-x86_64-ccache
-      - name: Set up Python version
-        uses: actions/setup-python@v2
-        with:
-            python-version: 3.6
-      - name: Install dependencies
-        run: |
-            sudo apt-get --yes install ccache
-            ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
-            sudo apt-get update -q -y
-            sudo apt-get install -y apt-utils build-essential git cmake
-            sudo apt-get install -y python3-dev
-            sudo apt-get install -y xorg-dev libglu1-mesa-dev ccache
-            sudo apt-get install -y libblas-dev liblapack-dev liblapacke-dev
-            python -m pip install -U pytest==6.0.1
-            python -m pip install -U scipy==1.4.1
-            python -m pip install -U wheel==0.35.1
-      - name: Build and test
-        run: |
-            PATH=/usr/lib/ccache:$PATH
-            ccache -s
-            mkdir build
-            cd build
-            cmake \
-              -DUSE_BLAS=ON \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_FILAMENT_FROM_SOURCE=ON \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE="$(which python3)" \
-              ..
-            make -j$(nproc)
-            make tests -j$(nproc)
-            make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/  --ignore ../python/test/t/io/test_realsense.py
-            ccache -s
 
-  # Build 3rd-party libraries and upload ccache to GCloud.
-  arm64-3rd-party:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
-        with:
-          submodules: true
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      - name: Docker build
+        run: |
+          docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
+                       --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
+                       --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
+                       -t open3d-openblas-ci:latest \
+                       -f .github/workflows/Dockerfile.openblas .
+
+      - name: C++ tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest build/bin/tests
+
+      - name: Python tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest \
+            pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
+
+      # https://stackoverflow.com/a/49357803/1255535
+      - name: Copy ccache out from the container
+        run: |
+          docker run -v ${GITHUB_WORKSPACE}:/opt/mount \
+            --rm --entrypoint \
+            cp open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz /opt/mount/${{ env.CCACHE_TAR_NAME }}.tar.gz
+          sudo chown $(id -u):$(id -g) ${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -98,71 +72,65 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
 
-      - name: Download cache from GCS
+      - name: Upload ccache to GCS
         run: |
-          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
-          mv ~/ccache-arm64 ~/.ccache
-          ls ~/.ccache
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
 
-      - name: Build on ARM Container
-        uses: uraimo/run-on-arch-action@v2.0.2
-        with:
-          # Ubuntu 20.04 has sufficiently new CMake
-          arch: aarch64
-          distro: ubuntu20.04
 
-          # Speeds up builds
-          githubToken: ${{ github.token }}
-
-          # https://github.com/uraimo/run-on-arch-action/issues/4
-          setup: |
-            mkdir -p ~/.ccache
-
-          # Mount cached directories in the container for faster builds
-          dockerRunArgs: |
-            --volume "${HOME}/.ccache:/root/.ccache"
-
-          # Build and run Open3D tests
-          run: |
-            source util/ci_utils.sh
-            install_arm64_dependencies
-            source ${HOME}/venv/bin/activate
-            PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
-            ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
-            ccache -s
-            mkdir build
-            cd build
-            cmake \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DBUILD_LIBREALSENSE=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE=$(which python) \
-              ..
-            make camera -j$(nproc) # open3d::camera is small and it triggers 3rd-party builds
-            ccache -s
-
-      - name: Upload cache to GCS
-        run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
-
-  arm64:
+  openblas_arm64:
     runs-on: ubuntu-20.04
-    needs: [arm64-3rd-party]
     strategy:
       fail-fast: false
+    env:
+      BASE_IMAGE: arm64v8/ubuntu:20.04
+      CMAKE_VER: cmake-3.19.7-Linux-aarch64
+      CCACHE_TAR_NAME: open3d-arm64-ci-ccache
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
+      - name: Setup Docker with QEMU
+        run: |
+          sudo apt-get --yes install qemu binfmt-support qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Docker build
+        run: |
+          docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
+                       --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
+                       --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
+                       -t open3d-openblas-ci:latest \
+                       -f .github/workflows/Dockerfile.openblas .
+
+      - name: C++ tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest build/bin/tests
+
+      - name: Python tests
+        run: |
+          docker run --rm open3d-openblas-ci:latest \
+            pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
+
+      # https://stackoverflow.com/a/49357803/1255535
+      - name: Copy ccache out from the container
+        run: |
+          docker run -v ${GITHUB_WORKSPACE}:/opt/mount \
+            --rm --entrypoint \
+            cp open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz /opt/mount/${{ env.CCACHE_TAR_NAME }}.tar.gz
+          sudo chown $(id -u):$(id -g) ${{ env.CCACHE_TAR_NAME }}.tar.gz
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -172,61 +140,6 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
 
-      - name: Download cache from GCS
+      - name: Upload ccache to GCS
         run: |
-          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
-          mv ~/ccache-arm64 ~/.ccache
-          ls ~/.ccache
-
-      - name: Build on ARM Container
-        uses: uraimo/run-on-arch-action@v2.0.2
-        with:
-          # Ubuntu 20.04 has sufficiently new CMake
-          arch: aarch64
-          distro: ubuntu20.04
-
-          # Speeds up builds
-          githubToken: ${{ github.token }}
-
-          # https://github.com/uraimo/run-on-arch-action/issues/4
-          setup: |
-            mkdir -p ~/.ccache
-
-          # Mount cached directories in the container for faster builds
-          dockerRunArgs: |
-            --volume "${HOME}/.ccache:/root/.ccache"
-
-          # Build and run Open3D tests
-          run: |
-            source util/ci_utils.sh
-            install_arm64_dependencies
-            source ${HOME}/venv/bin/activate
-            PATH=/usr/lib/ccache:$PATH
-            PATH=${HOME}/cmake-3.18-aarch64/bin:$PATH
-            ccache -M 1.5G  # See .github/workflows/readme.md for ccache strategy.
-            ccache -s
-            mkdir build
-            cd build
-            cmake \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=ON \
-              -DBUILD_LIBREALSENSE=ON \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DBUILD_TENSORFLOW_OPS=OFF \
-              -DBUILD_PYTORCH_OPS=OFF \
-              -DBUILD_UNIT_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-              -DPYTHON_EXECUTABLE=$(which python) \
-              ..
-            make -j$(nproc)
-            make tests -j$(nproc)
-            make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
-            ccache -s
-
-      - name: Upload cache to GCS
-        run: |
-          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true

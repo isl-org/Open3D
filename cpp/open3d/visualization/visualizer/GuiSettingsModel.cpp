@@ -201,6 +201,7 @@ const GuiSettingsModel::LitMaterial& GuiSettingsModel::GetDefaultLitMaterial() {
 GuiSettingsModel::GuiSettingsModel() {
     lighting_ = GetDefaultLightingProfile();
     current_materials_.lit = GetDefaultLitMaterial();
+    current_materials_.lit_name = DEFAULT_MATERIAL_NAME;
 }
 
 bool GuiSettingsModel::GetShowSkybox() const { return show_skybox_; }
@@ -212,6 +213,18 @@ void GuiSettingsModel::SetShowSkybox(bool show) {
 bool GuiSettingsModel::GetShowAxes() const { return show_axes_; }
 void GuiSettingsModel::SetShowAxes(bool show) {
     show_axes_ = show;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetShowGround() const { return show_ground_; }
+void GuiSettingsModel::SetShowGround(bool show) {
+    show_ground_ = show;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
+void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
+    sun_follows_cam_ = follow;
     NotifyChanged();
 }
 

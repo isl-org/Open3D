@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ class Image;
 namespace visualization {
 
 namespace rendering {
+class Renderer;
 class View;
 class Scene;
 }  // namespace rendering
@@ -51,6 +52,7 @@ namespace gui {
 
 struct Theme;
 class Window;
+class WindowSystem;
 
 class Application {
 public:
@@ -81,7 +83,7 @@ public:
     ///   "vi" (Vietnamese)
     ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
     ///   "zh_all" (Chinese, all characters, ~200 MB per window)
-    //  All other languages will be assumed to be Cyrillic.
+    /// All other languages will be assumed to be Cyrillic.
     void SetFontForLanguage(const char *font, const char *lang_code);
 
     /// Sets the font for the specified code points. The font can be a path to
@@ -105,8 +107,8 @@ public:
     /// using lambdas, capture by copy and make sure whatever you use will
     /// still be alive).
     void RunInThread(std::function<void()> f);
-    /// Runs \param f on the main thread at some point in the near future.
-    /// Proper context will be setup for \param window. \p f will block the
+    /// Runs \p f on the main thread at some point in the near future.
+    /// Proper context will be setup for \p window. \p f will block the
     /// UI, so it should run quickly. If you need to do something slow
     /// (e.g. load a file) consider using RunInThread() and have the function
     /// pass off UI calls to PostToMainThread().
@@ -117,7 +119,9 @@ public:
 
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
-    /// Must be called on the same thread that calls Run()
+    /// Must be called on the same thread that calls Run(). This is normally
+    /// called from Window::Close() and should not need to be called in user
+    /// code.
     void RemoveWindow(Window *window);
 
     /// Creates a message box window the next time the event loop processes.
@@ -129,6 +133,8 @@ public:
     /// window it is better to use ShowNativeAlert(). If the platform does not
     /// have an alert (like Linux), then this can be used as a last resort.
     void ShowMessageBox(const char *title, const char *message);
+
+    WindowSystem &GetWindowSystem() const;
 
     // (std::string not good in interfaces for ABI reasons)
     const char *GetResourcePath() const;
@@ -171,14 +177,32 @@ public:
     /// atexit().
     bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
 
+    /// Sets the WindowSystem to given object. Can be used to override the
+    /// default GLFWWindowSystem (e.g. HeadlessWindowSystem). Must be called
+    /// before creating any Windows.
+    void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
+
+    /// Verifies that Initialize() has been called, printing out an error and
+    /// exiting if not.
+    void VerifyIsInitialized();
+
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
     /// need to render from a GUI, use Scene::RenderToImage().
-    std::shared_ptr<geometry::Image> RenderToImage(EnvUnlocker &unlocker,
-                                                   rendering::View *view,
-                                                   rendering::Scene *scene,
-                                                   int width,
-                                                   int height);
+    std::shared_ptr<geometry::Image> RenderToImage(
+            rendering::Renderer &renderer,
+            rendering::View *view,
+            rendering::Scene *scene,
+            int width,
+            int height);
+
+    // Same as RenderToImage(), but returns the depth values in a float image.
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            rendering::Renderer &renderer,
+            rendering::View *view,
+            rendering::Scene *scene,
+            int width,
+            int height);
 
     struct UserFontInfo {
         std::string path;

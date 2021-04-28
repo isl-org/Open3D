@@ -443,14 +443,14 @@ public:
             const std::vector<size_t> &indices, bool cleanup = true) const;
 
     /// Function to crop pointcloud into output pointcloud
-    /// All points with coordinates outside the bounding box \param bbox are
+    /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
     /// \param bbox defines the input Axis Aligned Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(
             const AxisAlignedBoundingBox &bbox) const;
 
     /// Function to crop pointcloud into output pointcloud
-    /// All points with coordinates outside the bounding box \param bbox are
+    /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
     /// \param bbox defines the input Oriented Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(const OrientedBoundingBox &bbox) const;
@@ -582,30 +582,42 @@ public:
                                 int n_threads = -1);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
-    /// the mesh centroid will be at (0,0,0) and \param radius defines the
+    /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
-    static std::shared_ptr<TriangleMesh> CreateTetrahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateTetrahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
-    /// the mesh centroid will be at (0,0,0) and \param radius defines the
+    /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
-    static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateOctahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create an icosahedron mesh
     /// (trianglemeshfactory.cpp). The mesh centroid will be at (0,0,0) and
     /// \param radius defines the distance from the center to the mesh vertices.
-    static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateIcosahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length.
     /// \param height is y-directional length.
     /// \param depth is z-directional length.
-    static std::shared_ptr<TriangleMesh> CreateBox(double width = 1.0,
-                                                   double height = 1.0,
-                                                   double depth = 1.0);
+    /// \param create_uv_map add default UV map to the shape.
+    /// \param map_texture_to_each_face if true, maps the entire texture image
+    /// to each face. If false, sets the default uv map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            bool create_uv_map = false,
+            bool map_texture_to_each_face = false);
 
     /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
     /// The sphere with radius will be centered at (0, 0, 0).
@@ -616,8 +628,11 @@ public:
     /// latitude lines including the north and south pole). The latitudes will
     /// be split into `2 * resolution segments (i.e. there are 2 * resolution
     /// longitude lines.)
-    static std::shared_ptr<TriangleMesh> CreateSphere(double radius = 1.0,
-                                                      int resolution = 20);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateSphere(
+            double radius = 1.0,
+            int resolution = 20,
+            bool create_uv_map = false);
 
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
@@ -629,10 +644,13 @@ public:
     /// \param resolution defines that the circle will be split into resolution
     /// segments \param split defines that the height will be split into split
     /// segments.
-    static std::shared_ptr<TriangleMesh> CreateCylinder(double radius = 1.0,
-                                                        double height = 2.0,
-                                                        int resolution = 20,
-                                                        int split = 4);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateCylinder(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 4,
+            bool create_uv_map = false);
 
     /// Factory function to create a cone mesh (TriangleMeshFactory.cpp)
     /// The axis of the cone will be from (0, 0, 0) to (0, 0, height).
@@ -643,10 +661,12 @@ public:
     /// \param resolution defines that the circle will be split into resolution
     /// segments \param split defines that the height will be split into split
     /// segments.
+    /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateCone(double radius = 1.0,
                                                     double height = 2.0,
                                                     int resolution = 20,
-                                                    int split = 1);
+                                                    int split = 1,
+                                                    bool create_uv_map = false);
 
     /// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
     /// The torus will be centered at (0, 0, 0) and a radius of
@@ -695,7 +715,7 @@ public:
 
     /// Factory function to create a coordinate frame mesh
     /// (TriangleMeshFactory.cpp).
-    /// arrows respectively. \param size is the length of the axes.
+    /// arrows respectively. \p size is the length of the axes.
     /// \param size defines the size of the coordinate frame.
     /// \param origin defines the origin of the coordinate frame.
     static std::shared_ptr<TriangleMesh> CreateCoordinateFrame(
@@ -704,8 +724,9 @@ public:
 
     /// Factory function to create a Moebius strip.
     /// \param length_split defines the number of segments along the Moebius
-    /// strip. \param width_split defines the number of segments along the width
-    /// of the Moebius strip. \param twists defines the number of twists of the
+    /// strip.
+    /// \param width_split defines the number of segments along the width
+    /// of the Moebius strip.\param twists defines the number of twists of the
     /// strip.
     /// \param radius defines the radius of the Moebius strip.
     /// \param flatness controls the height of the strip.

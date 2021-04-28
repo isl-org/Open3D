@@ -31,6 +31,8 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/Scene.h"
 
 namespace open3d {
 
@@ -59,11 +61,17 @@ public:
 
     View* GetView() const;
     ViewHandle GetViewId() const { return view_; }
+    void SetViewport(std::int32_t x,
+                     std::int32_t y,
+                     std::uint32_t width,
+                     std::uint32_t height);
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
+    const Eigen::Vector4f GetBackgroundColor() const;
+    void ShowGroundPlane(bool enable, Scene::GroundPlane plane);
 
     enum class LightingProfile {
         HARD_SHADOWS,
@@ -140,8 +148,11 @@ private:
 private:
     Renderer& renderer_;
     SceneHandle scene_;
+    SceneHandle window_scene_;
     ViewHandle view_;
+    ViewHandle window_view_;
 
+    Eigen::Vector4f background_color;
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
     bool axis_dirty_ = true;

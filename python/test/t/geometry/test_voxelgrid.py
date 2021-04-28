@@ -103,6 +103,17 @@ def test_integration(device):
         extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
                                     o3d.core.Dtype.Float32, device)
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
+        if i == len(camera_poses) - 1:
+            vertexmap, _, _ = volume.raycast(intrinsic, extrinsic,
+                                             depth.columns, depth.rows, 50, 0.1,
+                                             3.0, min(i * 1.0, 3.0))
+            vertexmap_gt = np.load(
+                test_data_path +
+                "open3d_downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
+            discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
+                                 1e-5).sum()
+            # Be tolerant to numerical differences
+            assert discrepancy_count / vertexmap_gt.size < 1e-3
 
     pcd = volume.extract_surface_points().to_legacy_pointcloud()
     pcd_gt = o3d.io.read_point_cloud(test_data_path +

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 
 #include "open3d/visualization/gui/Window.h"
 
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
 
@@ -45,12 +44,11 @@
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Menu.h"
-#include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Widget.h"
-#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/gui/WindowSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
 // ----------------------------------------------------------------------------
@@ -65,72 +63,11 @@ static constexpr int CENTERED_Y = -10000;
 static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
 
-static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
-static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
-
 // Assumes the correct ImGuiContext is current
 void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
     style.FrameRounding *= new_scaling;
-}
-
-float GetScalingGLFW(GLFWwindow* w) {
-// Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
-#if (GLFW_VERSION_MAJOR > 3 || \
-     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
-    float xscale, yscale;
-    glfwGetWindowContentScale(w, &xscale, &yscale);
-    return std::min(xscale, yscale);
-#else
-    return 1.0f;
-#endif  // GLFW version >= 3.3
-}
-
-int MouseButtonFromGLFW(int button) {
-    switch (button) {
-        case GLFW_MOUSE_BUTTON_LEFT:
-            return int(MouseButton::LEFT);
-        case GLFW_MOUSE_BUTTON_RIGHT:
-            return int(MouseButton::RIGHT);
-        case GLFW_MOUSE_BUTTON_MIDDLE:
-            return int(MouseButton::MIDDLE);
-        case GLFW_MOUSE_BUTTON_4:
-            return int(MouseButton::BUTTON4);
-        case GLFW_MOUSE_BUTTON_5:
-            return int(MouseButton::BUTTON5);
-        default:
-            return int(MouseButton::NONE);
-    }
-}
-
-int KeymodsFromGLFW(int glfw_mods) {
-    int keymods = 0;
-    if (glfw_mods & GLFW_MOD_SHIFT) {
-        keymods |= int(KeyModifier::SHIFT);
-    }
-    if (glfw_mods & GLFW_MOD_CONTROL) {
-#if __APPLE__
-        keymods |= int(KeyModifier::ALT);
-#else
-        keymods |= int(KeyModifier::CTRL);
-#endif  // __APPLE__
-    }
-    if (glfw_mods & GLFW_MOD_ALT) {
-#if __APPLE__
-        keymods |= int(KeyModifier::META);
-#else
-        keymods |= int(KeyModifier::ALT);
-#endif  // __APPLE__
-    }
-    if (glfw_mods & GLFW_MOD_SUPER) {
-#if __APPLE__
-        keymods |= int(KeyModifier::CTRL);
-#else
-        keymods |= int(KeyModifier::META);
-#endif  // __APPLE__
-    }
-    return keymods;
 }
 
 void ChangeAllRenderQuality(
@@ -148,30 +85,165 @@ void ChangeAllRenderQuality(
     }
 }
 
+struct ImguiWindowContext : public FontContext {
+    const Theme* theme = nullptr;
+    std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
+    ImGuiContext* context = nullptr;
+    std::map<FontStyle, ImFont*> fonts;  // references, not owned by us
+    float scaling = 1.0;
+
+    void* GetFont(FontStyle style) { return this->fonts[style]; }
+
+    void CreateFonts() {
+        // ImGUI puts all fonts into one big texture atlas. However, there are
+        // separate ImFont* pointers for each conceptual font. This means that
+        // while we can have many fonts, all the fonts that we are ever going
+        // to use must be loaded up front, which makes a large font selection
+        // inconsistent with small memory footprint. Also, we might bump into
+        // OpenGL texture size limitations.
+
+        this->fonts[FontStyle::NORMAL] =
+                AddFont(FontStyle::NORMAL, this->theme->font_path);
+        this->fonts[FontStyle::BOLD] =
+                AddFont(FontStyle::BOLD, this->theme->font_bold_path);
+        this->fonts[FontStyle::ITALIC] =
+                AddFont(FontStyle::ITALIC, this->theme->font_italic_path);
+        this->fonts[FontStyle::BOLD_ITALIC] = AddFont(
+                FontStyle::BOLD_ITALIC, this->theme->font_bold_italic_path);
+
+        ImGuiIO& io = ImGui::GetIO();
+        unsigned char* pixels;
+        int textureW, textureH, bytesPerPx;
+        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
+                                     &bytesPerPx);
+        // Some fonts seem to result in 0x0 textures (maybe if the font does
+        // not contain any of the code points?), which cause Filament to
+        // panic. Handle this gracefully.
+        if (textureW == 0 || textureH == 0) {
+            utility::LogWarning(
+                    "Got zero-byte font texture; ignoring custom fonts");
+            io.Fonts->Clear();
+            this->fonts[FontStyle::NORMAL] =
+                    io.Fonts->AddFontFromFileTTF(this->theme->font_path.c_str(),
+                                                 float(this->theme->font_size));
+            this->fonts[FontStyle::BOLD] = this->fonts[FontStyle::NORMAL];
+            this->fonts[FontStyle::ITALIC] = this->fonts[FontStyle::NORMAL];
+            this->fonts[FontStyle::BOLD_ITALIC] =
+                    this->fonts[FontStyle::NORMAL];
+            io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
+                                         &bytesPerPx);
+        }
+        this->imgui_bridge->CreateAtlasTextureAlpha8(pixels, textureW, textureH,
+                                                     bytesPerPx);
+        ImGui::SetCurrentFont(this->fonts[FontStyle::NORMAL]);
+    }
+
+    ImFont* AddFont(FontStyle style, const std::string& font_path) {
+        ImFont* imfont = nullptr;
+        bool can_add_cjk = (style == FontStyle::NORMAL);
+
+        // If the given font path is invalid, ImGui will silently fall back to
+        // proggy, which is a tiny "pixel art" texture that is compiled into the
+        // library.
+        if (!font_path.empty()) {
+            ImGuiIO& io = ImGui::GetIO();
+            int en_fonts = 0;
+            for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
+                if (custom.lang == "en") {
+                    auto custom_path = FindFontPath(custom.path, style);
+                    if (custom_path == "") {
+                        // This should not fail, since we would have complained
+                        // about it in Application::SetFont...().
+                        custom_path =
+                                FindFontPath(custom.path, FontStyle::NORMAL);
+                    }
+                    imfont = io.Fonts->AddFontFromFileTTF(
+                            custom_path.c_str(), float(this->theme->font_size),
+                            NULL, io.Fonts->GetGlyphRangesDefault());
+                    en_fonts += 1;
+                }
+            }
+            if (en_fonts == 0) {
+                imfont = io.Fonts->AddFontFromFileTTF(
+                        font_path.c_str(), float(this->theme->font_size));
+            }
+
+            ImFontConfig config;
+            config.MergeMode = true;
+            for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
+                auto custom_path = FindFontPath(custom.path, style);
+                if (custom_path == "") {
+                    // This should not fail, since we would have complained
+                    // about it in Application::SetFont...().
+                    custom_path = FindFontPath(custom.path, FontStyle::NORMAL);
+                }
+                if (!custom.lang.empty()) {
+                    const ImWchar* range;
+                    if (custom.lang == "en") {
+                        continue;  // added above, don't want to add cyrillic
+                                   // too
+                    } else if (custom.lang == "ja" && can_add_cjk) {
+                        range = io.Fonts->GetGlyphRangesJapanese();
+                    } else if (custom.lang == "ko" && can_add_cjk) {
+                        range = io.Fonts->GetGlyphRangesKorean();
+                    } else if (custom.lang == "th") {
+                        range = io.Fonts->GetGlyphRangesThai();
+                    } else if (custom.lang == "vi") {
+                        range = io.Fonts->GetGlyphRangesVietnamese();
+                    } else if (custom.lang == "zh" && can_add_cjk) {
+                        range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                    } else if (custom.lang == "zh_all" && can_add_cjk) {
+                        range = io.Fonts->GetGlyphRangesChineseFull();
+                    } else {  // so many languages use Cyrillic it can be the
+                              // default
+                        range = io.Fonts->GetGlyphRangesCyrillic();
+                    }
+                    imfont = io.Fonts->AddFontFromFileTTF(
+                            custom_path.c_str(), float(this->theme->font_size),
+                            &config, range);
+                } else if (!custom.code_points.empty()) {
+                    // TODO: the ImGui docs say that this must exist until
+                    // CreateAtlastTextureAlpha8().
+                    ImVector<ImWchar> range;
+                    ImFontGlyphRangesBuilder builder;
+                    for (auto c : custom.code_points) {
+                        builder.AddChar(c);
+                    }
+                    builder.BuildRanges(&range);
+                    imfont = io.Fonts->AddFontFromFileTTF(
+                            custom_path.c_str(), float(this->theme->font_size),
+                            &config, range.Data);
+                }
+            }
+        }
+
+        return imfont;
+    }
+};
+
 }  // namespace
 
 const int Window::FLAG_HIDDEN = (1 << 0);
 const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
-    GLFWwindow* window_ = nullptr;
+    WindowSystem::OSWindow window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
+    bool draw_menu_ = true;
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
+    std::function<bool(void)> on_close_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
     int mouse_mods_ = 0;  // ORed KeyModifiers
     double last_render_time_ = 0.0;
+    double last_button_down_time_ = 0.0;  // we have to compute double-click
+    MouseButton last_button_down_ = MouseButton::NONE;
 
     Theme theme_;  // so that the font size can be different based on scaling
-    std::unique_ptr<visualization::rendering::FilamentRenderer> renderer_;
-    struct {
-        std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
-        ImGuiContext* context = nullptr;
-        ImFont* system_font = nullptr;  // reference; owned by imguiContext
-        float scaling = 1.0;
-    } imgui_;
+    visualization::rendering::FilamentRenderer* renderer_;
+    ImguiWindowContext imgui_;
     std::vector<std::shared_ptr<Widget>> children_;
 
     // Active dialog is owned here. It is not put in the children because
@@ -211,52 +283,41 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
+    // Make sure that the Application instance is initialized before creating
+    // the window. It is easy to call, e.g. O3DVisualizer() and forgetting to
+    // initialize the application. This will cause a crash because the window
+    // system will not exist, nor will the resource directory be located, and
+    // so the renderer will not load properly and give cryptic messages.
+    Application::GetInstance().VerifyIsInitialized();
+
     impl_->wants_auto_center_ = (x == CENTERED_X || y == CENTERED_Y);
     impl_->wants_auto_size_ =
             (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // NOTE: Setting alpha and stencil bits to match GLX standard default
-    // values. GLFW sets these internally to 8 and 8 respectively if not
-    // specified which causes problems with Filament on Linux with Nvidia binary
-    // driver
-    glfwWindowHint(GLFW_ALPHA_BITS, 0);
-    glfwWindowHint(GLFW_STENCIL_BITS, 0);
-
-#if __APPLE__
-    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
-#endif
     bool visible = (!(flags & FLAG_HIDDEN) &&
                     (impl_->wants_auto_size_ || impl_->wants_auto_center_));
-    glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
-    glfwWindowHint(GLFW_FLOATING,
-                   ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
+    int ws_flags = 0;
+    if (!visible) {
+        ws_flags |= WindowSystem::FLAG_HIDDEN;
+    }
+    if (flags & FLAG_TOPMOST) {
+        ws_flags |= WindowSystem::FLAG_TOPMOST;
+    }
 
-    impl_->window_ = glfwCreateWindow(std::max(10, width), std::max(10, height),
-                                      title.c_str(), NULL, NULL);
+    int initial_width = std::max(10, width);
+    int initial_height = std::max(10, height);
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    impl_->window_ = ws.CreateOSWindow(this, initial_width, initial_height,
+                                       title.c_str(), ws_flags);
     impl_->title_ = title;
 
     if (x != CENTERED_X || y != CENTERED_Y) {
-        glfwSetWindowPos(impl_->window_, x, y);
+        ws.SetWindowPos(impl_->window_, x, y);
     }
 
-    glfwSetWindowUserPointer(impl_->window_, this);
-    glfwSetWindowSizeCallback(impl_->window_, ResizeCallback);
-    glfwSetWindowPosCallback(impl_->window_, WindowMovedCallback);
-    glfwSetWindowRefreshCallback(impl_->window_, DrawCallback);
-    glfwSetCursorPosCallback(impl_->window_, MouseMoveCallback);
-    glfwSetMouseButtonCallback(impl_->window_, MouseButtonCallback);
-    glfwSetScrollCallback(impl_->window_, MouseScrollCallback);
-    glfwSetKeyCallback(impl_->window_, KeyCallback);
-    glfwSetCharCallback(impl_->window_, CharCallback);
-    glfwSetDropCallback(impl_->window_, DragDropCallback);
-    glfwSetWindowCloseCallback(impl_->window_, CloseCallback);
-
-    // On single-threaded platforms, Filament's OpenGL context must be current,
-    // not GLFW's context, so create the renderer after the window.
+    auto& theme = impl_->theme_;  // shorter alias
+    impl_->imgui_.context = ImGui::CreateContext();
+    auto oldContext = MakeDrawContextCurrent();
 
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
@@ -266,7 +327,7 @@ Window::Window(const std::string& title,
     // is the scaling factor. On Linux, there is no scaling of pixels (just
     // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
     // the appropriate scale factor for text and icons and such.
-    float scaling = GetScalingGLFW(impl_->window_);
+    float scaling = ws.GetUIScaleFactor(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
     impl_->theme_.font_size =
             int(std::round(impl_->theme_.font_size * scaling));
@@ -274,22 +335,6 @@ Window::Window(const std::string& title,
             int(std::round(impl_->theme_.default_margin * scaling));
     impl_->theme_.default_layout_spacing =
             int(std::round(impl_->theme_.default_layout_spacing * scaling));
-
-    auto& engine = visualization::rendering::EngineInstance::GetInstance();
-    auto& resource_manager =
-            visualization::rendering::EngineInstance::GetResourceManager();
-
-    impl_->renderer_ =
-            std::make_unique<visualization::rendering::FilamentRenderer>(
-                    engine, GetNativeDrawable(), resource_manager);
-    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
-
-    auto& theme = impl_->theme_;  // shorter alias
-    impl_->imgui_.context = ImGui::CreateContext();
-    auto oldContext = MakeDrawContextCurrent();
-
-    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
-            impl_->renderer_.get(), GetSize());
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -321,90 +366,9 @@ Window::Window(const std::string& title,
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tab_hover_color);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tab_active_color);
 
-    // If the given font path is invalid, ImGui will silently fall back to
-    // proggy, which is a tiny "pixel art" texture that is compiled into the
-    // library.
-    if (!theme.font_path.empty()) {
-        ImGuiIO& io = ImGui::GetIO();
-        int en_fonts = 0;
-        for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
-            if (custom.lang == "en") {
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        custom.path.c_str(), float(theme.font_size), NULL,
-                        io.Fonts->GetGlyphRangesDefault());
-                en_fonts += 1;
-            }
-        }
-        if (en_fonts == 0) {
-            impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                    theme.font_path.c_str(), float(theme.font_size));
-        }
-
-        ImFontConfig config;
-        config.MergeMode = true;
-        for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
-            if (!custom.lang.empty()) {
-                const ImWchar* range;
-                if (custom.lang == "en") {
-                    continue;  // added above, don't want to add cyrillic too
-                } else if (custom.lang == "ja") {
-                    range = io.Fonts->GetGlyphRangesJapanese();
-                } else if (custom.lang == "ko") {
-                    range = io.Fonts->GetGlyphRangesKorean();
-                } else if (custom.lang == "th") {
-                    range = io.Fonts->GetGlyphRangesThai();
-                } else if (custom.lang == "vi") {
-                    range = io.Fonts->GetGlyphRangesVietnamese();
-                } else if (custom.lang == "zh") {
-                    range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                } else if (custom.lang == "zh_all") {
-                    range = io.Fonts->GetGlyphRangesChineseFull();
-                } else {  // so many languages use Cyrillic it can be the
-                          // default
-                    range = io.Fonts->GetGlyphRangesCyrillic();
-                }
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        custom.path.c_str(), float(theme.font_size), &config,
-                        range);
-            } else if (!custom.code_points.empty()) {
-                ImVector<ImWchar> range;
-                ImFontGlyphRangesBuilder builder;
-                for (auto c : custom.code_points) {
-                    builder.AddChar(c);
-                }
-                builder.BuildRanges(&range);
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        custom.path.c_str(), float(theme.font_size), &config,
-                        range.Data);
-            }
-        }
-
-        /*static*/ unsigned char* pixels;
-        int textureW, textureH, bytesPerPx;
-        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
-                                     &bytesPerPx);
-        // Some fonts seem to result in 0x0 textures (maybe if the font does
-        // not contain any of the code points?), which cause Filament to
-        // panic. Handle this gracefully.
-        if (textureW == 0 || textureH == 0) {
-            utility::LogWarning(
-                    "Got zero-byte font texture; ignoring custom fonts");
-            io.Fonts->Clear();
-            impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                    theme.font_path.c_str(), float(theme.font_size));
-            io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
-                                         &bytesPerPx);
-        }
-        impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
-                pixels, textureW, textureH, bytesPerPx);
-        ImGui::SetCurrentFont(impl_->imgui_.system_font);
-    }
-
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
-#ifdef WIN32
-    io.ImeWindowHandle = GetNativeDrawable();
-#endif
+
     // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
     // io.KeyMap to map from our code to ImGui's code.
     io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
@@ -441,6 +405,27 @@ Window::Window(const std::string& title,
     // presses during draw. A file open dialog is likely to create a window
     // after pressing "Open".)
     RestoreDrawContext(oldContext);
+
+    CreateRenderer();
+}
+
+void Window::CreateRenderer() {
+    // This is a delayed part of the constructor. See comment at end of ctor.
+    auto old_context = MakeDrawContextCurrent();
+
+    // On single-threaded platforms, Filament's OpenGL context must be current,
+    // not GLFW's context, so create the renderer after the window.
+    impl_->renderer_ =
+            Application::GetInstance().GetWindowSystem().CreateRenderer(
+                    impl_->window_);
+    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
+
+    impl_->imgui_.imgui_bridge =
+            std::make_unique<ImguiFilamentBridge>(impl_->renderer_, GetSize());
+    impl_->imgui_.theme = &impl_->theme_;
+    impl_->imgui_.CreateFonts();
+
+    RestoreDrawContext(old_context);
 }
 
 Window::~Window() {
@@ -448,16 +433,18 @@ Window::~Window() {
     impl_->children_.clear();  // needs to happen before deleting renderer
     ImGui::SetCurrentContext(impl_->imgui_.context);
     ImGui::DestroyContext();
-    impl_->renderer_.reset();
+    delete impl_->renderer_;
     DestroyWindow();
 }
 
 void Window::DestroyWindow() {
-    glfwDestroyWindow(impl_->window_);
+    Application::GetInstance().GetWindowSystem().DestroyWindow(impl_->window_);
     // Ensure DestroyWindow() can be called multiple times, which will
     // happen if you call DestroyWindow() before the destructor.
     impl_->window_ = nullptr;
 }
+
+int Window::GetMouseMods() const { return impl_->mouse_mods_; }
 
 const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
     return impl_->children_;
@@ -473,10 +460,6 @@ void Window::RestoreDrawContext(void* oldContext) const {
     ImGui::SetCurrentContext((ImGuiContext*)oldContext);
 }
 
-void* Window::GetNativeDrawable() const {
-    return open3d::visualization::gui::GetNativeDrawable(impl_->window_);
-}
-
 const Theme& Window::GetTheme() const { return impl_->theme_; }
 
 visualization::rendering::Renderer& Window::GetRenderer() const {
@@ -484,22 +467,24 @@ visualization::rendering::Renderer& Window::GetRenderer() const {
 }
 
 Rect Window::GetOSFrame() const {
-    int x, y, w, h;
-    glfwGetWindowPos(impl_->window_, &x, &y);
-    glfwGetWindowSize(impl_->window_, &w, &h);
-    return Rect(x, y, w, h);
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    auto pos = ws.GetWindowPos(impl_->window_);
+    auto size = ws.GetWindowSize(impl_->window_);
+    return Rect(pos.x, pos.y, size.width, size.height);
 }
 
 void Window::SetOSFrame(const Rect& r) {
-    glfwSetWindowPos(impl_->window_, r.x, r.y);
-    glfwSetWindowSize(impl_->window_, r.width, r.height);
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    ws.SetWindowPos(impl_->window_, r.x, r.y);
+    ws.SetWindowSize(impl_->window_, r.width, r.height);
 }
 
 const char* Window::GetTitle() const { return impl_->title_.c_str(); }
 
 void Window::SetTitle(const char* title) {
     impl_->title_ = title;
-    glfwSetWindowTitle(impl_->window_, title);
+    return Application::GetInstance().GetWindowSystem().SetWindowTitle(
+            impl_->window_, title);
 }
 
 // Note: can only be called if the ImGUI context is current (that is,
@@ -517,7 +502,8 @@ Size Window::CalcPreferredSize() {
 
     Rect bbox(0, 0, 0, 0);
     for (auto& child : impl_->children_) {
-        auto pref = child->CalcPreferredSize(GetTheme());
+        auto pref = child->CalcPreferredSize(GetLayoutContext(),
+                                             Widget::Constraints());
         Rect r(child->GetFrame().x, child->GetFrame().y, pref.width,
                pref.height);
         bbox = bbox.UnionedWith(r);
@@ -542,70 +528,63 @@ void Window::SetSize(const Size& size) {
     // errors if we happen to do this in the middle of a draw.
     auto resize = [this, size /*copy*/]() {
         auto scaling = this->impl_->imgui_.scaling;
-        glfwSetWindowSize(this->impl_->window_,
-                          int(std::round(float(size.width) / scaling)),
-                          int(std::round(float(size.height) / scaling)));
-        // SDL_SetWindowSize() doesn't generate an event, so we need to update
-        // the size ourselves
-        this->OnResize();
+        int width = int(std::round(float(size.width) / scaling));
+        int height = int(std::round(float(size.height) / scaling));
+        Application::GetInstance().GetWindowSystem().SetWindowSize(
+                impl_->window_, width, height);
     };
     impl_->deferred_until_before_draw_.push(resize);
 }
 
 Size Window::GetSize() const {
-    uint32_t w, h;
-    glfwGetFramebufferSize(impl_->window_, (int*)&w, (int*)&h);
-    return Size(w, h);
+    return Application::GetInstance().GetWindowSystem().GetWindowSizePixels(
+            impl_->window_);
 }
 
 Rect Window::GetContentRect() const {
     auto size = GetSize();
     int menu_height = 0;
-#if !(GUI_USE_NATIVE_MENUS && defined(__APPLE__))
     MakeDrawContextCurrent();
     auto menubar = Application::GetInstance().GetMenubar();
-    if (menubar) {
+    if (menubar && impl_->draw_menu_) {
         menu_height = menubar->CalcHeight(GetTheme());
     }
-#endif
 
     return Rect(0, menu_height, size.width, size.height - menu_height);
 }
 
 float Window::GetScaling() const {
-// macOS unit of measurement is 72 dpi pixels, which on newer displays
-// is a factor of 2 or 3 smaller than the real number of pixels per inch.
-// This means that you can keep your hard-coded 12 pixel font and N pixel
-// sizes and it will be the same size on any disply.
-// On X Windows a pixel is a device pixel, so glfwGetWindowContentScale()
-// returns the scale factor needed so that your fonts and icons and sizes
-// are correct. This is not the same thing as Apple does.
-#if __APPLE__
-    return GetScalingGLFW(impl_->window_);
-#else
-    return 1.0f;
-#endif  // __APPLE__
+    return Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+            impl_->window_);
 }
 
 Point Window::GlobalToWindowCoord(int global_x, int global_y) {
-    int wx, wy;
-    glfwGetWindowPos(impl_->window_, &wx, &wy);
-    return Point(global_y - wx, global_y - wy);
+    auto pos = Application::GetInstance().GetWindowSystem().GetWindowPos(
+            impl_->window_);
+    return Point(global_y - pos.x, global_y - pos.y);
 }
 
 bool Window::IsVisible() const {
-    return glfwGetWindowAttrib(impl_->window_, GLFW_VISIBLE);
+    return Application::GetInstance().GetWindowSystem().GetWindowIsVisible(
+            impl_->window_);
 }
 
 void Window::Show(bool vis /*= true*/) {
-    if (vis) {
-        glfwShowWindow(impl_->window_);
-    } else {
-        glfwHideWindow(impl_->window_);
-    }
+    Application::GetInstance().GetWindowSystem().ShowWindow(impl_->window_,
+                                                            vis);
 }
 
-void Window::Close() { Application::GetInstance().RemoveWindow(this); }
+void Window::Close() {
+    if (impl_->on_close_) {
+        bool shouldContinue = impl_->on_close_();
+        if (!shouldContinue) {
+            Application::GetInstance().GetWindowSystem().CancelUserClose(
+                    impl_->window_);
+            return;
+        }
+    }
+    Application::GetInstance().RemoveWindow(this);
+}
 
 void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
 
@@ -616,14 +595,19 @@ void Window::PostRedraw() {
     if (impl_->is_drawing_) {
         impl_->needs_redraw_ = true;
     } else {
-        PostNativeExposeEvent(impl_->window_);
+        Application::GetInstance().GetWindowSystem().PostRedrawEvent(
+                impl_->window_);
     }
 }
 
-void Window::RaiseToTop() const { glfwFocusWindow(impl_->window_); }
+void Window::RaiseToTop() const {
+    Application::GetInstance().GetWindowSystem().RaiseWindowToTop(
+            impl_->window_);
+}
 
 bool Window::IsActiveWindow() const {
-    return glfwGetWindowAttrib(impl_->window_, GLFW_FOCUSED);
+    return Application::GetInstance().GetWindowSystem().IsActiveWindow(
+            impl_->window_);
 }
 
 void Window::SetFocusWidget(Widget* w) { impl_->focus_widget_ = w; }
@@ -642,6 +626,10 @@ void Window::SetOnTickEvent(std::function<bool()> callback) {
     impl_->on_tick_event_ = callback;
 }
 
+void Window::SetOnClose(std::function<bool()> callback) {
+    impl_->on_close_ = callback;
+}
+
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (impl_->active_dialog_) {
         CloseDialog();
@@ -649,21 +637,26 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     impl_->active_dialog_ = dlg;
     dlg->OnWillShow();
 
-    auto win_size = GetSize();
-    auto pref = dlg->CalcPreferredSize(GetTheme());
-    int w = dlg->GetFrame().width;
-    int h = dlg->GetFrame().height;
-    if (w == 0) {
-        w = pref.width;
-    }
-    if (h == 0) {
-        h = pref.height;
-    }
-    w = std::min(w, int(std::round(0.8 * win_size.width)));
-    h = std::min(h, int(std::round(0.8 * win_size.height)));
-    dlg->SetFrame(gui::Rect((win_size.width - w) / 2, (win_size.height - h) / 2,
-                            w, h));
-    dlg->Layout(GetTheme());
+    auto deferred_layout = [this, dlg]() {
+        auto context = GetLayoutContext();
+        auto content_rect = GetContentRect();
+        auto pref = dlg->CalcPreferredSize(context, Widget::Constraints());
+        int w = dlg->GetFrame().width;
+        int h = dlg->GetFrame().height;
+        if (w == 0) {
+            w = pref.width;
+        }
+        if (h == 0) {
+            h = pref.height;
+        }
+        w = std::min(w, int(std::round(0.8 * content_rect.width)));
+        h = std::min(h, int(std::round(0.8 * content_rect.height)));
+        dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
+                                (content_rect.height - h) / 2, w, h));
+        dlg->Layout(context);
+    };
+
+    impl_->deferred_until_draw_.push(deferred_layout);
 }
 
 // When scene caching is enabled on a SceneWidget the SceneWidget only redraws
@@ -689,16 +682,6 @@ void Window::CloseDialog() {
     }
     impl_->active_dialog_.reset();
 
-    ForceRedrawSceneWidget();
-
-    // Closing a dialog does not change the layout of widgets so the following
-    // is not necessary. However, on Apple, ForceRedrawSceneWidget isn't
-    // sufficent to force a SceneWidget to redraw and therefore flickering of
-    // the now closed dialog may occur. SetNeedsLayout ensures that
-    // SceneWidget::Layout gets called which will guarantee proper redraw of the
-    // SceneWidget.
-    SetNeedsLayout();
-
     // The dialog might not be closing from within a draw call, such as when
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will
@@ -719,14 +702,18 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
-void Window::Layout(const Theme& theme) {
+void Window::ShowMenu(bool show) { impl_->draw_menu_ = show; }
+
+LayoutContext Window::GetLayoutContext() { return {GetTheme(), impl_->imgui_}; }
+
+void Window::Layout(const LayoutContext& context) {
     if (impl_->children_.size() == 1) {
         auto r = GetContentRect();
         impl_->children_[0]->SetFrame(r);
-        impl_->children_[0]->Layout(theme);
+        impl_->children_[0]->Layout(context);
     } else {
         for (auto& child : impl_->children_) {
-            child->Layout(theme);
+            child->Layout(context);
         }
     }
 }
@@ -738,6 +725,8 @@ void Window::OnMenuItemSelected(Menu::ItemId item_id) {
         PostRedraw();  // might not be in a draw if from native menu
     }
 }
+
+WindowSystem::OSWindow Window::GetOSWindow() const { return impl_->window_; }
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
@@ -767,8 +756,8 @@ Widget::DrawResult DrawChild(DrawContext& dc,
     }
     auto frame = child->GetFrame();
     bool bg_color_not_default = !child->IsDefaultBackgroundColor();
-    auto is_container = !child->GetChildren().empty();
-    if (is_container) {
+    auto is_3d = (std::dynamic_pointer_cast<SceneWidget>(child) != nullptr);
+    if (!is_3d) {
         dc.uiOffsetX = frame.x;
         dc.uiOffsetY = frame.y;
         ImGui::SetNextWindowPos(ImVec2(float(frame.x), float(frame.y)));
@@ -787,7 +776,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
     Widget::DrawResult result;
     result = child->Draw(dc);
 
-    if (is_container) {
+    if (!is_3d) {
         ImGui::End();
         if (bg_color_not_default) {
             ImGui::PopStyleColor();
@@ -833,21 +822,15 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 
     // Set mouse information
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    auto& ws = Application::GetInstance().GetWindowSystem();
     if (IsActiveWindow()) {
-        double mx, my;
-        glfwGetCursorPos(impl_->window_, &mx, &my);
-        auto scaling = GetScaling();
-        io.MousePos = ImVec2(float(mx) * scaling, float(my) * scaling);
+        auto mouse_pos = ws.GetMousePosInWindow(impl_->window_);
+        io.MousePos = ImVec2(float(mouse_pos.x), float(mouse_pos.y));
     }
-    io.MouseDown[0] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_LEFT) ==
-             GLFW_PRESS);
-    io.MouseDown[1] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_RIGHT) ==
-             GLFW_PRESS);
-    io.MouseDown[2] =
-            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_MIDDLE) ==
-             GLFW_PRESS);
+    auto buttons = ws.GetMouseButtons(impl_->window_);
+    io.MouseDown[0] = (buttons & int(MouseButton::LEFT));
+    io.MouseDown[1] = (buttons & int(MouseButton::RIGHT));
+    io.MouseDown[2] = (buttons & int(MouseButton::MIDDLE));
 
     // Set key information
     io.KeyShift = (impl_->mouse_mods_ & int(KeyModifier::SHIFT));
@@ -864,7 +847,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     //    a key up event to process and erase the key down state from
     //    the ImGuiIO structure before we get a chance to draw/process it.
     ImGui::NewFrame();
-    ImGui::PushFont(impl_->imgui_.system_font);
+    ImGui::PushFont((ImFont*)impl_->imgui_.GetFont(FontStyle::NORMAL));
 
     // Run the deferred callbacks that need to happen inside a draw
     // In particular, text sizing with ImGUI seems to require being
@@ -878,14 +861,21 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // can query font information.
     auto& theme = impl_->theme_;
     if (impl_->needs_layout_) {
-        Layout(theme);
+        Layout(GetLayoutContext());
         impl_->needs_layout_ = false;
     }
 
     auto size = GetSize();
     int em = theme.font_size;  // em = font size in digital type (see Wikipedia)
-    DrawContext dc{theme,      *impl_->renderer_, 0,  0,
-                   size.width, size.height,       em, float(dt_sec)};
+    DrawContext dc{theme,
+                   *impl_->renderer_,
+                   impl_->imgui_,
+                   0,
+                   0,
+                   size.width,
+                   size.height,
+                   em,
+                   float(dt_sec)};
 
     // Draw all the widgets. These will get recorded by ImGui.
     size_t win_idx = 0;
@@ -912,14 +902,11 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // Draw menubar after the children so it is always on top (although it
     // shouldn't matter, as there shouldn't be anything under it)
     auto menubar = Application::GetInstance().GetMenubar();
-    if (menubar) {
+    if (menubar && impl_->draw_menu_) {
         auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
             needs_redraw = true;
-        }
-        if (menubar->CheckVisibilityChange()) {
-            ForceRedrawSceneWidget();
         }
     }
 
@@ -962,7 +949,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     }
 }
 
-Window::DrawResult Window::OnDraw() {
+void Window::OnDraw() {
     impl_->is_drawing_ = true;
     bool needed_layout = impl_->needs_layout_;
 
@@ -985,7 +972,12 @@ Window::DrawResult Window::OnDraw() {
         impl_->needs_redraw_ = false;
     }
 
-    return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
+    if (result == Widget::DrawResult::REDRAW) {
+        // Can't just draw here, because Filament sometimes fences within
+        // a draw, and then you can get two draws happening at the same
+        // time, which ends up with a crash.
+        PostRedraw();
+    }
 }
 
 void Window::OnResize() {
@@ -994,7 +986,8 @@ void Window::OnResize() {
 #if __APPLE__
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong.
-    impl_->renderer_->UpdateSwapChain();
+    Application::GetInstance().GetWindowSystem().ResizeRenderer(
+            impl_->window_, impl_->renderer_);
 #endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
@@ -1014,36 +1007,19 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.y = 1.0f;
 
     if (impl_->wants_auto_size_ || impl_->wants_auto_center_) {
-        int screen_width = FALLBACK_MONITOR_WIDTH;
-        int screen_height = FALLBACK_MONITOR_HEIGHT;
-        auto* monitor = glfwGetWindowMonitor(impl_->window_);
-        if (!monitor) {
-            monitor = glfwGetPrimaryMonitor();
-        }
-        if (monitor) {
-            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-            if (mode) {
-                screen_width = mode->width;
-                screen_height = mode->height;
-            }
-            // TODO: if we can update GLFW we can replace the above with this
-            //       Also, see below.
-            // int xpos, ypos;
-            // glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
-            //                       &screen_width, &screen_height);
-        }
-
+        auto& ws = Application::GetInstance().GetWindowSystem();
+        auto screen_size = ws.GetScreenSize(impl_->window_);
         int w = GetOSFrame().width;
         int h = GetOSFrame().height;
 
         if (impl_->wants_auto_size_) {
             ImGui::NewFrame();
-            ImGui::PushFont(impl_->imgui_.system_font);
+            ImGui::PushFont((ImFont*)impl_->imgui_.GetFont(FontStyle::NORMAL));
             auto pref = CalcPreferredSize();
             ImGui::PopFont();
             ImGui::EndFrame();
 
-            w = std::min(screen_width,
+            w = std::min(screen_size.width,
                          int(std::round(pref.width / impl_->imgui_.scaling)));
             // screen_height is the screen height, not the usable screen height.
             // If we cannot call glfwGetMonitorWorkarea(), then we need to guess
@@ -1051,14 +1027,15 @@ void Window::OnResize() {
             // is often a global menubar (Linux/GNOME, macOS) or a toolbar
             // (Windows). A toolbar is somewhere around 2 - 3 ems.
             int unusable_height = 4 * impl_->theme_.font_size;
-            h = std::min(screen_height - unusable_height,
+            h = std::min(screen_size.height - unusable_height,
                          int(std::round(pref.height / impl_->imgui_.scaling)));
-            glfwSetWindowSize(impl_->window_, w, h);
+            ws.SetWindowSize(impl_->window_, w, h);
         }
 
         if (impl_->wants_auto_center_) {
-            glfwSetWindowPos(impl_->window_, (screen_width - w) / 2,
-                             (screen_height - h) / 2);
+            int x = (screen_size.width - w) / 2;
+            int y = (screen_size.height - h) / 2;
+            ws.SetWindowPos(impl_->window_, x, y);
         }
 
         impl_->wants_auto_size_ = false;
@@ -1081,6 +1058,7 @@ void Window::OnResize() {
     }
 
     RestoreDrawContext(old_context);
+    PostRedraw();
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
@@ -1105,10 +1083,10 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             ImGuiIO& io = ImGui::GetIO();
             float dx = 0.0, dy = 0.0;
             if (e.wheel.dx != 0) {
-                dx = float(e.wheel.dx / std::abs(e.wheel.dx));  // get sign
+                dx = e.wheel.dx / std::abs(e.wheel.dx);  // get sign
             }
             if (e.wheel.dy != 0) {
-                dy = float(e.wheel.dy / std::abs(e.wheel.dy));  // get sign
+                dy = e.wheel.dy / std::abs(e.wheel.dy);  // get sign
             }
             // Note: ImGUI's documentation says that 1 unit of wheel movement
             //       is about 5 lines of text scrolling.
@@ -1128,6 +1106,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         if (e.type == MouseEvent::BUTTON_UP) {
             impl_->mouse_grabber_widget_ = nullptr;
         }
+        PostRedraw();
         return;
     }
 
@@ -1154,6 +1133,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
                     if (!weKnowThis) {
                         // This is not a rect that is one of our children,
                         // must be an ImGUI internal popup. Eat event.
+                        PostRedraw();
                         return;
                     }
                 }
@@ -1196,6 +1176,8 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             }
         }
     }
+
+    PostRedraw();
 }
 
 void Window::OnKeyEvent(const KeyEvent& e) {
@@ -1229,6 +1211,7 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     }
 
     RestoreDrawContext(old_context);
+    PostRedraw();
 }
 
 void Window::OnTextInput(const TextInputEvent& e) {
@@ -1236,9 +1219,11 @@ void Window::OnTextInput(const TextInputEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
     RestoreDrawContext(old_context);
+
+    PostRedraw();
 }
 
-bool Window::OnTickEvent(const TickEvent& e) {
+void Window::OnTickEvent(const TickEvent& e) {
     auto old_context = MakeDrawContextCurrent();
     bool redraw = false;
 
@@ -1252,209 +1237,13 @@ bool Window::OnTickEvent(const TickEvent& e) {
         }
     }
     RestoreDrawContext(old_context);
-    return redraw;
+
+    if (redraw) {
+        PostRedraw();
+    }
 }
 
 void Window::OnDragDropped(const char* path) {}
-
-// ----------------------------------------------------------------------------
-void Window::DrawCallback(GLFWwindow* window) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (w->OnDraw() == Window::REDRAW) {
-        // Can't just draw here, because Filament sometimes fences within
-        // a draw, and then you can get two draws happening at the same
-        // time, which ends up with a crash.
-        w->PostRedraw();
-    }
-}
-
-void Window::ResizeCallback(GLFWwindow* window, int os_width, int os_height) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnResize();
-    UpdateAfterEvent(w);
-}
-
-void Window::WindowMovedCallback(GLFWwindow* window, int os_x, int os_y) {
-#ifdef __APPLE__
-    // On macOS we need to recreate the swap chain if the window changes
-    // size OR MOVES!
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnResize();
-    UpdateAfterEvent(w);
-#endif
-}
-
-void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnResize();
-    UpdateAfterEvent(w);
-}
-
-void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    int buttons = 0;
-    for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
-        if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
-            buttons |= MouseButtonFromGLFW(b);
-        }
-    }
-    float scaling = w->GetScaling();
-    int ix = int(std::ceil(x * scaling));
-    int iy = int(std::ceil(y * scaling));
-
-    auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
-    MouseEvent me = {type, ix, iy, w->impl_->mouse_mods_};
-    me.button.button = MouseButton(buttons);
-
-    w->OnMouseEvent(me);
-    UpdateAfterEvent(w);
-}
-
-void Window::MouseButtonCallback(GLFWwindow* window,
-                                 int button,
-                                 int action,
-                                 int mods) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
-                                      : MouseEvent::BUTTON_UP);
-    double mx, my;
-    glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
-    int ix = int(std::ceil(mx * scaling));
-    int iy = int(std::ceil(my * scaling));
-
-    MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
-    me.button.button = MouseButton(MouseButtonFromGLFW(button));
-
-    w->OnMouseEvent(me);
-    UpdateAfterEvent(w);
-}
-
-void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    double mx, my;
-    glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
-    int ix = int(std::ceil(mx * scaling));
-    int iy = int(std::ceil(my * scaling));
-
-    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouse_mods_};
-    me.wheel.dx = int(std::round(dx));
-    me.wheel.dy = int(std::round(dy));
-
-    // GLFW doesn't give us any information about whether this scroll event
-    // came from a mousewheel or a trackpad two-finger scroll.
-#if __APPLE__
-    me.wheel.isTrackpad = true;
-#else
-    me.wheel.isTrackpad = false;
-#endif  // __APPLE__
-
-    w->OnMouseEvent(me);
-    UpdateAfterEvent(w);
-}
-
-void Window::KeyCallback(
-        GLFWwindow* window, int key, int scancode, int action, int mods) {
-    static std::unordered_map<int, uint32_t> g_GLFW2Key = {
-            {GLFW_KEY_BACKSPACE, KEY_BACKSPACE},
-            {GLFW_KEY_TAB, KEY_TAB},
-            {GLFW_KEY_ENTER, KEY_ENTER},
-            {GLFW_KEY_ESCAPE, KEY_ESCAPE},
-            {GLFW_KEY_DELETE, KEY_DELETE},
-            {GLFW_KEY_LEFT_SHIFT, KEY_LSHIFT},
-            {GLFW_KEY_RIGHT_SHIFT, KEY_RSHIFT},
-            {GLFW_KEY_LEFT_CONTROL, KEY_LCTRL},
-            {GLFW_KEY_RIGHT_CONTROL, KEY_RCTRL},
-            {GLFW_KEY_LEFT_ALT, KEY_ALT},
-            {GLFW_KEY_RIGHT_ALT, KEY_ALT},
-            {GLFW_KEY_LEFT_SUPER, KEY_META},
-            {GLFW_KEY_RIGHT_SUPER, KEY_META},
-            {GLFW_KEY_CAPS_LOCK, KEY_CAPSLOCK},
-            {GLFW_KEY_LEFT, KEY_LEFT},
-            {GLFW_KEY_RIGHT, KEY_RIGHT},
-            {GLFW_KEY_UP, KEY_UP},
-            {GLFW_KEY_DOWN, KEY_DOWN},
-            {GLFW_KEY_INSERT, KEY_INSERT},
-            {GLFW_KEY_HOME, KEY_HOME},
-            {GLFW_KEY_END, KEY_END},
-            {GLFW_KEY_PAGE_UP, KEY_PAGEUP},
-            {GLFW_KEY_PAGE_DOWN, KEY_PAGEDOWN},
-    };
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    auto type = (action == GLFW_RELEASE ? KeyEvent::Type::UP
-                                        : KeyEvent::Type::DOWN);
-
-    uint32_t k = key;
-    if (key >= 'A' && key <= 'Z') {
-        k += 32;  // GLFW gives uppercase for letters, convert to lowercase
-    } else {
-        auto it = g_GLFW2Key.find(key);
-        if (it != g_GLFW2Key.end()) {
-            k = it->second;
-        }
-    }
-    KeyEvent e = {type, k, (action == GLFW_REPEAT)};
-
-    w->OnKeyEvent(e);
-    UpdateAfterEvent(w);
-}
-
-void Window::CharCallback(GLFWwindow* window, unsigned int utf32char) {
-    // Convert utf-32 to utf8
-    // From https://stackoverflow.com/a/42013433/218226
-    // Note: This code handles all characters, but non-European characters
-    //       won't draw unless we will include them in the ImGUI font (which
-    //       is prohibitively large for hanzi/kanji)
-    char utf8[5];
-    if (utf32char <= 0x7f) {
-        utf8[0] = utf32char;
-        utf8[1] = '\0';
-    } else if (utf32char <= 0x7ff) {
-        utf8[0] = 0xc0 | (utf32char >> 6);
-        utf8[1] = 0x80 | (utf32char & 0x3f);
-        utf8[2] = '\0';
-    } else if (utf32char <= 0xffff) {
-        utf8[0] = 0xe0 | (utf32char >> 12);
-        utf8[1] = 0x80 | ((utf32char >> 6) & 0x3f);
-        utf8[2] = 0x80 | (utf32char & 0x3f);
-        utf8[3] = '\0';
-    } else if (utf32char <= 0x10ffff) {
-        utf8[0] = 0xf0 | (utf32char >> 18);
-        utf8[1] = 0x80 | ((utf32char >> 12) & 0x3f);
-        utf8[2] = 0x80 | ((utf32char >> 6) & 0x3f);
-        utf8[3] = 0x80 | (utf32char & 0x3f);
-        utf8[4] = '\0';
-    } else {
-        // These characters are supposed to be forbidden, but just in case
-        utf8[0] = '?';
-        utf8[1] = '\0';
-    }
-
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    w->OnTextInput(TextInputEvent{utf8});
-    UpdateAfterEvent(w);
-}
-
-void Window::DragDropCallback(GLFWwindow* window,
-                              int count,
-                              const char* paths[]) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    for (int i = 0; i < count; ++i) {
-        w->OnDragDropped(paths[i]);
-    }
-    UpdateAfterEvent(w);
-}
-
-void Window::CloseCallback(GLFWwindow* window) {
-    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    Application::GetInstance().RemoveWindow(w);
-}
-
-void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }
 
 }  // namespace gui
 }  // namespace visualization
