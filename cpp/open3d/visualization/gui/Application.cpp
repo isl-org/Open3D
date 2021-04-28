@@ -407,8 +407,7 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 void Application::AddWindow(std::shared_ptr<Window> window) {
 #ifdef BUILD_WEBRTC
     // TODO: move this elsewhere, better way to check window system type.
-    if (std::shared_ptr<
-                webrtc_server::WebRTCWindowSystem> webrtc_window_system =
+    if (auto webrtc_window_system =
                 std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
                         impl_->window_system_)) {
         // Client -> server message can trigger a mouse event and
@@ -467,7 +466,7 @@ std::vector<std::string> Application::GetWindowUIDs() const {
 
 std::shared_ptr<Window> Application::GetWindowByUID(
         const std::string &uid) const {
-    // This can be opimized by adding a map_uid_to_window, but it may not be
+    // This can be optimized by adding a map_uid_to_window, but it may not be
     // worth it since we typically don't have lots of windows.
     for (const std::shared_ptr<Window> &window : impl_->windows_) {
         if (window->GetUID() == uid) {
