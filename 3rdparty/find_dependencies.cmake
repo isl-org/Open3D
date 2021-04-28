@@ -1152,7 +1152,8 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
     add_library(3rdparty_CUDA_NPP INTERFACE)
-    target_link_libraries(3rdparty_CUDA_NPP INTERFACE CUDA::nppc CUDA::nppicc CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial)
+    target_link_libraries(3rdparty_CUDA_NPP INTERFACE CUDA::nppc CUDA::nppicc
+        CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial)
     if(NOT BUILD_SHARED_LIBS)
         install(TARGETS 3rdparty_CUDA_NPP EXPORT ${PROJECT_NAME}Targets)
     endif()
