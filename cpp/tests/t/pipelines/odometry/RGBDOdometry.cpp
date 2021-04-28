@@ -97,7 +97,8 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     for (int i = 0; i < 20; ++i) {
         auto result = t::pipelines::odometry::ComputePosePointToPlane(
                 src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
-                src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff);
+                src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff,
+                depth_diff * 0.5);
         trans = result.transformation_.Matmul(trans).Contiguous();
     }
 
@@ -157,8 +158,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScale) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_max, depth_diff,
-            {10, 5, 3});
+            src, dst, intrinsic_t, trans, depth_scale, depth_max, {10, 5, 3},
+            t::pipelines::odometry::Method::Hybrid,
+            t::pipelines::odometry::OdometryLossParams(depth_diff));
 
     core::Device host("CPU:0");
     core::Tensor T0 = core::Tensor::Init<double>(
