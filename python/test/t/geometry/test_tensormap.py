@@ -64,3 +64,8 @@ def test_tensormap(device):
     })
     assert "points" in tl
     assert "colors" in tl
+
+    # __delitem__ operator.
+    with pytest.raises(RuntimeError) as excinfo:
+        del tl["points"]
+        assert 'cannot be deleted' in str(excinfo.value)
