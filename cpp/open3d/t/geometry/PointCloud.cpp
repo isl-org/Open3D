@@ -259,8 +259,13 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
                 core::eigen_converter::TensorToEigenVector3dVector(GetPoints());
     }
     if (HasPointColors()) {
-        pcd_legacy.colors_ = core::eigen_converter::TensorToEigenVector3dVector(
-                GetPointColors());
+        auto colors = GetPointColors();
+        if (colors.GetDtype() == core::Dtype::UInt8) {
+            colors = colors.To(core::Dtype::Float64) / 255.0;
+        }
+
+        pcd_legacy.colors_ =
+                core::eigen_converter::TensorToEigenVector3dVector(colors);
     }
     if (HasPointNormals()) {
         pcd_legacy.normals_ =
