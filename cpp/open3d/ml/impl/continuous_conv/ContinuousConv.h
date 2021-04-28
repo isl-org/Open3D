@@ -149,7 +149,7 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                         const TFeat n_importance =
                                 (NEIGHBORS_IMPORTANCE ? neighbors_importance[n]
                                                       : TFeat(1));
-                        normalizers(out_col) += n_importance;
+                        normalizers(out_col) += TOut(n_importance);
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =

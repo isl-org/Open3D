@@ -152,7 +152,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                         const TFeat n_importance =
                                 (NEIGHBORS_IMPORTANCE ? neighbors_importance[n]
                                                       : TFeat(1));
-                        normalizer += n_importance;
+                        normalizer += TOut(n_importance);
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
