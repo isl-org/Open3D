@@ -29,7 +29,7 @@ function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS rtc_use_x11=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_use_pipewire=false\n${WEBRTC_ARGS})
 
-    # Don't use libstdc++ (Clang), use libc++ (GNU)
+    # Don't use libc++ (Clang), use libstdc++ (GNU)
     # https://stackoverflow.com/a/47384787/1255535
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS use_custom_libcxx_for_host=false\n${WEBRTC_ARGS})
