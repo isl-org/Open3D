@@ -102,7 +102,8 @@ public:
             aspect = float(width_) / float(height_);
         }
         auto *camera = scene_->GetCamera();
-        auto far_plane = Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
+        auto far_plane =
+                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
         camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
                               far_plane, rendering::Camera::FovType::Vertical);
         camera->LookAt(center, eye, up);
