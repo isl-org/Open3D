@@ -4,10 +4,9 @@ ExternalProject_Add(
     ext_jsoncpp
     PREFIX jsoncpp
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
-    GIT_TAG 1.9.4
+    GIT_TAG 94cda30dbddc1859f111848fdd05dfb85d3287c7 # Mar 18, 2021
     GIT_SHALLOW ON  # Do not download the history.
     UPDATE_COMMAND ""
-    PATCH_COMMAND git apply ${Open3D_3RDPARTY_DIR}/jsoncpp/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -22,6 +21,7 @@ ExternalProject_Add(
         -DJSONCPP_WITH_TESTS=OFF
         -DJSONCPP_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}
         -DJSONCPP_STATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
+        -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>"
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jsoncpp${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
