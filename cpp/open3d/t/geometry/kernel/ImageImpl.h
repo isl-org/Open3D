@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/CoreUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"

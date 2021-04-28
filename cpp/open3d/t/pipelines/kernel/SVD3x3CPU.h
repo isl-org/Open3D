@@ -172,7 +172,7 @@ inline void svd(float a11,
         Ss.f = __fadd_rn(Ss.f, Ss.f);
 
 #ifdef DEBUG_JACOBI_CONJUGATE
-        printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
+        printf("CPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
         //###########################################################

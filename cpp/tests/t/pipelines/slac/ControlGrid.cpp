@@ -67,43 +67,43 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     // t::pipelines::slac::VisualizePCDGridCorres(pcd_param, cgrid, true);
 }
 
-TEST_P(ControlGridPermuteDevices, Warp) {
-    core::Device device = GetParam();
-    t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
+// TEST_P(ControlGridPermuteDevices, Warp) {
+//     core::Device device = GetParam();
+//     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
-    t::geometry::PointCloud pcd = CreateTPCDFromFile(
-            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
-    cgrid.Touch(pcd);
-    cgrid.Compactify();
+//     t::geometry::PointCloud pcd = CreateTPCDFromFile(
+//             std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+//     cgrid.Touch(pcd);
+//     cgrid.Compactify();
 
-    t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
+//     t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
 
-    // int64_t n = cgrid.Size();
-    core::Tensor prev = cgrid.GetInitPositions();
-    core::Tensor curr = cgrid.GetCurrPositions();
-    curr[0][0] += 0.5;
-    curr[1][2] -= 0.5;
-    curr[2][1] += 0.5;
+//     // int64_t n = cgrid.Size();
+//     core::Tensor prev = cgrid.GetInitPositions();
+//     core::Tensor curr = cgrid.GetCurrPositions();
+//     curr[0][0] += 0.5;
+//     curr[1][2] -= 0.5;
+//     curr[2][1] += 0.5;
 
-    // t::pipelines::slac::VisualizeWarp(pcd_param, cgrid);
-}
+//     // t::pipelines::slac::VisualizeWarp(pcd_param, cgrid);
+// }
 
-TEST_P(ControlGridPermuteDevices, Regularizor) {
-    core::Device device = GetParam();
-    t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
+// TEST_P(ControlGridPermuteDevices, Regularizor) {
+//     core::Device device = GetParam();
+//     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
-    t::geometry::PointCloud pcd = CreateTPCDFromFile(
-            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
-    cgrid.Touch(pcd);
-    cgrid.Compactify();
-    core::Tensor prev = cgrid.GetInitPositions();
-    core::Tensor curr = cgrid.GetCurrPositions();
-    curr[0][0] += 0.2;
-    curr[1][2] -= 0.2;
-    curr[2][1] += 0.2;
+//     t::geometry::PointCloud pcd = CreateTPCDFromFile(
+//             std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+//     cgrid.Touch(pcd);
+//     cgrid.Compactify();
+//     core::Tensor prev = cgrid.GetInitPositions();
+//     core::Tensor curr = cgrid.GetCurrPositions();
+//     curr[0][0] += 0.2;
+//     curr[1][2] -= 0.2;
+//     curr[2][1] += 0.2;
 
-    // t::pipelines::slac::VisualizeRegularizor(cgrid);
-}
+//     // t::pipelines::slac::VisualizeRegularizor(cgrid);
+// }
 
 }  // namespace tests
 }  // namespace open3d
