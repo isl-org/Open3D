@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_civetweb
     PREFIX civetweb
-    GIT_REPOSITORY https://github.com/open-source-parsers/civetweb.git
-    GIT_TAG 1.9.4
+    GIT_REPOSITORY https://github.com/civetweb/civetweb.git
+    GIT_TAG v1.14
     GIT_SHALLOW ON
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -20,11 +20,13 @@ ExternalProject_Add(
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}civetweb${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}civetweb-cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+    BUILD_ALWAYS ON
 )
 
 ExternalProject_Get_Property(ext_civetweb INSTALL_DIR)
 set(CIVETWEB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(CIVETWEB_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(CIVETWEB_LIBRARIES civetweb)
+set(CIVETWEB_LIBRARIES civetweb civetweb-cpp)

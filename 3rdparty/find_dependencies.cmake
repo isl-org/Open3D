@@ -1202,6 +1202,7 @@ endif ()
 
 # WebRTC
 if(BUILD_WEBRTC)
+    # WebRTC
     if(BUILD_WEBRTC_FROM_SOURCE)
         include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
     else()
@@ -1215,6 +1216,17 @@ if(BUILD_WEBRTC)
     set(WEBRTC_TARGET "3rdparty_webrtc")
     add_dependencies(3rdparty_webrtc ext_webrtc_all)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
-
     target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads dl)
+
+    # CivetWeb server
+    include(${Open3D_3RDPARTY_DIR}/civetweb/civetweb.cmake)
+    import_3rdparty_library(3rdparty_civetweb
+        INCLUDE_DIRS ${CIVETWEB_INCLUDE_DIRS}
+        LIB_DIR      ${CIVETWEB_LIB_DIR}
+        LIBRARIES    ${CIVETWEB_LIBRARIES}
+    )
+    set(CIVETWEB_TARGET "3rdparty_civetweb")
+    add_dependencies(3rdparty_civetweb ext_civetweb)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
 endif()
+
