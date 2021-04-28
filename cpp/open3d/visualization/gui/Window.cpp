@@ -637,22 +637,26 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     impl_->active_dialog_ = dlg;
     dlg->OnWillShow();
 
-    auto context = GetLayoutContext();
-    auto content_rect = GetContentRect();
-    auto pref = dlg->CalcPreferredSize(context, Widget::Constraints());
-    int w = dlg->GetFrame().width;
-    int h = dlg->GetFrame().height;
-    if (w == 0) {
-        w = pref.width;
-    }
-    if (h == 0) {
-        h = pref.height;
-    }
-    w = std::min(w, int(std::round(0.8 * content_rect.width)));
-    h = std::min(h, int(std::round(0.8 * content_rect.height)));
-    dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
-                            (content_rect.height - h) / 2, w, h));
-    dlg->Layout(context);
+    auto deferred_layout = [this, dlg]() {
+        auto context = GetLayoutContext();
+        auto content_rect = GetContentRect();
+        auto pref = dlg->CalcPreferredSize(context, Widget::Constraints());
+        int w = dlg->GetFrame().width;
+        int h = dlg->GetFrame().height;
+        if (w == 0) {
+            w = pref.width;
+        }
+        if (h == 0) {
+            h = pref.height;
+        }
+        w = std::min(w, int(std::round(0.8 * content_rect.width)));
+        h = std::min(h, int(std::round(0.8 * content_rect.height)));
+        dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
+                                (content_rect.height - h) / 2, w, h));
+        dlg->Layout(context);
+    };
+
+    impl_->deferred_until_draw_.push(deferred_layout);
 }
 
 // When scene caching is enabled on a SceneWidget the SceneWidget only redraws

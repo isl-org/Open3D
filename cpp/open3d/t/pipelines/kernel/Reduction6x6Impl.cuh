@@ -31,7 +31,6 @@
 #include <cmath>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/CoreUtil.h"
 
 namespace open3d {
 namespace t {
