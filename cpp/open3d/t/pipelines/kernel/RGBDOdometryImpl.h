@@ -26,6 +26,7 @@
 
 // Private header. Do not include in Open3d.h.
 #pragma once
+
 #include "open3d/core/Tensor.h"
 
 namespace open3d {

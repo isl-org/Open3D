@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.ExtractPointCloud();
+        auto pcd = model.ExtractPointCloud(-1);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud(filename, *pcd_legacy);

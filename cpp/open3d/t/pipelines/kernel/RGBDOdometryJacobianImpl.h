@@ -39,6 +39,21 @@ namespace odometry {
 using t::geometry::kernel::NDArrayIndexer;
 using t::geometry::kernel::TransformIndexer;
 
+#ifndef __CUDACC__
+using std::abs;
+using std::max;
+#endif
+
+inline OPEN3D_HOST_DEVICE float HuberDeriv(float r, float delta) {
+    float abs_r = abs(r);
+    return abs_r < delta ? r : delta * Sign(r);
+}
+
+inline OPEN3D_HOST_DEVICE float HuberLoss(float r, float delta) {
+    float abs_r = abs(r);
+    return abs_r < delta ? 0.5 * r * r : delta * abs_r - 0.5 * delta * delta;
+}
+
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         int x,
         int y,

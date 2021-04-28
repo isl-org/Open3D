@@ -97,9 +97,10 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 A_reduction[i] += J_ij[j] * J_ij[k];
                                 i++;
                             }
-                            A_reduction[21 + j] += J_ij[j] * r;
+                            A_reduction[21 + j] +=
+                                    J_ij[j] * HuberDeriv(r, depth_huber_delta);
                         }
-                        A_reduction[27] += r * r;
+                        A_reduction[27] += HuberLoss(r, depth_huber_delta);
                         A_reduction[28] += 1;
                     }
                 }
@@ -190,9 +191,12 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                                 A_reduction[i] += J_I[j] * J_I[k];
                                 i++;
                             }
-                            A_reduction[21 + j] += J_I[j] * r_I;
+                            A_reduction[21 + j] +=
+                                    J_I[j] *
+                                    HuberDeriv(r_I, intensity_huber_delta);
                         }
-                        A_reduction[27] += r_I * r_I;
+                        A_reduction[27] +=
+                                HuberLoss(r_I, intensity_huber_delta);
                         A_reduction[28] += 1;
                     }
                 }
@@ -290,9 +294,14 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                                         J_I[j] * J_I[k] + J_D[j] * J_D[k];
                                 i++;
                             }
-                            A_reduction[21 + j] += J_I[j] * r_I + J_D[j] * r_D;
+                            A_reduction[21 + j] +=
+                                    J_I[j] * HuberDeriv(r_I,
+                                                        intensity_huber_delta) +
+                                    J_D[j] * HuberDeriv(r_D, depth_huber_delta);
                         }
-                        A_reduction[27] += r_I * r_I + r_D * r_D;
+                        A_reduction[27] +=
+                                HuberLoss(r_I, intensity_huber_delta) +
+                                HuberLoss(r_D, depth_huber_delta);
                         A_reduction[28] += 1;
                     }
                 }

@@ -43,112 +43,6 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-template <typename T>
-__device__ inline void WarpReduceSum(volatile T* local_sum, const int tid) {
-    local_sum[tid] += local_sum[tid + 32];
-    local_sum[tid] += local_sum[tid + 16];
-    local_sum[tid] += local_sum[tid + 8];
-    local_sum[tid] += local_sum[tid + 4];
-    local_sum[tid] += local_sum[tid + 2];
-    local_sum[tid] += local_sum[tid + 1];
-}
-
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid, volatile T* local_sum) {
-    if (BLOCK_SIZE >= 512) {
-        if (tid < 256) {
-            local_sum[tid] += local_sum[tid + 256];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 256) {
-        if (tid < 128) {
-            local_sum[tid] += local_sum[tid + 128];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 128) {
-        if (tid < 64) {
-            local_sum[tid] += local_sum[tid + 64];
-        }
-        __syncthreads();
-    }
-    if (tid < 32) {
-        WarpReduceSum<T>(local_sum, tid);
-    }
-}
-
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid,
-                                      volatile T* local_sum0,
-                                      volatile T* local_sum1) {
-    if (BLOCK_SIZE >= 512) {
-        if (tid < 256) {
-            local_sum0[tid] += local_sum0[tid + 256];
-            local_sum1[tid] += local_sum1[tid + 256];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 256) {
-        if (tid < 128) {
-            local_sum0[tid] += local_sum0[tid + 128];
-            local_sum1[tid] += local_sum1[tid + 128];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 128) {
-        if (tid < 64) {
-            local_sum0[tid] += local_sum0[tid + 64];
-            local_sum1[tid] += local_sum1[tid + 64];
-        }
-        __syncthreads();
-    }
-
-    if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
-    }
-}
-
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid,
-                                      volatile T* local_sum0,
-                                      volatile T* local_sum1,
-                                      volatile T* local_sum2) {
-    if (BLOCK_SIZE >= 512) {
-        if (tid < 256) {
-            local_sum0[tid] += local_sum0[tid + 256];
-            local_sum1[tid] += local_sum1[tid + 256];
-            local_sum2[tid] += local_sum2[tid + 256];
-        }
-        __syncthreads();
-    }
-
-    if (BLOCK_SIZE >= 256) {
-        if (tid < 128) {
-            local_sum0[tid] += local_sum0[tid + 128];
-            local_sum1[tid] += local_sum1[tid + 128];
-            local_sum2[tid] += local_sum2[tid + 128];
-        }
-        __syncthreads();
-    }
-
-    if (BLOCK_SIZE >= 128) {
-        if (tid < 64) {
-            local_sum0[tid] += local_sum0[tid + 64];
-            local_sum1[tid] += local_sum1[tid + 64];
-            local_sum2[tid] += local_sum2[tid + 64];
-        }
-        __syncthreads();
-    }
-
-    if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
-        WarpReduceSum<float>(local_sum2, tid);
-    }
-}
-
 __global__ void ComputePosePointToPlaneCUDAKernel(
         NDArrayIndexer source_vertex_indexer,
         NDArrayIndexer target_vertex_indexer,
@@ -188,9 +82,9 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
+        reduction[offset++] = J[i] * HuberDeriv(r, depth_huber_delta);
     }
-    reduction[offset++] = r * r;
+    reduction[offset++] = HuberLoss(r, depth_huber_delta);
     reduction[offset++] = valid;
 
     // Sum reduction: JtJ(21) and Jtr(6)
@@ -309,9 +203,9 @@ __global__ void ComputePoseIntensityCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
+        reduction[offset++] = J[i] * HuberDeriv(r, intensity_huber_delta);
     }
-    reduction[offset++] = r * r;
+    reduction[offset++] = HuberLoss(r, intensity_huber_delta);
     reduction[offset++] = valid;
 
     ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
@@ -419,9 +313,11 @@ __global__ void ComputePoseHybridCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J_I[i] * r_I + J_D[i] * r_D;
+        reduction[offset++] = J_I[i] * HuberDeriv(r_I, intensity_huber_delta) +
+                              J_D[i] * HuberDeriv(r_D, depth_huber_delta);
     }
-    reduction[offset++] = r_I * r_D + r_D * r_D;
+    reduction[offset++] = HuberLoss(r_I, intensity_huber_delta) +
+                          HuberLoss(r_D, depth_huber_delta);
     reduction[offset++] = valid;
 
     ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
