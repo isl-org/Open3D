@@ -47,8 +47,11 @@ pytestmark = mltest.default_marks
 # yapf: enable
 @mltest.parametrize.ml_tf_only
 @pytest.mark.parametrize('feat_out_type', [('float32', 'float32'),
-                                           ('bfloat16', 'float32'),
-                                           ('bfloat16', 'bfloat16')])
+                                        # tf 2.3 did support bfloat16 on cpu but 2.4 does not.
+                                        # We deactivate the tests for this type for now.
+                                        #    ('bfloat16', 'float32'), 
+                                        #    ('bfloat16', 'bfloat16')
+                                           ])
 @pytest.mark.parametrize('real_type', ['float32'])
 def test_compare_to_conv3d(ml, feat_out_type, real_type, filter_size,
                            out_channels, in_channels, with_inp_importance,
