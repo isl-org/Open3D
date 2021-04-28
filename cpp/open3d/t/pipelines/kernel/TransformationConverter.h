@@ -70,6 +70,7 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        core::Tensor &delta,
                        float &inlier_residual,
                        int &inlier_count);
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

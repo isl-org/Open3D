@@ -24,15 +24,68 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <cuda.h>
+
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+
+__global__ void ComputePosePointToPlaneCUDAKernel(
+        const float *source_points_ptr,
+        const float *target_points_ptr,
+        const float *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const int64_t *correspondences_second,
+        const int n,
+        float *global_sum) {
+    const int THREAD_1D_UNIT = 256;
+    __shared__ float local_sum0[THREAD_1D_UNIT];
+    __shared__ float local_sum1[THREAD_1D_UNIT];
+    __shared__ float local_sum2[THREAD_1D_UNIT];
+
+    const int tid = threadIdx.x;
+
+    local_sum0[tid] = 0;
+    local_sum1[tid] = 0;
+    local_sum2[tid] = 0;
+
+    const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (workload_idx >= n) return;
+
+    float J[6] = {0}, reduction[21 + 6 + 2];
+    float r = 0;
+
+    bool valid = GetJacobianPointToPlane(workload_idx, source_points_ptr,
+                                         target_points_ptr, target_normals_ptr,
+                                         correspondences_first,
+                                         correspondences_second, J, r);
+
+    // Dump J, r into JtJ and Jtr
+    int offset = 0;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j <= i; ++j) {
+            reduction[offset++] = J[i] * J[j];
+        }
+    }
+    for (int i = 0; i < 6; ++i) {
+        reduction[offset++] = J[i] * r;
+    }
+    reduction[offset++] = r * r;
+    reduction[offset++] = valid;
+
+    ReduceSum6x6LinearSystem<float, THREAD_1D_UNIT>(tid, valid, reduction,
+                                                    local_sum0, local_sum1,
+                                                    local_sum2, global_sum);
+}
 
 void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
                                  const float *target_points_ptr,
@@ -43,86 +96,24 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
                                  core::Tensor &pose,
                                  const core::Dtype &dtype,
                                  const core::Device &device) {
-    // atai: {n, 21} Stores local sum for ATA stacked vertically
-    core::Tensor atai =
-            core::Tensor::Empty({n, 21}, core::Dtype::Float32, device);
-    float *atai_ptr = atai.GetDataPtr<float>();
+    core::Tensor global_sum =
+            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    // atbi: {n, 6} Stores local sum for ATB.T() stacked vertically
-    core::Tensor atbi =
-            core::Tensor::Empty({n, 6}, core::Dtype::Float32, device);
-    float *atbi_ptr = atbi.GetDataPtr<float>();
+    const int THREAD_1D_UNIT = 256;
+    const dim3 blocks((n + THREAD_1D_UNIT - 1) / THREAD_1D_UNIT);
+    const dim3 threads(THREAD_1D_UNIT);
 
-    // This kernel computes the {n,21} shape atai tensor
-    // and {n,6} shape atbi tensor.
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                const int64_t &source_idx =
-                        3 * correspondences_first[workload_idx];
-                const int64_t &target_idx =
-                        3 * correspondences_second[workload_idx];
+    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+            source_points_ptr, target_points_ptr, target_normals_ptr,
+            correspondences_first, correspondences_second, n, global_sum_ptr);
 
-                const int64_t atai_stride = 21 * workload_idx;
-                const int64_t atbi_stride = 6 * workload_idx;
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 
-                const float &sx = source_points_ptr[source_idx + 0];
-                const float &sy = source_points_ptr[source_idx + 1];
-                const float &sz = source_points_ptr[source_idx + 2];
-                const float &tx = target_points_ptr[target_idx + 0];
-                const float &ty = target_points_ptr[target_idx + 1];
-                const float &tz = target_points_ptr[target_idx + 2];
-                const float &nx = target_normals_ptr[target_idx + 0];
-                const float &ny = target_normals_ptr[target_idx + 1];
-                const float &nz = target_normals_ptr[target_idx + 2];
-
-                const float bi =
-                        (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                const float ai[] = {(nz * sy - ny * sz),
-                                    (nx * sz - nz * sx),
-                                    (ny * sx - nx * sy),
-                                    nx,
-                                    ny,
-                                    nz};
-
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        atai_ptr[atai_stride + i] = ai[j] * ai[k];
-                        i++;
-                    }
-                    atbi_ptr[atbi_stride + j] = ai[j] * bi;
-                }
-            });
-
-    // Reduce matrix atai (to 1x21) and atbi (to ATB.T() 1x6).
-    // Compute linear system on CPU as Float64.
-    core::Device host("CPU:0");
-    core::Tensor ata_1x21 = atai.Sum({0}, true).To(host, core::Dtype::Float64);
-    core::Tensor ATB = atbi.Sum({0}, true).T().To(host, core::Dtype::Float64);
-
-    //   ata_1x21 is a {1,21} vector having elements of the matrix ATA such
-    //     that the corresponding elemetes in ATA are like:
-    //     0
-    //     1   2
-    //     3   4   5
-    //     6   7   8   9
-    //     10  11  12  13  14
-    //     15  16  17  18  19  20
-    //     Since, ATA is a symmertric matrix, it can be regenerated from this.
-
-    core::Tensor ATA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    double *ATA_ptr = ATA.GetDataPtr<double>();
-    double *ata_1x21_ptr = ata_1x21.GetDataPtr<double>();
-
-    for (int i = 0, j = 0; j < 6; j++) {
-        for (int k = 0; k <= j; k++) {
-            ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
-            ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
-            i++;
-        }
-    }
-
-    // ATA(6,6) . Pose(6,1) = ATB(6,1)
-    pose = ATA.Solve(ATB).Reshape({-1});
+    // TODO (@rishabh), residual will be used for adding robust kernel support.
+    float residual;
+    int inlier_count;
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
 }  // namespace kernel
