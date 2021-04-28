@@ -1117,15 +1117,24 @@ void pybind_gui_classes(py::module &m) {
             .def("set_view_controls", &PySceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
             .def("setup_camera",
-                 py::overload_cast<float, const geometry::AxisAlignedBoundingBox&, const Eigen::Vector3f&>(&PySceneWidget::SetupCamera),
+                 py::overload_cast<float,
+                                   const geometry::AxisAlignedBoundingBox &,
+                                   const Eigen::Vector3f &>(
+                         &PySceneWidget::SetupCamera),
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, center_of_rotation)")
             .def("setup_camera",
-                 py::overload_cast<const camera::PinholeCameraIntrinsic&, const Eigen::Matrix4d&, const geometry::AxisAlignedBoundingBox&>(&PySceneWidget::SetupCamera),
+                 py::overload_cast<const camera::PinholeCameraIntrinsic &,
+                                   const Eigen::Matrix4d &,
+                                   const geometry::AxisAlignedBoundingBox &>(
+                         &PySceneWidget::SetupCamera),
                  "setup_camera(intrinsics, extrinsic_matrix, model_bounds): "
                  "sets the camera view")
             .def("setup_camera",
-                 py::overload_cast<const Eigen::Matrix3d&, const Eigen::Matrix4d&, int, int, const geometry::AxisAlignedBoundingBox&>(&PySceneWidget::SetupCamera),
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Matrix4d &, int, int,
+                                   const geometry::AxisAlignedBoundingBox &>(
+                         &PySceneWidget::SetupCamera),
                  "setup_camera(intrinsic_matrix, extrinsic_matrix, "
                  "intrinsic_width_px, intrinsic_height_px, model_bounds): "
                  "sets the camera view")

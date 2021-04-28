@@ -206,7 +206,9 @@ double FilamentCamera::GetFieldOfView() const {
         // GetFieldOfView() after setting an orthographic projection
         return 0.0;
     } else if (projection_.is_intrinsic) {
-        double fov_rad = 2.0 * std::atan(0.5 * projection_.proj.intrinsics.height / projection_.proj.intrinsics.fy);
+        double fov_rad =
+                2.0 * std::atan(0.5 * projection_.proj.intrinsics.height /
+                                projection_.proj.intrinsics.fy);
         return 180.0 / 3.141592 * fov_rad;
     } else {
         return projection_.proj.perspective.fov;

@@ -56,7 +56,6 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 1.0;
 
 static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2;  // seconds
@@ -792,17 +791,16 @@ struct SceneWidget::Impl {
         float aspect = float(frame.width) / float(frame.height);
         Eigen::Matrix3d scale;
         if (aspect < 1.0f) {
-            scale << 1.0, 0.0, 0.0,
-                0.0, (aspect / orig_aspect), 0.0,
-                0.0, 0.0, 1.0;
+            scale << 1.0, 0.0, 0.0, 0.0, (aspect / orig_aspect), 0.0, 0.0, 0.0,
+                    1.0;
         } else {
-            scale << (orig_aspect / aspect), 0.0, 0.0,
-                0.0, 1.0, 0.0,
-                0.0, 0.0, 1.0;
+            scale << (orig_aspect / aspect), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                    1.0;
         }
         Eigen::Matrix3d m = intrinsics_.matrix * scale;
         auto* camera = scene_->GetCamera();
-        camera->SetProjection(m, NEAR_PLANE, CalcFarPlane(frame),
+        camera->SetProjection(m, rendering::Camera::CalcNearPlane(),
+                              rendering::Camera::CalcFarPlane(*camera, bounds_),
                               intrinsics_.width, intrinsics_.height);
     }
 
@@ -812,24 +810,10 @@ struct SceneWidget::Impl {
             aspect = float(frame.width) / float(frame.height);
         }
         auto* camera = scene_->GetCamera();
-        auto far = CalcFarPlane(frame);
-        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
+        auto far = rendering::Camera::CalcFarPlane(*camera, bounds_);
+        camera->SetProjection(verticalFoV, aspect,
+                              rendering::Camera::CalcNearPlane(), far,
                               rendering::Camera::FovType::Vertical);
-    }
-
-    double CalcFarPlane(const Rect& frame) {
-        // The far plane needs to be the max absolute distance, not just the
-        // max extent, so that axes are visible if requested.
-        // See also RotationInteractorLogic::UpdateCameraFarPlane().
-        auto* camera = scene_->GetCamera();
-        auto far1 = bounds_.GetMinBound().norm();
-        auto far2 = bounds_.GetMaxBound().norm();
-        auto far3 =
-                camera->GetModelMatrix().translation().cast<double>().norm();
-        auto model_size = 2.0 * bounds_.GetExtent().norm();
-        auto far = std::max(MIN_FAR_PLANE,
-                            std::max(std::max(far1, far2), far3) + model_size);
-        return far;
     }
 };
 
@@ -860,11 +844,11 @@ void SceneWidget::SetFrame(const Rect& f) {
 
 void SceneWidget::SetupCamera(
         float verticalFoV,
-        const geometry::AxisAlignedBoundingBox& geometry_bounds,
+        const geometry::AxisAlignedBoundingBox& scene_bounds,
         const Eigen::Vector3f& center_of_rotation) {
     impl_->intrinsics_.is_using = false;
-    impl_->bounds_ = geometry_bounds;
-    impl_->controls_->SetBoundingBox(geometry_bounds);
+    impl_->bounds_ = scene_bounds;
+    impl_->controls_->SetBoundingBox(scene_bounds);
     impl_->controls_->SetCenterOfRotation(center_of_rotation);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
@@ -872,50 +856,38 @@ void SceneWidget::SetupCamera(
     impl_->UpdateFarPlane(GetFrame(), verticalFoV);
 }
 
-void SceneWidget::SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
-                              const Eigen::Matrix4d& extrinsic,
-                              const geometry::AxisAlignedBoundingBox& geometry_bounds) {
-    SetupCamera(intrinsic.intrinsic_matrix_, extrinsic,
-                intrinsic.width_, intrinsic.height_, geometry_bounds);
+void SceneWidget::SetupCamera(
+        const camera::PinholeCameraIntrinsic& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
+        const geometry::AxisAlignedBoundingBox& scene_bounds) {
+    SetupCamera(intrinsic.intrinsic_matrix_, extrinsic, intrinsic.width_,
+                intrinsic.height_, scene_bounds);
 }
 
-void SceneWidget::SetupCamera(const Eigen::Matrix3d& intrinsic,
-                              const Eigen::Matrix4d& extrinsic,
-                              int intrinsic_width_px, int intrinsic_height_px,
-                              const geometry::AxisAlignedBoundingBox& geometry_bounds) {
+void SceneWidget::SetupCamera(
+        const Eigen::Matrix3d& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
+        int intrinsic_width_px,
+        int intrinsic_height_px,
+        const geometry::AxisAlignedBoundingBox& scene_bounds) {
     impl_->intrinsics_.is_using = true;
     impl_->intrinsics_.matrix = intrinsic;
     impl_->intrinsics_.width = intrinsic_width_px;
     impl_->intrinsics_.height = intrinsic_height_px;
-    impl_->bounds_ = geometry_bounds;
-    impl_->controls_->SetBoundingBox(geometry_bounds);
+    impl_->bounds_ = scene_bounds;
+    impl_->controls_->SetBoundingBox(scene_bounds);
 
-    // The intrinsic * extrinsic matrix models projection from the world through
-    // a pinhole onto the projection plane. The instrinsic matrix is the
-    // projection matrix, and extrinsic.inverse() is the camera pose. But the
-    // OpenGL camera has the projection plane in front of the camera, which
-    // essentially inverts all the axes of the projection. (Pinhole camera
-    // mages are flipped horizontally and vertically and the camera is the other
-    // direction.) But the extrinsic matrix is left-handed, so we also need to
-    // convert to OpenGL's right-handed matrices.
-    Eigen::Matrix4d toGLCamera;
-    toGLCamera << 1.0, 0.0, 0.0, 0.0,
-        0.0, -1.0, 0.0, 0.0,
-        0.0, 0.0, -1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0;
-    Eigen::Matrix4f m = (extrinsic.inverse() * toGLCamera).cast<float>();
-    auto *camera = GetCamera();
-    camera->SetModelMatrix(rendering::Camera::Transform(m));
-    camera->SetProjection(impl_->intrinsics_.matrix,
-                          NEAR_PLANE, impl_->CalcFarPlane(GetFrame()),
-                          intrinsic_width_px, intrinsic_height_px);
+    auto* camera = GetCamera();
+    rendering::Camera::SetupCameraAsPinholeCamera(
+            *camera, intrinsic, extrinsic, intrinsic_width_px,
+            intrinsic_height_px, scene_bounds);
 
     // We need to calculate the center of rotation (rather than specifying it
     // because the intrinsic/extrinsic matrices define a position for the camera
     // and the center of rotation needs to be visually consistent.
     Eigen::Vector3f forward = camera->GetForwardVector();
     Eigen::Vector3f pos = camera->GetPosition();
-    Eigen::Vector3f toCenter = geometry_bounds.GetCenter().cast<float>() - pos;
+    Eigen::Vector3f toCenter = scene_bounds.GetCenter().cast<float>() - pos;
     float dist = toCenter.dot(forward);
     Eigen::Vector3f cor = pos + dist * forward;
     impl_->controls_->SetCenterOfRotation(cor);

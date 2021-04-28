@@ -1038,18 +1038,19 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
-    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
-                     const Eigen::Matrix4d& extrinsic) {
+    void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
+                     const Eigen::Matrix4d &extrinsic) {
         scene_->SetupCamera(intrinsic, extrinsic,
                             scene_->GetScene()->GetBoundingBox());
         scene_->ForceRedraw();
     }
 
-    void SetupCamera(const Eigen::Matrix3d& intrinsic,
-                     const Eigen::Matrix4d& extrinsic,
-                     int intrinsic_width_px, int intrinsic_height_px) {
-        scene_->SetupCamera(intrinsic, extrinsic,
-                            intrinsic_width_px, intrinsic_height_px,
+    void SetupCamera(const Eigen::Matrix3d &intrinsic,
+                     const Eigen::Matrix4d &extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px) {
+        scene_->SetupCamera(intrinsic, extrinsic, intrinsic_width_px,
+                            intrinsic_height_px,
                             scene_->GetScene()->GetBoundingBox());
         scene_->ForceRedraw();
     }
@@ -1990,13 +1991,13 @@ void O3DVisualizer::SetupCamera(float fov,
     impl_->SetupCamera(fov, center, eye, up);
 }
 
-void O3DVisualizer::SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
-                                const Eigen::Matrix4d& extrinsic) {
+void O3DVisualizer::SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
+                                const Eigen::Matrix4d &extrinsic) {
     impl_->SetupCamera(intrinsic, extrinsic);
 }
 
-void O3DVisualizer::SetupCamera(const Eigen::Matrix3d& intrinsic,
-                                const Eigen::Matrix4d& extrinsic,
+void O3DVisualizer::SetupCamera(const Eigen::Matrix3d &intrinsic,
+                                const Eigen::Matrix4d &extrinsic,
                                 int intrinsic_width_px,
                                 int intrinsic_height_px) {
     impl_->SetupCamera(intrinsic, extrinsic, intrinsic_width_px,

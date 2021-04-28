@@ -144,7 +144,8 @@ public:
                      const Eigen::Matrix4d& extrinsic);
     void SetupCamera(const Eigen::Matrix3d& intrinsic,
                      const Eigen::Matrix4d& extrinsic,
-                     int intrinsic_width_px, int intrinsic_height_px);
+                     int intrinsic_width_px,
+                     int intrinsic_height_px);
 
     void ResetCameraToDefault();
 
