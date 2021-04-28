@@ -3,9 +3,7 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_civetweb
     PREFIX civetweb
-    GIT_REPOSITORY https://github.com/civetweb/civetweb.git
-    GIT_TAG v1.14
-    GIT_SHALLOW ON
+    URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.14.zip
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCIVETWEB_BUILD_TESTING=ON
