@@ -39,7 +39,7 @@
 namespace open3d {
 namespace tests {
 
-core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
+static core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
