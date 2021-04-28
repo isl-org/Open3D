@@ -85,8 +85,15 @@ struct Material {
 
     // Colors are assumed to be sRGB and tone-mapped accordingly.
     // If tone-mapping is disabled, then colors would be in linear RGB space,
-    // in which case this should be set to false.
+    // in which case this should be set to false. If necessary, colors will be
+    // linearized on the CPU.
     bool sRGB_color = true;
+
+    // Unlike the material property sRGB_color which is used to indicate that
+    // source colors are in sRGB colorspace, sRGB_vertex_color indicates that
+    // per-vertex colors are in sRGB space and should be passed to the GPU as
+    // sRGB color.
+    bool sRGB_vertex_color = false;
 
     // Background image (shader = "unlitBackground")
     float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img

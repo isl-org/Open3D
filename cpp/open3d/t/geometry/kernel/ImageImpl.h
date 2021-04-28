@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/CoreUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -162,7 +162,8 @@ void CreateVertexMapCPU
          float invalid_fill) {
     NDArrayIndexer src_indexer(src, 2);
     NDArrayIndexer dst_indexer(dst, 2);
-    TransformIndexer ti(intrinsics);
+    TransformIndexer ti(intrinsics, core::Tensor::Eye(4, core::Dtype::Float64,
+                                                      core::Device("CPU:0")));
 
     int64_t rows = src.GetShape(0);
     int64_t cols = src.GetShape(1);

@@ -71,9 +71,8 @@ void CreateVertexMap(const core::Tensor &src,
     core::Device device = src.GetDevice();
     static const core::Device host("CPU:0");
 
-    // TODO(wei): when upgrading to the TSDF-optim branch use Float64
     core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float32).Contiguous();
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
     if (device.GetType() == core::Device::DeviceType::CPU) {
         CreateVertexMapCPU(src, dst, intrinsics_d, invalid_fill);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {

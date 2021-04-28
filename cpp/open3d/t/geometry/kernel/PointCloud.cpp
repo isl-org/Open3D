@@ -52,12 +52,16 @@ void Unproject(const core::Tensor& depth,
                 "[Unproject] Both or none of image_colors and colors must have "
                 "values.");
     }
+
     core::Device device = depth.GetDevice();
-
-    core::Tensor intrinsics_d = intrinsics.To(device, core::Dtype::Float32);
-    core::Tensor extrinsics_d = extrinsics.To(device, core::Dtype::Float32);
-
     core::Device::DeviceType device_type = device.GetType();
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor extrinsics_d =
+            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+
     if (device_type == core::Device::DeviceType::CPU) {
         UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
                      extrinsics_d, depth_scale, depth_max, stride);

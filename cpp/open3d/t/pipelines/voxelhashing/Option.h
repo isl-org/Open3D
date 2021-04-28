@@ -26,17 +26,32 @@
 
 #pragma once
 
-#include "open3d/utility/Console.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/RGBDImage.h"
+#include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
+#include "open3d/t/pipelines/voxelhashing/Frame.h"
 
-#define DISPATCH_FLOAT32_FLOAT64_DTYPE(DTYPE, ...)          \
-    [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
-    }()
+namespace open3d {
+namespace t {
+namespace pipelines {
+namespace voxelhashing {
+
+struct Option {
+    Option() {}
+
+    /// TSDF VoxelBlock options
+    float voxel_size = 3.0 / 512.0;
+    int est_block_count = 40000;
+
+    /// Input options
+    float depth_scale = 1000.0f;
+    float depth_max = 3.0f;
+    float depth_diff = 0.07f;
+};
+
+}  // namespace voxelhashing
+}  // namespace pipelines
+}  // namespace t
+}  // namespace open3d
