@@ -37,7 +37,9 @@ namespace ml {
 namespace impl {
 
 // Implementation of CConvBackropFilterCPU
-template <class TReal,
+template <class TFeat,
+          class TOut,
+          class TReal,
           class TIndex,
           InterpolationMode INTERPOLATION,
           CoordinateMapping MAPPING,
@@ -45,21 +47,21 @@ template <class TReal,
           bool INDIVIDUAL_EXTENT,
           bool ISOTROPIC_EXTENT,
           bool POINT_IMPORTANCE>
-void _CConvBackropFilterCPU(TReal* filter_backprop,
+void _CConvBackropFilterCPU(TOut* filter_backprop,
                             const std::vector<int>& filter_dims,
                             size_t num_out,
                             const TReal* out_positions,
                             size_t num_inp,
                             const TReal* inp_positions,
-                            const TReal* inp_features,
-                            const TReal* inp_importance,
+                            const TFeat* inp_features,
+                            const TFeat* inp_importance,
                             size_t neighbors_index_size,
                             const TIndex* neighbors_index,
-                            const TReal* neighbors_importance,
+                            const TFeat* neighbors_importance,
                             const int64_t* neighbors_row_splits,
                             const TReal* extents,
                             const TReal* offsets,
-                            const TReal* out_features_gradient,
+                            const TFeat* out_features_gradient,
                             bool normalize) {
     const bool NEIGHBORS_IMPORTANCE = neighbors_importance;
     const int VECSIZE = 32;
@@ -77,7 +79,7 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
     Eigen::Array<int, 3, 1> filter_size_xyz(filter_dims[2], filter_dims[1],
                                             filter_dims[0]);
 
-    memset(filter_backprop, 0, sizeof(TReal) * total_filter_size);
+    memset(filter_backprop, 0, sizeof(TOut) * total_filter_size);
     std::mutex filter_backprop_mutex;
 
     tbb::parallel_for(
@@ -85,13 +87,13 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * spatial_filter_size, range_length);
                 B.setZero();
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> C(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> C(
                         out_channels, range_length);
 
-                typedef Eigen::Array<TReal, VECSIZE, Eigen::Dynamic> Matrix;
+                typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
                 Matrix infeat(VECSIZE, in_channels);
 
                 Eigen::Array<TReal, 3, 1> offsets_(offsets[0], offsets[1],
@@ -114,7 +116,7 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
                     const size_t neighbor_start = neighbors_row_splits[out_idx];
                     const size_t neighbor_end =
                             neighbors_row_splits[out_idx + 1];
-                    TReal normalizer = 0;
+                    TOut normalizer(0);
 
                     if (INDIVIDUAL_EXTENT) {
                         if (ISOTROPIC_EXTENT) {
@@ -147,16 +149,16 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
                         z(i) = inp_positions[inp_idx * 3 + 2] -
                                out_positions[out_idx * 3 + 2];
 
-                        const TReal n_importance =
+                        const TFeat n_importance =
                                 (NEIGHBORS_IMPORTANCE ? neighbors_importance[n]
-                                                      : 1);
+                                                      : TFeat(1));
                         normalizer += n_importance;
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
                                     inp_features[inp_idx * in_channels + ic];
 
-                        TReal importance = 1;
+                        TFeat importance = TFeat(1);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
                         if (NEIGHBORS_IMPORTANCE) importance *= n_importance;
@@ -179,7 +181,7 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
                                      ++j) {
                                     for (int ic = 0; ic < in_channels; ++ic)
                                         B(interp_indices(j, k) + ic, out_col) +=
-                                                interp_weights(j, k) *
+                                                TFeat(interp_weights(j, k)) *
                                                 infeat(k, ic);
                                 }
                             vec_valid_count = 0;
@@ -197,25 +199,25 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
                                  ++j) {
                                 for (int ic = 0; ic < in_channels; ++ic)
                                     B(interp_indices(j, k) + ic, out_col) +=
-                                            interp_weights(j, k) *
+                                            TFeat(interp_weights(j, k)) *
                                             infeat(k, ic);
                             }
                     }
 
                     C.col(out_col) = Eigen::Map<
-                            const Eigen::Array<TReal, Eigen::Dynamic, 1>>(
+                            const Eigen::Array<TFeat, Eigen::Dynamic, 1>>(
                             out_features_gradient + out_idx * out_channels,
                             out_channels, 1);
 
-                    if (normalize && normalizer != 0)
-                        C.col(out_col) /= normalizer;
+                    if (normalize && normalizer != TOut(0))
+                        C.col(out_col) /= TFeat(normalizer);
 
                 }  // out_idx
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> A(
+                Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic> A(
                         out_channels, spatial_filter_size * in_channels);
 
-                A = C * B.transpose();
+                A = (C * B.transpose()).template cast<TOut>();
 
                 {
                     std::lock_guard<std::mutex> lock(filter_backprop_mutex);
@@ -229,6 +231,11 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
 }
 
 /// Computes the backprop for the filter of a continuous convolution.
+///
+/// \tparam TFeat    Type for the features and weights
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
 ///
 /// \param filter_backprop    Output array for the computed filter gradient
 ///        with shape [depth,height,width, inp channels, out channels]
@@ -295,22 +302,22 @@ void _CConvBackropFilterCPU(TReal* filter_backprop,
 ///        by the number of points (neighbors_importance is null) or by the sum
 ///        of the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
-void CConvBackpropFilterCPU(TReal* filter_backprop,
+template <class TFeat, class TOut, class TReal, class TIndex>
+void CConvBackpropFilterCPU(TOut* filter_backprop,
                             const std::vector<int>& filter_dims,
                             size_t num_out,
                             const TReal* out_positions,
                             size_t num_inp,
                             const TReal* inp_positions,
-                            const TReal* inp_features,
-                            const TReal* inp_importance,
+                            const TFeat* inp_features,
+                            const TFeat* inp_importance,
                             size_t neighbors_index_size,
                             const TIndex* neighbors_index,
-                            const TReal* neighbors_importance,
+                            const TFeat* neighbors_importance,
                             const int64_t* neighbors_row_splits,
                             const TReal* extents,
                             const TReal* offsets,
-                            const TReal* out_features_gradient,
+                            const TFeat* out_features_gradient,
                             InterpolationMode interpolation,
                             CoordinateMapping coordinate_mapping,
                             bool align_corners,
@@ -332,8 +339,8 @@ void CConvBackpropFilterCPU(TReal* filter_backprop,
         INDIVIDUAL_EXTENT == individual_extent &&                          \
         ISOTROPIC_EXTENT == isotropic_extent &&                            \
         HAS_IMPORTANCE == has_importance)                                  \
-        _CConvBackropFilterCPU<TReal, TIndex, INTERPOLATION, MAPPING,      \
-                               ALIGN_CORNERS, INDIVIDUAL_EXTENT,           \
+        _CConvBackropFilterCPU<TFeat, TOut, TReal, TIndex, INTERPOLATION,  \
+                               MAPPING, ALIGN_CORNERS, INDIVIDUAL_EXTENT,  \
                                ISOTROPIC_EXTENT, HAS_IMPORTANCE>(          \
                 FN_PARAMETERS);
 

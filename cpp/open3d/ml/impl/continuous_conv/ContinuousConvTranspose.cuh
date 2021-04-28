@@ -40,27 +40,27 @@ namespace open3d {
 namespace ml {
 namespace impl {
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void CConvTransposeComputeFeaturesCUDA(
         const cudaStream_t& stream,
         void* temp,
         size_t& temp_size,
         size_t& max_temp_size,
         int texture_alignment,
-        TReal* out_features,
+        TOut* out_features,
         const std::vector<int>& filter_dims,
-        const TReal* filter,
+        const TFeat* filter,
         TIndex num_out,
         const TReal* out_positions,
-        const TReal* out_importance,
+        const TFeat* out_importance,
         TIndex num_inp,
         const TReal* inp_positions,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
+        const TFeat* inp_features,
+        const TFeat* inp_neighbors_importance_sum,
         const int64_t* inp_neighbors_prefix_sum,
         size_t neighbors_index_size,
         const TIndex* neighbors_index,
-        const TReal* neighbors_importance,
+        const TFeat* neighbors_importance,
         const int64_t* neighbors_row_splits,
         const TReal* extents,
         const TReal* offsets,
@@ -90,7 +90,7 @@ void CConvTransposeComputeFeaturesCUDA(
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     const size_t bytes_per_column =
-            sizeof(TReal) * (spatial_filter_size * in_channels);
+            sizeof(TFeat) * (spatial_filter_size * in_channels);
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -115,7 +115,7 @@ void CConvTransposeComputeFeaturesCUDA(
     }
 
     // init output
-    cudaMemsetAsync(out_features, 0, sizeof(TReal) * num_out * out_channels,
+    cudaMemsetAsync(out_features, 0, sizeof(TOut) * num_out * out_channels,
                     stream);
 
     size_t num_cols_per_run =
@@ -130,7 +130,7 @@ void CConvTransposeComputeFeaturesCUDA(
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
-    TReal* columns = (TReal*)mem_columns.first;
+    TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
     size_t num_runs = DivUp(num_out, num_cols_per_run);
@@ -140,7 +140,7 @@ void CConvTransposeComputeFeaturesCUDA(
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run);
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumnTranspose<TReal, TIndex>(
+        FillColumnTranspose<TFeat, TReal, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_neighbors_importance_sum, inp_neighbors_prefix_sum,

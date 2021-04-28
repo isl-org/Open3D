@@ -36,7 +36,9 @@ namespace impl {
 
 /// Implementation of CConvComputeFeatures with template parameters for
 /// configuration.
-template <class TReal,
+template <class TFeat,
+          class TOut,
+          class TReal,
           class TIndex,
           InterpolationMode INTERPOLATION,
           CoordinateMapping MAPPING,
@@ -44,18 +46,18 @@ template <class TReal,
           bool INDIVIDUAL_EXTENT,
           bool ISOTROPIC_EXTENT,
           bool POINT_IMPORTANCE>
-void _CConvComputeFeaturesCPU(TReal* out_features,
+void _CConvComputeFeaturesCPU(TOut* out_features,
                               const std::vector<int>& filter_dims,
-                              const TReal* filter,
+                              const TFeat* filter,
                               size_t num_out,
                               const TReal* out_positions,
                               size_t num_inp,
                               const TReal* inp_positions,
-                              const TReal* inp_features,
-                              const TReal* inp_importance,
+                              const TFeat* inp_features,
+                              const TFeat* inp_importance,
                               size_t neighbors_index_size,
                               const TIndex* neighbors_index,
-                              const TReal* neighbors_importance,
+                              const TFeat* neighbors_importance,
                               const int64_t* neighbors_row_splits,
                               const TReal* extents,
                               const TReal* offsets,
@@ -74,22 +76,22 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
     Eigen::Array<int, 3, 1> filter_size_xyz(filter_dims[2], filter_dims[1],
                                             filter_dims[0]);
 
-    memset(out_features, 0, sizeof(TReal) * num_out * out_channels);
+    memset(out_features, 0, sizeof(TOut) * num_out * out_channels);
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
                 int range_length = r.end() - r.begin();
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, 1> normalizers(
-                        range_length, 1);
+                Eigen::Matrix<TOut, Eigen::Dynamic, 1> normalizers(range_length,
+                                                                   1);
                 normalizers.setZero();
 
-                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
+                Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * spatial_filter_size, range_length);
                 B.setZero();
 
-                typedef Eigen::Array<TReal, VECSIZE, Eigen::Dynamic> Matrix;
+                typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
                 Matrix infeat(VECSIZE, in_channels);
 
                 Eigen::Array<TReal, 3, 1> offsets_(offsets[0], offsets[1],
@@ -144,16 +146,16 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
                         z(i) = inp_positions[inp_idx * 3 + 2] -
                                out_positions[out_idx * 3 + 2];
 
-                        const TReal n_importance =
+                        const TFeat n_importance =
                                 (NEIGHBORS_IMPORTANCE ? neighbors_importance[n]
-                                                      : 1);
+                                                      : TFeat(1));
                         normalizers(out_col) += n_importance;
 
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
                                     inp_features[inp_idx * in_channels + ic];
 
-                        TReal importance = 1.0;
+                        TFeat importance(1.0);
                         if (POINT_IMPORTANCE)
                             importance = inp_importance[inp_idx];
                         if (NEIGHBORS_IMPORTANCE) importance *= n_importance;
@@ -176,7 +178,7 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
                                      ++j) {
                                     for (int ic = 0; ic < in_channels; ++ic)
                                         B(interp_indices(j, k) + ic, out_col) +=
-                                                interp_weights(j, k) *
+                                                TFeat(interp_weights(j, k)) *
                                                 infeat(k, ic);
                                 }
                             vec_valid_count = 0;
@@ -194,31 +196,37 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
                                  ++j) {
                                 for (int ic = 0; ic < in_channels; ++ic)
                                     B(interp_indices(j, k) + ic, out_col) +=
-                                            interp_weights(j, k) *
+                                            TFeat(interp_weights(j, k)) *
                                             infeat(k, ic);
                             }
                     }
 
                 }  // out_idx
 
-                Eigen::Map<const Eigen::Matrix<TReal, Eigen::Dynamic,
+                Eigen::Map<const Eigen::Matrix<TFeat, Eigen::Dynamic,
                                                Eigen::Dynamic>>
                         A(filter, out_channels,
                           spatial_filter_size * in_channels);
-                Eigen::Map<Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic>>
+                Eigen::Map<Eigen::Matrix<TOut, Eigen::Dynamic, Eigen::Dynamic>>
                         C(out_features + (r.begin() * out_channels),
                           out_channels, range_length);
 
-                C = A * B;
+                C = (A * B).template cast<TOut>();
                 if (normalize) {
                     for (int i = 0; i < range_length; ++i) {
-                        if (normalizers(i) != 0) C.col(i) /= normalizers(i);
+                        if (normalizers(i) != TOut(0))
+                            C.col(i) /= normalizers(i);
                     }
                 }
             });
 }
 
 /// Computes the output features of a continuous convolution.
+///
+/// \tparam TFeat    Type for the features and weights
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
 ///
 /// \param out_features    Output array for the computed features with shape
 ///        [num_out, out channels]
@@ -287,19 +295,19 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
-void CConvComputeFeaturesCPU(TReal* out_features,
+template <class TFeat, class TOut, class TReal, class TIndex>
+void CConvComputeFeaturesCPU(TOut* out_features,
                              const std::vector<int>& filter_dims,
-                             const TReal* filter,
+                             const TFeat* filter,
                              size_t num_out,
                              const TReal* out_positions,
                              size_t num_inp,
                              const TReal* inp_positions,
-                             const TReal* inp_features,
-                             const TReal* inp_importance,
+                             const TFeat* inp_features,
+                             const TFeat* inp_importance,
                              size_t neighbors_index_size,
                              const TIndex* neighbors_index,
-                             const TReal* neighbors_importance,
+                             const TFeat* neighbors_importance,
                              const int64_t* neighbors_row_splits,
                              const TReal* extents,
                              const TReal* offsets,
@@ -318,16 +326,16 @@ void CConvComputeFeaturesCPU(TReal* out_features,
             neighbors_index, neighbors_importance, neighbors_row_splits,       \
             extents, offsets, normalize
 
-#define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,               \
-                      INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, HAS_IMPORTANCE) \
-    if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping && \
-        ALIGN_CORNERS == align_corners &&                                  \
-        INDIVIDUAL_EXTENT == individual_extent &&                          \
-        ISOTROPIC_EXTENT == isotropic_extent &&                            \
-        HAS_IMPORTANCE == has_importance)                                  \
-        _CConvComputeFeaturesCPU<TReal, TIndex, INTERPOLATION, MAPPING,    \
-                                 ALIGN_CORNERS, INDIVIDUAL_EXTENT,         \
-                                 ISOTROPIC_EXTENT, HAS_IMPORTANCE>(        \
+#define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,                \
+                      INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, HAS_IMPORTANCE)  \
+    if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping &&  \
+        ALIGN_CORNERS == align_corners &&                                   \
+        INDIVIDUAL_EXTENT == individual_extent &&                           \
+        ISOTROPIC_EXTENT == isotropic_extent &&                             \
+        HAS_IMPORTANCE == has_importance)                                   \
+        _CConvComputeFeaturesCPU<TFeat, TOut, TReal, TIndex, INTERPOLATION, \
+                                 MAPPING, ALIGN_CORNERS, INDIVIDUAL_EXTENT, \
+                                 ISOTROPIC_EXTENT, HAS_IMPORTANCE>(         \
                 FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(INTERPOLATION, MAPPING)                       \
