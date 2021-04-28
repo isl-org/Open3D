@@ -11,24 +11,17 @@ set(WEBRTC_STREAMER_SRC
     WebRTCServer.cpp
     WebRTCWindowSystem.cpp
 )
-# set(WEBRTC_STREAMER_3RD_PARTY_SRC
-#     civetweb/civetweb.c
-#     civetweb/CivetServer.cpp
-# )
 
 add_library(webrtc_server OBJECT
     ${WEBRTC_STREAMER_SRC}
-    # ${WEBRTC_STREAMER_3RD_PARTY_SRC}   # optional: civietweb
 )
 target_include_directories(webrtc_server SYSTEM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    # civetweb                           # optional: civetweb
 )
 target_compile_definitions(webrtc_server PRIVATE
     WEBRTC_POSIX
-    # OPENSSL_API_1_1                    # optional: civetweb
-    _FILE_OFFSET_BITS=64               # optional: civetweb
-    _LARGEFILE_SOURCE=1                # optional: civetweb
+    _FILE_OFFSET_BITS=64 # for civetweb
+    _LARGEFILE_SOURCE=1  # for civetweb
 )
 
 open3d_show_and_abort_on_warning(webrtc_server)
