@@ -1,5 +1,7 @@
 # Create object library
 set(T_GEOMETRY_SRC
+    kernel/Image.cpp
+    kernel/ImageCPU.cpp
     kernel/PointCloud.cpp
     kernel/PointCloudCPU.cpp
     kernel/TSDFVoxelGrid.cpp
@@ -14,6 +16,7 @@ set(T_GEOMETRY_SRC
 
 if (BUILD_CUDA_MODULE)
     list(APPEND T_GEOMETRY_SRC
+        kernel/ImageCUDA.cu
         kernel/PointCloudCUDA.cu
         kernel/TSDFVoxelGridCUDA.cu
         kernel/NPPImage.cpp
