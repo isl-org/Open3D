@@ -410,27 +410,6 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
     if (auto webrtc_window_system =
                 std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
                         impl_->window_system_)) {
-        // Client -> server message can trigger a mouse event and
-        // mouse_event_callback will be called.
-        std::function<void(const std::string &, const MouseEvent &)>
-                mouse_event_callback = [this, webrtc_window_system](
-                                               const std::string &window_uid,
-                                               const MouseEvent &me) -> void {
-            webrtc_window_system->PostMouseEvent(
-                    this->GetWindowByUID(window_uid)->GetOSWindow(), me);
-        };
-        webrtc_window_system->SetMouseEventCallback(mouse_event_callback);
-
-        // redraw_callback is called when the server wants to send a frame to
-        // the client without other triggering events.
-        std::function<void(const std::string &)> redraw_callback =
-                [this,
-                 webrtc_window_system](const std::string &window_uid) -> void {
-            webrtc_window_system->PostRedrawEvent(
-                    this->GetWindowByUID(window_uid)->GetOSWindow());
-        };
-        webrtc_window_system->SetRedrawCallback(redraw_callback);
-
         // No-op of the server is already started.
         webrtc_window_system->StartWebRTCServer();
     }

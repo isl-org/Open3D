@@ -34,6 +34,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/utility/Draw.h"
 #include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
@@ -60,12 +61,33 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 #endif
               ),
       impl_(new WebRTCWindowSystem::Impl()) {
+
     // Server->client send frame.
     auto draw_callback = [this](const gui::Window *window,
                                 std::shared_ptr<core::Tensor> im) -> void {
         WebRTCServer::GetInstance().OnFrame(window->GetUID(), im);
     };
     SetOnWindowDraw(draw_callback);
+
+    // Client -> server message can trigger a mouse event and
+    // mouse_event_callback will be called.
+    auto mouse_event_callback = [this](const std::string &window_uid,
+                                       const gui::MouseEvent &me) -> void {
+        this->PostMouseEvent(gui::Application::GetInstance()
+                                     .GetWindowByUID(window_uid)
+                                     ->GetOSWindow(),
+                             me);
+    };
+    this->SetMouseEventCallback(mouse_event_callback);
+
+    // redraw_callback is called when the server wants to send a frame to
+    // the client without other triggering events.
+    auto redraw_callback = [this](const std::string &window_uid) -> void {
+        this->PostRedrawEvent(gui::Application::GetInstance()
+                                      .GetWindowByUID(window_uid)
+                                      ->GetOSWindow());
+    };
+    this->SetRedrawCallback(redraw_callback);
 }
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {}
