@@ -138,6 +138,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();

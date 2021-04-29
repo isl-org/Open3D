@@ -34,22 +34,6 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-void PreprocessDepthCPU(const core::Tensor& depth,
-                        core::Tensor& depth_processed,
-                        float depth_scale,
-                        float depth_max);
-
-void PyrDownDepthCPU(const core::Tensor& depth,
-                     core::Tensor& depth_down,
-                     float depth_diff);
-
-void CreateVertexMapCPU(const core::Tensor& depth_map,
-                        const core::Tensor& intrinsics,
-                        core::Tensor& vertex_map);
-
-void CreateNormalMapCPU(const core::Tensor& vertex_map,
-                        core::Tensor& normal_map);
-
 void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 const core::Tensor& target_vertex_map,
                                 const core::Tensor& target_normal_map,
@@ -87,22 +71,6 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                           core::Tensor& residual,
                           float depth_diff);
 #ifdef BUILD_CUDA_MODULE
-
-void PreprocessDepthCUDA(const core::Tensor& depth,
-                         core::Tensor& depth_processed,
-                         float depth_scale,
-                         float depth_max);
-
-void PyrDownDepthCUDA(const core::Tensor& depth,
-                      core::Tensor& depth_down,
-                      float depth_diff);
-
-void CreateVertexMapCUDA(const core::Tensor& depth_map,
-                         const core::Tensor& intrinsics,
-                         core::Tensor& vertex_map);
-
-void CreateNormalMapCUDA(const core::Tensor& vertex_map,
-                         core::Tensor& normal_map);
 
 void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  const core::Tensor& target_vertex_map,

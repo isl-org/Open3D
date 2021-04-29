@@ -107,8 +107,8 @@ public:
     /// using lambdas, capture by copy and make sure whatever you use will
     /// still be alive).
     void RunInThread(std::function<void()> f);
-    /// Runs \param f on the main thread at some point in the near future.
-    /// Proper context will be setup for \param window. \p f will block the
+    /// Runs \p f on the main thread at some point in the near future.
+    /// Proper context will be setup for \p window. \p f will block the
     /// UI, so it should run quickly. If you need to do something slow
     /// (e.g. load a file) consider using RunInThread() and have the function
     /// pass off UI calls to PostToMainThread().

@@ -104,6 +104,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(2);
 

@@ -652,6 +652,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("background_color", &Widget::GetBackgroundColor,
                           &Widget::SetBackgroundColor,
                           "Background color of the widget")
+            .def_property("tooltip", &Widget::GetTooltip, &Widget::SetTooltip,
+                          "Widget's tooltip that is displayed on mouseover")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
                  "Returns the preferred size of the widget. This is intended "
                  "to be called only during layout, although it will also work "

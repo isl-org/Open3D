@@ -86,6 +86,9 @@ public:
     /// Parallel collect all iterators in the hash table
     virtual int64_t GetActiveIndices(addr_t* output_indices) = 0;
 
+    /// Clear stored map without reallocating memory.
+    virtual void Clear() = 0;
+
     virtual int64_t Size() const = 0;
     virtual int64_t GetBucketCount() const = 0;
     virtual float LoadFactor() const = 0;

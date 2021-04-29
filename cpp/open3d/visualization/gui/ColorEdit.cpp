@@ -86,6 +86,7 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     ImGui::ColorEdit3(impl_->id_.c_str(), new_value.GetMutablePointer());
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     if (impl_->value_ != new_value) {
         impl_->value_ = new_value;

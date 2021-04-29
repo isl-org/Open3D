@@ -121,6 +121,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     if (impl_->value_ != new_value) {
         impl_->value_ = new_value;

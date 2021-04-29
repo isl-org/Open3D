@@ -197,6 +197,12 @@ public:
                GetPointAttr(key).GetLength() == GetPoints().GetLength();
     }
 
+    /// Removes point attribute by key value. Primary attribute "points" cannot
+    /// be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
+
     /// Check if the "points" attribute's value has length > 0.
     /// This is a convenience function.
     bool HasPoints() const { return HasPointAttr("points"); }
@@ -310,8 +316,8 @@ public:
     /// / fy\n
     ///
     /// \param depth The input depth image should be a uint16_t or float image.
-    /// \param intrinsic Intrinsic parameters of the camera.
-    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param intrinsics Intrinsic parameters of the camera.
+    /// \param extrinsics Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
@@ -337,8 +343,8 @@ public:
     ///
     /// \param rgbd_image The input RGBD image should have a uint16_t or float
     /// depth image and RGB image with any DType and the same size.
-    /// \param intrinsic Intrinsic parameters of the camera.
-    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param intrinsics Intrinsic parameters of the camera.
+    /// \param extrinsics Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.

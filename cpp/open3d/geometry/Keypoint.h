@@ -52,8 +52,8 @@ namespace keypoint {
 /// from the input data, taking into account the Model Resolution.
 /// \param gamma_21 The upper bound on the ratio between the second and the
 /// first eigenvalue
-/// \param gamma32 The upper bound on the ratio between the third and the second
-/// eigenvalue
+/// \param gamma_32 The upper bound on the ratio between the third and the
+/// second eigenvalue
 /// \param min_neighbors Minimum number of neighbors that has to be found to
 /// consider a keypoint.
 /// \authors Ignacio Vizzo and Cyrill Stachniss, University of Bonn.

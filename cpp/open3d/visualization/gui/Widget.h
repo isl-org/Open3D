@@ -96,6 +96,9 @@ public:
     bool IsEnabled() const;
     virtual void SetEnabled(bool enabled);
 
+    void SetTooltip(const char* text);
+    const char* GetTooltip() const;
+
     static constexpr int DIM_GROW = 10000;
     struct Constraints {
         int width = DIM_GROW;
@@ -134,6 +137,7 @@ public:
 protected:
     void DrawImGuiPushEnabledState();
     void DrawImGuiPopEnabledState();
+    void DrawImGuiTooltip();
 
 private:
     struct Impl;
