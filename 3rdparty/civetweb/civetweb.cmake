@@ -3,7 +3,7 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_civetweb
     PREFIX civetweb
-    URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.14.zip
+    URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.14.tar.gz
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCIVETWEB_BUILD_TESTING=ON
