@@ -40,7 +40,8 @@ namespace pipelines {
 namespace odometry {
 
 enum class Method {
-    PointToPlane,  // Implemented and commented in ComputePosePointToPlane
+    PointToPlane,  // Implemented and commented in
+                   // ComputeOdometryResultPointToPlane
     Intensity,     // Implemented and commented in ComputePoseIntensity
     Hybrid,        // Implemented and commented in ComputePoseHybrid
 };
@@ -181,7 +182,7 @@ OdometryResult RGBDOdometryMultiScale(
 /// \param depth_huber_delta Huber norm parameter used in depth loss.
 /// \return odometry result, with (4, 4) optimized transformation matrix from
 /// source to target, inlier ratio, and fitness.
-OdometryResult ComputePosePointToPlane(
+OdometryResult ComputeOdometryResultPointToPlane(
         const core::Tensor& source_vertex_map,
         const core::Tensor& target_vertex_map,
         const core::Tensor& target_normal_map,
@@ -222,17 +223,18 @@ OdometryResult ComputePosePointToPlane(
 /// \param intensity_huber_delta Huber norm parameter used in intensity loss.
 /// \return odometry result, with(4, 4) optimized transformation matrix
 /// from source to target, inlier ratio, and fitness.
-OdometryResult ComputePoseIntensity(const core::Tensor& source_depth,
-                                    const core::Tensor& target_depth,
-                                    const core::Tensor& source_intensity,
-                                    const core::Tensor& target_intensity,
-                                    const core::Tensor& target_intensity_dx,
-                                    const core::Tensor& target_intensity_dy,
-                                    const core::Tensor& source_vertex_map,
-                                    const core::Tensor& intrinsics,
-                                    const core::Tensor& init_source_to_target,
-                                    const float depth_outlier_trunc,
-                                    const float intensity_huber_delta);
+OdometryResult ComputeOdometryResultIntensity(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta);
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target, with
 /// inlier rmse and fitness.
@@ -273,20 +275,21 @@ OdometryResult ComputePoseIntensity(const core::Tensor& source_depth,
 /// \param intensity_huber_delta Huber norm parameter used in intensity loss.
 /// \return odometry result, with(4, 4) optimized transformation matrix
 /// from source to target, inlier ratio, and fitness.
-OdometryResult ComputePoseHybrid(const core::Tensor& source_depth,
-                                 const core::Tensor& target_depth,
-                                 const core::Tensor& source_intensity,
-                                 const core::Tensor& target_intensity,
-                                 const core::Tensor& source_depth_dx,
-                                 const core::Tensor& source_depth_dy,
-                                 const core::Tensor& source_intensity_dx,
-                                 const core::Tensor& source_intensity_dy,
-                                 const core::Tensor& target_vertex_map,
-                                 const core::Tensor& intrinsics,
-                                 const core::Tensor& init_source_to_target,
-                                 const float depth_outlier_trunc,
-                                 const float depth_huber_delta,
-                                 const float intensity_huber_delta);
+OdometryResult ComputeOdometryResultHybrid(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& source_depth_dx,
+        const core::Tensor& source_depth_dy,
+        const core::Tensor& source_intensity_dx,
+        const core::Tensor& source_intensity_dy,
+        const core::Tensor& target_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta,
+        const float intensity_huber_delta);
 
 }  // namespace odometry
 }  // namespace pipelines

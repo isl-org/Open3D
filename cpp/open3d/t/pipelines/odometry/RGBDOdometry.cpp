@@ -208,7 +208,7 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
         for (int iter = 0; iter < iterations[i]; ++iter) {
-            auto delta_result = ComputePosePointToPlane(
+            auto delta_result = ComputeOdometryResultPointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
                     target_normal_maps[i], intrinsic_matrices[i],
                     result.transformation_, params.depth_outlier_trunc_,
@@ -308,7 +308,7 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
         for (int iter = 0; iter < iterations[i]; ++iter) {
-            auto delta_result = ComputePoseIntensity(
+            auto delta_result = ComputeOdometryResultIntensity(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_intensity_dx[i],
                     target_intensity_dy[i], source_vertex_maps[i],
@@ -415,7 +415,7 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
         for (int iter = 0; iter < iterations[i]; ++iter) {
-            auto delta_result = ComputePoseHybrid(
+            auto delta_result = ComputeOdometryResultHybrid(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_depth_dx[i], target_depth_dy[i],
                     target_intensity_dx[i], target_intensity_dy[i],
@@ -445,7 +445,7 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
     return result;
 }
 
-OdometryResult ComputePosePointToPlane(
+OdometryResult ComputeOdometryResultPointToPlane(
         const core::Tensor& source_vertex_map,
         const core::Tensor& target_vertex_map,
         const core::Tensor& target_normal_map,
@@ -457,7 +457,7 @@ OdometryResult ComputePosePointToPlane(
     core::Tensor se3_delta;
     float inlier_residual;
     int inlier_count;
-    kernel::odometry::ComputePosePointToPlane(
+    kernel::odometry::ComputeOdometryResultPointToPlane(
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
             init_source_to_target, se3_delta, inlier_residual, inlier_count,
             depth_outlier_trunc, depth_huber_delta);
@@ -469,22 +469,23 @@ OdometryResult ComputePosePointToPlane(
                                           source_vertex_map.GetShape()[1]));
 }
 
-OdometryResult ComputePoseIntensity(const core::Tensor& source_depth,
-                                    const core::Tensor& target_depth,
-                                    const core::Tensor& source_intensity,
-                                    const core::Tensor& target_intensity,
-                                    const core::Tensor& target_intensity_dx,
-                                    const core::Tensor& target_intensity_dy,
-                                    const core::Tensor& source_vertex_map,
-                                    const core::Tensor& intrinsics,
-                                    const core::Tensor& init_source_to_target,
-                                    const float depth_outlier_trunc,
-                                    const float intensity_huber_delta) {
+OdometryResult ComputeOdometryResultIntensity(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta) {
     // Delta target_to_source on host.
     core::Tensor se3_delta;
     float inlier_residual;
     int inlier_count;
-    kernel::odometry::ComputePoseIntensity(
+    kernel::odometry::ComputeOdometryResultIntensity(
             source_depth, target_depth, source_intensity, target_intensity,
             target_intensity_dx, target_intensity_dy, source_vertex_map,
             intrinsics, init_source_to_target, se3_delta, inlier_residual,
@@ -497,25 +498,26 @@ OdometryResult ComputePoseIntensity(const core::Tensor& source_depth,
                                           source_vertex_map.GetShape()[1]));
 }
 
-OdometryResult ComputePoseHybrid(const core::Tensor& source_depth,
-                                 const core::Tensor& target_depth,
-                                 const core::Tensor& source_intensity,
-                                 const core::Tensor& target_intensity,
-                                 const core::Tensor& target_depth_dx,
-                                 const core::Tensor& target_depth_dy,
-                                 const core::Tensor& target_intensity_dx,
-                                 const core::Tensor& target_intensity_dy,
-                                 const core::Tensor& source_vertex_map,
-                                 const core::Tensor& intrinsics,
-                                 const core::Tensor& init_source_to_target,
-                                 const float depth_outlier_trunc,
-                                 const float depth_huber_delta,
-                                 const float intensity_huber_delta) {
+OdometryResult ComputeOdometryResultHybrid(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& target_depth_dx,
+        const core::Tensor& target_depth_dy,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta,
+        const float intensity_huber_delta) {
     // Delta target_to_source on host.
     core::Tensor se3_delta;
     float inlier_residual;
     int inlier_count;
-    kernel::odometry::ComputePoseHybrid(
+    kernel::odometry::ComputeOdometryResultHybrid(
             source_depth, target_depth, source_intensity, target_intensity,
             target_depth_dx, target_depth_dy, target_intensity_dx,
             target_intensity_dy, source_vertex_map, intrinsics,

@@ -61,7 +61,7 @@ core::Tensor CreateIntrisicTensor() {
              {0, 0, 1}});
 }
 
-TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
+TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     core::Device device = GetParam();
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {
@@ -95,7 +95,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     for (int i = 0; i < 20; ++i) {
-        auto result = t::pipelines::odometry::ComputePosePointToPlane(
+        auto result = t::pipelines::odometry::ComputeOdometryResultPointToPlane(
                 src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
                 src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff,
                 depth_diff * 0.5);

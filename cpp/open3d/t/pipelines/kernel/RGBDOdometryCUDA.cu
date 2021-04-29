@@ -43,7 +43,7 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-__global__ void ComputePosePointToPlaneCUDAKernel(
+__global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
         NDArrayIndexer source_vertex_indexer,
         NDArrayIndexer target_vertex_indexer,
         NDArrayIndexer target_normal_indexer,
@@ -123,16 +123,17 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
     }
 }
 
-void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
-                                 const core::Tensor& target_vertex_map,
-                                 const core::Tensor& target_normal_map,
-                                 const core::Tensor& intrinsics,
-                                 const core::Tensor& init_source_to_target,
-                                 core::Tensor& delta,
-                                 float& inlier_residual,
-                                 int& inlier_count,
-                                 const float depth_outlier_trunc,
-                                 const float depth_huber_delta) {
+void ComputeOdometryResultPointToPlaneCUDA(
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& target_vertex_map,
+        const core::Tensor& target_normal_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        core::Tensor& delta,
+        float& inlier_residual,
+        int& inlier_count,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta) {
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
     NDArrayIndexer target_normal_indexer(target_normal_map, 2);
@@ -153,7 +154,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
     const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
                       (rows + kThreadSize - 1) / kThreadSize);
     const dim3 threads(kThreadSize, kThreadSize);
-    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+    ComputeOdometryResultPointToPlaneCUDAKernel<<<blocks, threads>>>(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
             ti, global_sum_ptr, rows, cols, depth_outlier_trunc,
             depth_huber_delta);
@@ -161,7 +162,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
-__global__ void ComputePoseIntensityCUDAKernel(
+__global__ void ComputeOdometryResultIntensityCUDAKernel(
         NDArrayIndexer source_depth_indexer,
         NDArrayIndexer target_depth_indexer,
         NDArrayIndexer source_intensity_indexer,
@@ -219,20 +220,21 @@ __global__ void ComputePoseIntensityCUDAKernel(
                                                 local_sum2, global_sum);
 }
 
-void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
-                              const core::Tensor& target_depth,
-                              const core::Tensor& source_intensity,
-                              const core::Tensor& target_intensity,
-                              const core::Tensor& target_intensity_dx,
-                              const core::Tensor& target_intensity_dy,
-                              const core::Tensor& source_vertex_map,
-                              const core::Tensor& intrinsics,
-                              const core::Tensor& init_source_to_target,
-                              core::Tensor& delta,
-                              float& inlier_residual,
-                              int& inlier_count,
-                              const float depth_outlier_trunc,
-                              const float intensity_huber_delta) {
+void ComputeOdometryResultIntensityCUDA(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        core::Tensor& delta,
+        float& inlier_residual,
+        int& inlier_count,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -259,7 +261,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
     const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
                       (rows + kThreadSize - 1) / kThreadSize);
     const dim3 threads(kThreadSize, kThreadSize);
-    ComputePoseIntensityCUDAKernel<<<blocks, threads>>>(
+    ComputeOdometryResultIntensityCUDAKernel<<<blocks, threads>>>(
             source_depth_indexer, target_depth_indexer,
             source_intensity_indexer, target_intensity_indexer,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
@@ -269,7 +271,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
-__global__ void ComputePoseHybridCUDAKernel(
+__global__ void ComputeOdometryResultHybridCUDAKernel(
         NDArrayIndexer source_depth_indexer,
         NDArrayIndexer target_depth_indexer,
         NDArrayIndexer source_intensity_indexer,
@@ -335,23 +337,23 @@ __global__ void ComputePoseHybridCUDAKernel(
                                                 local_sum2, global_sum);
 }
 
-void ComputePoseHybridCUDA(const core::Tensor& source_depth,
-                           const core::Tensor& target_depth,
-                           const core::Tensor& source_intensity,
-                           const core::Tensor& target_intensity,
-                           const core::Tensor& target_depth_dx,
-                           const core::Tensor& target_depth_dy,
-                           const core::Tensor& target_intensity_dx,
-                           const core::Tensor& target_intensity_dy,
-                           const core::Tensor& source_vertex_map,
-                           const core::Tensor& intrinsics,
-                           const core::Tensor& init_source_to_target,
-                           core::Tensor& delta,
-                           float& inlier_residual,
-                           int& inlier_count,
-                           const float depth_outlier_trunc,
-                           const float depth_huber_delta,
-                           const float intensity_huber_delta) {
+void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
+                                     const core::Tensor& target_depth,
+                                     const core::Tensor& source_intensity,
+                                     const core::Tensor& target_intensity,
+                                     const core::Tensor& target_depth_dx,
+                                     const core::Tensor& target_depth_dy,
+                                     const core::Tensor& target_intensity_dx,
+                                     const core::Tensor& target_intensity_dy,
+                                     const core::Tensor& source_vertex_map,
+                                     const core::Tensor& intrinsics,
+                                     const core::Tensor& init_source_to_target,
+                                     core::Tensor& delta,
+                                     float& inlier_residual,
+                                     int& inlier_count,
+                                     const float depth_outlier_trunc,
+                                     const float depth_huber_delta,
+                                     const float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -380,7 +382,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
     const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
                       (rows + kThreadSize - 1) / kThreadSize);
     const dim3 threads(kThreadSize, kThreadSize);
-    ComputePoseHybridCUDAKernel<<<blocks, threads>>>(
+    ComputeOdometryResultHybridCUDAKernel<<<blocks, threads>>>(
             source_depth_indexer, target_depth_indexer,
             source_intensity_indexer, target_intensity_indexer,
             target_depth_dx_indexer, target_depth_dy_indexer,

@@ -34,16 +34,17 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
-                             const core::Tensor &target_vertex_map,
-                             const core::Tensor &target_normal_map,
-                             const core::Tensor &intrinsics,
-                             const core::Tensor &init_source_to_target,
-                             core::Tensor &delta,
-                             float &inlier_residual,
-                             int &inlier_count,
-                             const float depth_outlier_trunc,
-                             const float depth_huber_delta) {
+void ComputeOdometryResultPointToPlane(
+        const core::Tensor &source_vertex_map,
+        const core::Tensor &target_vertex_map,
+        const core::Tensor &target_normal_map,
+        const core::Tensor &intrinsics,
+        const core::Tensor &init_source_to_target,
+        core::Tensor &delta,
+        float &inlier_residual,
+        int &inlier_count,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta) {
     core::Device device = source_vertex_map.GetDevice();
 
     static const core::Device host("CPU:0");
@@ -53,16 +54,16 @@ void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
             init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(source_vertex_map, target_vertex_map,
-                                   target_normal_map, intrinsics_d, trans_d,
-                                   delta, inlier_residual, inlier_count,
-                                   depth_outlier_trunc, depth_huber_delta);
+        ComputeOdometryResultPointToPlaneCPU(
+                source_vertex_map, target_vertex_map, target_normal_map,
+                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                depth_outlier_trunc, depth_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputePosePointToPlaneCUDA(source_vertex_map, target_vertex_map,
-                                    target_normal_map, intrinsics_d, trans_d,
-                                    delta, inlier_residual, inlier_count,
-                                    depth_outlier_trunc, depth_huber_delta);
+        ComputeOdometryResultPointToPlaneCUDA(
+                source_vertex_map, target_vertex_map, target_normal_map,
+                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                depth_outlier_trunc, depth_huber_delta);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -70,20 +71,20 @@ void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
         utility::LogError("Unimplemented device.");
     }
 }
-void ComputePoseIntensity(const core::Tensor &source_depth,
-                          const core::Tensor &target_depth,
-                          const core::Tensor &source_intensity,
-                          const core::Tensor &target_intensity,
-                          const core::Tensor &target_intensity_dx,
-                          const core::Tensor &target_intensity_dy,
-                          const core::Tensor &source_vertex_map,
-                          const core::Tensor &intrinsics,
-                          const core::Tensor &init_source_to_target,
-                          core::Tensor &delta,
-                          float &inlier_residual,
-                          int &inlier_count,
-                          const float depth_outlier_trunc,
-                          const float intensity_huber_delta) {
+void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
+                                    const core::Tensor &target_depth,
+                                    const core::Tensor &source_intensity,
+                                    const core::Tensor &target_intensity,
+                                    const core::Tensor &target_intensity_dx,
+                                    const core::Tensor &target_intensity_dy,
+                                    const core::Tensor &source_vertex_map,
+                                    const core::Tensor &intrinsics,
+                                    const core::Tensor &init_source_to_target,
+                                    core::Tensor &delta,
+                                    float &inlier_residual,
+                                    int &inlier_count,
+                                    const float depth_outlier_trunc,
+                                    const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
             intrinsics.To(host, core::Dtype::Float64).Contiguous();
@@ -92,14 +93,14 @@ void ComputePoseIntensity(const core::Tensor &source_depth,
 
     core::Device device = source_vertex_map.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {
-        ComputePoseIntensityCPU(
+        ComputeOdometryResultIntensityCPU(
                 source_depth, target_depth, source_intensity, target_intensity,
                 target_intensity_dx, target_intensity_dy, source_vertex_map,
                 intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
                 depth_outlier_trunc, intensity_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputePoseIntensityCUDA(
+        ComputeOdometryResultIntensityCUDA(
                 source_depth, target_depth, source_intensity, target_intensity,
                 target_intensity_dx, target_intensity_dy, source_vertex_map,
                 intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
@@ -112,23 +113,23 @@ void ComputePoseIntensity(const core::Tensor &source_depth,
     }
 }
 
-void ComputePoseHybrid(const core::Tensor &source_depth,
-                       const core::Tensor &target_depth,
-                       const core::Tensor &source_intensity,
-                       const core::Tensor &target_intensity,
-                       const core::Tensor &target_depth_dx,
-                       const core::Tensor &target_depth_dy,
-                       const core::Tensor &target_intensity_dx,
-                       const core::Tensor &target_intensity_dy,
-                       const core::Tensor &source_vertex_map,
-                       const core::Tensor &intrinsics,
-                       const core::Tensor &init_source_to_target,
-                       core::Tensor &delta,
-                       float &inlier_residual,
-                       int &inlier_count,
-                       const float depth_outlier_trunc,
-                       const float depth_huber_delta,
-                       const float intensity_huber_delta) {
+void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
+                                 const core::Tensor &target_depth,
+                                 const core::Tensor &source_intensity,
+                                 const core::Tensor &target_intensity,
+                                 const core::Tensor &target_depth_dx,
+                                 const core::Tensor &target_depth_dy,
+                                 const core::Tensor &target_intensity_dx,
+                                 const core::Tensor &target_intensity_dy,
+                                 const core::Tensor &source_vertex_map,
+                                 const core::Tensor &intrinsics,
+                                 const core::Tensor &init_source_to_target,
+                                 core::Tensor &delta,
+                                 float &inlier_residual,
+                                 int &inlier_count,
+                                 const float depth_outlier_trunc,
+                                 const float depth_huber_delta,
+                                 const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
             intrinsics.To(host, core::Dtype::Float64).Contiguous();
@@ -137,15 +138,15 @@ void ComputePoseHybrid(const core::Tensor &source_depth,
 
     core::Device device = source_vertex_map.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {
-        ComputePoseHybridCPU(source_depth, target_depth, source_intensity,
-                             target_intensity, target_depth_dx, target_depth_dy,
-                             target_intensity_dx, target_intensity_dy,
-                             source_vertex_map, intrinsics_d, trans_d, delta,
-                             inlier_residual, inlier_count, depth_outlier_trunc,
-                             depth_huber_delta, intensity_huber_delta);
+        ComputeOdometryResultHybridCPU(
+                source_depth, target_depth, source_intensity, target_intensity,
+                target_depth_dx, target_depth_dy, target_intensity_dx,
+                target_intensity_dy, source_vertex_map, intrinsics_d, trans_d,
+                delta, inlier_residual, inlier_count, depth_outlier_trunc,
+                depth_huber_delta, intensity_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputePoseHybridCUDA(
+        ComputeOdometryResultHybridCUDA(
                 source_depth, target_depth, source_intensity, target_intensity,
                 target_depth_dx, target_depth_dy, target_intensity_dx,
                 target_intensity_dy, source_vertex_map, intrinsics_d, trans_d,
