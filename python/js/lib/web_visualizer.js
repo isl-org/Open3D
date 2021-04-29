@@ -57,10 +57,6 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
 
 // Custom View. Renders the widget model.
 var WebVisualizerView = widgets.DOMWidgetView.extend({
-  onGetMediaList: function (mediaList) {
-    console.log("!!!!onGetMediaList mediaList: ", mediaList);
-  },
-
   /**
    * https://stackoverflow.com/a/52347011/1255535
    */
@@ -250,16 +246,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
 
     // The `el` property is the DOM element associated with the view
     this.el.appendChild(this.videoElt);
-
-    // TODO: remove this after switching to purely comms-based communication.
-    var http_server =
-      location.protocol + "//" + window.location.hostname + ":" + 8888;
-
-    // TODO: remove this since the media name should be given by Python
-    // directly. This is only used for developing the pipe.
-    WebRtcStreamer.remoteCall(http_server + "/api/getMediaList", true, {}, this)
-      .then((response) => response.json())
-      .then((jsonObj) => this.onGetMediaList(jsonObj));
 
     // Create WebRTC stream
     this.webRtcClient = new WebRtcStreamer(
