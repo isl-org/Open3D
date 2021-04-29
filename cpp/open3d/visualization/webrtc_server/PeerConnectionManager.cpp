@@ -173,7 +173,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/call"] = [this](const struct mg_request_info *req_info,
                                 const Json::Value &in) -> Json::Value {
         std::string peerid;
-        std::string url;
+        std::string url;  // window_uid.
         std::string options;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
