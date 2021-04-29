@@ -79,32 +79,30 @@ public:
         if (opts.find("roi_x") != opts.end()) {
             roi_x_ = std::stoi(opts.at("roi_x"));
             if (roi_x_ < 0) {
-                RTC_LOG(LS_ERROR)
-                        << "Ignore roi_x=" << roi_x_ << ", it muss be >=0";
+                utility::LogWarning("Ignore roi_x={}, it must be >=0", roi_x_);
                 roi_x_ = 0;
             }
         }
         if (opts.find("roi_y") != opts.end()) {
             roi_y_ = std::stoi(opts.at("roi_y"));
             if (roi_y_ < 0) {
-                RTC_LOG(LS_ERROR)
-                        << "Ignore roi_<=" << roi_y_ << ", it muss be >=0";
+                utility::LogWarning("Ignore roi_y_={}, it must be >=0", roi_y_);
                 roi_y_ = 0;
             }
         }
         if (opts.find("roi_width") != opts.end()) {
             roi_width_ = std::stoi(opts.at("roi_width"));
             if (roi_width_ <= 0) {
-                RTC_LOG(LS_ERROR) << "Ignore roi_width<=" << roi_width_
-                                  << ", it muss be >0";
+                utility::LogWarning("Ignore roi_width={}, it must be >0",
+                                    roi_width_);
                 roi_width_ = 0;
             }
         }
         if (opts.find("roi_height") != opts.end()) {
             roi_height_ = std::stoi(opts.at("roi_height"));
             if (roi_height_ <= 0) {
-                RTC_LOG(LS_ERROR) << "Ignore roi_height<=" << roi_height_
-                                  << ", it muss be >0";
+                utility::LogWarning("Ignore roi_height={}, it must be >0",
+                                    roi_height_);
                 roi_height_ = 0;
             }
         }

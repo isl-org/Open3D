@@ -116,8 +116,8 @@ void ImageCapturer::OnCaptureResult(
             broadcaster_.OnFrame(frame);
         }
     } else {
-        RTC_LOG(LS_ERROR) << "ImageCapturer:OnCaptureResult conversion error:"
-                          << conversion_result;
+        utility::LogError("ImageCapturer:OnCaptureResult conversion error: {}",
+                          conversion_result);
     }
 }
 
