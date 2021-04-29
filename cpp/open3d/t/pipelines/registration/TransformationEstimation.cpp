@@ -129,7 +129,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
 
     // Get pose {6} of type Float64 from correspondences indexed source and
     // target point cloud.
-    core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
+    core::Tensor pose = pipelines::kernel::ComputeOdometryResultPointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
             corres);
 

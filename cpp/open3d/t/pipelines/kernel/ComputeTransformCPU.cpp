@@ -41,15 +41,15 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCPU(const float *source_points_ptr,
-                                const float *target_points_ptr,
-                                const float *target_normals_ptr,
-                                const int64_t *correspondences_first,
-                                const int64_t *correspondences_second,
-                                const int n,
-                                core::Tensor &pose,
-                                const core::Dtype &dtype,
-                                const core::Device &device) {
+void ComputeOdometryResultPointToPlaneCPU(const float *source_points_ptr,
+                                          const float *target_points_ptr,
+                                          const float *target_normals_ptr,
+                                          const int64_t *correspondences_first,
+                                          const int64_t *correspondences_second,
+                                          const int n,
+                                          core::Tensor &pose,
+                                          const core::Dtype &dtype,
+                                          const core::Device &device) {
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.

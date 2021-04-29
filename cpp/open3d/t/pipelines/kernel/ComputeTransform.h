@@ -41,7 +41,7 @@ namespace kernel {
 /// \param correspondences CorrespondenceSet. [refer to definition in
 /// `/cpp/open3d/t/pipelines/registration/TransformationEstimation.h`].
 /// \return Pose [X Y Z alpha beta gamma], a shape {6} tensor of dtype Float32.
-core::Tensor ComputePosePointToPlane(
+core::Tensor ComputeOdometryResultPointToPlane(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &target_normals,
