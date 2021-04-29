@@ -52,7 +52,7 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
         int rows,
         int cols,
         float depth_outlier_trunc,
-        float depth_d_huberelta) {
+        float depth_huber_delta) {
     const int kBlockSize = 256;
     __shared__ float local_sum0[kBlockSize];
     __shared__ float local_sum1[kBlockSize];
@@ -74,8 +74,8 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
             x, y, depth_outlier_trunc, source_vertex_indexer,
             target_vertex_indexer, target_normal_indexer, ti, J, r);
 
-    float d_huber = HuberDeriv(r, depth_d_huberelta);
-    float r_huber = HuberLoss(r, depth_d_huberelta);
+    float d_huber = HuberDeriv(r, depth_huber_delta);
+    float r_huber = HuberLoss(r, depth_huber_delta);
 
     // Dump J, r into JtJ and Jtr
     int offset = 0;
@@ -132,7 +132,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  float& inlier_residual,
                                  int& inlier_count,
                                  float depth_outlier_trunc,
-                                 float depth_d_huberelta) {
+                                 float depth_huber_delta) {
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
     NDArrayIndexer target_normal_indexer(target_normal_map, 2);
@@ -156,7 +156,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
     ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
             ti, global_sum_ptr, rows, cols, depth_outlier_trunc,
-            depth_d_huberelta);
+            depth_huber_delta);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -174,7 +174,7 @@ __global__ void ComputePoseIntensityCUDAKernel(
         int rows,
         int cols,
         float depth_outlier_trunc,
-        float intensity_d_huberelta) {
+        float intensity_huber_delta) {
     const int kBlockSize = 256;
     __shared__ float local_sum0[kBlockSize];
     __shared__ float local_sum1[kBlockSize];
@@ -198,8 +198,8 @@ __global__ void ComputePoseIntensityCUDAKernel(
             target_intensity_indexer, target_intensity_dx_indexer,
             target_intensity_dy_indexer, source_vertex_indexer, ti, J, r);
 
-    float d_huber = HuberDeriv(r, intensity_d_huberelta);
-    float r_huber = HuberLoss(r, intensity_d_huberelta);
+    float d_huber = HuberDeriv(r, intensity_huber_delta);
+    float r_huber = HuberLoss(r, intensity_huber_delta);
 
     // Dump J, r into JtJ and Jtr
     int offset = 0;
@@ -209,9 +209,9 @@ __global__ void ComputePoseIntensityCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * HuberDeriv(r, intensity_d_huberelta);
+        reduction[offset++] = J[i] * HuberDeriv(r, intensity_huber_delta);
     }
-    reduction[offset++] = HuberLoss(r, intensity_d_huberelta);
+    reduction[offset++] = HuberLoss(r, intensity_huber_delta);
     reduction[offset++] = valid;
 
     ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
@@ -232,7 +232,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               float& inlier_residual,
                               int& inlier_count,
                               float depth_outlier_trunc,
-                              float intensity_d_huberelta) {
+                              float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -264,7 +264,7 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
             source_intensity_indexer, target_intensity_indexer,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
             source_vertex_indexer, ti, global_sum_ptr, rows, cols,
-            depth_outlier_trunc, intensity_d_huberelta);
+            depth_outlier_trunc, intensity_huber_delta);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -284,8 +284,8 @@ __global__ void ComputePoseHybridCUDAKernel(
         int rows,
         int cols,
         float depth_outlier_trunc,
-        float depth_d_huberelta,
-        float intensity_d_huberelta) {
+        float depth_huber_delta,
+        float intensity_huber_delta) {
     const int kBlockSize = 256;
     __shared__ float local_sum0[kBlockSize];
     __shared__ float local_sum1[kBlockSize];
@@ -311,11 +311,11 @@ __global__ void ComputePoseHybridCUDAKernel(
             target_intensity_dy_indexer, source_vertex_indexer, ti, J_I, J_D,
             r_I, r_D);
 
-    float d_huber_D = HuberDeriv(r_D, depth_d_huberelta);
-    float d_huber_I = HuberDeriv(r_I, intensity_d_huberelta);
+    float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
+    float d_huber_I = HuberDeriv(r_I, intensity_huber_delta);
 
-    float r_huber_D = HuberLoss(r_D, depth_d_huberelta);
-    float r_huber_I = HuberLoss(r_I, intensity_d_huberelta);
+    float r_huber_D = HuberLoss(r_D, depth_huber_delta);
+    float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
 
     // Dump J, r into JtJ and Jtr
     int offset = 0;
@@ -325,7 +325,7 @@ __global__ void ComputePoseHybridCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J_I[i] * d_huber_D + J_D[i] * d_huber_I;
+        reduction[offset++] = J_I[i] * d_huber_I + J_D[i] * d_huber_D;
     }
     reduction[offset++] = r_huber_D + r_huber_I;
     reduction[offset++] = valid;
@@ -350,8 +350,8 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            float& inlier_residual,
                            int& inlier_count,
                            float depth_outlier_trunc,
-                           float depth_d_huberelta,
-                           float intensity_d_huberelta) {
+                           float depth_huber_delta,
+                           float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -386,7 +386,7 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
             target_depth_dx_indexer, target_depth_dy_indexer,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
             source_vertex_indexer, ti, global_sum_ptr, rows, cols,
-            depth_outlier_trunc, depth_d_huberelta, intensity_d_huberelta);
+            depth_outlier_trunc, depth_huber_delta, intensity_huber_delta);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
