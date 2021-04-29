@@ -121,7 +121,7 @@ CreatePeerConnectionFactoryDependencies() {
     media_dependencies.task_queue_factory =
             dependencies.task_queue_factory.get();
 
-    // try to init audio
+    // Dummy audio factory.
     rtc::scoped_refptr<webrtc::AudioDeviceModule> audio_device_module(
             new webrtc::FakeAudioDeviceModule());
     media_dependencies.adm = std::move(audio_device_module);
