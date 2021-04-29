@@ -45,7 +45,7 @@ var WebRtcStreamer = (function () {
   }
 
   logAndReturn = function (value) {
-    console.log("!!! logAndReturn: ", value);
+    console.log("logAndReturn: ", value);
     return value;
   };
 
@@ -529,6 +529,9 @@ var WebRtcStreamer = (function () {
       };
       dataChannel.onmessage = function (evt) {
         console.log("local datachannel recv:" + JSON.stringify(evt.data));
+      };
+      dataChannel.onclose = function (evt) {
+        console.log("!!!! Data channel closed:" + JSON.stringify(evt.data));
       };
     } catch (e) {
       console.log("Cannot create datachannel error: " + e);
