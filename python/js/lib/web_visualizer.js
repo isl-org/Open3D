@@ -26,26 +26,22 @@
 
 // Jupyter widget for Open3D WebRTC visualize. See web_visualizer.py for the
 // kernel counterpart to this file.
+
 var widgets = require("@jupyter-widgets/base");
 var _ = require("lodash");
 require("webrtc-adapter");
 var WebRtcStreamer = require("./webrtcstreamer");
 
-// See web_visualizer.py for the kernel counterpart to this file.
-
 // Custom Model. Custom widgets models must at least provide default values
 // for model attributes, including
-//
 //  - `_view_name`
 //  - `_view_module`
 //  - `_view_module_version`
-//
 //  - `_model_name`
 //  - `_model_module`
 //  - `_model_module_version`
+// when different from the base class.
 //
-//  when different from the base class.
-
 // When serializing the entire widget state for embedding, only values that
 // differ from the defaults will be specified.
 var WebVisualizerModel = widgets.DOMWidgetModel.extend({
@@ -202,8 +198,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.touch();
   },
 
-  // args must be all strings.
-  // TODO: kwargs and sanity check
+  /**
+   * Hard-coded to call "call_http_request". Args and return value are all
+   * strings.
+   */
   callPython: async function (func, args = []) {
     var callId = this.callId.toString();
     this.callId++;
@@ -253,18 +251,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     // The `el` property is the DOM element associated with the view
     this.el.appendChild(this.videoElt);
 
-    // Listen for py->js message.
-    // this.model.on("change:pyjs_channel", this.on_pyjs_message, this);
-
-    // Send js->py message for testing.
-    // this.callPython("call_http_request", [
-    //   "my_entry_point",
-    //   "my_query_string",
-    //   "my_data",
-    // ]).then((result) => {
-    //   console.log("callPython.then()", result);
-    // });
-
     // TODO: remove this after switching to purely comms-based communication.
     var http_server =
       location.protocol + "//" + window.location.hostname + ":" + 8888;
@@ -279,7 +265,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
       location.protocol + "//" + window.location.hostname + ":" + 8888,
-      /*useComms(when supported)=*/ true,
+      /*useComms=*/ true,
       /*webVisualizer=*/ this
     );
     this.webRtcClient.connect(this.model.get("window_uid"));
@@ -299,16 +285,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
     return callResultMap[callId];
   },
-
-  // on_pyjs_message: function () {
-  //   var message = this.model.get("pyjs_channel");
-  //   console.log("pyjs_message received: " + message);
-
-  //   var result_obj = JSON.parse(message);
-  //   var call_id = result_obj["call_id"];
-  //   var json_result = result_obj["json_result"];
-  //   this.callResultMap[call_id] = json_result;
-  // },
 });
 
 module.exports = {
