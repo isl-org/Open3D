@@ -107,12 +107,12 @@
       }
 
       /**
-       * Add a webrtc client connection
+       * Add a WebRTC client connection
        */
       function del(url) {
         var videoTag = "video_" + JSON.stringify(url);
 
-        // disconnect webrtc connection
+        // Disconnect WebRTC connection
         var webrtcServer = webRtcServerList[videoTag];
         if (webrtcServer) {
           webrtcServer.disconnect();
@@ -129,14 +129,14 @@
       }
 
       /**
-       * add a webrtc client connection
+       * Add a WebRTC client connection
        */
       function add(url) {
         // url = {video: "window_1"}
         var videoTag = "video_" + JSON.stringify(url);
         var windowUID = url.video;
 
-        // add a video element to display webrtc stream
+        // Add a video element to display WebRTC stream
         if (document.getElementById(videoTag) === null) {
           var contentDiv = getContentDiv();
           if (contentDiv) {
@@ -159,7 +159,7 @@
 
         var videoElt = document.getElementById(videoTag);
         if (videoElt) {
-          // connect video element to webrtc stream
+          // Connect video element to webrtc stream
           var webRtcClient = new WebRtcStreamer(
             videoTag,
             webrtcConfig.url,
@@ -177,17 +177,17 @@
           console.log("url.video: " + url.video);
           console.log("options: " + options);
 
-          // highlight the navigation
+          // Highlight the navigation
           var navElt = document.getElementById("nav_" + videoTag);
           navElt.className = "active";
 
-          // register webrtc streamer connection
+          // Register webrtc streamer connection
           webRtcServerList[videoTag] = webRtcClient;
         }
       }
 
       /**
-       * load/unload callbacks
+       * Load/unload callbacks
        */
       window.onload = function () {
         if (layout) {
