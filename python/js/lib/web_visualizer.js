@@ -57,9 +57,64 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
 
 // Custom View. Renders the widget model.
 var WebVisualizerView = widgets.DOMWidgetView.extend({
+  sleep: function (time_ms) {
+    return new Promise((resolve) => setTimeout(resolve, time_ms));
+  },
+
   logAndReturn: function (value) {
     console.log("!!! logAndReturn: ", value);
     return value;
+  },
+
+  callResultReady: function (callId) {
+    var pyjs_channel = this.model.get("pyjs_channel");
+    console.log("Current pyjs_channel:", pyjs_channel);
+    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
+    return callId in callResultMap;
+  },
+
+  extractCallResult: function (callId) {
+    if (!this.callResultReady(callId)) {
+      throw "extractCallResult not ready yet.";
+    }
+    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
+    return callResultMap[callId];
+  },
+
+  /**
+   * Hard-coded to call "call_http_request". Args and return value are all
+   * strings.
+   */
+  callPython: async function (func, args = []) {
+    var callId = this.callId.toString();
+    this.callId++;
+    var message = {
+      func: func,
+      args: args,
+      call_id: callId,
+    };
+
+    // Append message to current jspy_channel
+    var jspyChannel = this.model.get("jspy_channel");
+    var jspyChannelObj = JSON.parse(jspyChannel);
+    jspyChannelObj[callId] = message;
+    jspyChannel = JSON.stringify(jspyChannelObj);
+    this.model.set("jspy_channel", jspyChannel);
+    this.touch();
+
+    var count = 0;
+    while (!this.callResultReady(callId)) {
+      console.log("callPython await, id: " + callId + ", count: " + count++);
+      await this.sleep(100);
+    }
+    var json_result = this.extractCallResult(callId);
+    console.log(
+      "callPython await done, id:",
+      callId,
+      "json_result:",
+      json_result
+    );
+    return json_result;
   },
 
   commsCall: function (url, data = {}) {
@@ -126,50 +181,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     }
   },
 
-  sleep: function (time_ms) {
-    return new Promise((resolve) => setTimeout(resolve, time_ms));
-  },
-
-  jspy_send: function (message) {
-    this.model.set("jspy_channel", message);
-    this.touch();
-  },
-
-  /**
-   * Hard-coded to call "call_http_request". Args and return value are all
-   * strings.
-   */
-  callPython: async function (func, args = []) {
-    var callId = this.callId.toString();
-    this.callId++;
-    var message = {
-      func: func,
-      args: args,
-      call_id: callId,
-    };
-
-    // Append message to current jspy_channel
-    var jspyChannel = this.model.get("jspy_channel");
-    var jspyChannelObj = JSON.parse(jspyChannel);
-    jspyChannelObj[callId] = message;
-    jspyChannel = JSON.stringify(jspyChannelObj);
-    this.jspy_send(jspyChannel);
-
-    var count = 0;
-    while (!this.callResultReady(callId)) {
-      console.log("callPython await, id: " + callId + ", count: " + count++);
-      await this.sleep(100);
-    }
-    var json_result = this.extractCallResult(callId);
-    console.log(
-      "callPython await done, id:",
-      callId,
-      "json_result:",
-      json_result
-    );
-    return json_result;
-  },
-
   render: function () {
     console.log("Entered render() function.");
     this.model.set("pyjs_channel", "{}");
@@ -196,21 +207,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       /*webVisualizer=*/ this
     );
     this.webRtcClient.connect(this.model.get("window_uid"));
-  },
-
-  callResultReady: function (callId) {
-    var pyjs_channel = this.model.get("pyjs_channel");
-    console.log("Current pyjs_channel:", pyjs_channel);
-    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
-    return callId in callResultMap;
-  },
-
-  extractCallResult: function (callId) {
-    if (!this.callResultReady(callId)) {
-      throw "extractCallResult not ready yet.";
-    }
-    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
-    return callResultMap[callId];
   },
 });
 
