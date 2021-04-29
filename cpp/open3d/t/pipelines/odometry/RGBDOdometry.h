@@ -42,8 +42,8 @@ namespace odometry {
 enum class Method {
     PointToPlane,  // Implemented and commented in
                    // ComputeOdometryResultPointToPlane
-    Intensity,     // Implemented and commented in ComputePoseIntensity
-    Hybrid,        // Implemented and commented in ComputePoseHybrid
+    Intensity,  // Implemented and commented in ComputeOdometryResultIntensity
+    Hybrid,     // Implemented and commented in ComputeOdometryResultHybrid
 };
 
 class OdometryConvergenceCriteria {

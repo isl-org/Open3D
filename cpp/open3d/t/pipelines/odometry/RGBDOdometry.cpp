@@ -312,8 +312,8 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_intensity_dx[i],
                     target_intensity_dy[i], source_vertex_maps[i],
-                    intrinsic_matrices[i], trans, params.depth_outlier_trunc_,
-                    params.intensity_huber_delta_);
+                    intrinsic_matrices[i], result.transformation_,
+                    params.depth_outlier_trunc_, params.intensity_huber_delta_);
             result.transformation_ =
                     delta_result.transformation_.Matmul(result.transformation_);
             utility::LogDebug("level {}, iter {}: rmse = {}, fitness = {}", i,
@@ -334,7 +334,7 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
         }
     }
 
-    return OdometryResult(trans, result.inlier_rmse_, result.fitness_);
+    return result;
 }
 
 OdometryResult RGBDOdometryMultiScaleHybrid(

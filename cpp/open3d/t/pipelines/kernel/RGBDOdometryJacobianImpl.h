@@ -61,7 +61,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         const NDArrayIndexer& source_vertex_indexer,
         const NDArrayIndexer& target_vertex_indexer,
         const NDArrayIndexer& target_normal_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_ij,
         float& r) {
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
@@ -123,7 +123,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         const NDArrayIndexer& target_intensity_dx_indexer,
         const NDArrayIndexer& target_intensity_dy_indexer,
         const NDArrayIndexer& source_vertex_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_I,
         float& r_I) {
     const float sobel_scale = 0.125;
@@ -197,7 +197,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
         const NDArrayIndexer& target_intensity_dx_indexer,
         const NDArrayIndexer& target_intensity_dy_indexer,
         const NDArrayIndexer& source_vertex_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_I,
         float* J_D,
         float& r_I,
