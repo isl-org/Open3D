@@ -43,8 +43,8 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                                 core::Tensor& delta,
                                 float& inlier_residual,
                                 int& inlier_count,
-                                float depth_outlier_trunc,
-                                float depth_huber_delta);
+                                const float depth_outlier_trunc,
+                                const float depth_huber_delta);
 
 void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                              const core::Tensor& target_depth,
@@ -58,8 +58,8 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                              core::Tensor& delta,
                              float& inlier_residual,
                              int& inlier_count,
-                             float depth_outlier_trunc,
-                             float intensity_huber_delta);
+                             const float depth_outlier_trunc,
+                             const float intensity_huber_delta);
 
 void ComputePoseHybridCPU(const core::Tensor& source_depth,
                           const core::Tensor& target_depth,
@@ -76,8 +76,8 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                           float& inlier_residual,
                           int& inlier_count,
                           float depth_outlier_trunc,
-                          float depth_huber_delta,
-                          float intensity_huber_delta);
+                          const float depth_huber_delta,
+                          const float intensity_huber_delta);
 #ifdef BUILD_CUDA_MODULE
 
 void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
@@ -88,8 +88,8 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  core::Tensor& delta,
                                  float& inlier_residual,
                                  int& inlier_count,
-                                 float depth_outlier_trunc,
-                                 float depth_huber_delta);
+                                 const float depth_outlier_trunc,
+                                 const float depth_huber_delta);
 
 void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               const core::Tensor& target_depth,
@@ -103,8 +103,8 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               core::Tensor& delta,
                               float& inlier_residual,
                               int& inlier_count,
-                              float depth_outlier_trunc,
-                              float intensity_huber_delta);
+                              const float depth_outlier_trunc,
+                              const float intensity_huber_delta);
 
 void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            const core::Tensor& target_depth,
@@ -120,9 +120,9 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            core::Tensor& delta,
                            float& inlier_residual,
                            int& inlier_count,
-                           float depth_outlier_trunc,
-                           float depth_huber_delta,
-                           float intensity_huber_delta);
+                           const float depth_outlier_trunc,
+                           const float depth_huber_delta,
+                           const float intensity_huber_delta);
 #endif
 
 }  // namespace odometry

@@ -42,8 +42,8 @@ void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
                              core::Tensor &delta,
                              float &inlier_residual,
                              int &inlier_count,
-                             float depth_outlier_trunc,
-                             float depth_huber_delta) {
+                             const float depth_outlier_trunc,
+                             const float depth_huber_delta) {
     core::Device device = source_vertex_map.GetDevice();
 
     static const core::Device host("CPU:0");
@@ -82,8 +82,8 @@ void ComputePoseIntensity(const core::Tensor &source_depth,
                           core::Tensor &delta,
                           float &inlier_residual,
                           int &inlier_count,
-                          float depth_outlier_trunc,
-                          float intensity_huber_delta) {
+                          const float depth_outlier_trunc,
+                          const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
             intrinsics.To(host, core::Dtype::Float64).Contiguous();
@@ -126,9 +126,9 @@ void ComputePoseHybrid(const core::Tensor &source_depth,
                        core::Tensor &delta,
                        float &inlier_residual,
                        int &inlier_count,
-                       float depth_outlier_trunc,
-                       float depth_huber_delta,
-                       float intensity_huber_delta) {
+                       const float depth_outlier_trunc,
+                       const float depth_huber_delta,
+                       const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
             intrinsics.To(host, core::Dtype::Float64).Contiguous();

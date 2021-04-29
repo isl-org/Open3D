@@ -42,8 +42,8 @@ void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
                              core::Tensor &delta,
                              float &inlier_residual,
                              int &inlier_count,
-                             float depth_outlier_trunc,
-                             float depth_huber_delta);
+                             const float depth_outlier_trunc,
+                             const float depth_huber_delta);
 
 void ComputePoseIntensity(const core::Tensor &source_depth,
                           const core::Tensor &target_depth,
@@ -57,8 +57,8 @@ void ComputePoseIntensity(const core::Tensor &source_depth,
                           core::Tensor &delta,
                           float &inlier_residual,
                           int &inlier_count,
-                          float depth_outlier_trunc,
-                          float intensity_huber_delta);
+                          const float depth_outlier_trunc,
+                          const float intensity_huber_delta);
 
 void ComputePoseHybrid(const core::Tensor &source_depth,
                        const core::Tensor &target_depth,
@@ -74,9 +74,9 @@ void ComputePoseHybrid(const core::Tensor &source_depth,
                        core::Tensor &delta,
                        float &inlier_residual,
                        int &inlier_count,
-                       float depth_outlier_trunc,
-                       float depth_huber_delta,
-                       float intensity_huber_delta);
+                       const float depth_outlier_trunc,
+                       const float depth_huber_delta,
+                       const float intensity_huber_delta);
 
 }  // namespace odometry
 }  // namespace kernel
