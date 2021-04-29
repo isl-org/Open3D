@@ -26,9 +26,6 @@ LABEL os="linux"
 LABEL version="0.12.0"
 LABEL maintainer="open3d-info@osvf.org"
 
-# Fix locale when unzipping
-ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US:en
-
 ENV DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles SUDO=command
 # Install Python 3, cmake>=3.12 and nvidia drivers (only if not installed)
 COPY ./util/docker/open3d-gpu/scripts/env-setup.sh /root/Open3D/util/docker/open3d-gpu/scripts/env-setup.sh
