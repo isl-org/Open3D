@@ -286,7 +286,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
         if (dtype_is_supported_for_conversion) {
             if (normalization_factor != 1.0) {
                 core::Tensor rescaled_colors =
-                        GetPointColors().To(core::Dtype::Float64, true) *
+                        GetPointColors().To(core::Dtype::Float64) *
                         normalization_factor;
                 pcd_legacy.colors_ =
                         core::eigen_converter::TensorToEigenVector3dVector(
