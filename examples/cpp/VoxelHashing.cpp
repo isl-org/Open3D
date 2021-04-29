@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -96,14 +96,8 @@ int main(int argc, char** argv) {
     iterations = std::min(n, iterations);
 
     // GT trajectory for reference
-    std::string gt_trajectory_path = std::string(argv[3]);
-    auto gt_trajectory =
-            io::CreatePinholeCameraTrajectoryFromFile(gt_trajectory_path);
-    Eigen::Matrix4d src_pose_gt_eigen =
-            gt_trajectory->parameters_[0].extrinsic_.inverse().eval();
-    Tensor src_pose_gt =
-            core::eigen_converter::EigenMatrixToTensor(src_pose_gt_eigen);
-    Tensor T_frame_to_model = src_pose_gt;
+    Tensor T_frame_to_model =
+            Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
     // Intrinsics
     std::string intrinsic_path = utility::GetProgramOptionAsString(
@@ -163,26 +157,42 @@ int main(int argc, char** argv) {
         input_frame.SetDataFromImage("depth", input_depth);
         input_frame.SetDataFromImage("color", input_color);
 
+        bool tracking_success = true;
         if (i > 0) {
-            utility::LogInfo("Frame-to-model for the frame {}", i);
-
-            Tensor delta_frame_to_model =
+            auto result =
                     model.TrackFrameToModel(input_frame, raycast_frame,
                                             depth_scale, depth_max, depth_diff);
-            T_frame_to_model =
-                    T_frame_to_model.Matmul(delta_frame_to_model).Contiguous();
+
+            core::Tensor translation =
+                    result.transformation_.Slice(0, 0, 3).Slice(1, 3, 4);
+            double translation_norm = std::sqrt(
+                    (translation * translation).Sum({0, 1}).Item<double>());
+            if (result.fitness_ >= 0.2 && translation_norm < 0.15) {
+                T_frame_to_model =
+                        T_frame_to_model.Matmul(result.transformation_);
+            } else {  // Don't update
+                tracking_success = false;
+                utility::LogWarning(
+                        "Tracking failed for frame {}, fitness: {:.3f}, "
+                        "translation: {:.3f}. Using previous frame's "
+                        "pose.",
+                        i, result.fitness_, translation_norm);
+            }
         }
 
+        // Integrate
         model.UpdateFramePose(i, T_frame_to_model);
-        model.Integrate(input_frame, depth_scale, depth_max);
-        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.3, depth_max);
+        if (tracking_success) {
+            model.Integrate(input_frame, depth_scale, depth_max);
+        }
+        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.ExtractPointCloud();
+        auto pcd = model.ExtractPointCloud(-1);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud(filename, *pcd_legacy);

@@ -182,9 +182,9 @@ inline OPEN3D_DEVICE voxel_t* DeviceGetVoxelAt(
     int yn = (yo + resolution) % resolution;
     int zn = (zo + resolution) % resolution;
 
-    int64_t dxb = sign(xo - xn);
-    int64_t dyb = sign(yo - yn);
-    int64_t dzb = sign(zo - zn);
+    int64_t dxb = Sign(xo - xn);
+    int64_t dyb = Sign(yo - yn);
+    int64_t dzb = Sign(zo - zn);
 
     int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 

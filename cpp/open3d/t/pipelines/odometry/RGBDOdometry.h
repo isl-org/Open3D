@@ -45,8 +45,67 @@ enum class Method {
     Hybrid,        // Implemented and commented in ComputePoseHybrid
 };
 
-// TODO (Wei): Encapsule shared params (depth_max, depth_diff, intrinsic, etc)
-// in an option, similar to Registration.
+class OdometryConvergenceCriteria {
+public:
+    OdometryConvergenceCriteria(double relative_rmse = 1e-6,
+                                double relative_fitness = 1e-6)
+        : relative_rmse_(relative_rmse), relative_fitness_(relative_fitness) {}
+
+public:
+    double relative_rmse_;
+    double relative_fitness_;
+};
+
+class OdometryResult {
+public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param transformation The estimated transformation matrix of dtype
+    /// Float64 on CPU device.
+    OdometryResult(const core::Tensor& transformation = core::Tensor::Eye(
+                           4, core::Dtype::Float64, core::Device("CPU:0")),
+                   double inlier_rmse = 0.0,
+                   double fitness = 0.0)
+        : transformation_(transformation),
+          inlier_rmse_(inlier_rmse),
+          fitness_(fitness) {}
+
+    ~OdometryResult() {}
+
+public:
+    /// The estimated transformation matrix of dtype Float64 on CPU device.
+    core::Tensor transformation_;
+    /// RMSE of all inlier correspondences. Lower is better.
+    double inlier_rmse_;
+    /// For ICP: the overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
+    double fitness_;
+};
+
+class OdometryLossParams {
+public:
+    OdometryLossParams(float depth_outlier_trunc = 0.07,
+                       float depth_huber_delta = 0.05,
+                       float intensity_huber_delta = 0.1)
+        : depth_outlier_trunc_(depth_outlier_trunc),
+          depth_huber_delta_(depth_huber_delta),
+          intensity_huber_delta_(intensity_huber_delta) {
+        if (depth_outlier_trunc_ < 0) {
+            utility::LogWarning(
+                    "Depth outlier truncation < 0, outliers will be counted!");
+        }
+        if (depth_huber_delta_ >= depth_outlier_trunc_) {
+            utility::LogWarning(
+                    "Huber delta is greater than truncation, huber norm will "
+                    "degenerate to L2 norm!");
+        }
+    }
+
+public:
+    float depth_outlier_trunc_;
+    float depth_huber_delta_;
+    float intensity_huber_delta_;
+};
 
 /// \brief Create an RGBD image pyramid given the original source and target
 /// RGBD images, and perform hierarchical odometry using specified \p
@@ -62,11 +121,11 @@ enum class Method {
 /// source to target.
 /// \param depth_scale Converts depth pixel values to meters by dividing the
 /// scale factor.
-/// \param depth_diff Depth difference threshold used to filter projective
-/// associations.
-/// \param iterations Iterations in multiscale odometry, from coarse to fine.
-/// \param method Method used to apply RGBD odometry.
-core::Tensor RGBDOdometryMultiScale(
+/// \param depth_outlier_trunc Depth difference threshold used to filter
+/// projective associations. \param iterations Iterations in multiscale
+/// odometry, from coarse to fine. \param method Method used to apply RGBD
+/// odometry.
+OdometryResult RGBDOdometryMultiScale(
         const t::geometry::RGBDImage& source,
         const t::geometry::RGBDImage& target,
         const core::Tensor& intrinsics,
@@ -74,9 +133,11 @@ core::Tensor RGBDOdometryMultiScale(
                 4, core::Dtype::Float64, core::Device("CPU:0")),
         float depth_scale = 1000.0f,
         float depth_max = 3.0f,
-        float depth_diff = 0.07f,
         const std::vector<int>& iterations = {10, 5, 3},
-        const Method method = Method::Hybrid);
+        const Method method = Method::Hybrid,
+        const OdometryLossParams& params = OdometryLossParams(),
+        const OdometryConvergenceCriteria& criteria =
+                OdometryConvergenceCriteria());
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target.
 /// Performs one iteration of RGBD odometry using loss function
@@ -97,15 +158,17 @@ core::Tensor RGBDOdometryMultiScale(
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
 /// \param init_source_to_target (4, 4) initial transformation matrix from
 /// source to target.
-/// \param depth_diff Depth difference threshold used to filter projective
-/// associations.
-/// \return (4, 4) optimized transformation matrix from source to target.
-core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
-                                     const core::Tensor& target_vertex_map,
-                                     const core::Tensor& target_normal_map,
-                                     const core::Tensor& intrinsics,
-                                     const core::Tensor& init_source_to_target,
-                                     float depth_diff);
+/// \param depth_outlier_trunc Depth difference threshold used to filter
+/// projective associations. \return (4, 4) optimized transformation matrix from
+/// source to target.
+OdometryResult ComputePosePointToPlane(
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& target_vertex_map,
+        const core::Tensor& target_normal_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        float depth_outlier_trunc,
+        float depth_huber_delta);
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target.
 /// Performs one iteration of RGBD odometry using loss function
@@ -133,19 +196,20 @@ core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
 /// \param init_source_to_target (4, 4) initial transformation matrix from
 /// source to target.
-/// \param depth_diff Depth difference threshold used to filter projective
-/// associations.
-/// \return (4, 4) optimized transformation matrix from source to target.
-core::Tensor ComputePoseIntensity(const core::Tensor& source_depth_map,
-                                  const core::Tensor& target_depth_map,
-                                  const core::Tensor& source_intensity,
-                                  const core::Tensor& target_intensity,
-                                  const core::Tensor& target_intensity_dx,
-                                  const core::Tensor& target_intensity_dy,
-                                  const core::Tensor& source_vertex_map,
-                                  const core::Tensor& intrinsics,
-                                  const core::Tensor& init_source_to_target,
-                                  float depth_diff);
+/// \param depth_outlier_trunc Depth difference threshold used to filter
+/// projective associations. \return (4, 4) optimized transformation matrix from
+/// source to target.
+OdometryResult ComputePoseIntensity(const core::Tensor& source_depth_map,
+                                    const core::Tensor& target_depth_map,
+                                    const core::Tensor& source_intensity,
+                                    const core::Tensor& target_intensity,
+                                    const core::Tensor& target_intensity_dx,
+                                    const core::Tensor& target_intensity_dy,
+                                    const core::Tensor& source_vertex_map,
+                                    const core::Tensor& intrinsics,
+                                    const core::Tensor& init_source_to_target,
+                                    float depth_outlier_trunc,
+                                    float intensity_huber_delta);
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target.
 /// Performs one iteration of RGBD odometry using loss function
@@ -179,21 +243,23 @@ core::Tensor ComputePoseIntensity(const core::Tensor& source_depth_map,
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
 /// \param init_source_to_target (4, 4) initial transformation matrix from
 /// source to target.
-/// \param depth_diff Depth difference threshold used to filter projective
-/// associations.
-/// \return (4, 4) optimized transformation matrix from source to target.
-core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
-                               const core::Tensor& target_depth,
-                               const core::Tensor& source_intensity,
-                               const core::Tensor& target_intensity,
-                               const core::Tensor& source_depth_dx,
-                               const core::Tensor& source_depth_dy,
-                               const core::Tensor& source_intensity_dx,
-                               const core::Tensor& source_intensity_dy,
-                               const core::Tensor& target_vertex_map,
-                               const core::Tensor& intrinsics,
-                               const core::Tensor& init_source_to_target,
-                               float depth_diff);
+/// \param depth_outlier_trunc Depth difference threshold used to filter
+/// projective associations. \return (4, 4) optimized transformation matrix from
+/// source to target.
+OdometryResult ComputePoseHybrid(const core::Tensor& source_depth,
+                                 const core::Tensor& target_depth,
+                                 const core::Tensor& source_intensity,
+                                 const core::Tensor& target_intensity,
+                                 const core::Tensor& source_depth_dx,
+                                 const core::Tensor& source_depth_dy,
+                                 const core::Tensor& source_intensity_dx,
+                                 const core::Tensor& source_intensity_dy,
+                                 const core::Tensor& target_vertex_map,
+                                 const core::Tensor& intrinsics,
+                                 const core::Tensor& init_source_to_target,
+                                 float depth_outlier_trunc,
+                                 float depth_huber_delta,
+                                 float intensity_huber_delta);
 
 }  // namespace odometry
 }  // namespace pipelines

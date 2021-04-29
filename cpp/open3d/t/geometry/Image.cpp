@@ -484,13 +484,13 @@ Image Image::ClipTransform(float scale,
     }
     if (!(std::isnan(clip_fill) || std::isinf(clip_fill) || clip_fill == 0)) {
         utility::LogWarning(
-                "The clip_fill value {} is not recommended Inf, NaN or, 0",
+                "The clip_fill value {} is not recommended. Please use Inf, "
+                "NaN or, 0",
                 clip_fill);
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
-                                       core::Dtype::Float32, data_.GetDevice());
+    Image dst_im(GetRows(), GetCols(), 1, core::Dtype::Float32,
+                 data_.GetDevice());
     kernel::image::ClipTransform(data_, dst_im.data_, scale, min_value,
                                  max_value, clip_fill);
     return dst_im;
@@ -509,9 +509,7 @@ Image Image::CreateVertexMap(const core::Tensor &intrinsics,
                           GetDtype().ToString());
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3}, GetDtype(),
-                                       GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateVertexMap(data_, dst_im.data_, intrinsics,
                                    invalid_fill);
     return dst_im;
@@ -529,9 +527,7 @@ Image Image::CreateNormalMap(float invalid_fill) {
                           GetDtype().ToString());
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3}, GetDtype(),
-                                       GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateNormalMap(data_, dst_im.data_, invalid_fill);
     return dst_im;
 }
@@ -555,9 +551,7 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
                 scale, min_value, max_value);
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3},
-                                       core::Dtype::UInt8, data_.GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, core::Dtype::UInt8, GetDevice());
     kernel::image::ColorizeDepth(data_, dst_im.data_, scale, min_value,
                                  max_value);
     return dst_im;

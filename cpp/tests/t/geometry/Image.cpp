@@ -39,7 +39,7 @@
 namespace open3d {
 namespace tests {
 
-core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
+static core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
@@ -826,7 +826,56 @@ TEST_P(ImagePermuteDevices, ToLegacyImage) {
                           *leg_im_3ch.PointerAt<uint16_t>(c, r, ch));
 }
 
-TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap) {
+TEST_P(ImagePermuteDevices, DepthToVertexNormalMaps) {
+    core::Device device = GetParam();
+
+    // clang-format off
+    core::Tensor t_depth(std::vector<uint16_t>{
+        0, 1, 2, 1, 0,
+        0, 2, 4, 2, 0,
+        0, 3, 6, 3, 29,
+        0, 2, 4, 2, 0,
+        0, 1, 2, 1, 0}, {5, 5, 1}, core::Dtype::UInt16, device);
+    core::Tensor t_depth_clipped_ref(std::vector<float>{
+        0.0, 0.1, 0.2, 0.1, 0.0,
+        0.0, 0.2, 0.4, 0.2, 0.0,
+        0.0, 0.3, 0.6, 0.3, 0.0,
+        0.0, 0.2, 0.4, 0.2, 0.0,
+        0.0, 0.1, 0.2, 0.1, 0.0}, {5, 5, 1}, core::Dtype::Float32, device);
+    core::Tensor intrinsic(std::vector<double>{
+            1.f, 0.f, 2.f,
+            0.f, 1.f, 2.f,
+            0.f, 0.f, 1.f}, {3, 3}, core::Dtype::Float64, device);
+    core::Tensor t_vertex_ref(std::vector<float>{
+        0.0,0.0,0.0,  -0.1,-0.2,0.1,  0.0,-0.4,0.2,  0.1,-0.2,0.1,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.2,-0.2,0.2,  0.0,-0.4,0.4,  0.2,-0.2,0.2,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.3,0.0,0.3,   0.0,0.0,0.6,   0.3,0.0,0.3,   0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.2,0.2,0.2,   0.0,0.4,0.4,   0.2,0.2,0.2,   0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.1,0.2,0.1,   0.0,0.4,0.2,   0.1,0.2,0.1,   0.0,0.0,0.0
+        }, {5, 5, 3}, core::Dtype::Float32, device);
+    core::Tensor t_normal_ref(std::vector<float>{
+        0.0,0.0,0.0,  0.57735,0.57735,0.57735,      -0.894427,0.447214,0.0,         0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.801784,0.534522,-0.267261,  -0.801784,0.267261,-0.534523,   0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.57735,-0.57735,-0.57735,    -0.666667,-0.333333,-0.666667,  0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.408248,-0.816497,0.408248,  -0.707107,-0.707107,-0.0,       0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.0,0.0,0.0,                   0.0,0.0,0.0,                   0.0,0.0,0.0,  0.0,0.0,0.0
+        }, {5, 5, 3}, core::Dtype::Float32, device);
+    // clang-format on
+    t::geometry::Image depth{t_depth};
+
+    float invalid_fill = 0.0f;
+    auto depth_clipped = depth.ClipTransform(10.0, 0.0, 2.5, invalid_fill);
+
+    EXPECT_TRUE(depth_clipped.AsTensor().AllClose(t_depth_clipped_ref));
+
+    auto vertex_map = depth_clipped.CreateVertexMap(intrinsic, invalid_fill);
+    EXPECT_TRUE(vertex_map.AsTensor().AllClose(t_vertex_ref));
+
+    auto normal_map = vertex_map.CreateNormalMap(invalid_fill);
+    EXPECT_TRUE(normal_map.AsTensor().AllClose(t_normal_ref));
+}
+
+TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
@@ -844,7 +893,7 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap) {
             vertex_map.ToLegacyImage())});
 }
 
-TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap) {
+TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =

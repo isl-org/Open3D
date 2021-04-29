@@ -26,8 +26,6 @@
 
 #include <cuda.h>
 
-#include <cub/cub.cuh>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
@@ -36,6 +34,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
+#include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -43,139 +42,6 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 namespace odometry {
-
-void ReduceAndSolve6x6(float* A_reduction,
-                       core::Tensor& delta,
-                       core::Tensor& residual,
-                       int64_t n,
-                       const core::Device& device) {
-    core::Tensor output_29 =
-            core::Tensor::Empty({29}, core::Dtype::Float32, device);
-    float* output_29_data = output_29.GetDataPtr<float>();
-
-    // Reduction of {29, N} to {29}.
-    for (int i = 0; i < 29; i++) {
-        // Determine temporary device storage requirements.
-        void* d_temp_storage = NULL;
-        size_t temp_storage_bytes = 0;
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        // Allocate temporary storage.
-        cudaMalloc(&d_temp_storage, temp_storage_bytes);
-        // Run sum-reduction.
-        cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes,
-                               A_reduction + i * n, output_29_data + i, n);
-        cudaFree(d_temp_storage);
-    }
-
-    DecodeAndSolve6x6(output_29, delta, residual);
-}
-
-template <typename T>
-__device__ inline void WarpReduceSum(volatile T* local_sum, const int tid) {
-    local_sum[tid] += local_sum[tid + 32];
-    local_sum[tid] += local_sum[tid + 16];
-    local_sum[tid] += local_sum[tid + 8];
-    local_sum[tid] += local_sum[tid + 4];
-    local_sum[tid] += local_sum[tid + 2];
-    local_sum[tid] += local_sum[tid + 1];
-}
-
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid, volatile T* local_sum) {
-    if (BLOCK_SIZE >= 512) {
-        if (tid < 256) {
-            local_sum[tid] += local_sum[tid + 256];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 256) {
-        if (tid < 128) {
-            local_sum[tid] += local_sum[tid + 128];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 128) {
-        if (tid < 64) {
-            local_sum[tid] += local_sum[tid + 64];
-        }
-        __syncthreads();
-    }
-    if (tid < 32) {
-        WarpReduceSum<T>(local_sum, tid);
-    }
-}
-
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid,
-                                      volatile T* local_sum0,
-                                      volatile T* local_sum1) {
-    if (BLOCK_SIZE >= 512) {
-        if (tid < 256) {
-            local_sum0[tid] += local_sum0[tid + 256];
-            local_sum1[tid] += local_sum1[tid + 256];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 256) {
-        if (tid < 128) {
-            local_sum0[tid] += local_sum0[tid + 128];
-            local_sum1[tid] += local_sum1[tid + 128];
-        }
-        __syncthreads();
-    }
-    if (BLOCK_SIZE >= 128) {
-        if (tid < 64) {
-            local_sum0[tid] += local_sum0[tid + 64];
-            local_sum1[tid] += local_sum1[tid + 64];
-        }
-        __syncthreads();
-    }
-
-    if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
-    }
-}
-
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid,
-                                      volatile T* local_sum0,
-                                      volatile T* local_sum1,
-                                      volatile T* local_sum2) {
-    if (BLOCK_SIZE >= 512) {
-        if (tid < 256) {
-            local_sum0[tid] += local_sum0[tid + 256];
-            local_sum1[tid] += local_sum1[tid + 256];
-            local_sum2[tid] += local_sum2[tid + 256];
-        }
-        __syncthreads();
-    }
-
-    if (BLOCK_SIZE >= 256) {
-        if (tid < 128) {
-            local_sum0[tid] += local_sum0[tid + 128];
-            local_sum1[tid] += local_sum1[tid + 128];
-            local_sum2[tid] += local_sum2[tid + 128];
-        }
-        __syncthreads();
-    }
-
-    if (BLOCK_SIZE >= 128) {
-        if (tid < 64) {
-            local_sum0[tid] += local_sum0[tid + 64];
-            local_sum1[tid] += local_sum1[tid + 64];
-            local_sum2[tid] += local_sum2[tid + 64];
-        }
-        __syncthreads();
-    }
-
-    if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
-        WarpReduceSum<float>(local_sum2, tid);
-    }
-}
 
 __global__ void ComputePosePointToPlaneCUDAKernel(
         NDArrayIndexer source_vertex_indexer,
@@ -185,7 +51,8 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
         float* global_sum,
         int rows,
         int cols,
-        float depth_diff) {
+        float depth_outlier_trunc,
+        float depth_huber_delta) {
     const int kBlockSize = 256;
     __shared__ float local_sum0[kBlockSize];
     __shared__ float local_sum1[kBlockSize];
@@ -204,8 +71,11 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
     float J[6] = {0}, reduction[21 + 6 + 2];
     float r = 0;
     bool valid = GetJacobianPointToPlane(
-            x, y, depth_diff, source_vertex_indexer, target_vertex_indexer,
-            target_normal_indexer, ti, J, r);
+            x, y, depth_outlier_trunc, source_vertex_indexer,
+            target_vertex_indexer, target_normal_indexer, ti, J, r);
+
+    float d_huber = HuberDeriv(r, depth_huber_delta);
+    float r_huber = HuberLoss(r, depth_huber_delta);
 
     // Dump J, r into JtJ and Jtr
     int offset = 0;
@@ -215,9 +85,9 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
         }
     }
     for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
+        reduction[offset++] = J[i] * d_huber;
     }
-    reduction[offset++] = r * r;
+    reduction[offset++] = r_huber;
     reduction[offset++] = valid;
 
     // Sum reduction: JtJ(21) and Jtr(6)
@@ -259,8 +129,10 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
                                  const core::Tensor& intrinsics,
                                  const core::Tensor& init_source_to_target,
                                  core::Tensor& delta,
-                                 core::Tensor& residual,
-                                 float depth_diff) {
+                                 float& inlier_residual,
+                                 int& inlier_count,
+                                 float depth_outlier_trunc,
+                                 float depth_huber_delta) {
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
     NDArrayIndexer target_normal_indexer(target_normal_map, 2);
@@ -273,10 +145,6 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    // A_29xN is a {29, N} shaped tensor, which is later reduced to {29} where
-    // [0, 20] elements are used to construct {6,6} shaped symmetric AtA
-    // matrix, [21, 26] elements are used to construct {6} AtB matrix, element
-    // [27] stores residual and element [28] stores count.
     core::Tensor global_sum =
             core::Tensor::Zeros({29}, core::Dtype::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
@@ -287,9 +155,68 @@ void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
     const dim3 threads(kThreadSize, kThreadSize);
     ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
-            ti, global_sum_ptr, rows, cols, depth_diff);
+            ti, global_sum_ptr, rows, cols, depth_outlier_trunc,
+            depth_huber_delta);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    DecodeAndSolve6x6(global_sum, delta, residual);
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
+}
+
+__global__ void ComputePoseIntensityCUDAKernel(
+        NDArrayIndexer source_depth_indexer,
+        NDArrayIndexer target_depth_indexer,
+        NDArrayIndexer source_intensity_indexer,
+        NDArrayIndexer target_intensity_indexer,
+        NDArrayIndexer target_intensity_dx_indexer,
+        NDArrayIndexer target_intensity_dy_indexer,
+        NDArrayIndexer source_vertex_indexer,
+        TransformIndexer ti,
+        float* global_sum,
+        int rows,
+        int cols,
+        float depth_outlier_trunc,
+        float intensity_huber_delta) {
+    const int kBlockSize = 256;
+    __shared__ float local_sum0[kBlockSize];
+    __shared__ float local_sum1[kBlockSize];
+    __shared__ float local_sum2[kBlockSize];
+
+    const int x = threadIdx.x + blockIdx.x * blockDim.x;
+    const int y = threadIdx.y + blockIdx.y * blockDim.y;
+    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
+
+    local_sum0[tid] = 0;
+    local_sum1[tid] = 0;
+    local_sum2[tid] = 0;
+
+    if (y >= rows || x >= cols) return;
+
+    float J[6] = {0}, reduction[21 + 6 + 2];
+    float r = 0;
+    bool valid = GetJacobianIntensity(
+            x, y, depth_outlier_trunc, source_depth_indexer,
+            target_depth_indexer, source_intensity_indexer,
+            target_intensity_indexer, target_intensity_dx_indexer,
+            target_intensity_dy_indexer, source_vertex_indexer, ti, J, r);
+
+    float d_huber = HuberDeriv(r, intensity_huber_delta);
+    float r_huber = HuberLoss(r, intensity_huber_delta);
+
+    // Dump J, r into JtJ and Jtr
+    int offset = 0;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j <= i; ++j) {
+            reduction[offset++] = J[i] * J[j];
+        }
+    }
+    for (int i = 0; i < 6; ++i) {
+        reduction[offset++] = J[i] * HuberDeriv(r, intensity_huber_delta);
+    }
+    reduction[offset++] = HuberLoss(r, intensity_huber_delta);
+    reduction[offset++] = valid;
+
+    ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
+                                                local_sum0, local_sum1,
+                                                local_sum2, global_sum);
 }
 
 void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
@@ -302,8 +229,10 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
                               const core::Tensor& intrinsics,
                               const core::Tensor& init_source_to_target,
                               core::Tensor& delta,
-                              core::Tensor& residual,
-                              float depth_diff) {
+                              float& inlier_residual,
+                              int& inlier_count,
+                              float depth_outlier_trunc,
+                              float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -321,46 +250,89 @@ void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
-    const int64_t n = rows * cols;
 
-    // A_29xN is a {29, N} shaped tensor, which is later reduced to
-    // {29} where [0, 20] elements are used to construct {6,6} shaped
-    // symmetric AtA matrix, [21, 26] elements are used to construct {6} AtB
-    // matrix, element [27] stores residual and element [28] stores count.
-    core::Tensor A_29xN =
-            core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
-    float* A_reduction = A_29xN.GetDataPtr<float>();
+    core::Tensor global_sum =
+            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                float J_I[6];
-                float r_I;
+    const int kThreadSize = 16;
+    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
+                      (rows + kThreadSize - 1) / kThreadSize);
+    const dim3 threads(kThreadSize, kThreadSize);
+    ComputePoseIntensityCUDAKernel<<<blocks, threads>>>(
+            source_depth_indexer, target_depth_indexer,
+            source_intensity_indexer, target_intensity_indexer,
+            target_intensity_dx_indexer, target_intensity_dy_indexer,
+            source_vertex_indexer, ti, global_sum_ptr, rows, cols,
+            depth_outlier_trunc, intensity_huber_delta);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
+}
 
-                bool valid = GetJacobianIntensity(
-                        workload_idx, cols, depth_diff, source_depth_indexer,
-                        target_depth_indexer, source_intensity_indexer,
-                        target_intensity_indexer, target_intensity_dx_indexer,
-                        target_intensity_dy_indexer, source_vertex_indexer, ti,
-                        J_I, r_I);
+__global__ void ComputePoseHybridCUDAKernel(
+        NDArrayIndexer source_depth_indexer,
+        NDArrayIndexer target_depth_indexer,
+        NDArrayIndexer source_intensity_indexer,
+        NDArrayIndexer target_intensity_indexer,
+        NDArrayIndexer target_depth_dx_indexer,
+        NDArrayIndexer target_depth_dy_indexer,
+        NDArrayIndexer target_intensity_dx_indexer,
+        NDArrayIndexer target_intensity_dy_indexer,
+        NDArrayIndexer source_vertex_indexer,
+        TransformIndexer ti,
+        float* global_sum,
+        int rows,
+        int cols,
+        float depth_outlier_trunc,
+        float depth_huber_delta,
+        float intensity_huber_delta) {
+    const int kBlockSize = 256;
+    __shared__ float local_sum0[kBlockSize];
+    __shared__ float local_sum1[kBlockSize];
+    __shared__ float local_sum2[kBlockSize];
 
-                if (valid) {
-                    for (int i = 0, j = 0; j < 6; j++) {
-                        for (int k = 0; k <= j; k++) {
-                            A_reduction[n * i + workload_idx] = J_I[j] * J_I[k];
-                            i++;
-                        }
-                        A_reduction[n * (21 + j) + workload_idx] = J_I[j] * r_I;
-                    }
-                    A_reduction[n * 27 + workload_idx] = r_I * r_I;
-                    A_reduction[n * 28 + workload_idx] = 1;
-                } else {
-                    for (int i = 0; i < 29; i++) {
-                        A_reduction[n * i + workload_idx] = 0;
-                    }
-                }
-            });
+    const int x = threadIdx.x + blockIdx.x * blockDim.x;
+    const int y = threadIdx.y + blockIdx.y * blockDim.y;
+    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
 
-    ReduceAndSolve6x6(A_reduction, delta, residual, n, device);
+    local_sum0[tid] = 0;
+    local_sum1[tid] = 0;
+    local_sum2[tid] = 0;
+
+    if (y >= rows || x >= cols) return;
+
+    float J_I[6] = {0}, J_D[6] = {0}, reduction[21 + 6 + 2];
+    float r_I = 0, r_D = 0;
+    bool valid = GetJacobianHybrid(
+            x, y, depth_outlier_trunc, source_depth_indexer,
+            target_depth_indexer, source_intensity_indexer,
+            target_intensity_indexer, target_depth_dx_indexer,
+            target_depth_dy_indexer, target_intensity_dx_indexer,
+            target_intensity_dy_indexer, source_vertex_indexer, ti, J_I, J_D,
+            r_I, r_D);
+
+    float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
+    float d_huber_I = HuberDeriv(r_I, intensity_huber_delta);
+
+    float r_huber_D = HuberLoss(r_D, depth_huber_delta);
+    float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
+
+    // Dump J, r into JtJ and Jtr
+    int offset = 0;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j <= i; ++j) {
+            reduction[offset++] = J_I[i] * J_I[j] + J_D[i] * J_D[j];
+        }
+    }
+    for (int i = 0; i < 6; ++i) {
+        reduction[offset++] = J_I[i] * d_huber_I + J_D[i] * d_huber_D;
+    }
+    reduction[offset++] = r_huber_D + r_huber_I;
+    reduction[offset++] = valid;
+
+    ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
+                                                local_sum0, local_sum1,
+                                                local_sum2, global_sum);
 }
 
 void ComputePoseHybridCUDA(const core::Tensor& source_depth,
@@ -375,8 +347,11 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
                            const core::Tensor& intrinsics,
                            const core::Tensor& init_source_to_target,
                            core::Tensor& delta,
-                           core::Tensor& residual,
-                           float depth_diff) {
+                           float& inlier_residual,
+                           int& inlier_count,
+                           float depth_outlier_trunc,
+                           float depth_huber_delta,
+                           float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -396,48 +371,24 @@ void ComputePoseHybridCUDA(const core::Tensor& source_depth,
 
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
-    const int64_t n = rows * cols;
 
-    // A_29xN is a {29, N} shaped tensor, which is later reduced to
-    // {29} where [0, 20] elements are used to construct {6,6} shaped
-    // symmetric AtA matrix, [21, 26] elements are used to construct {6} AtB
-    // matrix, element [27] stores residual and element [28] stores count.
-    core::Tensor A_29xN =
-            core::Tensor::Empty({29, n}, core::Dtype::Float32, device);
-    float* A_reduction = A_29xN.GetDataPtr<float>();
+    core::Tensor global_sum =
+            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                float J_I[6], J_D[6];
-                float r_I, r_D;
-
-                bool valid = GetJacobianHybrid(
-                        workload_idx, cols, depth_diff, source_depth_indexer,
-                        target_depth_indexer, source_intensity_indexer,
-                        target_intensity_indexer, target_depth_dx_indexer,
-                        target_depth_dy_indexer, target_intensity_dx_indexer,
-                        target_intensity_dy_indexer, source_vertex_indexer, ti,
-                        J_I, J_D, r_I, r_D);
-
-                if (valid) {
-                    for (int i = 0, j = 0; j < 6; j++) {
-                        for (int k = 0; k <= j; k++) {
-                            A_reduction[n * i + workload_idx] =
-                                    J_I[j] * J_I[k] + J_D[j] * J_D[k];
-                            i++;
-                        }
-                        A_reduction[n * (21 + j) + workload_idx] =
-                                J_I[j] * r_I + J_D[j] * r_D;
-                    }
-                    A_reduction[n * 27 + workload_idx] = r_I * r_I + r_D * r_D;
-                    A_reduction[n * 28 + workload_idx] = 1;
-                } else {
-                    for (int i = 0; i < 29; i++) {
-                        A_reduction[n * i + workload_idx] = 0;
-                    }
-                }
-            });
-    ReduceAndSolve6x6(A_reduction, delta, residual, n, device);
+    const int kThreadSize = 16;
+    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
+                      (rows + kThreadSize - 1) / kThreadSize);
+    const dim3 threads(kThreadSize, kThreadSize);
+    ComputePoseHybridCUDAKernel<<<blocks, threads>>>(
+            source_depth_indexer, target_depth_indexer,
+            source_intensity_indexer, target_intensity_indexer,
+            target_depth_dx_indexer, target_depth_dy_indexer,
+            target_intensity_dx_indexer, target_intensity_dy_indexer,
+            source_vertex_indexer, ti, global_sum_ptr, rows, cols,
+            depth_outlier_trunc, depth_huber_delta, intensity_huber_delta);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
 }  // namespace odometry

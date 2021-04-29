@@ -39,6 +39,21 @@ namespace odometry {
 using t::geometry::kernel::NDArrayIndexer;
 using t::geometry::kernel::TransformIndexer;
 
+#ifndef __CUDACC__
+using std::abs;
+using std::max;
+#endif
+
+inline OPEN3D_HOST_DEVICE float HuberDeriv(float r, float delta) {
+    float abs_r = abs(r);
+    return abs_r < delta ? r : delta * Sign(r);
+}
+
+inline OPEN3D_HOST_DEVICE float HuberLoss(float r, float delta) {
+    float abs_r = abs(r);
+    return abs_r < delta ? 0.5 * r * r : delta * abs_r - 0.5 * delta * delta;
+}
+
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         int x,
         int y,
@@ -98,8 +113,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
-        int64_t workload_idx,
-        int64_t cols,
+        int x,
+        int y,
         float depth_diff,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
@@ -112,9 +127,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         float* J_I,
         float& r_I) {
     const float sobel_scale = 0.125;
-
-    int y = workload_idx / cols;
-    int x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
     if (ISNAN(source_v[0])) {
@@ -173,8 +185,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
-        int64_t workload_idx,
-        int64_t cols,
+        int x,
+        int y,
         float depth_diff,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
@@ -195,9 +207,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     const float sqrt_lambda_intensity = 0.707;
     const float sqrt_lambda_depth = 0.707;
     const float sobel_scale = 0.125;
-
-    int y = workload_idx / cols;
-    int x = workload_idx % cols;
 
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
     if (ISNAN(source_v[0])) {

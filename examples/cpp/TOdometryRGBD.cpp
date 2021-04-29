@@ -129,15 +129,16 @@ int main(int argc, char **argv) {
         utility::LogError("Unsupported method {}", method);
     }
 
-    trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, 3.0, depth_diff,
-            {10, 5, 3}, odom_method);
+    auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
+            src, dst, intrinsic_t, trans, depth_scale, 3.0, {10, 5, 3},
+            odom_method,
+            t::pipelines::odometry::OdometryLossParams(depth_diff));
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(
             t::geometry::PointCloud::CreateFromRGBDImage(
                     t::geometry::RGBDImage(src.color_, src.depth_), intrinsic_t,
-                    trans.Inverse(), depth_scale)
+                    result.transformation_.Inverse(), depth_scale)
                     .ToLegacyPointCloud());
     // source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     target_pcd = std::make_shared<open3d::geometry::PointCloud>(
