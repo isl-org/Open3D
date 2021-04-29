@@ -35,27 +35,26 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputeOdometryResultPointToPlaneCPU(const float *source_points_ptr,
-                                          const float *target_points_ptr,
-                                          const float *target_normals_ptr,
-                                          const int64_t *correspondences_first,
-                                          const int64_t *correspondences_second,
-                                          const int n,
-                                          core::Tensor &pose,
-                                          const core::Dtype &dtype,
-                                          const core::Device &device);
+void ComputePosePointToPlaneCPU(const float *source_points_ptr,
+                                const float *target_points_ptr,
+                                const float *target_normals_ptr,
+                                const int64_t *correspondences_first,
+                                const int64_t *correspondences_second,
+                                const int n,
+                                core::Tensor &pose,
+                                const core::Dtype &dtype,
+                                const core::Device &device);
 
 #ifdef BUILD_CUDA_MODULE
-void ComputeOdometryResultPointToPlaneCUDA(
-        const float *source_points_ptr,
-        const float *target_points_ptr,
-        const float *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const int64_t *correspondences_second,
-        const int n,
-        core::Tensor &pose,
-        const core::Dtype &dtype,
-        const core::Device &device);
+void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
+                                 const float *target_points_ptr,
+                                 const float *target_normals_ptr,
+                                 const int64_t *correspondences_first,
+                                 const int64_t *correspondences_second,
+                                 const int n,
+                                 core::Tensor &pose,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device);
 #endif
 
 void ComputeRtPointToPointCPU(const float *source_points_ptr,

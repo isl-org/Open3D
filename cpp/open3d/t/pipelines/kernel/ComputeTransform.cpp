@@ -33,7 +33,7 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-core::Tensor ComputeOdometryResultPointToPlane(
+core::Tensor ComputePosePointToPlane(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &target_normals,
@@ -73,14 +73,14 @@ core::Tensor ComputeOdometryResultPointToPlane(
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputeOdometryResultPointToPlaneCPU(
-                source_points_ptr, target_points_ptr, target_normals_ptr,
-                corres_first, corres_second, n, pose, dtype, device);
+        ComputePosePointToPlaneCPU(source_points_ptr, target_points_ptr,
+                                   target_normals_ptr, corres_first,
+                                   corres_second, n, pose, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ComputeOdometryResultPointToPlaneCUDA(
-                source_points_ptr, target_points_ptr, target_normals_ptr,
-                corres_first, corres_second, n, pose, dtype, device);
+        ComputePosePointToPlaneCUDA(source_points_ptr, target_points_ptr,
+                                    target_normals_ptr, corres_first,
+                                    corres_second, n, pose, dtype, device);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

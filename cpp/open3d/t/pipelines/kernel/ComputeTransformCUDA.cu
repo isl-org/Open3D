@@ -34,7 +34,7 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputeOdometryResultPointToPlaneCUDA(
+void ComputePosePointToPlaneCUDA(
         const float *source_points_ptr,
         const float *target_points_ptr,
         const float *target_normals_ptr,
