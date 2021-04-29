@@ -26,8 +26,6 @@
 
 #include "pybind/t/pipelines/odometry/odometry.h"
 
-#include "open3d/t/geometry/Image.h"
-#include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "pybind/docstring.h"
 
@@ -35,29 +33,6 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace odometry {
-
-template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
-class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase {
-public:
-    using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
-    void ComputeJacobianAndResidual(
-            int row,
-            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
-            std::vector<double> &r,
-            std::vector<double> &w,
-            const geometry::RGBDImage &source,
-            const geometry::RGBDImage &target,
-            const geometry::Image &source_xyz,
-            const geometry::RGBDImage &target_dx,
-            const geometry::RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
-            const CorrespondenceSetPixelWise &corresps) const override {
-        PYBIND11_OVERLOAD_PURE(void, RGBDOdometryJacobianBase, row, J_r, r,
-                               source, target, source_xyz, target_dx, target_dy,
-                               extrinsic, corresps, intrinsic);
-    }
-};
 
 void pybind_odometry_classes(py::module &m) {
     py::enum_<Method>(m, "Method", "Tensor odometry esitmation method.")
@@ -90,9 +65,8 @@ void pybind_odometry_classes(py::module &m) {
             .def("__repr__", [](const OdometryConvergenceCriteria &c) {
                 return fmt::format(
                         "ICPConvergenceCriteria class "
-                        "with relative_fitness={:e}, relative_rmse={:e}, " c
-                                .relative_fitness_,
-                        c.relative_rmse_);
+                        "with relative_fitness={:e}, relative_rmse={:e}, ",
+                        c.relative_fitness_, c.relative_rmse_);
             });
 
     // open3d.t.pipelines.odometry.OdometryResult
@@ -101,8 +75,7 @@ void pybind_odometry_classes(py::module &m) {
     py::detail::bind_default_constructor<OdometryResult>(odometry_result);
     py::detail::bind_copy_functions<OdometryResult>(odometry_result);
     odometry_result
-            .def_readwrite("transformation",
-                           &RegistrationResult::transformation_,
+            .def_readwrite("transformation", &OdometryResult::transformation_,
                            "``4 x 4`` float64 tensor on CPU: The estimated "
                            "transformation matrix.")
             .def_readwrite("inlier_rmse", &OdometryResult::inlier_rmse_,
@@ -112,13 +85,13 @@ void pybind_odometry_classes(py::module &m) {
                     "fitness", &OdometryResult::fitness_,
                     "float: The overlapping area (# of inlier correspondences "
                     "/ # of points in target). Higher is better.")
-            .def("__repr__", [](const OdometryResult & or) {
+            .def("__repr__", [](const OdometryResult &odom_result) {
                 return fmt::format(
                         "OdometryResult with "
                         "fitness={:e}"
                         ", inlier_rmse={:e}"
                         "\nAccess transformation to get result.",
-                        or.fitness_, or.inlier_rmse_);
+                        odom_result.fitness_, odom_result.inlier_rmse_);
             });
 
     // open3d.t.pipelines.odometry.OdometryLossParams
@@ -142,7 +115,8 @@ void pybind_odometry_classes(py::module &m) {
                         "depth_outlier_trunc={:e}"
                         ", depth_huber_delta={:e}"
                         ", intensity_huber_delta={:e}",
-                        olp.fitness_, olp.inlier_rmse_);
+                        olp.depth_outlier_trunc_, olp.depth_huber_delta_,
+                        olp.intensity_huber_delta_);
             });
 }
 
@@ -153,12 +127,14 @@ static const std::unordered_map<std::string, std::string>
                 {"depth_outlier_trunc",
                  "Depth difference threshold used to filter projective "
                  "associations."},
+                {"depth_huber_delta", " "},
                 {"depth_scale",
                  "Converts depth pixel values to meters by dividing the scale "
                  "factor."},
                 {"init_source_to_target",
                  "(4, 4) initial transformation matrix from source to target."},
                 {"intrinsics", "(3, 3) intrinsic matrix for projection."},
+                {"intensity_huber_delta", " "},
                 {"iterations",
                  "o3d.utility.IntVector Iterations in multiscale "
                  "odometry, from coarse to fine."},
@@ -167,7 +143,46 @@ static const std::unordered_map<std::string, std::string>
                  "One of (``PointToPlane``, ``Intensity``, ``Hybrid``)"},
                 {"params", "Odometry loss parameters."},
                 {"source", "The source RGBD image."},
-                {"target", "The target RGBD image."}};
+                {"source_depth_map",
+                 "(H, W, 1) Float32 source depth image obtained by "
+                 "PreprocessDepth before calling this function."},
+                {"source_depth_dx",
+                 "(H, W, 1) Float32 source depth gradient image at x-axis "
+                 "obtained by FilterSobel before calling this function."},
+                {"source_depth_dy",
+                 "(H, W, 1) Float32 source depth gradient image at y-axis "
+                 "obtained by FilterSobel before calling this function."},
+                {"source_intensity",
+                 "(H, W, 1) Float32 source intensity image obtained by "
+                 "RGBToGray before calling this function"},
+                {"source_intensity_dx",
+                 "(H, W, 1) Float32 source intensity gradient image at x-axis "
+                 "obtained by FilterSobel before calling this function."},
+                {"source_intensity_dy",
+                 "(H, W, 1) Float32 source intensity gradient image at y-axis "
+                 "obtained by FilterSobel before calling this function."},
+                {"source_vertex_map",
+                 "(H, W, 3) Float32 source vertex image obtained by "
+                 "CreateVertexMap before calling this function."},
+                {"target", "The target RGBD image."},
+                {"target_depth_map",
+                 "(H, W, 1) Float32 target depth image obtained by "
+                 "PreprocessDepth before calling this function."},
+                {"target_intensity",
+                 "(H, W, 1) Float32 target intensity image obtained by "
+                 "RGBToGray before calling this function"},
+                {"target_intensity_dx",
+                 "(H, W, 1) Float32 target intensity gradient image at x-axis "
+                 "obtained by FilterSobel before calling this function."},
+                {"target_intensity_dy",
+                 "(H, W, 1) Float32 target intensity gradient image at y-axis "
+                 "obtained by FilterSobel before calling this function."},
+                {"target_normal_map",
+                 "(H, W, 3) Float32 target normal image obtained by "
+                 "CreateNormalMap before calling this function."},
+                {"target_vertex_map",
+                 "(H, W, 3) Float32 target vertex image obtained by "
+                 "CreateVertexMap before calling this function."}};
 
 void pybind_odometry_methods(py::module &m) {
     m.def("rgbd_odometry_multi_scale", &RGBDOdometryMultiScale,
@@ -176,10 +191,64 @@ void pybind_odometry_methods(py::module &m) {
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
                                                         core::Device("CPU:0")),
           "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f,
-          "iterations"_a = {10, 5, 3}, "method"_a = Method::Hybrid,
-          "params"_a = OdometryLossParams(),
+          "iterations"_a = std::vector<int>({10, 5, 3}),
+          "method"_a = Method::Hybrid, "params"_a = OdometryLossParams(),
           "criteria"_a = OdometryConvergenceCriteria());
     docstring::FunctionDocInject(m, "rgbd_odometry_multi_scale",
+                                 map_shared_argument_docstrings);
+
+    m.def("compute_pose_point_to_plane", &ComputePosePointToPlane,
+          "Estimates the 4x4 rigid transformation T from source to target. "
+          "Performs one iteration of RGBD odometry using loss function "
+          "\f$[(V_p - V_q)^T N_p]^2\f$, where "
+          "\f$ V_p \f$ denotes the vertex at pixel p in the source, "
+          "\f$ V_q \f$ denotes the vertex at pixel q in the target, "
+          "\f$ N_p \f$ denotes the normal at pixel p in the source. "
+          "q is obtained by transforming p with init_source_to_target then "
+          "projecting with intrinsics. "
+          "KinectFusion, ISMAR 2011",
+          "source_vertex_map"_a, "target_vertex_map"_a, "target_normal_map"_a,
+          "intrinsics"_a, "init_source_to_target"_a, "depth_outlier_trunc"_a,
+          "depth_huber_delta"_a);
+    docstring::FunctionDocInject(m, "compute_pose_point_to_plane",
+                                 map_shared_argument_docstrings);
+
+    m.def("compute_pose_intensity", &ComputePoseIntensity,
+          "Estimates the OdometryResult. "
+          "Performs one iteration of RGBD odometry using loss function "
+          "\f$(I_p - I_q)^2\f$, where "
+          "\f$ I_p \f$ denotes the intensity at pixel p in the source, "
+          "\f$ I_q \f$ denotes the intensity at pixel q in the target. "
+          "q is obtained by transforming p with init_source_to_target then "
+          "projecting with intrinsics. "
+          "Real-time visual odometry from dense RGB-D images, ICCV Workshops, "
+          "2011, ",
+          "source_depth_map"_a, "target_depth_map"_a, "source_intensity"_a,
+          "target_intensity"_a, "target_intensity_dx"_a,
+          "target_intensity_dy"_a, "source_vertices_map"_a, "intrinsics"_a,
+          "init_source_to_target"_a, "depth_outlier_trunc"_a,
+          "intensity_huber_delta"_a);
+    docstring::FunctionDocInject(m, "compute_pose_intensity",
+                                 map_shared_argument_docstrings);
+
+    m.def("compute_pose_hybrid", &ComputePoseHybrid,
+          "Estimates the OdometryResult. "
+          "Performs one iteration of RGBD odometry using loss function "
+          "\f$(I_p - I_q)^2 + lambda(D_p - (D_q)')^2\f$, where "
+          "\f$ I_p \f$ denotes the intensity at pixel p in the source, "
+          "\f$ I_q \f$ denotes the intensity at pixel q in the target. "
+          "\f$ D_p \f$ denotes the depth pixel p in the source, "
+          "\f$ D_q \f$ denotes the depth pixel q in the target. "
+          "q is obtained by transforming p with init_source_to_target then "
+          "projecting with intrinsics. "
+          "Colored ICP Revisited, ICCV 2017 ",
+          "source_depth_map"_a, "target_depth_map"_a, "source_intensity"_a,
+          "target_intensity"_a, "source_depth_dx"_a, "source_depth_dy"_a,
+          "source_intensity_dx"_a, "source_intensity_dy"_a,
+          "target_vertices_map"_a, "intrinsics"_a, "init_source_to_target"_a,
+          "depth_outlier_trunc"_a, "depth_huber_delta"_a,
+          "intensity_huber_delta"_a);
+    docstring::FunctionDocInject(m, "compute_pose_hybrid",
                                  map_shared_argument_docstrings);
 }
 
@@ -192,5 +261,5 @@ void pybind_odometry(py::module &m) {
 
 }  // namespace odometry
 }  // namespace pipelines
-)  // namespace t
 }  // namespace t
+}  // namespace open3d

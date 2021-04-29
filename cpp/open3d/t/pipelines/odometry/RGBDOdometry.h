@@ -102,6 +102,7 @@ public:
     }
 
 public:
+    /// Depth difference threshold used to filter projective associations.
     float depth_outlier_trunc_;
     float depth_huber_delta_;
     float intensity_huber_delta_;
@@ -170,7 +171,7 @@ OdometryResult ComputePosePointToPlane(
         float depth_outlier_trunc,
         float depth_huber_delta);
 
-/// \brief Estimates the 4x4 rigid transformation T from source to target.
+/// \brief Estimates the OdometryResult.
 /// Performs one iteration of RGBD odometry using loss function
 /// \f$(I_p - I_q)^2\f$, where
 /// \f$ I_p \f$ denotes the intensity at pixel p in the source,
