@@ -50,6 +50,7 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
     _view_name: "WebVisualizerView",
     _model_module: "open3d",
     _view_module: "open3d",
+    // @...@ is configured by cpp/pybind/make_python_package.cmake.
     _model_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
     _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
   }),

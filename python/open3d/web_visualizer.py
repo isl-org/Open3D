@@ -22,6 +22,7 @@ class WebVisualizer(widgets.DOMWidget):
     _model_module = Unicode('open3d').tag(sync=True)
 
     # Version of the front-end module containing widget view.
+    # @...@ is configured by cpp/pybind/make_python_package.cmake.
     _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)
     # Version of the front-end module containing widget model.

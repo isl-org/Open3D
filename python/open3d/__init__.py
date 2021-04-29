@@ -78,14 +78,12 @@ if __DEVICE_API__ == 'cpu':
 import open3d.core
 import open3d.visualization
 
-# TOOD (yixing): fix me
-# __version__ = "@PROJECT_VERSION@"
-from ._version import version_info, __version__
+__version__ = "@PROJECT_VERSION@"
 
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if "@BUILD_JUPYTER_EXTENSION@" == "ON":
+if _build_config["BUILD_JUPYTER_EXTENSION"]:
     from .web_visualizer import *
 
     # TODO: make this more robust, e.g. build gui, windows, macos
