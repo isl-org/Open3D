@@ -227,31 +227,6 @@ PeerConnectionManager::PeerConnectionManager(
         }
         return this->AddIceCandidate(peerid, in);
     };
-
-    func_["/api/getPeerConnectionList"] =
-            [this](const struct mg_request_info *req_info,
-                   const Json::Value &in) -> Json::Value {
-        return this->GetPeerConnectionList();
-    };
-
-    func_["/api/getStreamList"] = [this](const struct mg_request_info *req_info,
-                                         const Json::Value &in) -> Json::Value {
-        return this->GetStreamList();
-    };
-
-    func_["/api/log"] = [](const struct mg_request_info *req_info,
-                           const Json::Value &in) -> Json::Value {
-        std::string loglevel;
-        if (req_info->query_string) {
-            CivetServer::getParam(req_info->query_string, "level", loglevel);
-            if (!loglevel.empty()) {
-                rtc::LogMessage::LogToDebug(
-                        (rtc::LoggingSeverity)atoi(loglevel.c_str()));
-            }
-        }
-        Json::Value answer(rtc::LogMessage::GetLogToDebug());
-        return answer;
-    };
 }
 
 PeerConnectionManager::~PeerConnectionManager() {}
@@ -608,83 +583,6 @@ const Json::Value PeerConnectionManager::GetIceCandidateList(
         } else {
             RTC_LOG(LS_ERROR) << "No observer for peer:" << peerid;
         }
-    }
-    return value;
-}
-
-// Get PeerConnection list.
-const Json::Value PeerConnectionManager::GetPeerConnectionList() {
-    Json::Value value(Json::arrayValue);
-
-    std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
-    for (auto it : peer_connectionobs_map_) {
-        Json::Value content;
-
-        // get local SDP
-        rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
-                it.second->GetPeerConnection();
-        if ((peer_connection) && (peer_connection->local_description())) {
-            content["pc_state"] =
-                    (int)(peer_connection->peer_connection_state());
-            content["signaling_state"] =
-                    (int)(peer_connection->signaling_state());
-            content["ice_state"] =
-                    (int)(peer_connection->ice_connection_state());
-
-            std::string sdp;
-            peer_connection->local_description()->ToString(&sdp);
-            content["sdp"] = sdp;
-
-            Json::Value streams;
-            rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
-                    peer_connection->local_streams());
-            if (local_streams) {
-                for (unsigned int i = 0; i < local_streams->count(); i++) {
-                    auto localStream = local_streams->at(i);
-                    if (localStream != nullptr) {
-                        Json::Value tracks;
-
-                        const webrtc::VideoTrackVector &videoTracks =
-                                localStream->GetVideoTracks();
-                        for (unsigned int j = 0; j < videoTracks.size(); j++) {
-                            auto videoTrack = videoTracks.at(j);
-                            Json::Value track;
-                            track["kind"] = videoTrack->kind();
-                            BitmapTrackSourceInterface::Stats stats;
-                            if (videoTrack->GetSource()) {
-                                track["state"] =
-                                        videoTrack->GetSource()->state();
-                                if (videoTrack->GetSource()->GetStats(&stats)) {
-                                    track["width"] = stats.input_width;
-                                    track["height"] = stats.input_height;
-                                }
-                            }
-
-                            tracks[videoTrack->id()] = track;
-                        }
-                        streams[localStream->id()] = tracks;
-                    }
-                }
-            }
-            content["streams"] = streams;
-        }
-
-        // Get Stats.
-        // content["stats"] = it.second->GetStats();
-
-        Json::Value pc;
-        pc[it.first] = content;
-        value.append(pc);
-    }
-    return value;
-}
-
-// Get StreamList list.
-const Json::Value PeerConnectionManager::GetStreamList() {
-    std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-    Json::Value value(Json::arrayValue);
-    for (auto it : stream_map_) {
-        value.append(it.first);
     }
     return value;
 }

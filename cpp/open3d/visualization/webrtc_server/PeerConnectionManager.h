@@ -369,8 +369,6 @@ public:
                            const std::string& options,
                            const Json::Value& jmessage);
     const Json::Value GetIceServers();
-    const Json::Value GetPeerConnectionList();
-    const Json::Value GetStreamList();
     const Json::Value CreateOffer(const std::string& peerid,
                                   const std::string& window_uid,
                                   const std::string& options);
