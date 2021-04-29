@@ -80,13 +80,12 @@ protected:
 
 class ImageTrackSource : public BitmapTrackSource {
 public:
-    /// \param video_url Typically window_uid
     static rtc::scoped_refptr<BitmapTrackSourceInterface> Create(
-            const std::string& video_url,
+            const std::string& window_uid,
             const std::map<std::string, std::string>& opts) {
-        // TODO: do we need to call SanitizeLabel for video_url?
+        // TODO: do we need to call SanitizeLabel for window_uid?
         std::unique_ptr<ImageCapturer> capturer =
-                absl::WrapUnique(ImageCapturer::Create(video_url, opts));
+                absl::WrapUnique(ImageCapturer::Create(window_uid, opts));
         if (!capturer) {
             return nullptr;
         }

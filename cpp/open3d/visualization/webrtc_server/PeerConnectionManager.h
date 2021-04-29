@@ -365,28 +365,28 @@ public:
     const Json::Value GetMediaList();
     const Json::Value HangUp(const std::string& peerid);
     const Json::Value Call(const std::string& peerid,
-                           const std::string& video_url,
+                           const std::string& window_uid,
                            const std::string& options,
                            const Json::Value& jmessage);
     const Json::Value GetIceServers();
     const Json::Value GetPeerConnectionList();
     const Json::Value GetStreamList();
     const Json::Value CreateOffer(const std::string& peerid,
-                                  const std::string& video_url,
+                                  const std::string& window_uid,
                                   const std::string& options);
     const Json::Value SetAnswer(const std::string& peerid,
                                 const Json::Value& jmessage);
 
     rtc::scoped_refptr<BitmapTrackSourceInterface> GetVideoTrackSource(
-            const std::string& video_url);
+            const std::string& window_uid);
 
 protected:
     PeerConnectionObserver* CreatePeerConnection(const std::string& peerid);
     bool AddStreams(webrtc::PeerConnectionInterface* peer_connection,
-                    const std::string& video_url,
+                    const std::string& window_uid,
                     const std::string& options);
     rtc::scoped_refptr<BitmapTrackSourceInterface> CreateVideoSource(
-            const std::string& video_url,
+            const std::string& window_uid,
             const std::map<std::string, std::string>& opts);
     bool StreamStillUsed(const std::string& stream_label);
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection(

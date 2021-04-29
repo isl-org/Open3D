@@ -356,9 +356,9 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
 // Create an offer for a call,
 const Json::Value PeerConnectionManager::CreateOffer(
         const std::string &peerid,
-        const std::string &video_url,
+        const std::string &window_uid,
         const std::string &options) {
-    RTC_LOG(INFO) << __FUNCTION__ << " video:" << video_url
+    RTC_LOG(INFO) << __FUNCTION__ << " video:" << window_uid
                   << " options:" << options;
     Json::Value offer;
 
@@ -370,7 +370,7 @@ const Json::Value PeerConnectionManager::CreateOffer(
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
                 peer_connection_observer->GetPeerConnection();
 
-        if (!this->AddStreams(peer_connection, video_url, options)) {
+        if (!this->AddStreams(peer_connection, window_uid, options)) {
             RTC_LOG(WARNING) << "Can't add stream";
         }
 
@@ -480,10 +480,10 @@ const Json::Value PeerConnectionManager::SetAnswer(
 
 // Auto-answer to a call.
 const Json::Value PeerConnectionManager::Call(const std::string &peerid,
-                                              const std::string &video_url,
+                                              const std::string &window_uid,
                                               const std::string &options,
                                               const Json::Value &jmessage) {
-    RTC_LOG(INFO) << __FUNCTION__ << " video:" << video_url
+    RTC_LOG(INFO) << __FUNCTION__ << " video:" << window_uid
                   << " options:" << options;
 
     Json::Value answer;
@@ -548,7 +548,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             }
 
             // add local stream
-            if (!this->AddStreams(peer_connection, video_url, options)) {
+            if (!this->AddStreams(peer_connection, window_uid, options)) {
                 RTC_LOG(WARNING) << "Can't add stream";
             }
 
@@ -585,8 +585,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             // TODO: this is not the place to send SendInitFrames. Call
             // SendInitFrames after the video stream is fully established. Send
             //
-            // video_url is window_uid.
-            webrtc_server_->SendInitFrames(video_url);
+            // window_uid is window_uid.
+            webrtc_server_->SendInitFrames(window_uid);
         }
     }
     return answer;
@@ -811,11 +811,11 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
 // Get the capturer from its URL.
 rtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::CreateVideoSource(
-        const std::string &video_url,
+        const std::string &window_uid,
         const std::map<std::string, std::string> &opts) {
-    RTC_LOG(INFO) << "video_url:" << video_url;
+    RTC_LOG(INFO) << "window_uid:" << window_uid;
 
-    std::string video = video_url;
+    std::string video = window_uid;
     if (config_.isMember(video)) {
         video = config_[video]["video"].asString();
     }
@@ -841,15 +841,15 @@ const std::string PeerConnectionManager::SanitizeLabel(
 // Add a stream to a PeerConnection.
 bool PeerConnectionManager::AddStreams(
         webrtc::PeerConnectionInterface *peer_connection,
-        const std::string &video_url,
+        const std::string &window_uid,
         const std::string &options) {
     bool ret = false;
 
     // Compute options.
     // Example options: "rtptransport=tcp&timeout=60"
     std::string optstring = options;
-    if (config_.isMember(video_url)) {
-        std::string urlopts = config_[video_url]["options"].asString();
+    if (config_.isMember(window_uid)) {
+        std::string urlopts = config_[window_uid]["options"].asString();
         if (options.empty()) {
             optstring = urlopts;
         } else if (options.find_first_of("&") == 0) {
@@ -867,7 +867,7 @@ bool PeerConnectionManager::AddStreams(
         opts[key] = value;
     }
 
-    std::string video = video_url;
+    std::string video = window_uid;
     if (config_.isMember(video)) {
         video = config_[video]["video"].asString();
     }
@@ -886,7 +886,7 @@ bool PeerConnectionManager::AddStreams(
     }
 
     // Compute stream label removing space because SDP use label.
-    std::string stream_label = this->SanitizeLabel(video_url);
+    std::string stream_label = this->SanitizeLabel(window_uid);
 
     bool existing_stream = false;
     {
@@ -919,7 +919,7 @@ bool PeerConnectionManager::AddStreams(
                 rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
                 if (!video_source) {
                     RTC_LOG(LS_ERROR)
-                            << "Cannot create capturer video:" << video_url;
+                            << "Cannot create capturer video:" << window_uid;
                 } else {
                     rtc::scoped_refptr<BitmapTrackSourceInterface> videoScaled =
                             VideoFilter<VideoScaler>::Create(video_source,
@@ -970,13 +970,13 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
 }
 
 rtc::scoped_refptr<BitmapTrackSourceInterface>
-PeerConnectionManager::GetVideoTrackSource(const std::string &video_url) {
+PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
     {
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-        if (stream_map_.find(video_url) == stream_map_.end()) {
+        if (stream_map_.find(window_uid) == stream_map_.end()) {
             return nullptr;
         } else {
-            return stream_map_.at(video_url);
+            return stream_map_.at(window_uid);
         }
     }
 }
