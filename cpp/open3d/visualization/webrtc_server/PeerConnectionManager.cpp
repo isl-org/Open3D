@@ -567,7 +567,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     return answer;
 }
 
-// Get list ICE candidate associayed with a PeerConnection.
+// Get list ICE candidate associated with a PeerConnection.
 const Json::Value PeerConnectionManager::GetIceCandidateList(
         const std::string &peerid) {
     RTC_LOG(INFO) << __FUNCTION__;
