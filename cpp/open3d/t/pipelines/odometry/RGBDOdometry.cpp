@@ -184,7 +184,7 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
         t::geometry::Image target_vertex_map_smooth =
                 target_depth_curr_smooth.CreateVertexMap(intrinsics, NAN);
         t::geometry::Image target_normal_map =
-                target_vertex_map.CreateNormalMap(NAN);
+                target_vertex_map_smooth.CreateNormalMap(NAN);
 
         source_vertex_maps[n_levels - 1 - i] = source_vertex_map.AsTensor();
         target_vertex_maps[n_levels - 1 - i] = target_vertex_map.AsTensor();
