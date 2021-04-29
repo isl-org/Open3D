@@ -161,7 +161,8 @@ void _CConvTransposeComputeFeaturesCPU(
                         if (NORMALIZE) {
                             TFeat normalizer(1);
                             if (NEIGHBORS_IMPORTANCE) {
-                                if (inp_neighbors_importance_sum[inp_idx] != TFeat(0))
+                                if (inp_neighbors_importance_sum[inp_idx] !=
+                                    TFeat(0))
                                     normalizer /= inp_neighbors_importance_sum
                                             [inp_idx];
                             } else {
