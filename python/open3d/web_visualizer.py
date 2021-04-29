@@ -7,7 +7,7 @@ import open3d as o3d
 
 @widgets.register
 class WebVisualizer(widgets.DOMWidget):
-    """An example widget."""
+    """Open3D Web Visualizer based on WebRTC."""
 
     # Name of the widget view class in front-end.
     _view_name = Unicode('WebVisualizerView').tag(sync=True)
