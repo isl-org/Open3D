@@ -92,15 +92,16 @@ void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
                             J_ij, r);
 
                     if (valid) {
+                        float d_huber = HuberDeriv(r, depth_huber_delta);
+                        float r_huber = HuberLoss(r, depth_huber_delta);
                         for (int i = 0, j = 0; j < 6; j++) {
                             for (int k = 0; k <= j; k++) {
                                 A_reduction[i] += J_ij[j] * J_ij[k];
                                 i++;
                             }
-                            A_reduction[21 + j] +=
-                                    J_ij[j] * HuberDeriv(r, depth_huber_delta);
+                            A_reduction[21 + j] += J_ij[j] * d_huber;
                         }
-                        A_reduction[27] += HuberLoss(r, depth_huber_delta);
+                        A_reduction[27] += r_huber;
                         A_reduction[28] += 1;
                     }
                 }
@@ -186,17 +187,17 @@ void ComputePoseIntensityCPU(const core::Tensor& source_depth,
                             ti, J_I, r_I);
 
                     if (valid) {
+                        float d_huber = HuberDeriv(r_I, intensity_huber_delta);
+                        float r_huber = HuberLoss(r_I, intensity_huber_delta);
+
                         for (int i = 0, j = 0; j < 6; j++) {
                             for (int k = 0; k <= j; k++) {
                                 A_reduction[i] += J_I[j] * J_I[k];
                                 i++;
                             }
-                            A_reduction[21 + j] +=
-                                    J_I[j] *
-                                    HuberDeriv(r_I, intensity_huber_delta);
+                            A_reduction[21 + j] += J_I[j] * d_huber;
                         }
-                        A_reduction[27] +=
-                                HuberLoss(r_I, intensity_huber_delta);
+                        A_reduction[27] += r_huber;
                         A_reduction[28] += 1;
                     }
                 }
@@ -288,6 +289,13 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                             ti, J_I, J_D, r_I, r_D);
 
                     if (valid) {
+                        float d_huber_I =
+                                HuberDeriv(r_I, intensity_huber_delta);
+                        float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
+
+                        float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
+                        float r_huber_D = HuberLoss(r_D, depth_huber_delta);
+
                         for (int i = 0, j = 0; j < 6; j++) {
                             for (int k = 0; k <= j; k++) {
                                 A_reduction[i] +=
@@ -295,13 +303,9 @@ void ComputePoseHybridCPU(const core::Tensor& source_depth,
                                 i++;
                             }
                             A_reduction[21 + j] +=
-                                    J_I[j] * HuberDeriv(r_I,
-                                                        intensity_huber_delta) +
-                                    J_D[j] * HuberDeriv(r_D, depth_huber_delta);
+                                    J_I[j] * d_huber_I + J_D[j] * d_huber_D;
                         }
-                        A_reduction[27] +=
-                                HuberLoss(r_I, intensity_huber_delta) +
-                                HuberLoss(r_D, depth_huber_delta);
+                        A_reduction[27] += r_huber_I + r_huber_D;
                         A_reduction[28] += 1;
                     }
                 }

@@ -96,14 +96,8 @@ int main(int argc, char** argv) {
     iterations = std::min(n, iterations);
 
     // GT trajectory for reference
-    std::string gt_trajectory_path = std::string(argv[3]);
-    auto gt_trajectory =
-            io::CreatePinholeCameraTrajectoryFromFile(gt_trajectory_path);
-    Eigen::Matrix4d src_pose_gt_eigen =
-            gt_trajectory->parameters_[0].extrinsic_.inverse().eval();
-    Tensor src_pose_gt =
-            core::eigen_converter::EigenMatrixToTensor(src_pose_gt_eigen);
-    Tensor T_frame_to_model = src_pose_gt;
+    Tensor T_frame_to_model =
+            Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
     // Intrinsics
     std::string intrinsic_path = utility::GetProgramOptionAsString(
