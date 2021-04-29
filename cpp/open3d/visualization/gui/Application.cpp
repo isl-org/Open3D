@@ -406,7 +406,6 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
 #ifdef BUILD_WEBRTC
-    // TODO: move this elsewhere, better way to check window system type.
     if (auto webrtc_window_system =
                 std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
                         impl_->window_system_)) {
