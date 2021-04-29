@@ -946,14 +946,17 @@ if(BUILD_GUI)
     set(FILAMENT_RUNTIME_VER "")
     if (WIN32)
         if (STATIC_WINDOWS_RUNTIME)
-            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
+            set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
         else()
-            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
+            set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
         endif()
+    endif()
+    if (APPLE)
+        set(FILAMENT_RUNTIME_VER x86_64)
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
+        LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
