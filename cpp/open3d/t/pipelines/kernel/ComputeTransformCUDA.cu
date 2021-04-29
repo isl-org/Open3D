@@ -34,15 +34,16 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputeOdometryResultPointToPlaneCUDA(const float *source_points_ptr,
-                                 const float *target_points_ptr,
-                                 const float *target_normals_ptr,
-                                 const int64_t *correspondences_first,
-                                 const int64_t *correspondences_second,
-                                 const int n,
-                                 core::Tensor &pose,
-                                 const core::Dtype &dtype,
-                                 const core::Device &device) {
+void ComputeOdometryResultPointToPlaneCUDA(
+        const float *source_points_ptr,
+        const float *target_points_ptr,
+        const float *target_normals_ptr,
+        const int64_t *correspondences_first,
+        const int64_t *correspondences_second,
+        const int n,
+        core::Tensor &pose,
+        const core::Dtype &dtype,
+        const core::Device &device) {
     // atai: {n, 21} Stores local sum for ATA stacked vertically
     core::Tensor atai =
             core::Tensor::Empty({n, 21}, core::Dtype::Float32, device);
