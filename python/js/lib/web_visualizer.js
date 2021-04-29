@@ -33,13 +33,13 @@ require("webrtc-adapter");
 var WebRtcStreamer = require("./webrtcstreamer");
 
 // Custom Model. Custom widgets models must at least provide default values
-// for model attributes, including
-//  - `_view_name`
-//  - `_view_module`
-//  - `_view_module_version`
-//  - `_model_name`
-//  - `_model_module`
-//  - `_model_module_version`
+// for model attributes, including:
+//  - _view_name
+//  - _view_module
+//  - _view_module_version
+//  - _model_name
+//  - _model_module
+//  - _model_module_version
 // when different from the base class.
 //
 // When serializing the entire widget state for embedding, only values that
@@ -94,7 +94,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       call_id: callId,
     };
 
-    // Append message to current jspy_channel
+    // Append message to current jspy_channel.
     var jspyChannel = this.model.get("jspy_channel");
     var jspyChannelObj = JSON.parse(jspyChannel);
     jspyChannelObj[callId] = message;
@@ -187,7 +187,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.model.set("jspy_channel", "{}");
     this.touch();
 
-    // Python call registry
+    // Python call registry.
     this.callId = 0;
 
     this.videoElt = document.createElement("video");
@@ -196,10 +196,10 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.videoElt.controls = false;
     this.videoElt.playsinline = true;
 
-    // The `el` property is the DOM element associated with the view
+    // this.el is the DOM element associated with the view.
     this.el.appendChild(this.videoElt);
 
-    // Create WebRTC stream
+    // Create WebRTC stream.
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
       location.protocol + "//" + window.location.hostname + ":" + 8888,
