@@ -68,7 +68,7 @@
           deviceList.push.apply(deviceList, remoteDeviceList);
         }
 
-        // create navigation menu
+        // Create navigation menu
         var urllist = document.getElementById("menu");
         for (var dev in deviceList) {
           var url = deviceList[dev];
@@ -119,11 +119,11 @@
           webRtcServerList[videoTag] = undefined;
         }
 
-        // remove the video element and its tile
+        // Remove the video element and its tile
         var divElt = document.getElementById("div_" + videoTag);
         divElt.parentElement.removeChild(divElt);
 
-        // unhighlight the navigation
+        // Unhighlight the navigation
         var navElt = document.getElementById("nav_" + videoTag);
         navElt.className = "";
       }
