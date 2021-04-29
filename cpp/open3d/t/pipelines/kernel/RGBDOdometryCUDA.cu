@@ -78,10 +78,6 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
     float r_huber = HuberLoss(r, depth_d_huberelta);
 
     // Dump J, r into JtJ and Jtr
-    const float h = 0.05;
-    float huber_r = abs(r) < h ? 0.5 * r * r : h * abs(r) - 0.5 * h * h;
-    float deriv_r = abs(r) < h ? r : h * Sign(r);
-
     int offset = 0;
     for (int i = 0; i < 6; ++i) {
         for (int j = 0; j <= i; ++j) {
