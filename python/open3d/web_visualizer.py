@@ -9,32 +9,32 @@ import open3d as o3d
 class WebVisualizer(widgets.DOMWidget):
     """An example widget."""
 
-    # Name of the widget view class in front-end
+    # Name of the widget view class in front-end.
     _view_name = Unicode('WebVisualizerView').tag(sync=True)
 
-    # Name of the widget model class in front-end
+    # Name of the widget model class in front-end.
     _model_name = Unicode('WebVisualizerModel').tag(sync=True)
 
-    # Name of the front-end module containing widget view
+    # Name of the front-end module containing widget view.
     _view_module = Unicode('open3d').tag(sync=True)
 
-    # Name of the front-end module containing widget model
+    # Name of the front-end module containing widget model.
     _model_module = Unicode('open3d').tag(sync=True)
 
-    # Version of the front-end module containing widget view
+    # Version of the front-end module containing widget view.
     _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)
-    # Version of the front-end module containing widget model
+    # Version of the front-end module containing widget model.
     _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
         sync=True)
 
-    # Widget specific property.
-    # Widget properties are defined as traitlets. Any property tagged with `sync=True`
-    # is automatically synced to the frontend *any* time it changes in Python.
-    # It is synced back to Python from the frontend *any* time the model is touched.
+    # Widget specific property. Widget properties are defined as traitlets. Any
+    # property tagged with `sync=True` is automatically synced to the frontend
+    # *any* time it changes in Python. It is synced back to Python from the
+    # frontend *any* time the model is touched.
     window_uid = Unicode("window_UNDEFINED", help="Window UID").tag(sync=True)
 
-    # Two-way communication channels. It is possible to just use one channel.3
+    # Two-way communication channels.
     pyjs_channel = Unicode("Empty pyjs_channel.",
                            help="Python->JS message channel.").tag(sync=True)
     jspy_channel = Unicode("Empty jspy_channel.",
@@ -44,22 +44,6 @@ class WebVisualizer(widgets.DOMWidget):
         display(self)
 
     def pyjs_send(self, message):
-        # message = json.dumps({
-        #   "call_id"    : "my_id_00",
-        #   "json_result": "my_result_00"
-        # })
-        #
-        # self.pyjs_channel = json.dumps({
-        #   "my_id_00": "my_result_00",
-        #   "my_id_01": "my_result_01",
-        #   "my_id_02": "my_result_02"
-        # })
-        #
-        # pyjs_send() never clears self.pyjs_channel, instead, it adds a dict
-        # entry to self.pyjs_channel.
-        #
-        # self.pyjs_channel is cleared at javascript's render() call.
-
         # Parse input
         message_dict = json.loads(message)
         if "call_id" not in message_dict:
