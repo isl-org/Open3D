@@ -374,8 +374,6 @@ public:
     const Json::Value CreateOffer(const std::string& peerid,
                                   const std::string& window_uid,
                                   const std::string& options);
-    const Json::Value SetAnswer(const std::string& peerid,
-                                const Json::Value& jmessage);
 
     rtc::scoped_refptr<BitmapTrackSourceInterface> GetVideoTrackSource(
             const std::string& window_uid);

@@ -207,14 +207,6 @@ PeerConnectionManager::PeerConnectionManager(
         }
         return this->CreateOffer(peerid, url, options);
     };
-    func_["/api/setAnswer"] = [this](const struct mg_request_info *req_info,
-                                     const Json::Value &in) -> Json::Value {
-        std::string peerid;
-        if (req_info->query_string) {
-            CivetServer::getParam(req_info->query_string, "peerid", peerid);
-        }
-        return this->SetAnswer(peerid, in);
-    };
 
     func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
@@ -412,70 +404,6 @@ const Json::Value PeerConnectionManager::CreateOffer(
         }
     }
     return offer;
-}
-
-// Set answer to a call initiated by createOffer,
-const Json::Value PeerConnectionManager::SetAnswer(
-        const std::string &peerid, const Json::Value &jmessage) {
-    RTC_LOG(INFO) << jmessage;
-    Json::Value answer;
-
-    std::string type;
-    std::string sdp;
-    if (!rtc::GetStringFromJsonObject(jmessage, k_session_description_type_name,
-                                      &type) ||
-        !rtc::GetStringFromJsonObject(jmessage, k_session_description_sdp_name,
-                                      &sdp)) {
-        RTC_LOG(WARNING) << "Can't parse received message.";
-        answer["error"] = "Can't parse received message.";
-    } else {
-        webrtc::SessionDescriptionInterface *session_description(
-                webrtc::CreateSessionDescription(type, sdp, nullptr));
-        if (!session_description) {
-            RTC_LOG(WARNING)
-                    << "Can't parse received session description message.";
-            answer["error"] =
-                    "Can't parse received session description message.";
-        } else {
-            RTC_LOG(LERROR) << "From peerid:" << peerid
-                            << " received session description :"
-                            << session_description->type();
-
-            std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
-            rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = this->GetPeerConnection(peerid);
-            if (peer_connection) {
-                std::promise<const webrtc::SessionDescriptionInterface *>
-                        remote_promise;
-                peer_connection->SetRemoteDescription(
-                        SetSessionDescriptionObserver::Create(peer_connection,
-                                                              remote_promise),
-                        session_description);
-                // waiting for remote description
-                std::future<const webrtc::SessionDescriptionInterface *>
-                        remote_future = remote_promise.get_future();
-                if (remote_future.wait_for(std::chrono::milliseconds(5000)) ==
-                    std::future_status::ready) {
-                    RTC_LOG(INFO) << "remote_description is ready";
-                    const webrtc::SessionDescriptionInterface *desc =
-                            remote_future.get();
-                    if (desc) {
-                        std::string sdp;
-                        desc->ToString(&sdp);
-
-                        answer[k_session_description_type_name] = desc->type();
-                        answer[k_session_description_sdp_name] = sdp;
-                    } else {
-                        answer["error"] = "Can't get remote description.";
-                    }
-                } else {
-                    RTC_LOG(WARNING) << "Can't get remote description.";
-                    answer["error"] = "Can't get remote description.";
-                }
-            }
-        }
-    }
-    return answer;
 }
 
 // Auto-answer to a call.
