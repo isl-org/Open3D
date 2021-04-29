@@ -39,7 +39,7 @@ static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
                            geometry::TriangleMesh &,
-                           const ReadTriangleMeshOptions &)>>
+                           const open3d::io::ReadTriangleMeshOptions &)>>
         file_extension_to_trianglemesh_read_function{};
 
 static const std::unordered_map<
@@ -57,7 +57,7 @@ static const std::unordered_map<
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    ReadTriangleMeshOptions opt;
+    open3d::io::ReadTriangleMeshOptions opt;
     opt.print_progress = print_progress;
     ReadTriangleMesh(filename, *mesh, opt);
     return mesh;
@@ -78,7 +78,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      ReadTriangleMeshOptions params) {
+                      open3d::io::ReadTriangleMeshOptions params) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
