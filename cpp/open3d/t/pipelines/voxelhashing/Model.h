@@ -68,11 +68,11 @@ public:
                               float depth_max);
 
     /// Track using RGBD odometry
-    core::Tensor TrackFrameToModel(const Frame& input_frame,
-                                   const Frame& raycast_frame,
-                                   float depth_scale,
-                                   float depth_max,
-                                   float depth_diff);
+    odometry::OdometryResult TrackFrameToModel(const Frame& input_frame,
+                                               const Frame& raycast_frame,
+                                               float depth_scale,
+                                               float depth_max,
+                                               float depth_diff);
 
     /// Integrate RGBD at the original resolution
     void Integrate(const Frame& input_frame,

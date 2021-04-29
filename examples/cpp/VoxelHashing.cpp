@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -164,13 +164,17 @@ int main(int argc, char** argv) {
         input_frame.SetDataFromImage("color", input_color);
 
         if (i > 0) {
-            utility::LogInfo("Frame-to-model for the frame {}", i);
-
-            Tensor delta_frame_to_model =
+            auto result =
                     model.TrackFrameToModel(input_frame, raycast_frame,
                                             depth_scale, depth_max, depth_diff);
-            T_frame_to_model =
-                    T_frame_to_model.Matmul(delta_frame_to_model).Contiguous();
+            T_frame_to_model = T_frame_to_model.Matmul(result.transformation_)
+                                       .Contiguous();
+            if (result.fitness_ < 0.3) {
+                utility::LogInfo(
+                        "Frame-to-model for the frame {}, rmse={:.6f}, "
+                        "fitness={:.3f}",
+                        i, result.inlier_rmse_, result.fitness_);
+            }
         }
 
         model.UpdateFramePose(i, T_frame_to_model);
