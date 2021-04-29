@@ -87,50 +87,6 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     return value;
   },
 
-  /**
-   * Similar to WebRtcStreamer.remoteCall() but instead uses Jupyter's COMMS
-   * interface.
-   */
-  commsCallLegacy: function (url, data = {}) {
-    entryPoint = this.parseUrl(url).pathname;
-    queryString = this.parseUrl(url).search;
-    console.log("WebVisualizerView.commsCall with url: ", url, " data: ", data);
-    console.log("WebVisualizerView.commsCall with entryPoint: ", entryPoint);
-    console.log("WebVisualizerView.commsCall with queryString: ", queryString);
-    console.log(
-      'WebVisualizerView.commsCall with data["body"]: ',
-      data["body"]
-    );
-    var command_prefix =
-      "import open3d; print(open3d.visualization.webrtc_server.WebRTCServer.instance.call_http_request(";
-    // entry_point
-    var command_args = '"' + entryPoint + '"';
-    // query_string
-    if (queryString) {
-      command_args += ', "' + queryString + '"';
-    } else {
-      command_args += ', ""';
-    }
-    // data
-    var dataStr = data["body"];
-    command_args += ", '" + dataStr + "'";
-    var command_suffix = "))";
-    var command = command_prefix + command_args + command_suffix;
-    console.log("commsCall command: " + command);
-    return this.executePython(command)
-      .then((jsonStr) => JSON.parse(jsonStr))
-      .then((val) => this.logAndReturn(val))
-      .then(
-        (jsonObj) =>
-          new Response(
-            new Blob([JSON.stringify(jsonObj)], {
-              type: "application/json",
-            })
-          )
-      )
-      .then((val) => this.logAndReturn(val));
-  },
-
   commsCall: function (url, data = {}) {
     var entryPoint = this.parseUrl(url).pathname;
     var supportedAPI = [
@@ -181,7 +137,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
         )
         .then((val) => this.logAndReturn(val));
     } else {
-      return this.commsCallLegacy(url, data);
+      throw "Unsupported entryPoint: " + entryPoint;
     }
   },
 
