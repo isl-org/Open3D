@@ -43,23 +43,7 @@ class WebVisualizer(widgets.DOMWidget):
     def show(self):
         display(self)
 
-    def pyjs_send(self, message):
-        # Parse input
-        message_dict = json.loads(message)
-        if "call_id" not in message_dict:
-            raise ValueError(f"pyjs_send call_id not in message: {message}")
-        call_id = message_dict["call_id"]
-        if "json_result" not in message_dict:
-            raise ValueError(f"json_result call_id not in message: {message}")
-        json_result = message_dict["json_result"]
-
-        # Insert new entry to channel_dict
-        channel_dict = json.loads(self.pyjs_channel)
-        channel_dict[call_id] = json_result
-
-        self.pyjs_channel = json.dumps(channel_dict)
-
-    def call_http_request(self, entry_point, query_string, data):
+    def _call_http_request(self, entry_point, query_string, data):
         webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
         result = webrtc_server.call_http_request(entry_point, query_string,
                                                  data)
@@ -75,24 +59,18 @@ class WebVisualizer(widgets.DOMWidget):
         return proposal['value']
 
     @observe('jspy_channel')
-    def on_jspy_message(self, change):
-
-        # self.result_map = {"0": "result0", "1": "result1"};
+    def _on_jspy_channel(self, change):
+        # self.result_map = {"0": "result0",
+        #                    "1": "result1", ...};
         if not hasattr(self, "result_map"):
             self.result_map = dict()
 
         jspy_message = change["new"]
-        print(f"js->py message received: {jspy_message}")
-        new_call = False
+        print(f"jspy_message received: {jspy_message}")
         try:
             jspy_requests = json.loads(jspy_message)
-            print(f"!!! jspy_message: {jspy_message}")
-            print(f"!!! jspy_requests: {jspy_requests}")
-            print(f"!!! type(jspy_requests): {type(jspy_requests)}")
 
             for call_id, payload in jspy_requests.items():
-                print(f"!!! ONE call_id: {payload}")
-                print(f"!!! ONE payload: {payload}")
                 if "func" not in payload or payload[
                         "func"] != "call_http_request":
                     raise ValueError(f"Invalid jspy function: {jspy_requests}")
@@ -100,17 +78,15 @@ class WebVisualizer(widgets.DOMWidget):
                     raise ValueError(
                         f"Invalid jspy function arguments: {jspy_requests}")
 
-                # Check if already in result
+                # Check if already in result.
                 if not call_id in self.result_map:
-                    json_result = self.call_http_request(
+                    json_result = self._call_http_request(
                         payload["args"][0], payload["args"][1],
                         payload["args"][2])
                     self.result_map[call_id] = json_result
-                    new_call = True
         except:
             print(
-                f"js->py message is not a function call, ignored: {jspy_message}"
-            )
+                f"jspy_message is not a function call, ignored: {jspy_message}")
         else:
-            print(f"py->js sending: {self.result_map}")
+            print(f"pyjs_channel sending: {self.result_map}")
             self.pyjs_channel = json.dumps(self.result_map)
