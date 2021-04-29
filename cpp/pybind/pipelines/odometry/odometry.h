@@ -34,6 +34,6 @@ namespace odometry {
 
 void pybind_odometry(py::module &m);
 
-}
+}  // namespace odometry
 }  // namespace pipelines
 }  // namespace open3d

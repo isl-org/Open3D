@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,23 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/pipelines/pipelines.h"
+#pragma once
 
 #include "pybind/open3d_pybind.h"
-#include "pybind/t/pipelines/odometry/odometry.h"
-#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
+namespace odometry {
 
-void pybind_pipelines(py::module& m) {
-    py::module m_pipelines = m.def_submodule(
-            "pipelines", "Tensor-based geometry processing pipelines.");
-    registration::pybind_registration(m_pipelines);
-    odometry::pybind_odometry(m_pipelines);
-}
+void pybind_odometry(py::module &m);
 
+}  // namespace odometry
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
