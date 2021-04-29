@@ -227,7 +227,7 @@ const int Window::FLAG_HIDDEN = (1 << 0);
 const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
-    Impl() : uid_(ComputeUID()) {}
+    Impl() : uid_(GenerateUID()) {}
     ~Impl() {}
 
     WindowSystem::OSWindow window_ = nullptr;
@@ -271,7 +271,7 @@ struct Window::Impl {
     std::string uid_ = "";
 
 private:
-    std::string ComputeUID() {
+    std::string GenerateUID() {
         static size_t count = 0;
         return "window_" + std::to_string(count++);
     }
