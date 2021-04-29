@@ -57,38 +57,23 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
 
 // Custom View. Renders the widget model.
 var WebVisualizerView = widgets.DOMWidgetView.extend({
-  /**
-   * https://stackoverflow.com/a/52347011/1255535
-   */
-  executePython: function (python_code) {
-    return new Promise((resolve, reject) => {
-      var callbacks = {
-        iopub: {
-          output: (data) => resolve(data.content.text.trim()),
-        },
-      };
-      Jupyter.notebook.kernel.execute(python_code, callbacks);
-    });
-  },
-
-  /**
-   * https://stackoverflow.com/a/736970/1255535
-   * parseUrl(url).hostname
-   * parseUrl(url).entryPoint
-   */
-  parseUrl: function (url) {
-    var l = document.createElement("a");
-    l.href = url;
-    return l;
-  },
-
   logAndReturn: function (value) {
     console.log("!!! logAndReturn: ", value);
     return value;
   },
 
   commsCall: function (url, data = {}) {
-    var entryPoint = this.parseUrl(url).pathname;
+    // https://stackoverflow.com/a/736970/1255535
+    // parseUrl(url).hostname
+    // parseUrl(url).entryPoint
+    // parseUrl(url).search
+    var parseUrl = function (url) {
+      var l = document.createElement("a");
+      l.href = url;
+      return l;
+    };
+
+    var entryPoint = parseUrl(url).pathname;
     var supportedAPI = [
       "/api/getMediaList",
       "/api/getIceServers",
@@ -98,7 +83,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       "/api/addIceCandidate",
     ];
     if (supportedAPI.indexOf(entryPoint) >= 0) {
-      var queryString = this.parseUrl(url).search;
+      var queryString = parseUrl(url).search;
       if (!queryString) {
         queryString = "";
       }
