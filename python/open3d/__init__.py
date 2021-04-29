@@ -84,63 +84,26 @@ if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
 if _build_config["BUILD_JUPYTER_EXTENSION"]:
-    from .web_visualizer import *
-
-    # TODO: make this more robust, e.g. build gui, windows, macos
-    try:
-        shell = get_ipython().__class__.__name__
-        print("Jupyter environment detected, to enable WebRTC GUI backend.")
-        if shell == 'ZMQInteractiveShell':
-            _webrtc_server = open3d.visualization.webrtc_server.WebRTCServer.instance
-            _webrtc_server.enable_webrtc()
-            _webrtc_server.disable_http_handshake()
-    except NameError:
+    import platform
+    if platform.system() == "Linux":
+        from .web_visualizer import (WebVisualizer, _jupyter_labextension_paths,
+                                     _jupyter_nbextension_paths)
+        try:
+            shell = get_ipython().__class__.__name__
+            print(
+                "Jupyter environment detected. Enabling Open3D WebVisualizer.")
+            if shell == 'ZMQInteractiveShell':
+                _server = open3d.visualization.webrtc_server.WebRTCServer.instance
+                # Set default window system.
+                _server.enable_webrtc()
+                # HTTP handshake server is needed when Open3D is serving the
+                # visualizer webpage. Disable since Jupyter is serving.
+                _server.disable_http_handshake()
+        except NameError:
+            pass
+    else:
+        print("Open3D WebVisualizer is only supported on Linux for now.")
         pass
-
-
-def _jupyter_labextension_paths():
-    """Called by Jupyter Lab Server to detect if it is a valid labextension and
-    to install the widget
-
-    Returns
-    =======
-    src: Source directory name to copy files from. Webpack outputs generated files
-        into this directory and Jupyter Lab copies from this directory during
-        widget installation
-    dest: Destination directory name to install widget files to. Jupyter Lab copies
-        from `src` directory into <jupyter path>/labextensions/<dest> directory
-        during widget installation
-    """
-    return [{
-        'src': 'labextension',
-        'dest': 'open3d',
-    }]
-
-
-def _jupyter_nbextension_paths():
-    """Called by Jupyter Notebook Server to detect if it is a valid nbextension and
-    to install the widget
-
-    Returns
-    =======
-    section: The section of the Jupyter Notebook Server to change.
-        Must be 'notebook' for widget extensions
-    src: Source directory name to copy files from. Webpack outputs generated files
-        into this directory and Jupyter Notebook copies from this directory during
-        widget installation
-    dest: Destination directory name to install widget files to. Jupyter Notebook copies
-        from `src` directory into <jupyter path>/nbextensions/<dest> directory
-        during widget installation
-    require: Path to importable AMD Javascript module inside the
-        <jupyter path>/nbextensions/<dest> directory
-    """
-    return [{
-        'section': 'notebook',
-        'src': 'nbextension',
-        'dest': 'open3d',
-        'require': 'open3d/extension'
-    }]
-
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.
