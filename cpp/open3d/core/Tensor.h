@@ -700,13 +700,13 @@ public:
     /// the range [\p min_val, \p max_val], returning a new tensor.
     /// \param min_val Lower bound for output values.
     /// \param max_val Upper bound for output values.
-    Tensor Clip(double min_val, double max_val) const;
+    Tensor Clip(Scalar min_val, Scalar max_val) const;
 
     /// Element-wise clipping of tensor values so that resulting values lie in
     /// the range [\p min_val, \p max_val]. In-place version.
     /// \param min_val Lower bound for output values.
     /// \param max_val Upper bound for output values.
-    Tensor Clip_(double min_val, double max_val);
+    Tensor Clip_(Scalar min_val, Scalar max_val);
 
     /// Element-wise floor value of a tensor, returning a new tensor.
     Tensor Floor() const;
