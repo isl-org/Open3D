@@ -57,11 +57,11 @@ inline OPEN3D_HOST_DEVICE float HuberLoss(float r, float delta) {
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         int x,
         int y,
-        float depth_diff,
+        const float depth_outlier_trunc,
         const NDArrayIndexer& source_vertex_indexer,
         const NDArrayIndexer& target_vertex_indexer,
         const NDArrayIndexer& target_normal_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_ij,
         float& r) {
     float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
@@ -95,7 +95,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     r = (T_source_to_target_v[0] - target_v[0]) * target_n[0] +
         (T_source_to_target_v[1] - target_v[1]) * target_n[1] +
         (T_source_to_target_v[2] - target_v[2]) * target_n[2];
-    if (abs(r) > depth_diff) {
+    if (abs(r) > depth_outlier_trunc) {
         return false;
     }
 
@@ -115,7 +115,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
 OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         int x,
         int y,
-        float depth_diff,
+        const float depth_outlier_trunc,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
         const NDArrayIndexer& source_intensity_indexer,
@@ -123,7 +123,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         const NDArrayIndexer& target_intensity_dx_indexer,
         const NDArrayIndexer& target_intensity_dy_indexer,
         const NDArrayIndexer& source_vertex_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_I,
         float& r_I) {
     const float sobel_scale = 0.125;
@@ -153,7 +153,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
 
     float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
-    if (ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+    if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
@@ -187,7 +187,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
 OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
         int x,
         int y,
-        float depth_diff,
+        const float depth_outlier_trunc,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
         const NDArrayIndexer& source_intensity_indexer,
@@ -197,7 +197,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
         const NDArrayIndexer& target_intensity_dx_indexer,
         const NDArrayIndexer& target_intensity_dy_indexer,
         const NDArrayIndexer& source_vertex_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_I,
         float* J_D,
         float& r_I,
@@ -233,7 +233,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
 
     float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
-    if (ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+    if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 

@@ -88,8 +88,8 @@ void pybind_odometry_classes(py::module &m) {
             .def("__repr__", [](const OdometryResult &odom_result) {
                 return fmt::format(
                         "OdometryResult with "
-                        "fitness={:e}"
-                        ", inlier_rmse={:e}"
+                        "fitness={:e}, "
+                        "inlier_rmse={:e} "
                         "\nAccess transformation to get result.",
                         odom_result.fitness_, odom_result.inlier_rmse_);
             });
@@ -103,18 +103,22 @@ void pybind_odometry_classes(py::module &m) {
     py::detail::bind_copy_functions<OdometryLossParams>(odometry_loss_params);
     odometry_loss_params
             .def_readwrite("depth_outlier_trunc",
-                           &OdometryLossParams::depth_outlier_trunc_, "float.")
+                           &OdometryLossParams::depth_outlier_trunc_,
+                           "float: Depth difference threshold used to filter "
+                           "projective associations.")
             .def_readwrite("depth_huber_delta",
-                           &OdometryLossParams::depth_huber_delta_, "float.")
-            .def_readwrite("intensity_huber_delta",
-                           &OdometryLossParams::intensity_huber_delta_,
-                           "float.")
+                           &OdometryLossParams::depth_huber_delta_,
+                           "float: Huber norm parameter used in depth loss.")
+            .def_readwrite(
+                    "intensity_huber_delta",
+                    &OdometryLossParams::intensity_huber_delta_,
+                    "float: Huber norm parameter used in intensity loss.")
             .def("__repr__", [](const OdometryLossParams &olp) {
                 return fmt::format(
                         "OdometryLossParams with "
-                        "depth_outlier_trunc={:e}"
-                        ", depth_huber_delta={:e}"
-                        ", intensity_huber_delta={:e}",
+                        "depth_outlier_trunc={:e}, "
+                        "depth_huber_delta={:e}, "
+                        "intensity_huber_delta={:e} ",
                         olp.depth_outlier_trunc_, olp.depth_huber_delta_,
                         olp.intensity_huber_delta_);
             });
@@ -127,14 +131,16 @@ static const std::unordered_map<std::string, std::string>
                 {"depth_outlier_trunc",
                  "Depth difference threshold used to filter projective "
                  "associations."},
-                {"depth_huber_delta", " "},
+                {"depth_huber_delta",
+                 "Huber norm parameter used in depth loss."},
                 {"depth_scale",
                  "Converts depth pixel values to meters by dividing the scale "
                  "factor."},
                 {"init_source_to_target",
                  "(4, 4) initial transformation matrix from source to target."},
                 {"intrinsics", "(3, 3) intrinsic matrix for projection."},
-                {"intensity_huber_delta", " "},
+                {"intensity_huber_delta",
+                 "Huber norm parameter used in intensity loss."},
                 {"iterations",
                  "o3d.utility.IntVector Iterations in multiscale "
                  "odometry, from coarse to fine."},
@@ -197,7 +203,8 @@ void pybind_odometry_methods(py::module &m) {
     docstring::FunctionDocInject(m, "rgbd_odometry_multi_scale",
                                  map_shared_argument_docstrings);
 
-    m.def("compute_pose_point_to_plane", &ComputePosePointToPlane,
+    m.def("compute_odometry_result_point_to_plane",
+          &ComputeOdometryResultPointToPlane,
           "Estimates the 4x4 rigid transformation T from source to target. "
           "Performs one iteration of RGBD odometry using loss function "
           "[(V_p - V_q)^T N_p]^2, where "
@@ -213,7 +220,7 @@ void pybind_odometry_methods(py::module &m) {
     docstring::FunctionDocInject(m, "compute_pose_point_to_plane",
                                  map_shared_argument_docstrings);
 
-    m.def("compute_pose_intensity", &ComputePoseIntensity,
+    m.def("compute_odometry_result_intensity", &ComputeOdometryResultIntensity,
           "Estimates the OdometryResult. "
           "Performs one iteration of RGBD odometry using loss function "
           "(I_p - I_q)^2, where "
@@ -228,10 +235,10 @@ void pybind_odometry_methods(py::module &m) {
           "target_intensity_dy"_a, "source_vertices_map"_a, "intrinsics"_a,
           "init_source_to_target"_a, "depth_outlier_trunc"_a,
           "intensity_huber_delta"_a);
-    docstring::FunctionDocInject(m, "compute_pose_intensity",
+    docstring::FunctionDocInject(m, "compute_odometry_result_intensity",
                                  map_shared_argument_docstrings);
 
-    m.def("compute_pose_hybrid", &ComputePoseHybrid,
+    m.def("compute_odometry_result_hybrid", &ComputeOdometryResultHybrid,
           "Estimates the OdometryResult. "
           "Performs one iteration of RGBD odometry using loss function "
           "(I_p - I_q)^2 + lambda(D_p - (D_q)')^2, where "
@@ -248,7 +255,7 @@ void pybind_odometry_methods(py::module &m) {
           "target_vertices_map"_a, "intrinsics"_a, "init_source_to_target"_a,
           "depth_outlier_trunc"_a, "depth_huber_delta"_a,
           "intensity_huber_delta"_a);
-    docstring::FunctionDocInject(m, "compute_pose_hybrid",
+    docstring::FunctionDocInject(m, "compute_odometry_result_hybrid",
                                  map_shared_argument_docstrings);
 }
 
