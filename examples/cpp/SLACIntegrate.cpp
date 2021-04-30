@@ -96,13 +96,10 @@ int main(int argc, char** argv) {
 
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    Tensor intrinsic_t = Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, Dtype::Float32);
+    Tensor intrinsic_t = Tensor::Init<double>(
+            {{focal_length.first, 0, principal_point.first},
+             {0, focal_length.second, principal_point.second},
+             {0, 0, 1}});
 
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -144,17 +141,13 @@ int main(int argc, char** argv) {
                 "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
         for (auto node : fragment_pose_graph.nodes_) {
             Eigen::Matrix4d pose_local = node.pose_;
-            Eigen::Matrix4f extrinsic_local =
-                    pose_local.inverse().cast<float>().eval();
             Tensor extrinsic_local_t =
-                    core::eigen_converter::EigenMatrixToTensor(extrinsic_local)
-                            .To(device);
+                    core::eigen_converter::EigenMatrixToTensor(
+                            pose_local.inverse().eval());
 
             Eigen::Matrix4d pose = posegraph.nodes_[i].pose_ * node.pose_;
-            Eigen::Matrix4f extrinsic = pose.inverse().cast<float>().eval();
-            Tensor extrinsic_t =
-                    core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
-                            device);
+            Tensor extrinsic_t = core::eigen_converter::EigenMatrixToTensor(
+                    pose.inverse().eval());
 
             std::shared_ptr<geometry::Image> depth_legacy =
                     io::CreateImageFromFile(depth_filenames[k]);

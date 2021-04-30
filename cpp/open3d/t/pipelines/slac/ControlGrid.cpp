@@ -87,15 +87,24 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     // Convert back to the meter unit.
     vals_nb = vals_nb.View({8 * n, 3}) * grid_size_;
 
-    core::Tensor addrs_nb, masks_nb;
-    ctr_hashmap_->Insert(keys_nb, vals_nb, addrs_nb, masks_nb);
+    core::Hashmap unique_hashmap(n, core::Dtype::Int32, core::Dtype::Int32,
+                                 core::SizeVector{3}, core::SizeVector{1},
+                                 device_);
+
+    core::Tensor addrs_unique, masks_unique;
+    unique_hashmap.Activate(keys_nb, addrs_unique, masks_unique);
+
+    core::Tensor addrs, masks;
+    ctr_hashmap_->Insert(keys_nb.IndexGet({masks_unique}),
+                         vals_nb.IndexGet({masks_unique}), addrs, masks);
+
     utility::LogInfo("n * 8 = {}, Hashmap size: {}, capacity: {}, bucket: {}",
                      n * 8, ctr_hashmap_->Size(), ctr_hashmap_->GetCapacity(),
                      ctr_hashmap_->GetBucketCount());
 }
 
 void ControlGrid::Compactify() {
-    ctr_hashmap_->Rehash(ctr_hashmap_->Size());
+    ctr_hashmap_->Rehash(ctr_hashmap_->Size() * 2);
 
     core::Tensor active_addrs;
     ctr_hashmap_->GetActiveIndices(active_addrs);
@@ -328,17 +337,21 @@ std::pair<geometry::Image, geometry::Image> ControlGrid::Warp(
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max) {
+    utility::LogInfo("Warp: CreateFromRGBD");
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromRGBDImage(
             geometry::RGBDImage(color, depth), intrinsics, extrinsics,
             depth_scale, depth_max);
 
+    utility::LogInfo("Warp: Parameterize");
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Warp(pcd_param);
 
+    utility::LogInfo("Warp: ProjectRGBD");
     auto rgbd_warped =
             pcd_warped.ProjectRGBD(depth.GetCols(), depth.GetRows(), intrinsics,
                                    extrinsics, depth_scale, depth_max);
 
+    utility::LogInfo("Warp: Make pair");
     return std::make_pair(geometry::Image(rgbd_warped.first.AsTensor().To(
                                   core::Dtype::UInt16)),
                           geometry::Image(rgbd_warped.second.AsTensor()));
