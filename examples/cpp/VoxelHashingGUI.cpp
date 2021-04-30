@@ -206,7 +206,7 @@ public:
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
                                    1000, 1, 5000,
                                    "Scale factor applied to the depth values "
-                                   "from the depth image");
+                                   "from the depth image.");
         fixed_props_->AddFloatSlider("Voxel size", &prop_values_.voxel_size,
                                      3.0 / 512, 0.004, 0.01,
                                      "Voxel size for the TSDF voxel grid.");
@@ -219,28 +219,29 @@ public:
                 "Estimated points", &prop_values_.pointcloud_size, 6000000,
                 500000, 8000000,
                 "Estimated number of points in the point cloud; used to speed "
-                "extraction of points into the 3D scene");
+                "extraction of points into the 3D scene.");
 
         adjustable_props_ =
                 std::make_shared<PropertyPanel>(spacing, left_margin);
         adjustable_props_->AddIntSlider(
-                "Update interval", &prop_values_.surface_interval, 50, 1, 100,
-                "The number of iterations between updating the 3D display");
+                "Update interval", &prop_values_.surface_interval, 50, 1, 500,
+                "The number of iterations between updating the 3D display.");
 
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
                                           3.0, 1.0, 5.0,
                                           "Maximum depth before point is "
-                                          "discarded as part of background");
+                                          "discarded as part of background.");
         adjustable_props_->AddFloatSlider(
-                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5, "");
-        adjustable_props_->AddBool("Raycast color", &prop_values_.raycast_color,
-                                   true,
-                                   "Raycast into the color image to "
-                                   "determine point color");
+                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5,
+                "Depth truncation to reject outlier correspondences in "
+                "tracking.");
         adjustable_props_->AddBool("Update surface",
                                    &prop_values_.update_surface, true,
                                    "Update surface every several frames, "
                                    "determined by the update interval.");
+        adjustable_props_->AddBool(
+                "Raycast color", &prop_values_.raycast_color, true,
+                "Enable bilinear interpolated color image for visualization.");
 
         panel_->AddChild(std::make_shared<gui::Label>("Starting settings"));
         panel_->AddChild(fixed_props_);
@@ -272,10 +273,12 @@ public:
                                                   mat);
                         });
 
+                this->trajectory_ =
+                        std::make_shared<camera::PinholeCameraTrajectory>();
                 float voxel_size = prop_values_.voxel_size;
                 this->model_ =
                         std::make_shared<t::pipelines::voxelhashing::Model>(
-                                voxel_size, voxel_size * 4, 16,
+                                voxel_size, voxel_size * 6, 16,
                                 prop_values_.bucket_count,
                                 core::Tensor::Eye(4, core::Dtype::Float64,
                                                   core::Device("CPU:0")),
@@ -322,6 +325,20 @@ public:
         is_done_ = false;
         SetOnClose([this]() {
             is_done_ = true;
+
+            if (is_started_) {
+                utility::LogInfo("Writing reconstruction to scene.ply...");
+                auto pcd = model_->ExtractPointCloud(
+                        prop_values_.pointcloud_size, 3.0);
+                auto pcd_legacy =
+                        std::make_shared<open3d::geometry::PointCloud>(
+                                pcd.ToLegacyPointCloud());
+                io::WritePointCloud("scene.ply", *pcd_legacy);
+
+                utility::LogInfo("Writing trajectory to trajectory.log...");
+                io::WritePinholeCameraTrajectory("trajectory.log",
+                                                 *trajectory_);
+            }
             return true;  // false would cancel the close
         });
         update_thread_ = std::thread([this]() { this->UpdateMain(); });
@@ -347,6 +364,10 @@ public:
         Super::Layout(context);
     }
 
+    void SetOutput(const std::string& output) {
+        output_->SetText(output.c_str());
+    }
+
 protected:
     std::string dataset_path_;
 
@@ -368,10 +389,6 @@ protected:
     std::shared_ptr<gui::ImageWidget> raycast_color_image_;
     std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
 
-    void SetOutput(const std::string& output) {
-        output_->SetText(output.c_str());
-    }
-
     struct {
         std::atomic<int> surface_interval;
         std::atomic<int> pointcloud_size;
@@ -391,6 +408,7 @@ protected:
     std::atomic<bool> is_scene_updated_;
 
     std::shared_ptr<t::pipelines::voxelhashing::Model> model_;
+    std::shared_ptr<camera::PinholeCameraTrajectory> trajectory_;
     std::thread update_thread_;
 
 protected:
@@ -430,8 +448,15 @@ protected:
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
         t::pipelines::voxelhashing::Frame raycast_frame(
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-        size_t idx;
-        idx = 0;
+
+        // Legacy for write to file
+        camera::PinholeCameraIntrinsic intrinsic_legacy(
+                ref_depth.GetCols(), ref_depth.GetRows(), 525.0, 525.0, 319.5,
+                239.5);
+        camera::PinholeCameraParameters traj_param;
+        traj_param.intrinsic_ = intrinsic_legacy;
+
+        size_t idx = 0;
 
         // Odometry
         auto traj = std::make_shared<geometry::LineSet>();
@@ -521,7 +546,7 @@ protected:
                         result.transformation_.Slice(0, 0, 3).Slice(1, 3, 4);
                 double translation_norm = std::sqrt(
                         (translation * translation).Sum({0, 1}).Item<double>());
-                if (result.fitness_ >= 0.2 && translation_norm < 0.15) {
+                if (result.fitness_ >= 0.1 && translation_norm < 0.15) {
                     T_frame_to_model =
                             T_frame_to_model.Matmul(result.transformation_);
                 } else {  // Don't update
@@ -548,9 +573,10 @@ protected:
                     intrinsic_t);
             auto T_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
                     T_frame_to_model);
+            traj_param.extrinsic_ = T_eigen;
+            trajectory_->parameters_.push_back(traj_param);
 
             std::stringstream out;
-
             out << fmt::format("Frame {}/{}\n", idx, rgb_files.size());
             out << T_eigen.format(CleanFmt) << "\n";
             out << fmt::format("Active voxel blocks: {}/{}\n",

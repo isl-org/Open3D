@@ -95,7 +95,6 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", n));
     iterations = std::min(n, iterations);
 
-    // GT trajectory for reference
     Tensor T_frame_to_model =
             Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
