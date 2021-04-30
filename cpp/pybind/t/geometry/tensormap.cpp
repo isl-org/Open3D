@@ -42,7 +42,7 @@ template <typename Map,
           typename... Args>
 static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
                                                     const std::string &name,
-                                                    Args &&...args) {
+                                                    Args &&... args) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
     using Class_ = py::class_<Map, holder_type>;
