@@ -300,7 +300,7 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
         if (!candidate.get()) {
             RTC_LOG(WARNING) << "Can't parse received candidate message.";
         } else {
-            std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+            std::lock_guard<std::mutex> peerlock(peer_id_to_connection_mutex_);
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
                     peer_connection = this->GetPeerConnection(peerid);
             if (peer_connection) {
@@ -343,7 +343,7 @@ const Json::Value PeerConnectionManager::CreateOffer(
 
         // Register peerid.
         {
-            std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+            std::lock_guard<std::mutex> peerlock(peer_id_to_connection_mutex_);
             peer_id_to_connection_.insert(
                     std::pair<std::string, PeerConnectionObserver *>(
                             peerid, peer_connection_observer));
@@ -420,7 +420,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
 
             // register peerid
             {
-                std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+                std::lock_guard<std::mutex> peerlock(
+                        peer_id_to_connection_mutex_);
                 peer_id_to_connection_.insert(
                         std::pair<std::string, PeerConnectionObserver *>(
                                 peerid, peer_connection_observer));
@@ -519,7 +520,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
 
     PeerConnectionObserver *pc_observer = nullptr;
     {
-        std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+        std::lock_guard<std::mutex> peerlock(peer_id_to_connection_mutex_);
         std::map<std::string, PeerConnectionObserver *>::iterator it =
                 peer_id_to_connection_.find(peerid);
         if (it != peer_id_to_connection_.end()) {
@@ -573,7 +574,7 @@ const Json::Value PeerConnectionManager::GetIceCandidateList(
     RTC_LOG(INFO) << __FUNCTION__;
 
     Json::Value value;
-    std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
+    std::lock_guard<std::mutex> peerlock(peer_id_to_connection_mutex_);
     std::map<std::string, PeerConnectionObserver *>::iterator it =
             peer_id_to_connection_.find(peerid);
     if (it != peer_id_to_connection_.end()) {

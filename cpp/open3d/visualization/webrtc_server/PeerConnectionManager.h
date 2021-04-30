@@ -394,7 +394,7 @@ protected:
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             peer_connection_factory_;
-    std::mutex peer_map_mutex_;
+    std::mutex peer_id_to_connection_mutex_;
     std::map<std::string, PeerConnectionObserver*> peer_id_to_connection_;
     std::map<std::string, rtc::scoped_refptr<BitmapTrackSourceInterface>>
             window_uid_to_stream_;
