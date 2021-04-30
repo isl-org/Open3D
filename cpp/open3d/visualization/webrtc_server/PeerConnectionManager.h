@@ -404,6 +404,8 @@ protected:
             window_uid_to_track_source_;
     std::mutex window_uid_to_track_source_mutex_;
 
+    // Each Window can be connected to zero, one or more peers.
+
     std::list<std::string> ice_server_list_;
     const Json::Value config_;
     const std::regex publish_filter_;
