@@ -185,7 +185,23 @@ var WebRtcStreamer = (function () {
       resizeButtonElt.id = windowUID + "_resize_button";
       resizeButtonElt.type = "button";
       resizeButtonElt.innerText = "Resize " + windowUID;
-      resizeButtonElt.onclick = function () {};
+      resizeButtonElt.onclick = () => {
+        var heightInputElt = document.getElementById(
+          windowUID + "_height_input"
+        );
+        var widthInputElt = document.getElementById(windowUID + "_width_input");
+        if (!heightInputElt || !widthInputElt) {
+          Console.warn("Cannot resize, missing hight/width inputs.");
+          return;
+        }
+        var resizeEvent = {
+          window_uid: windowUID,
+          class_name: "ResizeEvent",
+          height: heightInputElt.value,
+          width: widthInputElt.value,
+        };
+        this.dataChannel.send(JSON.stringify(resizeEvent));
+      };
       controllerDivElt.appendChild(resizeButtonElt);
 
       this.videoElement.onloadedmetadata = function () {
