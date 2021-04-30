@@ -394,11 +394,16 @@ protected:
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             peer_connection_factory_;
-    std::mutex peer_id_to_connection_mutex_;
+
+    // Each peer has exactly one connection, has exactly one stream.
     std::map<std::string, PeerConnectionObserver*> peer_id_to_connection_;
+    std::mutex peer_id_to_connection_mutex_;
+
+    // Each Window has exactly one TrackSource.
     std::map<std::string, rtc::scoped_refptr<BitmapTrackSourceInterface>>
-            window_uid_to_stream_;
-    std::mutex window_uid_to_stream_mutex_;
+            window_uid_to_track_source_;
+    std::mutex window_uid_to_track_source_mutex_;
+
     std::list<std::string> ice_server_list_;
     const Json::Value config_;
     const std::regex publish_filter_;

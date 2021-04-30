@@ -544,10 +544,10 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << window_uid;
                     std::lock_guard<std::mutex> mlock(
-                            window_uid_to_stream_mutex_);
-                    auto it = window_uid_to_stream_.find(window_uid);
-                    if (it != window_uid_to_stream_.end()) {
-                        window_uid_to_stream_.erase(it);
+                            window_uid_to_track_source_mutex_);
+                    auto it = window_uid_to_track_source_.find(window_uid);
+                    if (it != window_uid_to_track_source_.end()) {
+                        window_uid_to_track_source_.erase(it);
                     }
 
                     RTC_LOG(LS_ERROR) << "hangUp stream closed " << window_uid;
@@ -699,25 +699,25 @@ bool PeerConnectionManager::AddStreams(
 
     bool existing_stream = false;
     {
-        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
-        existing_stream = (window_uid_to_stream_.find(window_uid) !=
-                           window_uid_to_stream_.end());
+        std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
+        existing_stream = (window_uid_to_track_source_.find(window_uid) !=
+                           window_uid_to_track_source_.end());
     }
 
     if (!existing_stream) {
-        // Create a new stream and add to window_uid_to_stream_;
+        // Create a new stream and add to window_uid_to_track_source_;
         rtc::scoped_refptr<BitmapTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
-        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
-        window_uid_to_stream_[window_uid] = video_source;
+        std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
+        window_uid_to_track_source_[window_uid] = video_source;
     }
 
     // AddTrack and AddStream to peer_connection
     {
-        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
-        auto it = window_uid_to_stream_.find(window_uid);
-        if (it != window_uid_to_stream_.end()) {
+        std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
+        auto it = window_uid_to_track_source_.find(window_uid);
+        if (it != window_uid_to_track_source_.end()) {
             rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
                     peer_connection_factory_->CreateLocalMediaStream(
                             window_uid);
@@ -782,12 +782,12 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
 rtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
     {
-        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
-        if (window_uid_to_stream_.find(window_uid) ==
-            window_uid_to_stream_.end()) {
+        std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
+        if (window_uid_to_track_source_.find(window_uid) ==
+            window_uid_to_track_source_.end()) {
             return nullptr;
         } else {
-            return window_uid_to_stream_.at(window_uid);
+            return window_uid_to_track_source_.at(window_uid);
         }
     }
 }
