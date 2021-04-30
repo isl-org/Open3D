@@ -26,16 +26,11 @@
       /**
        * Init device list
        */
-      function onGetMediaList(remoteDeviceList) {
-        var deviceList = [];
-        if (remoteDeviceList) {
-          deviceList.push.apply(deviceList, remoteDeviceList);
-        }
-
+      function onGetMediaList(mediaList) {
         // Create navigation menu
         var urllist = document.getElementById("menu");
-        for (var dev in deviceList) {
-          var url = deviceList[dev];
+        for (var dev in mediaList) {
+          var url = mediaList[dev];
           var option = document.createElement("a");
           var videoTag = "video_" + JSON.stringify(url);
           option.url = url;
@@ -52,7 +47,7 @@
         }
 
         var nbVideos = 1;
-        var random = deviceList
+        var random = mediaList
           .sort(() => 0.5 - Math.random())
           .slice(0, nbVideos);
         random.forEach((stream) => {
