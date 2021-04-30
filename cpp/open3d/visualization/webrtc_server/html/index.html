@@ -118,14 +118,6 @@
           webrtcServer.disconnect();
           webRtcServerList[videoTag] = undefined;
         }
-
-        // Remove the video element and its tile
-        var divElt = document.getElementById("div_" + videoTag);
-        divElt.parentElement.removeChild(divElt);
-
-        // Un-highlight the navigation
-        var navElt = document.getElementById("nav_" + videoTag);
-        navElt.className = "";
       }
 
       /**
@@ -159,10 +151,23 @@
 
         var videoElt = document.getElementById(videoTag);
         if (videoElt) {
+          var onClose = function () {
+            console.log("onClose() called for videoTag:", videoTag);
+
+            // Remove the video element and its tile
+            var divElt = document.getElementById("div_" + videoTag);
+            divElt.parentElement.removeChild(divElt);
+
+            // Un-highlight the navigation
+            var navElt = document.getElementById("nav_" + videoTag);
+            navElt.className = "";
+          };
+
           // Connect video element to webrtc stream
           var webRtcClient = new WebRtcStreamer(
             videoTag,
             webrtcConfig.url,
+            onClose,
             /*use_comms=*/ false
           );
           console.log("videoTag: " + videoTag);

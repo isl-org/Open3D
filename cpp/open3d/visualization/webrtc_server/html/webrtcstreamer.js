@@ -12,6 +12,7 @@ var WebRtcStreamer = (function () {
   function WebRtcStreamer(
     videoElement,
     srvurl,
+    onClose,
     useComms,
     webVisualizer = null
   ) {
@@ -40,6 +41,8 @@ var WebRtcStreamer = (function () {
     this.iceServers = null;
     this.earlyCandidates = [];
 
+    this.onClose = onClose;
+    console.log("this.onClose", onClose);
     this.useComms = useComms;
     this.webVisualizer = webVisualizer;
   }
@@ -532,6 +535,9 @@ var WebRtcStreamer = (function () {
       };
       dataChannel.onclose = function (evt) {
         console.log("!!!! Data channel closed:" + JSON.stringify(evt.data));
+        console.log("bind.onClose", bind.onClose);
+        bind.onClose();
+        console.log("!!!! bind.onClose() called:" + JSON.stringify(evt.data));
       };
     } catch (e) {
       console.log("Cannot create datachannel error: " + e);

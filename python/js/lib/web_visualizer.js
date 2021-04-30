@@ -183,6 +183,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   render: function () {
+    var windowUID = this.model.get("window_uid");
+    var onClose = function () {
+      console.log("onClose() called for window_uid:", windowUID);
+    };
+
     console.log("Entered render() function.");
     this.model.set("pyjs_channel", "{}");
     this.model.set("jspy_channel", "{}");
@@ -204,10 +209,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
       location.protocol + "//" + window.location.hostname + ":" + 8888,
+      onClose,
       /*useComms=*/ true,
       /*webVisualizer=*/ this
     );
-    this.webRtcClient.connect(this.model.get("window_uid"));
+    this.webRtcClient.connect(windowUID);
   },
 });
 
