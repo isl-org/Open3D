@@ -5,8 +5,10 @@
     <script src="libs/adapter.min.js"></script>
     <script src="webrtcstreamer.js"></script>
     <script>
-      // WebRTC configs
-      var argoptions = "rtptransport=tcp&timeout=60";
+      /**
+       * Global WebRTC configs
+       */
+      var webRtcOptions = "rtptransport=tcp&timeout=60";
 
       /**
        * WebRTC connections
@@ -119,11 +121,9 @@
           var webRtcClient = new WebRtcStreamer(videoTag, "", onClose, null);
           console.log("videoTag: " + videoTag);
 
-          var options = argoptions;
-
-          webRtcClient.connect(url.video, url.audio, options);
+          webRtcClient.connect(url.video, url.audio, webRtcOptions);
           console.log("url.video: " + url.video);
-          console.log("options: " + options);
+          console.log("options: " + webRtcOptions);
 
           // Highlight the navigation
           var navElt = document.getElementById("nav_" + videoTag);
