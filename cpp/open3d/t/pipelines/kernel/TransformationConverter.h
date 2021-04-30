@@ -53,16 +53,6 @@ core::Tensor PoseToTransformation(const core::Tensor &pose);
 /// \param A_reduction 1x29 tensor storing a linear system,
 /// (21 for \f$J^T J\f$ matrix, 6 for \f$J^T r\f$, 1 for residual,
 /// 1 for inlier count).
-/// \param delta 6d
-/// tensor for a se3 tangent vector. \param residual 1d tensor.
-void DecodeAndSolve6x6(const core::Tensor &A_reduction,
-                       core::Tensor &delta,
-                       core::Tensor &residual);
-
-/// \brief Decodes a 6x6 linear system from a compressed 29x1 tensor.
-/// \param A_reduction 1x29 tensor storing a linear system,
-/// (21 for \f$J^T J\f$ matrix, 6 for \f$J^T r\f$, 1 for residual,
-/// 1 for inlier count).
 /// \param delta 6d tensor for a se3 tangent vector.
 /// \param inlier_residual Float residual for the inliers.
 /// \param inlier_count Int number of inliers.

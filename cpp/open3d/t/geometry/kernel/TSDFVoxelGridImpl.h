@@ -1250,9 +1250,9 @@ void RayCastCPU
                         int y_vn = (y_v + block_resolution) % block_resolution;
                         int z_vn = (z_v + block_resolution) % block_resolution;
 
-                        int dx_b = sign(x_v - x_vn);
-                        int dy_b = sign(y_v - y_vn);
-                        int dz_b = sign(z_v - z_vn);
+                        int dx_b = Sign(x_v - x_vn);
+                        int dy_b = Sign(y_v - y_vn);
+                        int dz_b = Sign(z_v - z_vn);
 
                         if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
                             return voxel_block_buffer_indexer

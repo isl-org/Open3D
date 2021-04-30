@@ -51,8 +51,8 @@ static core::Tensor CreateIntrisicTensor() {
              {0, 0, 1}});
 }
 
-static void ComputePosePointToPlane(benchmark::State& state,
-                                    const core::Device& device) {
+static void ComputeOdometryResultPointToPlane(benchmark::State& state,
+                                              const core::Device& device) {
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {
         return;
@@ -85,9 +85,10 @@ static void ComputePosePointToPlane(benchmark::State& state,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
     for (int i = 0; i < 20; ++i) {
-        auto result = t::pipelines::odometry::ComputePosePointToPlane(
+        auto result = t::pipelines::odometry::ComputeOdometryResultPointToPlane(
                 src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
-                src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff);
+                src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff,
+                depth_diff * 0.5);
         trans = result.transformation_.Matmul(trans).Contiguous();
     }
 
@@ -96,9 +97,12 @@ static void ComputePosePointToPlane(benchmark::State& state,
                                                core::Device("CPU:0"));
 
         for (int i = 0; i < 20; ++i) {
-            auto result = t::pipelines::odometry::ComputePosePointToPlane(
-                    src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
-                    src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff);
+            auto result =
+                    t::pipelines::odometry::ComputeOdometryResultPointToPlane(
+                            src_vertex_map.AsTensor(),
+                            dst_vertex_map.AsTensor(),
+                            src_normal_map.AsTensor(), intrinsic_t, trans,
+                            depth_diff, depth_diff * 0.5);
             trans = result.transformation_.Matmul(trans).Contiguous();
         }
     }
@@ -136,27 +140,30 @@ static void RGBDOdometryMultiScale(
     core::Tensor intrinsic_t = CreateIntrisicTensor();
 
     // Very strict criteria to ensure running most the iterations
+    t::pipelines::odometry::OdometryLossParams loss(depth_diff);
     t::pipelines::odometry::OdometryConvergenceCriteria criteria(1e-12, 1e-12);
 
     // Warp up
     RGBDOdometryMultiScale(
             source, target, intrinsic_t,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")),
-            depth_scale, depth_max, depth_diff, {10, 5, 3}, method, criteria);
+            depth_scale, depth_max, {10, 5, 3}, method, loss, criteria);
 
     for (auto _ : state) {
         RGBDOdometryMultiScale(source, target, intrinsic_t,
                                core::Tensor::Eye(4, core::Dtype::Float64,
                                                  core::Device("CPU:0")),
-                               depth_scale, depth_max, depth_diff, {10, 5, 3},
-                               method, criteria);
+                               depth_scale, depth_max, {10, 5, 3}, method, loss,
+                               criteria);
     }
 }
 
-BENCHMARK_CAPTURE(ComputePosePointToPlane, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(ComputeOdometryResultPointToPlane, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(ComputePosePointToPlane, CUDA, core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(ComputeOdometryResultPointToPlane,
+                  CUDA,
+                  core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
