@@ -85,17 +85,42 @@
           if (contentDiv) {
             var divElt = document.createElement("div");
             divElt.id = "div_" + videoTag;
+
             var nameElt = document.createElement("h2");
             nameElt.id = "title_" + videoTag;
             nameElt.innerHTML = "<div>" + windowUID + "</div>";
             divElt.appendChild(nameElt);
+
+            var widthInputElt = document.createElement("input");
+            widthInputElt.type = "text";
+            widthInputElt.id = windowUID + "_width";
+            widthInputElt.value = "init width";
+            divElt.appendChild(widthInputElt);
+
+            var resizeElt = document.createElement("button");
+            resizeElt.type = "button";
+            resizeElt.innerText = "Resize " + windowUID;
+            resizeElt.onclick = function () {
+              console.log(
+                "width value:",
+                document.getElementById(windowUID + "_width").value
+              );
+            };
+            divElt.appendChild(resizeElt);
+
             var videoElt = document.createElement("video");
             videoElt.id = videoTag;
             videoElt.title = windowUID;
             videoElt.muted = true;
             videoElt.controls = false;
             videoElt.playsinline = true;
+            videoElt.onloadedmetadata = function () {
+              console.log("width is", this.videoWidth);
+              console.log("height is", this.videoHeight);
+            };
+
             divElt.appendChild(videoElt);
+
             contentDiv.appendChild(divElt);
           }
         }
