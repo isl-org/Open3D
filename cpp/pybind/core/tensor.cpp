@@ -62,13 +62,17 @@
     tensor.def(#py_name, &Tensor::cpp_name<uint64_t>);                      \
     tensor.def(#py_name, &Tensor::cpp_name<bool>);
 
-#define BIND_CLAMP_SCALAR(py_name, cpp_name, self_const)                       \
+#define BIND_CLIP_SCALAR(py_name, cpp_name, self_const)                        \
     tensor.def(#py_name,                                                       \
                [](self_const Tensor& self, float min_val, float max_val) {     \
                    return self.cpp_name(min_val, max_val);                     \
                });                                                             \
     tensor.def(#py_name,                                                       \
                [](self_const Tensor& self, double min_val, double max_val) {   \
+                   return self.cpp_name(min_val, max_val);                     \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int8_t min_val, int16_t max_val) {  \
                    return self.cpp_name(min_val, max_val);                     \
                });                                                             \
     tensor.def(#py_name,                                                       \
@@ -87,6 +91,18 @@
                [](self_const Tensor& self, uint8_t min_val, uint8_t max_val) { \
                    return self.cpp_name(min_val, max_val);                     \
                });                                                             \
+    tensor.def(#py_name, [](self_const Tensor& self, uint16_t min_val,         \
+                            uint8_t max_val) {                                 \
+        return self.cpp_name(min_val, max_val);                                \
+    });                                                                        \
+    tensor.def(#py_name, [](self_const Tensor& self, uint32_t min_val,         \
+                            uint8_t max_val) {                                 \
+        return self.cpp_name(min_val, max_val);                                \
+    });                                                                        \
+    tensor.def(#py_name, [](self_const Tensor& self, uint64_t min_val,         \
+                            uint8_t max_val) {                                 \
+        return self.cpp_name(min_val, max_val);                                \
+    });                                                                        \
     tensor.def(#py_name,                                                       \
                [](self_const Tensor& self, bool min_val, bool max_val) {       \
                    return self.cpp_name(min_val, max_val);                     \
@@ -616,8 +632,8 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
-    BIND_CLAMP_SCALAR(clip, Clip, CONST_ARG);
-    BIND_CLAMP_SCALAR(clip_, Clip_, NON_CONST_ARG);
+    BIND_CLIP_SCALAR(clip, Clip, CONST_ARG);
+    BIND_CLIP_SCALAR(clip_, Clip_, NON_CONST_ARG);
 
     // Boolean.
     tensor.def(

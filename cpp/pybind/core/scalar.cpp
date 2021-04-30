@@ -35,23 +35,17 @@ void pybind_core_scalar(py::module& m) {
     py::class_<Scalar> scalar(
             m, "Scalar", "A Scalar can store one of {double, int64, bool}.");
 
-    // o3c.Scalar(1).
-    scalar.def(
-            py::init([](float scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(
-            py::init([](double scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(py::init(
-            [](int16_t scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(py::init(
-            [](int32_t scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(py::init(
-            [](int64_t scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(py::init(
-            [](uint8_t scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(py::init(
-            [](uint16_t scalar_value) { return Scalar(scalar_value); }));
-    scalar.def(
-            py::init([](bool scalar_value) { return Scalar(scalar_value); }));
+    scalar.def(py::init([](float val) { return Scalar(val); }));
+    scalar.def(py::init([](double val) { return Scalar(val); }));
+    scalar.def(py::init([](int8_t val) { return Scalar(val); }));
+    scalar.def(py::init([](int16_t val) { return Scalar(val); }));
+    scalar.def(py::init([](int32_t val) { return Scalar(val); }));
+    scalar.def(py::init([](int64_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint8_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint16_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint32_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint64_t val) { return Scalar(val); }));
+    scalar.def(py::init([](bool val) { return Scalar(val); }));
 }
 
 }  // namespace core

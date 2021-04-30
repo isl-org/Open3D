@@ -2926,13 +2926,13 @@ TEST_P(TensorPermuteDevices, Clip) {
     t_clip = t.Clip(20.3, 40.6);
     EXPECT_TRUE(t_clip.AllClose(t_ref));
 
-    // Check with Integer
+    // Check with Integer.
     t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
     t_ref = core::Tensor::Init<int32_t>({{21, 49, 30, 49, 49}}, device);
     t_clip = t.Clip(21, 49);
     EXPECT_TRUE(t_clip.AllClose(t_ref));
 
-    // Check with Integer and min max values in double
+    // Check with Integer and min max values in double.
     t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
     t_ref = core::Tensor::Init<int32_t>({{20, 49, 30, 49, 49}}, device);
     t_clip = t.Clip(20.3, 49.01);
@@ -2948,11 +2948,13 @@ TEST_P(TensorPermuteDevices, Clip) {
     t_clip = t.Clip(5.2, 2.0);
     EXPECT_TRUE(t_clip.AllClose(t_ref));
 
-    // Check with large int64_t value
-    // t = core::Tensor::Init<int64_t>({{9223372036854775807, -1, 1, 4, 1000}},
-    // device); t_ref = core::Tensor::Init<int64_t>({{2.0, 2.0, 2.0, 2.0, 2.0}},
-    // device); t_clip = t.Clip(5.2, 9223372036854775807);
-    // EXPECT_TRUE(t_clip.AllClose(t_ref));
+    // Check with large int64_t value.
+    t = core::Tensor::Init<int64_t>({{9223372036854775807, -1, 1, 4, 1000}},
+                                    device);
+    t_ref = core::Tensor::Init<int64_t>({{9223372036854775807, 5, 5, 5, 1000}},
+                                        device);
+    t_clip = t.Clip(5.2, 9223372036854775807);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
 }
 
 TEST_P(TensorPermuteDevices, Clip_) {
@@ -2977,13 +2979,13 @@ TEST_P(TensorPermuteDevices, Clip_) {
     t.Clip_(20.3, 40.6);
     EXPECT_TRUE(t.AllClose(t_ref));
 
-    // Check with Integer
+    // Check with Integer.
     t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
     t_ref = core::Tensor::Init<int32_t>({{21, 49, 30, 49, 49}}, device);
     t.Clip_(21, 49);
     EXPECT_TRUE(t.AllClose(t_ref));
 
-    // Check with Integer and min max values in double
+    // Check with Integer and min max values in double.
     t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
     t_ref = core::Tensor::Init<int32_t>({{20, 49, 30, 49, 49}}, device);
     t.Clip_(20.3, 49.01);
@@ -2999,11 +3001,13 @@ TEST_P(TensorPermuteDevices, Clip_) {
     t.Clip_(5.2, 2.0);
     EXPECT_TRUE(t.AllClose(t_ref));
 
-    // Check with large int64_t value
-    // t = core::Tensor::Init<int64_t>({{9223372036854775807, -1, 1, 4, 1000}},
-    // device); t_ref = core::Tensor::Init<int64_t>({{2.0, 2.0, 2.0, 2.0, 2.0}},
-    // device); t.Clip_(5.2, 9223372036854775807);
-    // EXPECT_TRUE(t.AllClose(t_ref));
+    // Check with large int64_t value.
+    t = core::Tensor::Init<int64_t>({{9223372036854775807, -1, 1, 4, 1000}},
+                                    device);
+    t_ref = core::Tensor::Init<int64_t>({{9223372036854775807, 5, 5, 5, 1000}},
+                                        device);
+    t.Clip_(5.2, 9223372036854775807);
+    EXPECT_TRUE(t.AllClose(t_ref));
 }
 
 }  // namespace tests
