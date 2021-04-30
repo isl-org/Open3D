@@ -34,9 +34,9 @@ var WebRtcStreamer = (function () {
     this.iceServers = null;
     this.earlyCandidates = [];
 
+    // Open3D-specific functions.
     this.onClose = onClose;
     this.commsFetch = commsFetch;
-    console.log("!!!! Entry this.commsFetch: ", this.commsFetch);
   }
 
   logAndReturn = function (value) {
