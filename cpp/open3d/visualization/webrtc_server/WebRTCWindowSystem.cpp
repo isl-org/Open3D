@@ -83,6 +83,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
     // redraw_callback is called when the server wants to send a frame to
     // the client without other triggering events.
     auto redraw_callback = [this](const std::string &window_uid) -> void {
+        utility::LogInfo("##### To call redraw_callback for: {}", window_uid);
         this->PostRedrawEvent(gui::Application::GetInstance()
                                       .GetWindowByUID(window_uid)
                                       ->GetOSWindow());

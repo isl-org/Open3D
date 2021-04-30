@@ -614,6 +614,7 @@ void Window::PostRedraw() {
     if (impl_->is_drawing_) {
         impl_->needs_redraw_ = true;
     } else {
+        utility::LogInfo("##### Window::PostRedraw() called");
         Application::GetInstance().GetWindowSystem().PostRedrawEvent(
                 impl_->window_);
     }
@@ -705,6 +706,7 @@ void Window::CloseDialog() {
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will
     // get merged in with this one by the OS.
+    utility::LogInfo("PostRedraw() caller 3");
     PostRedraw();
 }
 
@@ -741,6 +743,7 @@ void Window::OnMenuItemSelected(Menu::ItemId item_id) {
     auto callback = impl_->menu_callbacks_.find(item_id);
     if (callback != impl_->menu_callbacks_.end()) {
         callback->second();
+        utility::LogInfo("PostRedraw() caller 4");
         PostRedraw();  // might not be in a draw if from native menu
     }
 }
@@ -995,6 +998,7 @@ void Window::OnDraw() {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
         // time, which ends up with a crash.
+        utility::LogInfo("PostRedraw() caller 5");
         PostRedraw();
     }
 }
@@ -1077,6 +1081,7 @@ void Window::OnResize() {
     }
 
     RestoreDrawContext(old_context);
+    utility::LogInfo("PostRedraw() caller 6");
     PostRedraw();
 }
 
@@ -1125,6 +1130,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         if (e.type == MouseEvent::BUTTON_UP) {
             impl_->mouse_grabber_widget_ = nullptr;
         }
+        utility::LogInfo("PostRedraw() caller 7");
         PostRedraw();
         return;
     }
@@ -1152,6 +1158,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
                     if (!weKnowThis) {
                         // This is not a rect that is one of our children,
                         // must be an ImGUI internal popup. Eat event.
+                        utility::LogInfo("PostRedraw() caller 8");
                         PostRedraw();
                         return;
                     }
@@ -1196,6 +1203,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         }
     }
 
+    utility::LogInfo("PostRedraw() caller 9");
     PostRedraw();
 }
 
@@ -1230,6 +1238,7 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     }
 
     RestoreDrawContext(old_context);
+    utility::LogInfo("PostRedraw() caller 10");
     PostRedraw();
 }
 
@@ -1239,6 +1248,7 @@ void Window::OnTextInput(const TextInputEvent& e) {
     io.AddInputCharactersUTF8(e.utf8);
     RestoreDrawContext(old_context);
 
+    utility::LogInfo("PostRedraw() caller 11");
     PostRedraw();
 }
 
@@ -1258,6 +1268,7 @@ void Window::OnTickEvent(const TickEvent& e) {
     RestoreDrawContext(old_context);
 
     if (redraw) {
+        utility::LogInfo("PostRedraw() caller 12");
         PostRedraw();
     }
 }

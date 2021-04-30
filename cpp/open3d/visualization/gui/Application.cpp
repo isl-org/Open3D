@@ -508,6 +508,7 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
             // If we post two expose events they get coalesced, but
             // setting needsLayout forces two (for the reason given above).
             w->SetNeedsLayout();
+            utility::LogInfo("PostRedraw() caller 1");
             w->PostRedraw();
             return;
         }
@@ -625,6 +626,7 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
             p.f();
             if (p.window) {
                 p.window->RestoreDrawContext(old);
+                utility::LogInfo("PostRedraw() caller 2");
                 p.window->PostRedraw();
             }
         }
