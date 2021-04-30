@@ -436,12 +436,18 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
              {"colors",
               core::Tensor::Init<float>(
                       {{0.0, 0.0, 0.0}, {0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}},
+                      device)},
+             {"normals",
+              core::Tensor::Init<float>(
+                      {{0.0, 0.0, 0.0}, {0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}},
                       device)}});
 
+    // UnProject, no normals
+    const bool with_normals = false;
     t::geometry::PointCloud pcd_out =
             t::geometry::PointCloud::CreateFromRGBDImage(
                     t::geometry::RGBDImage(im_color, im_depth), intrinsics,
-                    extrinsics, depth_scale, depth_max, stride);
+                    extrinsics, depth_scale, depth_max, stride, with_normals);
 
     EXPECT_THAT(pcd_out.GetPoints().GetShape(), ElementsAre(3, 3));
     // Unordered check since output point cloud order is non-deterministic
@@ -453,6 +459,87 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
     EXPECT_THAT(pcd_out.GetPointColors().ToFlatVector<float>(),
                 UnorderedElementsAreArray(
                         pcd_ref.GetPointColors().ToFlatVector<float>()));
+    EXPECT_FALSE(pcd_out.HasPointNormals());
+}
+
+TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor extrinsics =
+            core::Tensor::Eye(4, core::Dtype::Float32, device);
+    int stride = 1;
+    float depth_scale = 10.f, depth_max = 2.5f;
+    // clang-format off
+    core::Tensor t_depth(std::vector<uint16_t>{
+        0, 1, 2, 1, 0,
+        0, 2, 4, 2, 0,
+        0, 3, 6, 3, 29,
+        0, 2, 4, 2, 0,
+        0, 1, 2, 1, 0}, {5, 5, 1}, core::Dtype::UInt16, device);
+    core::Tensor t_color(std::vector<float>{
+        0,0,0, 0.1,0.1,0.1, 0.2,0.2,0.2, 0.1,0.1,0.1, 0.0,0.0,0.0,
+        0,0,0, 0.2,0.2,0.2, 0.4,0.4,0.4, 0.2,0.2,0.2, 0.0,0.0,0.0,
+        0,0,0, 0.3,0.3,0.3, 0.6,0.6,0.6, 0.3,0.3,0.3, 0.9,0.9,0.9,
+        0,0,0, 0.2,0.2,0.2, 0.4,0.4,0.4, 0.2,0.2,0.2, 0.0,0.0,0.0,
+        0,0,0, 0.1,0.1,0.1, 0.2,0.2,0.2, 0.1,0.1,0.1, 0.0,0.0,0.0
+        }, {5, 5, 3}, core::Dtype::Float32, device);
+    core::Tensor intrinsics(std::vector<double>{
+        1.f, 0.f, 2.f,
+        0.f, 1.f, 2.f,
+        0.f, 0.f, 1.f}, {3, 3}, core::Dtype::Float64, device);
+    core::Tensor t_vertex_ref(std::vector<float>{
+        -0.1, -0.2, 0.1,
+        0.0, -0.4, 0.2,
+        -0.2, -0.2, 0.2,
+        0.0, -0.4, 0.4,
+        -0.3, 0.0, 0.3,
+        0.0, 0.0, 0.6,
+        -0.2, 0.2, 0.2,
+        0.0, 0.4, 0.4}, {8, 3}, core::Dtype::Float32, device);
+    core::Tensor t_color_ref(std::vector<float>{
+        0.1, 0.1, 0.1,
+        0.2, 0.2, 0.2,
+        0.2, 0.2, 0.2,
+        0.4, 0.4, 0.4,
+        0.3, 0.3, 0.3,
+        0.6, 0.6, 0.6,
+        0.2, 0.2, 0.2,
+        0.4, 0.4, 0.4}, {8, 3}, core::Dtype::Float32, device);
+    core::Tensor t_normal_ref(std::vector<float>{
+        0.57735, 0.57735, 0.57735,
+        -0.894427, 0.447214, 0.0,
+        0.801784, 0.534522, -0.267261,
+        -0.801784, 0.267261, -0.534523,
+        0.57735, -0.57735, -0.57735,
+        -0.666667, -0.333333, -0.666667,
+        0.408248, -0.816497, 0.408248,
+        -0.707107, -0.707107, -0.0}, {8, 3}, core::Dtype::Float32, device);
+    // clang-format on
+    t::geometry::Image im_depth{t_depth}, im_color{t_color};
+
+    // with normals: go through CreateVertexMap() and CreateNormalMap()
+    const bool with_normals = true;
+    // test without color
+    t::geometry::PointCloud pcd_out =
+            t::geometry::PointCloud::CreateFromDepthImage(
+                    im_depth, intrinsics, extrinsics, depth_scale, depth_max,
+                    stride, with_normals);
+
+    EXPECT_TRUE(pcd_out.GetPoints().AllClose(t_vertex_ref));
+    EXPECT_TRUE(pcd_out.HasPointNormals());
+    EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
+    EXPECT_False(pcd_out.HasPointColors());
+
+    // test with color
+    pcd_out = t::geometry::PointCloud::CreateFromRGBDImage(
+            t::geometry::RGBDImage(im_color, im_depth), intrinsics, extrinsics,
+            depth_scale, depth_max, stride, with_normals);
+
+    EXPECT_TRUE(pcd_out.GetPoints().AllClose(t_vertex_ref));
+    EXPECT_TRUE(pcd_out.HasPointColors());
+    EXPECT_TRUE(pcd_out.GetPointColors().AllClose(t_color_ref));
+    EXPECT_TRUE(pcd_out.HasPointNormals());
+    EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
 }
 
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {

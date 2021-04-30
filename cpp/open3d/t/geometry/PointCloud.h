@@ -322,6 +322,8 @@ public:
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
     /// There is no low pass filtering, so aliasing is possible for stride>1.
+    /// \param with_normals Also compute normals for the point cloud. If True,
+    /// the point cloud will only contain points with valid normals.
     ///
     /// \return Created pointcloud with the 'points' property set. Thus is empty
     /// if the conversion fails.
@@ -332,7 +334,8 @@ public:
                     4, core::Dtype::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
-            int stride = 1);
+            int stride = 1,
+            bool with_normals = false);
 
     /// \brief Factory function to create a pointcloud from an RGB-D image and a
     /// camera model.
@@ -349,6 +352,8 @@ public:
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
     /// There is no low pass filtering, so aliasing is possible for stride>1.
+    /// \param with_normals Also compute normals for the point cloud. If True,
+    /// the point cloud will only contain points with valid normals.
     ///
     /// \return Created pointcloud with the 'points' and 'colors' properties
     /// set. This is empty if the conversion fails.
@@ -359,7 +364,8 @@ public:
                     4, core::Dtype::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
-            int stride = 1);
+            int stride = 1,
+            bool with_normals = false);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(

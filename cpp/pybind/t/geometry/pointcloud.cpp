@@ -51,7 +51,10 @@ static const std::unordered_map<std::string, std::string>
                 {"stride",
                  "Sampling factor to support coarse point cloud extraction. "
                  "There is no low pass filtering, so aliasing is possible for "
-                 "stride>1."}};
+                 "stride>1."},
+                {"with_normals",
+                 "Also compute normals for the point cloud. If True, the point "
+                 "cloud will only contain points with valid normals."}};
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
@@ -117,6 +120,7 @@ void pybind_pointcloud(py::module& m) {
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "with_normals"_a = false,
             "Factory function to create a pointcloud (with only 'points') from "
             "a depth image and a camera model.\n\n Given depth value d at (u, "
             "v) image coordinate, the corresponding 3d point is:\n z = d / "
@@ -128,6 +132,7 @@ void pybind_pointcloud(py::module& m) {
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "with_normals"_a = false,
             "Factory function to create a pointcloud (with properties "
             "{'points', 'colors'}) from an RGBD image and a camera model.\n\n "
             "Given depth value d at (u, v) image coordinate, the corresponding "
