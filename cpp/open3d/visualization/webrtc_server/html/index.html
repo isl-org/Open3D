@@ -59,7 +59,7 @@
       /**
        * Init device list
        */
-      function onGetDeviceList(remoteDeviceList) {
+      function onGetMediaList(remoteDeviceList) {
         var deviceList = [];
         if (argurl.video) {
           deviceList.push(argurl);
@@ -212,7 +212,7 @@
 
         WebRtcStreamer.getMediaList()
           .then((response) => response.json())
-          .then((response) => onGetDeviceList(response));
+          .then((response) => onGetMediaList(response));
       };
       window.onbeforeunload = function () {
         for (var url in webRtcServerList) {
