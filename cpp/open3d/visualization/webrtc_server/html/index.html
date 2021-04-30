@@ -91,22 +91,24 @@
             nameElt.innerHTML = "<div>" + windowUID + "</div>";
             divElt.appendChild(nameElt);
 
+            var heightInputElt = document.createElement("input");
+            heightInputElt.id = windowUID + "_height_input";
+            heightInputElt.type = "text";
+            heightInputElt.value = "";
+            divElt.appendChild(heightInputElt);
+
             var widthInputElt = document.createElement("input");
+            widthInputElt.id = windowUID + "_width_input";
             widthInputElt.type = "text";
-            widthInputElt.id = windowUID + "_width";
-            widthInputElt.value = "init width";
+            widthInputElt.value = "";
             divElt.appendChild(widthInputElt);
 
-            var resizeElt = document.createElement("button");
-            resizeElt.type = "button";
-            resizeElt.innerText = "Resize " + windowUID;
-            resizeElt.onclick = function () {
-              console.log(
-                "width value:",
-                document.getElementById(windowUID + "_width").value
-              );
-            };
-            divElt.appendChild(resizeElt);
+            var resizeButtonElt = document.createElement("button");
+            resizeButtonElt.id = windowUID + "_resize_button";
+            resizeButtonElt.type = "button";
+            resizeButtonElt.innerText = "Resize " + windowUID;
+            resizeButtonElt.onclick = function () {};
+            divElt.appendChild(resizeButtonElt);
 
             var videoElt = document.createElement("video");
             videoElt.id = videoTag;
@@ -117,6 +119,20 @@
             videoElt.onloadedmetadata = function () {
               console.log("width is", this.videoWidth);
               console.log("height is", this.videoHeight);
+              // videoElt.title is windowUID.
+              var windowUID = videoElt.title;
+              var heightInputElt = document.getElementById(
+                windowUID + "_height_input"
+              );
+              if (heightInputElt) {
+                heightInputElt.value = this.videoHeight;
+              }
+              var widthInputElt = document.getElementById(
+                windowUID + "_width_input"
+              );
+              if (widthInputElt) {
+                widthInputElt.value = this.videoWidth;
+              }
             };
 
             divElt.appendChild(videoElt);
