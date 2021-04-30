@@ -353,6 +353,10 @@ void WebRTCServer::DisableHttpHandshake() {
     impl_->http_handshake_enabled_ = false;
 }
 
+void WebRTCServer::CloseWindowConnections(const std::string& window_uid) {
+    utility::LogInfo("WebRTCServer::CloseWindowConnections: {}", window_uid);
+}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

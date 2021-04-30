@@ -112,9 +112,8 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     }
 }
 
-void WebRTCWindowSystem::CloseWindowConnections(const std::string window_uid) {
-    utility::LogInfo("WebRTCWindowSystem::CloseWindowConnections: {}",
-                     window_uid);
+void WebRTCWindowSystem::CloseWindowConnections(const std::string &window_uid) {
+    WebRTCServer::GetInstance().CloseWindowConnections(window_uid);
 }
 
 }  // namespace webrtc_server

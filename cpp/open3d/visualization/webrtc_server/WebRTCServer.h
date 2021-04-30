@@ -113,6 +113,9 @@ public:
     /// Application::AddWindow().
     void DisableHttpHandshake();
 
+    /// Close all WebRTC connections that correspond to a Window.
+    void CloseWindowConnections(const std::string& window_uid);
+
 private:
     WebRTCServer();
     struct Impl;

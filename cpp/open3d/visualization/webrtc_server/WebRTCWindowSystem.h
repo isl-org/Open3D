@@ -37,6 +37,7 @@ namespace webrtc_server {
 
 class WebRTCServer;
 
+// TODO (Yixing): Merged this class with WebRTCServer.
 class WebRTCWindowSystem : public gui::BitmapWindowSystem {
 public:
     static std::shared_ptr<WebRTCWindowSystem> GetInstance();
@@ -45,7 +46,7 @@ public:
             std::function<void(const std::string&, const gui::MouseEvent&)> f);
     void SetRedrawCallback(std::function<void(const std::string&)> f);
     void StartWebRTCServer();
-    void CloseWindowConnections(const std::string window_uid);
+    void CloseWindowConnections(const std::string& window_uid);
 
 private:
     WebRTCWindowSystem();
