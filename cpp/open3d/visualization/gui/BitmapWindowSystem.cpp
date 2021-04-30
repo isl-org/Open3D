@@ -171,7 +171,7 @@ WindowSystem::OSWindow BitmapWindowSystem::CreateOSWindow(Window *o3d_window,
 }
 
 void BitmapWindowSystem::DestroyWindow(OSWindow w) {
-    BitmapWindow *the_deceased = (BitmapWindow*)w;
+    BitmapWindow *the_deceased = (BitmapWindow *)w;
     // This window will soon go to its eternal repose, and since asking corpse-
     // windows to perform events is ... unpleasant ..., we need to remove all
     // events in the queue requested for this window. Unfortunately, std::queue
