@@ -99,10 +99,6 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
                 # HTTP handshake server is needed when Open3D is serving the
                 # visualizer webpage. Disable since Jupyter is serving.
                 _server.disable_http_handshake()
-                # TODO: allow C++ prints in Jupyter cell. We need to redirect
-                # C++ prints to terminal when async loop + GIL + py::print
-                # are used together under some scenarios.
-                open3d.utility.reset_print_function()
         except NameError:
             pass
     else:
