@@ -398,8 +398,8 @@ protected:
 
     // Each peer has exactly one connection, has exactly one stream.
     std::unordered_map<std::string, PeerConnectionObserver*>
-            peer_id_to_connection_;
-    std::mutex peer_id_to_connection_mutex_;
+            peerid_to_connection_;
+    std::mutex peerid_to_connection_mutex_;
 
     // Each Window has exactly one TrackSource.
     std::unordered_map<std::string,
@@ -409,8 +409,8 @@ protected:
 
     // Each Window can be connected to zero, one or more peers.
     std::unordered_map<std::string, std::set<std::string>>
-            window_uid_to_peer_ids_;
-    std::mutex window_uid_to_peer_ids_mutex_;
+            window_uid_to_peerids_;
+    std::mutex window_uid_to_peerids_mutex_;
 
     std::list<std::string> ice_server_list_;
     const Json::Value config_;

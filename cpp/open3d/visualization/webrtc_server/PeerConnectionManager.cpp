@@ -272,8 +272,8 @@ const Json::Value PeerConnectionManager::GetIceServers() {
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
-    auto it = peer_id_to_connection_.find(peerid);
-    if (it != peer_id_to_connection_.end()) {
+    auto it = peerid_to_connection_.find(peerid);
+    if (it != peerid_to_connection_.end()) {
         peer_connection = it->second->GetPeerConnection();
     }
     return peer_connection;
@@ -299,8 +299,7 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
         if (!candidate.get()) {
             RTC_LOG(WARNING) << "Can't parse received candidate message.";
         } else {
-            std::lock_guard<std::mutex> mutex_lock(
-                    peer_id_to_connection_mutex_);
+            std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
                     peer_connection = this->GetPeerConnection(peerid);
             if (peer_connection) {
@@ -342,9 +341,8 @@ const Json::Value PeerConnectionManager::CreateOffer(
         }
 
         {
-            std::lock_guard<std::mutex> mutex_lock(
-                    peer_id_to_connection_mutex_);
-            peer_id_to_connection_.insert(
+            std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
+            peerid_to_connection_.insert(
                     std::pair<std::string, PeerConnectionObserver *>(
                             peerid, peer_connection_observer));
         }
@@ -421,8 +419,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             // Register peerid.
             {
                 std::lock_guard<std::mutex> mutex_lock(
-                        peer_id_to_connection_mutex_);
-                peer_id_to_connection_.insert(
+                        peerid_to_connection_mutex_);
+                peerid_to_connection_.insert(
                         std::pair<std::string, PeerConnectionObserver *>(
                                 peerid, peer_connection_observer));
             }
@@ -498,7 +496,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
 
 bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
     bool still_used = false;
-    for (auto it : peer_id_to_connection_) {
+    for (auto it : peerid_to_connection_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
                 it.second->GetPeerConnection();
         rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
@@ -520,12 +518,12 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
 
     PeerConnectionObserver *pc_observer = nullptr;
     {
-        std::lock_guard<std::mutex> mutex_lock(peer_id_to_connection_mutex_);
-        auto it = peer_id_to_connection_.find(peerid);
-        if (it != peer_id_to_connection_.end()) {
+        std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
+        auto it = peerid_to_connection_.find(peerid);
+        if (it != peerid_to_connection_.end()) {
             pc_observer = it->second;
             RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
-            peer_id_to_connection_.erase(it);
+            peerid_to_connection_.erase(it);
         }
 
         if (pc_observer) {
@@ -573,9 +571,9 @@ const Json::Value PeerConnectionManager::GetIceCandidateList(
     RTC_LOG(INFO) << __FUNCTION__;
 
     Json::Value value;
-    std::lock_guard<std::mutex> mutex_lock(peer_id_to_connection_mutex_);
-    auto it = peer_id_to_connection_.find(peerid);
-    if (it != peer_id_to_connection_.end()) {
+    std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
+    auto it = peerid_to_connection_.find(peerid);
+    if (it != peerid_to_connection_.end()) {
         PeerConnectionObserver *obs = it->second;
         if (obs) {
             value = obs->GetIceCandidateList();
