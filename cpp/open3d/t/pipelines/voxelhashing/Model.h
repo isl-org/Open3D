@@ -66,7 +66,7 @@ public:
                               float depth_scale,
                               float depth_min,
                               float depth_max,
-                              bool enable_color);
+                              bool enable_color = true);
 
     /// Track using RGBD odometry
     odometry::OdometryResult TrackFrameToModel(const Frame& input_frame,
