@@ -121,8 +121,8 @@ void WebRTCServer::SetRedrawCallback(
 
 void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     try {
-        gui::MouseEvent me;
         Json::Value value = utility::StringToJson(message);
+        gui::MouseEvent me;
         if (value.get("class_name", "").asString() == "MouseEvent" &&
             value.get("window_uid", "").asString() != "" &&
             me.FromJson(value)) {
@@ -135,6 +135,19 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
             if (impl_->mouse_event_callback_) {
                 impl_->mouse_event_callback_(window_uid, me);
             }
+        } else if (value.get("class_name", "").asString() == "ResizeEvent" &&
+                   value.get("window_uid", "").asString() != "") {
+            const std::string window_uid =
+                    value.get("window_uid", "").asString();
+            const int height = value.get("height", 0).asInt();
+            const int width = value.get("width", 0).asInt();
+            if (height <= 0 || width <= 0) {
+                utility::LogInfoConsole(
+                        "Invalid heigh {} or width {}, ResizeEvent ignored.",
+                        height, width);
+            }
+            utility::LogInfoConsole("ResizeEvent {}: ({}, {})", window_uid,
+                                    height, width);
         }
     } catch (...) {
         utility::LogInfoConsole(

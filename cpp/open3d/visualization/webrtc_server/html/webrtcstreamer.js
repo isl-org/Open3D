@@ -197,8 +197,8 @@ var WebRtcStreamer = (function () {
         var resizeEvent = {
           window_uid: windowUID,
           class_name: "ResizeEvent",
-          height: heightInputElt.value,
-          width: widthInputElt.value,
+          height: parseInt(heightInputElt.value),
+          width: parseInt(widthInputElt.value),
         };
         this.dataChannel.send(JSON.stringify(resizeEvent));
       };
