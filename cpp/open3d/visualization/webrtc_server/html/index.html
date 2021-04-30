@@ -22,7 +22,6 @@
        */
       var argurl = { video: location.search.slice(1) };
       var argoptions = null;
-      var layout = null;
       if (typeof URLSearchParams != "undefined") {
         var params = new URLSearchParams(location.search);
         argurl = { video: params.get("video"), audio: params.get("audio") };
@@ -30,7 +29,6 @@
         if (!argoptions) {
           argoptions = webrtcConfig.options;
         }
-        layout = params.get("layout");
       } else {
         console.log(
           "URLSearchParams not supported then no argument could be used"
@@ -41,18 +39,7 @@
        * Get the div where to insert a video
        */
       function getContentDiv() {
-        var contentDiv = null;
-        if (document.getElementById("layout")) {
-          var divList = document.getElementsByTagName("div");
-          for (var i = 0; i < divList.length; i++) {
-            if (divList[i].childNodes.length == 0) {
-              contentDiv = divList[i];
-              break;
-            }
-          }
-        } else {
-          contentDiv = document.getElementById("content");
-        }
+        var contentDiv = document.getElementById("content");
         return contentDiv;
       }
 
@@ -91,12 +78,6 @@
           add(argurl);
         } else {
           var nbVideos = 1;
-          if (layout) {
-            var splitLayout = layout.split("x");
-            var nbrow = parseInt(splitLayout[0]);
-            var nbcol = parseInt(splitLayout[1]);
-            nbVideos = nbrow * nbcol;
-          }
           var random = deviceList
             .sort(() => 0.5 - Math.random())
             .slice(0, nbVideos);
@@ -174,9 +155,6 @@
           console.log("webrtcConfig.url: " + webrtcConfig.url);
 
           var options = argoptions;
-          if (layout) {
-            options += webrtcConfig.layoutextraoptions;
-          }
 
           webRtcClient.connect(url.video, url.audio, options);
           console.log("url.video: " + url.video);
@@ -195,21 +173,6 @@
        * Load/unload callbacks
        */
       window.onload = function () {
-        if (layout) {
-          var splitLayout = layout.split("x");
-          var nbrow = parseInt(splitLayout[0]);
-          var nbcol = parseInt(splitLayout[1]);
-          var tableelt = document.createElement("table");
-          tableelt.id = "layout";
-          for (var irow = 0; irow < nbrow; irow++) {
-            var row = tableelt.insertRow(0);
-            for (var icol = 0; icol < nbcol; icol++) {
-              row.insertCell(0).appendChild(document.createElement("div"));
-            }
-          }
-          document.getElementById("content").appendChild(tableelt);
-        }
-
         WebRtcStreamer.getMediaList()
           .then((response) => response.json())
           .then((response) => onGetMediaList(response));
