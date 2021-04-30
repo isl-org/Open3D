@@ -650,21 +650,6 @@ PeerConnectionManager::CreateVideoSource(
     return ImageTrackSource::Create(video, opts);
 }
 
-const std::string PeerConnectionManager::SanitizeLabel(
-        const std::string &label) {
-    std::string out(label);
-    out.erase(std::remove_if(out.begin(), out.end(),
-                             [](char c) -> bool {
-                                 return c == ' ' || c == ':' || c == '.' ||
-                                        c == '/' || c == '&';
-                             }),
-              out.end());
-    if (out != label) {
-        utility::LogInfo("Invalid video label {}.", label);
-    }
-    return out;
-}
-
 // Add a stream to a PeerConnection.
 bool PeerConnectionManager::AddStreams(
         webrtc::PeerConnectionInterface *peer_connection,
@@ -713,7 +698,7 @@ bool PeerConnectionManager::AddStreams(
     }
 
     // Compute stream label removing space because SDP use label.
-    std::string stream_label = this->SanitizeLabel(window_uid);
+    std::string stream_label = window_uid;
 
     bool existing_stream = false;
     {

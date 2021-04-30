@@ -388,7 +388,6 @@ protected:
     bool StreamStillUsed(const std::string& stream_label);
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection(
             const std::string& peerid);
-    const std::string SanitizeLabel(const std::string& label);
 
 protected:
     WebRTCServer* webrtc_server_ = nullptr;
