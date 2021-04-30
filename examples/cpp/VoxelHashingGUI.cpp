@@ -182,9 +182,13 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow(const std::string& dataset_path)
+    ReconstructionWindow(const std::string& dataset_path,
+                         const std::string& intrinsic_path,
+                         const std::string& device)
         : gui::Window("Open3D - Reconstruction", 1600, 900),
           dataset_path_(dataset_path),
+          intrinsic_path_(intrinsic_path),
+          device_str_(device),
           is_running_(false),
           is_started_(false) {
         ////////////////////////////////////////
@@ -282,7 +286,7 @@ public:
                                 prop_values_.bucket_count,
                                 core::Tensor::Eye(4, core::Dtype::Float64,
                                                   core::Device("CPU:0")),
-                                core::Device("CUDA:0"));
+                                core::Device(device_str_));
                 this->is_started_ = true;
             }
             this->is_running_ = !(this->is_running_);
@@ -370,6 +374,8 @@ public:
 
 protected:
     std::string dataset_path_;
+    std::string intrinsic_path_;
+    std::string device_str_;
 
     // General logic
     std::atomic<bool> is_running_;
@@ -412,32 +418,98 @@ protected:
     std::thread update_thread_;
 
 protected:
-    void UpdateMain() {
-        // Note that we cannot update the GUI on this thread, we must post to
-        // the main thread!
-        const std::string rgb_dir = dataset_path_ + "/color";
-        const std::string depth_dir = dataset_path_ + "/depth";
+    std::pair<std::vector<std::string>, std::vector<std::string>>
+    LoadFilenames() {
+        std::vector<std::string> rgb_candidates{"color", "image", "rgb"};
         std::vector<std::string> rgb_files;
-        std::vector<std::string> depth_files;
-        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "jpg",
-                                                               rgb_files);
-        if (rgb_files.size() == 0) {
+
+        // Load rgb
+        for (auto rgb_candidate : rgb_candidates) {
+            const std::string rgb_dir = dataset_path_ + "/" + rgb_candidate;
+            utility::filesystem::ListFilesInDirectoryWithExtension(
+                    rgb_dir, "jpg", rgb_files);
+            if (rgb_files.size() != 0) break;
             utility::filesystem::ListFilesInDirectoryWithExtension(
                     rgb_dir, "png", rgb_files);
+            if (rgb_files.size() != 0) break;
         }
-        std::sort(rgb_files.begin(), rgb_files.end());
+        if (rgb_files.size() == 0) {
+            utility::LogError(
+                    "RGB images not found! Please ensure a folder named color, "
+                    "image, or rgb is in {}",
+                    dataset_path_);
+        }
 
+        const std::string depth_dir = dataset_path_ + "/depth";
+        std::vector<std::string> depth_files;
         utility::filesystem::ListFilesInDirectoryWithExtension(depth_dir, "png",
                                                                depth_files);
+        if (depth_files.size() == 0) {
+            utility::LogError(
+                    "Depth images not found! Please ensure a folder named "
+                    "depth is in {}",
+                    dataset_path_);
+        }
+
+        if (depth_files.size() != rgb_files.size()) {
+            utility::LogError(
+                    "Number of depth images ({}) and color image ({}) "
+                    "mismatch!",
+                    dataset_path_);
+        }
+
+        std::sort(rgb_files.begin(), rgb_files.end());
         std::sort(depth_files.begin(), depth_files.end());
+        return std::make_pair(rgb_files, depth_files);
+    }
+
+    std::pair<core::Tensor, camera::PinholeCameraIntrinsic> LoadIntrinsics() {
+        // Default
+        camera::PinholeCameraIntrinsic intrinsic =
+                camera::PinholeCameraIntrinsic(
+                        camera::PinholeCameraIntrinsicParameters::
+                                PrimeSenseDefault);
+        if (intrinsic_path_.empty()) {
+            utility::LogInfo("Using Primesense default intrinsics.");
+        } else if (!io::ReadIJsonConvertible(intrinsic_path_, intrinsic)) {
+            utility::LogWarning(
+                    "Failed to load {}, using Primesense default intrinsics.",
+                    intrinsic_path_);
+        } else {
+            utility::LogInfo("Loaded intrinsics from {}.", intrinsic_path_);
+        }
+        auto focal_length = intrinsic.GetFocalLength();
+        auto principal_point = intrinsic.GetPrincipalPoint();
+        core::Tensor intrinsic_t = core::Tensor::Init<double>(
+                {{focal_length.first, 0, principal_point.first},
+                 {0, focal_length.second, principal_point.second},
+                 {0, 0, 1}});
+
+        camera::PinholeCameraIntrinsic intrinsic_legacy(
+                -1, -1, focal_length.first, focal_length.second,
+                principal_point.first, principal_point.second);
+        return std::make_pair(intrinsic_t, intrinsic_legacy);
+    }
+
+    // Note that we cannot update the GUI on this thread, we must post to
+    // the main thread!
+    void UpdateMain() {
+        // Load files
+        std::vector<std::string> rgb_files, depth_files;
+        std::tie(rgb_files, depth_files) = LoadFilenames();
+
+        // Load intrinsics (if provided)
+        core::Tensor intrinsic_t;
+        camera::PinholeCameraIntrinsic intrinsic_legacy;
+        std::tie(intrinsic_t, intrinsic_legacy) = LoadIntrinsics();
+        camera::PinholeCameraParameters traj_param;
+        traj_param.intrinsic_ = intrinsic_legacy;
 
         // Only set at initialization
         float depth_scale = prop_values_.depth_scale;
         core::Tensor T_frame_to_model = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
-        core::Tensor intrinsic_t = core::Tensor::Init<float>(
-                {{525.0, 0, 319.5}, {0, 525.0, 239.5}, {0, 0, 1}});
-        core::Device device("CUDA:0");
+        core::Device device(device_str_);
 
         t::geometry::Image ref_depth =
                 *t::io::CreateImageFromFile(depth_files[0]);
@@ -448,15 +520,6 @@ protected:
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
         t::pipelines::voxelhashing::Frame raycast_frame(
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-
-        // Legacy for write to file
-        camera::PinholeCameraIntrinsic intrinsic_legacy(
-                ref_depth.GetCols(), ref_depth.GetRows(), 525.0, 525.0, 319.5,
-                239.5);
-        camera::PinholeCameraParameters traj_param;
-        traj_param.intrinsic_ = intrinsic_legacy;
-
-        size_t idx = 0;
 
         // Odometry
         auto traj = std::make_shared<geometry::LineSet>();
@@ -512,6 +575,7 @@ protected:
 
         Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 
+        size_t idx = 0;
         utility::Timer timer;
         timer.Start();
         while (!is_done_) {
@@ -704,18 +768,29 @@ protected:
 };
 
 //------------------------------------------------------------------------------
-int main(int argc, const char* argv[]) {
+int main(int argc, char** argv) {
     if (argc < 2) {
-        utility::LogError("Expected dataset path as input");
-    }
-    std::string dataset_path = argv[1];
-    if (!utility::filesystem::DirectoryExists(dataset_path)) {
-        utility::LogError("Expected color/ and depth/ directories in {}",
-                          dataset_path);
+        utility::LogError("Expected a dataset path as input.");
     }
 
+    std::string dataset_path = argv[1];
+    if (!utility::filesystem::DirectoryExists(dataset_path)) {
+        utility::LogError("Expected an existing directory {}", dataset_path);
+    }
+
+    std::string intrinsic_path = utility::GetProgramOptionAsString(
+            argc, argv, "--intrinsics_json", "");
+    std::string device =
+            utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");
+    if (device != "CPU:0" && device != "CUDA:0") {
+        utility::LogError("Unrecognized device {}. Expecting CPU:0 or CUDA:0.",
+                          device);
+    }
+    utility::LogInfo("Using device {}.", device);
+
     auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
-    app.AddWindow(std::make_shared<ReconstructionWindow>(dataset_path));
+    app.Initialize(argc, const_cast<const char**>(argv));
+    app.AddWindow(std::make_shared<ReconstructionWindow>(
+            dataset_path, intrinsic_path, device));
     app.Run();
 }
