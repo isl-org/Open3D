@@ -76,12 +76,8 @@ var WebRtcStreamer = (function () {
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additional web server is required to process the http requests.
    */
-  WebRtcStreamer.getMediaList = function (commsFetch = null) {
-    return WebRtcStreamer.remoteCall(
-      webrtcConfig.url + "/api/getMediaList",
-      {},
-      commsFetch
-    );
+  WebRtcStreamer.getMediaList = function (url = "", commsFetch = null) {
+    return WebRtcStreamer.remoteCall(url + "/api/getMediaList", {}, commsFetch);
   };
 
   WebRtcStreamer._getModifiers = function (event) {

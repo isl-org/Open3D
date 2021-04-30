@@ -6,11 +6,7 @@
     <script src="webrtcstreamer.js"></script>
     <script>
       // WebRTC configs
-      var webrtcConfig = {
-        url: "",
-        options: "rtptransport=tcp&timeout=60",
-      };
-      var argoptions = webrtcConfig.options;
+      var argoptions = "rtptransport=tcp&timeout=60";
 
       /**
        * WebRTC connections
@@ -120,14 +116,8 @@
           };
 
           // Connect video element to webrtc stream
-          var webRtcClient = new WebRtcStreamer(
-            videoTag,
-            webrtcConfig.url,
-            onClose,
-            null
-          );
+          var webRtcClient = new WebRtcStreamer(videoTag, "", onClose, null);
           console.log("videoTag: " + videoTag);
-          console.log("webrtcConfig.url: " + webrtcConfig.url);
 
           var options = argoptions;
 
