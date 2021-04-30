@@ -168,7 +168,7 @@
             videoTag,
             webrtcConfig.url,
             onClose,
-            /*use_comms=*/ false
+            null
           );
           console.log("videoTag: " + videoTag);
           console.log("webrtcConfig.url: " + webrtcConfig.url);
@@ -210,7 +210,7 @@
           document.getElementById("content").appendChild(tableelt);
         }
 
-        WebRtcStreamer.getMediaList(/*use_comms=*/ false)
+        WebRtcStreamer.getMediaList()
           .then((response) => response.json())
           .then((response) => onGetDeviceList(response));
       };

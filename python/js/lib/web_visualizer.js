@@ -210,8 +210,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       this.videoElt,
       location.protocol + "//" + window.location.hostname + ":" + 8888,
       onClose,
-      /*useComms=*/ true,
-      /*webVisualizer=*/ this
+      this.commsCall.bind(this)
     );
     this.webRtcClient.connect(windowUID);
   },
