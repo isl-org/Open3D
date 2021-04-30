@@ -182,9 +182,10 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow()
+    ReconstructionWindow(const std::string& dataset_path)
         : gui::Window("Open3D - Reconstruction", 1600, 900),
-          is_running_(false) {
+          is_running_(false),
+          is_started_(false) {
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.25f * float(em)));
@@ -211,6 +212,7 @@ public:
 
         auto b = std::make_shared<gui::ToggleSwitch>("Resume/Pause");
         b->SetOnClicked([b, this](bool is_on) {
+            this->is_started_ = true;
             this->is_running_ = !(this->is_running_);
             this->adjustable_props_->SetEnabled(true);
         });
@@ -246,51 +248,8 @@ public:
 
         widget3d_->SetScene(
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
-    }
 
-    ~ReconstructionWindow() {}
-
-    void Layout(const gui::LayoutContext& context) override {
-        int em = context.theme.font_size;
-        int panel_width = 20 * em;
-        // The usable part of the window may not be the full size if there
-        // is a menu.
-        auto content_rect = GetContentRect();
-        panel_->SetFrame(gui::Rect(content_rect.x, content_rect.y, panel_width,
-                                   content_rect.height));
-        int x = panel_->GetFrame().GetRight();
-        widget3d_->SetFrame(gui::Rect(x, content_rect.y,
-                                      content_rect.GetRight() - x,
-                                      content_rect.height));
-
-        // Now that all the children are sized correctly, we can super to
-        // layout all their children.
-        Super::Layout(context);
-    }
-
-protected:
-    std::atomic<bool> is_running_;
-
-    std::shared_ptr<gui::Vert> panel_;
-    std::shared_ptr<gui::Label> output_;
-    std::shared_ptr<gui::SceneWidget> widget3d_;
-    std::shared_ptr<PropertyPanel> fixed_props_;
-    std::shared_ptr<PropertyPanel> adjustable_props_;
-
-    std::shared_ptr<gui::ImageWidget> input_color_image_;
-    std::shared_ptr<gui::ImageWidget> input_depth_image_;
-    std::shared_ptr<gui::ImageWidget> raycast_color_image_;
-    std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
-
-    void SetOutput(const std::string& output) {
-        output_->SetText(output.c_str());
-    }
-};
-
-//------------------------------------------------------------------------------
-class ExampleWindow : public ReconstructionWindow {
-public:
-    ExampleWindow(const std::string& dataset_path) {
+        // Previously in ExampleWindow
         dataset_path_ = dataset_path;
 
         // Fixed
@@ -331,7 +290,44 @@ public:
         update_thread_ = std::thread([this]() { this->UpdateMain(); });
     }
 
-    ~ExampleWindow() { update_thread_.join(); }
+    ~ReconstructionWindow() { update_thread_.join(); }
+
+    void Layout(const gui::LayoutContext& context) override {
+        int em = context.theme.font_size;
+        int panel_width = 20 * em;
+        // The usable part of the window may not be the full size if there
+        // is a menu.
+        auto content_rect = GetContentRect();
+        panel_->SetFrame(gui::Rect(content_rect.x, content_rect.y, panel_width,
+                                   content_rect.height));
+        int x = panel_->GetFrame().GetRight();
+        widget3d_->SetFrame(gui::Rect(x, content_rect.y,
+                                      content_rect.GetRight() - x,
+                                      content_rect.height));
+
+        // Now that all the children are sized correctly, we can super to
+        // layout all their children.
+        Super::Layout(context);
+    }
+
+protected:
+    std::atomic<bool> is_running_;
+    std::atomic<bool> is_started_;
+
+    std::shared_ptr<gui::Vert> panel_;
+    std::shared_ptr<gui::Label> output_;
+    std::shared_ptr<gui::SceneWidget> widget3d_;
+    std::shared_ptr<PropertyPanel> fixed_props_;
+    std::shared_ptr<PropertyPanel> adjustable_props_;
+
+    std::shared_ptr<gui::ImageWidget> input_color_image_;
+    std::shared_ptr<gui::ImageWidget> input_depth_image_;
+    std::shared_ptr<gui::ImageWidget> raycast_color_image_;
+    std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
+
+    void SetOutput(const std::string& output) {
+        output_->SetText(output.c_str());
+    }
 
 private:
     std::string dataset_path_;
@@ -400,7 +396,6 @@ private:
         t::pipelines::voxelhashing::Model model(voxel_size, sdf_trunc,
                                                 block_resolution, block_count,
                                                 T_frame_to_model, device);
-
         size_t idx;
         idx = 0;
 
@@ -668,6 +663,6 @@ int main(int argc, const char* argv[]) {
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
-    app.AddWindow(std::make_shared<ExampleWindow>(dataset_path));
+    app.AddWindow(std::make_shared<ReconstructionWindow>(dataset_path));
     app.Run();
 }
