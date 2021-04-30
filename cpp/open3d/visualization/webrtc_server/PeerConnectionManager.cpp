@@ -273,8 +273,8 @@ rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
     std::map<std::string, PeerConnectionObserver *>::iterator it =
-            peer_connections_map_.find(peerid);
-    if (it != peer_connections_map_.end()) {
+            peer_id_to_connection_observer_.find(peerid);
+    if (it != peer_id_to_connection_observer_.end()) {
         peer_connection = it->second->GetPeerConnection();
     }
     return peer_connection;
@@ -344,7 +344,7 @@ const Json::Value PeerConnectionManager::CreateOffer(
         // Register peerid.
         {
             std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
-            peer_connections_map_.insert(
+            peer_id_to_connection_observer_.insert(
                     std::pair<std::string, PeerConnectionObserver *>(
                             peerid, peer_connection_observer));
         }
@@ -421,7 +421,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             // register peerid
             {
                 std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
-                peer_connections_map_.insert(
+                peer_id_to_connection_observer_.insert(
                         std::pair<std::string, PeerConnectionObserver *>(
                                 peerid, peer_connection_observer));
             }
@@ -497,7 +497,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
 
 bool PeerConnectionManager::StreamStillUsed(const std::string &stream_label) {
     bool still_used = false;
-    for (auto it : peer_connections_map_) {
+    for (auto it : peer_id_to_connection_observer_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
                 it.second->GetPeerConnection();
         rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
@@ -521,11 +521,11 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     {
         std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
         std::map<std::string, PeerConnectionObserver *>::iterator it =
-                peer_connections_map_.find(peerid);
-        if (it != peer_connections_map_.end()) {
+                peer_id_to_connection_observer_.find(peerid);
+        if (it != peer_id_to_connection_observer_.end()) {
             pc_observer = it->second;
             RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
-            peer_connections_map_.erase(it);
+            peer_id_to_connection_observer_.erase(it);
         }
 
         if (pc_observer) {
@@ -543,9 +543,9 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << stream_label;
                     std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-                    auto it = stream_map_.find(stream_label);
-                    if (it != stream_map_.end()) {
-                        stream_map_.erase(it);
+                    auto it = window_uid_to_stream_.find(stream_label);
+                    if (it != window_uid_to_stream_.end()) {
+                        window_uid_to_stream_.erase(it);
                     }
 
                     RTC_LOG(LS_ERROR)
@@ -575,8 +575,8 @@ const Json::Value PeerConnectionManager::GetIceCandidateList(
     Json::Value value;
     std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
     std::map<std::string, PeerConnectionObserver *>::iterator it =
-            peer_connections_map_.find(peerid);
-    if (it != peer_connections_map_.end()) {
+            peer_id_to_connection_observer_.find(peerid);
+    if (it != peer_id_to_connection_observer_.end()) {
         PeerConnectionObserver *obs = it->second;
         if (obs) {
             value = obs->GetIceCandidateList();
@@ -717,23 +717,24 @@ bool PeerConnectionManager::AddStreams(
     bool existing_stream = false;
     {
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-        existing_stream = (stream_map_.find(stream_label) != stream_map_.end());
+        existing_stream = (window_uid_to_stream_.find(stream_label) !=
+                           window_uid_to_stream_.end());
     }
 
     if (!existing_stream) {
-        // Create a new stream and add to stream_map_;
+        // Create a new stream and add to window_uid_to_stream_;
         rtc::scoped_refptr<BitmapTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-        stream_map_[stream_label] = video_source;
+        window_uid_to_stream_[stream_label] = video_source;
     }
 
     // AddTrack and AddStream to peer_connection
     {
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-        auto it = stream_map_.find(stream_label);
-        if (it != stream_map_.end()) {
+        auto it = window_uid_to_stream_.find(stream_label);
+        if (it != window_uid_to_stream_.end()) {
             rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
                     peer_connection_factory_->CreateLocalMediaStream(
                             stream_label);
@@ -799,10 +800,11 @@ rtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
     {
         std::lock_guard<std::mutex> mlock(stream_map_mutex_);
-        if (stream_map_.find(window_uid) == stream_map_.end()) {
+        if (window_uid_to_stream_.find(window_uid) ==
+            window_uid_to_stream_.end()) {
             return nullptr;
         } else {
-            return stream_map_.at(window_uid);
+            return window_uid_to_stream_.at(window_uid);
         }
     }
 }
