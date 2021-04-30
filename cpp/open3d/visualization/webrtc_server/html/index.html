@@ -20,11 +20,9 @@
       /**
        * Decode URL arguments
        */
-      var argurl = { video: location.search.slice(1) };
       var argoptions = null;
       if (typeof URLSearchParams != "undefined") {
         var params = new URLSearchParams(location.search);
-        argurl = { video: params.get("video"), audio: params.get("audio") };
         argoptions = params.get("options");
         if (!argoptions) {
           argoptions = webrtcConfig.options;
@@ -48,9 +46,6 @@
        */
       function onGetMediaList(remoteDeviceList) {
         var deviceList = [];
-        if (argurl.video) {
-          deviceList.push(argurl);
-        }
         if (remoteDeviceList) {
           deviceList.push.apply(deviceList, remoteDeviceList);
         }
@@ -74,17 +69,13 @@
           urllist.appendChild(option);
         }
 
-        if (argurl.video) {
-          add(argurl);
-        } else {
-          var nbVideos = 1;
-          var random = deviceList
-            .sort(() => 0.5 - Math.random())
-            .slice(0, nbVideos);
-          random.forEach((stream) => {
-            add(stream);
-          });
-        }
+        var nbVideos = 1;
+        var random = deviceList
+          .sort(() => 0.5 - Math.random())
+          .slice(0, nbVideos);
+        random.forEach((stream) => {
+          add(stream);
+        });
       }
 
       /**
