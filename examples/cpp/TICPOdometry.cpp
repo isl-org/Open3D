@@ -14,15 +14,12 @@ using namespace open3d;
 using namespace open3d::visualization;
 using namespace open3d::t::pipelines::registration;
 
-const int WIDTH = 400;
-const int HEIGHT = 300;
+const int WIDTH = 1200;
+const int HEIGHT = 900;
 float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
 const std::string CURRENT_CLOUD = "current_scan";
-
-const double PERCENTAGE_MIN_OFFSET_VISUALIZATION_SCALAR = -0.8;
-const double PERCENTAGE_MAX_OFFSET_VISUALIZATION_SCALAR = -0.3;
 
 //------------------------------------------------------------------------------
 // Creating GUI Layout
@@ -32,8 +29,9 @@ class ReconstructionWindow : public gui::Window {
 
 public:
     ReconstructionWindow()
-        : gui::Window(
-                  "Open3D - Frame to Frame Odometry using ICP ", 1200, 768) {
+        : gui::Window("Open3D - Frame to Frame Odometry using ICP ",
+                      WIDTH,
+                      HEIGHT) {
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.5f * float(em)));
@@ -94,6 +92,34 @@ public:
           dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
 
+        // Loads the pointcloud, converts to Float32, estimates normals if
+        // required, sets the "__visualization_scalar" parameter and it's min
+        // max values.
+        pointclouds_device_ = LoadTensorPointClouds();
+
+        // Rendering Materials for Current Frame.
+        mat_ = rendering::Material();
+        mat_.shader = "defaultUnlit";
+        mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
+        mat_.point_size = 5.0f;
+        // Rendering Materials for cummulative pointcloud.
+        pointcloud_mat_ = GetPointCloudMaterial();
+
+        // When window is closed, it will stop the execute of the code.
+        is_done_ = false;
+        SetOnClose([this]() {
+            is_done_ = true;
+            return true;  // false would cancel the close
+        });
+        update_thread_ = std::thread([this]() { this->UpdateMain(); });
+    }
+
+    ~ExampleWindow() { update_thread_.join(); }
+
+private:
+    std::thread update_thread_;
+
+    void UpdateMain() {
         // ----------------- VISUALIZATION --------------------
         if (visualize_output_) {
             {
@@ -115,56 +141,6 @@ public:
         }
         // -----------------------------------------------------
 
-        // "__visualization_scalar_" is used for color gradient rendering by
-        // the visualizer. We need to set the min and max value.
-        // When reading the dataset inside compute loop (avoiding data
-        // pre-fetching, either set this manually, or define it w.r.t. the first
-        // data input +- % offset deviation).
-        min_visualization_scalar_ = INT32_MAX * 1.0;
-        max_visualization_scalar_ = INT32_MIN * 1.0;
-        max_points_in_frame_ = 0;
-        total_approximate_points_in_dataset_ = 0;
-
-        // Loads the pointcloud, converts to Float32, estimates normals if
-        // required, sets the "__visualization_scalar" parameter and it's min
-        // max values.
-        pointclouds_device_ = LoadTensorPointClouds();
-
-        // Using negative offset: points from min value to 0.2 * min_val will ve
-        // assigned the min. gradient. Similarly for max. gradient.
-        min_visualization_scalar_offset_ =
-                PERCENTAGE_MIN_OFFSET_VISUALIZATION_SCALAR *
-                min_visualization_scalar_;
-        max_visualization_scalar_offset_ =
-                PERCENTAGE_MAX_OFFSET_VISUALIZATION_SCALAR *
-                max_visualization_scalar_;
-
-        // Rendering Materials for Current Frame.
-        mat_ = rendering::Material();
-        mat_.shader = "defaultUnlit";
-        mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-        mat_.point_size = 5.0f;
-        // Rendering Materials for cummulative pointcloud.
-        pointcloud_mat_ = GetPointCloudMaterial();
-
-        // Initial transformation guess for each frame.
-        transformation_ = core::Tensor::Eye(4, dtype_, device_);
-
-        // When window is closed, it will stop the execute of the code.
-        is_done_ = false;
-        SetOnClose([this]() {
-            is_done_ = true;
-            return true;  // false would cancel the close
-        });
-        update_thread_ = std::thread([this]() { this->UpdateMain(); });
-    }
-
-    ~ExampleWindow() { update_thread_.join(); }
-
-private:
-    std::thread update_thread_;
-
-    void UpdateMain() {
         core::Tensor initial_transform = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor cumulative_transform = initial_transform.Clone();
@@ -188,6 +164,7 @@ private:
         double total_time_i = 0;
         int64_t total_points_in_frame = 0;
 
+        // --------------------- Main Function -----------------------
         int i = 0;
         for (i = 0; i < end_range_ - 1 && !is_done_; i++) {
             utility::Timer time_total;
@@ -206,6 +183,8 @@ private:
 
             // ----------------- VISUALIZATION --------------------
             if (visualize_output_) {
+                std::stringstream out_;
+
                 {
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     pcd_current_ = target.Transform(cumulative_transform.To(
@@ -218,9 +197,9 @@ private:
 
                 if (i != 0) {
                     out_ << std::setprecision(4) << 1000.0 * i / total_time_i
-                        << " FPS " << std::endl
-                        << std::endl
-                        << "Total Points: " << total_points_in_frame;
+                         << " FPS " << std::endl
+                         << std::endl
+                         << "Total Points: " << total_points_in_frame;
                 }
 
                 gui::Application::GetInstance().PostToMainThread(
@@ -246,6 +225,7 @@ private:
             time_total.Stop();
             total_time_i += time_total.GetDuration();
         }
+        // ----------------------------------------------------------
         utility::LogInfo(" Total Average FPS: {}", 1000 * i / total_time_i);
     }
 
@@ -296,12 +276,12 @@ private:
                 } else if (name == "verbosity") {
                     std::istringstream is(value);
                     verb = value;
-                } else if (name == "ground_truth_tx") {
+                } else if (name == "visualization_min") {
                     std::istringstream is(value);
-                    gt_tx_ = std::stod(value);
-                } else if (name == "ground_truth_ty") {
+                    min_visualization_scalar_ = std::stod(value);
+                } else if (name == "visualization_max") {
                     std::istringstream is(value);
-                    gt_ty_ = std::stod(value);
+                    max_visualization_scalar_ = std::stod(value);
                 }
             }
         } else {
@@ -397,6 +377,7 @@ private:
         std::vector<t::geometry::PointCloud> pointclouds_device(
                 filenames_.size(), t::geometry::PointCloud(device_));
 
+        max_points_in_frame_ = 0;
         try {
             int i = 0;
             t::geometry::PointCloud pointcloud_local;
@@ -445,29 +426,9 @@ private:
                         pointcloud_local.To(device_).VoxelDownSample(
                                 voxel_sizes_[icp_scale_levels_ - 1]);
 
-                // When reading the dataset inside compute loop (avoiding data
-                // pre-fetching, either set this manually, or define it w.r.t.
-                // the first data input +- % offset deviation).
-                min_visualization_scalar_ = std::min(
-                        min_visualization_scalar_,
-                        static_cast<double>(
-                                pointclouds_device[i - 1]
-                                        .GetPointAttr("__visualization_scalar")
-                                        .Min({0})
-                                        .Item<float>()));
-                max_visualization_scalar_ = std::max(
-                        max_visualization_scalar_,
-                        static_cast<double>(
-                                pointclouds_device[i - 1]
-                                        .GetPointAttr("__visualization_scalar")
-                                        .Max({0})
-                                        .Item<float>()));
-                int64_t num_points =
-                        pointclouds_device[i - 1].GetPoints().GetLength();
-                max_points_in_frame_ =
-                        std::max(max_points_in_frame_, num_points);
-
-                total_approximate_points_in_dataset_ += num_points;
+                max_points_in_frame_ = std::max(
+                        max_points_in_frame_,
+                        pointclouds_device[i - 1].GetPoints().GetLength());
             }
             std::cout << std::endl;
         } catch (...) {
@@ -485,12 +446,8 @@ private:
     rendering::Material GetPointCloudMaterial() {
         auto pointcloud_mat = rendering::Material();
         pointcloud_mat.shader = "unlitGradient";
-        pointcloud_mat.scalar_min = -4.0;
-        // pointcloud_mat.scalar_min = min_visualization_scalar_ +
-        //                             min_visualization_scalar_offset_;
-        pointcloud_mat.scalar_max = 1.0;
-        // pointcloud_mat.scalar_max = max_visualization_scalar_ +
-        //                             max_visualization_scalar_offset_;
+        pointcloud_mat.scalar_min = min_visualization_scalar_;
+        pointcloud_mat.scalar_max =  max_visualization_scalar_;
         pointcloud_mat.point_size = 0.1f;
         // pointcloud_mat.base_color =
         //         Eigen::Vector4f(1.f, 1.0f, 1.0f, 0.5f);
@@ -518,17 +475,11 @@ private:
     open3d::visualization::rendering::Material mat_;
 
     std::vector<open3d::t::geometry::PointCloud> pointclouds_device_;
-    t::geometry::PointCloud pcd_;
     t::geometry::PointCloud pcd_current_;
-    
-    std::stringstream out_;
 
-    int64_t total_approximate_points_in_dataset_;
     int64_t max_points_in_frame_;
     double min_visualization_scalar_;
     double max_visualization_scalar_;
-    double min_visualization_scalar_offset_;
-    double max_visualization_scalar_offset_;
 
 private:
     std::string path_dataset;
@@ -537,6 +488,8 @@ private:
     utility::VerbosityLevel verbosity_;
     int end_range_;
     bool visualize_output_;
+    double visualization_min_;
+    double visualization_max_;
 
 private:
     std::vector<double> voxel_sizes_;
@@ -553,9 +506,6 @@ private:
     core::Device device_;
     core::Device host_;
     core::Dtype dtype_;
-
-    double gt_tx_;
-    double gt_ty_;
 };
 
 //------------------------------------------------------------------------------

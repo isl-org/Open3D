@@ -9,13 +9,15 @@
 
 # option to turn ON / OFF visualization:
 visualization = ON
+visualization_min = -1.5
+visualization_max = 1.5
 
 # Verbosity can be Info, Debug.
 verbosity = Info
 
 # Path of the downloaded dataset containing frames in .pcd format, named
 # sequentially from 0.pcd to [end_range - 1].pcd.
- dataset_path = ../../open3d_downloads/kitti_samples/
+ dataset_path = /home/rey/Datasets/kitti_samples/
 
 # Range of frames is 0 to end_range - 1.
 end_range = 400
