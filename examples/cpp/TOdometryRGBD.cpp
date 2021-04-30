@@ -130,7 +130,9 @@ int main(int argc, char **argv) {
     }
 
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, 3.0, {10, 5, 3},
+            src, dst, intrinsic_t, trans, depth_scale, 3.0,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
             odom_method,
             t::pipelines::odometry::OdometryLossParams(depth_diff));
 
