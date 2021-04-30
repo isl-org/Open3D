@@ -495,7 +495,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
     return answer;
 }
 
-bool PeerConnectionManager::StreamStillUsed(const std::string &stream_label) {
+bool PeerConnectionManager::WindowStillUsed(const std::string &stream_label) {
     bool still_used = false;
     for (auto it : map_peer_id_to_connection_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
@@ -538,7 +538,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                 auto stream = local_streams->at(i);
 
                 std::string stream_label = stream->id();
-                bool still_used = this->StreamStillUsed(stream_label);
+                bool still_used = this->WindowStillUsed(stream_label);
                 if (!still_used) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << stream_label;
