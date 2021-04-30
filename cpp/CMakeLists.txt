@@ -19,7 +19,6 @@ function(open3d_show_and_abort_on_warning trgt)
             )
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS
             -Wno-unused-parameter               # (many places in Open3D code)
-            -Wno-missing-field-initializers     # (visualization/gui/Events.h)
             )
 
     if (BUILD_CUDA_MODULE)
@@ -31,7 +30,7 @@ function(open3d_show_and_abort_on_warning trgt)
                 )
         string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
 
-        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations,reorder")
+        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.2")
             string(APPEND CUDA_FLAGS " --Werror all-warnings")
         endif()
@@ -55,6 +54,9 @@ function(open3d_show_and_abort_on_warning trgt)
 
             string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX,${CUDA_DISABLE_MSVC_WARNINGS}")
         else()
+            # reorder breaks builds on Windows, so only enable for other platforms
+            string(APPEND CUDA_FLAGS " --Werror reorder")
+
             set(CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS ${DISABLE_GNU_CLANG_INTEL_WARNINGS})
             string(REPLACE ";" "," CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS "${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
 
