@@ -378,6 +378,8 @@ public:
     rtc::scoped_refptr<BitmapTrackSourceInterface> GetVideoTrackSource(
             const std::string& window_uid);
 
+    void CloseWindowConnections(const std::string& window_uid);
+
 protected:
     PeerConnectionObserver* CreatePeerConnection(const std::string& peerid);
     bool AddStreams(webrtc::PeerConnectionInterface* peer_connection,

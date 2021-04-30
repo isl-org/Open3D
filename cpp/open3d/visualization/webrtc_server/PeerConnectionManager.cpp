@@ -805,6 +805,24 @@ PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
     }
 }
 
+void PeerConnectionManager::CloseWindowConnections(
+        const std::string &window_uid) {
+    utility::LogInfo("PeerConnectionManager::CloseWindowConnections: {}",
+                     window_uid);
+    std::set<std::string> peerids;
+    {
+        std::lock_guard<std::mutex> mlock(window_uid_to_peerids_mutex_);
+        peerids = window_uid_to_peerids_.at(window_uid);
+    }
+    for (const std::string &peerid : peerids) {
+        HangUp(peerid);
+    }
+    {
+        std::lock_guard<std::mutex> mlock(window_uid_to_peerids_mutex_);
+        window_uid_to_track_source_.erase(window_uid);
+    }
+}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d

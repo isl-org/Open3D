@@ -108,6 +108,10 @@ struct WebRTCServer::Impl {
                    "webrtc_server/html";
         }
     }
+
+    // TODO (Yixing): remove this
+    std::set<std::string> deleted_window_uids_;
+    std::mutex window_uid_mutex_;
 };
 
 void WebRTCServer::SetMouseEventCallback(
@@ -122,6 +126,7 @@ void WebRTCServer::SetRedrawCallback(
 
 void WebRTCServer::OnDataChannelMessage(const std::string& message) {
     try {
+        std::lock_guard<std::mutex> mutex_lock(impl_->window_uid_mutex_);
         gui::MouseEvent me;
         Json::Value value = utility::StringToJson(message);
         if (value.get("class_name", "").asString() == "MouseEvent" &&
@@ -133,8 +138,19 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
                     "WebRTCServer::Impl::OnDataChannelMessage: window_uid: {}, "
                     "MouseEvent: {}",
                     window_uid, me.ToString());
-            if (impl_->mouse_event_callback_) {
-                impl_->mouse_event_callback_(window_uid, me);
+            if (impl_->deleted_window_uids_.count(window_uid) == 0) {
+                utility::LogInfo(
+                        "OnDataChannelMessage: {} had not been deleted, "
+                        "proceed with mouse event callback.",
+                        window_uid);
+                if (impl_->mouse_event_callback_) {
+                    impl_->mouse_event_callback_(window_uid, me);
+                }
+            } else {
+                utility::LogInfo(
+                        "OnDataChannelMessage: {} had been deleted, message "
+                        "ignored.",
+                        window_uid);
             }
         }
     } catch (...) {
@@ -354,7 +370,15 @@ void WebRTCServer::DisableHttpHandshake() {
 }
 
 void WebRTCServer::CloseWindowConnections(const std::string& window_uid) {
-    utility::LogInfo("WebRTCServer::CloseWindowConnections: {}", window_uid);
+    {
+        std::lock_guard<std::mutex> mutex_lock(impl_->window_uid_mutex_);
+        utility::LogInfo("Calling WebRTCServer::CloseWindowConnections: {}",
+                         window_uid);
+        impl_->peer_connection_manager_->CloseWindowConnections(window_uid);
+        utility::LogInfo("Done WebRTCServer::CloseWindowConnections: {}",
+                         window_uid);
+        impl_->deleted_window_uids_.insert(window_uid);
+    }
 }
 
 }  // namespace webrtc_server
