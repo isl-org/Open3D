@@ -90,7 +90,7 @@ void EmptyBox() {
                 AddDrawWindow({mesh}, "Open3D pcd", 640, 480);
             };
 
-    AddDrawWindow({big_bbox}, "Open3D EmptyBox", 640, 480,
+    AddDrawWindow({big_bbox}, "Open3D EmptyBox", 800, 480,
                   {{"Load example mesh", new_window_action}});
 }
 
