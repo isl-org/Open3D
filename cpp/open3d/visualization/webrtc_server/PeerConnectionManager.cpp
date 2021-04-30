@@ -417,7 +417,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                           << " localDescription:"
                           << peer_connection->local_description();
 
-            // register peerid
+            // Register peerid.
             {
                 std::lock_guard<std::mutex> peerlock(
                         peer_id_to_connection_mutex_);
@@ -426,7 +426,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                 peerid, peer_connection_observer));
             }
 
-            // set remote offer
+            // Set remote offer.
             webrtc::SessionDescriptionInterface *session_description(
                     webrtc::CreateSessionDescription(type, sdp, nullptr));
             if (!session_description) {
@@ -439,7 +439,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                         SetSessionDescriptionObserver::Create(peer_connection,
                                                               remote_promise),
                         session_description);
-                // waiting for remote description
+                // Waiting for remote description.
                 std::future<const webrtc::SessionDescriptionInterface *>
                         remote_future = remote_promise.get_future();
                 if (remote_future.wait_for(std::chrono::milliseconds(5000)) ==
