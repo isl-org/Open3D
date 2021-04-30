@@ -335,12 +335,6 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
                         peerid, utility::StringToJson(data)));
     }
 
-    // utility::LogInfoConsole(
-    //         "///////////////////// WebRTCServer::CallHttpRequest({}, {}, {})
-    //         "
-    //         "==> \n{}",
-    //         entry_point, query_string_trimmed, utility::StringToJson(data),
-    //         result);
     utility::LogInfoConsole("result: {}", result);
     utility::LogInfoConsole(
             "///////////////////////////////////////////////////");
