@@ -64,49 +64,48 @@
 
 #define BIND_CLIP_SCALAR(py_name, cpp_name, self_const)                        \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, float min_val, float max_val) {     \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, float min_v, float max_v) {         \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, double min_val, double max_val) {   \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, double min_v, double max_v) {       \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, int8_t min_val, int16_t max_val) {  \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, int8_t min_v, int8_t max_v) {       \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, int16_t min_val, int16_t max_val) { \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, int16_t min_v, int16_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, int32_t min_val, int32_t max_val) { \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, int32_t min_v, int32_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, int64_t min_val, int64_t max_val) { \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, int64_t min_v, int64_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, uint8_t min_val, uint8_t max_val) { \
-                   return self.cpp_name(min_val, max_val);                     \
+               [](self_const Tensor& self, uint8_t min_v, uint8_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
                });                                                             \
-    tensor.def(#py_name, [](self_const Tensor& self, uint16_t min_val,         \
-                            uint8_t max_val) {                                 \
-        return self.cpp_name(min_val, max_val);                                \
-    });                                                                        \
-    tensor.def(#py_name, [](self_const Tensor& self, uint32_t min_val,         \
-                            uint8_t max_val) {                                 \
-        return self.cpp_name(min_val, max_val);                                \
-    });                                                                        \
-    tensor.def(#py_name, [](self_const Tensor& self, uint64_t min_val,         \
-                            uint8_t max_val) {                                 \
-        return self.cpp_name(min_val, max_val);                                \
-    });                                                                        \
     tensor.def(#py_name,                                                       \
-               [](self_const Tensor& self, bool min_val, bool max_val) {       \
-                   return self.cpp_name(min_val, max_val);                     \
-               });
+               [](self_const Tensor& self, uint16_t min_v, uint16_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint32_t min_v, uint32_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint64_t min_v, uint64_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name, [](self_const Tensor& self, bool min_v, bool max_v) { \
+        return self.cpp_name(min_v, max_v);                                    \
+    });
 
 #define BIND_BINARY_R_OP_ALL_DTYPES(py_name, cpp_name)                    \
     tensor.def(#py_name, [](const Tensor& self, float value) {            \
