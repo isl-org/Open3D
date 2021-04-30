@@ -207,6 +207,14 @@ public:
                                    1000, 1, 5000,
                                    "Scale factor applied to the depth values "
                                    "from the depth image");
+        fixed_props_->AddFloatSlider("Voxel size", &prop_values_.voxel_size,
+                                     3.0 / 512, 0.004, 0.01,
+                                     "Voxel size for the TSDF voxel grid.");
+        fixed_props_->AddIntSlider(
+                "Block count", &prop_values_.bucket_count, 40000, 10000, 100000,
+                "Number of estimated voxel blocks for spatial "
+                "hashmap. Will be adapted dynamically, but "
+                "may trigger memory issue during rehashing for large scenes.");
         fixed_props_->AddIntSlider(
                 "Estimated points", &prop_values_.pointcloud_size, 6000000,
                 500000, 8000000,
@@ -220,7 +228,7 @@ public:
                 "The number of iterations between updating the 3D display");
 
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
-                                          3.0, 0.0, 5.0,
+                                          3.0, 1.0, 5.0,
                                           "Maximum depth before point is "
                                           "discarded as part of background");
         adjustable_props_->AddFloatSlider(
@@ -229,6 +237,10 @@ public:
                                    true,
                                    "Raycast into the color image to "
                                    "determine point color");
+        adjustable_props_->AddBool("Update surface",
+                                   &prop_values_.update_surface, true,
+                                   "Update surface every several frames, "
+                                   "determined by the update interval.");
 
         panel_->AddChild(std::make_shared<gui::Label>("Starting settings"));
         panel_->AddChild(fixed_props_);
@@ -236,7 +248,7 @@ public:
         panel_->AddChild(
                 std::make_shared<gui::Label>("Reconstruction settings"));
         panel_->AddChild(adjustable_props_);
-        panel_->SetEnabled(false);
+        // panel_->SetEnabled(false);
 
         auto b = std::make_shared<gui::ToggleSwitch>("Resume/Pause");
         b->SetOnClicked([b, this](bool is_on) {
@@ -260,9 +272,11 @@ public:
                                                   mat);
                         });
 
+                float voxel_size = prop_values_.voxel_size;
                 this->model_ =
                         std::make_shared<t::pipelines::voxelhashing::Model>(
-                                0.0058, 0.04, 16, 80000,
+                                voxel_size, voxel_size * 4, 16,
+                                prop_values_.bucket_count,
                                 core::Tensor::Eye(4, core::Dtype::Float64,
                                                   core::Device("CPU:0")),
                                 core::Device("CUDA:0"));
@@ -301,7 +315,7 @@ public:
 
         auto tab3 = std::make_shared<gui::Vert>(0, tab_margins);
         tab3->AddChild(output_);
-        tabs->AddTab("Tracking", tab3);
+        tabs->AddTab("Info", tab3);
         widget3d_->SetScene(
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
 
@@ -362,10 +376,12 @@ protected:
         std::atomic<int> surface_interval;
         std::atomic<int> pointcloud_size;
         std::atomic<int> depth_scale;
+        std::atomic<int> bucket_count;
         std::atomic<double> voxel_size;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
+        std::atomic<bool> update_surface;
     } prop_values_;
 
     struct {
@@ -398,16 +414,7 @@ protected:
         std::sort(depth_files.begin(), depth_files.end());
 
         // Only set at initialization
-        // float voxel_size = 3.0 / 512;
-        // int block_resolution = 16;
-        // int block_count = 80000;
         float depth_scale = prop_values_.depth_scale;
-
-        // Can be changed at runtime
-        // float sdf_trunc = 0.04f;
-        // float depth_max = prop_values_.depth_max;
-        // float depth_diff = prop_values_.depth_diff;
-
         core::Tensor T_frame_to_model = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor intrinsic_t = core::Tensor::Init<float>(
@@ -534,23 +541,28 @@ protected:
                                   prop_values_.depth_max);
             }
             model_->SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
-                                         prop_values_.depth_max);
+                                         prop_values_.depth_max,
+                                         prop_values_.raycast_color);
 
             auto K_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
                     intrinsic_t);
             auto T_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
                     T_frame_to_model);
+
             std::stringstream out;
-            out << "Frame " << idx << "\n";
+
+            out << fmt::format("Frame {}/{}\n", idx, rgb_files.size());
             out << T_eigen.format(CleanFmt) << "\n";
-            out << "Active voxel blocks: " << model_->GetHashmapSize() << "\n";
+            out << fmt::format("Active voxel blocks: {}/{}\n",
+                               model_->GetHashmap().Size(),
+                               model_->GetHashmap().GetCapacity());
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len = surface_.pcd.HasPoints()
                                       ? surface_.pcd.GetPoints().GetLength()
                                       : 0;
-                out << "Surface points: " << len << "\n";
-
+                out << fmt::format("Surface points: {}/{}\n", len,
+                                   prop_values_.pointcloud_size);
                 out << "FPS: " << 1000.0 / elapsed_time << "\n";
             }
 
@@ -588,7 +600,8 @@ protected:
 
             // Extract surface on demand (do before we increment idx, so that
             // we see something immediately, on interation 0)
-            if (idx % static_cast<int>(prop_values_.surface_interval) == 0 ||
+            if ((prop_values_.update_surface &&
+                 idx % static_cast<int>(prop_values_.surface_interval) == 0) ||
                 idx == depth_files.size() - 1) {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 surface_.pcd =

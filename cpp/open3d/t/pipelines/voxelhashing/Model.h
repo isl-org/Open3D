@@ -65,7 +65,8 @@ public:
     void SynthesizeModelFrame(Frame& raycast_frame,
                               float depth_scale,
                               float depth_min,
-                              float depth_max);
+                              float depth_max,
+                              bool enable_color);
 
     /// Track using RGBD odometry
     odometry::OdometryResult TrackFrameToModel(const Frame& input_frame,
@@ -79,10 +80,10 @@ public:
                    float depth_scale,
                    float depth_max);
 
-    t::geometry::PointCloud ExtractPointCloud(int estimated_number = 3000000,
+    t::geometry::PointCloud ExtractPointCloud(int estimated_number = -1,
                                               float weight_threshold = 3.0f);
 
-    int64_t GetHashmapSize();
+    core::Hashmap GetHashmap();
 
 public:
     // Maintained volumetric map
