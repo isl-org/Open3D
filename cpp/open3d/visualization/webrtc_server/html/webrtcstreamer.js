@@ -165,6 +165,44 @@ var WebRtcStreamer = (function () {
 
   WebRtcStreamer.prototype.addEventListeners = function (windowUID) {
     if (this.videoElement) {
+      var parentDivElt = this.videoElement.parentElement;
+      var controllerDivElt = document.createElement("div");
+      parentDivElt.insertBefore(controllerDivElt, this.videoElement);
+
+      var heightInputElt = document.createElement("input");
+      heightInputElt.id = windowUID + "_height_input";
+      heightInputElt.type = "text";
+      heightInputElt.value = "";
+      controllerDivElt.appendChild(heightInputElt);
+
+      var widthInputElt = document.createElement("input");
+      widthInputElt.id = windowUID + "_width_input";
+      widthInputElt.type = "text";
+      widthInputElt.value = "";
+      controllerDivElt.appendChild(widthInputElt);
+
+      var resizeButtonElt = document.createElement("button");
+      resizeButtonElt.id = windowUID + "_resize_button";
+      resizeButtonElt.type = "button";
+      resizeButtonElt.innerText = "Resize " + windowUID;
+      resizeButtonElt.onclick = function () {};
+      controllerDivElt.appendChild(resizeButtonElt);
+
+      this.videoElement.onloadedmetadata = function () {
+        console.log("width is", this.videoWidth);
+        console.log("height is", this.videoHeight);
+        var heightInputElt = document.getElementById(
+          windowUID + "_height_input"
+        );
+        if (heightInputElt) {
+          heightInputElt.value = this.videoHeight;
+        }
+        var widthInputElt = document.getElementById(windowUID + "_width_input");
+        if (widthInputElt) {
+          widthInputElt.value = this.videoWidth;
+        }
+      };
+
       this.videoElement.addEventListener("mousedown", (event) => {
         var open3dMouseEvent = {
           window_uid: windowUID,
