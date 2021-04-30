@@ -181,7 +181,18 @@ void pybind_o3dvisualizer(py::module& m) {
                          &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
                  "time"_a = 0.0, "is_visible"_a = true,
-                 "Adds a geometry: geometry(name, geometry, material=None, "
+                 "Adds a geometry: add_geometry(name, geometry, material=None, "
+                 "group='', time=0.0, is_visible=True). 'name' must be unique.")
+            .def("add_geometry",
+                 py::overload_cast<const std::string&,
+                                   std::shared_ptr<t::geometry::Geometry>,
+                                   const rendering::Material*,
+                                   const std::string&, double, bool>(
+                         &O3DVisualizer::AddGeometry),
+                 "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
+                 "time"_a = 0.0, "is_visible"_a = true,
+                 "Adds a Tensor-based add_geometry: geometry(name, geometry, "
+                 "material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
             .def(
                     "add_geometry",
