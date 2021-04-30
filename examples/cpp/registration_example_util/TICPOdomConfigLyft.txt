@@ -11,16 +11,15 @@
 visualization = ON
 
 # Verbosity can be Info, Debug.
-verbosity = Info
+verbosity = Debug
 
 # Path of the downloaded dataset containing frames in .pcd format, named
 # sequentially from 0.pcd to [end_range - 1].pcd.
- dataset_path = ../../open3d_downloads/kitti_samples/
-# dataset_path = /home/rey/Datasets/CARLA/pcd/
+dataset_path = /home/rey/Datasets/lyft_1000
 
 
 # Range of frames is 0 to end_range - 1.
-end_range = 400
+end_range = 200
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane
@@ -28,15 +27,22 @@ registration_method = PointToPlane
 # Multi-Scale ICP parameters:
 
 # Scale 1:
- voxel_size = 0.8
- search_radii = 1.2
+ voxel_size = 2.0
+ search_radii = 20.0
  criteria.relative_fitness = 0.01
  criteria.relative_rmse = 0.01
- criteria.max_iterations = 10
+ criteria.max_iterations = 100
+
+# Scale 2:
+ voxel_size = 1.0
+ search_radii = 10.0
+ criteria.relative_fitness = 0.01
+ criteria.relative_rmse = 0.01
+ criteria.max_iterations = 100
 
 # Scale 2:
  voxel_size = 0.5
- search_radii = 1.0
+ search_radii = 2.0
  criteria.relative_fitness = 0.001
  criteria.relative_rmse = 0.001
  criteria.max_iterations = 10
