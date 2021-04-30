@@ -379,6 +379,7 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
             this->capacity_);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 template <typename Key, typename Hash>

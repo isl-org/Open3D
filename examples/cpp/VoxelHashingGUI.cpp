@@ -184,8 +184,11 @@ class ReconstructionWindow : public gui::Window {
 public:
     ReconstructionWindow(const std::string& dataset_path)
         : gui::Window("Open3D - Reconstruction", 1600, 900),
+          dataset_path_(dataset_path),
           is_running_(false),
           is_started_(false) {
+        ////////////////////////////////////////
+        /// General layout
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.25f * float(em)));
@@ -197,13 +200,38 @@ public:
         AddChild(panel_);
         AddChild(widget3d_);
 
+        ////////////////////////////////////////
+        /// Property panels
         fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
+        fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
+                                   1000, 1, 5000,
+                                   "Scale factor applied to the depth values "
+                                   "from the depth image");
+        fixed_props_->AddIntSlider(
+                "Estimated points", &prop_values_.pointcloud_size, 6000000,
+                500000, 8000000,
+                "Estimated number of points in the point cloud; used to speed "
+                "extraction of points into the 3D scene");
+
         adjustable_props_ =
                 std::make_shared<PropertyPanel>(spacing, left_margin);
+        adjustable_props_->AddIntSlider(
+                "Update interval", &prop_values_.surface_interval, 50, 1, 100,
+                "The number of iterations between updating the 3D display");
+
+        adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
+                                          3.0, 0.0, 5.0,
+                                          "Maximum depth before point is "
+                                          "discarded as part of background");
+        adjustable_props_->AddFloatSlider(
+                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5, "");
+        adjustable_props_->AddBool("Raycast color", &prop_values_.raycast_color,
+                                   true,
+                                   "Raycast into the color image to "
+                                   "determine point color");
 
         panel_->AddChild(std::make_shared<gui::Label>("Starting settings"));
         panel_->AddChild(fixed_props_);
-
         panel_->AddFixed(vspacing);
         panel_->AddChild(
                 std::make_shared<gui::Label>("Reconstruction settings"));
@@ -212,7 +240,34 @@ public:
 
         auto b = std::make_shared<gui::ToggleSwitch>("Resume/Pause");
         b->SetOnClicked([b, this](bool is_on) {
-            this->is_started_ = true;
+            if (!this->is_started_) {
+                gui::Application::GetInstance().PostToMainThread(
+                        this, [this]() {
+                            int max_points = prop_values_.pointcloud_size;
+                            t::geometry::PointCloud pcd_placeholder(
+                                    core::Tensor({max_points, 3},
+                                                 core::Dtype::Float32,
+                                                 core::Device("CPU:0")));
+                            pcd_placeholder.SetPointColors(core::Tensor(
+                                    {max_points, 3}, core::Dtype::Float32,
+                                    core::Device("CPU:0")));
+
+                            auto mat = rendering::Material();
+                            mat.shader = "defaultUnlit";
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->AddGeometry("points", pcd_placeholder,
+                                                  mat);
+                        });
+
+                this->model_ =
+                        std::make_shared<t::pipelines::voxelhashing::Model>(
+                                0.0058, 0.04, 16, 80000,
+                                core::Tensor::Eye(4, core::Dtype::Float64,
+                                                  core::Device("CPU:0")),
+                                core::Device("CUDA:0"));
+                this->is_started_ = true;
+            }
             this->is_running_ = !(this->is_running_);
             this->adjustable_props_->SetEnabled(true);
         });
@@ -221,6 +276,8 @@ public:
 
         panel_->AddStretch();
 
+        ////////////////////////////////////////
+        /// Tabs
         gui::Margins tab_margins(0, int(std::round(0.5f * float(em))), 0, 0);
         auto tabs = std::make_shared<gui::TabControl>();
         panel_->AddChild(tabs);
@@ -245,42 +302,8 @@ public:
         auto tab3 = std::make_shared<gui::Vert>(0, tab_margins);
         tab3->AddChild(output_);
         tabs->AddTab("Tracking", tab3);
-
         widget3d_->SetScene(
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
-
-        // Previously in ExampleWindow
-        dataset_path_ = dataset_path;
-
-        // Fixed
-        fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
-                                   1000, 1, 5000,
-                                   "Scale factor applied to the depth values "
-                                   "from the depth image");
-        fixed_props_->AddIntSlider(
-                "Estimated points", &prop_values_.pointcloud_size, 6000000,
-                500000, 8000000,
-                "Estimated number of points in the point cloud; used to speed "
-                "extraction of points into the 3D scene");
-
-        // Adjustable
-        adjustable_props_->AddIntSlider(
-                "Update interval", &prop_values_.surface_interval, 50, 1, 100,
-                "The number of iterations between updating the 3D display");
-
-        adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
-                                          3.0, 0.0, 5.0,
-                                          "Maximum depth before point is "
-                                          "discarded as part of background");
-        adjustable_props_->AddFloatSlider(
-                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5, "");
-        adjustable_props_->AddBool("Raycast color", &prop_values_.raycast_color,
-                                   true,
-                                   "Raycast into the color image to "
-                                   "determine point color");
-
-        // Set adjustable disabled to make the Start button clearer
-        adjustable_props_->SetEnabled(false);
 
         is_done_ = false;
         SetOnClose([this]() {
@@ -311,15 +334,21 @@ public:
     }
 
 protected:
+    std::string dataset_path_;
+
+    // General logic
     std::atomic<bool> is_running_;
     std::atomic<bool> is_started_;
+    std::atomic<bool> is_done_;
 
+    // Panels and controls
     std::shared_ptr<gui::Vert> panel_;
     std::shared_ptr<gui::Label> output_;
     std::shared_ptr<gui::SceneWidget> widget3d_;
     std::shared_ptr<PropertyPanel> fixed_props_;
     std::shared_ptr<PropertyPanel> adjustable_props_;
 
+    // Images
     std::shared_ptr<gui::ImageWidget> input_color_image_;
     std::shared_ptr<gui::ImageWidget> input_depth_image_;
     std::shared_ptr<gui::ImageWidget> raycast_color_image_;
@@ -329,25 +358,26 @@ protected:
         output_->SetText(output.c_str());
     }
 
-private:
-    std::string dataset_path_;
-
     struct {
         std::atomic<int> surface_interval;
         std::atomic<int> pointcloud_size;
         std::atomic<int> depth_scale;
+        std::atomic<double> voxel_size;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
     } prop_values_;
-    std::atomic<bool> is_done_;
-    std::thread update_thread_;
+
     struct {
         std::mutex lock;
         t::geometry::PointCloud pcd;
     } surface_;
     std::atomic<bool> is_scene_updated_;
 
+    std::shared_ptr<t::pipelines::voxelhashing::Model> model_;
+    std::thread update_thread_;
+
+protected:
     void UpdateMain() {
         // Note that we cannot update the GUI on this thread, we must post to
         // the main thread!
@@ -368,13 +398,13 @@ private:
         std::sort(depth_files.begin(), depth_files.end());
 
         // Only set at initialization
-        float voxel_size = 3.0 / 512;
-        int block_resolution = 16;
-        int block_count = 80000;
+        // float voxel_size = 3.0 / 512;
+        // int block_resolution = 16;
+        // int block_count = 80000;
         float depth_scale = prop_values_.depth_scale;
 
         // Can be changed at runtime
-        float sdf_trunc = 0.04f;
+        // float sdf_trunc = 0.04f;
         // float depth_max = prop_values_.depth_max;
         // float depth_diff = prop_values_.depth_diff;
 
@@ -393,9 +423,6 @@ private:
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
         t::pipelines::voxelhashing::Frame raycast_frame(
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-        t::pipelines::voxelhashing::Model model(voxel_size, sdf_trunc,
-                                                block_resolution, block_count,
-                                                T_frame_to_model, device);
         size_t idx;
         idx = 0;
 
@@ -441,19 +468,6 @@ private:
                             raycast_depth_colored);
                     this->SetNeedsLayout();  // size of image changed
 
-                    int max_points = prop_values_.pointcloud_size;
-                    t::geometry::PointCloud pcd_placeholder(
-                            core::Tensor({max_points, 3}, core::Dtype::Float32,
-                                         core::Device("CPU:0")));
-                    pcd_placeholder.SetPointColors(
-                            core::Tensor({max_points, 3}, core::Dtype::Float32,
-                                         core::Device("CPU:0")));
-
-                    auto mat = rendering::Material();
-                    mat.shader = "defaultUnlit";
-                    this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                            "points", pcd_placeholder, mat);
-
                     geometry::AxisAlignedBoundingBox bbox(
                             Eigen::Vector3d(-5, -5, -5),
                             Eigen::Vector3d(5, 5, 5));
@@ -471,7 +485,7 @@ private:
         while (!is_done_) {
             float depth_scale = prop_values_.depth_scale;
 
-            if (!is_running_) {
+            if (!is_started_ || !is_running_) {
                 // If we aren't running, sleep a little bit so that we don't
                 // use 100% of the CPU just checking if we need to run.
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -492,7 +506,7 @@ private:
 
             bool tracking_success = true;
             if (idx > 0) {
-                auto result = model.TrackFrameToModel(
+                auto result = model_->TrackFrameToModel(
                         input_frame, raycast_frame, depth_scale,
                         prop_values_.depth_max, prop_values_.depth_diff);
 
@@ -514,13 +528,13 @@ private:
             }
 
             // Integrate
-            model.UpdateFramePose(idx, T_frame_to_model);
+            model_->UpdateFramePose(idx, T_frame_to_model);
             if (tracking_success) {
-                model.Integrate(input_frame, depth_scale,
-                                prop_values_.depth_max);
+                model_->Integrate(input_frame, depth_scale,
+                                  prop_values_.depth_max);
             }
-            model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
-                                       prop_values_.depth_max);
+            model_->SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
+                                         prop_values_.depth_max);
 
             auto K_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
                     intrinsic_t);
@@ -529,7 +543,7 @@ private:
             std::stringstream out;
             out << "Frame " << idx << "\n";
             out << T_eigen.format(CleanFmt) << "\n";
-            out << "Active voxel blocks: " << model.GetHashmapSize() << "\n";
+            out << "Active voxel blocks: " << model_->GetHashmapSize() << "\n";
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len = surface_.pcd.HasPoints()
@@ -578,8 +592,8 @@ private:
                 idx == depth_files.size() - 1) {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 surface_.pcd =
-                        model.ExtractPointCloud(prop_values_.pointcloud_size,
-                                                std::min<float>(idx, 3.0f))
+                        model_->ExtractPointCloud(prop_values_.pointcloud_size,
+                                                  std::min<float>(idx, 3.0f))
                                 .CPU();
                 is_scene_updated_ = true;
             }
