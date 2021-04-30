@@ -409,8 +409,17 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
     if (auto webrtc_window_system =
                 std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
                         impl_->window_system_)) {
+        const std::string window_uid = window->GetUID();
+
         // No-op of the server is already started.
         webrtc_window_system->StartWebRTCServer();
+
+        auto close_window_callback = [window_uid,
+                                      webrtc_window_system]() -> bool {
+            webrtc_window_system->CloseWindowConnections(window_uid);
+            return true;  // Should close
+        };
+        window->SetOnClose(close_window_callback);
     }
 #endif
 

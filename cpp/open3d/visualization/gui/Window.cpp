@@ -587,9 +587,11 @@ void Window::Show(bool vis /*= true*/) {
 }
 
 void Window::Close() {
+    utility::LogInfo("Window::Close()");
     if (impl_->on_close_) {
-        bool shouldContinue = impl_->on_close_();
-        if (!shouldContinue) {
+        utility::LogInfo("Calling impl_->on_close_()");
+        bool should_close = impl_->on_close_();
+        if (!should_close) {
             Application::GetInstance().GetWindowSystem().CancelUserClose(
                     impl_->window_);
             return;
