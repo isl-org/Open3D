@@ -396,11 +396,10 @@ protected:
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             peer_connection_factory_;
     std::mutex peer_map_mutex_;
-    std::map<std::string, PeerConnectionObserver*>
-            peer_id_to_connection_observer_;
+    std::map<std::string, PeerConnectionObserver*> map_peer_id_to_connection_;
     std::map<std::string, rtc::scoped_refptr<BitmapTrackSourceInterface>>
-            window_uid_to_stream_;
-    std::mutex stream_map_mutex_;
+            map_window_uid_to_stream_;
+    std::mutex map_window_uid_to_stream_mutex_;
     std::list<std::string> ice_server_list_;
     const Json::Value config_;
     const std::regex publish_filter_;
