@@ -45,7 +45,6 @@
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
-#include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 
 namespace open3d {
 namespace visualization {

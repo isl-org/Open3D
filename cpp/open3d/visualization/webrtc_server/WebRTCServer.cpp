@@ -52,7 +52,6 @@
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
-#include "open3d/visualization/webrtc_server/GlobalBuffer.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
