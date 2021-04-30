@@ -424,6 +424,12 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                         std::pair<std::string, PeerConnectionObserver *>(
                                 peerid, peer_connection_observer));
             }
+            {
+                std::lock_guard<std::mutex> mutex_lock(
+                        window_uid_to_peerids_mutex_);
+                window_uid_to_peerids_[window_uid].insert(peerid);
+                peerid_to_window_uid_[peerid] = window_uid;
+            }
 
             // Set remote offer.
             webrtc::SessionDescriptionInterface *session_description(
@@ -524,6 +530,17 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
             pc_observer = it->second;
             RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
             peerid_to_connection_.erase(it);
+        }
+        if (peerid_to_window_uid_.count(peerid) != 0) {
+            std::lock_guard<std::mutex> mutex_lock(
+                    window_uid_to_peerids_mutex_);
+            const std::string window_uid = peerid_to_window_uid_.at(peerid);
+            peerid_to_window_uid_.erase(peerid);
+
+            // After window_uid_to_peerids_[window_uid] becomes empty, we don't
+            // remove the window_uid from the map here. We remove window_uid
+            // from window_uid_to_peerids_ when the Window is closed.
+            window_uid_to_peerids_[window_uid].erase(peerid);
         }
 
         if (pc_observer) {

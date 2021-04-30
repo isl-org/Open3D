@@ -396,7 +396,7 @@ protected:
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             peer_connection_factory_;
 
-    // Each peer has exactly one connection, has exactly one stream.
+    // Each peer has exactly one connection.
     std::unordered_map<std::string, PeerConnectionObserver*>
             peerid_to_connection_;
     std::mutex peerid_to_connection_mutex_;
@@ -410,6 +410,8 @@ protected:
     // Each Window can be connected to zero, one or more peers.
     std::unordered_map<std::string, std::set<std::string>>
             window_uid_to_peerids_;
+    std::unordered_map<std::string, std::string> peerid_to_window_uid_;
+    // Shared by window_uid_to_peerids_ and peerid_to_window_uid_.
     std::mutex window_uid_to_peerids_mutex_;
 
     std::list<std::string> ice_server_list_;
