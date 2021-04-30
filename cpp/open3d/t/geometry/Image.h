@@ -239,40 +239,47 @@ public:
     /// resize (ratio = 0.5) operation.
     Image PyrDown() const;
 
-    /// Preprocess a image of shape (rows, cols, channels=1), typically used for
-    /// a depth image. UInt16 and Float32 Dtypes supported. Each pixel will be
-    /// transformed by
+    /// \brief Preprocess a image of shape (rows, cols, channels=1), typically
+    /// used for a depth image. UInt16 and Float32 Dtypes supported.
+    /// Each pixel will be transformed by
     /// x = x / scale
     /// x = x < min_value ? clip_fill : x
     /// x = x > max_value ? clip_fill : x
     /// Use INF, NAN or 0.0 (default) for \p clip_fill
+    /// \return Transformed image of type Float32, with out-of-range pixels
+    /// clipped and assigned the \p clip_fill value.
     Image ClipTransform(float scale,
                         float min_value,
                         float max_value,
                         float clip_fill = 0.0f);
 
-    /// Create a vertex map (rows, cols, channels=3) in Float32 from an image of
-    /// shape (rows, cols, channels=1) in Float32 using unprojection. The input
-    /// depth is expected to be the output of ClipTransform.
+    /// \brief Create a vertex map (rows, cols, channels=3) in Float32 from an
+    /// image of shape (rows, cols, channels=1) in Float32 using unprojection.
+    /// The input depth is expected to be the output of ClipTransform.
     /// \param intrinsics Pinhole camera model of (3, 3) in Float64.
     /// \param invalid_fill Value to fill in for invalid depths. Must be
     /// consistent with \p clip_fill in ClipTransform.
+    /// \return Vertex map image of type Float32, with invalid points assigned
+    /// the \p invalid_fill value.
     Image CreateVertexMap(const core::Tensor &intrinsics, float invalid_fill);
 
-    /// Create a normal map (rows, cols, channels=3) in Float32 from an image of
-    /// (rows, cols, channels=3) in Float32 using cross product of V(r,
+    /// \brief Create a normal map (rows, cols, channels=3) in Float32 from an
+    /// image of (rows, cols, channels=3) in Float32 using cross product of V(r,
     /// c+1)-V(r, c) and V(r+1, c)-V(r, c). The input vertex map is expected to
     /// be the output of CreateVertexMap. You may need to start with a filtered
     /// depth image (e.g. with FilterBilateral) to obtain good results.
     /// \param invalid_fill Value to fill in for invalid points, and to fill-in
     /// if no valid neighbor is found. Must be consistent with \p invalid_fill
     /// in CreateVertexMap.
+    /// \return Normal map image of type Float32, with invalid normals assigned
+    /// the \p invalid_fill value.
     Image CreateNormalMap(float invalid_fill);
 
-    /// Colorize an input depth image (with Dtype UInt16 or Float32). The image
-    /// values are divided by scale, then clamped within [min_value, max_value]
-    /// and finally converted to a 3 channel UInt8 RGB image using the Turbo
-    /// colormap as a lookup table.
+    /// \brief Colorize an input depth image (with Dtype UInt16 or Float32). The
+    /// image values are divided by scale, then clamped within [min_value,
+    /// max_value] and finally converted to a 3 channel UInt8 RGB image using
+    /// the Turbo colormap as a lookup table.
+    /// \return Colorized depth image of type UInt8.
     Image ColorizeDepth(float scale, float min_value, float max_value);
 
     /// Compute min 2D coordinates for the data (always {0, 0}).
