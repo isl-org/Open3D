@@ -52,6 +52,7 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
+// TODO (yixing): Use PImpl.
 class PeerConnectionManager {
     class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     public:
