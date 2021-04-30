@@ -171,6 +171,10 @@ void Logger::SetPrintFunction(
     impl_->print_fcn_ = print_fcn;
 }
 
+void Logger::ResetPrintFunction() {
+    impl_->print_fcn_ = impl_->console_print_fcn_;
+}
+
 void Logger::SetVerbosityLevel(VerbosityLevel verbosity_level) {
     impl_->verbosity_level_ = verbosity_level;
 }
