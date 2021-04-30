@@ -495,7 +495,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
     return answer;
 }
 
-bool PeerConnectionManager::WindowStillUsed(const std::string &stream_label) {
+bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
     bool still_used = false;
     for (auto it : map_peer_id_to_connection_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
@@ -503,7 +503,7 @@ bool PeerConnectionManager::WindowStillUsed(const std::string &stream_label) {
         rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
                 peer_connection->local_streams());
         for (unsigned int i = 0; i < local_streams->count(); i++) {
-            if (local_streams->at(i)->id() == stream_label) {
+            if (local_streams->at(i)->id() == window_uid) {
                 still_used = true;
                 break;
             }
@@ -537,20 +537,19 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
             for (unsigned int i = 0; i < local_streams->count(); i++) {
                 auto stream = local_streams->at(i);
 
-                std::string stream_label = stream->id();
-                bool still_used = this->WindowStillUsed(stream_label);
+                std::string window_uid = stream->id();
+                bool still_used = this->WindowStillUsed(window_uid);
                 if (!still_used) {
                     RTC_LOG(LS_ERROR)
-                            << "hangUp stream is no more used " << stream_label;
+                            << "hangUp stream is no more used " << window_uid;
                     std::lock_guard<std::mutex> mlock(
                             map_window_uid_to_stream_mutex_);
-                    auto it = map_window_uid_to_stream_.find(stream_label);
+                    auto it = map_window_uid_to_stream_.find(window_uid);
                     if (it != map_window_uid_to_stream_.end()) {
                         map_window_uid_to_stream_.erase(it);
                     }
 
-                    RTC_LOG(LS_ERROR)
-                            << "hangUp stream closed " << stream_label;
+                    RTC_LOG(LS_ERROR) << "hangUp stream closed " << window_uid;
                 }
 
                 peer_connection->RemoveStream(stream);
@@ -697,13 +696,10 @@ bool PeerConnectionManager::AddStreams(
         RTC_LOG(WARNING) << "set bitrate:" << bitrate;
     }
 
-    // Compute stream label removing space because SDP use label.
-    std::string stream_label = window_uid;
-
     bool existing_stream = false;
     {
         std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        existing_stream = (map_window_uid_to_stream_.find(stream_label) !=
+        existing_stream = (map_window_uid_to_stream_.find(window_uid) !=
                            map_window_uid_to_stream_.end());
     }
 
@@ -713,17 +709,17 @@ bool PeerConnectionManager::AddStreams(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
         std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        map_window_uid_to_stream_[stream_label] = video_source;
+        map_window_uid_to_stream_[window_uid] = video_source;
     }
 
     // AddTrack and AddStream to peer_connection
     {
         std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        auto it = map_window_uid_to_stream_.find(stream_label);
+        auto it = map_window_uid_to_stream_.find(window_uid);
         if (it != map_window_uid_to_stream_.end()) {
             rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
                     peer_connection_factory_->CreateLocalMediaStream(
-                            stream_label);
+                            window_uid);
             if (!stream.get()) {
                 RTC_LOG(LS_ERROR) << "Cannot create stream";
             } else {
@@ -738,7 +734,7 @@ bool PeerConnectionManager::AddStreams(
                             VideoFilter<VideoScaler>::Create(video_source,
                                                              opts);
                     video_track = peer_connection_factory_->CreateVideoTrack(
-                            stream_label + "_video", videoScaled);
+                            window_uid + "_video", videoScaled);
                 }
 
                 if ((video_track) && (!stream->AddTrack(video_track))) {

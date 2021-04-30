@@ -385,7 +385,7 @@ protected:
     rtc::scoped_refptr<BitmapTrackSourceInterface> CreateVideoSource(
             const std::string& window_uid,
             const std::map<std::string, std::string>& opts);
-    bool WindowStillUsed(const std::string& stream_label);
+    bool WindowStillUsed(const std::string& window_uid);
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection(
             const std::string& peerid);
 
