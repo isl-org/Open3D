@@ -447,7 +447,7 @@ private:
         auto pointcloud_mat = rendering::Material();
         pointcloud_mat.shader = "unlitGradient";
         pointcloud_mat.scalar_min = min_visualization_scalar_;
-        pointcloud_mat.scalar_max =  max_visualization_scalar_;
+        pointcloud_mat.scalar_max = max_visualization_scalar_;
         pointcloud_mat.point_size = 0.1f;
         // pointcloud_mat.base_color =
         //         Eigen::Vector4f(1.f, 1.0f, 1.0f, 0.5f);
