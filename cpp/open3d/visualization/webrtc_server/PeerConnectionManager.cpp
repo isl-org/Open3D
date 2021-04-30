@@ -272,8 +272,7 @@ const Json::Value PeerConnectionManager::GetIceServers() {
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
-    std::map<std::string, PeerConnectionObserver *>::iterator it =
-            peer_id_to_connection_.find(peerid);
+    auto it = peer_id_to_connection_.find(peerid);
     if (it != peer_id_to_connection_.end()) {
         peer_connection = it->second->GetPeerConnection();
     }
@@ -521,8 +520,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     PeerConnectionObserver *pc_observer = nullptr;
     {
         std::lock_guard<std::mutex> peerlock(peer_id_to_connection_mutex_);
-        std::map<std::string, PeerConnectionObserver *>::iterator it =
-                peer_id_to_connection_.find(peerid);
+        auto it = peer_id_to_connection_.find(peerid);
         if (it != peer_id_to_connection_.end()) {
             pc_observer = it->second;
             RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
@@ -575,8 +573,7 @@ const Json::Value PeerConnectionManager::GetIceCandidateList(
 
     Json::Value value;
     std::lock_guard<std::mutex> peerlock(peer_id_to_connection_mutex_);
-    std::map<std::string, PeerConnectionObserver *>::iterator it =
-            peer_id_to_connection_.find(peerid);
+    auto it = peer_id_to_connection_.find(peerid);
     if (it != peer_id_to_connection_.end()) {
         PeerConnectionObserver *obs = it->second;
         if (obs) {

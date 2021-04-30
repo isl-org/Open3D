@@ -43,6 +43,7 @@
 #include <regex>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
@@ -396,11 +397,13 @@ protected:
             peer_connection_factory_;
 
     // Each peer has exactly one connection, has exactly one stream.
-    std::map<std::string, PeerConnectionObserver*> peer_id_to_connection_;
+    std::unordered_map<std::string, PeerConnectionObserver*>
+            peer_id_to_connection_;
     std::mutex peer_id_to_connection_mutex_;
 
     // Each Window has exactly one TrackSource.
-    std::map<std::string, rtc::scoped_refptr<BitmapTrackSourceInterface>>
+    std::unordered_map<std::string,
+                       rtc::scoped_refptr<BitmapTrackSourceInterface>>
             window_uid_to_track_source_;
     std::mutex window_uid_to_track_source_mutex_;
 
