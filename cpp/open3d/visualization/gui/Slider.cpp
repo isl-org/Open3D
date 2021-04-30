@@ -93,7 +93,8 @@ void Slider::SetOnValueChanged(std::function<void(double)> on_value_changed) {
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size Slider::CalcPreferredSize(const Theme& theme) const {
+Size Slider::CalcPreferredSize(const LayoutContext& context,
+                               const Constraints& constraints) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
@@ -120,6 +121,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     if (impl_->value_ != new_value) {
         impl_->value_ = new_value;

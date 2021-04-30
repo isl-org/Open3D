@@ -36,17 +36,6 @@
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
 #include "open3d/utility/Console.h"
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-__device__ inline float atomicMinf(float* addr, float value) {
-    float old;
-    old = (value >= 0)
-                  ? __int_as_float(atomicMin((int*)addr, __float_as_int(value)))
-                  : __uint_as_float(atomicMax((unsigned int*)addr,
-                                              __float_as_uint(value)));
-    return old;
-}
-#endif
-
 namespace open3d {
 namespace t {
 namespace geometry {

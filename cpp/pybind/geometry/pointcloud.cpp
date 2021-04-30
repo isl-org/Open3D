@@ -143,19 +143,16 @@ void pybind_pointcloud(py::module &m) {
             .def("compute_point_cloud_distance",
                  &PointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "
-                 "distance to "
-                 "the target point cloud.",
+                 "distance to the target point cloud.",
                  "target"_a)
             .def("compute_mean_and_covariance",
                  &PointCloud::ComputeMeanAndCovariance,
                  "Function to compute the mean and covariance matrix of a "
-                 "point "
-                 "cloud.")
+                 "point cloud.")
             .def("compute_mahalanobis_distance",
                  &PointCloud::ComputeMahalanobisDistance,
                  "Function to compute the Mahalanobis distance for points in a "
-                 "point "
-                 "cloud. See: "
+                 "point cloud. See: "
                  "https://en.wikipedia.org/wiki/Mahalanobis_distance.")
             .def("compute_nearest_neighbor_distance",
                  &PointCloud::ComputeNearestNeighborDistance,

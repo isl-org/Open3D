@@ -633,8 +633,9 @@ PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
     size_t origin_vidx = pt_map.size();
     for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
         size_t pidx = pt_map[vidx];
-        visible_mesh->vertices_[vidx] = points_[pidx];
-        if (pidx == origin_pidx) {
+        if (pidx != origin_pidx) {
+            visible_mesh->vertices_[vidx] = points_[pidx];
+        } else {
             origin_vidx = vidx;
             visible_mesh->vertices_[vidx] = camera_location;
         }

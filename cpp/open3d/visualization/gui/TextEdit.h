@@ -50,7 +50,8 @@ public:
     /// Sets the text to display if the text value is empty.
     void SetPlaceholderText(const char* text);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 

@@ -280,7 +280,7 @@ public:
         release_pool(*small_block_pool_);
         release_pool(*large_block_pool_);
 
-        utility::LogInfo("[CUDACacher] {} bytes released.", total_bytes);
+        utility::LogDebug("[CUDACacher] {} bytes released.", total_bytes);
     }
 
 private:
@@ -365,7 +365,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
         }
 
         if (dst_device == src_device) {
-            CUDADeviceSwitcher switcher(src_device);
+            switcher.SwitchTo(src_device);
             OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                          cudaMemcpyDeviceToDevice));
         } else if (CUDAState::GetInstance()->IsP2PEnabled(src_device.GetID(),
@@ -375,7 +375,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
                                              num_bytes));
         } else {
             void* cpu_buf = MemoryManager::Malloc(num_bytes, Device("CPU:0"));
-            CUDADeviceSwitcher switcher(src_device);
+            switcher.SwitchTo(src_device);
             OPEN3D_CUDA_CHECK(cudaMemcpy(cpu_buf, src_ptr, num_bytes,
                                          cudaMemcpyDeviceToHost));
             switcher.SwitchTo(dst_device);

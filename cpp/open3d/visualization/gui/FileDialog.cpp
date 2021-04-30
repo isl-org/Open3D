@@ -355,8 +355,7 @@ void FileDialog::SetPath(const char *path) {
 }
 
 void FileDialog::AddFilter(const char *filter, const char *description) {
-    std::vector<std::string> exts;
-    utility::SplitString(exts, filter, ", ");
+    std::vector<std::string> exts = utility::SplitString(filter, ", ");
 
     std::unordered_set<std::string> ext_filter;
     for (auto &ext : exts) {
@@ -413,9 +412,11 @@ void FileDialog::OnDone() {
     }
 }
 
-Size FileDialog::CalcPreferredSize(const Theme &theme) const {
-    auto em = theme.font_size;
-    auto width = std::max(25 * em, Super::CalcPreferredSize(theme).width);
+Size FileDialog::CalcPreferredSize(const LayoutContext &context,
+                                   const Constraints &constraints) const {
+    auto em = context.theme.font_size;
+    auto width = std::max(25 * em,
+                          Super::CalcPreferredSize(context, constraints).width);
     return Size(width, 30 * em);
 }
 

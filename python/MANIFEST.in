@@ -28,40 +28,18 @@
 include README.rst
 include LICENSE.txt
 include requirements.txt
+include setup.cfg
+include setup.py
 
-# Compiled module
-include open3d/cpu/*.pyd
-include open3d/cuda/*.pyd
-include open3d/cpu/*.so
-include open3d/cuda/*.so
-include open3d/cpu/*.dylib
-include open3d/cuda/*.dylib
-include open3d/open3d*.so
-include open3d/open3d*.dylib
-include open3d/*depthengine*
-include open3d/*k4a*
-include open3d/*libstdc*
-
-# Extra shared libraries
-include open3d/*.so*
-
-# JS
-recursive-include open3d/static *.*
+# Main library, including compiled binaries
+graft open3d
+graft js
+graft test
 
 # Exclude
-global-exclude *.py[co]
-
-# ml module
-recursive-include open3d/ml *.py
-recursive-include open3d/_ml3d *.py
-recursive-include open3d/_ml3d *.so
-recursive-include open3d/_ml3d *.dylib
-recursive-include open3d/_ml3d *.yml
-recursive-include open3d/_ml3d *.yaml
-recursive-include open3d/_ml3d/datasets *.txt
-
-# visualizer module
-recursive-include open3d/visualization *.py
-
-# gui
-include open3d/resources/*
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude .ipynb_checkpoints
+global-exclude *.map

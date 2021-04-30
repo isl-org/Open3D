@@ -162,6 +162,38 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
     }
 }
 
+TEST_P(TriangleMeshPermuteDevices, RemoveAttr) {
+    core::Device device = GetParam();
+
+    core::Tensor vertices =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device);
+    core::Tensor vertex_labels =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3;
+
+    core::Tensor triangles =
+            core::Tensor::Ones({2, 3}, core::Dtype::Int64, device);
+    core::Tensor triangle_labels =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3;
+
+    t::geometry::TriangleMesh mesh(vertices, triangles);
+
+    mesh.SetVertexAttr("labels", vertex_labels);
+
+    EXPECT_NO_THROW(mesh.GetVertexAttr("labels"));
+    mesh.RemoveVertexAttr("labels");
+    EXPECT_ANY_THROW(mesh.GetVertexAttr("labels"));
+
+    mesh.SetTriangleAttr("labels", triangle_labels);
+
+    EXPECT_NO_THROW(mesh.GetTriangleAttr("labels"));
+    mesh.RemoveTriangleAttr("labels");
+    EXPECT_ANY_THROW(mesh.GetTriangleAttr("labels"));
+
+    // Not allowed to delete primary key attribute.
+    EXPECT_ANY_THROW(mesh.RemoveVertexAttr("vertices"));
+    EXPECT_ANY_THROW(mesh.RemoveTriangleAttr("triangles"));
+}
+
 TEST_P(TriangleMeshPermuteDevices, Has) {
     core::Device device = GetParam();
 
