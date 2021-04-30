@@ -341,7 +341,6 @@ const Json::Value PeerConnectionManager::CreateOffer(
             RTC_LOG(WARNING) << "Can't add stream";
         }
 
-        // Register peerid.
         {
             std::lock_guard<std::mutex> mutex_lock(
                     peer_id_to_connection_mutex_);

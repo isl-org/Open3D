@@ -408,6 +408,9 @@ protected:
     std::mutex window_uid_to_track_source_mutex_;
 
     // Each Window can be connected to zero, one or more peers.
+    std::unordered_map<std::string, std::set<std::string>>
+            window_uid_to_peer_ids_;
+    std::mutex window_uid_to_peer_ids_mutex_;
 
     std::list<std::string> ice_server_list_;
     const Json::Value config_;
