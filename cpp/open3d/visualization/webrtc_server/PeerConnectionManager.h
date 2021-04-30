@@ -396,7 +396,7 @@ protected:
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             peer_connection_factory_;
     std::mutex peer_map_mutex_;
-    std::map<std::string, PeerConnectionObserver*> peer_connectionobs_map_;
+    std::map<std::string, PeerConnectionObserver*> peer_connections_map_;
     std::map<std::string, rtc::scoped_refptr<BitmapTrackSourceInterface>>
             stream_map_;
     std::mutex stream_map_mutex_;
