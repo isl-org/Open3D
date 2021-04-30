@@ -5,6 +5,7 @@ var WebRtcStreamer = (function () {
    * @constructor
    * @param {string} videoElement Id of the video element tag
    * @param {string} srvurl Url of webrtc-streamer (default is current location)
+   * @param {string} onClose Callback function to be called when datachannel is closed.
    * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
    * be used for WebRTC handshake. Otherwise, fetch() will be used and an
    * additional web server is required to process the http requests.
