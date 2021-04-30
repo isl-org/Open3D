@@ -11,27 +11,12 @@
         options: "rtptransport=tcp&timeout=60",
         layoutextraoptions: "&width=320&height=0",
       };
+      var argoptions = webrtcConfig.options;
 
       /**
        * WebRTC connections
        */
       var webRtcServerList = {};
-
-      /**
-       * Decode URL arguments
-       */
-      var argoptions = null;
-      if (typeof URLSearchParams != "undefined") {
-        var params = new URLSearchParams(location.search);
-        argoptions = params.get("options");
-        if (!argoptions) {
-          argoptions = webrtcConfig.options;
-        }
-      } else {
-        console.log(
-          "URLSearchParams not supported then no argument could be used"
-        );
-      }
 
       /**
        * Get the div where to insert a video
