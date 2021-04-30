@@ -273,8 +273,8 @@ rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
     std::map<std::string, PeerConnectionObserver *>::iterator it =
-            map_peer_id_to_connection_.find(peerid);
-    if (it != map_peer_id_to_connection_.end()) {
+            peer_id_to_connection_.find(peerid);
+    if (it != peer_id_to_connection_.end()) {
         peer_connection = it->second->GetPeerConnection();
     }
     return peer_connection;
@@ -344,7 +344,7 @@ const Json::Value PeerConnectionManager::CreateOffer(
         // Register peerid.
         {
             std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
-            map_peer_id_to_connection_.insert(
+            peer_id_to_connection_.insert(
                     std::pair<std::string, PeerConnectionObserver *>(
                             peerid, peer_connection_observer));
         }
@@ -421,7 +421,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             // register peerid
             {
                 std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
-                map_peer_id_to_connection_.insert(
+                peer_id_to_connection_.insert(
                         std::pair<std::string, PeerConnectionObserver *>(
                                 peerid, peer_connection_observer));
             }
@@ -497,7 +497,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
 
 bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
     bool still_used = false;
-    for (auto it : map_peer_id_to_connection_) {
+    for (auto it : peer_id_to_connection_) {
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
                 it.second->GetPeerConnection();
         rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
@@ -521,11 +521,11 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     {
         std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
         std::map<std::string, PeerConnectionObserver *>::iterator it =
-                map_peer_id_to_connection_.find(peerid);
-        if (it != map_peer_id_to_connection_.end()) {
+                peer_id_to_connection_.find(peerid);
+        if (it != peer_id_to_connection_.end()) {
             pc_observer = it->second;
             RTC_LOG(LS_ERROR) << "Remove PeerConnection peerid:" << peerid;
-            map_peer_id_to_connection_.erase(it);
+            peer_id_to_connection_.erase(it);
         }
 
         if (pc_observer) {
@@ -543,10 +543,10 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                     RTC_LOG(LS_ERROR)
                             << "hangUp stream is no more used " << window_uid;
                     std::lock_guard<std::mutex> mlock(
-                            map_window_uid_to_stream_mutex_);
-                    auto it = map_window_uid_to_stream_.find(window_uid);
-                    if (it != map_window_uid_to_stream_.end()) {
-                        map_window_uid_to_stream_.erase(it);
+                            window_uid_to_stream_mutex_);
+                    auto it = window_uid_to_stream_.find(window_uid);
+                    if (it != window_uid_to_stream_.end()) {
+                        window_uid_to_stream_.erase(it);
                     }
 
                     RTC_LOG(LS_ERROR) << "hangUp stream closed " << window_uid;
@@ -575,8 +575,8 @@ const Json::Value PeerConnectionManager::GetIceCandidateList(
     Json::Value value;
     std::lock_guard<std::mutex> peerlock(peer_map_mutex_);
     std::map<std::string, PeerConnectionObserver *>::iterator it =
-            map_peer_id_to_connection_.find(peerid);
-    if (it != map_peer_id_to_connection_.end()) {
+            peer_id_to_connection_.find(peerid);
+    if (it != peer_id_to_connection_.end()) {
         PeerConnectionObserver *obs = it->second;
         if (obs) {
             value = obs->GetIceCandidateList();
@@ -698,25 +698,25 @@ bool PeerConnectionManager::AddStreams(
 
     bool existing_stream = false;
     {
-        std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        existing_stream = (map_window_uid_to_stream_.find(window_uid) !=
-                           map_window_uid_to_stream_.end());
+        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
+        existing_stream = (window_uid_to_stream_.find(window_uid) !=
+                           window_uid_to_stream_.end());
     }
 
     if (!existing_stream) {
-        // Create a new stream and add to map_window_uid_to_stream_;
+        // Create a new stream and add to window_uid_to_stream_;
         rtc::scoped_refptr<BitmapTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         RTC_LOG(INFO) << "Adding Stream to map";
-        std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        map_window_uid_to_stream_[window_uid] = video_source;
+        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
+        window_uid_to_stream_[window_uid] = video_source;
     }
 
     // AddTrack and AddStream to peer_connection
     {
-        std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        auto it = map_window_uid_to_stream_.find(window_uid);
-        if (it != map_window_uid_to_stream_.end()) {
+        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
+        auto it = window_uid_to_stream_.find(window_uid);
+        if (it != window_uid_to_stream_.end()) {
             rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
                     peer_connection_factory_->CreateLocalMediaStream(
                             window_uid);
@@ -781,12 +781,12 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
 rtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
     {
-        std::lock_guard<std::mutex> mlock(map_window_uid_to_stream_mutex_);
-        if (map_window_uid_to_stream_.find(window_uid) ==
-            map_window_uid_to_stream_.end()) {
+        std::lock_guard<std::mutex> mlock(window_uid_to_stream_mutex_);
+        if (window_uid_to_stream_.find(window_uid) ==
+            window_uid_to_stream_.end()) {
             return nullptr;
         } else {
-            return map_window_uid_to_stream_.at(window_uid);
+            return window_uid_to_stream_.at(window_uid);
         }
     }
 }
