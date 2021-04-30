@@ -5,8 +5,8 @@ var WebRtcStreamer = (function () {
    * @constructor
    * @param {string} videoElement Id of the video element tag
    * @param {string} srvurl Url of WebRTC-streamer (default is current location)
-   * @param {string} commsFetch A fetch() function implemented by Jupyter's
-   * COMMS interface. If null, the default fetch() will be used.
+   * @param {object} commsFetch An alternative implementation of fetch() that
+   * uses Jupyter's COMMS interface. If null, the default fetch() will be used.
    */
   function WebRtcStreamer(videoElement, srvurl, onClose, commsFetch = null) {
     if (typeof videoElement === "string") {
@@ -50,33 +50,23 @@ var WebRtcStreamer = (function () {
    * See https://stackoverflow.com/a/1635143/1255535.
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
    * @param {object} data Data object
-   * @param {boolean} useComms If true, Open3D's Jupyter "COMMS" interface will
-   * be used for WebRTC handshake. Otherwise, fetch() will be used and an
-   * additional web server is required to process the http requests.
+   * @param {object} commsFetch An alternative implementation of fetch() that
+   * uses Jupyter's COMMS interface. If null, the default fetch() will be used.
    */
-  WebRtcStreamer.remoteCall = function (
-    url,
-    useComms,
-    data = {},
-    commsFetch = null
-  ) {
+  WebRtcStreamer.remoteCall = function (url, data = {}, commsFetch = null) {
     console.log(
       "WebRtcStreamer.remoteCall{" + "url: ",
       url,
-      ", useComms: ",
-      useComms,
       ", data: ",
       data,
+      ", commsFetch",
+      commsFetch,
       "}"
     );
-    if (useComms) {
-      if (commsFetch) {
-        return commsFetch(url, data);
-      } else {
-        throw new Error("Open3D's remote call API is not implemented.");
-      }
-    } else {
+    if (commsFetch == null) {
       return fetch(url, data);
+    } else {
+      return commsFetch(url, data);
     }
   };
 
@@ -89,7 +79,6 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.getMediaList = function (commsFetch = null) {
     return WebRtcStreamer.remoteCall(
       webrtcConfig.url + "/api/getMediaList",
-      commsFetch != null,
       {},
       commsFetch
     );
@@ -147,7 +136,6 @@ var WebRtcStreamer = (function () {
 
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
-        this.commsFetch != null && true,
         {},
         this.commsFetch
       )
@@ -346,7 +334,6 @@ var WebRtcStreamer = (function () {
     if (this.pc) {
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/hangup?peerid=" + this.pc.peerid,
-        this.commsFetch != null && true,
         {},
         this.commsFetch
       )
@@ -409,7 +396,6 @@ var WebRtcStreamer = (function () {
             function () {
               WebRtcStreamer.remoteCall(
                 callurl,
-                bind.commsFetch != null && true,
                 {
                   method: "POST",
                   body: JSON.stringify(sessionDescription),
@@ -440,7 +426,6 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.getIceCandidate = function () {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/getIceCandidate?peerid=" + this.pc.peerid,
-      this.commsFetch != null && true,
       {},
       this.commsFetch
     )
@@ -562,7 +547,6 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.addIceCandidate = function (peerid, candidate) {
     WebRtcStreamer.remoteCall(
       this.srvurl + "/api/addIceCandidate?peerid=" + peerid,
-      this.commsFetch != null && true,
       {
         method: "POST",
         body: JSON.stringify(candidate),
