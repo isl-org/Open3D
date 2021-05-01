@@ -335,7 +335,8 @@ public:
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
             int stride = 1,
-            bool with_normals = false);
+            bool with_normals = false,
+            float depth_diff_threshold = 10.f);
 
     /// \brief Factory function to create a pointcloud from an RGB-D image and a
     /// camera model.
@@ -365,7 +366,8 @@ public:
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
             int stride = 1,
-            bool with_normals = false);
+            bool with_normals = false,
+            float depth_diff_threshold = 10.f);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(

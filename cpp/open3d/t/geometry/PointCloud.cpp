@@ -185,15 +185,22 @@ PointCloud PointCloud::VoxelDownSample(
 static PointCloud CreatePointCloudWithNormals(
         const Image &depth_in, /* UInt16 or Float32 */
         const Image &color_in, /* Float32 */
-        const core::Tensor &intrinsics,
+        const core::Tensor &intrinsics_in,
         const core::Tensor &extrinsics,
         float depth_scale,
         float depth_max,
-        int stride) {
+        int stride,
+        float depth_diff_threshold) {
     using core::None;
     using core::Tensor;
     using core::TensorKey;
     const float invalid_fill = NAN;
+    const int bilateral_kernel_size =  // bilateral filter defaults for backends
+            depth_in.GetDevice().GetType() == core::Device::DeviceType::CUDA
+                    ? 3
+                    : 5;
+    const float bilateral_value_sigma = depth_diff_threshold;
+    const float bilateral_distance_sigma = 10.f;  // bilateral filter default
 
     if ((stride & (stride - 1)) != 0) {
         utility::LogError(
@@ -204,13 +211,18 @@ static PointCloud CreatePointCloudWithNormals(
                                    depth_in.GetCols() != color_in.GetCols())) {
         utility::LogError("Depth and color images have different sizes.");
     }
-    auto depth = depth_in, color = color_in;
+    auto depth =
+            depth_in.ClipTransform(depth_scale, 0.0f, depth_max, invalid_fill);
+    auto color = color_in;
+    auto intrinsics = intrinsics_in / stride;
+    intrinsics[-1][-1] = 1.f;
     for (; stride > 1; stride /= 2) {
-        depth = depth.PyrDown();
+        depth = depth.PyrDownDepth(depth_diff_threshold, invalid_fill);
         color = color.PyrDown();
     }
-    int64_t im_size = depth.GetRows() * depth.GetCols();
-    depth = depth.ClipTransform(depth_scale, 0.0f, depth_max, invalid_fill);
+    const int64_t im_size = depth.GetRows() * depth.GetCols();
+    depth = depth.FilterBilateral(bilateral_kernel_size, bilateral_value_sigma,
+                                  bilateral_distance_sigma);
     auto vertex_map = depth.CreateVertexMap(intrinsics, invalid_fill);
     auto vertex_list = vertex_map.AsTensor().View({im_size, 3});
     if (!extrinsics.AllClose(Tensor::Eye(4, extrinsics.GetDtype(),
@@ -252,7 +264,8 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             float depth_scale,
                                             float depth_max,
                                             int stride,
-                                            bool with_normals) {
+                                            bool with_normals,
+                                            float depth_diff_threshold) {
     core::Dtype dtype = depth.AsTensor().GetDtype();
     if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
         utility::LogError(
@@ -264,7 +277,7 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
     if (with_normals) {
         return CreatePointCloudWithNormals(depth, Image(), intrinsics,
                                            extrinsics, depth_scale, depth_max,
-                                           stride);
+                                           stride, depth_diff_threshold);
     } else {
         core::Tensor points;
         kernel::pointcloud::Unproject(
@@ -280,7 +293,8 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            float depth_scale,
                                            float depth_max,
                                            int stride,
-                                           bool with_normals) {
+                                           bool with_normals,
+                                           float depth_diff_threshold) {
     auto dtype = rgbd_image.depth_.AsTensor().GetDtype();
     if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
         utility::LogError(
@@ -293,9 +307,9 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
             rgbd_image.color_.To(core::Dtype::Float32, /*copy=*/false);
 
     if (with_normals) {
-        return CreatePointCloudWithNormals(rgbd_image.depth_, image_colors,
-                                           intrinsics, extrinsics, depth_scale,
-                                           depth_max, stride);
+        return CreatePointCloudWithNormals(
+                rgbd_image.depth_, image_colors, intrinsics, extrinsics,
+                depth_scale, depth_max, stride, depth_diff_threshold);
     } else {
         core::Tensor points, colors, image_colors_t = image_colors.AsTensor();
         kernel::pointcloud::Unproject(

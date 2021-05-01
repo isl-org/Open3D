@@ -120,7 +120,7 @@ void pybind_pointcloud(py::module& m) {
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
-            "with_normals"_a = false,
+            "with_normals"_a = false, "depth_diff_threshold"_a = 10.f,
             "Factory function to create a pointcloud (with only 'points') from "
             "a depth image and a camera model.\n\n Given depth value d at (u, "
             "v) image coordinate, the corresponding 3d point is:\n z = d / "
@@ -132,7 +132,7 @@ void pybind_pointcloud(py::module& m) {
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
-            "with_normals"_a = false,
+            "with_normals"_a = false, "depth_diff_threshold"_a = 10.f,
             "Factory function to create a pointcloud (with properties "
             "{'points', 'colors'}) from an RGBD image and a camera model.\n\n "
             "Given depth value d at (u, v) image coordinate, the corresponding "
