@@ -22,24 +22,15 @@ set(filament_LIBRARIES
     utils
 )
 
+# Locate byproducts
 set(lib_dir lib)
-if(MSVC)
-    if (STATIC_WINDOWS_RUNTIME)
-        string(APPEND lib_dir /mt)
-    else()
-        string(APPEND lib_dir /md)
-    endif()
+if(APPLE)
+    string(APPEND lib_dir /x86_64)
 endif()
 
 set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
 list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
-if(WIN32)
-    set(lib_byproducts_debug ${filament_LIBRARIES})
-    list(TRANSFORM lib_byproducts_debug PREPEND ${FILAMENT_ROOT}/${lib_dir}d/${CMAKE_STATIC_LIBRARY_PREFIX})
-    list(TRANSFORM lib_byproducts_debug APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
-    list(APPEND lib_byproducts ${lib_byproducts_debug})
-endif()
 
 ExternalProject_Add(
     ext_filament
