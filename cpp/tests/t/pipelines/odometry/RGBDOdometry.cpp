@@ -163,7 +163,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_max, {10, 5, 3},
+            src, dst, intrinsic_t, trans, depth_scale, depth_max,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
             t::pipelines::odometry::Method::PointToPlane,
             t::pipelines::odometry::OdometryLossParams(depth_diff));
 
@@ -228,7 +230,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_max, {10, 5, 3},
+            src, dst, intrinsic_t, trans, depth_scale, depth_max,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
             t::pipelines::odometry::Method::Intensity,
             t::pipelines::odometry::OdometryLossParams(depth_diff));
 
@@ -293,7 +297,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_max, {10, 5, 3},
+            src, dst, intrinsic_t, trans, depth_scale, depth_max,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
             t::pipelines::odometry::Method::Hybrid,
             t::pipelines::odometry::OdometryLossParams(depth_diff));
 
