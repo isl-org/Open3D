@@ -87,17 +87,14 @@ void Project(core::Tensor& depth,
              float depth_max) {
     core::Device device = depth.GetDevice();
 
-    core::Tensor intrinsics_d = intrinsics.To(device);
-    core::Tensor extrinsics_d = extrinsics.To(device);
-
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ProjectCPU(depth, color, points, point_colors, intrinsics_d,
-                   extrinsics_d, depth_scale, depth_max);
+        ProjectCPU(depth, color, points, point_colors, intrinsics, extrinsics,
+                   depth_scale, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ProjectCUDA(depth, color, points, point_colors, intrinsics_d,
-                    extrinsics_d, depth_scale, depth_max);
+        ProjectCUDA(depth, color, points, point_colors, intrinsics, extrinsics,
+                    depth_scale, depth_max);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

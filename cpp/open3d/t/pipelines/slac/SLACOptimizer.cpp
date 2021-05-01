@@ -98,28 +98,28 @@ core::Tensor GetCorrespondencesForPair(int i,
                      inlier_ratio);
 
     if (j != i + 1 && inlier_ratio < 0.3) {
-        Eigen::Matrix4d flip;
-        flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
-        auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_i.Clone().Transform(T_i).ToLegacyPointCloud());
-        pcd_i_corres->PaintUniformColor({1, 0, 0});
-        pcd_i_corres->Transform(flip);
-        auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_j.Clone().Transform(T_j).ToLegacyPointCloud());
-        pcd_j_corres->PaintUniformColor({0, 1, 0});
-        pcd_j_corres->Transform(flip);
-        std::vector<std::pair<int, int>> corres_lines;
-        for (size_t i = 0; i < result.correspondence_set_.size(); ++i) {
-            corres_lines.push_back(
-                    std::make_pair(result.correspondence_set_[i](0),
-                                   result.correspondence_set_[i](1)));
-        }
-        auto lineset =
-                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
-                        *pcd_i_corres, *pcd_j_corres, corres_lines);
-        lineset->PaintUniformColor({0, 0, 1});
+        // Eigen::Matrix4d flip;
+        // flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
+        // auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+        //         tpcd_i.Clone().Transform(T_i).ToLegacyPointCloud());
+        // pcd_i_corres->PaintUniformColor({1, 0, 0});
+        // pcd_i_corres->Transform(flip);
+        // auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+        //         tpcd_j.Clone().Transform(T_j).ToLegacyPointCloud());
+        // pcd_j_corres->PaintUniformColor({0, 1, 0});
+        // pcd_j_corres->Transform(flip);
+        // std::vector<std::pair<int, int>> corres_lines;
+        // for (size_t i = 0; i < result.correspondence_set_.size(); ++i) {
+        //     corres_lines.push_back(
+        //             std::make_pair(result.correspondence_set_[i](0),
+        //                            result.correspondence_set_[i](1)));
+        // }
+        // auto lineset =
+        //         open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+        //                 *pcd_i_corres, *pcd_j_corres, corres_lines);
+        // lineset->PaintUniformColor({0, 0, 1});
 
-        visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
+        // visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
 
         return core::Tensor();
     }
@@ -227,6 +227,7 @@ void InitializeControlGrid(ControlGrid& ctr_grid,
         auto tpcd = CreateTPCDFromFile(fname, device);
         ctr_grid.Touch(tpcd);
     }
+    utility::LogInfo("Initialization finished.");
 }
 
 void FillInRigidAlignmentTerm(core::Tensor& AtA,
@@ -532,9 +533,11 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     GetCorrespondencesForPointClouds(fnames_down, pose_graph, option);
 
     // First initialize ctr_grid
-    ControlGrid ctr_grid(3.0 / 8, 1000, device);
+    ControlGrid ctr_grid(3.0 / 8, 8000, device);
     InitializeControlGrid(ctr_grid, fnames_down, option);
+    utility::LogInfo("Compactifying");
     ctr_grid.Compactify();
+    utility::LogInfo("Compactifying finished");
 
     // Fill-in
     // fragments x 6 (se3) + control_grids x 3 (R^3)
