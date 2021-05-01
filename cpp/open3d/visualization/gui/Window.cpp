@@ -614,17 +614,8 @@ void Window::PostRedraw() {
     if (impl_->is_drawing_) {
         impl_->needs_redraw_ = true;
     } else {
-        utility::LogInfo("To call GetWindowByUID");
-        std::shared_ptr<Window> this_window =
-                Application::GetInstance().GetWindowByUID(GetUID());
-        utility::LogInfo("Called GetWindowByUID");
-        if (this_window) {
-            utility::LogInfo("##### Window::PostRedraw() called");
-            Application::GetInstance().GetWindowSystem().PostRedrawEvent(
-                    impl_->window_);
-        } else {
-            utility::LogInfo("this_window is null, PostRedraw() ignored");
-        }
+        Application::GetInstance().GetWindowSystem().PostRedrawEvent(
+                impl_->window_);
     }
 }
 
