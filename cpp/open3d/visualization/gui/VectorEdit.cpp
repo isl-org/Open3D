@@ -51,6 +51,7 @@ struct VectorEdit::Impl {
 VectorEdit::VectorEdit() : impl_(new VectorEdit::Impl()) {
     std::stringstream s;
     s << "##vectoredit" << g_next_vector_edit_id++ << std::endl;
+    impl_->id_ = s.str();
 }
 
 VectorEdit::~VectorEdit() {}
