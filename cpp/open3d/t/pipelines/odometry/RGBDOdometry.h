@@ -51,19 +51,25 @@ public:
     /// \brief Constructor for the convergence criteria, where we stop
     /// iterations once the criteria are met.
     ///
+    /// \param max_iteration Maximum iteration before iteration stops.
     /// \param relative_rmse Relative rmse threshold where we stop iterations.
     /// \param relative_fitness Relative fitness threshold where we stop
     /// iterations.
-    OdometryConvergenceCriteria(int iterations,
+    OdometryConvergenceCriteria(int max_iteration,
                                 double relative_rmse = 1e-6,
                                 double relative_fitness = 1e-6)
-        : iterations_(iterations),
+        : max_iteration_(max_iteration),
           relative_rmse_(relative_rmse),
           relative_fitness_(relative_fitness) {}
 
 public:
-    int iterations_;
+    /// Maximum iteration before iteration stops.
+    int max_iteration_;
+    /// If relative change (difference) of inliner RMSE score is lower than
+    /// `relative_rmse`, the iteration stops.
     double relative_rmse_;
+    /// If relative change (difference) of fitness score is lower than
+    /// `relative_fitness`, the iteration stops.
     double relative_fitness_;
 };
 
@@ -86,8 +92,12 @@ public:
     ~OdometryResult() {}
 
 public:
+    /// The estimated transformation matrix of dtype Float64 on CPU device.
     core::Tensor transformation_;
+    /// RMSE of all inlier. Lower is better.
     double inlier_rmse_;
+    /// The overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
     double fitness_;
 };
 

@@ -41,40 +41,49 @@ void pybind_odometry_classes(py::module &m) {
             .value("Hybrid", Method::Hybrid)
             .export_values();
 
+    // open3d.t.pipelines.odometry.OdometryConvergenceCriteria
     py::class_<OdometryConvergenceCriteria> odometry_convergence_criteria(
             m, "OdometryConvergenceCriteria",
             "Class that defines the convergence criteria of odometry. "
             "Odometry algorithm stops if the relative change of fitness and "
-            "rmse "
-            "hit ``relative_fitness`` and ``relative_rmse`` individually. ");
+            "rmse hit ``relative_fitness`` and ``relative_rmse`` individually, "
+            "or the iteration number exceeds ``max_iteration``.");
     py::detail::bind_copy_functions<OdometryConvergenceCriteria>(
             odometry_convergence_criteria);
     odometry_convergence_criteria
-            .def(py::init<double, double>(), "relative_fitness"_a = 1e-6,
-                 "relative_rmse"_a = 1e-6)
-            .def_readwrite(
-                    "relative_fitness",
-                    &OdometryConvergenceCriteria::relative_fitness_,
-                    "If relative change (difference) of fitness score is lower "
-                    "than ``relative_fitness``, the iteration stops.")
+            .def(py::init<int, double, double>(), "max_iteration"_a,
+                 "relative_rmse"_a = 1e-6, "relative_fitness"_a = 1e-6)
+            .def_readwrite("max_iteration",
+                           &OdometryConvergenceCriteria::max_iteration_,
+                           "Maximum iteration before iteration stops.")
             .def_readwrite(
                     "relative_rmse",
                     &OdometryConvergenceCriteria::relative_rmse_,
                     "If relative change (difference) of inliner RMSE score is "
                     "lower than ``relative_rmse``, the iteration stops.")
+            .def_readwrite(
+                    "relative_fitness",
+                    &OdometryConvergenceCriteria::relative_fitness_,
+                    "If relative change (difference) of fitness score is lower "
+                    "than ``relative_fitness``, the iteration stops.")
             .def("__repr__", [](const OdometryConvergenceCriteria &c) {
                 return fmt::format(
                         "ICPConvergenceCriteria class "
-                        "with relative_fitness={:e}, relative_rmse={:e}, ",
-                        c.relative_fitness_, c.relative_rmse_);
+                        "with max_iteration={:d}, relative_rmse={:e}, "
+                        "relative_fitness={:e}.",
+                        c.max_iteration_, c.relative_rmse_,
+                        c.relative_fitness_);
             });
 
     // open3d.t.pipelines.odometry.OdometryResult
     py::class_<OdometryResult> odometry_result(
             m, "OdometryResult", "Class that contains the odometry results.");
-    py::detail::bind_default_constructor<OdometryResult>(odometry_result);
     py::detail::bind_copy_functions<OdometryResult>(odometry_result);
     odometry_result
+            .def(py::init<core::Tensor, double, double>(),
+                 "transformation"_a = core::Tensor::Eye(4, core::Dtype::Float64,
+                                                        core::Device("CPU:0")),
+                 "inlier_rmse"_a = 0.0, "fitness"_a = 0.0)
             .def_readwrite("transformation", &OdometryResult::transformation_,
                            "``4 x 4`` float64 tensor on CPU: The estimated "
                            "transformation matrix.")
@@ -98,10 +107,11 @@ void pybind_odometry_classes(py::module &m) {
     py::class_<OdometryLossParams> odometry_loss_params(
             m, "OdometryLossParams",
             "Class that contains the odometry loss parameters.");
-    py::detail::bind_default_constructor<OdometryLossParams>(
-            odometry_loss_params);
     py::detail::bind_copy_functions<OdometryLossParams>(odometry_loss_params);
     odometry_loss_params
+            .def(py::init<double, double, double>(),
+                 "depth_outlier_trunc"_a = 0.07, "depth_huber_delta"_a = 0.05,
+                 "intensity_huber_delta"_a = 0.1)
             .def_readwrite("depth_outlier_trunc",
                            &OdometryLossParams::depth_outlier_trunc_,
                            "float: Depth difference threshold used to filter "
@@ -128,6 +138,7 @@ void pybind_odometry_classes(py::module &m) {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"criteria", "Odometry convergence criteria."},
+                {"criterias", "Vector of Odometry convergence criteria."},
                 {"depth_outlier_trunc",
                  "Depth difference threshold used to filter projective "
                  "associations."},
@@ -141,9 +152,6 @@ static const std::unordered_map<std::string, std::string>
                 {"intrinsics", "(3, 3) intrinsic matrix for projection."},
                 {"intensity_huber_delta",
                  "Huber norm parameter used in intensity loss."},
-                {"iterations",
-                 "o3d.utility.IntVector Iterations in multiscale "
-                 "odometry, from coarse to fine."},
                 {"method",
                  "Estimation method used to apply RGBD odometry. "
                  "One of (``PointToPlane``, ``Intensity``, ``Hybrid``)"},
@@ -197,9 +205,8 @@ void pybind_odometry_methods(py::module &m) {
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
                                                         core::Device("CPU:0")),
           "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f,
-          "iterations"_a = std::vector<int>({10, 5, 3}),
-          "method"_a = Method::Hybrid, "params"_a = OdometryLossParams(),
-          "criteria"_a = OdometryConvergenceCriteria());
+          "criterias"_a = std::vector<OdometryConvergenceCriteria>({10, 5, 3}),
+          "method"_a = Method::Hybrid, "params"_a = OdometryLossParams());
     docstring::FunctionDocInject(m, "rgbd_odometry_multi_scale",
                                  map_shared_argument_docstrings);
 
