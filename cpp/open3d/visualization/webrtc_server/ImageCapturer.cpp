@@ -81,11 +81,11 @@ void ImageCapturer::OnCaptureResult(
                      width);
     utility::LogInfo("frame shape: {}", frame->GetShape().ToString());
 
-    static int frame_id = 0;
-    t::geometry::Image image(frame->Clone());
-    std::string file_name = fmt::format("im_{:04d}.png", frame_id++);
-    t::io::WriteImage(file_name, image);
-    utility::LogInfo("Frame saved to {}", file_name);
+    // static int frame_id = 0;
+    // t::geometry::Image image(frame->Clone());
+    // std::string file_name = fmt::format("im_{:04d}.png", frame_id++);
+    // t::io::WriteImage(file_name, image);
+    // utility::LogInfo("Frame saved to {}", file_name);
 
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);
