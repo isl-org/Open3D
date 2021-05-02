@@ -75,7 +75,7 @@ public:
                  const std::shared_ptr<core::Tensor>& im);
 
     /// Send initial frames. This flushes the WebRTC video stream. After the
-    /// initial frames, new frames will only be sent at redraw events.
+    /// initial frames, new frames will only be sent at triggered events.
     void SendInitFrames(const std::string& window_uid);
 
     /// List available windows.

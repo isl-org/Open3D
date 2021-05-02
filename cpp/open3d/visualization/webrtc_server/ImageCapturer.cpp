@@ -76,6 +76,9 @@ void ImageCapturer::OnCaptureResult(
     utility::LogInfoConsole("ImageCapturer::OnCaptureResult: New frame");
     int height = (int)frame->GetShape(0);
     int width = (int)frame->GetShape(1);
+    utility::LogInfo("ImageCapturer got frame height {}, width {}", height,
+                     width);
+    utility::LogInfo("frame shape: {}", frame->GetShape().ToString());
 
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);
@@ -94,7 +97,6 @@ void ImageCapturer::OnCaptureResult(
                                        rtc::TimeMicros());
         if ((height_ == 0) && (width_ == 0)) {
             broadcaster_.OnFrame(video_frame);
-
         } else {
             int height = height_;
             int width = width_;

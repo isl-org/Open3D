@@ -51,6 +51,7 @@
 #include "open3d/utility/IJsonConvertible.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
@@ -148,6 +149,11 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
             }
             utility::LogInfoConsole("ResizeEvent {}: ({}, {})", window_uid,
                                     height, width);
+            webrtc_server::WebRTCWindowSystem::GetInstance()->SetWindowSize(
+                    gui::Application::GetInstance()
+                            .GetWindowByUID(window_uid)
+                            ->GetOSWindow(),
+                    width, height);
         }
     } catch (...) {
         utility::LogInfoConsole(
