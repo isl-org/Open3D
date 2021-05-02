@@ -298,8 +298,6 @@ class SphinxDocsBuilder:
                 "sphinx-build",
                 "-b",
                 "html",
-                "-j",
-                "auto",
                 "-D",
                 "version=" + release_version,
                 "-D",
@@ -312,8 +310,6 @@ class SphinxDocsBuilder:
                 "sphinx-build",
                 "-b",
                 "html",
-                "-j",
-                "auto",
                 ".",
                 build_dir,
             ]
