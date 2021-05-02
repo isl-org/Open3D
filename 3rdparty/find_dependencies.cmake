@@ -928,16 +928,18 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
-        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
-        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
-        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
-        # /usr/lib/aarch64-linux-gnu.
-        # For aarch64, the symbolic link path may not work for CMake's
-        # find_library. Therefore, when compiling Filament from source, we
-        # explicitly find the corresponidng path based on the clang version.
-        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
-        if(clang_version MATCHES "clang version ([0-9]+)")
-            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+        if (UNIX AND NOT APPLE)
+            # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+            # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+            # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+            # /usr/lib/aarch64-linux-gnu.
+            # For aarch64, the symbolic link path may not work for CMake's
+            # find_library. Therefore, when compiling Filament from source, we
+            # explicitly find the corresponidng path based on the clang version.
+            execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+            if(clang_version MATCHES "clang version ([0-9]+)")
+                set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+            endif()
         endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
