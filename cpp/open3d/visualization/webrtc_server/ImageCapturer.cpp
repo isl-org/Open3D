@@ -41,6 +41,7 @@
 #include <thread>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 
@@ -79,6 +80,12 @@ void ImageCapturer::OnCaptureResult(
     utility::LogInfo("ImageCapturer got frame height {}, width {}", height,
                      width);
     utility::LogInfo("frame shape: {}", frame->GetShape().ToString());
+
+    static int frame_id = 0;
+    t::geometry::Image image(frame->Clone());
+    std::string file_name = fmt::format("im_{%02d}.png", frame_id);
+    utility::LogError("file_name: {}", file_name);
+    t::io::WriteImage(file_name, image);
 
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);
