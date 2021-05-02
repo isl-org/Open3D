@@ -31,7 +31,7 @@ __all__ = ['VoxelPooling']
 
 
 class VoxelPooling(tf.keras.layers.Layer):
-    """Voxel pooling for 3D point clouds
+    """Voxel pooling for 3D point clouds.
 
     Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 

@@ -51,7 +51,7 @@ void pybind_sensor(py::module &m) {
                      "'depth' here. The intrinsic camera calibration for the "
                      "color stream will be saved in 'intrinsic.json'"},
                     {"start_time_us",
-                     "(default 0) Start saving frames from this time (us)"},
+                     "Start saving frames from this time (us)"},
                     {"end_time_us",
                      "(default video length) Save frames till this time (us)"},
                     {"buffer_size",
@@ -171,7 +171,7 @@ void pybind_sensor(py::module &m) {
     py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
             rs_bag_reader(
                     m, "RSBagReader",
-                    "RealSense Bag file reader."
+                    "RealSense Bag file reader. "
                     "Only the first color and depth streams from the bag file "
                     "will be read.\n"
                     " - The streams must have the same frame rate.\n"
@@ -181,14 +181,15 @@ void pybind_sensor(py::module &m) {
                     "pixel format\n"
                     "The output is synchronized color and depth frame pairs "
                     "with the depth frame aligned to the color frame."
-                    "Unsynchronized frames will be dropped. With alignment,"
-                    "the depth and color frames have the same  viewpoint and"
-                    "resolution. See "
-                    "https://intelrealsense.github.io/librealsense/doxygen/"
-                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7"
-                    "for format documentation\n"
-                    "Note: A few frames may be dropped if user code takes a "
-                    "long time (>10 frame intervals) to process a frame.");
+                    "Unsynchronized frames will be dropped. With alignment, "
+                    "the depth and color frames have the same  viewpoint and "
+                    "resolution. See format documentation `here "
+                    "<https://intelrealsense.github.io/librealsense/doxygen/"
+                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7>`__"
+                    "\n\n"
+                    ".. warning:: A few frames may be dropped if user code "
+                    "takes a long time (>10 frame intervals) to process a "
+                    "frame.");
     rs_bag_reader.def(py::init<>())
             .def(py::init<size_t>(),
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
@@ -220,7 +221,7 @@ void pybind_sensor(py::module &m) {
                  py::call_guard<py::gil_scoped_release>(), "frame_path"_a,
                  "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
                  "Save synchronized and aligned individual frames to "
-                 "subfolders")
+                 "subfolders.")
             .def("__repr__", &RSBagReader::ToString);
     docstring::ClassMethodDocInject(m, "RSBagReader", "__init__",
                                     map_shared_argument_docstrings);
