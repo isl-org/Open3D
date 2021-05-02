@@ -157,7 +157,7 @@ static const std::unordered_map<std::string, std::string>
                  "One of (``PointToPlane``, ``Intensity``, ``Hybrid``)"},
                 {"params", "Odometry loss parameters."},
                 {"source", "The source RGBD image."},
-                {"source_depth_map",
+                {"source_depth",
                  "(H, W, 1) Float32 source depth image obtained by "
                  "PreprocessDepth before calling this function."},
                 {"source_depth_dx",
@@ -179,7 +179,7 @@ static const std::unordered_map<std::string, std::string>
                  "(H, W, 3) Float32 source vertex image obtained by "
                  "CreateVertexMap before calling this function."},
                 {"target", "The target RGBD image."},
-                {"target_depth_map",
+                {"target_depth",
                  "(H, W, 1) Float32 target depth image obtained by "
                  "PreprocessDepth before calling this function."},
                 {"target_intensity",
@@ -200,7 +200,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_odometry_methods(py::module &m) {
     m.def("rgbd_odometry_multi_scale", &RGBDOdometryMultiScale,
-          "Function for Multi Scale RGBD odometry", "source"_a, "target"_a,
+          "Function for Multi Scale RGBD odometry.", "source"_a, "target"_a,
           "intrinsics"_a,
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
                                                         core::Device("CPU:0")),
@@ -220,11 +220,11 @@ void pybind_odometry_methods(py::module &m) {
           "N_p  denotes the normal at pixel p in the source. "
           "q is obtained by transforming p with init_source_to_target then "
           "projecting with intrinsics. "
-          "KinectFusion, ISMAR 2011",
+          "KinectFusion, ISMAR 2011.",
           "source_vertex_map"_a, "target_vertex_map"_a, "target_normal_map"_a,
           "intrinsics"_a, "init_source_to_target"_a, "depth_outlier_trunc"_a,
           "depth_huber_delta"_a);
-    docstring::FunctionDocInject(m, "compute_pose_point_to_plane",
+    docstring::FunctionDocInject(m, "compute_odometry_result_point_to_plane",
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_intensity", &ComputeOdometryResultIntensity,
@@ -236,8 +236,8 @@ void pybind_odometry_methods(py::module &m) {
           "q is obtained by transforming p with init_source_to_target then "
           "projecting with intrinsics. "
           "Real-time visual odometry from dense RGB-D images, ICCV Workshops, "
-          "2011, ",
-          "source_depth_map"_a, "target_depth_map"_a, "source_intensity"_a,
+          "2011. ",
+          "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "target_intensity_dx"_a,
           "target_intensity_dy"_a, "source_vertices_map"_a, "intrinsics"_a,
           "init_source_to_target"_a, "depth_outlier_trunc"_a,
@@ -255,8 +255,8 @@ void pybind_odometry_methods(py::module &m) {
           "D_q  denotes the depth pixel q in the target. "
           "q is obtained by transforming p with init_source_to_target then "
           "projecting with intrinsics. "
-          "Colored ICP Revisited, ICCV 2017 ",
-          "source_depth_map"_a, "target_depth_map"_a, "source_intensity"_a,
+          "Colored ICP Revisited, ICCV 2017. ",
+          "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "source_depth_dx"_a, "source_depth_dy"_a,
           "source_intensity_dx"_a, "source_intensity_dy"_a,
           "target_vertices_map"_a, "intrinsics"_a, "init_source_to_target"_a,
