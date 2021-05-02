@@ -83,7 +83,7 @@ void ImageCapturer::OnCaptureResult(
 
     static int frame_id = 0;
     t::geometry::Image image(frame->Clone());
-    std::string file_name = fmt::format("im_{:04d}.png", frame_id);
+    std::string file_name = fmt::format("im_{:04d}.png", frame_id++);
     t::io::WriteImage(file_name, image);
     utility::LogInfo("Frame saved to {}", file_name);
 
