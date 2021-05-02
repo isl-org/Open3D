@@ -171,16 +171,16 @@ void pybind_sensor(py::module &m) {
     py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
             rs_bag_reader(
                     m, "RSBagReader",
-                    "RealSense Bag file reader. "
-                    "Only the first color and depth streams from the bag file "
-                    "will be read.\n"
+                    "RealSense Bag file reader.\n"
+                    "\tOnly the first color and depth streams from the bag "
+                    "file will be read.\n"
                     " - The streams must have the same frame rate.\n"
                     " - The color stream must have RGB 8 bit (RGB8/BGR8) pixel "
                     "format\n"
                     " - The depth stream must have 16 bit unsigned int (Z16) "
                     "pixel format\n"
                     "The output is synchronized color and depth frame pairs "
-                    "with the depth frame aligned to the color frame."
+                    "with the depth frame aligned to the color frame. "
                     "Unsynchronized frames will be dropped. With alignment, "
                     "the depth and color frames have the same  viewpoint and "
                     "resolution. See format documentation `here "
