@@ -39,11 +39,23 @@
         // Create navigation menu
         var menu = document.getElementById("menu");
 
-        // Collect available video tags (from server).
+        // Collect updated URLs (from server).
         var validUrls = new Set();
         for (var key in mediaList) {
           validUrls.add(mediaList[key]);
         }
+        // Collect existing URLs in the menu bar. At launch, the set is empty.
+        var existingUrls = new Set();
+        for (var i = 0; i < menu.children.length; i++) {
+          var menuEntry = menu.children[i];
+          existingUrls.add(menuEntry.url);
+        }
+
+        // 1. The client connect to all newly added URLs.
+        // 2. Stale URLs will be removed from menu bar.
+        // 3. Existing menu entries that are not stale will be kept unchanged.
+        var newUrls = new Array();
+        var staleUrls = new Array();
 
         // Remove unavailable entries. Keep the "active" status of existing
         // entries.
