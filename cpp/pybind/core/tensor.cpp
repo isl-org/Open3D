@@ -247,6 +247,15 @@ void pybind_core_tensor(py::module& m) {
                }),
                "np_array"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
+    // o3c.Tensor(True, dtype=None, device=None).
+    // Default to Bool, CPU:0.
+    tensor.def(py::init([](bool scalar_value, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   return BoolToTensor(scalar_value, dtype, device);
+               }),
+               "scalar_value"_a, "dtype"_a = py::none(),
+               "device"_a = py::none());
+
     // o3c.Tensor(1, dtype=None, device=None).
     // Default to Int64, CPU:0.
     tensor.def(py::init([](int64_t scalar_value, utility::optional<Dtype> dtype,

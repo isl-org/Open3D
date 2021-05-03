@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 
 #include <Eigen/Core>
+#include <limits>
 #include <string>
 #include <unordered_map>
 
@@ -299,8 +300,43 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
                 core::eigen_converter::TensorToEigenVector3dVector(GetPoints());
     }
     if (HasPointColors()) {
-        pcd_legacy.colors_ = core::eigen_converter::TensorToEigenVector3dVector(
-                GetPointColors());
+        bool dtype_is_supported_for_conversion = true;
+        double normalization_factor = 1.0;
+        core::Dtype point_color_dtype = GetPointColors().GetDtype();
+
+        if (point_color_dtype == core::Dtype::UInt8) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint8_t>::max());
+        } else if (point_color_dtype == core::Dtype::UInt16) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint16_t>::max());
+        } else if (point_color_dtype != core::Dtype::Float32 &&
+                   point_color_dtype != core::Dtype::Float64) {
+            utility::LogWarning(
+                    "Dtype {} of color attribute is not supported for "
+                    "conversion to LegacyPointCloud and will be skipped. "
+                    "Supported dtypes include UInt8, UIn16, Float32, and "
+                    "Float64",
+                    point_color_dtype.ToString());
+            dtype_is_supported_for_conversion = false;
+        }
+
+        if (dtype_is_supported_for_conversion) {
+            if (normalization_factor != 1.0) {
+                core::Tensor rescaled_colors =
+                        GetPointColors().To(core::Dtype::Float64) *
+                        normalization_factor;
+                pcd_legacy.colors_ =
+                        core::eigen_converter::TensorToEigenVector3dVector(
+                                rescaled_colors);
+            } else {
+                pcd_legacy.colors_ =
+                        core::eigen_converter::TensorToEigenVector3dVector(
+                                GetPointColors());
+            }
+        }
     }
     if (HasPointNormals()) {
         pcd_legacy.normals_ =
