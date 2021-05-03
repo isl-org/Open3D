@@ -149,19 +149,6 @@ void BitmapWindowSystem::WaitEventsTimeout(double timeout_secs) {
         dt = duration.count();
         if (!impl_->event_queue_.empty()) {
             std::shared_ptr<BitmapEvent> event = impl_->event_queue_.front();
-            if (auto event_cast =
-                        std::dynamic_pointer_cast<BitmapDrawEvent>(event)) {
-            }
-            if (auto event_cast =
-                        std::dynamic_pointer_cast<BitmapMouseEvent>(event)) {
-            }
-            if (auto event_cast =
-                        std::dynamic_pointer_cast<BitmapKeyEvent>(event)) {
-            }
-            if (auto event_cast =
-                        std::dynamic_pointer_cast<BitmapTextInputEvent>(
-                                event)) {
-            }
             event->Execute();
             impl_->event_queue_.pop();
             break;
