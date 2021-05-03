@@ -86,7 +86,9 @@ void BuildSpatialHashTableCUDA(void* temp,
                                const int64_t* hash_table_splits,
                                const size_t hash_table_cell_splits_size,
                                int64_t* hash_table_cell_splits,
-                               int64_t* hash_table_index);
+                               int64_t* hash_table_index,
+                               int64_t* sorted_point_indices,
+                               T* sorted_points);
 
 /// Fixed radius search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and an exclusive prefix
@@ -171,6 +173,7 @@ void FixedRadiusSearchCUDA(void* temp,
                            int64_t* query_neighbors_row_splits,
                            size_t num_points,
                            const T* const points,
+                           const int64_t* const point_indices,
                            size_t num_queries,
                            const T* const queries,
                            const T radius,
@@ -255,6 +258,7 @@ void FixedRadiusSearchCUDA(void* temp,
 template <class T>
 void HybridSearchCUDA(size_t num_points,
                       const T* const points,
+                      const int64_t* const point_indices,
                       size_t num_queries,
                       const T* const queries,
                       const T radius,
