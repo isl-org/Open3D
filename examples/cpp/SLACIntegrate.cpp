@@ -198,7 +198,9 @@ int main(int argc, char** argv) {
                              timer.GetDuration());
 
             if (k % 10 == 0) {
-                CUDACachedMemoryManager::ReleaseCache();
+                #if defined(__CUDACC__)
+    				CUDACachedMemoryManager::ReleaseCache();
+                #endif
             }
         }
     }
