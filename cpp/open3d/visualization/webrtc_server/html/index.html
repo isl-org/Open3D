@@ -32,7 +32,7 @@
        *  1: {video: "window_1"},
        * }
        */
-      function onGetMediaList(mediaList) {
+      function updateMediaList(mediaList) {
         // Create navigation menu
         var urlList = document.getElementById("menu");
         for (var key in mediaList) {
@@ -141,7 +141,7 @@
       window.onload = function () {
         WebRtcStreamer.getMediaList()
           .then((response) => response.json())
-          .then((response) => onGetMediaList(response));
+          .then((response) => updateMediaList(response));
       };
       window.onbeforeunload = function () {
         for (var url in webRtcServerList) {
