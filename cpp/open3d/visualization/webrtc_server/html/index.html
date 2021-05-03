@@ -34,7 +34,7 @@
        */
       function updateMediaList(mediaList) {
         // Create navigation menu
-        var urlList = document.getElementById("menu");
+        var menu = document.getElementById("menu");
         for (var key in mediaList) {
           var url = mediaList[key]; // e.g. url = {video: "window_0"}.
           var menuEntry = document.createElement("a");
@@ -49,7 +49,7 @@
               add(this.url);
             }
           };
-          urlList.appendChild(menuEntry);
+          menu.appendChild(menuEntry);
         }
 
         mediaList.forEach((url) => {
