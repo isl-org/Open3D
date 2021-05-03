@@ -1,9 +1,3 @@
-cmake_minimum_required(VERSION 3.0)
-# Overide policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
-
 ################################################################################
 #
 # build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI
