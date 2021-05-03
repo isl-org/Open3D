@@ -48,40 +48,42 @@
         let menu = document.getElementById("menu");
 
         // The current video source that the server is serving.
-        let validUrls = new Set();
+        let validWindowIds = new Set();
         for (let key in mediaList) {
-          validUrls.add(mediaList[key]);
+          let url = mediaList[key];
+          let windowId = url.video;
+          validWindowIds.add(windowId);
         }
 
         // Collect stale and new URLs. This is needed to avoid "removing while
         // iterating".
-        let existingUrls = new Set();
-        let staleUrls = new Array();
+        let existingWindowIds = new Set();
+        let staleWindowIds = new Array();
         for (let i = 0; i < menu.children.length; i++) {
           let navElt = menu.children[i];
           let url = navElt.url;
-          existingUrls.add(url);
-          if (!validUrls.has(url)) {
-            staleUrls.push(url);
+          let windowId = url.video;
+          existingWindowIds.add(windowId);
+          if (!validWindowIds.has(windowId)) {
+            staleWindowIds.push(windowId);
           }
         }
-        let newUrls = [...setDifference(validUrls, existingUrls)];
+        let newWindowIds = [
+          ...setDifference(validWindowIds, existingWindowIds),
+        ];
 
         // Remove stale URLs.
-        staleUrls.forEach(function (url) {
-          let windowId = url.video;
+        staleWindowIds.forEach(function (windowId) {
           let videoId = "video_" + windowId;
           let id = "nav_" + videoId;
           document.getElementById(id).remove();
         });
 
         // Append and connect to new URLs.
-        newUrls.forEach(function (url) {
-          let windowId = url.video;
+        newWindowIds.forEach(function (windowId) {
           let videoId = "video_" + windowId;
           let navId = "nav_" + videoId;
           let navElt = document.createElement("a");
-          navElt.url = url;
           navElt.text = windowId;
           navElt.id = navId;
           navElt.onclick = function () {
@@ -94,26 +96,8 @@
           menu.appendChild(navElt);
         });
 
-        // for (var key in mediaList) {
-        //   var url = mediaList[key]; // e.g. url = {video: "window_0"}.
-        //   var windowId = url.video; // e.g. "window_0".
-        //   var videoId = "video_" + windowId; // e.g. "video_window_0"
-        //   var navElt = document.createElement("a");
-        //   navElt.url = url;
-        //   navElt.text = url.video;
-        //   navElt.id = "nav_" + videoId;
-        //   navElt.onclick = function () {
-        //     if (this.className === "active") {
-        //       delConnection(this.url.video);
-        //     } else {
-        //       addConnection(this.url.video);
-        //     }
-        //   };
-        //   menu.appendChild(navElt);
-        // }
-
-        newUrls.forEach((url) => {
-          addConnection(url.video);
+        newWindowIds.forEach((windowId) => {
+          addConnection(windowId);
         });
       }
 
@@ -135,7 +119,6 @@
        * Add a WebRTC client connection
        */
       function addConnection(windowId) {
-        // url = {video: "window_1"}
         var videoId = "video_" + windowId;
 
         // Add a video element to display WebRTC stream
@@ -207,8 +190,8 @@
           .then((response) => updateMediaList(response));
       };
       window.onbeforeunload = function () {
-        for (var url in webRtcServerList) {
-          webRtcServerList[url].disconnect();
+        for (let key in webRtcServerList) {
+          webRtcServerList[key].disconnect();
         }
       };
     </script>
