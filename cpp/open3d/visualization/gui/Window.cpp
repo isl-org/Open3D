@@ -983,12 +983,8 @@ void Window::OnDraw() {
 void Window::OnResize() {
     impl_->needs_layout_ = true;
 
-#if __APPLE__
-    // We need to recreate the swap chain after resizing a window on macOS
-    // otherwise things look very wrong.
     Application::GetInstance().GetWindowSystem().ResizeRenderer(
             impl_->window_, impl_->renderer_);
-#endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
 
