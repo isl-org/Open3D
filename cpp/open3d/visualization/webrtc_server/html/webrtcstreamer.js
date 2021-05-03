@@ -184,7 +184,7 @@ var WebRtcStreamer = (function () {
       var resizeButtonElt = document.createElement("button");
       resizeButtonElt.id = windowUID + "_resize_button";
       resizeButtonElt.type = "button";
-      resizeButtonElt.innerText = "Resize " + windowUID;
+      resizeButtonElt.innerText = "Resize";
       resizeButtonElt.onclick = () => {
         var heightInputElt = document.getElementById(
           windowUID + "_height_input"
