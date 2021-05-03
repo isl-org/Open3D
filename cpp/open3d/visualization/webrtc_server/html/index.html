@@ -40,8 +40,8 @@
        *  1: {video: "window_1"},
        * }
        * var url = mediaList["0"];            // {video: "window_0"}
-       * var windowUID = url.video;           // "window_0"
-       * var videoTag = "video_" + windowUID; // "video_window_0"
+       * var windowId = url.video;           // "window_0"
+       * var videoId = "video_" + windowId; // "video_window_0"
        */
       function updateMediaList(mediaList) {
         // Create navigation menu.
@@ -69,20 +69,20 @@
 
         // Remove stale URLs.
         staleUrls.forEach(function (url) {
-          let windowUID = url.video;
-          let videoTag = "video_" + windowUID;
-          let id = "nav_" + videoTag;
+          let windowId = url.video;
+          let videoId = "video_" + windowId;
+          let id = "nav_" + videoId;
           document.getElementById(id).remove();
         });
 
         // Append and connect to new URLs.
         newUrls.forEach(function (url) {
-          let windowUID = url.video;
-          let videoTag = "video_" + windowUID;
-          let id = "nav_" + videoTag;
+          let windowId = url.video;
+          let videoId = "video_" + windowId;
+          let id = "nav_" + videoId;
           let menuEntry = document.createElement("a");
           menuEntry.url = url;
-          menuEntry.text = windowUID;
+          menuEntry.text = windowId;
           menuEntry.id = id;
           menuEntry.onclick = function () {
             if (this.className === "active") {
@@ -96,12 +96,12 @@
 
         // for (var key in mediaList) {
         //   var url = mediaList[key]; // e.g. url = {video: "window_0"}.
-        //   var windowUID = url.video; // e.g. "window_0".
-        //   var videoTag = "video_" + windowUID; // e.g. "video_window_0"
+        //   var windowId = url.video; // e.g. "window_0".
+        //   var videoId = "video_" + windowId; // e.g. "video_window_0"
         //   var menuEntry = document.createElement("a");
         //   menuEntry.url = url;
         //   menuEntry.text = url.video;
-        //   menuEntry.id = "nav_" + videoTag;
+        //   menuEntry.id = "nav_" + videoId;
         //   menuEntry.onclick = function () {
         //     if (this.className === "active") {
         //       del(this.url);
@@ -121,14 +121,14 @@
        * Delete a WebRTC client connection
        */
       function del(url) {
-        var windowUID = url.video;
-        var videoTag = "video_" + windowUID;
+        var windowId = url.video;
+        var videoId = "video_" + windowId;
 
         // Disconnect WebRTC connection
-        var webrtcServer = webRtcServerList[videoTag];
+        var webrtcServer = webRtcServerList[videoId];
         if (webrtcServer) {
           webrtcServer.disconnect();
-          webRtcServerList[videoTag] = undefined;
+          webRtcServerList[videoId] = undefined;
         }
       }
 
@@ -137,24 +137,24 @@
        */
       function add(url) {
         // url = {video: "window_1"}
-        var windowUID = url.video;
-        var videoTag = "video_" + windowUID;
+        var windowId = url.video;
+        var videoId = "video_" + windowId;
 
         // Add a video element to display WebRTC stream
-        if (document.getElementById(videoTag) === null) {
+        if (document.getElementById(videoId) === null) {
           var contentDiv = getContentDiv();
           if (contentDiv) {
             var divElt = document.createElement("div");
-            divElt.id = "div_" + videoTag;
+            divElt.id = "div_" + videoId;
 
             var nameElt = document.createElement("h2");
-            nameElt.id = "title_" + videoTag;
-            nameElt.innerHTML = "<div>" + windowUID + "</div>";
+            nameElt.id = "title_" + videoId;
+            nameElt.innerHTML = "<div>" + windowId + "</div>";
             divElt.appendChild(nameElt);
 
             var videoElt = document.createElement("video");
-            videoElt.id = videoTag;
-            videoElt.title = windowUID;
+            videoElt.id = videoId;
+            videoElt.title = windowId;
             videoElt.muted = true;
             videoElt.controls = false;
             videoElt.playsinline = true;
@@ -165,17 +165,17 @@
           }
         }
 
-        var videoElt = document.getElementById(videoTag);
+        var videoElt = document.getElementById(videoId);
         if (videoElt) {
           var onClose = function () {
-            console.log("onClose() called for videoTag:", videoTag);
+            console.log("onClose() called for videoId:", videoId);
 
             // Remove the video element and its tile
-            var divElt = document.getElementById("div_" + videoTag);
+            var divElt = document.getElementById("div_" + videoId);
             divElt.parentElement.removeChild(divElt);
 
             // Un-highlight the navigation
-            var navElt = document.getElementById("nav_" + videoTag);
+            var navElt = document.getElementById("nav_" + videoId);
             navElt.className = "";
 
             WebRtcStreamer.getMediaList()
@@ -184,19 +184,19 @@
           };
 
           // Connect video element to WebRTC stream
-          var webRtcClient = new WebRtcStreamer(videoTag, "", onClose, null);
-          console.log("videoTag: " + videoTag);
+          var webRtcClient = new WebRtcStreamer(videoId, "", onClose, null);
+          console.log("videoId: " + videoId);
 
           webRtcClient.connect(url.video, url.audio, webRtcOptions);
           console.log("url.video: " + url.video);
           console.log("options: " + webRtcOptions);
 
           // Highlight the navigation
-          var navElt = document.getElementById("nav_" + videoTag);
+          var navElt = document.getElementById("nav_" + videoId);
           navElt.className = "active";
 
           // Register WebRTC streamer connection
-          webRtcServerList[videoTag] = webRtcClient;
+          webRtcServerList[videoId] = webRtcClient;
         }
       }
 
