@@ -30,6 +30,7 @@
 #include <set>
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
@@ -47,7 +48,7 @@ using PointCloud = open3d::geometry::PointCloud;
 using TPointCloud = t::geometry::PointCloud;
 
 /// Decoupled functions
-std::shared_ptr<PointCloud> PreprocessPointCloud(
+static std::shared_ptr<PointCloud> PreprocessPointCloud(
         std::shared_ptr<PointCloud>& pcd, float voxel_size) {
     if (voxel_size > 0) {
         auto pcd_down = pcd->VoxelDownSample(voxel_size);
@@ -63,39 +64,129 @@ std::shared_ptr<PointCloud> PreprocessPointCloud(
     }
 }
 
+// The correspondences from NNS has the value as the target index
+// correspondening the source point which is index of the value itself.
+// Therefore, for target_indexed_correspondences = {2, 3, -1 , 4}.
+// (source, target) correspondences are: {{0, 2}, {1, 3}, {3, 4}}.
+//
+// For convinience to access
+// source and target pointcloud indexed by their correspondences, this
+// function converts {N, 1} shaped target_indices correspondences to {C, 2}
+// shaped CorrespondenceSet, where C is the number of correspondences such that
+//
+// For getting correspondence indexed pointclouds:
+// source_indexed_pcd = source.GetPoints()
+//                            .IndexGet({correspondence_set.T()[0]});
+// target_indexed_pcd = target.GetPoints()
+//                            .IndexGet({correspondence_set.T()[1]});
+//
+//  For getting the i-th correspondence pair:
+// correspondence_pair_i = make_pair(correspondence[i][0],
+//                                              correspondence[i][1]);
+static core::Tensor ConvertCorrespondencesTargetIndexedToCx2Form(
+        const core::Tensor& target_correspondences) {
+    core::Device device = target_correspondences.GetDevice();
+    int64_t N = target_correspondences.GetLength();
+
+    core::Tensor valid_correspondences =
+            target_correspondences.Ne(-1).Reshape({-1});
+
+    // Only take valid indices.
+    core::Tensor target_indices =
+            target_correspondences.IndexGet({valid_correspondences});
+
+    // Number of good correspondences (C).
+    int64_t C = target_indices.GetLength();
+
+    // correpondence_set : (i, corres[i]).
+    // source[i] and target[corres[i]] is a correspondence.
+    core::Tensor source_indices =
+            core::Tensor::Arange(0, N, 1, core::Dtype::Int64, device)
+                    .IndexGet({valid_correspondences})
+                    .Reshape({C, 1});
+
+    // Creating {C, 2} shaped tensor by horizontal stacking {source_indices,
+    // target_indices}.
+    core::Tensor correspondence_set({C, 2}, core::Dtype::Int64, device);
+    correspondence_set.SetItem(
+            {core::TensorKey::Slice(0, C, 1), core::TensorKey::Slice(0, 1, 1)},
+            source_indices);
+    correspondence_set.SetItem(
+            {core::TensorKey::Slice(0, C, 1), core::TensorKey::Slice(1, 2, 1)},
+            target_indices);
+
+    return correspondence_set;
+}
+
 /// Aggressive pruning -- reject any suspicious pair
-core::Tensor GetCorrespondencesForPair(int i,
-                                       int j,
-                                       TPointCloud& tpcd_i,
-                                       TPointCloud& tpcd_j,
-                                       const core::Tensor& T_i,
-                                       const core::Tensor& T_j,
-                                       const core::Tensor& T_ij,
-                                       float threshold) {
-    // Obtain correspondence via nns
-    auto result = open3d::pipelines::registration::EvaluateRegistration(
-            tpcd_i.ToLegacyPointCloud(), tpcd_j.ToLegacyPointCloud(), threshold,
-            core::eigen_converter::TensorToEigenMatrixXf(T_ij).cast<double>());
-    core::Tensor corres = core::eigen_converter::EigenVector2iVectorToTensor(
-            result.correspondence_set_, core::Dtype::Int64,
-            core::Device("CPU:0"));
+//
+// tpcd_i is the source pointcloud, tpcd_j is the target pointcloud,
+// T_i is the transformation_model_to_source,
+// T_j is the transformation_model_to_target,
+// T_ij is the transformation_source_to_target.
+// distance_threshold is the search_distance for NNS.
+// i and j are the indices of source and target pointcloud respectively.
+core::Tensor GetCorrespondencesForPointCloudPair(int i,
+                                                 int j,
+                                                 TPointCloud& tpcd_i,
+                                                 TPointCloud& tpcd_j,
+                                                 const core::Tensor& T_i,
+                                                 const core::Tensor& T_j,
+                                                 const core::Tensor& T_ij,
+                                                 float distance_threshold) {
+    core::Device device = tpcd_i.GetDevice();
+    core::Dtype dtype = tpcd_i.GetPoints().GetDtype();
 
-    TPointCloud tpcd_i_cropped(tpcd_i.GetPoints().IndexGet({corres.T()[0]}));
-    TPointCloud tpcd_j_cropped(tpcd_j.GetPoints().IndexGet({corres.T()[1]}));
-    tpcd_i_cropped.Transform(T_i);
-    tpcd_j_cropped.Transform(T_j);
+    tpcd_j.GetPoints().AssertDevice(device);
+    tpcd_j.GetPoints().AssertDtype(dtype);
 
-    // N x 3
-    core::Tensor residual =
-            tpcd_i_cropped.GetPoints() - tpcd_j_cropped.GetPoints();
-    core::Tensor square_residual = (residual * residual).Sum({1});
-    core::Tensor inliers = square_residual.Le(threshold * threshold);
+    // TODO (@rishabh): AssertTransformation / IsTransformation.
+    T_i.AssertShape({4, 4});
+    T_j.AssertShape({4, 4});
+    T_ij.AssertShape({4, 4});
+
+    TPointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
+    tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));
+
+    // Obtain correspondence via nns, between tpcd_i_transformed_Tij and tpcd_j.
+    core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPoints());
+    bool check = tpcd_j_nns.HybridIndex(distance_threshold);
+    if (!check) {
+        utility::LogError(
+                "[NearestNeighborSearch::HybridSearch] Index is not set.");
+    }
+    core::Tensor target_indices, residual_distances_Tij;
+    std::tie(target_indices, residual_distances_Tij) = tpcd_j_nns.HybridSearch(
+            tpcd_i_transformed_Tij.GetPoints(), distance_threshold, 1);
+
+    // Get the correspondence_set Transformed of shape {C, 2}.
+    core::Tensor correspondence_set =
+            ConvertCorrespondencesTargetIndexedToCx2Form(target_indices);
+
+    // Get correspondence indexed pointcloud.
+    TPointCloud tpcd_i_indexed(
+            tpcd_i.GetPoints().IndexGet({correspondence_set.T()[0]}));
+    TPointCloud tpcd_j_indexed(
+            tpcd_j.GetPoints().IndexGet({correspondence_set.T()[1]}));
+
+    // Inlier Ratio is calculated on pointclouds transformed by their pose in
+    // model frame, to reject any suspicious pair.
+    tpcd_i_indexed.Transform(T_i.To(device, dtype));
+    tpcd_j_indexed.Transform(T_j.To(device, dtype));
+
+    core::Tensor square_residual =
+            (tpcd_i_indexed.GetPoints() - tpcd_j_indexed.GetPoints()).Sum({1});
+    core::Tensor inliers =
+            square_residual.Le(distance_threshold * distance_threshold);
 
     int64_t num_inliers =
             inliers.To(core::Dtype::Int64).Sum({0}).Item<int64_t>();
-    float inlier_ratio = float(num_inliers) / float(inliers.GetLength());
-    utility::LogInfo("Tij and (Ti, Tj) compatibility ratio = {}.",
-                     inlier_ratio);
+
+    float inlier_ratio = static_cast<float>(num_inliers) /
+                         static_cast<float>(inliers.GetLength());
+
+    utility::LogDebug("Tij and (Ti, Tj) compatibility ratio = {}.",
+                      inlier_ratio);
 
     if (j != i + 1 && inlier_ratio < 0.3) {
         // Eigen::Matrix4d flip;
@@ -124,25 +215,12 @@ core::Tensor GetCorrespondencesForPair(int i,
         return core::Tensor();
     }
 
-    return corres;
-
-    // Make correspondence indices (N x 2)
-    // core::Tensor corres =
-    //         core::Tensor({2, result.correspondence_set_.GetLength()},
-    //                      core::Dtype::Int64);
-    // core::Tensor indices = core::Tensor::Arange(
-    //         0, result.correspondence_select_bool_.GetLength(), 1,
-    //         core::Dtype::Int64);
-    // corres.SetItem({core::TensorKey::Index(0)},
-    //                indices.IndexGet({result.correspondence_select_bool_}));
-    // corres.SetItem({core::TensorKey::Index(1)},
-    // result.correspondence_set_);
-    // return corres.T();
+    return correspondence_set;
 }
 
 /// Write point clouds after preprocessing (remove outliers, estimate normals,
 /// etc).
-std::vector<std::string> PreprocessPointClouds(
+static std::vector<std::string> PreprocessPointClouds(
         const std::vector<std::string>& fnames,
         const SLACOptimizerOption& option) {
     std::string subdir_name = option.GetSubfolderName();
@@ -171,7 +249,7 @@ std::vector<std::string> PreprocessPointClouds(
 
 /// Read pose graph containing loop closures and odometry to compute
 /// correspondences.
-void GetCorrespondencesForPointClouds(
+static void GetCorrespondencesForPointClouds(
         const std::vector<std::string>& fnames_processed,
         const PoseGraph& pose_graph,
         const SLACOptimizerOption& option) {
@@ -182,9 +260,9 @@ void GetCorrespondencesForPointClouds(
 
         utility::LogInfo("Processing {:02d} -> {:02d}", i, j);
 
-        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
-                                               option.GetSubfolderName(), i, j);
-        if (utility::filesystem::FileExists(corres_fname)) continue;
+        std::string correspondences_fname = fmt::format(
+                "{}/{:03d}_{:03d}.npy", option.GetSubfolderName(), i, j);
+        if (utility::filesystem::FileExists(correspondences_fname)) continue;
 
         auto tpcd_i = CreateTPCDFromFile(fnames_processed[i]);
         auto tpcd_j = CreateTPCDFromFile(fnames_processed[j]);
@@ -193,33 +271,29 @@ void GetCorrespondencesForPointClouds(
         auto pose_j = pose_graph.nodes_[j].pose_;
         auto pose_ij = edge.transformation_;
 
-        core::Tensor T_i =
-                core::eigen_converter::EigenMatrixToTensor(pose_i).To(
-                        core::Dtype::Float32);
-        core::Tensor T_j =
-                core::eigen_converter::EigenMatrixToTensor(pose_j).To(
-                        core::Dtype::Float32);
-        core::Tensor T_ij =
-                core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
-                        core::Dtype::Float32);
+        core::Tensor T_i = core::eigen_converter::EigenMatrixToTensor(pose_i);
+        core::Tensor T_j = core::eigen_converter::EigenMatrixToTensor(pose_j);
+        core::Tensor T_ij = core::eigen_converter::EigenMatrixToTensor(pose_ij);
+
         // 0.008 ~ 3.0 / 512 * 1.4
-        float dist_threshold =
-                option.voxel_size_ < 0 ? 0.008 : 1.4 * option.voxel_size_;
+        float distance_threshold =
+                option.voxel_size_ < 0.001 ? 0.008 : 1.4 * option.voxel_size_;
 
-        core::Tensor corres = GetCorrespondencesForPair(
-                i, j, tpcd_i, tpcd_j, T_i, T_j, T_ij, dist_threshold);
+        // Get correspondences betweem
+        core::Tensor correspondence_set = GetCorrespondencesForPointCloudPair(
+                i, j, tpcd_i, tpcd_j, T_i, T_j, T_ij, distance_threshold);
 
-        if (corres.GetLength() > 0) {
-            corres.Save(corres_fname);
+        if (correspondence_set.GetLength() > 0) {
+            correspondence_set.Save(correspondences_fname);
             utility::LogInfo("Saving {} corres for {:02d} -> {:02d}",
-                             corres.GetLength(), i, j);
+                             correspondence_set.GetLength(), i, j);
         }
     }
 }
 
-void InitializeControlGrid(ControlGrid& ctr_grid,
-                           const std::vector<std::string>& fnames,
-                           const SLACOptimizerOption& option) {
+static void InitializeControlGrid(ControlGrid& ctr_grid,
+                                  const std::vector<std::string>& fnames,
+                                  const SLACOptimizerOption& option) {
     core::Device device(option.device_);
     for (auto& fname : fnames) {
         utility::LogInfo("Initializing grid for {}", fname);
@@ -243,49 +317,45 @@ void FillInRigidAlignmentTerm(core::Tensor& AtA,
                               float threshold,
                               core::Device& device,
                               bool visualize = false) {
-    auto ps = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
-    auto qs = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
+    core::Dtype dtype = tpcd_i.GetPoints().GetDtype();
 
-    auto normal_ps =
-            tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}).To(device);
+    TPointCloud tpcd_i_points_indexed(
+            tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device, true));
+    tpcd_i_points_indexed.SetPointNormals(
+            tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device, true));
 
-    auto Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
-    auto ti = Ti.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+    TPointCloud tpcd_j_points_indexed(
+            tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device, true));
 
-    auto Rj = Tj.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
-    auto tj = Tj.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+    tpcd_i_points_indexed.Transform(Ti.To(device, dtype));
+    tpcd_j_points_indexed.Transform(Tj.To(device, dtype));
 
-    auto Ti_ps = (Ri.Matmul(ps.T())).Add_(ti).T().Contiguous();
-    auto Tj_qs = (Rj.Matmul(qs.T())).Add_(tj).T().Contiguous();
-    auto Ri_normal_ps = (Ri.Matmul(normal_ps.T())).T().Contiguous();
-
-    kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, Ti_ps, Tj_qs,
-                                     Ri_normal_ps, i, j, threshold);
+    kernel::FillInRigidAlignmentTerm(
+            AtA, Atb, residual, tpcd_i_points_indexed.GetPoints(),
+            tpcd_j_points_indexed.GetPoints(),
+            tpcd_i_points_indexed.GetPointNormals(), i, j, threshold);
 
     if (visualize) {
-        utility::LogInfo("{} -> {}", i, j);
-        t::geometry::PointCloud tpcd_i_corres(Ti_ps);
-        t::geometry::PointCloud tpcd_j_corres(Tj_qs);
+        // utility::LogInfo("{} -> {}", i, j);
+        // Eigen::Matrix4d flip;
+        // flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
+        // auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
+        //         tpcd_i_points_indexed.ToLegacyPointCloud());
+        // pcd_i_corres->PaintUniformColor({1, 0, 0});
+        // pcd_i_corres->Transform(flip);
+        // auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
+        //         tpcd_j_points_indexed.ToLegacyPointCloud());
+        // pcd_j_corres->PaintUniformColor({0, 1, 0});
+        // pcd_j_corres->Transform(flip);
+        // std::vector<std::pair<int, int>> corres_lines;
+        // for (size_t i = 0; i < pcd_i_corres->points_.size(); ++i) {
+        //     corres_lines.push_back(std::make_pair(i, i));
+        // }
+        // auto lineset =
+        //         open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
+        //                 *pcd_i_corres, *pcd_j_corres, corres_lines);
 
-        Eigen::Matrix4d flip;
-        flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
-        auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_i_corres.ToLegacyPointCloud());
-        pcd_i_corres->PaintUniformColor({1, 0, 0});
-        pcd_i_corres->Transform(flip);
-        auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
-                tpcd_j_corres.ToLegacyPointCloud());
-        pcd_j_corres->PaintUniformColor({0, 1, 0});
-        pcd_j_corres->Transform(flip);
-        std::vector<std::pair<int, int>> corres_lines;
-        for (size_t i = 0; i < pcd_i_corres->points_.size(); ++i) {
-            corres_lines.push_back(std::make_pair(i, i));
-        }
-        auto lineset =
-                open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
-                        *pcd_i_corres, *pcd_j_corres, corres_lines);
-
-        visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
+        // visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
     }
 }
 
@@ -347,24 +417,21 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
                              float threshold,
                              core::Device& device,
                              bool visualize = false) {
-    auto Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
-    auto ti = Ti.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+    TPointCloud tpcd_i_points_indexed(device);
+    tpcd_i_points_indexed.SetPoints(
+            tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device));
+    tpcd_i_points_indexed.SetPointNormals(
+            tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}).To(device));
 
-    auto Rj = Tj.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
-    auto tj = Tj.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+    TPointCloud tpcd_j_points_indexed(device);
+    tpcd_j_points_indexed.SetPoints(
+            tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device));
+    tpcd_j_points_indexed.SetPointNormals(
+            tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]}).To(device));
 
-    auto ps = tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}).To(device);
-    auto qs = tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}).To(device);
-    auto normal_ps =
-            tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}).To(device);
-    auto normal_qs =
-            tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]}).To(device);
-
-    // Parameterize points in the control grid
-    auto tpcd_param_i = ctr_grid.Parameterize(
-            TPointCloud({{"points", ps}, {"normals", normal_ps}}));
-    auto tpcd_param_j = ctr_grid.Parameterize(
-            TPointCloud({{"points", qs}, {"normals", normal_qs}}));
+    //     Parameterize points in the control grid
+    auto tpcd_param_i = ctr_grid.Parameterize(tpcd_i_points_indexed);
+    auto tpcd_param_j = ctr_grid.Parameterize(tpcd_j_points_indexed);
 
     // Parameterize: setup point cloud -> cgrid correspondences
     auto cgrid_index_ps =
@@ -383,9 +450,17 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     auto tpcd_nonrigid_i = ctr_grid.Warp(tpcd_param_i);
     auto tpcd_nonrigid_j = ctr_grid.Warp(tpcd_param_j);
 
+    // TODO: Put the following pre-processing inside the FillInSlACAlignmentTerm
+    // kernel, if possible.
     auto Cps = tpcd_nonrigid_i.GetPoints();
     auto Cqs = tpcd_nonrigid_j.GetPoints();
     auto Cnormal_ps = tpcd_nonrigid_i.GetPointNormals();
+
+    auto Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
+    auto ti = Ti.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
+
+    auto Rj = Tj.Slice(0, 0, 3).Slice(1, 0, 3).To(device);
+    auto tj = Tj.Slice(0, 0, 3).Slice(1, 3, 4).To(device);
 
     // Transform for required entries
     auto Ti_Cps = (Ri.Matmul(Cps.T())).Add_(ti).T().Contiguous();
@@ -402,14 +477,14 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
     if (visualize) {
         utility::LogInfo("edge {} -> {}", i, j);
         VisualizePCDCorres(tpcd_i, tpcd_j, tpcd_param_i, tpcd_param_j, Tij_icp);
-        // VisualizePCDCorres(tpcd_i, tpcd_j, tpcd_nonrigid_i, tpcd_nonrigid_j,
-        //                    Tij_icp);
+        VisualizePCDCorres(tpcd_i, tpcd_j, tpcd_nonrigid_i, tpcd_nonrigid_j,
+                           Tij_icp);
 
-        // VisualizeWarp(tpcd_param_i, ctr_grid);
-        // VisualizeWarp(tpcd_param_j, ctr_grid);
+        VisualizeWarp(tpcd_param_i, ctr_grid);
+        VisualizeWarp(tpcd_param_j, ctr_grid);
 
-        // VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
-        // VisualizePCDGridCorres(tpcd_param_j, ctr_grid);
+        VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
+        VisualizePCDGridCorres(tpcd_param_j, ctr_grid);
     }
 }
 
@@ -444,18 +519,19 @@ void FillInSLACAlignmentTerm(core::Tensor& AtA,
         auto tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
         // Load correspondences and select points and normals
-        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
-                                               option.GetSubfolderName(), i, j);
-        if (!utility::filesystem::FileExists(corres_fname)) {
+        std::string correspondences_fname = fmt::format(
+                "{}/{:03d}_{:03d}.npy", option.GetSubfolderName(), i, j);
+        if (!utility::filesystem::FileExists(correspondences_fname)) {
             utility::LogWarning("Correspondence {} {} not processed!", i, j);
             continue;
         }
-        core::Tensor corres_ij = core::Tensor::Load(corres_fname).To(device);
+        core::Tensor correspondences_ij =
+                core::Tensor::Load(correspondences_fname).To(device);
 
         // Fill In
         FillInSLACAlignmentTerm(
                 AtA, Atb, residual, ctr_grid, tpcd_i, tpcd_j, Ti, Tj, Tij,
-                corres_ij, i, j, n_frags, option.threshold_, device,
+                correspondences_ij, i, j, n_frags, option.threshold_, device,
                 option.debug_enabled_ && i >= option.debug_start_idx_);
     }
     AtA.Save(fmt::format("{}/hessian.npy", option.GetSubfolderName()));
@@ -597,7 +673,9 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
     // estimation.
     std::vector<std::string> fnames_down =
             PreprocessPointClouds(fnames, option);
-    // Then obtain the correspondences given the pose graph
+
+    // Then obtain the correspondences given the pose graph and save them on
+    // disk.
     GetCorrespondencesForPointClouds(fnames_down, pose_graph, option);
 
     // Fill-in
