@@ -51,9 +51,11 @@ public:
     /// \brief Constructor for the convergence criteria, where we stop
     /// iterations once the criteria are met.
     ///
-    /// \param relative_rmse Relative rmse threshold where we stop iterations.
+    /// \param relative_rmse Relative rmse threshold where we stop iterations
+    /// when \f$ |rmse_{i+1} - rmse_i|/rmse_i < relative rmse\f$.
     /// \param relative_fitness Relative fitness threshold where we stop
-    /// iterations.
+    /// iterations when \f$ |fitness_{i+1} - fitness_i|/fitness_i < relative
+    /// fitness\f$
     OdometryConvergenceCriteria(int iterations,
                                 double relative_rmse = 1e-6,
                                 double relative_fitness = 1e-6)
@@ -145,7 +147,7 @@ public:
 /// iterations by default triggers the implicit conversion.
 /// \param method Method used to apply RGBD odometry.
 /// \param params Parameters used in loss function, including outlier rejection
-/// threshold and huber norm parameters.
+/// threshold and Huber norm parameters.
 /// \return odometry result, with (4, 4) optimized transformation matrix from
 /// source to target, inlier ratio, and fitness.
 OdometryResult RGBDOdometryMultiScale(
@@ -171,12 +173,12 @@ OdometryResult RGBDOdometryMultiScale(
 /// projecting with \p intrinsics.
 /// KinectFusion, ISMAR 2011
 ///
-/// \param source_vertex_map (H, W, 3) Float32 source vertex image obtained by
-/// CreateVertexMap before calling this function.
-/// \param target_vertex_map (H, W, 3) Float32 target vertex image obtained by
-/// CreateVertexMap before calling this function.
-/// \param target_normal_map (H, W, 3) Float32 target normal image obtained by
-/// CreateNormalMap before calling this function.
+/// \param source_vertex_map (rows, cols, channels=3) Float32 source vertex
+/// image obtained by CreateVertexMap before calling this function.
+/// \param target_vertex_map (rows, cols, channels=3) Float32 target vertex
+/// image obtained by CreateVertexMap before calling this function.
+/// \param target_normal_map (rows, cols, channels=3) Float32 target normal
+/// image obtained by CreateNormalMap before calling this function.
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
 /// \param init_source_to_target (4, 4) initial transformation matrix from
 /// source to target.
@@ -204,22 +206,24 @@ OdometryResult ComputeOdometryResultPointToPlane(
 /// projecting with \p intrinsics.
 /// Real-time visual odometry from dense RGB-D images, ICCV Workshops, 2011
 ///
-/// \param source_depth (H, W, 1) Float32 source depth image obtained by
-/// PreprocessDepth before calling this function.
-/// \param target_depth (H, W, 1) Float32 target depth image obtained by
-/// PreprocessDepth before calling this function.
-/// \param source_intensity (H, W, 1) Float32 source intensity image obtained by
-/// RGBToGray before calling this function.
-/// \param target_intensity (H, W, 1) Float32 target intensity image obtained by
-/// RGBToGray before calling this function.
-/// \param target_intensity_dx (H, W, 1) Float32 target intensity gradient image
-/// at x-axis obtained by FilterSobel before calling this function.
-/// \param target_intensity_dy (H, W, 1) Float32 target intensity gradient image
-/// at y-axis obtained by FilterSobel before calling this function.
-/// \param source_vertex_map (H, W, 3) Float32 source vertex image obtained by
-/// CreateVertexMap before calling this function.
+/// \param source_depth (rows, cols, channels=1) Float32 source depth image
+/// obtained by PreprocessDepth before calling this function.
+/// \param target_depth (rows, cols, channels=1) Float32 target depth image
+/// obtained by PreprocessDepth before calling this function.
+/// \param source_intensity (rows, cols, channels=1) Float32 source intensity
+/// image obtained by RGBToGray before calling this function.
+/// \param target_intensity (rows, cols, channels=1) Float32 target intensity
+/// image obtained by RGBToGray before calling this function.
+/// \param target_intensity_dx (rows, cols, channels=1) Float32 target intensity
+/// gradient image at x-axis obtained by FilterSobel before calling this
+/// function.
+/// \param target_intensity_dy (rows, cols, channels=1) Float32 target intensity
+/// gradient image at y-axis obtained by FilterSobel before calling this
+/// function.
+/// \param source_vertex_map (rows, cols, channels=3) Float32 source vertex
+/// image obtained by CreateVertexMap before calling this function.
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
-/// \param init_source_to_target (4, 4) initial transformation matrix from
+/// \param  init_source_to_target (4, 4) initial transformation matrix from
 /// source to target.
 /// \param depth_outlier_trunc Depth difference threshold used to filter
 /// projective associations.
@@ -251,24 +255,28 @@ OdometryResult ComputeOdometryResultIntensity(
 /// projecting with \p intrinsics.
 /// Colored ICP Revisited, ICCV 2017
 ///
-/// \param source_depth (H, W, 1) Float32 source depth image obtained by
-/// PreprocessDepth before calling this function.
-/// \param target_depth (H, W, 1) Float32 target depth image obtained by
-/// PreprocessDepth before calling this function.
-/// \param source_intensity (H, W, 1) Float32 source intensity image obtained by
-/// RGBToGray before calling this function.
-/// \param target_intensity (H, W, 1) Float32 target intensity image obtained by
-/// RGBToGray before calling this function.
-/// \param source_depth_dx (H, W, 1) Float32 source depth gradient image
-/// at x-axis obtained by FilterSobel before calling this function.
-/// \param source_depth_dy (H, W, 1) Float32 source depth gradient image
-/// at y-axis obtained by FilterSobel before calling this function.
-/// \param source_intensity_dx (H, W, 1) Float32 source intensity gradient image
-/// at x-axis obtained by FilterSobel before calling this function.
-/// \param source_intensity_dy (H, W, 1) Float32 source intensity gradient image
-/// at y-axis obtained by FilterSobel before calling this function.
-/// \param target_vertex_map (H, W, 3) Float32 target vertex image obtained by
-/// CreateVertexMap before calling this function.
+/// \param source_depth (rows, cols, channels=1) Float32 source depth image
+/// obtained by PreprocessDepth before calling this function.
+/// \param target_depth (rows, cols, channels=1) Float32 target depth image
+/// obtained by PreprocessDepth before calling this function.
+/// \param source_intensity (rows, cols, channels=1) Float32 source intensity
+/// image obtained by RGBToGray before calling this function.
+/// \param target_intensity (rows, cols, channels=1) Float32 target intensity
+/// image obtained by RGBToGray before calling this function.
+/// \param source_depth_dx (rows, cols, channels=1) Float32 source depth
+/// gradient image at x-axis obtained by FilterSobel before calling this
+/// function.
+/// \param source_depth_dy (rows, cols, channels=1) Float32 source depth
+/// gradient image at y-axis obtained by FilterSobel before calling this
+/// function.
+/// \param source_intensity_dx (rows, cols, channels=1) Float32 source intensity
+/// gradient image at x-axis obtained by FilterSobel before calling this
+/// function.
+/// \param source_intensity_dy (rows, cols, channels=1) Float32 source intensity
+/// gradient image at y-axis obtained by FilterSobel before calling this
+/// function.
+/// \param target_vertex_map (rows, cols, channels=3) Float32 target vertex
+/// image obtained by CreateVertexMap before calling this function.
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
 /// \param init_source_to_target (4, 4) initial transformation matrix from
 /// source to target.
