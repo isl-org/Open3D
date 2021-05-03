@@ -88,7 +88,7 @@
             if (this.className === "active") {
               del(this.url);
             } else {
-              add(this.url);
+              addConnection(this.url);
             }
           };
           menu.appendChild(menuEntry);
@@ -106,14 +106,14 @@
         //     if (this.className === "active") {
         //       del(this.url);
         //     } else {
-        //       add(this.url);
+        //       addConnection(this.url);
         //     }
         //   };
         //   menu.appendChild(menuEntry);
         // }
 
         newUrls.forEach((url) => {
-          add(url);
+          addConnection(url);
         });
       }
 
@@ -135,7 +135,7 @@
       /**
        * Add a WebRTC client connection
        */
-      function add(url) {
+      function addConnection(url) {
         // url = {video: "window_1"}
         var windowId = url.video;
         var videoId = "video_" + windowId;
