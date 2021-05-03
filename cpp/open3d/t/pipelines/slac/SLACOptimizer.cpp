@@ -202,10 +202,8 @@ void GetCorrespondencesForPointClouds(
         core::Tensor T_ij =
                 core::eigen_converter::EigenMatrixToTensor(pose_ij).To(
                         core::Dtype::Float32);
-        // 0.008 ~ 3.0 / 512 * 1.4
-        float dist_threshold =
-                option.voxel_size_ < 0 ? 0.008 : 1.4 * option.voxel_size_;
 
+        float dist_threshold = option.threshold_;
         core::Tensor corres = GetCorrespondencesForPair(
                 i, j, tpcd_i, tpcd_j, T_i, T_j, T_ij, dist_threshold);
 
