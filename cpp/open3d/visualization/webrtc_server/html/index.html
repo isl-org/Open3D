@@ -58,8 +58,8 @@
         let existingUrls = new Set();
         let staleUrls = new Array();
         for (let i = 0; i < menu.children.length; i++) {
-          let menuEntry = menu.children[i];
-          let url = menuEntry.url;
+          let nav = menu.children[i];
+          let url = nav.url;
           existingUrls.add(url);
           if (!validUrls.has(url)) {
             staleUrls.push(url);
@@ -79,49 +79,48 @@
         newUrls.forEach(function (url) {
           let windowId = url.video;
           let videoId = "video_" + windowId;
-          let id = "nav_" + videoId;
-          let menuEntry = document.createElement("a");
-          menuEntry.url = url;
-          menuEntry.text = windowId;
-          menuEntry.id = id;
-          menuEntry.onclick = function () {
+          let navId = "nav_" + videoId;
+          let nav = document.createElement("a");
+          nav.url = url;
+          nav.text = windowId;
+          nav.id = navId;
+          nav.onclick = function () {
             if (this.className === "active") {
-              delConnection(this.url);
+              delConnection(this.windowId);
             } else {
-              addConnection(this.url);
+              addConnection(this.windowId);
             }
           };
-          menu.appendChild(menuEntry);
+          menu.appendChild(nav);
         });
 
         // for (var key in mediaList) {
         //   var url = mediaList[key]; // e.g. url = {video: "window_0"}.
         //   var windowId = url.video; // e.g. "window_0".
         //   var videoId = "video_" + windowId; // e.g. "video_window_0"
-        //   var menuEntry = document.createElement("a");
-        //   menuEntry.url = url;
-        //   menuEntry.text = url.video;
-        //   menuEntry.id = "nav_" + videoId;
-        //   menuEntry.onclick = function () {
+        //   var nav = document.createElement("a");
+        //   nav.url = url;
+        //   nav.text = url.video;
+        //   nav.id = "nav_" + videoId;
+        //   nav.onclick = function () {
         //     if (this.className === "active") {
-        //       delConnection(this.url);
+        //       delConnection(this.url.video);
         //     } else {
-        //       addConnection(this.url);
+        //       addConnection(this.url.video);
         //     }
         //   };
-        //   menu.appendChild(menuEntry);
+        //   menu.appendChild(nav);
         // }
 
         newUrls.forEach((url) => {
-          addConnection(url);
+          addConnection(url.video);
         });
       }
 
       /**
        * Delete a WebRTC client connection
        */
-      function delConnection(url) {
-        var windowId = url.video;
+      function delConnection(windowId) {
         var videoId = "video_" + windowId;
 
         // Disconnect WebRTC connection
@@ -135,9 +134,8 @@
       /**
        * Add a WebRTC client connection
        */
-      function addConnection(url) {
+      function addConnection(windowId) {
         // url = {video: "window_1"}
-        var windowId = url.video;
         var videoId = "video_" + windowId;
 
         // Add a video element to display WebRTC stream
@@ -185,11 +183,11 @@
 
           // Connect video element to WebRTC stream
           var webRtcClient = new WebRtcStreamer(videoId, "", onClose, null);
-          console.log("videoId: " + videoId);
+          console.log("[addConnection] videoId: " + videoId);
 
-          webRtcClient.connect(url.video, /*audio*/ null, webRtcOptions);
-          console.log("url.video: " + url.video);
-          console.log("options: " + webRtcOptions);
+          webRtcClient.connect(windowId, /*audio*/ null, webRtcOptions);
+          console.log("[addConnection] windowId: " + windowId);
+          console.log("[addConnection] options: " + webRtcOptions);
 
           // Highlight the navigation
           var navElt = document.getElementById("nav_" + videoId);
