@@ -37,8 +37,9 @@
         var menu = document.getElementById("menu");
         for (var key in mediaList) {
           var url = mediaList[key]; // e.g. url = {video: "window_0"}.
+          var windowUID = url.video; // e.g. "window_0".
+          var videoTag = "video_" + windowUID; // e.g. "video_window_0"
           var menuEntry = document.createElement("a");
-          var videoTag = "video_" + JSON.stringify(url);
           menuEntry.url = url;
           menuEntry.text = url.video;
           menuEntry.id = "nav_" + videoTag;
@@ -61,7 +62,8 @@
        * Delete a WebRTC client connection
        */
       function del(url) {
-        var videoTag = "video_" + JSON.stringify(url);
+        var windowUID = url.video;
+        var videoTag = "video_" + windowUID;
 
         // Disconnect WebRTC connection
         var webrtcServer = webRtcServerList[videoTag];
@@ -76,8 +78,8 @@
        */
       function add(url) {
         // url = {video: "window_1"}
-        var videoTag = "video_" + JSON.stringify(url);
         var windowUID = url.video;
+        var videoTag = "video_" + windowUID;
 
         // Add a video element to display WebRTC stream
         if (document.getElementById(videoTag) === null) {
