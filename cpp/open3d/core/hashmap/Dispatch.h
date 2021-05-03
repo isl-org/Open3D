@@ -91,8 +91,8 @@ public:
         }
     }
 
-    const T& OPEN3D_HOST_DEVICE operator()(size_t i) const { return data_[i]; }
-    T& OPEN3D_HOST_DEVICE operator()(size_t i) { return data_[i]; }
+    T OPEN3D_HOST_DEVICE Get(size_t i) const { return data_[i]; }
+    void OPEN3D_HOST_DEVICE Set(size_t i, const T& value) { data_[i] = value; }
 
 private:
     T data_[N];
@@ -107,7 +107,7 @@ public:
 #pragma unroll
 #endif
         for (size_t i = 0; i < N; ++i) {
-            hash ^= static_cast<uint64_t>(key(i));
+            hash ^= static_cast<uint64_t>(key.Get(i));
             hash *= UINT64_C(1099511628211);
         }
         return hash;
