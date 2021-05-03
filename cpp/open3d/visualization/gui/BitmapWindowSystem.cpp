@@ -151,25 +151,16 @@ void BitmapWindowSystem::WaitEventsTimeout(double timeout_secs) {
             std::shared_ptr<BitmapEvent> event = impl_->event_queue_.front();
             if (auto event_cast =
                         std::dynamic_pointer_cast<BitmapDrawEvent>(event)) {
-                utility::LogInfo(
-                        "##### BitmapWindowSystem: to pop BitmapDrawEvent");
             }
             if (auto event_cast =
                         std::dynamic_pointer_cast<BitmapMouseEvent>(event)) {
-                utility::LogInfo(
-                        "##### BitmapWindowSystem: to pop BitmapMouseEvent");
             }
             if (auto event_cast =
                         std::dynamic_pointer_cast<BitmapKeyEvent>(event)) {
-                utility::LogInfo(
-                        "##### BitmapWindowSystem: to pop BitmapKeyEvent");
             }
             if (auto event_cast =
                         std::dynamic_pointer_cast<BitmapTextInputEvent>(
                                 event)) {
-                utility::LogInfo(
-                        "##### BitmapWindowSystem: to pop "
-                        "BitmapTextInputEvent");
             }
             event->Execute();
             impl_->event_queue_.pop();
@@ -223,26 +214,22 @@ void BitmapWindowSystem::DestroyWindow(OSWindow w) {
 void BitmapWindowSystem::PostRedrawEvent(OSWindow w) {
     auto hw = (BitmapWindow *)w;
     impl_->event_queue_.push(std::make_shared<BitmapDrawEvent>(hw));
-    utility::LogInfo("##### BitmapWindowSystem: pushed BitmapDrawEvent");
 }
 
 void BitmapWindowSystem::PostMouseEvent(OSWindow w, const MouseEvent &e) {
     auto hw = (BitmapWindow *)w;
     impl_->event_queue_.push(std::make_shared<BitmapMouseEvent>(hw, e));
-    utility::LogInfo("##### BitmapWindowSystem: pushed BitmapMouseEvent");
 }
 
 void BitmapWindowSystem::PostKeyEvent(OSWindow w, const KeyEvent &e) {
     auto hw = (BitmapWindow *)w;
     impl_->event_queue_.push(std::make_shared<BitmapKeyEvent>(hw, e));
-    utility::LogInfo("##### BitmapWindowSystem: pushed BitmapKeyEvent");
 }
 
 void BitmapWindowSystem::PostTextInputEvent(OSWindow w,
                                             const TextInputEvent &e) {
     auto hw = (BitmapWindow *)w;
     impl_->event_queue_.push(std::make_shared<BitmapTextInputEvent>(hw, e));
-    utility::LogInfo("##### BitmapWindowSystem: pushed BitmapTextInputEvent");
 }
 
 bool BitmapWindowSystem::GetWindowIsVisible(OSWindow w) const { return false; }
