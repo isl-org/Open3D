@@ -984,8 +984,6 @@ void EstimateRangeCPU
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
-    using std::ceil;
-    using std::floor;
     using std::max;
     using std::min;
 #endif
@@ -1020,11 +1018,11 @@ void EstimateRangeCPU
                     u /= down_factor;
                     v /= down_factor;
 
-                    v_min = min(static_cast<int>(floor(v)), v_min);
-                    v_max = max(static_cast<int>(ceil(v)), v_max);
+                    v_min = min(static_cast<int>(floorf(v)), v_min);
+                    v_max = max(static_cast<int>(ceilf(v)), v_max);
 
-                    u_min = min(static_cast<int>(floor(u)), u_min);
-                    u_max = max(static_cast<int>(ceil(u)), u_max);
+                    u_min = min(static_cast<int>(floorf(u)), u_min);
+                    u_max = max(static_cast<int>(ceilf(u)), u_max);
 
                     z_min = min(z_min, zc);
                     z_max = max(z_max, zc);
@@ -1040,9 +1038,9 @@ void EstimateRangeCPU
 
                 // Divide the rectangle into small 16x16 fragments
                 int frag_v_count =
-                        ceil(float(v_max - v_min + 1) / float(fragment_size));
+                        ceilf(float(v_max - v_min + 1) / float(fragment_size));
                 int frag_u_count =
-                        ceil(float(u_max - u_min + 1) / float(fragment_size));
+                        ceilf(float(u_max - u_min + 1) / float(fragment_size));
 
                 int frag_count = frag_v_count * frag_u_count;
                 int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
@@ -1290,9 +1288,9 @@ void RayCastCPU
                         float z_g = z_o + t * z_d;
 
                         // Block coordinate and look up
-                        int x_b = static_cast<int>(floor(x_g / block_size));
-                        int y_b = static_cast<int>(floor(y_g / block_size));
-                        int z_b = static_cast<int>(floor(z_g / block_size));
+                        int x_b = static_cast<int>(floorf(x_g / block_size));
+                        int y_b = static_cast<int>(floorf(y_g / block_size));
+                        int z_b = static_cast<int>(floorf(z_g / block_size));
 
                         Key key;
                         key(0) = x_b;
@@ -1430,9 +1428,12 @@ void RayCastCPU
                         // TODO(wei): simplify the flow by splitting the
                         // functions given what is enabled
                         if (enable_color || enable_normal) {
-                            int x_b = static_cast<int>(floor(x_g / block_size));
-                            int y_b = static_cast<int>(floor(y_g / block_size));
-                            int z_b = static_cast<int>(floor(z_g / block_size));
+                            int x_b =
+                                    static_cast<int>(floorf(x_g / block_size));
+                            int y_b =
+                                    static_cast<int>(floorf(y_g / block_size));
+                            int z_b =
+                                    static_cast<int>(floorf(z_g / block_size));
                             float x_v = (x_g - float(x_b) * block_size) /
                                         voxel_size;
                             float y_v = (y_g - float(y_b) * block_size) /
@@ -1453,9 +1454,9 @@ void RayCastCPU
                                 cache.Update(x_b, y_b, z_b, block_addr);
                             }
 
-                            int x_v_floor = static_cast<int>(floor(x_v));
-                            int y_v_floor = static_cast<int>(floor(y_v));
-                            int z_v_floor = static_cast<int>(floor(z_v));
+                            int x_v_floor = static_cast<int>(floorf(x_v));
+                            int y_v_floor = static_cast<int>(floorf(y_v));
+                            int z_v_floor = static_cast<int>(floorf(z_v));
 
                             float ratio_x = x_v - float(x_v_floor);
                             float ratio_y = y_v - float(y_v_floor);
