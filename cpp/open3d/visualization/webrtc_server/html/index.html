@@ -24,6 +24,14 @@
         return contentDiv;
       }
 
+      function setDifference(setA, setB) {
+        let _difference = new Set(setA);
+        for (let elem of setB) {
+          _difference.delete(elem);
+        }
+        return _difference;
+      }
+
       /**
        * Init device list
        * @param {object} mediaList A map of media. E.g.
@@ -36,37 +44,46 @@
        * var videoTag = "video_" + windowUID; // "video_window_0"
        */
       function updateMediaList(mediaList) {
-        // Create navigation menu
-        var menu = document.getElementById("menu");
+        // Create navigation menu.
+        let menu = document.getElementById("menu");
 
-        // Collect updated URLs (from server).
-        var validUrls = new Set();
-        for (var key in mediaList) {
+        // The current video source that the server is serving.
+        let validUrls = new Set();
+        for (let key in mediaList) {
           validUrls.add(mediaList[key]);
         }
-        // Collect existing URLs in the menu bar. At launch, the set is empty.
-        var existingUrls = new Set();
-        for (var i = 0; i < menu.children.length; i++) {
-          var menuEntry = menu.children[i];
-          existingUrls.add(menuEntry.url);
+
+        // Collect stale and new URLs. This is needed to avoid "removing while
+        // iterating".
+        let existingUrls = new Set();
+        let staleUrls = new Array();
+        for (let i = 0; i < menu.children.length; i++) {
+          let menuEntry = menu.children[i];
+          let url = menuEntry.url;
+          existingUrls.add(url);
+          if (!validUrls.has(url)) {
+            staleUrls.push(url);
+          }
         }
+        let newUrls = [...setDifference(validUrls, existingUrls)];
 
-        // 1. The client connect to all newly added URLs.
-        // 2. Stale URLs will be removed from menu bar.
-        // 3. Existing menu entries that are not stale will be kept unchanged.
-        var newUrls = new Array();
-        var staleUrls = new Array();
+        // Remove stale URLs.
+        staleUrls.forEach(function (url) {
+          let windowUID = url.video;
+          let videoTag = "video_" + windowUID;
+          let id = "nav_" + videoTag;
+          document.getElementById(id).remove();
+        });
 
-        // Remove unavailable entries. Keep the "active" status of existing
-        // entries.
-        for (var key in mediaList) {
-          var url = mediaList[key]; // e.g. url = {video: "window_0"}.
-          var windowUID = url.video; // e.g. "window_0".
-          var videoTag = "video_" + windowUID; // e.g. "video_window_0"
-          var menuEntry = document.createElement("a");
+        // Append and connect to new URLs.
+        newUrls.forEach(function (url) {
+          let windowUID = url.video;
+          let videoTag = "video_" + windowUID;
+          let id = "nav_" + videoTag;
+          let menuEntry = document.createElement("a");
           menuEntry.url = url;
-          menuEntry.text = url.video;
-          menuEntry.id = "nav_" + videoTag;
+          menuEntry.text = windowUID;
+          menuEntry.id = id;
           menuEntry.onclick = function () {
             if (this.className === "active") {
               del(this.url);
@@ -75,9 +92,27 @@
             }
           };
           menu.appendChild(menuEntry);
-        }
+        });
 
-        mediaList.forEach((url) => {
+        // for (var key in mediaList) {
+        //   var url = mediaList[key]; // e.g. url = {video: "window_0"}.
+        //   var windowUID = url.video; // e.g. "window_0".
+        //   var videoTag = "video_" + windowUID; // e.g. "video_window_0"
+        //   var menuEntry = document.createElement("a");
+        //   menuEntry.url = url;
+        //   menuEntry.text = url.video;
+        //   menuEntry.id = "nav_" + videoTag;
+        //   menuEntry.onclick = function () {
+        //     if (this.className === "active") {
+        //       del(this.url);
+        //     } else {
+        //       add(this.url);
+        //     }
+        //   };
+        //   menu.appendChild(menuEntry);
+        // }
+
+        newUrls.forEach((url) => {
           add(url);
         });
       }
@@ -142,6 +177,10 @@
             // Un-highlight the navigation
             var navElt = document.getElementById("nav_" + videoTag);
             navElt.className = "";
+
+            WebRtcStreamer.getMediaList()
+              .then((response) => response.json())
+              .then((response) => updateMediaList(response));
           };
 
           // Connect video element to WebRTC stream
