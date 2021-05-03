@@ -97,7 +97,7 @@ void EmptyBox() {
 void BoxWithOjects() {
     std::shared_ptr<geometry::TriangleMesh> mesh = io::CreateMeshFromFile(
             "../../../examples/test_data/monkey/monkey.obj");
-    AddDrawWindow({mesh}, "Open3D BoxWithOjects", 640, 480);
+    AddDrawWindow({mesh}, "Open3D BoxWithOjects", 800, 600);
 
     // const double pc_rad = 1.0;
     // const double r = 0.4;
