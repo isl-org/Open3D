@@ -1258,17 +1258,17 @@ void RayCastCPU
                                                                   block_addr);
                         } else {
                             Key key;
-                            key(0) = x_b + dx_b;
-                            key(1) = y_b + dy_b;
-                            key(2) = z_b + dz_b;
+                            key.Set(0, x_b + dx_b);
+                            key.Set(1, y_b + dy_b);
+                            key.Set(2, z_b + dz_b);
 
-                            int block_addr =
-                                    cache.Check(key(0), key(1), key(2));
+                            int block_addr = cache.Check(key.Get(0), key.Get(1),
+                                                         key.Get(2));
                             if (block_addr < 0) {
                                 auto iter = hashmap_impl.find(key);
                                 if (iter == hashmap_impl.end()) return nullptr;
                                 block_addr = iter->second;
-                                cache.Update(key(0), key(1), key(2),
+                                cache.Update(key.Get(0), key.Get(1), key.Get(2),
                                              block_addr);
                             }
 
@@ -1293,9 +1293,9 @@ void RayCastCPU
                         int z_b = static_cast<int>(floorf(z_g / block_size));
 
                         Key key;
-                        key(0) = x_b;
-                        key(1) = y_b;
-                        key(2) = z_b;
+                        key.Set(0, x_b);
+                        key.Set(1, y_b);
+                        key.Set(2, z_b);
 
                         int block_addr = cache.Check(x_b, y_b, z_b);
                         if (block_addr < 0) {
@@ -1442,9 +1442,9 @@ void RayCastCPU
                                         voxel_size;
 
                             Key key;
-                            key(0) = x_b;
-                            key(1) = y_b;
-                            key(2) = z_b;
+                            key.Set(0, x_b);
+                            key.Set(1, y_b);
+                            key.Set(2, z_b);
 
                             int block_addr = cache.Check(x_b, y_b, z_b);
                             if (block_addr < 0) {
