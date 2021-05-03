@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 
@@ -55,9 +54,7 @@ struct Slider::Impl {
 };
 
 Slider::Slider(Type type) : impl_(new Slider::Impl()) {
-    std::stringstream s;
-    s << "##slider_" << g_next_slider_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##slider_" + std::to_string(g_next_slider_id++);
     impl_->type_ = type;
 }
 
