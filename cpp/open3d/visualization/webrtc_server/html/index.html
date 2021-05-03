@@ -35,6 +35,18 @@
       function updateMediaList(mediaList) {
         // Create navigation menu
         var menu = document.getElementById("menu");
+
+        // Collect available video tags (from server).
+        var videoTags = new Set();
+        for (var key in mediaList) {
+          var url = mediaList[key]; // e.g. url = {video: "window_0"}.
+          var windowUID = url.video; // e.g. "window_0".
+          var videoTag = "video_" + windowUID; // e.g. "video_window_0"
+          videoTags.add(videoTag);
+        }
+
+        // Remove unavailable entries. Keep the "active" status of existing
+        // entries.
         for (var key in mediaList) {
           var url = mediaList[key]; // e.g. url = {video: "window_0"}.
           var windowUID = url.video; // e.g. "window_0".
