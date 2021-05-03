@@ -528,7 +528,7 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
     EXPECT_TRUE(pcd_out.GetPoints().AllClose(t_vertex_ref));
     EXPECT_TRUE(pcd_out.HasPointNormals());
     EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
-    EXPECT_False(pcd_out.HasPointColors());
+    EXPECT_FALSE(pcd_out.HasPointColors());
 
     // test with color
     pcd_out = t::geometry::PointCloud::CreateFromRGBDImage(

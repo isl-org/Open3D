@@ -288,6 +288,8 @@ public:
     /// x &= x > max_value ? clip_fill : x
     /// \f}
     /// Use INFINITY, NAN or 0.0 (default) for \p clip_fill.
+    /// \return Transformed image of type Float32, with out-of-range pixels
+    /// clipped and assigned the \p clip_fill value.
     Image ClipTransform(float scale,
                         float min_value,
                         float max_value,
@@ -303,7 +305,8 @@ public:
     /// INFINITY or 0.0 (default). Must be consistent with \p clip_fill in
     /// ClipTransform.
     ///
-    /// \returns Vertex map of shape (rows, cols, channels=3) and Dtype Float32.
+    /// \returns Vertex map of shape (rows, cols, channels=3) and Dtype Float32,
+    /// with invalid points assigned the \p invalid_fill value.
     Image CreateVertexMap(const core::Tensor &intrinsics,
                           float invalid_fill = 0.0f);
 
@@ -319,7 +322,8 @@ public:
     /// if no valid neighbor is found. Use NAN, INFINITY or 0.0 (default). Must
     /// be consistent with \p clip_fill in CreateVertexMap.
     ///
-    /// \returns Normal map of shape (rows, cols, channels=3) and Dtype Float32.
+    /// \returns Normal map of shape (rows, cols, channels=3) and Dtype Float32,
+    /// with invalid normals assigned the \p invalid_fill value.
     Image CreateNormalMap(float invalid_fill = 0.0f);
 
     /// \brief Colorize an input depth image (with Dtype UInt16 or Float32).
