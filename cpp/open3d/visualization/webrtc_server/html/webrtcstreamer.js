@@ -3,16 +3,16 @@ var WebRtcStreamer = (function () {
   /**
    * Interface with WebRTC-streamer API
    * @constructor
-   * @param {string} videoElement Id of the video element tag
+   * @param {string} videoElt Id of the video element tag
    * @param {string} srvurl Url of WebRTC-streamer (default is current location)
    * @param {object} commsFetch An alternative implementation of fetch() that
    * uses Jupyter's COMMS interface. If null, the default fetch() will be used.
    */
-  function WebRtcStreamer(videoElement, srvurl, onClose, commsFetch = null) {
-    if (typeof videoElement === "string") {
-      this.videoElement = document.getElementById(videoElement);
+  function WebRtcStreamer(videoElt, srvurl, onClose, commsFetch = null) {
+    if (typeof videoElt === "string") {
+      this.videoElt = document.getElementById(videoElt);
     } else {
-      this.videoElement = videoElement;
+      this.videoElt = videoElt;
     }
     this.srvurl =
       srvurl ||
@@ -111,7 +111,7 @@ var WebRtcStreamer = (function () {
   };
 
   /**
-   * Connect a WebRTC Stream to videoElement
+   * Connect a WebRTC Stream to videoElt
    * @param {string} videourl Id of WebRTC video stream, a.k.a. windowUID,
    * e.g. window_0.
    * @param {string} audiourl Od of WebRTC audio stream
@@ -164,10 +164,10 @@ var WebRtcStreamer = (function () {
   };
 
   WebRtcStreamer.prototype.addEventListeners = function (windowUID) {
-    if (this.videoElement) {
-      var parentDivElt = this.videoElement.parentElement;
+    if (this.videoElt) {
+      var parentDivElt = this.videoElt.parentElement;
       var controllerDivElt = document.createElement("div");
-      parentDivElt.insertBefore(controllerDivElt, this.videoElement);
+      parentDivElt.insertBefore(controllerDivElt, this.videoElt);
 
       var heightInputElt = document.createElement("input");
       heightInputElt.id = windowUID + "_height_input";
@@ -204,7 +204,7 @@ var WebRtcStreamer = (function () {
       };
       controllerDivElt.appendChild(resizeButtonElt);
 
-      this.videoElement.onloadedmetadata = function () {
+      this.videoElt.onloadedmetadata = function () {
         console.log("width is", this.videoWidth);
         console.log("height is", this.videoHeight);
         var heightInputElt = document.getElementById(
@@ -219,7 +219,7 @@ var WebRtcStreamer = (function () {
         }
       };
 
-      this.videoElement.addEventListener("mousedown", (event) => {
+      this.videoElt.addEventListener("mousedown", (event) => {
         var open3dMouseEvent = {
           window_uid: windowUID,
           class_name: "MouseEvent",
@@ -234,7 +234,7 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
-      this.videoElement.addEventListener("touchstart", (event) => {
+      this.videoElt.addEventListener("touchstart", (event) => {
         event.preventDefault();
         var rect = event.target.getBoundingClientRect();
         var open3dMouseEvent = {
@@ -251,7 +251,7 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
-      this.videoElement.addEventListener("mouseup", (event) => {
+      this.videoElt.addEventListener("mouseup", (event) => {
         var open3dMouseEvent = {
           window_uid: windowUID,
           class_name: "MouseEvent",
@@ -266,7 +266,7 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
-      this.videoElement.addEventListener("touchend", (event) => {
+      this.videoElt.addEventListener("touchend", (event) => {
         event.preventDefault();
         var rect = event.target.getBoundingClientRect();
         var open3dMouseEvent = {
@@ -284,7 +284,7 @@ var WebRtcStreamer = (function () {
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
       this.v;
-      this.videoElement.addEventListener("mousemove", (event) => {
+      this.videoElt.addEventListener("mousemove", (event) => {
         // TODO: Known differences. Currently only left-key drag works.
         // - Open3D: L=1, M=2, R=4
         // - JavaScript: L=1, R=2, M=4
@@ -301,7 +301,7 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
-      this.videoElement.addEventListener("touchmove", (event) => {
+      this.videoElt.addEventListener("touchmove", (event) => {
         // TODO: Known differences. Currently only left-key drag works.
         // - Open3D: L=1, M=2, R=4
         // - JavaScript: L=1, R=2, M=4
@@ -320,7 +320,7 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
-      this.videoElement.addEventListener("mouseleave", (event) => {
+      this.videoElt.addEventListener("mouseleave", (event) => {
         var open3dMouseEvent = {
           window_uid: windowUID,
           class_name: "MouseEvent",
@@ -335,7 +335,7 @@ var WebRtcStreamer = (function () {
         };
         this.dataChannel.send(JSON.stringify(open3dMouseEvent));
       });
-      this.videoElement.addEventListener(
+      this.videoElt.addEventListener(
         "wheel",
         (event) => {
           // Prevent propagating the wheel event to the browser.
@@ -375,11 +375,11 @@ var WebRtcStreamer = (function () {
   };
 
   /**
-   * Disconnect a WebRTC Stream and clear videoElement source
+   * Disconnect a WebRTC Stream and clear videoElt source
    */
   WebRtcStreamer.prototype.disconnect = function () {
-    if (this.videoElement) {
-      this.videoElement.src = "";
+    if (this.videoElt) {
+      this.videoElt.src = "";
     }
     if (this.pc) {
       WebRtcStreamer.remoteCall(
@@ -510,16 +510,16 @@ var WebRtcStreamer = (function () {
       console.log(
         "oniceconnectionstatechange  state: " + pc.iceConnectionState
       );
-      if (bind.videoElement) {
+      if (bind.videoElt) {
         if (pc.iceConnectionState === "connected") {
-          bind.videoElement.style.opacity = "1.0";
+          bind.videoElt.style.opacity = "1.0";
         } else if (pc.iceConnectionState === "disconnected") {
-          bind.videoElement.style.opacity = "0.25";
+          bind.videoElt.style.opacity = "0.25";
         } else if (
           pc.iceConnectionState === "failed" ||
           pc.iceConnectionState === "closed"
         ) {
-          bind.videoElement.style.opacity = "0.5";
+          bind.videoElt.style.opacity = "0.5";
         } else if (pc.iceConnectionState === "new") {
           bind.getIceCandidate.call(bind);
         }
@@ -615,13 +615,13 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.onAddStream = function (event) {
     console.log("Remote track added:" + JSON.stringify(event));
 
-    this.videoElement.srcObject = event.stream;
-    var promise = this.videoElement.play();
+    this.videoElt.srcObject = event.stream;
+    var promise = this.videoElt.play();
     if (promise !== undefined) {
       var bind = this;
       promise.catch(function (error) {
         console.warn("error:" + error);
-        bind.videoElement.setAttribute("controls", true);
+        bind.videoElt.setAttribute("controls", true);
       });
     }
   };
