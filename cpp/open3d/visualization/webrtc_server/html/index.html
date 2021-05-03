@@ -27,22 +27,22 @@
       /**
        * Init device list
        * @param {object} mediaList A map of media. E.g.
-       * mediaList = {
+       * var mediaList = {
        *  0: {video: "window_0"},
        *  1: {video: "window_1"},
        * }
+       * var url = mediaList["0"];            // {video: "window_0"}
+       * var windowUID = url.video;           // "window_0"
+       * var videoTag = "video_" + windowUID; // "video_window_0"
        */
       function updateMediaList(mediaList) {
         // Create navigation menu
         var menu = document.getElementById("menu");
 
         // Collect available video tags (from server).
-        var videoTags = new Set();
+        var validUrls = new Set();
         for (var key in mediaList) {
-          var url = mediaList[key]; // e.g. url = {video: "window_0"}.
-          var windowUID = url.video; // e.g. "window_0".
-          var videoTag = "video_" + windowUID; // e.g. "video_window_0"
-          videoTags.add(videoTag);
+          validUrls.add(mediaList[key]);
         }
 
         // Remove unavailable entries. Keep the "active" status of existing
