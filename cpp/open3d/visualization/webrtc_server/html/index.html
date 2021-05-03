@@ -39,9 +39,6 @@
        *  0: {video: "window_0"},
        *  1: {video: "window_1"},
        * }
-       * var url = mediaList["0"];          // {video: "window_0"}
-       * var windowId = url.video;          // "window_0"
-       * var videoId = "video_" + windowId; // "video_window_0"
        */
       function updateMediaList(mediaList) {
         // Create navigation menu.
@@ -50,9 +47,7 @@
         // The current video source that the server is serving.
         let validWindowIds = new Set();
         for (let key in mediaList) {
-          let url = mediaList[key];
-          let windowId = url.video;
-          validWindowIds.add(windowId);
+          validWindowIds.add(mediaList[key].video);
         }
 
         // Collect stale and new URLs. This is needed to avoid "removing while
@@ -61,8 +56,7 @@
         let staleWindowIds = new Array();
         for (let i = 0; i < menu.children.length; i++) {
           let navElt = menu.children[i];
-          let url = navElt.url;
-          let windowId = url.video;
+          let windowId = navElt.windowId;
           existingWindowIds.add(windowId);
           if (!validWindowIds.has(windowId)) {
             staleWindowIds.push(windowId);
@@ -85,11 +79,15 @@
           let navId = "nav_" + videoId;
           let navElt = document.createElement("a");
           navElt.text = windowId;
+          navElt.windowId = windowId;
           navElt.id = navId;
           navElt.onclick = function () {
+            console.log("navElt.onclick");
             if (this.className === "active") {
+              console.log("active");
               delConnection(this.windowId);
             } else {
+              console.log("non-active");
               addConnection(this.windowId);
             }
           };
@@ -105,6 +103,7 @@
        * Delete a WebRTC client connection
        */
       function delConnection(windowId) {
+        console.log("delConnection: ", windowId);
         var videoId = "video_" + windowId;
 
         // Disconnect WebRTC connection
