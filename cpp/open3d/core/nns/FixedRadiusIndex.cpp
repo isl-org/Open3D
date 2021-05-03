@@ -100,6 +100,19 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                   hash_table_cell_splits_.GetShape()[0],
                                   hash_table_cell_splits_.GetDataPtr<int64_t>(),
                                   hash_table_index_.GetDataPtr<int64_t>());
+
+        // Sort dataset points by hash id.
+        sorted_dataset_indices_ = Tensor::Empty({int64_t(num_dataset_points)},
+                                                Dtype::Int64, device);
+        sorted_dataset_points_ =
+                Tensor::Empty({int64_t(num_dataset_points), 3}, dtype, device);
+        for (auto i = 0; i < num_dataset_points; ++i) {
+            sorted_dataset_indices_[i] = hash_table_index_[i];
+            int64_t idx = hash_table_index_[i].Item<int64_t>();
+            sorted_dataset_points_[i] = dataset_points_[idx];
+        }
+        hash_table_index_ =
+                Tensor::Arange(0, num_dataset_points, 1, Dtype::Int64, device);
     });
     return true;
 #else
@@ -144,17 +157,20 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
+
         // Determine temp_size.
+        auto *dataset_point_ptr = sorted_dataset_points_.GetDataPtr<scalar_t>();
+        auto *hash_table_index_ptr = hash_table_index_.GetDataPtr<int64_t>();
         FixedRadiusSearchCUDA(
                 temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
-                num_dataset_points, dataset_points_.GetDataPtr<scalar_t>(),
-                num_query_points, query_points_.GetDataPtr<scalar_t>(),
-                scalar_t(radius), points_row_splits_.size(),
-                points_row_splits_.data(), queries_row_splits.size(),
-                queries_row_splits.data(), hash_table_splits_.data(),
+                num_dataset_points, dataset_point_ptr, num_query_points,
+                query_points_.GetDataPtr<scalar_t>(), scalar_t(radius),
+                points_row_splits_.size(), points_row_splits_.data(),
+                queries_row_splits.size(), queries_row_splits.data(),
+                hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
                 hash_table_cell_splits_.GetDataPtr<int64_t>(),
-                hash_table_index_.GetDataPtr<int64_t>(), output_allocator);
+                hash_table_index_ptr, output_allocator);
 
         Tensor temp_tensor =
                 Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
@@ -163,25 +179,35 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         // Actually run the function.
         FixedRadiusSearchCUDA(
                 temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
-                num_dataset_points, dataset_points_.GetDataPtr<scalar_t>(),
-                num_query_points, query_points_.GetDataPtr<scalar_t>(),
-                scalar_t(radius), points_row_splits_.size(),
-                points_row_splits_.data(), queries_row_splits.size(),
-                queries_row_splits.data(), hash_table_splits_.data(),
+                num_dataset_points, dataset_point_ptr, num_query_points,
+                query_points_.GetDataPtr<scalar_t>(), scalar_t(radius),
+                points_row_splits_.size(), points_row_splits_.data(),
+                queries_row_splits.size(), queries_row_splits.data(),
+                hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
                 hash_table_cell_splits_.GetDataPtr<int64_t>(),
-                hash_table_index_.GetDataPtr<int64_t>(), output_allocator);
+                hash_table_index_ptr, output_allocator);
 
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
 
+        // Map sorted indices.
+        Tensor indices_tmp = Tensor::Empty(
+                indices.GetShape(), indices.GetDtype(), indices.GetDevice());
+        for (auto i = 0; i < indices.GetShape()[0]; ++i) {
+            int64_t idx = indices[i].Item<int64_t>();
+            indices_tmp[i] = sorted_dataset_indices_[idx];
+        }
+
+        // Sort indices and distances in descending order of distance.
         if (sort) {
             int64_t num_indices = indices.GetShape()[0];
             SortPairs(num_indices, num_query_points,
                       neighbors_row_splits.GetDataPtr<int64_t>(),
-                      indices.GetDataPtr<int64_t>(),
+                      indices_tmp.GetDataPtr<int64_t>(),
                       distances.GetDataPtr<scalar_t>());
         }
+        indices = indices_tmp;
     });
     return std::make_tuple(indices, distances, neighbors_row_splits);
 #else
@@ -220,19 +246,33 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
+
+        auto *dataset_point_ptr = sorted_dataset_points_.GetDataPtr<scalar_t>();
+
         // Determine temp_size.
-        HybridSearchCUDA(
-                num_dataset_points, dataset_points_.GetDataPtr<scalar_t>(),
-                num_query_points, query_points_.GetDataPtr<scalar_t>(),
-                scalar_t(radius), max_knn, points_row_splits_.size(),
-                points_row_splits_.data(), queries_row_splits.size(),
-                queries_row_splits.data(), hash_table_splits_.data(),
-                hash_table_cell_splits_.GetShape()[0],
-                hash_table_cell_splits_.GetDataPtr<int64_t>(),
-                hash_table_index_.GetDataPtr<int64_t>(), output_allocator);
+        HybridSearchCUDA(num_dataset_points, dataset_point_ptr,
+                         num_query_points, query_points_.GetDataPtr<scalar_t>(),
+                         scalar_t(radius), max_knn, points_row_splits_.size(),
+                         points_row_splits_.data(), queries_row_splits.size(),
+                         queries_row_splits.data(), hash_table_splits_.data(),
+                         hash_table_cell_splits_.GetShape()[0],
+                         hash_table_cell_splits_.GetDataPtr<int64_t>(),
+                         hash_table_index_.GetDataPtr<int64_t>(),
+                         output_allocator);
 
         neighbors_index = output_allocator.NeighborsIndex();
         neighbors_distance = output_allocator.NeighborsDistance();
+
+        // Map sorted indices.
+        Tensor indices_tmp = Tensor::Empty(neighbors_index.GetShape(),
+                                           neighbors_index.GetDtype(),
+                                           neighbors_index.GetDevice());
+        for (auto i = 0; i < neighbors_index.GetShape()[0]; ++i) {
+            int64_t idx = neighbors_index[i].Item<int64_t>();
+            indices_tmp[i] =
+                    idx > 0 ? sorted_dataset_indices_[idx] : neighbors_index[i];
+        }
+        neighbors_index = indices_tmp;
     });
     return std::make_pair(neighbors_index.View({num_query_points, max_knn}),
                           neighbors_distance.View({num_query_points, max_knn}));

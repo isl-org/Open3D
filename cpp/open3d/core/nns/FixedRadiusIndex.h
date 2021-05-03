@@ -93,6 +93,8 @@ protected:
     std::vector<int64_t> hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
+    Tensor sorted_dataset_points_;
+    Tensor sorted_dataset_indices_;
 };
 
 template <class T>
