@@ -47,8 +47,7 @@ void ClassMethodDocInject(py::module& pybind_module,
                           const std::string& class_name,
                           const std::string& function_name,
                           const std::unordered_map<std::string, std::string>&
-                                  map_parameter_body_docs,
-                          bool skip_init) {
+                                  map_parameter_body_docs) {
     // Get function
     PyObject* module = pybind_module.ptr();
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
@@ -79,29 +78,13 @@ void ClassMethodDocInject(py::module& pybind_module,
         return;
     }
 
-    if (function_name == "__init__") {
-        // TODO: parse __init__ separately, currently __init__ can be
-        // overloaded which might cause parsing error. So we only do
-        // namespace fix and skip the parsing.
-        //
-        // If we know for sure that "__init__" is not overloaded, the doc
-        // injection should still work. In this case, skip_init == false.
-        if (skip_init) {
-            std::string pybind_doc = f->m_ml->ml_doc;
-            pybind_doc = FunctionDoc::NamespaceFix(pybind_doc);
-            f->m_ml->ml_doc = strdup(pybind_doc.c_str());
-            return;
-        }
-    }
-
     // Parse existing docstring to FunctionDoc
     FunctionDoc fd(f->m_ml->ml_doc);
 
     // Inject docstring
     for (auto& overload : fd.overload_docs_) {
         for (ArgumentDoc& ad : overload.argument_docs_) {
-            if (map_parameter_body_docs.find(ad.name_) !=
-                map_parameter_body_docs.end()) {
+            if (map_parameter_body_docs.count(ad.name_) > 0) {
                 ad.body_ = map_parameter_body_docs.at(ad.name_);
             }
         }
@@ -131,8 +114,7 @@ void FunctionDocInject(py::module& pybind_module,
     // Inject docstring: repeat for each overload
     for (auto& overload : fd.overload_docs_) {
         for (ArgumentDoc& ad : overload.argument_docs_) {
-            if (map_parameter_body_docs.find(ad.name_) !=
-                map_parameter_body_docs.end()) {
+            if (map_parameter_body_docs.count(ad.name_) > 0) {
                 ad.body_ = map_parameter_body_docs.at(ad.name_);
             }
         }
@@ -172,7 +154,7 @@ size_t FunctionDoc::ParseSummary() {
     size_t arrow_pos = pybind_doc_.find(" -> ", doc_pos_[0]);
     size_t summary_end_pos = std::string::npos;
     if (arrow_pos != std::string::npos) {
-        overload_docs_.push_back(overload_docs_t{});
+        overload_docs_.push_back(OverloadDocs{});
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
                 result_type_pos +
@@ -303,13 +285,15 @@ std::string FunctionDoc::ToGoogleDocString() const {
         }
 
         // Return
-        rc << std::endl;
-        rc << "Returns:" << std::endl;
-        rc << indent << overload.return_doc_.type_;
-        if (overload.return_doc_.body_ != "") {
-            rc << ": " << overload.return_doc_.body_;
+        if (name_ != "__init__") {
+            rc << std::endl;
+            rc << "Returns:" << std::endl;
+            rc << indent << overload.return_doc_.type_;
+            if (overload.return_doc_.body_ != "") {
+                rc << ": " << overload.return_doc_.body_;
+            }
+            rc << std::endl;
         }
-        rc << std::endl;
     }
     return rc.str();
 }

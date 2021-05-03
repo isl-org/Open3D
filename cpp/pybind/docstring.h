@@ -120,14 +120,14 @@ protected:
                                       const std::string& white_space = " \t\n");
 
 public:
-    struct overload_docs_t {
+    struct OverloadDocs {
         std::vector<ArgumentDoc> argument_docs_;
         ArgumentDoc return_doc_;
         std::string summary_ = "";
     };
     std::string name_ = "";
     std::string preamble_ = "";
-    std::vector<overload_docs_t> overload_docs_;
+    std::vector<OverloadDocs> overload_docs_;
 
 protected:
     std::string pybind_doc_ = "";
@@ -150,8 +150,7 @@ void ClassMethodDocInject(
         const std::string& function_name,
         const std::unordered_map<std::string, std::string>&
                 map_parameter_body_docs =
-                        std::unordered_map<std::string, std::string>(),
-        bool skip_init = true);
+                        std::unordered_map<std::string, std::string>());
 
 extern py::handle static_property;
 
