@@ -86,7 +86,7 @@
           menuEntry.id = id;
           menuEntry.onclick = function () {
             if (this.className === "active") {
-              del(this.url);
+              delConnection(this.url);
             } else {
               addConnection(this.url);
             }
@@ -104,7 +104,7 @@
         //   menuEntry.id = "nav_" + videoId;
         //   menuEntry.onclick = function () {
         //     if (this.className === "active") {
-        //       del(this.url);
+        //       delConnection(this.url);
         //     } else {
         //       addConnection(this.url);
         //     }
@@ -120,7 +120,7 @@
       /**
        * Delete a WebRTC client connection
        */
-      function del(url) {
+      function delConnection(url) {
         var windowId = url.video;
         var videoId = "video_" + windowId;
 
