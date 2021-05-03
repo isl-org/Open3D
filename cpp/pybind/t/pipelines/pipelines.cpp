@@ -24,21 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/TemplateHashmapCUDA.cuh"
+#include "pybind/t/pipelines/pipelines.h"
+
+#include "pybind/open3d_pybind.h"
+#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace pipelines {
 
-/// Non-templated factory
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCUDAHashmap(
-        int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CUDAHashmap<DefaultHash, DefaultKeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+void pybind_pipelines(py::module& m) {
+    py::module m_pipelines = m.def_submodule(
+            "pipelines", "Tensor-based geometry processing pipelines.");
+    registration::pybind_registration(m_pipelines);
 }
 
-}  // namespace core
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

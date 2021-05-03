@@ -43,14 +43,14 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
                                  core::Tensor &pose,
                                  const core::Dtype &dtype,
                                  const core::Device &device) {
-    core::Dtype solve_dtype = core::Dtype::Float32;
-
     // atai: {n, 21} Stores local sum for ATA stacked vertically
-    core::Tensor atai = core::Tensor::Empty({n, 21}, solve_dtype, device);
+    core::Tensor atai =
+            core::Tensor::Empty({n, 21}, core::Dtype::Float32, device);
     float *atai_ptr = atai.GetDataPtr<float>();
 
     // atbi: {n, 6} Stores local sum for ATB.T() stacked vertically
-    core::Tensor atbi = core::Tensor::Empty({n, 6}, solve_dtype, device);
+    core::Tensor atbi =
+            core::Tensor::Empty({n, 6}, core::Dtype::Float32, device);
     float *atbi_ptr = atbi.GetDataPtr<float>();
 
     // This kernel computes the {n,21} shape atai tensor
@@ -94,8 +94,10 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
             });
 
     // Reduce matrix atai (to 1x21) and atbi (to ATB.T() 1x6).
-    core::Tensor ata_1x21 = atai.Sum({0}, true);
-    core::Tensor ATB = atbi.Sum({0}, true).T();
+    // Compute linear system on CPU as Float64.
+    core::Device host("CPU:0");
+    core::Tensor ata_1x21 = atai.Sum({0}, true).To(host, core::Dtype::Float64);
+    core::Tensor ATB = atbi.Sum({0}, true).T().To(host, core::Dtype::Float64);
 
     //   ata_1x21 is a {1,21} vector having elements of the matrix ATA such
     //     that the corresponding elemetes in ATA are like:
@@ -106,23 +108,21 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
     //     10  11  12  13  14
     //     15  16  17  18  19  20
     //     Since, ATA is a symmertric matrix, it can be regenerated from this.
-    core::Tensor ATA = core::Tensor::Empty({6, 6}, solve_dtype, device);
-    float *ATA_ptr = ATA.GetDataPtr<float>();
-    float *ata_1x21_ptr = ata_1x21.GetDataPtr<float>();
 
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
-            1, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
-                        ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
-                        i++;
-                    }
-                }
-            });
+    core::Tensor ATA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
+    double *ATA_ptr = ATA.GetDataPtr<double>();
+    double *ata_1x21_ptr = ata_1x21.GetDataPtr<double>();
+
+    for (int i = 0, j = 0; j < 6; j++) {
+        for (int k = 0; k <= j; k++) {
+            ATA_ptr[j * 6 + k] = ata_1x21_ptr[i];
+            ATA_ptr[k * 6 + j] = ata_1x21_ptr[i];
+            i++;
+        }
+    }
 
     // ATA(6,6) . Pose(6,1) = ATB(6,1)
-    pose = ATA.Solve(ATB).Reshape({-1}).To(dtype);
+    pose = ATA.Solve(ATB).Reshape({-1});
 }
 
 }  // namespace kernel

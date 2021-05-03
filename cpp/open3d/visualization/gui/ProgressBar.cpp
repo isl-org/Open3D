@@ -50,8 +50,10 @@ void ProgressBar::SetValue(float value) { impl_->value_ = value; }
 
 float ProgressBar::GetValue() const { return impl_->value_; }
 
-Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
-    return Size(Widget::DIM_GROW, int(std::ceil(0.25 * theme.font_size)));
+Size ProgressBar::CalcPreferredSize(const LayoutContext& context,
+                                    const Constraints& constraints) const {
+    return Size(constraints.width,
+                int(std::ceil(0.25 * context.theme.font_size)));
 }
 
 Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {

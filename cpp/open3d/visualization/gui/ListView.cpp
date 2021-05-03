@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
@@ -52,9 +51,7 @@ struct ListView::Impl {
 };
 
 ListView::ListView() : impl_(new ListView::Impl()) {
-    std::stringstream s;
-    s << "##listview_" << g_next_list_box_id++;
-    impl_->imgui_id_ = s.str();
+    impl_->imgui_id_ = "##listview_" + std::to_string(g_next_list_box_id++);
 }
 
 ListView::~ListView() {}
@@ -84,14 +81,16 @@ void ListView::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size ListView::CalcPreferredSize(const Theme &theme) const {
+Size ListView::CalcPreferredSize(const LayoutContext &context,
+                                 const Constraints &constraints) const {
     auto padding = ImGui::GetStyle().FramePadding;
     auto *font = ImGui::GetFont();
     ImVec2 size(0, 0);
 
     for (auto &item : impl_->items_) {
-        auto item_size = font->CalcTextSizeA(
-                float(theme.font_size), Widget::DIM_GROW, 0.0, item.c_str());
+        auto item_size = font->CalcTextSizeA(float(context.theme.font_size),
+                                             float(constraints.width), 0.0,
+                                             item.c_str());
         size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }

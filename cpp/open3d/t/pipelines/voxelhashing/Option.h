@@ -26,21 +26,32 @@
 
 #pragma once
 
-#include "open3d/core/hashmap/CPU/HashmapCPU.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/RGBDImage.h"
+#include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
+#include "open3d/t/pipelines/voxelhashing/Frame.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace pipelines {
+namespace voxelhashing {
 
-/// Templated factory.
-template <typename Hash, typename KeyEq>
-std::shared_ptr<CPUHashmap<Hash, KeyEq>> CreateTemplateCPUHashmap(
-        int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CPUHashmap<Hash, KeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
-}
-}  // namespace core
+struct Option {
+    Option() {}
+
+    /// TSDF VoxelBlock options
+    float voxel_size = 3.0 / 512.0;
+    int est_block_count = 40000;
+
+    /// Input options
+    float depth_scale = 1000.0f;
+    float depth_max = 3.0f;
+    float depth_diff = 0.07f;
+};
+
+}  // namespace voxelhashing
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

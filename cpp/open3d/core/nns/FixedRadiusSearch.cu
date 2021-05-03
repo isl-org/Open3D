@@ -657,7 +657,7 @@ __global__ void WriteNeighborsHybridKernel(
         if (i < count) {
             distances[indices_offset + i] = distance_thread[i];
         } else {
-            distances[indices_offset + i] = -1;
+            distances[indices_offset + i] = 0;
             indices[indices_offset + i] = -1;
         }
     }
@@ -1043,8 +1043,7 @@ void HybridSearchCUDA(size_t num_points,
     output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
 
     T* distances_ptr;
-    output_allocator.AllocDistances(&distances_ptr, num_indices,
-                                    std::numeric_limits<T>::max());
+    output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
 
     for (int i = 0; i < batch_size; ++i) {
         const size_t hash_table_size =

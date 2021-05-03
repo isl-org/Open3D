@@ -245,7 +245,7 @@ public:
     /// When called, the update function adds the point cloud point index to
     /// the corresponding node index list.
     ///
-    /// \param idx Point cloud point index associated with node.
+    /// \param index Point cloud point index associated with node.
     /// \param color Color of the node.
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(size_t index, const Eigen::Vector3d& color);

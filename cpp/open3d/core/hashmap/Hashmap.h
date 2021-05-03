@@ -24,46 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
 
-#pragma once
 namespace open3d {
 namespace core {
 
-// Forward declaration of device-dependent classes
-class DefaultHash;
-class DefaultKeyEq;
-
-template <typename Hash, typename KeyEq>
 class DeviceHashmap;
-typedef DeviceHashmap<DefaultHash, DefaultKeyEq> DefaultDeviceHashmap;
+
+enum class HashmapBackend { Slab, StdGPU, TBB, Default };
 
 class Hashmap {
 public:
-    static constexpr int64_t kDefaultElemsPerBucket = 4;
-
-    /// Constructor for primitive and custom types, supporting element shapes.
-    /// Example 1:
+    /// Constructor for primitive types, supporting element shapes.
+    /// Example:
     /// Key is int<3> coordinate:
-    /// # Option 1:
     /// - dtype_key = Dtype::Int32
     /// - element_shape_key = {3}
-    /// # Option 2:
-    /// - dtype_key = Dtype(DtypeCode::Object, 3 * Dtype::Int32.ByteSize(),
-    /// "int3")
-    /// - element_shape_key = {1}
-    /// Example 2:
-    /// Key is struct Pt {int x; int y; int z;}
-    /// - dtype_key = Dtype(DtypeCode::Object, sizeof(Pt), "pt")
-    /// - element_shape_key = {1}
     Hashmap(int64_t init_capacity,
             const Dtype& dtype_key,
             const Dtype& dtype_value,
             const SizeVector& element_shape_key,
             const SizeVector& element_shape_value,
-            const Device& device);
+            const Device& device,
+            const HashmapBackend& backend = HashmapBackend::Default);
 
     ~Hashmap(){};
 
@@ -75,9 +62,9 @@ public:
     void Rehash(int64_t buckets);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// Return \addrs: internal indices that can be directly used for advanced
+    /// Return addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// masks: success insertions, must be combined with addrs in advanced
     /// indexing.
     void Insert(const Tensor& input_keys,
                 const Tensor& input_values,
@@ -87,18 +74,18 @@ public:
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
-    /// Return \addrs: internal indices that can be directly used for advanced
+    /// Return addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// masks: success insertions, must be combined with addrs in advanced
     /// indexing.
     void Activate(const Tensor& input_keys,
                   Tensor& output_addrs,
                   Tensor& output_masks);
 
     /// Parallel find an array of keys in Tensor.
-    /// Return \addrs: internal indices that can be directly used for advanced
+    /// Return addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// masks: success insertions, must be combined with addrs in advanced
     /// indexing.
     void Find(const Tensor& input_keys,
               Tensor& output_addrs,
@@ -106,14 +93,17 @@ public:
 
     /// Parallel erase an array of keys in Tensor.
     /// Output masks is a bool Tensor.
-    /// Return \masks: success insertions, must be combined with \addrs in
+    /// Return masks: success insertions, must be combined with addrs in
     /// advanced indexing.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
     /// Parallel collect all iterators in the hash table
-    /// Return \addrs: internal indices that can be directly used for advanced
+    /// Return addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
     void GetActiveIndices(Tensor& output_indices) const;
+
+    /// Clear stored map without reallocating memory.
+    void Clear();
 
     Hashmap Clone() const;
     Hashmap To(const Device& device, bool copy = false) const;
@@ -141,7 +131,7 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() const {
+    std::shared_ptr<DeviceHashmap> GetDeviceHashmap() const {
         return device_hashmap_;
     }
 
@@ -155,10 +145,10 @@ protected:
     Dtype GetValueDtype() const { return dtype_value_; }
 
 private:
-    std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;
+    std::shared_ptr<DeviceHashmap> device_hashmap_;
 
-    Dtype dtype_key_ = Dtype::Undefined;
-    Dtype dtype_value_ = Dtype::Undefined;
+    Dtype dtype_key_;
+    Dtype dtype_value_;
 
     SizeVector element_shape_key_;
     SizeVector element_shape_value_;

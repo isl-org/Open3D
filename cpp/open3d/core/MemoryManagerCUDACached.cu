@@ -280,7 +280,7 @@ public:
         release_pool(*small_block_pool_);
         release_pool(*large_block_pool_);
 
-        utility::LogInfo("[CUDACacher] {} bytes released.", total_bytes);
+        utility::LogDebug("[CUDACacher] {} bytes released.", total_bytes);
     }
 
 private:

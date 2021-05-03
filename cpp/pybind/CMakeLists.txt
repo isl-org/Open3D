@@ -97,6 +97,8 @@ set(PY_ALL_SOURCE_FILES
     t/geometry/image.cpp
     t/geometry/tensormap.cpp
     t/geometry/tsdf_voxelgrid.cpp
+    t/pipelines/pipelines.cpp
+    t/pipelines/registration/registration.cpp
     utility/console.cpp
     utility/eigen.cpp
     utility/utility.cpp
@@ -259,12 +261,17 @@ if ( BUNDLE_OPEN3D_ML )
 endif ()
 
 configure_file("_build_config.py.in"
-               "${CMAKE_BINARY_DIR}/lib/_build_config.py")
+               "${CMAKE_BINARY_DIR}/lib/_build_config.py.in")
+file(GENERATE
+    OUTPUT "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
+    INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py.in"
+    )
 
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${PYTHON_PACKAGE_SRC_DIR}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_COMPILED_MODULE_DIR=${PYTHON_COMPILED_MODULE_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"

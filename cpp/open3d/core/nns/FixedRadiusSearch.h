@@ -44,9 +44,6 @@ namespace nns {
 /// \param temp_size    The size of the temporary memory in bytes. This is
 ///        used as an output if temp is nullptr
 ///
-/// \param texture_alignment    The texture alignment in bytes. This is used
-///        for allocating segments within the temporary memory.
-///
 /// \param num_points    The number of points.
 ///
 /// \param points    The array of 3D points.
@@ -111,9 +108,6 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///
 /// \param temp_size    The size of the temporary memory in bytes. This is
 ///        used as an output if temp is nullptr
-///
-/// \param texture_alignment    The texture alignment in bytes. This is used
-///        for allocating segments within the temporary memory.
 ///
 /// \param query_neighbors_row_splits    This is the output pointer for the
 ///        prefix sum. The length of this array is \p num_queries + 1.

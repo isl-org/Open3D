@@ -190,18 +190,38 @@ Tensor IntToTensor(int64_t scalar_value,
             .To(dtype_value);
 }
 
+Tensor BoolToTensor(bool scalar_value,
+                    utility::optional<Dtype> dtype,
+                    utility::optional<Device> device) {
+    Dtype dtype_value = Dtype::Bool;
+    if (dtype.has_value()) {
+        dtype_value = dtype.value();
+    }
+    Device device_value("CPU:0");
+    if (device.has_value()) {
+        device_value = device.value();
+    }
+    return Tensor(std::vector<bool>{scalar_value}, {}, Dtype::Bool,
+                  device_value)
+            .To(dtype_value);
+}
+
 Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Dtype> dtype,
                         utility::optional<Device> device,
                         bool force_copy) {
-    /// 1) int
-    /// 2) float (double)
-    /// 3) list
-    /// 4) tuple
-    /// 5) numpy.ndarray (value will be copied)
-    /// 6) Tensor (value will be copied)
+    // 1) bool
+    // 2) int
+    // 3) float (double)
+    // 4) list
+    // 5) tuple
+    // 6) numpy.ndarray (value will be copied)
+    // 7) Tensor (value will be copied)
     std::string class_name(handle.get_type().str());
-    if (class_name == "<class 'int'>") {
+    if (class_name == "<class 'bool'>") {
+        return BoolToTensor(static_cast<bool>(handle.cast<py::bool_>()), dtype,
+                            device);
+    } else if (class_name == "<class 'int'>") {
         return IntToTensor(static_cast<int64_t>(handle.cast<py::int_>()), dtype,
                            device);
     } else if (class_name == "<class 'float'>") {

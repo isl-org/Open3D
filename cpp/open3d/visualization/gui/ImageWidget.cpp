@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ImageLabel.h"
+#include "open3d/visualization/gui/ImageWidget.h"
 
 #include <imgui.h>
 
+#include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -35,46 +36,81 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-struct ImageLabel::Impl {
+struct ImageWidget::Impl {
     std::shared_ptr<UIImage> image_;
 };
 
-ImageLabel::ImageLabel(const char* image_path) : impl_(new ImageLabel::Impl()) {
+ImageWidget::ImageWidget() : impl_(new ImageWidget::Impl()) {
+    impl_->image_ =
+            std::make_shared<UIImage>(std::make_shared<geometry::Image>());
+}
+
+ImageWidget::ImageWidget(const char* image_path)
+    : impl_(new ImageWidget::Impl()) {
     impl_->image_ = std::make_shared<UIImage>(image_path);
 }
 
-ImageLabel::ImageLabel(visualization::rendering::TextureHandle texture_id,
-                       float u0 /*= 0.0f*/,
-                       float v0 /*= 0.0f*/,
-                       float u1 /*= 1.0f*/,
-                       float v1 /*= 1.0f*/)
-    : impl_(new ImageLabel::Impl()) {
+ImageWidget::ImageWidget(std::shared_ptr<geometry::Image> image)
+    : impl_(new ImageWidget::Impl()) {
+    impl_->image_ = std::make_shared<UIImage>(image);
+}
+
+ImageWidget::ImageWidget(std::shared_ptr<t::geometry::Image> image)
+    : impl_(new ImageWidget::Impl()) {
+    impl_->image_ = std::make_shared<UIImage>(image);
+}
+
+ImageWidget::ImageWidget(visualization::rendering::TextureHandle texture_id,
+                         float u0 /*= 0.0f*/,
+                         float v0 /*= 0.0f*/,
+                         float u1 /*= 1.0f*/,
+                         float v1 /*= 1.0f*/)
+    : impl_(new ImageWidget::Impl()) {
     impl_->image_ = std::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
 }
 
-ImageLabel::ImageLabel(std::shared_ptr<UIImage> image)
-    : impl_(new ImageLabel::Impl()) {
+ImageWidget::ImageWidget(std::shared_ptr<UIImage> image)
+    : impl_(new ImageWidget::Impl()) {
     impl_->image_ = image;
 }
 
-ImageLabel::~ImageLabel() {}
+ImageWidget::~ImageWidget() {}
 
-Size ImageLabel::CalcPreferredSize(const Theme& theme) const {
+void ImageWidget::UpdateImage(std::shared_ptr<geometry::Image> image) {
+    GetUIImage()->UpdateImage(image);
+}
+
+void ImageWidget::UpdateImage(std::shared_ptr<t::geometry::Image> image) {
+    GetUIImage()->UpdateImage(image);
+}
+
+std::shared_ptr<UIImage> ImageWidget::GetUIImage() const {
+    return impl_->image_;
+}
+
+void ImageWidget::SetUIImage(std::shared_ptr<UIImage> image) {
+    impl_->image_ = image;
+}
+
+Size ImageWidget::CalcPreferredSize(const LayoutContext& context,
+                                    const Constraints& constraints) const {
     Size pref;
     if (impl_->image_) {
-        pref = impl_->image_->CalcPreferredSize(theme);
+        pref = impl_->image_->CalcPreferredSize(context, constraints);
     }
 
     if (pref.width != 0 && pref.height != 0) {
         return pref;
     } else {
-        return Size(5 * theme.font_size, 5 * theme.font_size);
+        return Size(5 * context.theme.font_size, 5 * context.theme.font_size);
     }
 }
 
-void ImageLabel::Layout(const Theme& theme) { Super::Layout(theme); }
+void ImageWidget::Layout(const LayoutContext& context) {
+    Super::Layout(context);
+}
 
-Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
+Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     UIImage::DrawParams params;  // .texture defaults to kBad handle
     if (impl_->image_) {
@@ -120,7 +156,11 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
 
         ImGui::PopStyleColor();
     }
+    DrawImGuiTooltip();
 
+    if (params.image_size_changed) {
+        return Widget::DrawResult::RELAYOUT;
+    }
     return Widget::DrawResult::NONE;
 }
 

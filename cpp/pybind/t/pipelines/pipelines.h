@@ -24,17 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.h"
+#pragma once
+
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace pipelines {
 
-__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < capacity) {
-        heap[i] = i;
-    }
+void pybind_pipelines(py::module& m);
+
 }
-
-}  // namespace core
+}  // namespace t
 }  // namespace open3d

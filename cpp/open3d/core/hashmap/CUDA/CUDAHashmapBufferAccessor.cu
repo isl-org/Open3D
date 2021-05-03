@@ -24,19 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
 
-#include "open3d/utility/Console.h"
+namespace open3d {
+namespace core {
 
-#define DISPATCH_FLOAT32_FLOAT64_DTYPE(DTYPE, ...)          \
-    [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
-    }()
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < capacity) {
+        heap[i] = i;
+    }
+}
+
+}  // namespace core
+}  // namespace open3d

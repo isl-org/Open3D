@@ -37,7 +37,8 @@ class SmallButton : public gui::Button {
 public:
     explicit SmallButton(const char *title);
 
-    gui::Size CalcPreferredSize(const gui::Theme &theme) const override;
+    gui::Size CalcPreferredSize(const gui::LayoutContext &context,
+                                const Constraints &constraints) const override;
 };
 
 class SmallToggleButton : public SmallButton {

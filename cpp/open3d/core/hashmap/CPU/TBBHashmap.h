@@ -28,23 +28,22 @@
 
 #include <tbb/concurrent_unordered_map.h>
 
+#include <limits>
 #include <unordered_map>
 
-#include "open3d/core/hashmap/CPU/HashmapBufferCPU.hpp"
+#include "open3d/core/hashmap/CPU/CPUHashmapBufferAccessor.hpp"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
 namespace core {
-template <typename Hash, typename KeyEq>
-class CPUHashmap : public DeviceHashmap<Hash, KeyEq> {
+template <typename Key, typename Hash>
+class TBBHashmap : public DeviceHashmap {
 public:
-    CPUHashmap(int64_t init_buckets,
-               int64_t init_capacity,
+    TBBHashmap(int64_t init_capacity,
                int64_t dsize_key,
                int64_t dsize_value,
                const Device& device);
-
-    ~CPUHashmap();
+    ~TBBHashmap();
 
     void Rehash(int64_t buckets) override;
 
@@ -70,21 +69,22 @@ public:
 
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
-    int64_t Size() const override;
+    void Clear() override;
 
+    int64_t Size() const override;
+    int64_t GetBucketCount() const override;
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
-    GetContext() const {
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, addr_t, Hash>> GetImpl()
+            const {
         return impl_;
     }
 
 protected:
-    std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
-            impl_;
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, addr_t, Hash>> impl_;
 
-    std::shared_ptr<CPUHashmapBufferContext> buffer_ctx_;
+    std::shared_ptr<CPUHashmapBufferAccessor> buffer_ctx_;
 
     void InsertImpl(const void* input_keys,
                     const void* input_values,
@@ -92,77 +92,65 @@ protected:
                     bool* output_masks,
                     int64_t count);
 
-    void Allocate(int64_t capacity, int64_t buckets);
+    void Allocate(int64_t capacity);
 };
 
-template <typename Hash, typename KeyEq>
-CPUHashmap<Hash, KeyEq>::CPUHashmap(int64_t init_buckets,
-                                    int64_t init_capacity,
-                                    int64_t dsize_key,
-                                    int64_t dsize_value,
-                                    const Device& device)
-    : DeviceHashmap<Hash, KeyEq>(
-              init_buckets,
-              init_capacity,  /// Dummy for std unordered_map, reserved for.
-                              /// other hashmaps.
-              dsize_key,
-              dsize_value,
-              device) {
-    Allocate(init_capacity, init_buckets);
+template <typename Key, typename Hash>
+TBBHashmap<Key, Hash>::TBBHashmap(int64_t init_capacity,
+                                  int64_t dsize_key,
+                                  int64_t dsize_value,
+                                  const Device& device)
+    : DeviceHashmap(init_capacity, dsize_key, dsize_value, device) {
+    Allocate(init_capacity);
 }
 
-template <typename Hash, typename KeyEq>
-CPUHashmap<Hash, KeyEq>::~CPUHashmap() {}
+template <typename Key, typename Hash>
+TBBHashmap<Key, Hash>::~TBBHashmap() {}
 
-template <typename Hash, typename KeyEq>
-int64_t CPUHashmap<Hash, KeyEq>::Size() const {
+template <typename Key, typename Hash>
+int64_t TBBHashmap<Key, Hash>::Size() const {
     return impl_->size();
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
-                                     const void* input_values,
-                                     addr_t* output_addrs,
-                                     bool* output_masks,
-                                     int64_t count) {
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
+                                   const void* input_values,
+                                   addr_t* output_addrs,
+                                   bool* output_masks,
+                                   int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
+        int64_t bucket_count = GetBucketCount();
         float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
+                float(this->capacity_) / float(bucket_count);
+
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                bucket_count * 2,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
+
         Rehash(expected_buckets);
     }
     InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
-                                       addr_t* output_addrs,
-                                       bool* output_masks,
-                                       int64_t count) {
-    int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
-        float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
-        int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-        Rehash(expected_buckets);
-    }
-    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
+                                     addr_t* output_addrs,
+                                     bool* output_masks,
+                                     int64_t count) {
+    Insert(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
-                                   addr_t* output_addrs,
-                                   bool* output_masks,
-                                   int64_t count) {
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Find(const void* input_keys,
+                                 addr_t* output_addrs,
+                                 bool* output_masks,
+                                 int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
+
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
-        uint8_t* key = const_cast<uint8_t*>(
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
+        const Key& key = input_keys_templated[i];
 
         auto iter = impl_->find(key);
         bool flag = (iter != impl_->end());
@@ -171,13 +159,14 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
     }
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
-                                    bool* output_masks,
-                                    int64_t count) {
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Erase(const void* input_keys,
+                                  bool* output_masks,
+                                  int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
+
     for (int64_t i = 0; i < count; ++i) {
-        uint8_t* key = const_cast<uint8_t*>(
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
+        const Key& key = input_keys_templated[i];
 
         auto iter = impl_->find(key);
         bool flag = (iter != impl_->end());
@@ -187,11 +176,10 @@ void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
             impl_->unsafe_erase(iter);
         }
     }
-    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
-template <typename Hash, typename KeyEq>
-int64_t CPUHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_indices) {
+template <typename Key, typename Hash>
+int64_t TBBHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
     int64_t count = impl_->size();
     int64_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
@@ -201,8 +189,14 @@ int64_t CPUHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_indices) {
     return count;
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Clear() {
+    impl_->clear();
+    buffer_ctx_->Reset();
+}
+
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
@@ -218,11 +212,11 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     }
 
     float avg_capacity_per_bucket =
-            float(this->capacity_) / float(this->bucket_count_);
-
+            float(this->capacity_) / float(GetBucketCount());
     int64_t new_capacity =
             int64_t(std::ceil(buckets * avg_capacity_per_bucket));
-    Allocate(new_capacity, buckets);
+
+    Allocate(new_capacity);
 
     if (iterator_count > 0) {
         Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
@@ -234,11 +228,15 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     }
 
     impl_->rehash(buckets);
-    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
-template <typename Hash, typename KeyEq>
-std::vector<int64_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
+template <typename Key, typename Hash>
+int64_t TBBHashmap<Key, Hash>::GetBucketCount() const {
+    return impl_->unsafe_bucket_count();
+}
+
+template <typename Key, typename Hash>
+std::vector<int64_t> TBBHashmap<Key, Hash>::BucketSizes() const {
     int64_t bucket_count = impl_->unsafe_bucket_count();
     std::vector<int64_t> ret;
     for (int64_t i = 0; i < bucket_count; ++i) {
@@ -247,72 +245,74 @@ std::vector<int64_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
     return ret;
 }
 
-template <typename Hash, typename KeyEq>
-float CPUHashmap<Hash, KeyEq>::LoadFactor() const {
+template <typename Key, typename Hash>
+float TBBHashmap<Key, Hash>::LoadFactor() const {
     return impl_->load_factor();
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
-                                         const void* input_values,
-                                         addr_t* output_addrs,
-                                         bool* output_masks,
-                                         int64_t count) {
-#pragma omp parallel for
-    for (int64_t i = 0; i < count; ++i) {
-        const uint8_t* src_key =
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
-
-        addr_t dst_kv_addr = buffer_ctx_->DeviceAllocate();
-        auto dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
-
-        uint8_t* dst_key = static_cast<uint8_t*>(dst_kv_iter.first);
-        uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
-        std::memcpy(dst_key, src_key, this->dsize_key_);
-
-        if (input_values != nullptr) {
-            const uint8_t* src_value =
-                    static_cast<const uint8_t*>(input_values) +
-                    this->dsize_value_ * i;
-            std::memcpy(dst_value, src_value, this->dsize_value_);
-        } else {
-            std::memset(dst_value, 0, this->dsize_value_);
-        }
-
-        // Try insertion.
-        auto res = impl_->insert({dst_key, dst_kv_addr});
-
-        output_addrs[i] = dst_kv_addr;
-        output_masks[i] = res.second;
-    }
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
+                                       const void* input_values,
+                                       addr_t* output_addrs,
+                                       bool* output_masks,
+                                       int64_t count) {
+    const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
-        if (!output_masks[i]) {
-            buffer_ctx_->DeviceFree(output_addrs[i]);
+        output_addrs[i] = 0;
+        output_masks[i] = false;
+
+        const Key& key = input_keys_templated[i];
+
+        // Try to insert a dummy address.
+        auto res = impl_->insert({key, 0});
+
+        // Lazy copy key value pair to buffer only if succeeded
+        if (res.second) {
+            addr_t dst_kv_addr = buffer_ctx_->DeviceAllocate();
+            auto dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
+
+            // Copy templated key to buffer
+            *static_cast<Key*>(dst_kv_iter.first) = key;
+
+            // Copy/reset non-templated value in buffer
+            uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
+            if (input_values != nullptr) {
+                const uint8_t* src_value =
+                        static_cast<const uint8_t*>(input_values) +
+                        this->dsize_value_ * i;
+                std::memcpy(dst_value, src_value, this->dsize_value_);
+            } else {
+                std::memset(dst_value, 0, this->dsize_value_);
+            }
+
+            // Update from dummy 0
+            res.first->second = dst_kv_addr;
+
+            // Write to return variables
+            output_addrs[i] = dst_kv_addr;
+            output_masks[i] = true;
         }
     }
-
-    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::Allocate(int64_t capacity, int64_t buckets) {
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ =
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_value_, this->device_);
 
-    buffer_ctx_ = std::make_shared<CPUHashmapBufferContext>(
+    buffer_ctx_ = std::make_shared<CPUHashmapBufferAccessor>(
             this->capacity_, this->dsize_key_, this->dsize_value_,
             this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffer(),
             this->buffer_->GetHeap());
     buffer_ctx_->Reset();
 
-    impl_ = std::make_shared<
-            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
-            buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
+    impl_ = std::make_shared<tbb::concurrent_unordered_map<Key, addr_t, Hash>>(
+            capacity, Hash());
 }
 
 }  // namespace core

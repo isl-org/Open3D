@@ -51,10 +51,14 @@
     });                                                                     \
     tensor.def(#py_name, &Tensor::cpp_name<float>);                         \
     tensor.def(#py_name, &Tensor::cpp_name<double>);                        \
+    tensor.def(#py_name, &Tensor::cpp_name<int8_t>);                        \
     tensor.def(#py_name, &Tensor::cpp_name<int16_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int32_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<int64_t>);                       \
     tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
+    tensor.def(#py_name, &Tensor::cpp_name<uint16_t>);                      \
+    tensor.def(#py_name, &Tensor::cpp_name<uint32_t>);                      \
+    tensor.def(#py_name, &Tensor::cpp_name<uint64_t>);                      \
     tensor.def(#py_name, &Tensor::cpp_name<bool>);
 
 #define BIND_BINARY_R_OP_ALL_DTYPES(py_name, cpp_name)                    \
@@ -63,6 +67,10 @@
                 .cpp_name(self);                                          \
     });                                                                   \
     tensor.def(#py_name, [](const Tensor& self, double value) {           \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, int8_t value) {           \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
     });                                                                   \
@@ -79,6 +87,18 @@
                 .cpp_name(self);                                          \
     });                                                                   \
     tensor.def(#py_name, [](const Tensor& self, uint8_t value) {          \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, uint16_t value) {         \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, uint32_t value) {         \
+        return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
+                .cpp_name(self);                                          \
+    });                                                                   \
+    tensor.def(#py_name, [](const Tensor& self, uint64_t value) {         \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
     });                                                                   \
@@ -227,6 +247,15 @@ void pybind_core_tensor(py::module& m) {
                }),
                "np_array"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
+    // o3c.Tensor(True, dtype=None, device=None).
+    // Default to Bool, CPU:0.
+    tensor.def(py::init([](bool scalar_value, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   return BoolToTensor(scalar_value, dtype, device);
+               }),
+               "scalar_value"_a, "dtype"_a = py::none(),
+               "device"_a = py::none());
+
     // o3c.Tensor(1, dtype=None, device=None).
     // Default to Int64, CPU:0.
     tensor.def(py::init([](int64_t scalar_value, utility::optional<Dtype> dtype,
@@ -269,10 +298,14 @@ void pybind_core_tensor(py::module& m) {
     BindTensorCreation(tensor, "ones", Tensor::Ones);
     BindTensorFullCreation<float>(tensor);
     BindTensorFullCreation<double>(tensor);
+    BindTensorFullCreation<int8_t>(tensor);
     BindTensorFullCreation<int16_t>(tensor);
     BindTensorFullCreation<int32_t>(tensor);
     BindTensorFullCreation<int64_t>(tensor);
     BindTensorFullCreation<uint8_t>(tensor);
+    BindTensorFullCreation<uint16_t>(tensor);
+    BindTensorFullCreation<uint32_t>(tensor);
+    BindTensorFullCreation<uint64_t>(tensor);
     BindTensorFullCreation<bool>(tensor);
     tensor.def_static(
             "eye",
@@ -551,6 +584,9 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
     tensor.def("abs_", &Tensor::Abs_);
+    tensor.def("isnan", &Tensor::IsNan);
+    tensor.def("isinf", &Tensor::IsInf);
+    tensor.def("isfinite", &Tensor::IsFinite);
     tensor.def("floor", &Tensor::Floor);
     tensor.def("ceil", &Tensor::Ceil);
     tensor.def("round", &Tensor::Round);
@@ -597,26 +633,20 @@ void pybind_core_tensor(py::module& m) {
     // Get item from Tensor of one element.
     tensor.def("item", [](const Tensor& tensor) -> py::object {
         Dtype dtype = tensor.GetDtype();
-        if (dtype == Dtype::Float32) {
-            return py::float_(tensor.Item<float>());
-        } else if (dtype == Dtype::Float64) {
-            return py::float_(tensor.Item<double>());
-        } else if (dtype == Dtype::Int16) {
-            return py::int_(tensor.Item<int16_t>());
-        } else if (dtype == Dtype::Int32) {
-            return py::int_(tensor.Item<int32_t>());
-        } else if (dtype == Dtype::Int64) {
-            return py::int_(tensor.Item<int64_t>());
-        } else if (dtype == Dtype::UInt8) {
-            return py::int_(tensor.Item<uint8_t>());
-        } else if (dtype == Dtype::UInt16) {
-            return py::int_(tensor.Item<uint16_t>());
-        } else if (dtype == Dtype::Bool) {
-            return py::bool_(tensor.Item<bool>());
-        } else {
-            utility::LogError(
-                    "Tensor.item(): unsupported dtype to convert to python.");
-        }
+        if (dtype == Dtype::Float32) return py::float_(tensor.Item<float>());
+        if (dtype == Dtype::Float64) return py::float_(tensor.Item<double>());
+        if (dtype == Dtype::Int8) return py::int_(tensor.Item<int8_t>());
+        if (dtype == Dtype::Int16) return py::int_(tensor.Item<int16_t>());
+        if (dtype == Dtype::Int32) return py::int_(tensor.Item<int32_t>());
+        if (dtype == Dtype::Int64) return py::int_(tensor.Item<int64_t>());
+        if (dtype == Dtype::UInt8) return py::int_(tensor.Item<uint8_t>());
+        if (dtype == Dtype::UInt16) return py::int_(tensor.Item<uint16_t>());
+        if (dtype == Dtype::UInt32) return py::int_(tensor.Item<uint32_t>());
+        if (dtype == Dtype::UInt64) return py::int_(tensor.Item<uint64_t>());
+        if (dtype == Dtype::Bool) return py::bool_(tensor.Item<bool>());
+        utility::LogError(
+                "Tensor.item(): unsupported dtype to convert to python.");
+        return py::none();
     });
 }
 

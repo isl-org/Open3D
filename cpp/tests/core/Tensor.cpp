@@ -152,10 +152,6 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_THROW(core::Tensor::Init<int>({{1, 2, 3}, {4, 5}}, device),
                  std::runtime_error);
 
-    // Check unsupported dtype.
-    EXPECT_THROW(core::Tensor::Init<uint64_t>({{1, 2, 3}, {4, 5, 6}}, device),
-                 std::exception);
-
     // Test shapes with 0-element.
     t = core::Tensor::Init<double>({}, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({0}));
@@ -2083,6 +2079,48 @@ TEST_P(TensorPermuteDevices, Abs) {
     // Inplace version.
     src.Abs_();
     EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsNan) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isnan(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsNan();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsInf) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isinf(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsInf();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsFinite) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isfinite(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsFinite();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
 }
 
 TEST_P(TensorPermuteDevices, Floor) {

@@ -42,7 +42,8 @@ public:
     bool IsChecked() const;
     void SetChecked(bool checked);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 

@@ -24,21 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CPU/TemplateHashmapCPU.hpp"
-
-namespace open3d {
-namespace core {
-
-/// Non-templated factory.
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
-        int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CPUHashmap<DefaultHash, DefaultKeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
-}
-
-}  // namespace core
-}  // namespace open3d
+#include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/t/geometry/kernel/ImageImpl.h"

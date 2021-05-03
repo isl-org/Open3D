@@ -54,6 +54,9 @@
         } else if (DTYPE == open3d::core::Dtype::Float64) { \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Int8) {    \
+            using scalar_t = int8_t;                        \
+            return __VA_ARGS__();                           \
         } else if (DTYPE == open3d::core::Dtype::Int16) {   \
             using scalar_t = int16_t;                       \
             return __VA_ARGS__();                           \
@@ -69,6 +72,12 @@
         } else if (DTYPE == open3d::core::Dtype::UInt16) {  \
             using scalar_t = uint16_t;                      \
             return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::UInt32) {  \
+            using scalar_t = uint32_t;                      \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::UInt64) {  \
+            using scalar_t = uint64_t;                      \
+            return __VA_ARGS__();                           \
         } else {                                            \
             utility::LogError("Unsupported data type.");    \
         }                                                   \
@@ -81,5 +90,18 @@
             return __VA_ARGS__();                           \
         } else {                                            \
             DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, __VA_ARGS__); \
+        }                                                   \
+    }()
+
+#define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
+    [&] {                                                   \
+        if (DTYPE == open3d::core::Dtype::Float32) {        \
+            using scalar_t = float;                         \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == open3d::core::Dtype::Float64) { \
+            using scalar_t = double;                        \
+            return __VA_ARGS__();                           \
+        } else {                                            \
+            utility::LogError("Unsupported data type.");    \
         }                                                   \
     }()

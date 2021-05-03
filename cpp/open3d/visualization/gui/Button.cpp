@@ -97,19 +97,21 @@ void Button::SetOnClicked(std::function<void()> on_clicked) {
     impl_->on_clicked_ = on_clicked;
 }
 
-Size Button::CalcPreferredSize(const Theme& theme) const {
-    auto em = float(theme.font_size);
+Size Button::CalcPreferredSize(const LayoutContext& context,
+                               const Constraints& constraints) const {
+    auto em = float(context.theme.font_size);
     auto padding_horiz = int(std::ceil(impl_->padding_horizontal_em_ * em));
     auto padding_vert = int(std::ceil(impl_->padding_vertical_em_ * em));
     if (impl_->image_) {
-        auto size = impl_->image_->CalcPreferredSize(theme);
+        auto size = impl_->image_->CalcPreferredSize(context, constraints);
         return Size(size.width + 2 * padding_horiz,
                     size.height + 2 * padding_vert);
     } else {
         auto font = ImGui::GetFont();
         auto imguiVertPadding = ImGui::GetTextLineHeightWithSpacing() -
                                 ImGui::GetTextLineHeight();
-        auto size = font->CalcTextSizeA(float(theme.font_size), 10000, 10000,
+        auto size = font->CalcTextSizeA(float(context.theme.font_size),
+                                        float(constraints.width), 10000,
                                         impl_->title_.c_str());
         // When ImGUI draws text, it draws text in a box of height
         // font_size + spacing. The padding on the bottom is essentially the
@@ -172,6 +174,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         result = Widget::DrawResult::REDRAW;
     }
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
     if (was_on) {
         ImGui::PopStyleColor(4);
     }
