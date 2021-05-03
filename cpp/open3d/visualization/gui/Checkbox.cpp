@@ -38,14 +38,21 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+namespace {
+static int g_next_checkbox_id = 1;
+}
+
 struct Checkbox::Impl {
     std::string name_;
+    std::string id_;
     bool is_checked_ = false;
     std::function<void(bool)> on_checked_;
 };
 
 Checkbox::Checkbox(const char* name) : impl_(new Checkbox::Impl()) {
     impl_->name_ = name;
+    impl_->id_ =
+            impl_->name_ + "##checkbox_" + std::to_string(g_next_checkbox_id++);
 }
 
 Checkbox::~Checkbox() {}
@@ -96,7 +103,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(float(GetFrame().width));
-    if (ImGui::Checkbox(impl_->name_.c_str(), &impl_->is_checked_)) {
+    if (ImGui::Checkbox(impl_->id_.c_str(), &impl_->is_checked_)) {
         if (impl_->on_checked_) {
             impl_->on_checked_(impl_->is_checked_);
         }
