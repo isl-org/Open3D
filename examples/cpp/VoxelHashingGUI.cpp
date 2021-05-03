@@ -271,6 +271,7 @@ public:
 
                             auto mat = rendering::Material();
                             mat.shader = "defaultUnlit";
+                            mat.sRGB_vertex_color = true;
                             this->widget3d_->GetScene()
                                     ->GetScene()
                                     ->AddGeometry("points", pcd_placeholder,
