@@ -1015,7 +1015,6 @@ struct O3DVisualizer::Impl {
                     }
 
                     UpdateGeometryVisibility(o);  // calls ForceRedraw()
-                    utility::LogInfo("PostRedraw() caller 14");
                     window_->PostRedraw();
 
                     if (selections_->IsActive()) {
@@ -1585,7 +1584,6 @@ struct O3DVisualizer::Impl {
         }
         settings.selection_sets->SetItems(items);
         SelectSelectionSet(idx);
-        utility::LogInfo("PostRedraw() caller 15");
         window_->PostRedraw();
     }
 

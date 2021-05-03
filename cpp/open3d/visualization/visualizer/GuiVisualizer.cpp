@@ -929,7 +929,6 @@ void GuiVisualizer::StopRPCInterface() {
 
 bool GuiVisualizer::SetIBL(const char *path) {
     auto result = impl_->SetIBL(GetRenderer(), path);
-    utility::LogInfo("PostRedraw() caller 13");
     PostRedraw();
     return result;
 }
