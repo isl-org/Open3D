@@ -34,6 +34,7 @@ jobs:
       matrix:
         SHARED: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
+        BUILD_CUDA: [ON, OFF]
         CONFIG: [Release, Debug]
         exclude:
           - SHARED: ON
@@ -48,6 +49,19 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
 
+      - name: Install CUDA
+        if: ${{ matrix.BUILD_CUDA == 'ON' }}
+        run: |
+          # Download and install CUDA 11.0
+          Invoke-WebRequest http://developer.download.nvidia.com/compute/cuda/11.0.3/network_installers/cuda_11.0.3_win10_network.exe -OutFile cuda.exe
+          Start-Process -Wait -FilePath .\cuda.exe -ArgumentList "-s nvcc_11.0 visual_studio_integration_11.0 cublas_11.0 cublas_dev_11.0 cudart_11.0 cusolver_11.0 cusolver_dev_11.0 npp_11.0 npp_dev_11.0"
+          if ( !$? ) {
+            exit 1
+          }
+          # Add CUDA environment variables.
+          echo "CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CUDA_PATH_V11_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.0\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -70,6 +84,7 @@ jobs:
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_UNIT_TESTS=ON `
+            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
             ${{ env.SRC_DIR }}
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
@@ -80,6 +95,7 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
       - name: Run C++ unit tests
+        if: ${{ matrix.BUILD_CUDA == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
@@ -108,7 +124,7 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.SHARED == 'OFF' }}
+        if: ${{ matrix.SHARED == 'OFF' && matrix.BUILD_CUDA == 'OFF' }}
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
