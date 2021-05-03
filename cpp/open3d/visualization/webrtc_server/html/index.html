@@ -118,7 +118,7 @@
             navElt.className = "";
           };
 
-          // Connect video element to webrtc stream
+          // Connect video element to WebRTC stream
           var webRtcClient = new WebRtcStreamer(videoTag, "", onClose, null);
           console.log("videoTag: " + videoTag);
 
@@ -130,7 +130,7 @@
           var navElt = document.getElementById("nav_" + videoTag);
           navElt.className = "active";
 
-          // Register webrtc streamer connection
+          // Register WebRTC streamer connection
           webRtcServerList[videoTag] = webRtcClient;
         }
       }

@@ -561,10 +561,8 @@ var WebRtcStreamer = (function () {
         console.log("local datachannel recv:" + JSON.stringify(evt.data));
       };
       dataChannel.onclose = function (evt) {
-        console.log("!!!! Data channel closed:" + JSON.stringify(evt.data));
-        console.log("bind.onClose", bind.onClose);
+        console.log("dataChannel.onclose triggered");
         bind.onClose();
-        console.log("!!!! bind.onClose() called:" + JSON.stringify(evt.data));
       };
     } catch (e) {
       console.log("Cannot create datachannel error: " + e);
