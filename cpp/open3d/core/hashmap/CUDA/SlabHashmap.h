@@ -186,6 +186,8 @@ void SlabHashmap<Key, Hash>::Find(const void* input_keys,
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
@@ -202,6 +204,8 @@ void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
     auto iterator_addrs = static_cast<addr_t*>(
             MemoryManager::Malloc(sizeof(addr_t) * count, this->device_));
 
@@ -221,7 +225,9 @@ template <typename Key, typename Hash>
 int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
     uint32_t* iterator_count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
-    cudaMemset(iterator_count, 0, sizeof(uint32_t));
+    OPEN3D_CUDA_CHECK(cudaMemset(iterator_count, 0, sizeof(uint32_t)));
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     const int64_t num_blocks =
             (impl_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
@@ -247,6 +253,8 @@ void SlabHashmap<Key, Hash>::Clear() {
     // Clear the linked list heads
     OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
                                  sizeof(Slab) * this->bucket_count_));
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     // Clear the linked list nodes
     node_mgr_->Reset();
@@ -335,6 +343,8 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
             sizeof(Slab) * this->bucket_count_, this->device_));
     OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
                                  sizeof(Slab) * this->bucket_count_));
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     impl_.Setup(this->bucket_count_, this->capacity_, this->dsize_key_,
                 this->dsize_value_, node_mgr_->impl_, buffer_accessor_);

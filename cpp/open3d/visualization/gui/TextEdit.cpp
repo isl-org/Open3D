@@ -29,7 +29,6 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <sstream>
 #include <string>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -63,9 +62,7 @@ struct TextEdit::Impl {
 };
 
 TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
-    std::stringstream s;
-    s << "##textedit_" << g_next_text_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##textedit_" + std::to_string(g_next_text_edit_id++);
     impl_->text_.reserve(1);
 }
 

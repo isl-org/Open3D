@@ -197,6 +197,12 @@ public:
                GetPointAttr(key).GetLength() == GetPoints().GetLength();
     }
 
+    /// Removes point attribute by key value. Primary attribute "points" cannot
+    /// be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
+
     /// Check if the "points" attribute's value has length > 0.
     /// This is a convenience function.
     bool HasPoints() const { return HasPointAttr("points"); }

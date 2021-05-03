@@ -351,9 +351,25 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
 
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     if (geometry_.HasPointColors()) {
-        VertexBuffer::BufferDescriptor color_descriptor(
-                geometry_.GetPointColors().GetDataPtr(), color_array_size);
-        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+        if (geometry_.GetPointColors().GetDtype() == core::Dtype::UInt8) {
+            float* color_array = static_cast<float*>(malloc(color_array_size));
+            float* color_array_ptr = color_array;
+            const uint8_t* color_uint8_array = static_cast<const uint8_t*>(
+                    geometry_.GetPointColors().GetDataPtr());
+            for (size_t i = 0; i < n_vertices; ++i) {
+                *color_array_ptr++ = *color_uint8_array++ / 255.f;
+                *color_array_ptr++ = *color_uint8_array++ / 255.f;
+                *color_array_ptr++ = *color_uint8_array++ / 255.f;
+            }
+            VertexBuffer::BufferDescriptor color_descriptor(
+                    color_array, color_array_size,
+                    GeometryBuffersBuilder::DeallocateBuffer);
+            vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+        } else {
+            VertexBuffer::BufferDescriptor color_descriptor(
+                    geometry_.GetPointColors().GetDataPtr(), color_array_size);
+            vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+        }
     } else {
         float* color_array = static_cast<float*>(malloc(color_array_size));
         for (size_t i = 0; i < n_vertices * 3; ++i) {
