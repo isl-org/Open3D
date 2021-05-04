@@ -27,10 +27,10 @@
 // Jupyter widget for Open3D WebRTC visualize. See web_visualizer.py for the
 // kernel counterpart to this file.
 
-var widgets = require("@jupyter-widgets/base");
-var _ = require("lodash");
+let widgets = require("@jupyter-widgets/base");
+let _ = require("lodash");
 require("webrtc-adapter");
-var WebRtcStreamer = require("./webrtcstreamer");
+let WebRtcStreamer = require("./webrtcstreamer");
 
 // Custom Model. Custom widgets models must at least provide default values
 // for model attributes, including:
@@ -44,7 +44,7 @@ var WebRtcStreamer = require("./webrtcstreamer");
 //
 // When serializing the entire widget state for embedding, only values that
 // differ from the defaults will be specified.
-var WebVisualizerModel = widgets.DOMWidgetModel.extend({
+let WebVisualizerModel = widgets.DOMWidgetModel.extend({
   defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
     _model_name: "WebVisualizerModel",
     _view_name: "WebVisualizerView",
@@ -57,20 +57,20 @@ var WebVisualizerModel = widgets.DOMWidgetModel.extend({
 });
 
 // Custom View. Renders the widget model.
-var WebVisualizerView = widgets.DOMWidgetView.extend({
+let WebVisualizerView = widgets.DOMWidgetView.extend({
   sleep: function (time_ms) {
     return new Promise((resolve) => setTimeout(resolve, time_ms));
   },
 
   logAndReturn: function (value) {
-    console.log("!!! logAndReturn: ", value);
+    console.log("logAndReturn: ", value);
     return value;
   },
 
   callResultReady: function (callId) {
-    var pyjs_channel = this.model.get("pyjs_channel");
+    let pyjs_channel = this.model.get("pyjs_channel");
     console.log("Current pyjs_channel:", pyjs_channel);
-    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
+    let callResultMap = JSON.parse(this.model.get("pyjs_channel"));
     return callId in callResultMap;
   },
 
@@ -78,7 +78,7 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     if (!this.callResultReady(callId)) {
       throw "extractCallResult not ready yet.";
     }
-    var callResultMap = JSON.parse(this.model.get("pyjs_channel"));
+    let callResultMap = JSON.parse(this.model.get("pyjs_channel"));
     return callResultMap[callId];
   },
 
@@ -87,28 +87,28 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
    * strings.
    */
   callPython: async function (func, args = []) {
-    var callId = this.callId.toString();
+    let callId = this.callId.toString();
     this.callId++;
-    var message = {
+    let message = {
       func: func,
       args: args,
       call_id: callId,
     };
 
     // Append message to current jspy_channel.
-    var jspyChannel = this.model.get("jspy_channel");
-    var jspyChannelObj = JSON.parse(jspyChannel);
+    let jspyChannel = this.model.get("jspy_channel");
+    let jspyChannelObj = JSON.parse(jspyChannel);
     jspyChannelObj[callId] = message;
     jspyChannel = JSON.stringify(jspyChannelObj);
     this.model.set("jspy_channel", jspyChannel);
     this.touch();
 
-    var count = 0;
+    let count = 0;
     while (!this.callResultReady(callId)) {
       console.log("callPython await, id: " + callId + ", count: " + count++);
       await this.sleep(100);
     }
-    var json_result = this.extractCallResult(callId);
+    let json_result = this.extractCallResult(callId);
     console.log(
       "callPython await done, id:",
       callId,
@@ -123,14 +123,14 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
     // parseUrl(url).hostname
     // parseUrl(url).entryPoint
     // parseUrl(url).search
-    var parseUrl = function (url) {
-      var l = document.createElement("a");
+    let parseUrl = function (url) {
+      let l = document.createElement("a");
       l.href = url;
       return l;
     };
 
-    var entryPoint = parseUrl(url).pathname;
-    var supportedAPI = [
+    let entryPoint = parseUrl(url).pathname;
+    let supportedAPI = [
       "/api/getMediaList",
       "/api/getIceServers",
       "/api/hangup",
@@ -139,11 +139,11 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
       "/api/addIceCandidate",
     ];
     if (supportedAPI.indexOf(entryPoint) >= 0) {
-      var queryString = parseUrl(url).search;
+      let queryString = parseUrl(url).search;
       if (!queryString) {
         queryString = "";
       }
-      var dataStr = data["body"];
+      let dataStr = data["body"];
       if (!dataStr) {
         dataStr = "";
       }
@@ -183,8 +183,8 @@ var WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   render: function () {
-    var windowUID = this.model.get("window_uid");
-    var onClose = function () {
+    let windowUID = this.model.get("window_uid");
+    let onClose = function () {
       console.log("onClose() called for window_uid:", windowUID);
     };
 
