@@ -44,9 +44,7 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     core::HashmapBackend backend = core::HashmapBackend::Default;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backend = core::HashmapBackend::Slab;
-    }
+
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
             grid_count, core::Dtype::Int32, core::Dtype::Float32,
             core::SizeVector{3}, core::SizeVector{3}, device, backend);
@@ -58,12 +56,8 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     core::HashmapBackend backend = core::HashmapBackend::Default;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backend = core::HashmapBackend::Slab;
-    }
-
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
+            2 * keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
             core::SizeVector{3}, core::SizeVector{3}, device, backend);
 
     core::Tensor addrs, masks;
