@@ -27,6 +27,7 @@ class _AsyncEventLoop:
         self._run_queue = []
         self._return_vals = {}
         self._started = False
+        self.start()
 
     def start(self):
         if not self._started:
@@ -63,7 +64,6 @@ class _AsyncEventLoop:
 # There are different ways to achieve this, here we use the module as a holder
 # for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
 _async_event_loop = _AsyncEventLoop()
-_async_event_loop.start()
 
 
 def return_one():
