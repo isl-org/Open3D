@@ -1,12 +1,10 @@
 import ipywidgets
 import traitlets
-from IPython.display import display
+import IPython
 import json
-import open3d as o3d
 import threading
-import open3d.visualization.gui as gui
-import open3d.visualization as vis
-from functools import partial
+import functools
+import open3d as o3d
 
 
 @ipywidgets.register
@@ -49,7 +47,7 @@ class WebVisualizer(ipywidgets.DOMWidget):
         help="JS->Python message channel.").tag(sync=True)
 
     def show(self):
-        display(self)
+        IPython.display.display(self)
 
     def _call_http_request(self, entry_point, query_string, data):
         webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
@@ -139,7 +137,7 @@ class _AsyncEventLoop:
                     return self._return_vals[task.task_id]
 
     def _thread_main(self):
-        app = gui.Application.instance
+        app = o3d.visualization.gui.Application.instance
         app.initialize()
 
         done = False
@@ -180,27 +178,27 @@ def web_draw(geometry=None,
              on_animation_tick=None):
 
     uid = _async_event_loop.run_sync(
-        partial(vis.draw,
-                geometry=geometry,
-                title=title,
-                width=width,
-                height=height,
-                actions=actions,
-                lookat=lookat,
-                eye=eye,
-                up=up,
-                field_of_view=field_of_view,
-                bg_color=bg_color,
-                bg_image=bg_image,
-                show_ui=show_ui,
-                point_size=point_size,
-                animation_time_step=animation_time_step,
-                animation_duration=animation_duration,
-                rpc_interface=rpc_interface,
-                on_init=on_init,
-                on_animation_frame=on_animation_frame,
-                on_animation_tick=on_animation_tick,
-                run_application=False))
+        functools.partial(o3d.visualization.draw,
+                          geometry=geometry,
+                          title=title,
+                          width=width,
+                          height=height,
+                          actions=actions,
+                          lookat=lookat,
+                          eye=eye,
+                          up=up,
+                          field_of_view=field_of_view,
+                          bg_color=bg_color,
+                          bg_image=bg_image,
+                          show_ui=show_ui,
+                          point_size=point_size,
+                          animation_time_step=animation_time_step,
+                          animation_duration=animation_duration,
+                          rpc_interface=rpc_interface,
+                          on_init=on_init,
+                          on_animation_frame=on_animation_frame,
+                          on_animation_tick=on_animation_tick,
+                          run_application=False))
     print(f"Newly add Window: {uid}")
     visualizer = o3d.WebVisualizer(window_uid=uid)
     visualizer.show()
