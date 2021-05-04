@@ -233,6 +233,7 @@ PeerConnectionManager::~PeerConnectionManager() {}
 
 // Return deviceList as JSON vector.
 const Json::Value PeerConnectionManager::GetMediaList() {
+    std::lock_guard<std::mutex> media_list_lock(media_list_mutex_);
     Json::Value value(Json::arrayValue);
 
     for (const std::string &window_uid : webrtc_server_->GetWindowUIDs()) {
@@ -809,6 +810,7 @@ void PeerConnectionManager::CloseWindowConnections(
         const std::string &window_uid) {
     utility::LogInfo("PeerConnectionManager::CloseWindowConnections: {}",
                      window_uid);
+    std::lock_guard<std::mutex> media_list_lock(media_list_mutex_);
     std::set<std::string> peerids;
     {
         std::lock_guard<std::mutex> mlock(window_uid_to_peerids_mutex_);
