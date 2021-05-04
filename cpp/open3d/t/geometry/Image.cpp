@@ -122,7 +122,7 @@ Image Image::To(core::Dtype dtype,
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
         std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
-        // TODO: Tensor based Op for saturate_cast / LinearTransform
+        // TODO(Sameer): Tensor based Op for saturate_cast / LinearTransform
         // NPP does not expose a useful API, so as a workaround, move data to
         // CPU and use IPP.
         auto device = data_.GetDevice();
