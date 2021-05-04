@@ -32,7 +32,6 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
 #include "open3d/visualization/gui/Window.h"
@@ -117,19 +116,6 @@ struct BitmapTextInputEvent : public BitmapEvent {
 struct BitmapWindowSystem::Impl {
     BitmapWindowSystem::OnDrawCallback on_draw_;
     std::queue<std::shared_ptr<BitmapEvent>> event_queue_;
-
-    template <typename T, int MAX_SIZE, typename Container = std::deque<T>>
-    class BoundedQueue : public std::queue<T, Container> {
-    public:
-        void push(const T &value) {
-            if (this->size() == MAX_SIZE) {
-                this->c.pop_front();
-            }
-            std::queue<T, Container>::push(value);
-        }
-    };
-    BoundedQueue<std::pair<std::string, std::shared_ptr<core::Tensor>>, 5>
-            frame_queue_;
 };
 
 BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
@@ -161,18 +147,7 @@ void BitmapWindowSystem::WaitEventsTimeout(double timeout_secs) {
     do {
         duration = std::chrono::steady_clock::now() - t0;
         dt = duration.count();
-        if (!impl_->frame_queue_.empty()) {
-            std::string window_uid;
-            std::shared_ptr<core::Tensor> image;
-            std::tie(window_uid, image) = this->impl_->frame_queue_.front();
-            if (this->impl_->on_draw_) {
-                this->impl_->on_draw_(gui::Application::GetInstance()
-                                              .GetWindowByUID(window_uid)
-                                              .get(),
-                                      image);
-            }
-            this->impl_->frame_queue_.pop();
-        } else if (!impl_->event_queue_.empty()) {
+        if (!impl_->event_queue_.empty()) {
             std::shared_ptr<BitmapEvent> event = impl_->event_queue_.front();
             event->Execute();
             impl_->event_queue_.pop();
@@ -317,10 +292,7 @@ rendering::FilamentRenderer *BitmapWindowSystem::CreateRenderer(OSWindow w) {
 
         auto on_pixels = [this, window](std::shared_ptr<core::Tensor> image) {
             if (this->impl_->on_draw_) {
-                // this->impl_->on_draw_(window, image);
-                std::string window_uid = window->GetUID();
-                this->impl_->frame_queue_.push(
-                        std::make_pair(window_uid, image));
+                this->impl_->on_draw_(window, image);
             }
         };
         renderer->RequestReadPixels(size.width, size.height, on_pixels);
