@@ -8,7 +8,7 @@
 # Change CPU:0 to CUDA:0 for running it on primary GPU.
 
 # option to turn ON / OFF visualization:
-visualization = ON
+visualization = OFF
 visualization_min = -1.5
 visualization_max = 1.5
 
@@ -20,7 +20,7 @@ verbosity = Info
  dataset_path = /home/rey/Datasets/kitti_samples/
 
 # Range of frames is 0 to end_range - 1.
-end_range = 400
+end_range = 500
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane

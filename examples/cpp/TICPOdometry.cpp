@@ -20,6 +20,9 @@ float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
 const std::string CURRENT_CLOUD = "current_scan";
+std::string window_name = "Open3D - ICP Frame to Frame Odometry";
+std::string device_string = "CPU:0";
+std::string widget_string = "Average FPS on ";
 
 //------------------------------------------------------------------------------
 // Creating GUI Layout
@@ -28,10 +31,7 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow()
-        : gui::Window("Open3D - Frame to Frame Odometry using ICP ",
-                      WIDTH,
-                      HEIGHT) {
+    ReconstructionWindow() : gui::Window(window_name, WIDTH, HEIGHT) {
         auto& theme = GetTheme();
         int em = theme.font_size;
         int spacing = int(std::round(0.5f * float(em)));
@@ -44,7 +44,8 @@ public:
         AddChild(output_panel_);
 
         output_ = std::make_shared<gui::Label>("");
-        output_panel_->AddChild(std::make_shared<gui::Label>("Average FPS"));
+        const char* label = widget_string.c_str();
+        output_panel_->AddChild(std::make_shared<gui::Label>(label));
         output_panel_->AddChild(output_);
 
         widget3d_->SetScene(
@@ -100,8 +101,8 @@ public:
         // Rendering Materials for Current Frame.
         mat_ = rendering::Material();
         mat_.shader = "defaultUnlit";
-        mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-        mat_.point_size = 5.0f;
+        mat_.base_color = Eigen::Vector4f(0.72f, 0.45f, 0.69f, 1.0f);
+        mat_.point_size = 3.0f;
         // Rendering Materials for cummulative pointcloud.
         pointcloud_mat_ = GetPointCloudMaterial();
 
@@ -448,7 +449,7 @@ private:
         pointcloud_mat.shader = "unlitGradient";
         pointcloud_mat.scalar_min = min_visualization_scalar_;
         pointcloud_mat.scalar_max = max_visualization_scalar_;
-        pointcloud_mat.point_size = 0.1f;
+        pointcloud_mat.point_size = 0.3f;
         // pointcloud_mat.base_color =
         //         Eigen::Vector4f(1.f, 1.0f, 1.0f, 0.5f);
 
@@ -515,10 +516,14 @@ int main(int argc, const char* argv[]) {
     }
     const std::string path_config = std::string(argv[2]);
 
+    device_string = std::string(argv[1]);
+    window_name = window_name + " [" + device_string + "]";
+    widget_string = widget_string + device_string;
+
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
     app.AddWindow(std::make_shared<ExampleWindow>(path_config,
-                                                  core::Device(argv[1])));
+                                                  core::Device(device_string)));
     app.Run();
     return 0;
 }
