@@ -135,9 +135,6 @@ void ControlGrid::Compactify() {
     anchor_idx_ =
             active_addrs[active_keys_indexed[active_keys_indexed.size() / 2](3)]
                     .Item<int>();
-    utility::LogInfo("{}",
-                     ctr_hashmap_->GetKeyTensor()[anchor_idx_].ToString());
-    std::cout << anchor_idx_ << "\n";
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
@@ -323,15 +320,11 @@ geometry::Image ControlGrid::Deform(const geometry::Image& depth,
             depth, intrinsics, extrinsics, depth_scale, depth_max);
 
     geometry::PointCloud pcd_param = Parameterize(pcd);
-    geometry::PointCloud pcd_warped = Deform(pcd_param);
+    geometry::PointCloud pcd_deformed = Deform(pcd_param);
 
-    return geometry::Image(pcd_warped
-                                   .ProjectToDepthImage(depth.GetCols(),
-                                                        depth.GetRows(),
-                                                        intrinsics, extrinsics,
-                                                        depth_scale, depth_max)
-                                   .AsTensor()
-                                   .To(core::Dtype::UInt16));
+    return pcd_deformed.ProjectToDepthImage(depth.GetCols(), depth.GetRows(),
+                                            intrinsics, extrinsics, depth_scale,
+                                            depth_max);
 }
 
 geometry::RGBDImage ControlGrid::Deform(const geometry::RGBDImage& rgbd,
@@ -343,14 +336,13 @@ geometry::RGBDImage ControlGrid::Deform(const geometry::RGBDImage& rgbd,
             rgbd, intrinsics, extrinsics, depth_scale, depth_max);
 
     geometry::PointCloud pcd_param = Parameterize(pcd);
-    geometry::PointCloud pcd_warped = Deform(pcd_param);
+    geometry::PointCloud pcd_deformed = Deform(pcd_param);
 
     int cols = rgbd.depth_.GetCols();
     int rows = rgbd.color_.GetRows();
-    auto rgbd_warped = pcd_warped.ProjectToRGBDImage(
-            cols, rows, intrinsics, extrinsics, depth_scale, depth_max);
 
-    return rgbd_warped;
+    return pcd_deformed.ProjectToRGBDImage(cols, rows, intrinsics, extrinsics,
+                                           depth_scale, depth_max);
 }
 
 }  // namespace slac
