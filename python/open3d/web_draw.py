@@ -2,7 +2,7 @@ import open3d as o3d
 import threading
 
 
-class AsyncEventLoop:
+class _AsyncEventLoop:
 
     class _Task:
         _g_next_id = 0
@@ -14,17 +14,21 @@ class AsyncEventLoop:
 
     # Do not call this directly, use instance instead
     def __init__(self):
-        # TODO: find a better solution. We need to redirect
-        # C++ prints to terminal when async loop + GIL + py::print
-        # are used together under some scenarios.
+        # TODO: find a better solution. Currently py::print requires GIL which
+        # causes deadlock when AsyncEventLoop is used. By calling
+        # reset_print_function(), all C++ prints will be directed to the
+        # terminal while python print will still remain in the cell.
         o3d.utility.reset_print_function()
         self._lock = threading.Lock()
         self._run_queue = []
         self._return_vals = {}
+        self._started = False
 
     def start(self):
-        self._thread = threading.Thread(target=self._thread_main)
-        self._thread.start()
+        if not self._started:
+            self._thread = threading.Thread(target=self._thread_main)
+            self._thread.start()
+            self._started = True
 
     def run_sync(self, f):
         with self._lock:
@@ -49,3 +53,9 @@ class AsyncEventLoop:
                 self._run_queue.clear()
 
             done = not app.run_one_tick()
+
+
+# The _AsyncEventLoop class shall only be used to create a singleton instance.
+# There are different ways to achieve this, here we use the module as a holder
+# for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
+global_jupyter_loop = _AsyncEventLoop()
