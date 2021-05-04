@@ -198,7 +198,7 @@ def web_draw(geometry=None,
                           on_init=on_init,
                           on_animation_frame=on_animation_frame,
                           on_animation_tick=on_animation_tick,
-                          run_application=False))
+                          non_blocking_and_return_uid=True))
     print(f"Newly add Window: {uid}")
     visualizer = o3d.WebVisualizer(window_uid=uid)
     visualizer.show()

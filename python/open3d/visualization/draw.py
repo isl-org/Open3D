@@ -21,7 +21,7 @@ def draw(geometry=None,
          on_init=None,
          on_animation_frame=None,
          on_animation_tick=None,
-         run_application=True):
+         non_blocking_and_return_uid=False):
     gui.Application.instance.initialize()
     w = O3DVisualizer(title, width, height)
     w.set_background(bg_color, bg_image)
@@ -75,7 +75,7 @@ def draw(geometry=None,
         w.set_on_animation_tick(on_animation_tick)
 
     gui.Application.instance.add_window(w)
-    if run_application:
-        gui.Application.instance.run()
-    else:
+    if non_blocking_and_return_uid:
         return w.uid
+    else:
+        gui.Application.instance.run()
