@@ -46,7 +46,8 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999))
+            o3d.pipelines.registration.RANSACConvergenceCriteria(
+                1000000, 0.999))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
@@ -153,7 +154,7 @@ def make_posegraph_for_scene(ply_file_names, config):
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count()//2,
+        MAX_THREAD = min(multiprocessing.cpu_count() // 2,
                          max(len(matching_results), 1))
         results = Parallel(n_jobs=MAX_THREAD)(delayed(
             register_point_cloud_pair)(ply_file_names, matching_results[r].s,

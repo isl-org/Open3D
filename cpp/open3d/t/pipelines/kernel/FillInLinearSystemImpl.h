@@ -426,7 +426,7 @@ void FillInSLACRegularizerTermCPU
         const bool *mask_nbs = grid_nbs_mask_ptr + 6 * workload_idx;
 
         // Build a 3x3 linear system to compute the local R
-        float cov[3][3] = {0};
+        float cov[3][3] = {{0}};
         float U[3][3], V[3][3], S[3];
 
         int cnt = 0;

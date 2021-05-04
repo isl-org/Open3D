@@ -197,8 +197,10 @@ int main(int argc, char** argv) {
             utility::LogInfo("{}: Integration takes {}", k,
                              timer.GetDuration());
 
-            if (k % 50 == 0) {
+            if (k % 10 == 0) {
+#ifdef BUILD_CUDA_MODULE
                 CUDACachedMemoryManager::ReleaseCache();
+#endif
             }
         }
     }
