@@ -167,7 +167,10 @@ var WebRtcStreamer = (function () {
     if (this.videoElt) {
       var parentDivElt = this.videoElt.parentElement;
       var controllerDivElt = document.createElement("div");
-      parentDivElt.insertBefore(controllerDivElt, this.videoElt);
+
+      // TODO: Uncomment this line to display the resize controls.
+      // Resize with auto-refresh still need some more work.
+      // parentDivElt.insertBefore(controllerDivElt, this.videoElt);
 
       var heightInputElt = document.createElement("input");
       heightInputElt.id = windowUID + "_height_input";
