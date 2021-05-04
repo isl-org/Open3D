@@ -64,10 +64,26 @@ struct SLACOptimizerOption {
     }
 };
 
-/// Simultaneous Localization and Calibration: Self-Calibration of Consumer
-/// Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
-/// Estimate a shared control grid for all fragments for scene reconstruction,
-/// implemented in https://github.com/qianyizh/ElasticReconstruction.
+/// \brief Read pose graph containing loop closures and odometry to compute
+/// correspondences. Uses aggressive pruning -- reject any suspicious pair.
+///
+/// \param fnames_processed Vector of filenames for processed pointcloud
+/// fragments. \param fragment_pose_graph Legacy PoseGraph for pointcloud
+/// fragments. \param option SLACOptimizerOption containing the configurations.
+void SaveCorrespondencesForPointClouds(
+        const std::vector<std::string>& fnames_processed,
+        const PoseGraph& fragment_pose_graph,
+        const SLACOptimizerOption& option);
+
+/// \brief Simultaneous Localization and Calibration: Self-Calibration of
+/// Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun Estimate a
+/// shared control grid for all fragments for scene reconstruction, implemented
+/// in https://github.com/qianyizh/ElasticReconstruction.
+///
+/// \param fragment_fnames Vector of filenames for pointcloud fragments.
+/// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
+/// \param option SLACOptimizerOption containing the configurations.
+/// \return pair of registraion::PoseGraph and slac::ControlGrid.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,

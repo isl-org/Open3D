@@ -286,9 +286,9 @@ void SaveCorrespondencesForPointClouds(
     }
 }
 
-void InitializeControlGrid(ControlGrid& ctr_grid,
-                           const std::vector<std::string>& fnames,
-                           const SLACOptimizerOption& option) {
+static void InitializeControlGrid(ControlGrid& ctr_grid,
+                                  const std::vector<std::string>& fnames,
+                                  const SLACOptimizerOption& option) {
     core::Device device(option.device_);
     for (auto& fname : fnames) {
         utility::LogInfo("Initializing grid for {}", fname);
@@ -299,9 +299,9 @@ void InitializeControlGrid(ControlGrid& ctr_grid,
     utility::LogInfo("Initialization finished.");
 }
 
-void UpdatePoses(PoseGraph& fragment_pose_graph,
-                 core::Tensor& delta,
-                 const SLACOptimizerOption& option) {
+static void UpdatePoses(PoseGraph& fragment_pose_graph,
+                        core::Tensor& delta,
+                        const SLACOptimizerOption& option) {
     core::Tensor delta_poses = delta.View({-1, 6}).To(core::Device("CPU:0"));
 
     if (delta_poses.GetLength() != int64_t(fragment_pose_graph.nodes_.size())) {
@@ -324,9 +324,9 @@ void UpdatePoses(PoseGraph& fragment_pose_graph,
     }
 }
 
-void UpdateControlGrid(ControlGrid& ctr_grid,
-                       core::Tensor& delta,
-                       const SLACOptimizerOption& option) {
+static void UpdateControlGrid(ControlGrid& ctr_grid,
+                              core::Tensor& delta,
+                              const SLACOptimizerOption& option) {
     core::Tensor delta_cgrids = delta.View({-1, 3});
     if (delta_cgrids.GetLength() != int64_t(ctr_grid.Size())) {
         utility::LogError("Dimension Mismatch");
