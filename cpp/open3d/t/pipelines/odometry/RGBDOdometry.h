@@ -51,15 +51,25 @@ public:
     /// \brief Constructor for the convergence criteria, where we stop
     /// iterations once the criteria are met.
     ///
+    /// \param max_iteration Maximum iteration before iteration stops.
     /// \param relative_rmse Relative rmse threshold where we stop iterations.
     /// \param relative_fitness Relative fitness threshold where we stop
     /// iterations.
-    OdometryConvergenceCriteria(double relative_rmse = 1e-6,
+    OdometryConvergenceCriteria(int max_iteration,
+                                double relative_rmse = 1e-6,
                                 double relative_fitness = 1e-6)
-        : relative_rmse_(relative_rmse), relative_fitness_(relative_fitness) {}
+        : max_iteration_(max_iteration),
+          relative_rmse_(relative_rmse),
+          relative_fitness_(relative_fitness) {}
 
 public:
+    /// Maximum iteration before iteration stops.
+    int max_iteration_;
+    /// If relative change (difference) of inliner RMSE score is lower than
+    /// `relative_rmse`, the iteration stops.
     double relative_rmse_;
+    /// If relative change (difference) of fitness score is lower than
+    /// `relative_fitness`, the iteration stops.
     double relative_fitness_;
 };
 
@@ -82,8 +92,12 @@ public:
     ~OdometryResult() {}
 
 public:
+    /// The estimated transformation matrix of dtype Float64 on CPU device.
     core::Tensor transformation_;
+    /// RMSE of all inlier. Lower is better.
     double inlier_rmse_;
+    /// The overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
     double fitness_;
 };
 
@@ -137,11 +151,12 @@ public:
 /// \param depth_scale Converts depth pixel values to meters by dividing the
 /// scale factor.
 /// \param depth_max Max depth to truncate depth image with noisy measurements.
-/// \param iterations Iterations in multiscale odometry, from coarse to fine.
+/// \param criteria Criteria used to define and terminate iterations. In
+/// multiscale odometry the order is from coarse to fine. Inputting a vector of
+/// iterations by default triggers the implicit conversion.
 /// \param method Method used to apply RGBD odometry.
 /// \param params Parameters used in loss function, including outlier rejection
 /// threshold and huber norm parameters.
-/// \param criteria Criteria used to terminate iterations.
 /// \return odometry result, with (4, 4) optimized transformation matrix from
 /// source to target, inlier ratio, and fitness.
 OdometryResult RGBDOdometryMultiScale(
@@ -152,11 +167,9 @@ OdometryResult RGBDOdometryMultiScale(
                 4, core::Dtype::Float64, core::Device("CPU:0")),
         const float depth_scale = 1000.0f,
         const float depth_max = 3.0f,
-        const std::vector<int>& iterations = {10, 5, 3},
+        const std::vector<OdometryConvergenceCriteria>& criteria = {10, 5, 3},
         const Method method = Method::Hybrid,
-        const OdometryLossParams& params = OdometryLossParams(),
-        const OdometryConvergenceCriteria& criteria =
-                OdometryConvergenceCriteria());
+        const OdometryLossParams& params = OdometryLossParams());
 
 /// \brief Estimates the 4x4 rigid transformation T from source to target, with
 /// inlier rmse and fitness.

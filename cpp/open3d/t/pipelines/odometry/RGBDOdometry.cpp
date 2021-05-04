@@ -69,9 +69,8 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
         const core::Tensor& trans,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria);
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params);
 
 OdometryResult RGBDOdometryMultiScaleIntensity(
         const t::geometry::RGBDImage& source,
@@ -80,9 +79,8 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
         const core::Tensor& trans,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria);
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params);
 
 OdometryResult RGBDOdometryMultiScaleHybrid(
         const t::geometry::RGBDImage& source,
@@ -91,9 +89,8 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
         const core::Tensor& trans,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria);
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params);
 
 OdometryResult RGBDOdometryMultiScale(
         const t::geometry::RGBDImage& source,
@@ -102,10 +99,9 @@ OdometryResult RGBDOdometryMultiScale(
         const core::Tensor& init_source_to_target,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
         const Method method,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria) {
+        const OdometryLossParams& params) {
     // TODO (wei): more device check
     core::Device device = source.depth_.GetDevice();
     if (target.depth_.GetDevice() != device) {
@@ -137,15 +133,15 @@ OdometryResult RGBDOdometryMultiScale(
     if (method == Method::PointToPlane) {
         return RGBDOdometryMultiScalePointToPlane(
                 source_processed, target_processed, intrinsics_d, trans_d,
-                depth_scale, depth_max, iterations, params, criteria);
+                depth_scale, depth_max, criteria, params);
     } else if (method == Method::Intensity) {
         return RGBDOdometryMultiScaleIntensity(
                 source_processed, target_processed, intrinsics_d, trans_d,
-                depth_scale, depth_max, iterations, params, criteria);
+                depth_scale, depth_max, criteria, params);
     } else if (method == Method::Hybrid) {
-        return RGBDOdometryMultiScaleHybrid(
-                source_processed, target_processed, intrinsics_d, trans_d,
-                depth_scale, depth_max, iterations, params, criteria);
+        return RGBDOdometryMultiScaleHybrid(source_processed, target_processed,
+                                            intrinsics_d, trans_d, depth_scale,
+                                            depth_max, criteria, params);
     } else {
         utility::LogError("Odometry method not implemented.");
     }
@@ -160,10 +156,9 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
         const core::Tensor& trans,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria) {
-    int64_t n_levels = int64_t(iterations.size());
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params) {
+    int64_t n_levels = int64_t(criteria.size());
     std::vector<core::Tensor> source_vertex_maps(n_levels);
     std::vector<core::Tensor> target_vertex_maps(n_levels);
     std::vector<core::Tensor> target_normal_maps(n_levels);
@@ -207,7 +202,7 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
 
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < iterations[i]; ++iter) {
+        for (int iter = 0; iter < criteria[i].max_iteration_; ++iter) {
             auto delta_result = ComputeOdometryResultPointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
                     target_normal_maps[i], intrinsic_matrices[i],
@@ -221,10 +216,10 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
 
             if (std::abs(result.fitness_ - delta_result.fitness_) /
                                 result.fitness_ <
-                        criteria.relative_fitness_ &&
+                        criteria[i].relative_fitness_ &&
                 std::abs(result.inlier_rmse_ - delta_result.inlier_rmse_) /
                                 result.inlier_rmse_ <
-                        criteria.relative_rmse_) {
+                        criteria[i].relative_rmse_) {
                 utility::LogDebug("Early exit at level {}, iter {}", i, iter);
                 break;
             }
@@ -243,10 +238,9 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
         const core::Tensor& trans,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria) {
-    int64_t n_levels = int64_t(iterations.size());
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params) {
+    int64_t n_levels = int64_t(criteria.size());
     std::vector<core::Tensor> source_intensity(n_levels);
     std::vector<core::Tensor> target_intensity(n_levels);
 
@@ -307,7 +301,7 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
     // Odometry
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < iterations[i]; ++iter) {
+        for (int iter = 0; iter < criteria[i].max_iteration_; ++iter) {
             auto delta_result = ComputeOdometryResultIntensity(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_intensity_dx[i],
@@ -322,10 +316,10 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
 
             if (std::abs(result.fitness_ - delta_result.fitness_) /
                                 result.fitness_ <
-                        criteria.relative_fitness_ &&
+                        criteria[i].relative_fitness_ &&
                 std::abs(result.inlier_rmse_ - delta_result.inlier_rmse_) /
                                 result.inlier_rmse_ <
-                        criteria.relative_rmse_) {
+                        criteria[i].relative_rmse_) {
                 utility::LogDebug("Early exit at level {}, iter {}", i, iter);
                 break;
             }
@@ -344,10 +338,9 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
         const core::Tensor& trans,
         const float depth_scale,
         const float depth_max,
-        const std::vector<int>& iterations,
-        const OdometryLossParams& params,
-        const OdometryConvergenceCriteria& criteria) {
-    int64_t n_levels = int64_t(iterations.size());
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params) {
+    int64_t n_levels = int64_t(criteria.size());
     std::vector<core::Tensor> source_intensity(n_levels);
     std::vector<core::Tensor> target_intensity(n_levels);
 
@@ -397,7 +390,6 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
         target_depth_dy[n_levels - 1 - i] = target_depth_grad.second.AsTensor();
 
         intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
-
         if (i != n_levels - 1) {
             source_depth_curr = PyrDownDepth(
                     source_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
@@ -414,7 +406,7 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
     // Odometry
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < iterations[i]; ++iter) {
+        for (int iter = 0; iter < criteria[i].max_iteration_; ++iter) {
             auto delta_result = ComputeOdometryResultHybrid(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_depth_dx[i], target_depth_dy[i],
@@ -430,10 +422,10 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
 
             if (std::abs(result.fitness_ - delta_result.fitness_) /
                                 result.fitness_ <
-                        criteria.relative_fitness_ &&
+                        criteria[i].relative_fitness_ &&
                 std::abs(result.inlier_rmse_ - delta_result.inlier_rmse_) /
                                 result.inlier_rmse_ <
-                        criteria.relative_rmse_) {
+                        criteria[i].relative_rmse_) {
                 utility::LogDebug("Early exit at level {}, iter {}", i, iter);
                 break;
             }
