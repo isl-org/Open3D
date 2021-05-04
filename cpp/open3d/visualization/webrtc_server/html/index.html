@@ -9,18 +9,18 @@
       /**
        * Global WebRTC configs
        */
-      var webRtcOptions = "rtptransport=tcp&timeout=60";
+      let webRtcOptions = "rtptransport=tcp&timeout=60";
 
       /**
        * WebRTC connections
        */
-      var webRtcServerList = {};
+      let webRtcServerList = {};
 
       /**
        * Get the div where to insert a video
        */
       function getContentDiv() {
-        var contentDiv = document.getElementById("content");
+        let contentDiv = document.getElementById("content");
         return contentDiv;
       }
 
@@ -101,10 +101,10 @@
        */
       function delConnection(windowId) {
         console.log("delConnection: ", windowId);
-        var videoId = "video_" + windowId;
+        let videoId = "video_" + windowId;
 
         // Disconnect WebRTC connection
-        var webrtcServer = webRtcServerList[videoId];
+        let webrtcServer = webRtcServerList[videoId];
         if (webrtcServer) {
           webrtcServer.disconnect();
           webRtcServerList[videoId] = undefined;
