@@ -4,6 +4,8 @@ from IPython.display import display
 import json
 import open3d as o3d
 import threading
+import open3d.visualization.gui as gui
+from open3d.visualization import O3DVisualizer
 
 
 @widgets.register
@@ -133,7 +135,7 @@ class _AsyncEventLoop:
                     return self._return_vals[task.task_id]
 
     def _thread_main(self):
-        app = o3d.visualization.gui.Application.instance
+        app = gui.Application.instance
         app.initialize()
 
         done = False
@@ -150,8 +152,8 @@ class _AsyncEventLoop:
 # The _AsyncEventLoop class shall only be used to create a singleton instance.
 # There are different ways to achieve this, here we use the module as a holder
 # for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
-global_jupyter_loop = _AsyncEventLoop()
-global_jupyter_loop.start()
+_global_jupyter_loop = _AsyncEventLoop()
+_global_jupyter_loop.start()
 
 
 def _jupyter_labextension_paths():
