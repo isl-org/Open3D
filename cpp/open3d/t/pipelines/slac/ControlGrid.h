@@ -114,13 +114,11 @@ public:
     /// - unprojecting the depth image to a point cloud;
     /// - deform the point cloud;
     /// - project the deformed point cloud back to the image.
-    std::pair<geometry::Image, geometry::Image> Deform(
-            const geometry::Image& depth,
-            const geometry::Image& color,
-            const core::Tensor& intrinsics,
-            const core::Tensor& extrinsics,
-            float depth_scale,
-            float depth_max);
+    geometry::RGBDImage Deform(const geometry::RGBDImage& rgbd,
+                               const core::Tensor& intrinsics,
+                               const core::Tensor& extrinsics,
+                               float depth_scale,
+                               float depth_max);
 
     /// Get control grid original positions directly from tensor keys.
     core::Tensor GetInitPositions() {

@@ -325,39 +325,32 @@ geometry::Image ControlGrid::Deform(const geometry::Image& depth,
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Deform(pcd_param);
 
-    return geometry::Image(
-            pcd_warped
-                    .ProjectDepth(depth.GetCols(), depth.GetRows(), intrinsics,
-                                  extrinsics, depth_scale, depth_max)
-                    .AsTensor()
-                    .To(core::Dtype::UInt16));
+    return geometry::Image(pcd_warped
+                                   .ProjectToDepthImage(depth.GetCols(),
+                                                        depth.GetRows(),
+                                                        intrinsics, extrinsics,
+                                                        depth_scale, depth_max)
+                                   .AsTensor()
+                                   .To(core::Dtype::UInt16));
 }
 
-std::pair<geometry::Image, geometry::Image> ControlGrid::Deform(
-        const geometry::Image& depth,
-        const geometry::Image& color,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max) {
-    utility::LogInfo("Deform: CreateFromRGBD");
+geometry::RGBDImage ControlGrid::Deform(const geometry::RGBDImage& rgbd,
+                                        const core::Tensor& intrinsics,
+                                        const core::Tensor& extrinsics,
+                                        float depth_scale,
+                                        float depth_max) {
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromRGBDImage(
-            geometry::RGBDImage(color, depth), intrinsics, extrinsics,
-            depth_scale, depth_max);
+            rgbd, intrinsics, extrinsics, depth_scale, depth_max);
 
-    utility::LogInfo("Deform: Parameterize");
     geometry::PointCloud pcd_param = Parameterize(pcd);
     geometry::PointCloud pcd_warped = Deform(pcd_param);
 
-    utility::LogInfo("Deform: ProjectRGBD");
-    auto rgbd_warped =
-            pcd_warped.ProjectRGBD(depth.GetCols(), depth.GetRows(), intrinsics,
-                                   extrinsics, depth_scale, depth_max);
+    int cols = rgbd.depth_.GetCols();
+    int rows = rgbd.color_.GetRows();
+    auto rgbd_warped = pcd_warped.ProjectToRGBDImage(
+            cols, rows, intrinsics, extrinsics, depth_scale, depth_max);
 
-    utility::LogInfo("Deform: Make pair");
-    return std::make_pair(geometry::Image(rgbd_warped.first.AsTensor().To(
-                                  core::Dtype::UInt16)),
-                          geometry::Image(rgbd_warped.second.AsTensor()));
+    return rgbd_warped;
 }
 
 }  // namespace slac

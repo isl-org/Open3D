@@ -232,23 +232,21 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
     return PointCloud({{"points", points}, {"colors", colors}});
 }
 
-geometry::Image PointCloud::ProjectDepth(int width,
-                                         int height,
-                                         const core::Tensor &intrinsics,
-                                         const core::Tensor &extrinsics,
-                                         float depth_scale,
-                                         float depth_max) {
+geometry::Image PointCloud::ProjectToDepthImage(int width,
+                                                int height,
+                                                const core::Tensor &intrinsics,
+                                                const core::Tensor &extrinsics,
+                                                float depth_scale,
+                                                float depth_max) {
     core::Tensor depth = core::Tensor::Zeros({height, width, 1},
                                              core::Dtype::Float32, device_);
-    core::Tensor color_placeholder({1, 1, 3}, core::Dtype::UInt8);
-    core::Tensor point_colors_placeholder({1, 3}, core::Dtype::Float32);
-    kernel::pointcloud::Project(depth, color_placeholder, GetPoints(),
-                                point_colors_placeholder, intrinsics,
-                                extrinsics, depth_scale, depth_max);
+    kernel::pointcloud::Project(depth, utility::nullopt, GetPoints(),
+                                utility::nullopt, intrinsics, extrinsics,
+                                depth_scale, depth_max);
     return geometry::Image(depth);
 }
 
-std::pair<geometry::Image, geometry::Image> PointCloud::ProjectRGBD(
+geometry::RGBDImage PointCloud::ProjectToRGBDImage(
         int width,
         int height,
         const core::Tensor &intrinsics,
@@ -268,7 +266,7 @@ std::pair<geometry::Image, geometry::Image> PointCloud::ProjectRGBD(
     kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
                                 intrinsics, extrinsics, depth_scale, depth_max);
 
-    return std::make_pair(geometry::Image(depth), geometry::Image(color));
+    return geometry::RGBDImage(color, depth);
 }
 
 PointCloud PointCloud::FromLegacyPointCloud(

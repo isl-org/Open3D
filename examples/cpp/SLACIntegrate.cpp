@@ -158,18 +158,18 @@ int main(int argc, char** argv) {
                     t::geometry::Image::FromLegacyImage(*depth_legacy, device);
             t::geometry::Image color =
                     t::geometry::Image::FromLegacyImage(*color_legacy, device);
+            t::geometry::RGBDImage rgbd(color, depth);
 
-            utility::LogInfo("Reprojecting");
-            t::geometry::Image depth_reproj, color_reproj;
-            std::tie(depth_reproj, color_reproj) =
-                    ctr_grid.Deform(depth, color, intrinsic_t,
-                                    extrinsic_local_t, depth_scale, max_depth);
-            utility::LogInfo("depth_reproj = {}", depth_reproj.ToString());
+            utility::Timer timer;
+            timer.Start();
+
+            t::geometry::RGBDImage rgbd_projected =
+                    ctr_grid.Deform(rgbd, intrinsic_t, extrinsic_local_t,
+                                    depth_scale, max_depth);
             if (false) {
                 t::geometry::PointCloud pcd =
                         t::geometry::PointCloud::CreateFromRGBDImage(
-                                t::geometry::RGBDImage(color, depth),
-                                intrinsic_t, extrinsic_t, depth_scale,
+                                rgbd, intrinsic_t, extrinsic_t, depth_scale,
                                 max_depth);
                 auto pcd_old_legacy =
                         std::make_shared<open3d::geometry::PointCloud>(
@@ -177,20 +177,17 @@ int main(int argc, char** argv) {
 
                 t::geometry::PointCloud pcd_reproj =
                         t::geometry::PointCloud::CreateFromRGBDImage(
-                                t::geometry::RGBDImage(color_reproj,
-                                                       depth_reproj),
-                                intrinsic_t, extrinsic_t, depth_scale,
-                                max_depth);
+                                rgbd_projected, intrinsic_t, extrinsic_t,
+                                depth_scale, max_depth);
                 auto pcd_legacy =
                         std::make_shared<open3d::geometry::PointCloud>(
                                 pcd_reproj.ToLegacyPointCloud());
                 visualization::DrawGeometries({pcd_old_legacy, pcd_legacy});
             }
 
-            utility::Timer timer;
-            timer.Start();
-            voxel_grid.Integrate(depth_reproj, color_reproj, intrinsic_t,
-                                 extrinsic_t, depth_scale, max_depth);
+            voxel_grid.Integrate(rgbd_projected.depth_, rgbd_projected.color_,
+                                 intrinsic_t, extrinsic_t, depth_scale,
+                                 max_depth);
             timer.Stop();
 
             ++k;

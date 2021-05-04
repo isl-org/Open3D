@@ -42,29 +42,30 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
-void ProjectCPU(core::Tensor& depth,
-                core::Tensor& color,
-                const core::Tensor& points,
-                const core::Tensor& point_colors,
-                const core::Tensor& intrinsics,
-                const core::Tensor& extrinsics,
-                float depth_scale,
-                float depth_max) {
-    int64_t n = points.GetLength();
-    const float* points_ptr = static_cast<const float*>(points.GetDataPtr());
-    const float* point_colors_ptr =
-            static_cast<const float*>(point_colors.GetDataPtr());
+void ProjectCPU(
+        core::Tensor& depth,
+        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max) {
+    const bool has_colors = image_colors.has_value();
 
-    bool process_color = point_colors.GetLength() == points.GetLength();
+    int64_t n = points.GetLength();
+
+    const float* points_ptr = points.GetDataPtr<float>();
+    const float* point_colors_ptr =
+            has_colors ? colors.value().get().GetDataPtr<float>() : nullptr;
 
     TransformIndexer transform_indexer(intrinsics, extrinsics, 1.0f);
-
     NDArrayIndexer depth_indexer(depth, 2);
-    NDArrayIndexer color_indexer(color, 2);
-    core::Tensor pixel_counter =
-            core::Tensor({depth.GetShape()[0], depth.GetShape()[1], 1},
-                         core::Dtype::Int32, depth.GetDevice());
-    NDArrayIndexer pixel_indexer(pixel_counter, 2);
+
+    NDArrayIndexer color_indexer;
+    if (has_colors) {
+        color_indexer = NDArrayIndexer(image_colors.value().get(), 2);
+    }
 
     core::kernel::CPULauncher::LaunchGeneralKernel(
             n, [&](int64_t workload_idx) {
@@ -91,7 +92,7 @@ void ProjectCPU(core::Tensor& depth,
                     if (*depth_ptr == 0 || *depth_ptr >= d) {
                         *depth_ptr = d;
 
-                        if (process_color) {
+                        if (has_colors) {
                             uint8_t* color_ptr =
                                     color_indexer.GetDataPtrFromCoord<uint8_t>(
                                             static_cast<int64_t>(u),

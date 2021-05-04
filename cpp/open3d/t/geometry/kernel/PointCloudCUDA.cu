@@ -42,18 +42,22 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
-void ProjectCUDA(core::Tensor& depth,
-                 core::Tensor& color,
-                 const core::Tensor& points,
-                 const core::Tensor& point_colors,
-                 const core::Tensor& intrinsics,
-                 const core::Tensor& extrinsics,
-                 float depth_scale,
-                 float depth_max) {
+void ProjectCUDA(
+        core::Tensor& depth,
+        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max) {
+    const bool has_colors = image_colors.has_value();
+
     int64_t n = points.GetLength();
-    const float* points_ptr = static_cast<const float*>(points.GetDataPtr());
+
+    const float* points_ptr = points.GetDataPtr<float>();
     const float* point_colors_ptr =
-            static_cast<const float*>(point_colors.GetDataPtr());
+            has_colors ? colors.value().get().GetDataPtr<float>() : nullptr;
 
     TransformIndexer transform_indexer(intrinsics, extrinsics, 1.0f);
     NDArrayIndexer depth_indexer(depth, 2);
@@ -86,10 +90,9 @@ void ProjectCUDA(core::Tensor& depth,
             });
 
     // Pass 2: color map
-    if (point_colors.GetLength() != points.GetLength()) return;
+    if (!has_colors) return;
 
-    NDArrayIndexer color_indexer(color, 2);
-
+    NDArrayIndexer color_indexer(image_colors.value().get(), 2);
     float precision_bound = depth_scale * 1e-4;
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
