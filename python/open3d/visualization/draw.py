@@ -20,7 +20,8 @@ def draw(geometry=None,
          rpc_interface=False,
          on_init=None,
          on_animation_frame=None,
-         on_animation_tick=None):
+         on_animation_tick=None,
+         run_application=True):
     gui.Application.instance.initialize()
     w = O3DVisualizer(title, width, height)
     w.set_background(bg_color, bg_image)
@@ -74,4 +75,6 @@ def draw(geometry=None,
         w.set_on_animation_tick(on_animation_tick)
 
     gui.Application.instance.add_window(w)
-    gui.Application.instance.run()
+
+    if run_application:
+        gui.Application.instance.run()
