@@ -197,8 +197,9 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     tpcd_i_indexed.Transform(T_i.To(device, dtype));
     tpcd_j_indexed.Transform(T_j.To(device, dtype));
 
-    core::Tensor square_residual =
-            (tpcd_i_indexed.GetPoints() - tpcd_j_indexed.GetPoints()).Sum({1});
+    core::Tensor residual =
+            (tpcd_i_indexed.GetPoints() - tpcd_j_indexed.GetPoints());
+    core::Tensor square_residual = (residual * residual).Sum({1});
     core::Tensor inliers =
             square_residual.Le(distance_threshold * distance_threshold);
 
@@ -272,8 +273,7 @@ void SaveCorrespondencesForPointClouds(
                 edge.transformation_);
 
         // 0.008 ~ 3.0 / 512 * 1.4
-        float distance_threshold =
-                option.voxel_size_ < 0.001 ? 0.008 : 1.4 * option.voxel_size_;
+        float distance_threshold = option.threshold_;
 
         // Get correspondences.
         core::Tensor correspondence_set = GetCorrespondenceSetForPointCloudPair(
