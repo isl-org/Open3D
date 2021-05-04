@@ -69,6 +69,8 @@ public:
 
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
+    void Clear() override;
+
     int64_t Size() const override;
     int64_t GetBucketCount() const override;
     std::vector<int64_t> BucketSizes() const override;
@@ -185,6 +187,12 @@ int64_t TBBHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
     }
 
     return count;
+}
+
+template <typename Key, typename Hash>
+void TBBHashmap<Key, Hash>::Clear() {
+    impl_->clear();
+    buffer_ctx_->Reset();
 }
 
 template <typename Key, typename Hash>

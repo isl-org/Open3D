@@ -84,6 +84,23 @@ constexpr Alignment operator|(Alignment x, Alignment y) {
     return Alignment((unsigned int)(x) | (unsigned int)(y));
 }
 
+/// BOLD, ITALIC, and BOLD_ITALIC are not supported for CJK characters
+/// due to the large of amount of GPU memory it would take, and also because
+/// these styles offer limited utility for CJK characters.
+enum class FontStyle {
+    NORMAL = 0,
+    BOLD = 1,
+    ITALIC = 2,
+    BOLD_ITALIC = 3  /// BOLD | ITALIC
+};
+
+class FontContext {
+public:
+    virtual ~FontContext(){};
+
+    virtual void* GetFont(FontStyle style) = 0;
+};
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

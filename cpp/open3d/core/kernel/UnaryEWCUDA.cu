@@ -93,6 +93,27 @@ static OPEN3D_HOST_DEVICE void CUDAAbsElementKernel(const void* src,
 }
 
 template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAIsNanElementKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<bool*>(dst) =
+            isnan(static_cast<float>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAIsInfElementKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<bool*>(dst) =
+            isinf(static_cast<float>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAIsFiniteElementKernel(const void* src,
+                                                         void* dst) {
+    *static_cast<bool*>(dst) =
+            isfinite(static_cast<float>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t>
 static OPEN3D_HOST_DEVICE void CUDAFloorElementKernel(const void* src,
                                                       void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
@@ -248,6 +269,32 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 utility::LogError(
                         "Boolean op's output type must be boolean or the "
                         "same type as the input.");
+            }
+        });
+    } else if (op_code == UnaryEWOpCode::IsNan ||
+               op_code == UnaryEWOpCode::IsInf ||
+               op_code == UnaryEWOpCode::IsFinite) {
+        assert_dtype_is_float(src_dtype);
+        Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            if (op_code == UnaryEWOpCode::IsNan) {
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDAIsNanElementKernel<scalar_t>(src, dst);
+                        });
+            } else if (op_code == UnaryEWOpCode::IsInf) {
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDAIsInfElementKernel<scalar_t>(src, dst);
+                        });
+            } else if (op_code == UnaryEWOpCode::IsFinite) {
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDAIsFiniteElementKernel<scalar_t>(src, dst);
+                        });
             }
         });
     } else {

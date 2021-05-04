@@ -112,5 +112,13 @@ TEST(Scalar, To) {
     EXPECT_EQ(ToScalar(1.25f).To<bool>(), true);
 }
 
+TEST(Scalar, Constructor) {
+    // Test with int64_t limit.
+    core::Scalar a(9223372036854775807);
+    EXPECT_EQ(a.GetInt64(), 9223372036854775807);
+    core::Scalar b = ToScalar(9223372036854775807);
+    EXPECT_EQ(b.GetInt64(), 9223372036854775807);
+}
+
 }  // namespace tests
 }  // namespace open3d

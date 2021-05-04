@@ -145,7 +145,7 @@ def test_compare_to_conv3d(ml, dtype, kernel_size, out_channels, in_channels,
 
     y_conv3d += bias
 
-    np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
+    np.testing.assert_allclose(y, y_conv3d, rtol=1e-3, atol=1e-5)
 
 
 # yapf: disable
@@ -263,4 +263,4 @@ def test_compare_to_conv3dtranspose(ml, dtype, kernel_size, out_channels,
 
     y_conv3d += bias
 
-    np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
+    np.testing.assert_allclose(y, y_conv3d, rtol=1e-3, atol=1e-8)

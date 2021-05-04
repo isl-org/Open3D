@@ -286,6 +286,12 @@ endfunction()
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
+# CUDAToolkit
+if(BUILD_CUDA_MODULE)
+    find_package(CUDAToolkit REQUIRED)
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
+endif()
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
@@ -940,14 +946,17 @@ if(BUILD_GUI)
     set(FILAMENT_RUNTIME_VER "")
     if (WIN32)
         if (STATIC_WINDOWS_RUNTIME)
-            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
+            set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
         else()
-            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
+            set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
         endif()
+    endif()
+    if (APPLE)
+        set(FILAMENT_RUNTIME_VER x86_64)
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
+        LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
@@ -1058,8 +1067,8 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
         if(BUILD_CUDA_MODULE)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_cusolver_LIBRARY}")
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_CUBLAS_LIBRARIES}")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas)
         endif()
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
@@ -1076,9 +1085,7 @@ if(USE_BLAS)
         add_dependencies(3rdparty_openblas ext_openblas)
         target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
         if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_openblas INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
+            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver CUDA::cublas)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
@@ -1106,9 +1113,7 @@ else()
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
     # cuSOLVER and cuBLAS
     if(BUILD_CUDA_MODULE)
-        target_link_libraries(3rdparty_mkl INTERFACE
-                            ${CUDA_cusolver_LIBRARY}
-                            ${CUDA_CUBLAS_LIBRARIES})
+        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver CUDA::cublas)
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
@@ -1149,14 +1154,9 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    foreach(NPPLIB nppc nppicc nppif nppig nppim nppial)
-        if (NOT CUDA_${NPPLIB}_LIBRARY)
-            message(FATAL_ERROR "NPP library ${NPPLIB} not found!: ${CUDA_${NPPLIB}_LIBRARY}")
-        endif()
-        list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
-    endforeach()
     add_library(3rdparty_CUDA_NPP INTERFACE)
-    target_link_libraries(3rdparty_CUDA_NPP INTERFACE ${CUDA_NPP_LIBRARIES})
+    target_link_libraries(3rdparty_CUDA_NPP INTERFACE CUDA::nppc CUDA::nppicc
+        CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial)
     if(NOT BUILD_SHARED_LIBS)
         install(TARGETS 3rdparty_CUDA_NPP EXPORT ${PROJECT_NAME}Targets)
     endif()

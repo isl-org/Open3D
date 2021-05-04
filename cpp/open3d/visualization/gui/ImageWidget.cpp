@@ -92,21 +92,23 @@ void ImageWidget::SetUIImage(std::shared_ptr<UIImage> image) {
     impl_->image_ = image;
 }
 
-Size ImageWidget::CalcPreferredSize(const Theme& theme,
+Size ImageWidget::CalcPreferredSize(const LayoutContext& context,
                                     const Constraints& constraints) const {
     Size pref;
     if (impl_->image_) {
-        pref = impl_->image_->CalcPreferredSize(theme, constraints);
+        pref = impl_->image_->CalcPreferredSize(context, constraints);
     }
 
     if (pref.width != 0 && pref.height != 0) {
         return pref;
     } else {
-        return Size(5 * theme.font_size, 5 * theme.font_size);
+        return Size(5 * context.theme.font_size, 5 * context.theme.font_size);
     }
 }
 
-void ImageWidget::Layout(const Theme& theme) { Super::Layout(theme); }
+void ImageWidget::Layout(const LayoutContext& context) {
+    Super::Layout(context);
+}
 
 Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
@@ -154,6 +156,7 @@ Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
 
         ImGui::PopStyleColor();
     }
+    DrawImGuiTooltip();
 
     if (params.image_size_changed) {
         return Widget::DrawResult::RELAYOUT;

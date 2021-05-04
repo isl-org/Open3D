@@ -53,15 +53,20 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
     // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
     // with [0:21] elements as ATA and [21:27] elements as ATB.
-    std::vector<double> A_1x27(27, 0.0);
-    // Identity element for running_total reduction variable: zeros_27.
-    std::vector<double> zeros_27(27, 0.0);
+    std::vector<float> A_1x27(27, 0.0);
 
+#ifdef _WIN32
+    std::vector<float> zeros_27(27, 0.0);
     A_1x27 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_27,
-            [&](tbb::blocked_range<int> r, std::vector<double> A_reduction) {
+            [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
+#else
+    float *A_reduction = A_1x27.data();
+#pragma omp parallel for reduction(+ : A_reduction[:27]) schedule(static)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
                     const int64_t &source_idx =
                             3 * correspondences_first[workload_idx];
                     const int64_t &target_idx =
@@ -77,14 +82,14 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                     const float &ny = target_normals_ptr[target_idx + 1];
                     const float &nz = target_normals_ptr[target_idx + 2];
 
-                    const double bi_neg =
+                    const float bi_neg =
                             (tx - sx) * nx + (ty - sy) * ny + (tz - sz) * nz;
-                    const double ai[] = {(nz * sy - ny * sz),
-                                         (nx * sz - nz * sx),
-                                         (ny * sx - nx * sy),
-                                         nx,
-                                         ny,
-                                         nz};
+                    const float ai[] = {(nz * sy - ny * sz),
+                                        (nx * sz - nz * sx),
+                                        (ny * sx - nx * sy),
+                                        nx,
+                                        ny,
+                                        nz};
 
                     for (int i = 0, j = 0; j < 6; j++) {
                         for (int k = 0; k <= j; k++) {
@@ -96,26 +101,29 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                         A_reduction[21 + j] += ai[j] * bi_neg;
                     }
                 }
+#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
-                std::vector<double> result(27);
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(27);
                 for (int j = 0; j < 27; j++) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
+#endif
 
-    core::Tensor ATA =
-            core::Tensor::Empty({6, 6}, core::Dtype::Float32, device);
-    float *ata_ptr = ATA.GetDataPtr<float>();
+    // Compute linear system on CPU as Float64.
+    core::Device host("CPU:0");
+    core::Tensor ATA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
+    double *ata_ptr = ATA.GetDataPtr<double>();
 
     // ATB_neg is -(ATB), as bi_neg is used in kernel instead of bi,
     // where  bi = [source_points - target_points].(target_normals).
     core::Tensor ATB_neg =
-            core::Tensor::Empty({6, 1}, core::Dtype::Float32, device);
-    float *atb_ptr = ATB_neg.GetDataPtr<float>();
+            core::Tensor::Empty({6, 1}, core::Dtype::Float64, host);
+    double *atb_ptr = ATB_neg.GetDataPtr<double>();
 
     // ATA_ {1,21} to ATA {6,6}.
     for (int i = 0, j = 0; j < 6; j++) {
@@ -128,7 +136,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
     }
 
     // ATA(6,6) . Pose(6,1) = -ATB(6,1).
-    pose = ATA.Solve(ATB_neg).Reshape({-1}).To(dtype);
+    pose = ATA.Solve(ATB_neg).Reshape({-1});
 }
 
 void ComputeRtPointToPointCPU(const float *source_points_ptr,
@@ -142,15 +150,20 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                               const core::Device device) {
     // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
     // target points respectively.
-    std::vector<double> mean_1x6(6, 0.0);
-    // Identity element for running_total reduction variable: zeros_6.
-    std::vector<double> zeros_6(6, 0.0);
+    std::vector<float> mean_1x6(6, 0.0);
 
+#ifdef _WIN32
+    std::vector<float> zeros_6(6, 0.0);
     mean_1x6 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_6,
-            [&](tbb::blocked_range<int> r, std::vector<double> mean_reduction) {
+            [&](tbb::blocked_range<int> r, std::vector<float> mean_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
+#else
+    float *mean_reduction = mean_1x6.data();
+#pragma omp parallel for reduction(+ : mean_reduction[:6]) schedule(static)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
                     for (int i = 0; i < 3; i++) {
                         mean_reduction[i] += source_points_ptr
                                 [3 * correspondences_first[workload_idx] + i];
@@ -158,33 +171,40 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                                 [3 * correspondences_second[workload_idx] + i];
                     }
                 }
+#ifdef _WIN32
                 return mean_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
-                std::vector<double> result(6);
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(6);
                 for (int j = 0; j < 6; j++) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
+#endif
 
-    double num_correspondences = static_cast<double>(n);
+    float num_correspondences = static_cast<float>(n);
     for (int i = 0; i < 6; i++) {
         mean_1x6[i] = mean_1x6[i] / num_correspondences;
     }
 
     // Calculating the Sxy for SVD.
-    std::vector<double> sxy_1x9(9, 0.0);
-    // Identity element for running total reduction variable: zeros_9.
-    std::vector<double> zeros_9(9, 0.0);
+    std::vector<float> sxy_1x9(9, 0.0);
 
+#ifdef _WIN32
+    std::vector<float> zeros_9(9, 0.0);
     sxy_1x9 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_9,
             [&](tbb::blocked_range<int> r,
-                std::vector<double> sxy_1x9_reduction) {
+                std::vector<float> sxy_1x9_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
+#else
+    float *sxy_1x9_reduction = sxy_1x9.data();
+#pragma omp parallel for reduction(+ : sxy_1x9_reduction[:9]) schedule(static) collapse(2)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
                     for (int i = 0; i < 9; i++) {
                         const int row = i % 3;
                         const int col = i / 3;
@@ -198,28 +218,31 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                                                  mean_1x6[3 + col]);
                     }
                 }
+#ifdef _WIN32
                 return sxy_1x9_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
-                std::vector<double> result(9);
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(9);
                 for (int j = 0; j < 9; j++) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
+#endif
 
+    // Compute linear system on CPU as Float64.
+    core::Device host("CPU:0");
     core::Tensor mean_s =
-            core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
-    float *mean_s_ptr = mean_s.GetDataPtr<float>();
+            core::Tensor::Empty({1, 3}, core::Dtype::Float64, host);
+    double *mean_s_ptr = mean_s.GetDataPtr<double>();
 
     core::Tensor mean_t =
-            core::Tensor::Empty({1, 3}, core::Dtype::Float32, device);
-    float *mean_t_ptr = mean_t.GetDataPtr<float>();
+            core::Tensor::Empty({1, 3}, core::Dtype::Float64, host);
+    double *mean_t_ptr = mean_t.GetDataPtr<double>();
 
-    core::Tensor Sxy =
-            core::Tensor::Empty({3, 3}, core::Dtype::Float32, device);
-    float *sxy_ptr = Sxy.GetDataPtr<float>();
+    core::Tensor Sxy = core::Tensor::Empty({3, 3}, core::Dtype::Float64, host);
+    double *sxy_ptr = Sxy.GetDataPtr<double>();
 
     // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
     // reduction variables. The shapes of mean_s and mean_t are such, because it
@@ -235,7 +258,7 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
 
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
-    core::Tensor S = core::Tensor::Eye(3, dtype, device);
+    core::Tensor S = core::Tensor::Eye(3, core::Dtype::Float64, host);
     if (U.Det() * (VT.T()).Det() < 0) {
         S[-1][-1] = -1;
     }

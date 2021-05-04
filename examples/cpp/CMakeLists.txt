@@ -15,7 +15,7 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
+        target_link_libraries(${EXAMPLE_CPP_NAME} PRIVATE ${DEPENDENCY})
     endforeach()
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
@@ -61,6 +61,7 @@ EXAMPLE_CPP(ViewDistances             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(VoxelHashing              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
 
 if (BUILD_GUI)

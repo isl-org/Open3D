@@ -318,6 +318,72 @@ TEST_P(HashmapPermuteDevices, Rehash) {
     }
 }
 
+TEST_P(HashmapPermuteDevices, Clear) {
+    core::Device device = GetParam();
+    std::vector<core::HashmapBackend> backends;
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
+    } else {
+        backends.push_back(core::HashmapBackend::TBB);
+    }
+
+    const int n = 1000000;
+    const int slots = 1023;
+    int init_capacity = n * 2;
+
+    // Insert once, find twice
+    HashData<int, int> data(n, slots);
+    core::Tensor keys(data.keys_, {n}, core::Dtype::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
+
+    for (auto backend : backends) {
+        core::Hashmap hashmap(init_capacity, core::Dtype::Int32,
+                              core::Dtype::Int32, {1}, {1}, device, backend);
+
+        // Insert first
+        core::Tensor addrs, masks;
+        hashmap.Insert(keys, values, addrs, masks);
+        EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
+
+        int64_t s = hashmap.Size();
+        EXPECT_EQ(s, slots);
+
+        // Then clear
+        hashmap.Clear();
+        s = hashmap.Size();
+        EXPECT_EQ(s, 0);
+
+        // Then insert again
+        hashmap.Insert(keys, values, addrs, masks);
+        EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
+        s = hashmap.Size();
+        EXPECT_EQ(s, slots);
+
+        core::Tensor active_addrs;
+        hashmap.GetActiveIndices(active_addrs);
+
+        core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+        std::vector<core::Tensor> ai = {active_indices};
+        core::Tensor active_keys = hashmap.GetKeyTensor().IndexGet(ai);
+        core::Tensor active_values = hashmap.GetValueTensor().IndexGet(ai);
+
+        std::vector<int> active_keys_vec = active_keys.ToFlatVector<int>();
+        std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
+
+        // Check matches
+        for (int i = 0; i < s; ++i) {
+            EXPECT_EQ(active_keys_vec[i],
+                      data.k_factor_ * active_values_vec[i]);
+        }
+        // Check existence
+        std::sort(active_values_vec.begin(), active_values_vec.end());
+        for (int i = 0; i < s; ++i) {
+            EXPECT_EQ(active_values_vec[i], i);
+        }
+    }
+}
+
 class int3 {
 public:
     int3() : x_(0), y_(0), z_(0){};

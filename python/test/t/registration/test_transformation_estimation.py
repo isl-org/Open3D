@@ -112,7 +112,8 @@ def test_compute_transformation_point_to_point(device):
 
     transformation_p2p = estimation_p2p.compute_transformation(
         source_t, target_t, corres)
-    source_transformed_p2p = source_t.transform(transformation_p2p)
+    source_transformed_p2p = source_t.transform(
+        transformation_p2p.to(device, dtype))
     p2p_rmse = estimation_p2p.compute_rmse(source_transformed_p2p, target_t,
                                            corres)
 
@@ -217,7 +218,8 @@ def test_compute_transformation_point_to_plane(device):
 
     transformation_p2l = estimation_p2l.compute_transformation(
         source_t, target_t, corres)
-    source_transformed_p2l = source_t.transform(transformation_p2l)
+    source_transformed_p2l = source_t.transform(
+        transformation_p2l.to(device, dtype))
 
     p2l_rmse = estimation_p2l.compute_rmse(source_transformed_p2l, target_t,
                                            corres)

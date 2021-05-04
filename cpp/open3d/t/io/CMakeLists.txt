@@ -1,6 +1,7 @@
 set(FILE_IO_SRC
     PointCloudIO.cpp
     ImageIO.cpp
+    TriangleMeshIO.cpp
     file_format/FileXYZI.cpp
     file_format/FilePLY.cpp
     file_format/FileJPG.cpp
