@@ -50,8 +50,7 @@
           validWindowIds.add(mediaList[key].video);
         }
 
-        // Collect stale and new URLs. This is needed to avoid "removing while
-        // iterating".
+        // Collect stale and new URLs. Avoid "removing while iterating".
         let existingWindowIds = new Set();
         let staleWindowIds = new Array();
         for (let i = 0; i < menu.children.length; i++) {
@@ -73,7 +72,7 @@
           document.getElementById(id).remove();
         });
 
-        // Append and connect to new URLs.
+        // Append new URLs to the menu bar.
         newWindowIds.forEach(function (windowId) {
           let videoId = "video_" + windowId;
           let navId = "nav_" + videoId;
@@ -82,18 +81,16 @@
           navElt.windowId = windowId;
           navElt.id = navId;
           navElt.onclick = function () {
-            console.log("navElt.onclick");
             if (this.className === "active") {
-              console.log("active");
               delConnection(this.windowId);
             } else {
-              console.log("non-active");
               addConnection(this.windowId);
             }
           };
           menu.appendChild(navElt);
         });
 
+        // Connect to the new URLs, this will also highlight the menu entry.
         newWindowIds.forEach((windowId) => {
           addConnection(windowId);
         });
