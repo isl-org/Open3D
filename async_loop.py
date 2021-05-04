@@ -6,13 +6,13 @@ import numpy as np
 o3d.visualization.webrtc_server.WebRTCServer.instance.enable_webrtc()
 
 
-class _Task:
+class _AsyncTask:
     _g_next_id = 0
 
     def __init__(self, f):
         self.task_id = self._g_next_id
         self.func = f
-        _Task._g_next_id += 1
+        _AsyncTask._g_next_id += 1
 
 
 class _AsyncEventLoop:
@@ -37,7 +37,7 @@ class _AsyncEventLoop:
 
     def run_sync(self, f):
         with self._lock:
-            task = _Task(f)
+            task = _AsyncTask(f)
             self._run_queue.append(task)
 
         while True:
