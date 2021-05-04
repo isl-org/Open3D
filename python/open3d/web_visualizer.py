@@ -53,9 +53,9 @@ class WebVisualizer(ipywidgets.DOMWidget):
         webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
         result = webrtc_server.call_http_request(entry_point, query_string,
                                                  data)
-        print(
-            f"call_http_request({entry_point}, {query_string}, {query_string})"
-            f"->{result}")
+        # print(
+        #     f"call_http_request({entry_point}, {query_string}, {query_string})"
+        #     f"->{result}")
         return result
 
     @traitlets.validate('window_uid')
@@ -72,7 +72,7 @@ class WebVisualizer(ipywidgets.DOMWidget):
             self.result_map = dict()
 
         jspy_message = change["new"]
-        print(f"jspy_message received: {jspy_message}")
+        # print(f"jspy_message received: {jspy_message}")
         try:
             jspy_requests = json.loads(jspy_message)
 
@@ -94,7 +94,7 @@ class WebVisualizer(ipywidgets.DOMWidget):
             print(
                 f"jspy_message is not a function call, ignored: {jspy_message}")
         else:
-            print(f"pyjs_channel sending: {self.result_map}")
+            # print(f"pyjs_channel sending: {self.result_map}")
             self.pyjs_channel = json.dumps(self.result_map)
 
 
@@ -199,7 +199,6 @@ def draw(geometry=None,
                           on_animation_frame=on_animation_frame,
                           on_animation_tick=on_animation_tick,
                           non_blocking_and_return_uid=True))
-    print(f"Newly add Window: {uid}")
     visualizer = o3d.WebVisualizer(window_uid=uid)
     visualizer.show()
 
