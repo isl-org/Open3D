@@ -35,7 +35,7 @@
       /**
        * Init device list
        * @param {object} mediaList A map of media. E.g.
-       * var mediaList = {
+       * let mediaList = {
        *  0: {video: "window_0"},
        *  1: {video: "window_1"},
        * }
@@ -115,21 +115,21 @@
        * Add a WebRTC client connection
        */
       function addConnection(windowId) {
-        var videoId = "video_" + windowId;
+        let videoId = "video_" + windowId;
 
         // Add a video element to display WebRTC stream
         if (document.getElementById(videoId) === null) {
-          var contentDiv = getContentDiv();
+          let contentDiv = getContentDiv();
           if (contentDiv) {
-            var divElt = document.createElement("div");
+            let divElt = document.createElement("div");
             divElt.id = "div_" + videoId;
 
-            var nameElt = document.createElement("h2");
+            let nameElt = document.createElement("h2");
             nameElt.id = "title_" + videoId;
             nameElt.innerHTML = "<div>" + windowId + "</div>";
             divElt.appendChild(nameElt);
 
-            var videoElt = document.createElement("video");
+            let videoElt = document.createElement("video");
             videoElt.id = videoId;
             videoElt.title = windowId;
             videoElt.muted = true;
@@ -142,17 +142,17 @@
           }
         }
 
-        var videoElt = document.getElementById(videoId);
+        let videoElt = document.getElementById(videoId);
         if (videoElt) {
-          var onClose = function () {
+          let onClose = function () {
             console.log("onClose() called for videoId:", videoId);
 
             // Remove the video element and its tile
-            var divElt = document.getElementById("div_" + videoId);
+            let divElt = document.getElementById("div_" + videoId);
             divElt.parentElement.removeChild(divElt);
 
             // Un-highlight the navigation
-            var navElt = document.getElementById("nav_" + videoId);
+            let navElt = document.getElementById("nav_" + videoId);
             navElt.className = "";
 
             WebRtcStreamer.getMediaList()
@@ -161,7 +161,7 @@
           };
 
           // Connect video element to WebRTC stream
-          var webRtcClient = new WebRtcStreamer(videoId, "", onClose, null);
+          let webRtcClient = new WebRtcStreamer(videoId, "", onClose, null);
           console.log("[addConnection] videoId: " + videoId);
 
           webRtcClient.connect(windowId, /*audio*/ null, webRtcOptions);
@@ -169,7 +169,7 @@
           console.log("[addConnection] options: " + webRtcOptions);
 
           // Highlight the navigation
-          var navElt = document.getElementById("nav_" + videoId);
+          let navElt = document.getElementById("nav_" + videoId);
           navElt.className = "active";
 
           // Register WebRTC streamer connection
