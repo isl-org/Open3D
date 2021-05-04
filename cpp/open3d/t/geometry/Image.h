@@ -282,11 +282,10 @@ public:
     /// This is typically used for preprocessing a depth image. Images of shape
     /// (rows, cols, channels=1) and Dtypes UInt16 and Float32 are supported.
     /// Each pixel will be transformed by
-    /// \f{eqnarray*}{
-    /// x &= x / scale \\
-    /// x &= x < min_value ? clip_fill : x \\
-    /// x &= x > max_value ? clip_fill : x
-    /// \f}
+    /// - x = x / \p scale
+    /// - x = x < \p min_value ? \p clip_fill : x
+    /// - x = x > \p max_value ? \p clip_fill : x
+    ///
     /// Use INFINITY, NAN or 0.0 (default) for \p clip_fill.
     /// \return Transformed image of type Float32, with out-of-range pixels
     /// clipped and assigned the \p clip_fill value.
