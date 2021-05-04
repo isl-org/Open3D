@@ -740,8 +740,24 @@ Tensor Tensor::Add(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Add(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Add(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Add_(const Tensor& value) {
     kernel::Add(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Add_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Add_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -752,8 +768,24 @@ Tensor Tensor::Sub(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Sub(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Sub(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Sub_(const Tensor& value) {
     kernel::Sub(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Sub_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Sub_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -764,8 +796,24 @@ Tensor Tensor::Mul(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Mul(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Mul(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Mul_(const Tensor& value) {
     kernel::Mul(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Mul_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Mul_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -776,8 +824,24 @@ Tensor Tensor::Div(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Div(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Div(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Div_(const Tensor& value) {
     kernel::Div(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Div_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Div_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
