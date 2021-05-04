@@ -59,3 +59,4 @@ class _AsyncEventLoop:
 # There are different ways to achieve this, here we use the module as a holder
 # for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
 global_jupyter_loop = _AsyncEventLoop()
+global_jupyter_loop.start()
