@@ -416,9 +416,6 @@ protected:
     // Shared by window_uid_to_peerids_ and peerid_to_window_uid_.
     std::mutex window_uid_to_peerids_mutex_;
 
-    // Lock for when MediaList is changing (e.g. stream being deleted).
-    std::mutex media_list_mutex_;
-
     std::list<std::string> ice_server_list_;
     const Json::Value config_;
     const std::regex publish_filter_;

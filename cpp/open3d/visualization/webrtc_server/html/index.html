@@ -33,14 +33,6 @@
       }
 
       /**
-       * Removes a DOM element. https://stackoverflow.com/a/3391282/1255535.
-       */
-      function removeElementById(id) {
-        var elem = document.getElementById(id);
-        return elem.parentNode.removeChild(elem);
-      }
-
-      /**
        * Init device list
        * @param {object} mediaList A map of media. E.g.
        * let mediaList = {
@@ -57,7 +49,6 @@
         for (let key in mediaList) {
           validWindowIds.add(mediaList[key].video);
         }
-        console.log("!!!! validWindowIds: ", validWindowIds);
 
         // Collect stale and new URLs. Avoid "removing while iterating".
         let existingWindowIds = new Set();
@@ -75,11 +66,10 @@
         ];
 
         // Remove stale URLs.
-        console.log("!!!! staleWindowIds: ", staleWindowIds);
         staleWindowIds.forEach(function (windowId) {
           let videoId = "video_" + windowId;
-          let navId = "nav_" + videoId;
-          removeElementById(navId);
+          let id = "nav_" + videoId;
+          document.getElementById(id).remove();
         });
 
         // Append new URLs to the menu bar.
