@@ -1,5 +1,5 @@
-import ipywidgets as widgets
-from traitlets import validate, observe, Unicode, TraitError
+import ipywidgets
+import traitlets
 from IPython.display import display
 import json
 import open3d as o3d
@@ -9,41 +9,44 @@ import open3d.visualization as vis
 from functools import partial
 
 
-@widgets.register
-class WebVisualizer(widgets.DOMWidget):
+@ipywidgets.register
+class WebVisualizer(ipywidgets.DOMWidget):
     """Open3D Web Visualizer based on WebRTC."""
 
     # Name of the widget view class in front-end.
-    _view_name = Unicode('WebVisualizerView').tag(sync=True)
+    _view_name = traitlets.Unicode('WebVisualizerView').tag(sync=True)
 
     # Name of the widget model class in front-end.
-    _model_name = Unicode('WebVisualizerModel').tag(sync=True)
+    _model_name = traitlets.Unicode('WebVisualizerModel').tag(sync=True)
 
     # Name of the front-end module containing widget view.
-    _view_module = Unicode('open3d').tag(sync=True)
+    _view_module = traitlets.Unicode('open3d').tag(sync=True)
 
     # Name of the front-end module containing widget model.
-    _model_module = Unicode('open3d').tag(sync=True)
+    _model_module = traitlets.Unicode('open3d').tag(sync=True)
 
     # Version of the front-end module containing widget view.
     # @...@ is configured by cpp/pybind/make_python_package.cmake.
-    _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
-        sync=True)
+    _view_module_version = traitlets.Unicode(
+        '~@PROJECT_VERSION_THREE_NUMBER@').tag(sync=True)
     # Version of the front-end module containing widget model.
-    _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
-        sync=True)
+    _model_module_version = traitlets.Unicode(
+        '~@PROJECT_VERSION_THREE_NUMBER@').tag(sync=True)
 
     # Widget specific property. Widget properties are defined as traitlets. Any
     # property tagged with `sync=True` is automatically synced to the frontend
     # *any* time it changes in Python. It is synced back to Python from the
     # frontend *any* time the model is touched.
-    window_uid = Unicode("window_UNDEFINED", help="Window UID").tag(sync=True)
+    window_uid = traitlets.Unicode("window_UNDEFINED",
+                                   help="Window UID").tag(sync=True)
 
     # Two-way communication channels.
-    pyjs_channel = Unicode("Empty pyjs_channel.",
-                           help="Python->JS message channel.").tag(sync=True)
-    jspy_channel = Unicode("Empty jspy_channel.",
-                           help="JS->Python message channel.").tag(sync=True)
+    pyjs_channel = traitlets.Unicode(
+        "Empty pyjs_channel.",
+        help="Python->JS message channel.").tag(sync=True)
+    jspy_channel = traitlets.Unicode(
+        "Empty jspy_channel.",
+        help="JS->Python message channel.").tag(sync=True)
 
     def show(self):
         display(self)
@@ -57,13 +60,13 @@ class WebVisualizer(widgets.DOMWidget):
             f"->{result}")
         return result
 
-    @validate('window_uid')
+    @traitlets.validate('window_uid')
     def _valid_window_uid(self, proposal):
         if proposal['value'][:7] != "window_":
-            raise TraitError('window_uid must be "window_xxx".')
+            raise traitlets.TraitError('window_uid must be "window_xxx".')
         return proposal['value']
 
-    @observe('jspy_channel')
+    @traitlets.observe('jspy_channel')
     def _on_jspy_channel(self, change):
         # self.result_map = {"0": "result0",
         #                    "1": "result1", ...};
