@@ -105,7 +105,7 @@ Image Image::To(core::Dtype dtype,
             {core::Dtype::UInt16},  {core::Dtype::Int32},
             {core::Dtype::Float32}, {core::Dtype::Float64}};
 
-    [[maybe_unused]] double scale = 1.0;
+    double scale = 1.0;
     if (!scale_.has_value() &&
         (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64)) {
         if (GetDtype() == core::Dtype::UInt8) {

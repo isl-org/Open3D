@@ -8,9 +8,12 @@ Build from source
 System requirements
 -------------------
 
-* Ubuntu 18.04+: GCC 5+, Clang 7+
-* macOS 10.14+: XCode 8.0+
-* Windows 10 (64-bit): Visual Studio 2019+
+* C++14 compiler:
+
+  * Ubuntu 18.04+: GCC 5+, Clang 7+
+  * macOS 10.14+: XCode 8.0+
+  * Windows 10 (64-bit): Visual Studio 2019+
+
 * CMake: 3.18+
 
   * Ubuntu (18.04 / 20.04):
@@ -240,6 +243,19 @@ directory, run
 .. note:: This workaround has some compatibility issues with the source code of
     GLFW included in ``3rdparty``.
     Make sure Open3D is linked against GLFW installed on the OS.
+
+Filament
+````````
+
+The visualization module depends on the Filament rendering engine and, by default,
+Open3D uses a prebuilt version of it. You can also build Filament from source
+by setting ``BUILD_FILAMENT_FROM_SOURCE=ON``.
+
+.. note::
+    Whereas Open3D only requires a C++14 compiler, Filament needs a C++17 compiler
+    and only supports Clang 7+, the most recent version of Xcode, and Visual Studio 2019,
+    see `their building instructions <https://github.com/google/filament/blob/main/BUILDING.md>`_.
+    Make sure to use one of these compiler if you build Open3D with ``BUILD_FILAMENT_FROM_SOURCE=ON``.
 
 ML Module
 `````````
