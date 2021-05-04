@@ -114,7 +114,7 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
             tpcd_grid.ToLegacyPointCloud());
 
     // Prepare nb point cloud for visualization
-    core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kAttrNbGridIdx)
+    core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
                                   .To(core::Device("CPU:0"));
     t::geometry::PointCloud tpcd_grid_nb(tpcd_grid.GetPoints().IndexGet(
             {corres.View({-1}).To(core::Dtype::Int64)}));
@@ -140,7 +140,7 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
                     *pcd, *pcd_grid, corres_lines);
 
     core::Tensor corres_interp =
-            tpcd_param.GetPointAttr(ControlGrid::kAttrNbGridPointInterp)
+            tpcd_param.GetPointAttr(ControlGrid::kGrid8NbVertexInterpRatios)
                     .To(core::Device("CPU:0"));
     for (int64_t i = 0; i < corres.GetLength(); ++i) {
         for (int k = 0; k < 8; ++k) {
@@ -153,8 +153,8 @@ void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
     visualization::DrawGeometries({lineset, pcd, pcd_grid_nb});
 }
 
-void VisualizeWarp(const geometry::PointCloud& tpcd_param,
-                   ControlGrid& ctr_grid) {
+void VisualizeDeform(const geometry::PointCloud& tpcd_param,
+                     ControlGrid& ctr_grid) {
     int64_t n = ctr_grid.Size();
     core::Tensor prev = ctr_grid.GetInitPositions().Slice(0, 0, n);
     core::Tensor curr = ctr_grid.GetCurrPositions().Slice(0, 0, n);
@@ -173,7 +173,7 @@ void VisualizeWarp(const geometry::PointCloud& tpcd_param,
             tpcd_curr_grid.ToLegacyPointCloud());
     pcd_curr_grid->PaintUniformColor({1, 0, 0});
 
-    auto tpcd_warped = ctr_grid.Warp(tpcd_param);
+    auto tpcd_warped = ctr_grid.Deform(tpcd_param);
     auto pcd_warped = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_warped.ToLegacyPointCloud());
     pcd_warped->PaintUniformColor({1, 0, 0});

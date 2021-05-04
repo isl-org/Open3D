@@ -171,20 +171,20 @@ static void FillInSLACAlignmentTerm(core::Tensor& AtA,
 
     // Parameterize: setup point cloud -> cgrid correspondences
     core::Tensor cgrid_index_ps =
-            tpcd_param_i.GetPointAttr(ControlGrid::kAttrNbGridIdx).To(device);
+            tpcd_param_i.GetPointAttr(ControlGrid::kGrid8NbIndices).To(device);
     core::Tensor cgrid_ratio_ps =
-            tpcd_param_i.GetPointAttr(ControlGrid::kAttrNbGridPointInterp)
+            tpcd_param_i.GetPointAttr(ControlGrid::kGrid8NbVertexInterpRatios)
                     .To(device);
 
     core::Tensor cgrid_index_qs =
-            tpcd_param_j.GetPointAttr(ControlGrid::kAttrNbGridIdx).To(device);
+            tpcd_param_j.GetPointAttr(ControlGrid::kGrid8NbIndices).To(device);
     core::Tensor cgrid_ratio_qs =
-            tpcd_param_j.GetPointAttr(ControlGrid::kAttrNbGridPointInterp)
+            tpcd_param_j.GetPointAttr(ControlGrid::kGrid8NbVertexInterpRatios)
                     .To(device);
 
-    // Warp with control grids
-    TPointCloud tpcd_nonrigid_i = ctr_grid.Warp(tpcd_param_i);
-    TPointCloud tpcd_nonrigid_j = ctr_grid.Warp(tpcd_param_j);
+    // Deform with control grids
+    TPointCloud tpcd_nonrigid_i = ctr_grid.Deform(tpcd_param_i);
+    TPointCloud tpcd_nonrigid_j = ctr_grid.Deform(tpcd_param_j);
 
     // TODO: Put the following pre-processing inside the FillInSlACAlignmentTerm
     // kernel, if possible.
@@ -216,8 +216,8 @@ static void FillInSLACAlignmentTerm(core::Tensor& AtA,
         // VisualizePCDCorres(tpcd_i, tpcd_j, tpcd_nonrigid_i, tpcd_nonrigid_j,
         //                    Tij_icp);
 
-        // VisualizeWarp(tpcd_param_i, ctr_grid);
-        // VisualizeWarp(tpcd_param_j, ctr_grid);
+        // VisualizeDeform(tpcd_param_i, ctr_grid);
+        // VisualizeDeform(tpcd_param_j, ctr_grid);
 
         // VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
         // VisualizePCDGridCorres(tpcd_param_j, ctr_grid);

@@ -162,8 +162,8 @@ int main(int argc, char** argv) {
             utility::LogInfo("Reprojecting");
             t::geometry::Image depth_reproj, color_reproj;
             std::tie(depth_reproj, color_reproj) =
-                    ctr_grid.Warp(depth, color, intrinsic_t, extrinsic_local_t,
-                                  depth_scale, max_depth);
+                    ctr_grid.Deform(depth, color, intrinsic_t,
+                                    extrinsic_local_t, depth_scale, max_depth);
             utility::LogInfo("depth_reproj = {}", depth_reproj.ToString());
             if (false) {
                 t::geometry::PointCloud pcd =

@@ -67,7 +67,7 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     // t::pipelines::slac::VisualizePCDGridCorres(pcd_param, cgrid, true);
 }
 
-TEST_P(ControlGridPermuteDevices, Warp) {
+TEST_P(ControlGridPermuteDevices, Deform) {
     core::Device device = GetParam();
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
@@ -85,7 +85,7 @@ TEST_P(ControlGridPermuteDevices, Warp) {
     curr[1][2] -= 0.5;
     curr[2][1] += 0.5;
 
-    // t::pipelines::slac::VisualizeWarp(pcd_param, cgrid);
+    // t::pipelines::slac::VisualizeDeform(pcd_param, cgrid);
 }
 
 TEST_P(ControlGridPermuteDevices, Regularizor) {
