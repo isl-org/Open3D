@@ -90,9 +90,9 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
                                      _jupyter_nbextension_paths)
         try:
             shell = get_ipython().__class__.__name__
-            print(
-                "Jupyter environment detected. Enabling Open3D WebVisualizer.")
             if shell == 'ZMQInteractiveShell':
+                print("Jupyter environment detected."
+                      "Enabling Open3D WebVisualizer.")
                 _server = open3d.visualization.webrtc_server.WebRTCServer.instance
                 # Set default window system.
                 _server.enable_webrtc()
