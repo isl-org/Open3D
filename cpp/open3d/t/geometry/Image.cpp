@@ -155,6 +155,9 @@ Image Image::To(core::Dtype dtype,
             IPP_CALL(ipp::To, data_, dst_im.data_, scale, offset);
         }
     } else {
+        // Suppress unused-but-set-variable warning if IPPICV is not available
+        (void)scale;
+
         utility::LogError(
                 "Conversion from {} to {} on device {} is not implemented!",
                 GetDtype().ToString(), dtype.ToString(),
