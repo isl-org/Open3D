@@ -321,8 +321,6 @@ const Json::Value PeerConnectionManager::CreateOffer(
         const std::string &peerid,
         const std::string &window_uid,
         const std::string &options) {
-    utility::LogInfo("[{}] peerid: {}, window_uid; {}, options: {}.",
-                     __FUNCTION__, peerid, window_uid, options);
     Json::Value offer;
 
     PeerConnectionObserver *peer_connection_observer =
@@ -381,10 +379,6 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                               const std::string &window_uid,
                                               const std::string &options,
                                               const Json::Value &json_message) {
-    utility::LogInfo(
-            "[{}] peerid: {}, window_uid; {}, options: {}, json_message: {}.",
-            __FUNCTION__, peerid, window_uid, options, json_message);
-
     Json::Value answer;
 
     std::string type;
@@ -515,8 +509,6 @@ bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
 
 // Hangup a call.
 const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
-    utility::LogInfo("[{}] peerid: {}.", __FUNCTION__, peerid);
-
     bool result = false;
     PeerConnectionObserver *pc_observer = nullptr;
     {
