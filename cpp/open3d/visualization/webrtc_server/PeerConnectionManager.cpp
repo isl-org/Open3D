@@ -161,16 +161,19 @@ PeerConnectionManager::PeerConnectionManager(
     // Register api in http server.
     func_["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
                                         const Json::Value &in) -> Json::Value {
+        utility::LogInfo("[Called HTTP API] /api/getMediaList");
         return this->GetMediaList();
     };
 
     func_["/api/getIceServers"] = [this](const struct mg_request_info *req_info,
                                          const Json::Value &in) -> Json::Value {
+        utility::LogInfo("[Called HTTP API] /api/getIceServers");
         return this->GetIceServers();
     };
 
     func_["/api/call"] = [this](const struct mg_request_info *req_info,
                                 const Json::Value &in) -> Json::Value {
+        utility::LogInfo("[Called HTTP API] /api/call");
         std::string peerid;
         std::string url;  // window_uid.
         std::string options;
@@ -185,6 +188,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
+        utility::LogInfo("[Called HTTP API] /api/getIceCandidate");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -195,6 +199,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/addIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
+        utility::LogInfo("[Called HTTP API] /api/addIceCandidate");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -204,6 +209,7 @@ PeerConnectionManager::PeerConnectionManager(
 
     func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
                                   const Json::Value &in) -> Json::Value {
+        utility::LogInfo("[Called HTTP API] /api/hangup");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);

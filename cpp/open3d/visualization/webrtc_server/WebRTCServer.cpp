@@ -272,17 +272,13 @@ void WebRTCServer::Run() {
 std::string WebRTCServer::CallHttpAPI(const std::string& entry_point,
                                       const std::string& query_string,
                                       const std::string& data) const {
-    utility::LogInfo("WebRTCServer::CallHttpAPI /////////////////////");
+    utility::LogInfo("[Called HTTP API (custom handshake)] {}.", entry_point);
 
     std::string query_string_trimmed = "";
     if (!query_string.empty() && query_string[0] == '?') {
         query_string_trimmed =
                 query_string.substr(1, query_string.length() - 1);
     }
-
-    utility::LogInfo("entry_point: {}", entry_point);
-    utility::LogInfo("query_string_trimmed: {}", query_string_trimmed);
-    utility::LogInfo("data: {}", data);
 
     std::string result = "";
     if (entry_point == "/api/getMediaList") {
@@ -331,8 +327,10 @@ std::string WebRTCServer::CallHttpAPI(const std::string& entry_point,
                         peerid, utility::StringToJson(data)));
     }
 
-    utility::LogInfo("result: {}", result);
-    utility::LogInfo("///////////////////////////////////////////////////");
+    utility::LogDebug("entry_point: {}", entry_point);
+    utility::LogDebug("query_string_trimmed: {}", query_string_trimmed);
+    utility::LogDebug("data: {}", data);
+    utility::LogDebug("result: {}", result);
 
     return result;
 }
