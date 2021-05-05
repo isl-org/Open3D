@@ -79,19 +79,19 @@ public:
     virtual ~Image() override {}
 
 public:
-    /// Clear image contents by resetting the rows and cols to 0, while
+    /// \brief Clear image contents by resetting the rows and cols to 0, while
     /// keeping channels, dtype and device unchanged.
     Image &Clear() override {
         data_ = core::Tensor({0, 0, GetChannels()}, GetDtype(), GetDevice());
         return *this;
     }
 
-    /// Returns true if rows * cols * channels == 0.
+    /// \brief Returns true if rows * cols * channels == 0.
     bool IsEmpty() const override {
         return GetRows() * GetCols() * GetChannels() == 0;
     }
 
-    /// Reinitialize image with new parameters.
+    /// \brief Reinitialize image with new parameters.
     Image &Reset(int64_t rows = 0,
                  int64_t cols = 0,
                  int64_t channels = 1,
@@ -99,25 +99,27 @@ public:
                  const core::Device &device = core::Device("CPU:0"));
 
 public:
-    /// Get the number of rows of the image.
+    /// \brief Get the number of rows of the image.
     int64_t GetRows() const { return data_.GetShape()[0]; }
 
-    /// Get the number of columns of the image.
+    /// \brief Get the number of columns of the image.
     int64_t GetCols() const { return data_.GetShape()[1]; }
 
-    /// Get the number of channels of the image.
+    /// \brief Get the number of channels of the image.
     int64_t GetChannels() const { return data_.GetShape()[2]; }
 
-    /// Get dtype of the image.
+    /// \brief Get dtype of the image.
     core::Dtype GetDtype() const { return data_.GetDtype(); }
 
-    /// Get device of the image.
+    /// \brief Get device of the image.
     core::Device GetDevice() const { return data_.GetDevice(); }
 
-    /// Get pixel(s) in the image. If channels == 1, returns a tensor with shape
-    /// {}, otherwise returns a tensor with shape {channels,}. The returned
-    /// tensor is a slice of the image's tensor, so when modifying the slice,
-    /// the original tensor will also be modified.
+    /// \brief Get pixel(s) in the image.
+    ///
+    /// If channels == 1, returns a tensor with shape {}, otherwise returns a
+    /// tensor with shape {channels,}. The returned tensor is a slice of the
+    /// image's tensor, so when modifying the slice, the original tensor will
+    /// also be modified.
     core::Tensor At(int64_t r, int64_t c) const {
         if (GetChannels() == 1) {
             return data_[r][c][0];
@@ -126,21 +128,22 @@ public:
         }
     }
 
-    /// Get pixel(s) in the image. Returns a tensor with shape {}.
+    /// \brief Get pixel(s) in the image. Returns a tensor with shape {}.
     core::Tensor At(int64_t r, int64_t c, int64_t ch) const {
         return data_[r][c][ch];
     }
 
-    /// Get raw buffer of the Image data.
+    /// \brief Get raw buffer of the Image data.
     void *GetDataPtr() { return data_.GetDataPtr(); }
 
-    /// Get raw buffer of the Image data.
+    /// \brief Get raw buffer of the Image data.
     const void *GetDataPtr() const { return data_.GetDataPtr(); }
 
-    /// Retuns the underlying Tensor of the Image.
+    /// \brief Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
-    /// Transfer the image to a specified device.
+    /// \brief Transfer the image to a specified device.
+    ///
     /// \param device The targeted device to convert to.
     /// \param copy If true, a new image is always created; if false, the
     /// copy is avoided when the original image is already on the targeted
@@ -149,15 +152,15 @@ public:
         return Image(data_.To(device, copy));
     }
 
-    /// Returns copy of the image on the same device.
+    /// \brief Returns copy of the image on the same device.
     Image Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-    /// Transfer the image to CPU.
+    /// \brief Transfer the image to CPU.
     ///
     /// If the image is already on CPU, no copy will be performed.
     Image CPU() const { return To(core::Device("CPU:0")); }
 
-    /// Transfer the image to a CUDA device.
+    /// \brief Transfer the image to a CUDA device.
     ///
     /// If the image is already on the specified CUDA device, no copy will
     /// be performed.
@@ -165,7 +168,8 @@ public:
         return To(core::Device(core::Device::DeviceType::CUDA, device_id));
     }
 
-    /// Returns an Image with the specified \p dtype.
+    /// \brief Returns an Image with the specified \p dtype.
+    ///
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
     /// is avoided when the original tensor already has the targeted dtype.
@@ -177,88 +181,180 @@ public:
              utility::optional<double> scale = utility::nullopt,
              double offset = 0.0) const;
 
-    /// Function to linearly transform pixel intensities in place.
-    /// image = scale * image + offset.
+    /// \brief Function to linearly transform pixel intensities in place.
+    ///
+    /// \f$image = scale * image + offset\f$.
+    ///
     /// \param scale First multiply image pixel values with this factor. This
     /// should be positive for unsigned dtypes.
     /// \param offset Then add this factor to all image pixel values.
+    ///
     /// \return Reference to self.
     Image &LinearTransform(double scale = 1.0, double offset = 0.0) {
         To(GetDtype(), false, scale, offset);
         return *this;
     }
 
-    /// Converts a 3-channel RGB image to a new 1-channel Grayscale image by
-    /// I = 0.299 * R + 0.587 * G + 0.114 * B.
+    /// \brief Converts a 3-channel RGB image to a new 1-channel Grayscale image
+    ///
+    /// Uses formula \f$I = 0.299 * R + 0.587 * G + 0.114 * B\f$.
     Image RGBToGray() const;
 
-    /// Return a new image after resizing with specified interpolation type.
-    /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
-    /// Aspect ratio is always kept.
+    /// Image interpolation algorithms.
     enum class InterpType {
-        Nearest = 0,
-        Linear = 1,
-        Cubic = 2,
-        Lanczos = 3,
-        Super = 4
+        Nearest = 0,  ///< Nearest neighbors interpolation.
+        Linear = 1,   ///< Bilinear interpolation.
+        Cubic = 2,    ///< Bicubic interpolation.
+        Lanczos = 3,  ///< Lanczos filter interpolation.
+        Super = 4     ///< Super sampling interpolation (only downsample).
     };
+    /// \brief Return a new image after resizing with specified interpolation
+    /// type.
+    ///
+    /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
+    /// Aspect ratio is always preserved.
     Image Resize(float sampling_rate = 0.5f,
                  InterpType interp_type = InterpType::Nearest) const;
 
-    /// Return a new image after performing morphological dilation. Supported
-    /// datatypes are UInt8, UInt16 and Float32 with {1, 3, 4} channels. An
-    /// 8-connected neighborhood is used to create the dilation mask.
+    /// \brief Return a new image after performing morphological dilation.
+    ///
+    /// Supported datatypes are UInt8, UInt16 and Float32 with {1, 3, 4}
+    /// channels. An 8-connected neighborhood is used to create the dilation
+    /// mask.
+    ///
     /// \param kernel_size An odd number >= 3.
     Image Dilate(int kernel_size = 3) const;
 
-    /// Return a new image given the filtering kernel.
+    /// \brief Return a new image after filtering with the given kernel.
     Image Filter(const core::Tensor &kernel) const;
 
-    /// Return a new image after bilateral filtering.
+    /// \brief Return a new image after bilateral filtering.
+    ///
     /// \param value_sigma Standard deviation for the image content.
     /// \param distance_sigma Standard deviation for the image pixel positions.
-    /// Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:
-    /// CPU uses a round kernel (radius = floor(kernel_size / 2)),
-    /// while CUDA uses a square kernel (width = kernel_size).
+    ///
+    /// Note: CPU (IPP) and CUDA (NPP) versions use different algorithms and
+    /// will give different results:\n
+    /// CPU uses a round kernel (radius = floor(kernel_size / 2)),\n
+    /// while CUDA uses a square kernel (width = kernel_size).\n
     /// Make sure to tune parameters accordingly.
     Image FilterBilateral(int kernel_size = 3,
                           float value_sigma = 20.0f,
                           float distance_sigma = 10.0f) const;
 
-    /// Return a new image after Gaussian filtering.
+    /// \brief Return a new image after Gaussian filtering.
+    ///
     /// \param kernel_size Odd numbers >= 3 are supported.
     /// \param sigma Standard deviation of the Gaussian distribution.
     Image FilterGaussian(int kernel_size = 3, float sigma = 1.0f) const;
 
-    /// Return a pair of new gradient images (dx, dy) after Sobel filtering.
-    /// Possible kernel_size: 3 and 5.
+    /// \brief Return a pair of new gradient images (dx, dy) after Sobel
+    /// filtering.
+    ///
+    /// \param kernel_size: Sobel filter kernel size, either 3 or 5.
     std::pair<Image, Image> FilterSobel(int kernel_size = 3) const;
 
-    /// Return a new downsampled image with pyramid downsampling formed by a
-    /// chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a
-    /// resize (ratio = 0.5) operation.
+    /// \brief Return a new downsampled image with pyramid downsampling.
+    ///
+    /// The returned image is formed by a chained Gaussian filter (kernel_size =
+    /// 5, sigma = 1.0) and a resize (ratio = 0.5) operation.
+    ///
+    /// \returns Half sized downsampled depth image.
     Image PyrDown() const;
 
-    /// Compute min 2D coordinates for the data (always {0, 0}).
+    /// \brief Edge and invalid value preserving downsampling by 2 specifically
+    /// for depth images.
+    ///
+    /// Only 1 channel Float32 images are supported. The returned image is
+    /// formed by a chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a
+    /// resize (ratio = 0.5) operation.
+    ///
+    /// \param diff_threshold The Gaussian filter averaging ignores neighboring
+    /// values if the depth difference is larger than this value.
+    /// \param invalid_fill The Gaussian filter ignores these values (may be
+    /// specified as NAN, INFINITY or 0.0 (default)).
+    ///
+    /// \returns Half sized downsampled Float32 depth image.
+    Image PyrDownDepth(float diff_threshold, float invalid_fill = 0.f) const;
+
+    /// \brief Return new image after scaling and clipping image values.
+    ///
+    /// This is typically used for preprocessing a depth image. Images of shape
+    /// (rows, cols, channels=1) and Dtypes UInt16 and Float32 are supported.
+    /// Each pixel will be transformed by
+    /// - x = x / \p scale
+    /// - x = x < \p min_value ? \p clip_fill : x
+    /// - x = x > \p max_value ? \p clip_fill : x
+    ///
+    /// Use INFINITY, NAN or 0.0 (default) for \p clip_fill.
+    /// \return Transformed image of type Float32, with out-of-range pixels
+    /// clipped and assigned the \p clip_fill value.
+    Image ClipTransform(float scale,
+                        float min_value,
+                        float max_value,
+                        float clip_fill = 0.0f) const;
+
+    /// \brief Create a vertex map from a depth image using unprojection.
+    ///
+    /// The input depth (of shape (rows, cols, channels=1) and Dtype Float32) is
+    /// expected to be the output of ClipTransform.
+    ///
+    /// \param intrinsics Pinhole camera model of (3, 3) in Float64.
+    /// \param invalid_fill Value to fill in for invalid depths. Use NAN,
+    /// INFINITY or 0.0 (default). Must be consistent with \p clip_fill in
+    /// ClipTransform.
+    ///
+    /// \returns Vertex map of shape (rows, cols, channels=3) and Dtype Float32,
+    /// with invalid points assigned the \p invalid_fill value.
+    Image CreateVertexMap(const core::Tensor &intrinsics,
+                          float invalid_fill = 0.0f);
+
+    /// \brief Create a normal map from a vertex map.
+    ///
+    /// The input vertex map image should be of shape (rows, cols, channels=3)
+    /// and Dtype Float32.  This uses a cross product of \f$V(r, c+1)-V(r, c)\f$
+    /// and \f$V(r+1, c)-V(r, c)\f$. The input vertex map is expected to be the
+    /// output of CreateVertexMap. You may need to start with a filtered depth
+    /// image (e.g. with FilterBilateral) to obtain good results.
+    ///
+    /// \param invalid_fill Value to fill in for invalid points, and to fill-in
+    /// if no valid neighbor is found. Use NAN, INFINITY or 0.0 (default). Must
+    /// be consistent with \p clip_fill in CreateVertexMap.
+    ///
+    /// \returns Normal map of shape (rows, cols, channels=3) and Dtype Float32,
+    /// with invalid normals assigned the \p invalid_fill value.
+    Image CreateNormalMap(float invalid_fill = 0.0f);
+
+    /// \brief Colorize an input depth image (with Dtype UInt16 or Float32).
+    ///
+    /// The image values are divided by scale, then clamped within [min_value,
+    /// max_value] and finally converted to an RGB image using the Turbo
+    /// colormap as a lookup table.
+    ///
+    /// \returns Full color depth map of shape (rows, cols, channels=3) and
+    /// Dtype UInt8.
+    Image ColorizeDepth(float scale, float min_value, float max_value);
+
+    /// \brief Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
     }
 
-    /// Compute max 2D coordinates for the data ({rows, cols}).
+    /// \brief Compute max 2D coordinates for the data ({rows, cols}).
     core::Tensor GetMaxBound() const {
         return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
                             core::Dtype::Int64);
     }
 
-    /// Create from a legacy Open3D Image.
+    /// \brief Create from a legacy Open3D Image.
     static Image FromLegacyImage(
             const open3d::geometry::Image &image_legacy,
             const core::Device &Device = core::Device("CPU:0"));
 
-    /// Convert to legacy Image type.
+    /// \brief Convert to legacy Image type.
     open3d::geometry::Image ToLegacyImage() const;
 
-    /// Text description
+    /// \brief Text description.
     std::string ToString() const;
 
     /// Do we use IPP ICV for accelerating image processing operations?

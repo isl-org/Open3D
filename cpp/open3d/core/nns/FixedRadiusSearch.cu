@@ -1042,7 +1042,7 @@ void HybridSearchCUDA(size_t num_points,
     output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
 
     T* distances_ptr;
-    output_allocator.AllocDistances(&distances_ptr, num_indices, -1);
+    output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
 
     for (int i = 0; i < batch_size; ++i) {
         const size_t hash_table_size =

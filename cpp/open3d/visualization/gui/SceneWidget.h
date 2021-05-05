@@ -167,6 +167,9 @@ public:
                             std::string,
                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
                     int)> on_picked);
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick);
+    enum class PolygonPickAction { CANCEL = 0, SELECT };
+    void DoPolygonPick(PolygonPickAction action);
 
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
@@ -174,7 +177,6 @@ public:
     void RemoveLabel(std::shared_ptr<Label3D> label);
     void ClearLabels();
 
-    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

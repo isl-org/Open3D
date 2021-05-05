@@ -144,6 +144,8 @@ void pybind_o3dvisualizer(py::module& m) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &O3DVisualizer::IsVisible,
                                    "True if window is visible (read-only)")
+            .def("post_redraw", &O3DVisualizer::PostRedraw,
+                 "Tells the window to redraw")
             .def("show", &O3DVisualizer::Show, "Shows or hides the window")
             .def("close", &O3DVisualizer::Close,
                  "Closes the window and destroys it, unless an on_close "
@@ -179,7 +181,18 @@ void pybind_o3dvisualizer(py::module& m) {
                          &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
                  "time"_a = 0.0, "is_visible"_a = true,
-                 "Adds a geometry: geometry(name, geometry, material=None, "
+                 "Adds a geometry: add_geometry(name, geometry, material=None, "
+                 "group='', time=0.0, is_visible=True). 'name' must be unique.")
+            .def("add_geometry",
+                 py::overload_cast<const std::string&,
+                                   std::shared_ptr<t::geometry::Geometry>,
+                                   const rendering::Material*,
+                                   const std::string&, double, bool>(
+                         &O3DVisualizer::AddGeometry),
+                 "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
+                 "time"_a = 0.0, "is_visible"_a = true,
+                 "Adds a Tensor-based add_geometry: geometry(name, geometry, "
+                 "material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
             .def(
                     "add_geometry",

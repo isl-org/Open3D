@@ -56,7 +56,7 @@ void _CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
                                       const TReal* inp_features,
                                       const TReal* inp_neighbors_importance_sum,
                                       const int64_t* inp_neighbors_row_splits,
-                                      size_t num_indices,
+                                      size_t neighbors_index_size,
                                       const TIndex* neighbors_index,
                                       const TReal* neighbors_importance,
                                       const int64_t* neighbors_row_splits,
@@ -235,14 +235,12 @@ void _CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
 
 /// Computes the backprop for the filter of a transpose continuous convolution.
 ///
-/// \param filter_backrop    Output array for the computed filter gradient
-///        with shape [depth,height,witdth, inp channels, out channels]
+/// \param filter_backprop    Output array for the computed filter gradient
+///        with shape [depth,height,width, inp channels, out channels]
 ///
 /// \param filter_dims    The sizes of the filter dimensions. The size of
 ///        filter_dims must be 5. The order is
 ///        [depth, height, width, inp channels, out channels].
-///
-/// \param filter    Pointer to the filter values.
 ///
 /// \param num_out    The number of output points.
 ///
@@ -323,7 +321,7 @@ void CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
                                      const TReal* inp_features,
                                      const TReal* inp_neighbors_importance_sum,
                                      const int64_t* inp_neighbors_row_splits,
-                                     size_t num_indices,
+                                     size_t neighbors_index_size,
                                      const TIndex* neighbors_index,
                                      const TReal* neighbors_importance,
                                      const int64_t* neighbors_row_splits,
@@ -340,7 +338,7 @@ void CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
     filter_backprop, filter_dims, num_out, out_positions, out_importance, \
             num_inp, inp_positions, inp_features,                         \
             inp_neighbors_importance_sum, inp_neighbors_row_splits,       \
-            num_indices, neighbors_index, neighbors_importance,           \
+            neighbors_index_size, neighbors_index, neighbors_importance,  \
             neighbors_row_splits, extents, offsets, out_features_gradient
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,               \

@@ -72,10 +72,10 @@ static const std::unordered_map<std::string, std::string>
                  "Standard deviation for the image pixel positions."}};
 
 void pybind_image(py::module &m) {
-    py::class_<Image, PyGeometry<Image>, Geometry> image(
-            m, "Image", py::buffer_protocol(),
-            "The Image class stores image with customizable rols, cols, "
-            "channels, dtype and device.");
+    py::class_<Image, PyGeometry<Image>, std::shared_ptr<Image>, Geometry>
+            image(m, "Image", py::buffer_protocol(),
+                  "The Image class stores image with customizable rols, cols, "
+                  "channels, dtype and device.");
 
     py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
@@ -140,21 +140,20 @@ void pybind_image(py::module &m) {
                  "Return a new image after filtering with the given kernel.",
                  "kernel"_a)
             .def("filter_gaussian", &Image::FilterGaussian,
-                 "Return a new image after Gaussian filtering."
+                 "Return a new image after Gaussian filtering. "
                  "Possible kernel_size: odd numbers >= 3 are supported.",
                  "kernel_size"_a = 3, "sigma"_a = 1.0)
             .def("filter_bilateral", &Image::FilterBilateral,
                  "Return a new image after bilateral filtering."
-                 "Note: CPU (IPP) and CUDA (NPP) versions are inconsistent:"
-                 "CPU uses a round kernel (radius = floor(kernel_size / 2)),"
-                 "while CUDA uses a square kernel (width = kernel_size)."
+                 "Note: CPU (IPP) and CUDA (NPP) versions are inconsistent: "
+                 "CPU uses a round kernel (radius = floor(kernel_size / 2)), "
+                 "while CUDA uses a square kernel (width = kernel_size). "
                  "Make sure to tune parameters accordingly.",
                  "kernel_size"_a = 3, "value_sigma"_a = 20.0,
                  "dist_sigma"_a = 10.0)
             .def("filter_sobel", &Image::FilterSobel,
                  "Return a pair of new gradient images (dx, dy) after Sobel "
-                 "filtering."
-                 "Possible kernel_size: 3 and 5.",
+                 "filtering. Possible kernel_size: 3 and 5.",
                  "kernel_size"_a = 3)
             .def("resize", &Image::Resize,
                  "Return a new image after resizing with specified "
@@ -165,15 +164,46 @@ void pybind_image(py::module &m) {
                  "interp_type"_a = Image::InterpType::Nearest)
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
-                 "formed by a"
-                 "chained Gaussian filter (kernel_size = 5, sigma = 1.0) and a"
-                 "resize (ratio = 0.5) operation.")
+                 "formed by a chained Gaussian filter (kernel_size = 5, sigma"
+                 " = 1.0) and a resize (ratio = 0.5) operation.")
             .def("rgb_to_gray", &Image::RGBToGray,
                  "Converts a 3-channel RGB image to a new 1-channel Grayscale "
                  "image by I = 0.299 * R + 0.587 * G + 0.114 * B.")
             .def("__repr__", &Image::ToString);
     docstring::ClassMethodDocInject(m, "Image", "linear_transform",
                                     map_shared_argument_docstrings);
+
+    // Depth utilities.
+    image.def("clip_transform", &Image::ClipTransform,
+              "Preprocess a image of shape (rows, cols, channels=1), typically"
+              " used for a depth image. UInt16 and Float32 Dtypes supported. "
+              "Each pixel will be transformed by\n"
+              "x = x / scale\n"
+              "x = x < min_value ? clip_fill : x\n"
+              "x = x > max_value ? clip_fill : x\n"
+              "Use INF, NAN or 0.0 (default) for clip_fill",
+              "scale"_a, "min_value"_a, "max_value"_a, "clip_fill"_a = 0.0f);
+    image.def("create_vertex_map", &Image::CreateVertexMap,
+              "Create a vertex map of shape (rows, cols, channels=3) in Float32"
+              " from an image of shape (rows, cols, channels=1) in Float32 "
+              "using unprojection. The input depth is expected to be the output"
+              " of clip_transform.",
+              "intrinsics"_a, "invalid_fill"_a = 0.0f);
+    image.def("create_normal_map", &Image::CreateNormalMap,
+              "Create a normal map of shape (rows, cols, channels=3) in Float32"
+              " from a vertex map of shape (rows, cols, channels=1) in Float32 "
+              "using cross product of V(r, c+1)-V(r, c) and V(r+1, c)-V(r, c)"
+              ". The input vertex map is expected to be the output of "
+              "create_vertex_map. You may need to start with a filtered depth "
+              " image (e.g. with filter_bilateral) to obtain good results.",
+              "invalid_fill"_a = 0.0f);
+    image.def(
+            "colorize_depth", &Image::ColorizeDepth,
+            "Colorize an input depth image (with Dtype UInt16 or Float32). The"
+            " image values are divided by scale, then clamped within "
+            "(min_value, max_value) and finally converted to a 3 channel UInt8"
+            " RGB image using the Turbo colormap as a lookup table.",
+            "scale"_a, "min_value"_a, "max_value"_a);
 
     // Device transfers.
     image.def("to",
@@ -224,11 +254,14 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
     docstring::ClassMethodDocInject(m, "Image", "to_legacy_image");
 
-    py::class_<RGBDImage, PyGeometry<RGBDImage>, Geometry> rgbd_image(
-            m, "RGBDImage",
-            "RGBDImage is a pair of color and depth images. For most "
-            "procesing, the image pair should be aligned (same viewpoint and  "
-            "resolution).");
+    py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
+               Geometry>
+            rgbd_image(
+                    m, "RGBDImage",
+                    "RGBDImage is a pair of color and depth images. For most "
+                    "procesing, the image pair should be aligned (same "
+                    "viewpoint and  "
+                    "resolution).");
     rgbd_image
             // Constructors.
             .def(py::init<>(), "Construct an empty RGBDImage.")
