@@ -324,10 +324,8 @@ const Json::Value PeerConnectionManager::CreateOffer(
         const std::string &peerid,
         const std::string &window_uid,
         const std::string &options) {
-    utility::LogInfo(
-            "[PeerConnectionManager::CreateOffer] peerid: {}, window_uid; {}, "
-            "options: {}",
-            peerid, window_uid, options);
+    // utility::LogInfo("[{}] peerid: {}, window_uid; {}, options: {}.",
+    //                  __FUNCTION__, peerid, window_uid, options);
     Json::Value offer;
 
     PeerConnectionObserver *peer_connection_observer =
@@ -387,9 +385,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                               const std::string &options,
                                               const Json::Value &jmessage) {
     utility::LogInfo(
-            "[PeerConnectionManager::Call] peerid: {}, window_uid; {}, "
-            "options: {}, jmessage: {}.",
-            peerid, window_uid, options, jmessage);
+            "[{}] peerid: {}, window_uid; {}, options: {}, jmessage: {}.",
+            __FUNCTION__, peerid, window_uid, options, jmessage);
 
     Json::Value answer;
 
@@ -413,12 +410,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             rtc::scoped_refptr<webrtc::PeerConnectionInterface>
                     peer_connection =
                             peer_connection_observer->GetPeerConnection();
-            RTC_LOG(INFO) << "nbStreams local:"
-                          << peer_connection->local_streams()->count()
-                          << " remote:"
-                          << peer_connection->remote_streams()->count()
-                          << " localDescription:"
-                          << peer_connection->local_description();
+            utility::LogDebug("nbStreams local: {}, remote: {}",
+                              peer_connection->local_streams()->count(),
+                              peer_connection->remote_streams()->count());
 
             // Register peerid.
             {
@@ -453,9 +447,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                         remote_future = remote_promise.get_future();
                 if (remote_future.wait_for(std::chrono::milliseconds(5000)) ==
                     std::future_status::ready) {
-                    RTC_LOG(INFO) << "remote_description is ready";
+                    utility::LogInfo("remote_description is ready.");
                 } else {
-                    RTC_LOG(WARNING) << "remote_description is nullptr";
+                    utility::LogWarning("remote_description is nullptr.");
                 }
             }
 
@@ -523,9 +517,9 @@ bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
 
 // Hangup a call.
 const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
-    bool result = false;
-    RTC_LOG(INFO) << __FUNCTION__ << " " << peerid;
+    // utility::LogInfo("[{}] peerid: {}.", __FUNCTION__, peerid);
 
+    bool result = false;
     PeerConnectionObserver *pc_observer = nullptr;
     {
         std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
@@ -582,14 +576,13 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     if (result) {
         answer = result;
     }
-    RTC_LOG(INFO) << __FUNCTION__ << " " << peerid << " result:" << result;
     return answer;
 }
 
 // Get list ICE candidate associated with a PeerConnection.
 const Json::Value PeerConnectionManager::GetIceCandidateList(
         const std::string &peerid) {
-    RTC_LOG(INFO) << __FUNCTION__;
+    // utility::LogInfo("[{}] peerid: {}.", __FUNCTION__, peerid);
 
     Json::Value value;
     std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
@@ -625,29 +618,27 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
 
     // Use example From
     // https://soru.site/questions/51578447/api-c-webrtcyi-kullanarak-peerconnection-ve-ucretsiz-baglant-noktasn-serbest-nasl
-    int minPort = 0;
-    int maxPort = 65535;
+    int min_port = 0;
+    int max_port = 65535;
     std::istringstream is(webrtc_port_range_);
     std::string port;
     if (std::getline(is, port, ':')) {
-        minPort = std::stoi(port);
+        min_port = std::stoi(port);
         if (std::getline(is, port, ':')) {
-            maxPort = std::stoi(port);
+            max_port = std::stoi(port);
         }
     }
     std::unique_ptr<cricket::PortAllocator> port_allocator(
             new cricket::BasicPortAllocator(new rtc::BasicNetworkManager()));
-    port_allocator->SetPortRange(minPort, maxPort);
-    RTC_LOG(INFO) << __FUNCTION__
-                  << "CreatePeerConnection webrtcPortRange:" << minPort << ":"
-                  << maxPort;
-
-    RTC_LOG(INFO) << __FUNCTION__ << "CreatePeerConnection peerid:" << peerid;
+    port_allocator->SetPortRange(min_port, max_port);
+    utility::LogInfo("CreatePeerConnection webrtcPortRange: {}:{}.", min_port,
+                     max_port);
+    utility::LogInfo("CreatePeerConnection peerid: {}.", peerid);
     PeerConnectionObserver *obs =
             new PeerConnectionObserver(this->webrtc_server_, this, peerid,
                                        config, std::move(port_allocator));
     if (!obs) {
-        RTC_LOG(LERROR) << __FUNCTION__ << "CreatePeerConnection failed";
+        utility::LogError("CreatePeerConnection failed.");
     }
     return obs;
 }
@@ -657,8 +648,6 @@ rtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::CreateVideoSource(
         const std::string &window_uid,
         const std::map<std::string, std::string> &opts) {
-    RTC_LOG(INFO) << "window_uid:" << window_uid;
-
     std::string video = window_uid;
     if (config_.isMember(video)) {
         video = config_[video]["video"].asString();
@@ -725,7 +714,6 @@ bool PeerConnectionManager::AddStreams(
         // Create a new stream and add to window_uid_to_track_source_;
         rtc::scoped_refptr<BitmapTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
-        RTC_LOG(INFO) << "Adding Stream to map";
         std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
         window_uid_to_track_source_[window_uid] = video_source;
     }
@@ -764,7 +752,7 @@ bool PeerConnectionManager::AddStreams(
                     RTC_LOG(LS_ERROR)
                             << "Adding stream to PeerConnection failed";
                 } else {
-                    RTC_LOG(INFO) << "stream added to PeerConnection";
+                    utility::LogInfo("Stream added to PeerConnection.");
                     ret = true;
                 }
             }
@@ -779,14 +767,13 @@ bool PeerConnectionManager::AddStreams(
 // ICE callback.
 void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
         const webrtc::IceCandidateInterface *candidate) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << candidate->sdp_mline_index();
+    utility::LogInfo("PeerConnectionObserver::OnIceCandidate: {}.",
+                     candidate->sdp_mline_index());
 
     std::string sdp;
     if (!candidate->ToString(&sdp)) {
         RTC_LOG(LS_ERROR) << "Failed to serialize candidate";
     } else {
-        RTC_LOG(INFO) << sdp;
-
         Json::Value jmessage;
         jmessage[k_candidate_sdp_mid_name] = candidate->sdp_mid();
         jmessage[k_candidate_sdp_mline_index_name] =
