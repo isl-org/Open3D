@@ -67,11 +67,7 @@ void EngineInstance::SetResourcePath(const std::string& resource_path) {
     }
 }
 
-const std::string& EngineInstance::GetResourcePath() {
-    std::cout << "EngineInstance::GetResourcePath(): " << resource_path_
-              << std::endl;
-    return resource_path_;
-}
+const std::string& EngineInstance::GetResourcePath() { return resource_path_; }
 
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
 
@@ -121,17 +117,11 @@ EngineInstance::EngineInstance() {
     filament::backend::Platform* custom_platform = nullptr;
     if (is_headless_) {
 #ifdef __linux__
-        utility::LogInfo(
-                "EngineInstance::EngineInstance(): is_headless_ == true "
-                "!!!!!!!!!!!!");
+        utility::LogInfo("EGL headless mode enabled.");
         custom_platform = CreateEGLHeadlessPlatform();
 #else
-        utility::LogError("EGL Headless is not supported on this platform");
+        utility::LogError("EGL Headless is not supported on this platform.");
 #endif
-    } else {
-        utility::LogInfo(
-                "EngineInstance::EngineInstance(): is_headless_ == false "
-                "!!!!!!!!!!!!");
     }
 
     engine_ = filament::Engine::create(backend, custom_platform);
