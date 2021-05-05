@@ -141,7 +141,9 @@ int main(int argc, char **argv) {
                 TEST_DIR);
     }
     visualization::webrtc_server::WebRTCServer::GetInstance().EnableWebRTC();
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    // Uncomment this line to see more WebRTC loggings
+    // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     EmptyBox();
     BoxWithOjects();
