@@ -173,15 +173,23 @@ void CreateVertexMapCPU
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
+    using std::isinf;
+    using std::isnan;
 #endif
     launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        auto is_invalid = [invalid_fill] OPEN3D_DEVICE(float v) {
+            if (isinf(invalid_fill)) return isinf(v);
+            if (isnan(invalid_fill)) return isnan(v);
+            return v == invalid_fill;
+        };
+
         int64_t y = workload_idx / cols;
         int64_t x = workload_idx % cols;
 
         float d = *src_indexer.GetDataPtrFromCoord<float>(x, y);
 
         float* vertex = dst_indexer.GetDataPtrFromCoord<float>(x, y);
-        if (d != invalid_fill) {
+        if (!is_invalid(d)) {
             ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
                          vertex + 0, vertex + 1, vertex + 2);
         } else {
@@ -191,7 +199,6 @@ void CreateVertexMapCPU
         }
     });
 }
-
 #ifdef __CUDACC__
 void CreateNormalMapCUDA
 #else
