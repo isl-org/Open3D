@@ -198,11 +198,11 @@ std::vector<std::string> WebRTCServer::GetWindowUIDs() const {
 }
 
 WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
+    // impl_->web_root_ is filled at WebRTCServer::Run(), since it relies on
+    // the GetResourcePath(), which happens after Application::Initialize().
     impl_->http_handshake_enabled_ = true;
     impl_->http_address_ =
             Impl::GetEnvWebRTCIP() + ":" + Impl::GetEnvWebRTCPort();
-    impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
-    utility::LogInfo("impl_->web_root_: {}", impl_->web_root_);
 }
 
 WebRTCServer& WebRTCServer::GetInstance() {
@@ -212,6 +212,9 @@ WebRTCServer& WebRTCServer::GetInstance() {
 
 void WebRTCServer::Run() {
     std::cout << "WebRTCServer::Run()" << std::endl;
+
+    impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
+    utility::LogInfo("impl_->web_root_: {}", impl_->web_root_);
 
     const std::string web_root = impl_->web_root_;
     const std::string http_address = impl_->http_address_;
