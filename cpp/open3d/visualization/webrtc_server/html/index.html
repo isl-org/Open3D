@@ -7,17 +7,17 @@
     <script src="webrtcstreamer.js"></script>
     <script>
       /**
-       * Global WebRTC configs
+       * Global WebRTC configs.
        */
       let webRtcOptions = "rtptransport=tcp&timeout=60";
 
       /**
-       * WebRTC connections
+       * WebRTC connections.
        */
       let webRtcServerList = {};
 
       /**
-       * Get the div where to insert a video
+       * Get the div where to insert a video.
        */
       function getContentDiv() {
         let contentDiv = document.getElementById("content");
@@ -72,6 +72,8 @@
           document.getElementById(id).remove();
         });
 
+        console.log("staleWindowIds:", staleWindowIds);
+
         // Append new URLs to the menu bar.
         newWindowIds.forEach(function (windowId) {
           let videoId = "video_" + windowId;
@@ -97,13 +99,13 @@
       }
 
       /**
-       * Delete a WebRTC client connection
+       * Delete a WebRTC client connection.
        */
       function delConnection(windowId) {
         console.log("delConnection: ", windowId);
         let videoId = "video_" + windowId;
 
-        // Disconnect WebRTC connection
+        // Disconnect WebRTC connection.
         let webrtcServer = webRtcServerList[videoId];
         if (webrtcServer) {
           webrtcServer.disconnect();
@@ -112,12 +114,12 @@
       }
 
       /**
-       * Add a WebRTC client connection
+       * Add a WebRTC client connection.
        */
       function addConnection(windowId) {
         let videoId = "video_" + windowId;
 
-        // Add a video element to display WebRTC stream
+        // Add a video element to display WebRTC stream.
         if (document.getElementById(videoId) === null) {
           let contentDiv = getContentDiv();
           if (contentDiv) {
@@ -147,11 +149,11 @@
           let onClose = function () {
             console.log("onClose() called for videoId:", videoId);
 
-            // Remove the video element and its tile
+            // Remove the video element and its tile.
             let divElt = document.getElementById("div_" + videoId);
             divElt.parentElement.removeChild(divElt);
 
-            // Un-highlight the navigation
+            // Un-highlight the navigation.
             let navElt = document.getElementById("nav_" + videoId);
             navElt.className = "";
 
@@ -160,7 +162,7 @@
               .then((response) => updateMediaList(response));
           };
 
-          // Connect video element to WebRTC stream
+          // Connect video element to WebRTC stream.
           let webRtcClient = new WebRtcStreamer(videoId, "", onClose, null);
           console.log("[addConnection] videoId: " + videoId);
 
@@ -168,17 +170,17 @@
           console.log("[addConnection] windowId: " + windowId);
           console.log("[addConnection] options: " + webRtcOptions);
 
-          // Highlight the navigation
+          // Highlight the navigation.
           let navElt = document.getElementById("nav_" + videoId);
           navElt.className = "active";
 
-          // Register WebRTC streamer connection
+          // Register WebRTC streamer connection.
           webRtcServerList[videoId] = webRtcClient;
         }
       }
 
       /**
-       * Load/unload callbacks
+       * Load/unload callbacks.
        */
       window.onload = function () {
         WebRtcStreamer.getMediaList()
