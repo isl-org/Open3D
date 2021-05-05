@@ -1113,8 +1113,25 @@ Tensor Tensor::LogicalAnd(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::LogicalAnd(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = LogicalAnd(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::LogicalAnd_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
+    return *this;
+}
+
+Tensor Tensor::LogicalAnd_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        LogicalAnd_(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1126,8 +1143,24 @@ Tensor Tensor::LogicalOr(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::LogicalOr(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = LogicalOr(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::LogicalOr_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
+    return *this;
+}
+
+Tensor Tensor::LogicalOr_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        LogicalOr_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1139,8 +1172,25 @@ Tensor Tensor::LogicalXor(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::LogicalXor(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = LogicalXor(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::LogicalXor_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
+    return *this;
+}
+
+Tensor Tensor::LogicalXor_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        LogicalXor_(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1151,8 +1201,24 @@ Tensor Tensor::Gt(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Gt(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Gt(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Gt_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
+    return *this;
+}
+
+Tensor Tensor::Gt_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Gt_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1163,8 +1229,24 @@ Tensor Tensor::Lt(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Lt(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Lt(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Lt_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
+    return *this;
+}
+
+Tensor Tensor::Lt_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Lt_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1175,8 +1257,24 @@ Tensor Tensor::Ge(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Ge(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Ge(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Ge_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
+    return *this;
+}
+
+Tensor Tensor::Ge_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Ge_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1187,8 +1285,24 @@ Tensor Tensor::Le(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Le(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Le(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Le_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
+    return *this;
+}
+
+Tensor Tensor::Le_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Le_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1199,8 +1313,24 @@ Tensor Tensor::Eq(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Eq(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Eq(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Eq_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
+    return *this;
+}
+
+Tensor Tensor::Eq_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Eq_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1211,8 +1341,24 @@ Tensor Tensor::Ne(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Ne(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Ne(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Ne_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
+    return *this;
+}
+
+Tensor Tensor::Ne_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Ne_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 

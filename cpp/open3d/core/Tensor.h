@@ -692,10 +692,7 @@ public:
     /// non-zero values will be treated as True.
     Tensor LogicalAnd(const Tensor& value) const;
     Tensor operator&&(const Tensor& value) const { return LogicalAnd(value); }
-    template <typename T>
-    Tensor LogicalAnd(T scalar_value) const {
-        return LogicalAnd(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalAnd(Scalar value) const;
 
     /// Element-wise logical and of tensors, in-place. This operation won't
     /// change the tensor's dtype.
@@ -704,10 +701,7 @@ public:
     /// will be treated as True. The tensor will be filled with 0 or 1 casted to
     /// the tensor's dtype.
     Tensor LogicalAnd_(const Tensor& value);
-    template <typename T>
-    Tensor LogicalAnd_(T scalar_value) {
-        return LogicalAnd_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalAnd_(Scalar value);
 
     /// Element-wise logical or of tensors, returning a new boolean tensor.
     ///
@@ -715,10 +709,7 @@ public:
     /// non-zero values will be treated as True.
     Tensor LogicalOr(const Tensor& value) const;
     Tensor operator||(const Tensor& value) const { return LogicalOr(value); }
-    template <typename T>
-    Tensor LogicalOr(T scalar_value) const {
-        return LogicalOr(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalOr(Scalar value) const;
 
     /// Element-wise logical or of tensors, in-place. This operation won't
     /// change the tensor's dtype.
@@ -727,10 +718,7 @@ public:
     /// will be treated as True. The tensor will be filled with 0 or 1 casted to
     /// the tensor's dtype.
     Tensor LogicalOr_(const Tensor& value);
-    template <typename T>
-    Tensor LogicalOr_(T scalar_value) {
-        return LogicalOr_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalOr_(Scalar value);
 
     /// Element-wise logical exclusive-or of tensors, returning a new boolean
     /// tensor.
@@ -738,10 +726,7 @@ public:
     /// If the tensor is not boolean, zero will be treated as False, while
     /// non-zero values will be treated as True.
     Tensor LogicalXor(const Tensor& value) const;
-    template <typename T>
-    Tensor LogicalXor(T scalar_value) const {
-        return LogicalXor(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalXor(Scalar value) const;
 
     /// Element-wise logical exclusive-or of tensors, in-place. This operation
     /// won't change the tensor's dtype.
@@ -750,108 +735,69 @@ public:
     /// non-zero values will be treated as True. The tensor will be filled with
     /// 0 or 1 casted to the tensor's dtype.
     Tensor LogicalXor_(const Tensor& value);
-    template <typename T>
-    Tensor LogicalXor_(T scalar_value) {
-        return LogicalXor_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalXor_(Scalar value);
 
     /// Element-wise greater-than of tensors, returning a new boolean tensor.
     Tensor Gt(const Tensor& value) const;
     Tensor operator>(const Tensor& value) const { return Gt(value); }
-    template <typename T>
-    Tensor Gt(T scalar_value) const {
-        return Gt(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Gt(Scalar value) const;
 
     /// Element-wise greater-than of tensors, in-place. This operation
     /// won't change the tensor's dtype.
     Tensor Gt_(const Tensor& value);
-    template <typename T>
-    Tensor Gt_(T scalar_value) {
-        return Gt_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Gt_(Scalar value);
 
     /// Element-wise less-than of tensors, returning a new boolean tensor.
     Tensor Lt(const Tensor& value) const;
     Tensor operator<(const Tensor& value) const { return Lt(value); }
-    template <typename T>
-    Tensor Lt(T scalar_value) const {
-        return Lt(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Lt(Scalar value) const;
 
     /// Element-wise less-than of tensors, in-place. This operation won't change
     /// the tensor's dtype.
     Tensor Lt_(const Tensor& value);
-    template <typename T>
-    Tensor Lt_(T scalar_value) {
-        return Lt_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Lt_(Scalar value);
 
     /// Element-wise greater-than-or-equals-to of tensors, returning a new
     /// boolean tensor.
     Tensor Ge(const Tensor& value) const;
     Tensor operator>=(const Tensor& value) const { return Ge(value); }
-    template <typename T>
-    Tensor Ge(T scalar_value) const {
-        return Ge(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ge(Scalar value) const;
 
     /// Element-wise greater-than-or-equals-to of tensors, in-place. This
     /// operation won't change the tensor's dtype.
     Tensor Ge_(const Tensor& value);
-    template <typename T>
-    Tensor Ge_(T scalar_value) {
-        return Ge_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ge_(Scalar value);
 
     /// Element-wise less-than-or-equals-to of tensors, returning a new boolean
     /// tensor.
     Tensor Le(const Tensor& value) const;
     Tensor operator<=(const Tensor& value) const { return Le(value); }
-    template <typename T>
-    Tensor Le(T scalar_value) const {
-        return Le(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Le(Scalar value) const;
 
     /// Element-wise less-than-or-equals-to of tensors, in-place. This operation
     /// won't change the tensor's dtype.
     Tensor Le_(const Tensor& value);
-    template <typename T>
-    Tensor Le_(T scalar_value) {
-        return Le_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Le_(Scalar value);
 
     /// Element-wise equals-to of tensors, returning a new boolean tensor.
     Tensor Eq(const Tensor& value) const;
     Tensor operator==(const Tensor& value) const { return Eq(value); }
-    template <typename T>
-    Tensor Eq(T scalar_value) const {
-        return Eq(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Eq(Scalar value) const;
 
     /// Element-wise equals-to of tensors, in-place. This
     /// operation won't change the tensor's dtype.
     Tensor Eq_(const Tensor& value);
-    template <typename T>
-    Tensor Eq_(T scalar_value) {
-        return Eq_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Eq_(Scalar value);
 
     /// Element-wise not-equals-to of tensors, returning a new boolean tensor.
     Tensor Ne(const Tensor& value) const;
     Tensor operator!=(const Tensor& value) const { return Ne(value); }
-    template <typename T>
-    Tensor Ne(T scalar_value) const {
-        return Ne(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ne(Scalar value) const;
 
     /// Element-wise equals-to of tensors, in-place. This
     /// operation won't change the tensor's dtype.
     Tensor Ne_(const Tensor& value);
-    template <typename T>
-    Tensor Ne_(T scalar_value) {
-        return Ne_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ne_(Scalar value);
 
     /// Find the indices of the elements that are non-zero. Returns a vector of
     /// int64 Tensors, each containing the indices of the non-zero elements in
