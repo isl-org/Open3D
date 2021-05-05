@@ -66,9 +66,8 @@ class PeerConnectionManager {
         virtual void OnFrame(const webrtc::VideoFrame& video_frame) {
             rtc::scoped_refptr<webrtc::I420BufferInterface> buffer(
                     video_frame.video_frame_buffer()->ToI420());
-            RTC_LOG(LS_VERBOSE)
-                    << __PRETTY_FUNCTION__ << " frame:" << buffer->width()
-                    << "x" << buffer->height();
+            utility::LogDebug("[{}] frame: {}x{}", __PRETTY_FUNCTION__,
+                              buffer->height(), buffer->width());
         }
 
     protected:
@@ -96,7 +95,7 @@ class PeerConnectionManager {
             }
         }
         virtual void OnFailure(webrtc::RTCError error) {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " " << error.message();
+            utility::LogWarning("{}", error.message());
             promise_.set_value(nullptr);
         }
 
@@ -129,7 +128,7 @@ class PeerConnectionManager {
                     SetSessionDescriptionObserver::Create(pc_, promise_), desc);
         }
         virtual void OnFailure(webrtc::RTCError error) {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " " << error.message();
+            utility::LogWarning("{}", error.message());
             promise_.set_value(nullptr);
         }
 
@@ -181,11 +180,10 @@ class PeerConnectionManager {
 
         // DataChannelObserver interface
         virtual void OnStateChange() {
-            RTC_LOG(LERROR)
-                    << __PRETTY_FUNCTION__
-                    << " channel:" << data_channel_->label() << " state:"
-                    << webrtc::DataChannelInterface::DataStateString(
-                               data_channel_->state());
+            utility::LogInfo("[{}] channel: {}, state: {}.",
+                             __PRETTY_FUNCTION__, data_channel_->label(),
+                             webrtc::DataChannelInterface::DataStateString(
+                                     data_channel_->state()));
             std::string msg(data_channel_->label() + " " +
                             webrtc::DataChannelInterface::DataStateString(
                                     data_channel_->state()));
@@ -195,10 +193,8 @@ class PeerConnectionManager {
         virtual void OnMessage(const webrtc::DataBuffer& buffer) {
             std::string msg((const char*)buffer.data.data(),
                             buffer.data.size());
-            RTC_LOG(LERROR)
-                    << __PRETTY_FUNCTION__
-                    << " channel:" << data_channel_->label() << " msg:" << msg;
-
+            utility::LogInfo("[{}] channel: {}, msg: {}.", __PRETTY_FUNCTION__,
+                             data_channel_->label(), msg);
             webrtc_server_->OnDataChannelMessage(msg);
         }
 
@@ -268,9 +264,9 @@ class PeerConnectionManager {
         // PeerConnectionObserver interface
         virtual void OnAddStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-            RTC_LOG(LERROR)
-                    << __PRETTY_FUNCTION__
-                    << " nb video tracks:" << stream->GetVideoTracks().size();
+            utility::LogDebug("[{}] GetVideoTracks().size(): {}.",
+                              __PRETTY_FUNCTION__,
+                              stream->GetVideoTracks().size());
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {
                 video_sink_.reset(new VideoSink(videoTracks.at(0)));
@@ -278,26 +274,22 @@ class PeerConnectionManager {
         }
         virtual void OnRemoveStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__;
             video_sink_.reset();
         }
         virtual void OnDataChannel(
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel) {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__;
+            utility::LogDebug("peerid: {}", peerid_);
             remote_channel_ = new DataChannelObserver(webrtc_server_, channel);
         }
         virtual void OnRenegotiationNeeded() {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " peerid:" << peerid_;
-            ;
+            utility::LogDebug("peerid: {}", peerid_);
         }
-
         virtual void OnIceCandidate(
                 const webrtc::IceCandidateInterface* candidate);
 
         virtual void OnSignalingChange(
                 webrtc::PeerConnectionInterface::SignalingState state) {
-            RTC_LOG(LERROR) << __PRETTY_FUNCTION__ << " state:" << state
-                            << " peerid:" << peerid_;
+            utility::LogDebug("state: {}, peerid: {}", state, peerid_);
         }
         virtual void OnIceConnectionChange(
                 webrtc::PeerConnectionInterface::IceConnectionState state) {
