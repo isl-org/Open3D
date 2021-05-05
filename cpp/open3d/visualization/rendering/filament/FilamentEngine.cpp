@@ -67,7 +67,11 @@ void EngineInstance::SetResourcePath(const std::string& resource_path) {
     }
 }
 
-const std::string& EngineInstance::GetResourcePath() { return resource_path_; }
+const std::string& EngineInstance::GetResourcePath() {
+    std::cout << "EngineInstance::GetResourcePath(): " << resource_path_
+              << std::endl;
+    return resource_path_;
+}
 
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
 

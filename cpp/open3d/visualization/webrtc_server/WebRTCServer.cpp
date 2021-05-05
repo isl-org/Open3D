@@ -103,9 +103,9 @@ struct WebRTCServer::Impl {
         if (const char* env_p = std::getenv("WEBRTC_WEB_ROOT")) {
             return std::string(env_p);
         } else {
-            return utility::filesystem::GetUnixHome() +
-                   "/repo/Open3D/cpp/open3d/visualization/"
-                   "webrtc_server/html";
+            std::string resource_path(
+                    gui::Application::GetInstance().GetResourcePath());
+            return resource_path + "/html";
         }
     }
 };
@@ -202,6 +202,7 @@ WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
     impl_->http_address_ =
             Impl::GetEnvWebRTCIP() + ":" + Impl::GetEnvWebRTCPort();
     impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
+    utility::LogInfo("impl_->web_root_: {}", impl_->web_root_);
 }
 
 WebRTCServer& WebRTCServer::GetInstance() {
