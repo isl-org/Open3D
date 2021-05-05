@@ -533,7 +533,6 @@ var WebRtcStreamer = (function () {
 
       evt.channel.onopen = function () {
         console.log("remote datachannel open");
-        this.send("remote channel opened");
       };
       evt.channel.onmessage = function (event) {
         console.log("remote datachannel recv:" + JSON.stringify(event.data));
@@ -558,7 +557,6 @@ var WebRtcStreamer = (function () {
       var dataChannel = this.dataChannel;
       dataChannel.onopen = function () {
         console.log("local datachannel open");
-        this.send("local channel opened");
       };
       dataChannel.onmessage = function (evt) {
         console.log("local datachannel recv:" + JSON.stringify(evt.data));
