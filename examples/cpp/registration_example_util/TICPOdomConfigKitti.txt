@@ -8,7 +8,7 @@
 # Change CPU:0 to CUDA:0 for running it on primary GPU.
 
 # option to turn ON / OFF visualization:
-visualization = OFF
+visualization = ON
 visualization_min = -1.5
 visualization_max = 1.5
 

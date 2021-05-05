@@ -9,6 +9,7 @@
 
 #include "open3d/Open3D.h"
 #include "open3d/t/geometry/Utility.h"
+#include "open3d/visualization/webrtc_server/WebRTCServer.h"
 
 using namespace open3d;
 using namespace open3d::visualization;
@@ -519,6 +520,9 @@ int main(int argc, const char* argv[]) {
     device_string = std::string(argv[1]);
     window_name = window_name + " [" + device_string + "]";
     widget_string = widget_string + device_string;
+
+    visualization::webrtc_server::WebRTCServer::GetInstance().EnableWebRTC();
+    // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
