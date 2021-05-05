@@ -49,12 +49,11 @@ class WebVisualizer(ipywidgets.DOMWidget):
     def show(self):
         IPython.display.display(self)
 
-    def _call_http_request(self, entry_point, query_string, data):
+    def _call_http_api(self, entry_point, query_string, data):
         webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
-        result = webrtc_server.call_http_request(entry_point, query_string,
-                                                 data)
+        result = webrtc_server.call_http_api(entry_point, query_string, data)
         # print(
-        #     f"call_http_request({entry_point}, {query_string}, {query_string})"
+        #     f"call_http_api({entry_point}, {query_string}, {query_string})"
         #     f"->{result}")
         return result
 
@@ -77,8 +76,7 @@ class WebVisualizer(ipywidgets.DOMWidget):
             jspy_requests = json.loads(jspy_message)
 
             for call_id, payload in jspy_requests.items():
-                if "func" not in payload or payload[
-                        "func"] != "call_http_request":
+                if "func" not in payload or payload["func"] != "call_http_api":
                     raise ValueError(f"Invalid jspy function: {jspy_requests}")
                 if "args" not in payload or len(payload["args"]) != 3:
                     raise ValueError(
@@ -86,9 +84,9 @@ class WebVisualizer(ipywidgets.DOMWidget):
 
                 # Check if already in result.
                 if not call_id in self.result_map:
-                    json_result = self._call_http_request(
-                        payload["args"][0], payload["args"][1],
-                        payload["args"][2])
+                    json_result = self._call_http_api(payload["args"][0],
+                                                      payload["args"][1],
+                                                      payload["args"][2])
                     self.result_map[call_id] = json_result
         except:
             print(

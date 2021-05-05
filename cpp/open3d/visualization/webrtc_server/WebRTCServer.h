@@ -89,7 +89,7 @@ public:
     /// data = {method: "POST", body: JSON.stringify(candidate)};
     /// fetch(this.srvurl + "/api/addIceCandidate?peerid=" + peerid, data);
     ///
-    /// Now with CallHttpRequest:
+    /// Now with CallHttpAPI:
     /// open3d.visualization.webrtc_server("/api/addIceCandidate",
     ///                                    "?peerid=" + peerid,
     ///                                    data["body"]);
@@ -98,9 +98,9 @@ public:
     /// \param query_string URL part after '?', including '?'. If '?' is not the
     /// first character or if the stirng is empty, the query_string is ignored.
     /// \param data JSON-encoded string.
-    std::string CallHttpRequest(const std::string& entry_point,
-                                const std::string& query_string = "",
-                                const std::string& data = "") const;
+    std::string CallHttpAPI(const std::string& entry_point,
+                            const std::string& query_string = "",
+                            const std::string& data = "") const;
 
     /// Sets WebRTCWindowSystem as the default window system in Application.
     /// This enables a global WebRTC server and each gui::Window will be

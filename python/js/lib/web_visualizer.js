@@ -83,7 +83,7 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
   },
 
   /**
-   * Hard-coded to call "call_http_request". Args and return value are all
+   * Hard-coded to call "call_http_api". Args and return value are all
    * strings.
    */
   callPython: async function (func, args = []) {
@@ -161,7 +161,7 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
       );
       console.log('WebVisualizerView.commsCall with data["body"]: ', dataStr);
 
-      return this.callPython("call_http_request", [
+      return this.callPython("call_http_api", [
         entryPoint,
         queryString,
         dataStr,
