@@ -59,7 +59,7 @@ __device__ inline float atomicMaxf(float *addr, float value) {
 }
 #endif
 
-OPEN3D_HOST_DEVICE inline int sign(int x) {
+OPEN3D_HOST_DEVICE inline int Sign(int x) {
     return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
 }
 
