@@ -1762,8 +1762,10 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
 #endif  // __APPLE__
     auto file_menu = std::make_shared<Menu>();
     file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
-    file_menu->AddSeparator();
-    file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
+    if (Application::GetInstance().UsingNativeWindows()) {
+        file_menu->AddSeparator();
+        file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
+    }
     menu->AddMenu("File", file_menu);
 
     auto actions_menu = std::make_shared<Menu>();
