@@ -39,7 +39,6 @@
 #include <p2p/base/turn_server.h>
 #include <rtc_base/ssl_adapter.h>
 #include <rtc_base/thread.h>
-#include <signal.h>
 
 #include <fstream>
 #include <iostream>
@@ -205,6 +204,11 @@ WebRTCServer::WebRTCServer() : impl_(new WebRTCServer::Impl()) {
             Impl::GetEnvWebRTCIP() + ":" + Impl::GetEnvWebRTCPort();
 }
 
+WebRTCServer::~WebRTCServer() {
+    this->impl_->peer_connection_manager_ = nullptr;
+    rtc::Thread::Current()->Quit();
+}
+
 WebRTCServer& WebRTCServer::GetInstance() {
     static WebRTCServer webrtc_server;
     return webrtc_server;
@@ -242,17 +246,6 @@ void WebRTCServer::Run() {
     } else {
         throw std::runtime_error("InitializePeerConnection() failed.");
     }
-
-    // TODO: fix me.
-    // https://stackoverflow.com/a/20291676/1255535.
-    // https://stackoverflow.com/q/7852101/1255535.
-    // auto signal_handler = [this](int n) {
-    //     printf("SIGINT\n");
-    //     // delete need thread still running
-    //     peer_connection_manager_ = nullptr;
-    //     rtc::Thread::Current()->Quit();
-    // };
-
     // CivetWeb http server.
     if (impl_->http_handshake_enabled_) {
         std::vector<std::string> options;
@@ -281,7 +274,6 @@ void WebRTCServer::Run() {
             // Main loop.
             std::cout << "HTTP Listen at " << http_address << std::endl;
             HttpServerRequestHandler civet_server(func, options);
-            // signal(SIGINT, &signal_handler);  // TODO: fix me
             thread->Run();
         } catch (const CivetException& ex) {
             std::cout << "Cannot Initialize start HTTP server exception:"

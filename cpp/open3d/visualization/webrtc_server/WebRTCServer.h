@@ -116,6 +116,9 @@ public:
     /// Close all WebRTC connections that correspond to a Window.
     void CloseWindowConnections(const std::string& window_uid);
 
+    /// Cleans up WebRTC peer connection and thread.
+    ~WebRTCServer();
+
 private:
     WebRTCServer();
     struct Impl;
