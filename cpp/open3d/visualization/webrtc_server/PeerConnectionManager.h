@@ -58,13 +58,9 @@ class PeerConnectionManager {
     class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     public:
         VideoSink(webrtc::VideoTrackInterface* track) : track_(track) {
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " track:" << track_->id();
             track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
         }
-        virtual ~VideoSink() {
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " track:" << track_->id();
-            track_->RemoveSink(this);
-        }
+        virtual ~VideoSink() { track_->RemoveSink(this); }
 
         // VideoSinkInterface implementation
         virtual void OnFrame(const webrtc::VideoFrame& video_frame) {
@@ -94,11 +90,9 @@ class PeerConnectionManager {
             if (pc_->local_description()) {
                 promise_.set_value(pc_->local_description());
                 pc_->local_description()->ToString(&sdp);
-                RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " Local SDP:" << sdp;
             } else if (pc_->remote_description()) {
                 promise_.set_value(pc_->remote_description());
                 pc_->remote_description()->ToString(&sdp);
-                RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " Remote SDP:" << sdp;
             }
         }
         virtual void OnFailure(webrtc::RTCError error) {
@@ -131,8 +125,6 @@ class PeerConnectionManager {
         virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
             std::string sdp;
             desc->ToString(&sdp);
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " type:" << desc->type()
-                          << " sdp:" << sdp;
             pc_->SetLocalDescription(
                     SetSessionDescriptionObserver::Create(pc_, promise_), desc);
         }
@@ -230,17 +222,12 @@ class PeerConnectionManager {
               remote_channel_(nullptr),
               ice_candidate_list_(Json::arrayValue),
               deleting_(false) {
-            RTC_LOG(INFO) << __FUNCTION__
-                          << "CreatePeerConnection peerid:" << peerid;
             pc_ = peer_connection_manager_->peer_connection_factory_
                           ->CreatePeerConnection(config,
                                                  std::move(portAllocator),
                                                  nullptr, this);
 
             if (pc_.get()) {
-                RTC_LOG(INFO) << __FUNCTION__
-                              << "CreateDataChannel peerid:" << peerid;
-
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel =
                         pc_->CreateDataChannel("ServerDataChannel", nullptr);
                 local_channel_ =
@@ -252,7 +239,6 @@ class PeerConnectionManager {
         };
 
         virtual ~PeerConnectionObserver() {
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__;
             delete local_channel_;
             delete remote_channel_;
             if (pc_.get()) {
@@ -315,8 +301,6 @@ class PeerConnectionManager {
         }
         virtual void OnIceConnectionChange(
                 webrtc::PeerConnectionInterface::IceConnectionState state) {
-            RTC_LOG(INFO) << __PRETTY_FUNCTION__ << " state:" << state
-                          << " peerid:" << peerid_;
             if ((state ==
                  webrtc::PeerConnectionInterface::kIceConnectionFailed) ||
                 (state ==

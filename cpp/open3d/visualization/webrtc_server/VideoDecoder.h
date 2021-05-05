@@ -109,13 +109,11 @@ public:
     }
 
     void Start() {
-        RTC_LOG(INFO) << "VideoDecoder::start";
         stop_ = false;
         decoder_thread_ = std::thread(&VideoDecoder::DecoderThread, this);
     }
 
     void Stop() {
-        RTC_LOG(INFO) << "VideoDecoder::stop";
         stop_ = true;
         Frame frame;
         {
