@@ -122,7 +122,7 @@ Image Image::To(core::Dtype dtype,
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
         std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
-        // TODO: Tensor based Op for saturate_cast / LinearTransform
+        // TODO(Sameer): Tensor based Op for saturate_cast / LinearTransform
         // NPP does not expose a useful API, so as a workaround, move data to
         // CPU and use IPP.
         auto device = data_.GetDevice();
@@ -464,10 +464,29 @@ Image Image::PyrDown() const {
     return blur.Resize(0.5, InterpType::Nearest);
 }
 
+Image Image::PyrDownDepth(float diff_threshold, float invalid_fill) const {
+    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
+        utility::LogError(
+                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
+                "{})",
+                GetRows(), GetCols(), GetChannels());
+    }
+    if (GetDtype() != core::Dtype::Float32) {
+        utility::LogError("Expected a Float32 image, but got {}",
+                          GetDtype().ToString());
+    }
+
+    core::Tensor dst_tensor = core::Tensor::Empty(
+            {GetRows() / 2, GetCols() / 2, 1}, GetDtype(), GetDevice());
+    t::geometry::kernel::image::PyrDownDepth(AsTensor(), dst_tensor,
+                                             diff_threshold, invalid_fill);
+    return t::geometry::Image(dst_tensor);
+}
+
 Image Image::ClipTransform(float scale,
                            float min_value,
                            float max_value,
-                           float clip_fill) {
+                           float clip_fill) const {
     if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
         utility::LogError(
                 "Invalid shape, expected a 1 channel image, but got ({}, {}, "
@@ -487,13 +506,13 @@ Image Image::ClipTransform(float scale,
     }
     if (!(std::isnan(clip_fill) || std::isinf(clip_fill) || clip_fill == 0)) {
         utility::LogWarning(
-                "The clip_fill value {} is not recommended Inf, NaN or, 0",
+                "The clip_fill value {} is not recommended. Please use Inf, "
+                "NaN or, 0",
                 clip_fill);
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
-                                       core::Dtype::Float32, data_.GetDevice());
+    Image dst_im(GetRows(), GetCols(), 1, core::Dtype::Float32,
+                 data_.GetDevice());
     kernel::image::ClipTransform(data_, dst_im.data_, scale, min_value,
                                  max_value, clip_fill);
     return dst_im;
@@ -512,9 +531,7 @@ Image Image::CreateVertexMap(const core::Tensor &intrinsics,
                           GetDtype().ToString());
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3}, GetDtype(),
-                                       GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateVertexMap(data_, dst_im.data_, intrinsics,
                                    invalid_fill);
     return dst_im;
@@ -532,9 +549,7 @@ Image Image::CreateNormalMap(float invalid_fill) {
                           GetDtype().ToString());
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3}, GetDtype(),
-                                       GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateNormalMap(data_, dst_im.data_, invalid_fill);
     return dst_im;
 }
@@ -558,9 +573,7 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
                 scale, min_value, max_value);
     }
 
-    Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 3},
-                                       core::Dtype::UInt8, data_.GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, core::Dtype::UInt8, GetDevice());
     kernel::image::ColorizeDepth(data_, dst_im.data_, scale, min_value,
                                  max_value);
     return dst_im;
