@@ -46,7 +46,6 @@
 
 #include <fstream>
 #include <functional>
-#include <iostream>
 #include <utility>
 
 #include "open3d/utility/IJsonConvertible.h"
@@ -180,9 +179,6 @@ PeerConnectionManager::PeerConnectionManager(
             CivetServer::getParam(req_info->query_string, "url", url);
             CivetServer::getParam(req_info->query_string, "options", options);
         }
-        utility::LogInfo("/api/call in data ////////////////////////////////");
-        utility::LogInfo("{}", utility::JsonToString(in));
-        utility::LogInfo("//////////////////////////////////////////////////");
         return this->Call(peerid, url, options, in);
     };
 
@@ -254,7 +250,6 @@ const Json::Value PeerConnectionManager::GetIceServers() {
         Json::Value server;
         Json::Value urlList(Json::arrayValue);
         IceServer srv = GetIceServerFromUrl(ice_server);
-        utility::LogInfo("ICE URL: {}", srv.url);
         urlList.append(srv.url);
         server["urls"] = urlList;
         if (srv.user.length() > 0) server["username"] = srv.user;
