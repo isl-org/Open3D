@@ -92,6 +92,21 @@ public:
         AssertPrimaryKeyInMapOrEmpty();
     }
 
+    /// \brief Erase elements for the TensorMap by key value, if the key
+    /// exists. If the key does not exists, a warning is thrown.
+    /// Also `primary_key` cannot be deleted. It is based on
+    /// `size_type unordered_map::erase(const key_type& k);`.
+    /// \return The number of elements deleted. [0 if key was not present].
+    std::size_t Erase(const std::string key) {
+        if (key == primary_key_) {
+            utility::LogError("Primary key: {} cannot be deleted.",
+                              primary_key_);
+        } else if (!Contains(key)) {
+            utility::LogWarning("Key: {} is not present.", key);
+        }
+        return this->erase(key);
+    }
+
     TensorMap& operator=(const TensorMap&) = default;
 
     TensorMap& operator=(TensorMap&&) = default;

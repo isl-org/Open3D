@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
@@ -386,10 +385,7 @@ CollapsableVert::CollapsableVert(const char* text,
     static int g_next_id = 1;
 
     impl_->text_ = text;
-
-    std::stringstream s;
-    s << text << "##collapsing" << g_next_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = impl_->text_ + "##collapsing_" + std::to_string(g_next_id++);
 }
 
 CollapsableVert::~CollapsableVert() {}

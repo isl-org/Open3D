@@ -42,27 +42,6 @@ using core::Tensor;
 using t::geometry::Image;
 using t::geometry::RGBDImage;
 
-namespace {
-Image PyrDownDepth(Image& src, float diff_threshold, float invalid_fill) {
-    if (src.GetRows() <= 0 || src.GetCols() <= 0 || src.GetChannels() != 1) {
-        utility::LogError(
-                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
-                "{})",
-                src.GetRows(), src.GetCols(), src.GetChannels());
-    }
-    if (src.GetDtype() != core::Dtype::Float32) {
-        utility::LogError("Expected a Float32 image, but got {}",
-                          src.GetDtype().ToString());
-    }
-
-    Tensor dst_tensor = Tensor::Empty({src.GetRows() / 2, src.GetCols() / 2, 1},
-                                      src.GetDtype(), src.GetDevice());
-    t::geometry::kernel::image::PyrDownDepth(src.AsTensor(), dst_tensor,
-                                             diff_threshold, invalid_fill);
-    return Image(dst_tensor);
-}
-}  // namespace
-
 OdometryResult RGBDOdometryMultiScalePointToPlane(
         const RGBDImage& source,
         const RGBDImage& target,
@@ -187,10 +166,10 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
         intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
 
         if (i != n_levels - 1) {
-            source_depth_curr = PyrDownDepth(
-                    source_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
-            target_depth_curr = PyrDownDepth(
-                    target_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
+            source_depth_curr = source_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
+            target_depth_curr = target_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
 
             intrinsics_pyr /= 2;
             intrinsics_pyr[-1][-1] = 1;
@@ -283,10 +262,10 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
         intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
 
         if (i != n_levels - 1) {
-            source_depth_curr = PyrDownDepth(
-                    source_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
-            target_depth_curr = PyrDownDepth(
-                    target_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
+            source_depth_curr = source_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
+            target_depth_curr = target_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
             source_intensity_curr = source_intensity_curr.PyrDown();
             target_intensity_curr = target_intensity_curr.PyrDown();
 
@@ -388,10 +367,10 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
 
         intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
         if (i != n_levels - 1) {
-            source_depth_curr = PyrDownDepth(
-                    source_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
-            target_depth_curr = PyrDownDepth(
-                    target_depth_curr, params.depth_outlier_trunc_ * 2, NAN);
+            source_depth_curr = source_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
+            target_depth_curr = target_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
             source_intensity_curr = source_intensity_curr.PyrDown();
             target_intensity_curr = target_intensity_curr.PyrDown();
 
