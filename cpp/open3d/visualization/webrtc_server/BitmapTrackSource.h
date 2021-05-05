@@ -23,7 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
+// ----------------------------------------------------------------------------
 // Modified from: WebRTC src/pc/video_track_source.h
 //
 // Copyright 2016 The WebRTC project authors. All Rights Reserved.
@@ -33,6 +33,7 @@
 // tree. An additional intellectual property rights grant can be found
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
