@@ -547,7 +547,12 @@ rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
 
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,
                                       rendering::FilamentRenderer* renderer) {
+#if __APPLE__
+    // We need to recreate the swap chain after resizing a window on macOS
+    // otherwise things look very wrong. SwapChain does not need to be resized
+    // on other platforms.
     renderer->UpdateSwapChain();
+#endif  // __APPLE__
 }
 
 MenuBase* GLFWWindowSystem::CreateOSMenu() {
