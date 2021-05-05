@@ -262,6 +262,15 @@ public:
     /// \returns Half sized downsampled depth image.
     Image PyrDown() const;
 
+<<<<<<< variant A
+    /// Preprocess a image of shape (rows, cols, channels=1), typically used for
+    /// a depth image. UInt16 and Float32 Dtypes supported. Each pixel will be
+    /// transformed by
+    /// x = x / scale
+    /// x = x < min_value ? clip_fill : x
+    /// x = x > max_value ? clip_fill : x
+    /// Use INF, NAN or 0.0 (default) for \p clip_fill
+>>>>>>> variant B
     /// \brief Edge and invalid value preserving downsampling by 2 specifically
     /// for depth images.
     ///
@@ -289,17 +298,29 @@ public:
     /// Use INFINITY, NAN or 0.0 (default) for \p clip_fill.
     /// \return Transformed image of type Float32, with out-of-range pixels
     /// clipped and assigned the \p clip_fill value.
+======= end
     Image ClipTransform(float scale,
                         float min_value,
                         float max_value,
                         float clip_fill = 0.0f) const;
 
+<<<<<<< variant A
+    /// Create a vertex map (rows, cols, channels=3) in Float32 from an image of
+    /// shape (rows, cols, channels=1) in Float32 using unprojection. The input
+    /// depth is expected to be the output of ClipTransform.
+>>>>>>> variant B
     /// \brief Create a vertex map from a depth image using unprojection.
     ///
     /// The input depth (of shape (rows, cols, channels=1) and Dtype Float32) is
     /// expected to be the output of ClipTransform.
     ///
+======= end
     /// \param intrinsics Pinhole camera model of (3, 3) in Float64.
+<<<<<<< variant A
+    /// \param invalid_fill Value to fill in for invalid depths. Must be
+    /// consistent with \p clip_fill in ClipTransform.
+    Image CreateVertexMap(const core::Tensor &intrinsics, float invalid_fill);
+>>>>>>> variant B
     /// \param invalid_fill Value to fill in for invalid depths. Use NAN,
     /// INFINITY or 0.0 (default). Must be consistent with \p clip_fill in
     /// ClipTransform.
@@ -308,7 +329,15 @@ public:
     /// with invalid points assigned the \p invalid_fill value.
     Image CreateVertexMap(const core::Tensor &intrinsics,
                           float invalid_fill = 0.0f);
+======= end
 
+<<<<<<< variant A
+    /// Create a normal map (rows, cols, channels=3) in Float32 from an image of
+    /// (rows, cols, channels=3) in Float32 using cross product of V(r,
+    /// c+1)-V(r, c) and V(r+1, c)-V(r, c). The input vertex map is expected to
+    /// be the output of CreateVertexMap. You may need to start with a filtered
+    /// depth image (e.g. with FilterBilateral) to obtain good results.
+>>>>>>> variant B
     /// \brief Create a normal map from a vertex map.
     ///
     /// The input vertex map image should be of shape (rows, cols, channels=3)
@@ -317,25 +346,45 @@ public:
     /// output of CreateVertexMap. You may need to start with a filtered depth
     /// image (e.g. with FilterBilateral) to obtain good results.
     ///
+======= end
     /// \param invalid_fill Value to fill in for invalid points, and to fill-in
+<<<<<<< variant A
+    /// if no valid neighbor is found. Must be consistent with \p invalid_fill
+    /// in CreateVertexMap.
+    Image CreateNormalMap(float invalid_fill);
+>>>>>>> variant B
     /// if no valid neighbor is found. Use NAN, INFINITY or 0.0 (default). Must
     /// be consistent with \p clip_fill in CreateVertexMap.
     ///
     /// \returns Normal map of shape (rows, cols, channels=3) and Dtype Float32,
     /// with invalid normals assigned the \p invalid_fill value.
     Image CreateNormalMap(float invalid_fill = 0.0f);
+======= end
 
+<<<<<<< variant A
+    /// Colorize an input depth image (with Dtype UInt16 or Float32). The image
+    /// values are divided by scale, then clamped within [min_value, max_value]
+    /// and finally converted to a 3 channel UInt8 RGB image using the Turbo
+>>>>>>> variant B
     /// \brief Colorize an input depth image (with Dtype UInt16 or Float32).
     ///
     /// The image values are divided by scale, then clamped within [min_value,
     /// max_value] and finally converted to an RGB image using the Turbo
+======= end
     /// colormap as a lookup table.
+<<<<<<< variant A
+>>>>>>> variant B
     ///
     /// \returns Full color depth map of shape (rows, cols, channels=3) and
     /// Dtype UInt8.
+======= end
     Image ColorizeDepth(float scale, float min_value, float max_value);
 
+<<<<<<< variant A
+    /// Compute min 2D coordinates for the data (always {0, 0}).
+>>>>>>> variant B
     /// \brief Compute min 2D coordinates for the data (always {0, 0}).
+======= end
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
     }
