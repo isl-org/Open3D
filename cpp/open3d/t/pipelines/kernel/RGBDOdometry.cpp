@@ -26,6 +26,7 @@
 
 #include "open3d/t/pipelines/kernel/RGBDOdometry.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 
 namespace open3d {
@@ -59,14 +60,10 @@ void ComputeOdometryResultPointToPlane(
                 intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
                 depth_outlier_trunc, depth_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputeOdometryResultPointToPlaneCUDA(
-                source_vertex_map, target_vertex_map, target_normal_map,
-                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
-                depth_outlier_trunc, depth_huber_delta);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ComputeOdometryResultPointToPlaneCUDA, source_vertex_map,
+                  target_vertex_map, target_normal_map, intrinsics_d, trans_d,
+                  delta, inlier_residual, inlier_count, depth_outlier_trunc,
+                  depth_huber_delta);
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -99,15 +96,11 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                 intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
                 depth_outlier_trunc, intensity_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputeOdometryResultIntensityCUDA(
-                source_depth, target_depth, source_intensity, target_intensity,
-                target_intensity_dx, target_intensity_dy, source_vertex_map,
-                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
-                depth_outlier_trunc, intensity_huber_delta);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ComputeOdometryResultIntensityCUDA, source_depth,
+                  target_depth, source_intensity, target_intensity,
+                  target_intensity_dx, target_intensity_dy, source_vertex_map,
+                  intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                  depth_outlier_trunc, intensity_huber_delta);
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -145,16 +138,12 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                 delta, inlier_residual, inlier_count, depth_outlier_trunc,
                 depth_huber_delta, intensity_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputeOdometryResultHybridCUDA(
-                source_depth, target_depth, source_intensity, target_intensity,
-                target_depth_dx, target_depth_dy, target_intensity_dx,
-                target_intensity_dy, source_vertex_map, intrinsics_d, trans_d,
-                delta, inlier_residual, inlier_count, depth_outlier_trunc,
-                depth_huber_delta, intensity_huber_delta);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ComputeOdometryResultHybridCUDA, source_depth, target_depth,
+                  source_intensity, target_intensity, target_depth_dx,
+                  target_depth_dy, target_intensity_dx, target_intensity_dy,
+                  source_vertex_map, intrinsics_d, trans_d, delta,
+                  inlier_residual, inlier_count, depth_outlier_trunc,
+                  depth_huber_delta, intensity_huber_delta);
     } else {
         utility::LogError("Unimplemented device.");
     }

@@ -43,8 +43,8 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t);
 
 /// \brief Convert pose to the transformation matrix.
 ///
-/// \param pose Pose [alpha, beta, gamma, tx, ty, tz], a tensor of
-/// shape {6,}.
+/// \param pose Pose [alpha beta gamma, tx, ty, tz], a shape {6} tensor of dtype
+/// Float32, where alpha, beta, gamma are the Euler angles in the ZYX order.
 /// \return Transformation, a tensor of shape {4, 4}, dtype and device same
 /// as pose.
 core::Tensor PoseToTransformation(const core::Tensor &pose);
