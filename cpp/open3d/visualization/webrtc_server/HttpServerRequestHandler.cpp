@@ -64,18 +64,18 @@ public:
         bool ret = false;
         const struct mg_request_info *req_info = mg_get_request_info(conn);
 
-        utility::LogInfoConsole("RequestHandler ##########################");
-        utility::LogInfoConsole("request_uri: {}", req_info->request_uri);
-        utility::LogInfoConsole("local_uri: {}", req_info->local_uri);
-        utility::LogInfoConsole("request_method: {}", req_info->request_method);
+        utility::LogInfo("RequestHandler ##########################");
+        utility::LogInfo("request_uri: {}", req_info->request_uri);
+        utility::LogInfo("local_uri: {}", req_info->local_uri);
+        utility::LogInfo("request_method: {}", req_info->request_method);
         if (req_info->query_string) {
-            utility::LogInfoConsole("query_string: {}", req_info->query_string);
+            utility::LogInfo("query_string: {}", req_info->query_string);
         } else {
-            utility::LogInfoConsole("query_string: {}", "nullptr");
+            utility::LogInfo("query_string: {}", "nullptr");
         }
-        // utility::LogInfoConsole("remote_addr: {}", req_info->remote_addr);
-        utility::LogInfoConsole("content_length: {}", req_info->content_length);
-        utility::LogInfoConsole("#########################################");
+        // utility::LogInfo("remote_addr: {}", req_info->remote_addr);
+        utility::LogInfo("content_length: {}", req_info->content_length);
+        utility::LogInfo("#########################################");
 
         // Read input.
         Json::Value in = this->getInputMessage(req_info, conn);

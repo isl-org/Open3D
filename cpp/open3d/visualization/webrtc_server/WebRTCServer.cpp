@@ -128,7 +128,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
             me.FromJson(value)) {
             const std::string window_uid =
                     value.get("window_uid", "").asString();
-            utility::LogInfoConsole(
+            utility::LogInfo(
                     "WebRTCServer::Impl::OnDataChannelMessage: window_uid: {}, "
                     "MouseEvent: {}",
                     window_uid, me.ToString());
@@ -142,12 +142,12 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
             const int height = value.get("height", 0).asInt();
             const int width = value.get("width", 0).asInt();
             if (height <= 0 || width <= 0) {
-                utility::LogInfoConsole(
+                utility::LogInfo(
                         "Invalid heigh {} or width {}, ResizeEvent ignored.",
                         height, width);
             }
-            utility::LogInfoConsole("ResizeEvent {}: ({}, {})", window_uid,
-                                    height, width);
+            utility::LogInfo("ResizeEvent {}: ({}, {})", window_uid, height,
+                             width);
             webrtc_server::WebRTCWindowSystem::GetInstance()->SetWindowSize(
                     gui::Application::GetInstance()
                             .GetWindowByUID(window_uid)
@@ -155,7 +155,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
                     width, height);
         }
     } catch (...) {
-        utility::LogInfoConsole(
+        utility::LogInfo(
                 "WebRTCServer::Impl::OnDataChannelMessage: cannot parse {}.",
                 message);
     }
@@ -174,7 +174,7 @@ void WebRTCServer::SendInitFrames(const std::string& window_uid) {
             this->impl_->redraw_callback_(window_uid);
             std::this_thread::sleep_for(
                     std::chrono::milliseconds(s_sleep_between_frames_ms));
-            utility::LogInfoConsole("Sent init frames {}", i);
+            utility::LogInfo("Sent init frames {}", i);
         }
     };
     std::thread thread(sender);
@@ -274,8 +274,7 @@ void WebRTCServer::Run() {
 std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
                                           const std::string& query_string,
                                           const std::string& data) const {
-    utility::LogInfoConsole(
-            "WebRTCServer::CallHttpRequest /////////////////////");
+    utility::LogInfo("WebRTCServer::CallHttpRequest /////////////////////");
 
     std::string query_string_trimmed = "";
     if (!query_string.empty() && query_string[0] == '?') {
@@ -283,9 +282,9 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
                 query_string.substr(1, query_string.length() - 1);
     }
 
-    utility::LogInfoConsole("entry_point: {}", entry_point);
-    utility::LogInfoConsole("query_string_trimmed: {}", query_string_trimmed);
-    utility::LogInfoConsole("data: {}", data);
+    utility::LogInfo("entry_point: {}", entry_point);
+    utility::LogInfo("query_string_trimmed: {}", query_string_trimmed);
+    utility::LogInfo("data: {}", data);
 
     std::string result = "";
     if (entry_point == "/api/getMediaList") {
@@ -334,9 +333,8 @@ std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
                         peerid, utility::StringToJson(data)));
     }
 
-    utility::LogInfoConsole("result: {}", result);
-    utility::LogInfoConsole(
-            "///////////////////////////////////////////////////");
+    utility::LogInfo("result: {}", result);
+    utility::LogInfo("///////////////////////////////////////////////////");
 
     return result;
 }
