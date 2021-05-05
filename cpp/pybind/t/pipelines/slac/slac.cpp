@@ -38,7 +38,8 @@ namespace slac {
 
 void pybind_slac_classes(py::module &m) {
     py::class_<SLACOptimizerParams> slac_optimizer_params(
-            m, "slac_optimizer_params", "SLAC optimzation parameters.");
+            m, "slac_optimizer_params",
+            "SLAC parameters to tune in optimization.");
     py::detail::bind_copy_functions<SLACOptimizerParams>(slac_optimizer_params);
     slac_optimizer_params
             .def(py::init<const int, const float, const float, const float,
@@ -85,8 +86,9 @@ void pybind_slac_classes(py::module &m) {
     slac_debug_option
             .def(py::init<const bool, const int>(), "debug"_a = false,
                  "debug_start_node_idx"_a = 0)
-            .def(py::init<const int>(), "debug_start_node_idx"_a = 0)
-            .def_readwrite("debug", &SLACDebugOption::debug_, "Enable debug.")
+            .def(py::init<const int>(), "debug_start_node_idx"_a)
+            .def_readwrite("debug_option", &SLACDebugOption::debug_,
+                           "Enable debug.")
             .def_readwrite("debug_start_node_idx",
                            &SLACDebugOption::debug_start_node_idx_,
                            "The node id to start debugging with. Smaller nodes "
@@ -100,7 +102,7 @@ void pybind_slac_classes(py::module &m) {
             });
 }
 
-// Registration functions have similar arguments, sharing arg docstrings.
+// SLAC functions have similar arguments, sharing arg docstrings.
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"fnames_processed",
@@ -110,9 +112,8 @@ static const std::unordered_map<std::string, std::string>
                  "List of filenames (str) for pointcloud fragments."},
                 {"fragment_pose_graph", "PoseGraph for pointcloud fragments"},
                 {"params",
-                 "slac_optimizer_params containing the configurations."},
-                {"debug_option",
-                 "slac_debug_option containing the debug options."}};
+                 "slac_optimizer_params Parameters to tune in optimization."},
+                {"debug_option", "debug options."}};
 
 void pybind_slac_methods(py::module &m) {
     m.def("save_correspondences_for_pointclouds",
@@ -120,9 +121,8 @@ void pybind_slac_methods(py::module &m) {
           "Read pose graph containing loop closures and odometry to compute "
           "correspondences. Uses aggressive pruning -- reject any suspicious "
           "pair.",
-          "fnames_processed"_a, "fragment_pose_graph"_a,
-          "params"_a = SLACOptimizerParams(),
-          "debug_option"_a = SLACDebugOption());
+          "fnames_processed"_a, "fragment_pose_graph"_a, "params"_a,
+          "debug_option"_a);
     docstring::FunctionDocInject(m, "save_correspondences_for_pointclouds",
                                  map_shared_argument_docstrings);
 
@@ -132,21 +132,21 @@ void pybind_slac_methods(py::module &m) {
           "Estimate a shared control grid for all fragments for scene "
           "reconstruction, implemented in "
           "https://github.com/qianyizh/ElasticReconstruction. ",
-          "fragment_filenames"_a, "fragment_pose_graph"_a,
-          "params"_a = SLACOptimizerParams(),
-          "debug_option"_a = SLACDebugOption());
+          "fragment_filenames"_a, "fragment_pose_graph"_a, "params"_a,
+          "debug_option"_a);
     docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 
     m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
-          "RunRigidOptimizerForFragments.", "fragment_filenames"_a,
-          "fragment_pose_graph"_a, "params"_a = SLACOptimizerParams(),
-          "debug_option"_a = SLACDebugOption());
+          "Extended ICP to simultaneously align multiple point clouds with "
+          "dense pairwise point-to-plane distances.",
+          "fragment_filenames"_a, "fragment_pose_graph"_a, "params"_a,
+          "debug_option"_a);
     docstring::FunctionDocInject(m, "run_rigid_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 }
 
-void pybind_registration(py::module &m) {
+void pybind_slac(py::module &m) {
     py::module m_submodule = m.def_submodule(
             "slac",
             "Tensor-based Simultaneous Localisation and Calibration pipeline.");
