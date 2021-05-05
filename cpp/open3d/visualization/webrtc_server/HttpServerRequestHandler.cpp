@@ -115,7 +115,7 @@ private:
 
     Json::Value getInputMessage(const struct mg_request_info *req_info,
                                 struct mg_connection *conn) {
-        Json::Value jmessage;
+        Json::Value json_message;
 
         // Read input.
         long long tlen = req_info->content_length;
@@ -143,12 +143,12 @@ private:
                     reader_builder_.newCharReader());
             std::string errors;
             if (!reader->parse(body.c_str(), body.c_str() + body.size(),
-                               &jmessage, &errors)) {
+                               &json_message, &errors)) {
                 std::cout << "Received unknown message:" << body
                           << " errors:" << errors << std::endl;
             }
         }
-        return jmessage;
+        return json_message;
     }
 };
 

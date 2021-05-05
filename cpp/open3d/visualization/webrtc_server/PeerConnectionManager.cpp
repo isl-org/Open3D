@@ -281,16 +281,18 @@ PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
 
 // Add ICE candidate to a PeerConnection.
 const Json::Value PeerConnectionManager::AddIceCandidate(
-        const std::string &peerid, const Json::Value &jmessage) {
+        const std::string &peerid, const Json::Value &json_message) {
     bool result = false;
     std::string sdp_mid;
     int sdp_mlineindex = 0;
     std::string sdp;
-    if (!rtc::GetStringFromJsonObject(jmessage, k_candidate_sdp_mid_name,
+    if (!rtc::GetStringFromJsonObject(json_message, k_candidate_sdp_mid_name,
                                       &sdp_mid) ||
-        !rtc::GetIntFromJsonObject(jmessage, k_candidate_sdp_mline_index_name,
+        !rtc::GetIntFromJsonObject(json_message,
+                                   k_candidate_sdp_mline_index_name,
                                    &sdp_mlineindex) ||
-        !rtc::GetStringFromJsonObject(jmessage, k_candidate_sdp_name, &sdp)) {
+        !rtc::GetStringFromJsonObject(json_message, k_candidate_sdp_name,
+                                      &sdp)) {
         utility::LogWarning("Can't parse received message.");
     } else {
         std::unique_ptr<webrtc::IceCandidateInterface> candidate(
@@ -383,20 +385,20 @@ const Json::Value PeerConnectionManager::CreateOffer(
 const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                               const std::string &window_uid,
                                               const std::string &options,
-                                              const Json::Value &jmessage) {
+                                              const Json::Value &json_message) {
     utility::LogInfo(
-            "[{}] peerid: {}, window_uid; {}, options: {}, jmessage: {}.",
-            __FUNCTION__, peerid, window_uid, options, jmessage);
+            "[{}] peerid: {}, window_uid; {}, options: {}, json_message: {}.",
+            __FUNCTION__, peerid, window_uid, options, json_message);
 
     Json::Value answer;
 
     std::string type;
     std::string sdp;
 
-    if (!rtc::GetStringFromJsonObject(jmessage, k_session_description_type_name,
-                                      &type) ||
-        !rtc::GetStringFromJsonObject(jmessage, k_session_description_sdp_name,
-                                      &sdp)) {
+    if (!rtc::GetStringFromJsonObject(json_message,
+                                      k_session_description_type_name, &type) ||
+        !rtc::GetStringFromJsonObject(json_message,
+                                      k_session_description_sdp_name, &sdp)) {
         utility::LogWarning("Can't parse received message.");
     } else {
         PeerConnectionObserver *peer_connection_observer =
@@ -771,12 +773,12 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
     if (!candidate->ToString(&sdp)) {
         utility::LogError("Failed to serialize candidate.");
     } else {
-        Json::Value jmessage;
-        jmessage[k_candidate_sdp_mid_name] = candidate->sdp_mid();
-        jmessage[k_candidate_sdp_mline_index_name] =
+        Json::Value json_message;
+        json_message[k_candidate_sdp_mid_name] = candidate->sdp_mid();
+        json_message[k_candidate_sdp_mline_index_name] =
                 candidate->sdp_mline_index();
-        jmessage[k_candidate_sdp_name] = sdp;
-        ice_candidate_list_.append(jmessage);
+        json_message[k_candidate_sdp_name] = sdp;
+        ice_candidate_list_.append(json_message);
     }
 }
 

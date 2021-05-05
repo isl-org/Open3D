@@ -339,13 +339,13 @@ public:
 
     const Json::Value GetIceCandidateList(const std::string& peerid);
     const Json::Value AddIceCandidate(const std::string& peerid,
-                                      const Json::Value& jmessage);
+                                      const Json::Value& json_message);
     const Json::Value GetMediaList();
     const Json::Value HangUp(const std::string& peerid);
     const Json::Value Call(const std::string& peerid,
                            const std::string& window_uid,
                            const std::string& options,
-                           const Json::Value& jmessage);
+                           const Json::Value& json_message);
     const Json::Value GetIceServers();
     const Json::Value CreateOffer(const std::string& peerid,
                                   const std::string& window_uid,
