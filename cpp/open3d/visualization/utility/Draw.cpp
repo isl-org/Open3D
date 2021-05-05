@@ -26,8 +26,11 @@
 
 #include "open3d/visualization/utility/Draw.h"
 
+#include <chrono>
 #include <sstream>
+#include <thread>
 
+#include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
 
@@ -87,7 +90,9 @@ void Draw(const std::vector<DrawObject> &objects,
           int width /*= 1024*/,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
-    gui::Application::GetInstance().Initialize();
+    auto &o3d_app = gui::Application::GetInstance();
+    o3d_app.Initialize();
+
     auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
                                                             height);
     for (auto &o : objects) {
@@ -106,7 +111,9 @@ void Draw(const std::vector<DrawObject> &objects,
     draw->ResetCameraToDefault();
 
     gui::Application::GetInstance().AddWindow(draw);
+
     draw.reset();  // so we don't hold onto the pointer after Run() cleans up
+
     gui::Application::GetInstance().Run();
 }
 

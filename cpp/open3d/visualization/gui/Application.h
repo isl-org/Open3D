@@ -124,6 +124,12 @@ public:
     /// code.
     void RemoveWindow(Window *window);
 
+    /// Returns UIDs of all windows.
+    std::vector<std::string> GetWindowUIDs() const;
+
+    /// Returns a specific window by its UID.
+    std::shared_ptr<Window> GetWindowByUID(const std::string &uid) const;
+
     /// Creates a message box window the next time the event loop processes.
     /// This message box will be a separate window and not associated with any
     /// of the other windows shown with AddWindow().
@@ -178,9 +184,15 @@ public:
     bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
 
     /// Sets the WindowSystem to given object. Can be used to override the
-    /// default GLFWWindowSystem (e.g. HeadlessWindowSystem). Must be called
+    /// default GLFWWindowSystem (e.g. BitmapWindowSystem). Must be called
     /// before creating any Windows.
     void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
+
+    /// Returns true if using the native OS window system, false otherwise.
+    /// This is useful for choosing to display some features that are only
+    /// useful with native windows. For instance, when embedded in a Jupyter
+    /// notebook, a "Close Window" menu item is not necessary.
+    bool UsingNativeWindows() const;
 
     /// Verifies that Initialize() has been called, printing out an error and
     /// exiting if not.

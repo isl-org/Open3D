@@ -83,17 +83,27 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if "@BUILD_JUPYTER_EXTENSION@" == "ON":
-    from .j_visualizer import *
-
-    def _jupyter_nbextension_paths():
-        return [{
-            "section": "notebook",
-            "src": "static",
-            "dest": "open3d",
-            "require": "open3d/extension",
-        }]
-
+if _build_config["BUILD_JUPYTER_EXTENSION"]:
+    import platform
+    if platform.system() == "Linux":
+        from .web_visualizer import (WebVisualizer, _jupyter_labextension_paths,
+                                     _jupyter_nbextension_paths)
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':
+                print("Jupyter environment detected."
+                      "Enabling Open3D WebVisualizer.")
+                _server = open3d.visualization.webrtc_server.WebRTCServer.instance
+                # Set default window system.
+                _server.enable_webrtc()
+                # HTTP handshake server is needed when Open3D is serving the
+                # visualizer webpage. Disable since Jupyter is serving.
+                _server.disable_http_handshake()
+        except NameError:
+            pass
+    else:
+        print("Open3D WebVisualizer is only supported on Linux for now.")
+        pass
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.

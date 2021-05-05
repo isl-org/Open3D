@@ -144,6 +144,8 @@ void pybind_o3dvisualizer(py::module& m) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &O3DVisualizer::IsVisible,
                                    "True if window is visible (read-only)")
+            .def_property_readonly("uid", &O3DVisualizer::GetUID,
+                                   "Window's unique ID")
             .def("post_redraw", &O3DVisualizer::PostRedraw,
                  "Tells the window to redraw")
             .def("show", &O3DVisualizer::Show, "Shows or hides the window")

@@ -27,6 +27,16 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
+#include <string>
+
+#include "open3d/utility/IJsonConvertible.h"
+
+/// @cond
+namespace Json {
+class Value;
+}  // namespace Json
+/// @endcond
 
 namespace open3d {
 namespace visualization {
@@ -71,6 +81,9 @@ struct MouseEvent {
             bool isTrackpad;
         } wheel;
     };
+
+    bool FromJson(const Json::Value &value);
+    std::string ToString() const;
 };
 
 struct TickEvent {

@@ -118,6 +118,12 @@ if (BUILD_GUI)
         )
 endif()
 
+if (BUILD_WEBRTC)
+    list(APPEND PY_ALL_SOURCE_FILES
+        visualization/webrtc_server/webrtc_server.cpp
+    )
+endif()
+
 if (BUILD_AZURE_KINECT)
     list(APPEND PY_ALL_SOURCE_FILES io/sensor.cpp)
 endif()

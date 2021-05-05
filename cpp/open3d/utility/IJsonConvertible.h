@@ -39,6 +39,10 @@ class Value;
 namespace open3d {
 namespace utility {
 
+Json::Value StringToJson(const std::string &json_str);
+
+std::string JsonToString(const Json::Value json);
+
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
 class IJsonConvertible {
