@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -86,21 +86,21 @@ struct SLACDebugOption {
 /// fragments.
 ///  \param fragment_pose_graph Legacy PoseGraph for pointcloud
 /// fragments.
-/// \param option SLACOptimizerParams containing the configurations.
-/// \param option SLACDebugOption containing the debug options.
+/// \param params Parameters to tune in finding correspondences.
 void SaveCorrespondencesForPointClouds(
         const std::vector<std::string>& fnames_processed,
         const PoseGraph& fragment_pose_graph,
         const SLACOptimizerParams& params);
 
 /// \brief Simultaneous Localization and Calibration: Self-Calibration of
-/// Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun Estimate a
-/// shared control grid for all fragments for scene reconstruction, implemented
-/// in https://github.com/qianyizh/ElasticReconstruction.
+/// Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun
+/// Estimate a shared control grid for all fragments for scene reconstruction,
+/// implemented in https://github.com/qianyizh/ElasticReconstruction.
 ///
 /// \param fragment_fnames Vector of filenames for pointcloud fragments.
 /// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
-/// \param option SLACOptimizerOption containing the configurations.
+/// \param params Parameters to tune in SLAC.
+/// \param debug_option Debug options.
 /// \return pair of registraion::PoseGraph and slac::ControlGrid.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
@@ -108,6 +108,14 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const SLACOptimizerParams& params,
         const SLACDebugOption& debug_option);
 
+/// \brief Extended ICP to simultaneously align multiple point clouds with dense
+/// pairwise point-to-plane distances.
+///
+/// \param fragment_fnames Vector of filenames for pointcloud fragments.
+/// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
+/// \param params Parameters to tune in rigid optimization.
+/// \param debug_option Debug options.
+/// \return Updated pose graph.
 PoseGraph RunRigidOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
