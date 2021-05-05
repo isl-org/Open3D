@@ -29,7 +29,7 @@ Dos
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Follow the :ref:`style_guide` and install the required tools                                           |
 +-------------------------------------------------------------------------------------------------------------+
-| [DO] Use C++11 features when contributing C++ code. Use C++14 and C++17 features only when required         |
+| [DO] Use C++14 features when contributing C++ code                                                          |
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Remember to provide Python bindings when adding new C++ core functionalities                           |
 +-------------------------------------------------------------------------------------------------------------+
