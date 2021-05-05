@@ -98,7 +98,6 @@ struct WebRTCServer::Impl {
         }
     }
     static std::string GetEnvWebRTCWebRoot() {
-        // TODO: package WEBRTC_WEB_ROOT with GUI resource files
         if (const char* env_p = std::getenv("WEBRTC_WEB_ROOT")) {
             return std::string(env_p);
         } else {
