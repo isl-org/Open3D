@@ -210,18 +210,9 @@ static void FillInSLACAlignmentTerm(core::Tensor& AtA,
             RjT_Ri_Cnormal_ps, cgrid_index_ps, cgrid_index_qs, cgrid_ratio_ps,
             cgrid_ratio_qs, i, j, n_fragments, threshold);
 
-    if (visualize) {
-        utility::LogInfo("edge {} -> {}", i, j);
-        VisualizePCDCorres(tpcd_i, tpcd_j, tpcd_param_i, tpcd_param_j, Tij_icp);
-        // VisualizePCDCorres(tpcd_i, tpcd_j, tpcd_nonrigid_i, tpcd_nonrigid_j,
-        //                    Tij_icp);
-
-        // VisualizeDeform(tpcd_param_i, ctr_grid);
-        // VisualizeDeform(tpcd_param_j, ctr_grid);
-
-        // VisualizePCDGridCorres(tpcd_param_i, ctr_grid);
-        // VisualizePCDGridCorres(tpcd_param_j, ctr_grid);
-    }
+    VisualizePointCloudEmbedding(tpcd_param_i, ctr_grid);
+    VisualizePointCloudDeformation(tpcd_param_i, ctr_grid);
+    VisualizeGridDeformation(ctr_grid);
 }
 
 void FillInSLACAlignmentTerm(core::Tensor& AtA,

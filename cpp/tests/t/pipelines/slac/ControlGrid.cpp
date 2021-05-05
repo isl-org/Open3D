@@ -63,8 +63,9 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     cgrid.Touch(pcd);
 
     t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
-    // t::pipelines::slac::VisualizePCDGridCorres(pcd_param, cgrid, false);
-    // t::pipelines::slac::VisualizePCDGridCorres(pcd_param, cgrid, true);
+    // t::pipelines::slac::VisualizePointCloudEmbedding(pcd_param, cgrid,
+    // false); t::pipelines::slac::VisualizePointCloudEmbedding(pcd_param,
+    // cgrid, true);
 }
 
 TEST_P(ControlGridPermuteDevices, Deform) {
@@ -102,7 +103,7 @@ TEST_P(ControlGridPermuteDevices, Regularizor) {
     curr[1][2] -= 0.2;
     curr[2][1] += 0.2;
 
-    // t::pipelines::slac::VisualizeRegularizor(cgrid);
+    // t::pipelines::slac::VisualizeGridDeformation(cgrid);
 }
 
 }  // namespace tests

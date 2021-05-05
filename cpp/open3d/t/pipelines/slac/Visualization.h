@@ -33,8 +33,6 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/t/pipelines/slac/ControlGrid.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/utility/Draw.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
 namespace t {
@@ -45,20 +43,26 @@ t::geometry::PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0"));
 
-void VisualizePCDCorres(t::geometry::PointCloud& tpcd_i,
-                        t::geometry::PointCloud& tpcd_j,
-                        t::geometry::PointCloud& tpcd_param_i,
-                        t::geometry::PointCloud& tpcd_param_j,
-                        const core::Tensor& Tij);
+/// Visualize pairs with correspondences.
+/// \param tpcd_i, source point cloud.
+/// \param tpcd_j, target point cloud.
+/// \param correspondences Putative correspondence between tcpd_i and tpcd_j.
+/// \param T_ij Transformation from tpcd_i to tpcd_j. Use T_j.Inverse() @ T_i
+/// (node transformation in a pose graph) to check global correspondences , and
+/// T_ij (edge transformation) to check pairwise correspondences.
+void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
+                                        const t::geometry::PointCloud& tpcd_j,
+                                        const core::Tensor correspondences,
+                                        const core::Tensor& T_ij);
 
-void VisualizePCDGridCorres(t::geometry::PointCloud& tpcd_param,
-                            ControlGrid& ctr_grid,
-                            bool show_lines = true);
+void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
+                                  ControlGrid& ctr_grid,
+                                  bool show_lines = true);
 
-void VisualizeWarp(const geometry::PointCloud& tpcd_param,
-                   ControlGrid& ctr_grid);
+void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
+                                    ControlGrid& ctr_grid);
 
-void VisualizeRegularizor(ControlGrid& cgrid);
+void VisualizeGridDeformation(ControlGrid& cgrid);
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

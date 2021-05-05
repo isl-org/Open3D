@@ -142,8 +142,8 @@ static core::Tensor ConvertCorrespondencesTargetIndexedToCx2Form(
 // Aggressive pruning -- reject any suspicious pair
 //
 // tpcd_i is the source pointcloud, tpcd_j is the target pointcloud,
-// T_i is the transformation_model_to_source,
-// T_j is the transformation_model_to_target,
+// T_i is the transformation_source_to_world,
+// T_j is the transformation_target_to_world,
 // T_ij is the transformation_source_to_target.
 // distance_threshold is the search_distance for NNS.
 // i and j are the indices of source and target pointcloud respectively.
@@ -212,29 +212,9 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
                       inlier_ratio);
 
     if (j != i + 1 && inlier_ratio < 0.3) {
-        // Eigen::Matrix4d flip;
-        // flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
-        // auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
-        //         tpcd_i.Clone().Transform(T_i).ToLegacyPointCloud());
-        // pcd_i_corres->PaintUniformColor({1, 0, 0});
-        // pcd_i_corres->Transform(flip);
-        // auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
-        //         tpcd_j.Clone().Transform(T_j).ToLegacyPointCloud());
-        // pcd_j_corres->PaintUniformColor({0, 1, 0});
-        // pcd_j_corres->Transform(flip);
-        // std::vector<std::pair<int, int>> corres_lines;
-        // for (size_t i = 0; i < result.correspondence_set_.size(); ++i) {
-        //     corres_lines.push_back(
-        //             std::make_pair(result.correspondence_set_[i](0),
-        //                            result.correspondence_set_[i](1)));
-        // }
-        // auto lineset =
-        //         open3d::geometry::LineSet::CreateFromPointCloudCorrespondences(
-        //                 *pcd_i_corres, *pcd_j_corres, corres_lines);
-        // lineset->PaintUniformColor({0, 0, 1});
-
-        // visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
-
+        VisualizePointCloudCorrespondences(
+                tpcd_i, tpcd_j, correspondence_set,
+                T_j.Inverse().Matmul(T_i).To(device, dtype));
         return core::Tensor();
     }
 
@@ -381,6 +361,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
                 core::Tensor::Zeros({1}, core::Dtype::Float32, device);
         FillInSLACAlignmentTerm(AtA, Atb, residual_data, ctr_grid, fnames_down,
                                 pose_graph_update, option);
+
         utility::LogInfo("Residual Data = {}", residual_data[0].Item<float>());
 
         core::Tensor residual_reg =
@@ -398,7 +379,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
 
         UpdatePoses(pose_graph_update, delta_poses, option);
         UpdateControlGrid(ctr_grid, delta_cgrids, option);
-        VisualizeRegularizor(ctr_grid);
+        VisualizeGridDeformation(ctr_grid);
     }
     return std::make_pair(pose_graph_update, ctr_grid);
 }
