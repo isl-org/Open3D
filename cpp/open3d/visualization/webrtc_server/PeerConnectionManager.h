@@ -348,9 +348,6 @@ public:
                            const std::string& options,
                            const Json::Value& json_message);
     const Json::Value GetIceServers();
-    const Json::Value CreateOffer(const std::string& peerid,
-                                  const std::string& window_uid,
-                                  const std::string& options);
 
     void CloseWindowConnections(const std::string& window_uid);
 

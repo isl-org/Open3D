@@ -191,19 +191,6 @@ PeerConnectionManager::PeerConnectionManager(
         return this->HangUp(peerid);
     };
 
-    func_["/api/createOffer"] = [this](const struct mg_request_info *req_info,
-                                       const Json::Value &in) -> Json::Value {
-        std::string peerid;
-        std::string url;
-        std::string options;
-        if (req_info->query_string) {
-            CivetServer::getParam(req_info->query_string, "peerid", peerid);
-            CivetServer::getParam(req_info->query_string, "url", url);
-            CivetServer::getParam(req_info->query_string, "options", options);
-        }
-        return this->CreateOffer(peerid, url, options);
-    };
-
     func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
@@ -314,64 +301,6 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
         answer = result;
     }
     return answer;
-}
-
-// Create an offer for a call,
-const Json::Value PeerConnectionManager::CreateOffer(
-        const std::string &peerid,
-        const std::string &window_uid,
-        const std::string &options) {
-    Json::Value offer;
-
-    PeerConnectionObserver *peer_connection_observer =
-            this->CreatePeerConnection(peerid);
-    if (!peer_connection_observer) {
-        utility::LogError("Failed to initialize PeerConnection");
-    } else {
-        rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
-                peer_connection_observer->GetPeerConnection();
-
-        if (!this->AddStreams(peer_connection, window_uid, options)) {
-            utility::LogError("Can't add stream {}.", window_uid);
-        }
-
-        {
-            std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
-            peerid_to_connection_.insert(
-                    std::pair<std::string, PeerConnectionObserver *>(
-                            peerid, peer_connection_observer));
-        }
-
-        // Ask to create offer.
-        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions rtc_options;
-        rtc_options.offer_to_receive_video = 0;
-        rtc_options.offer_to_receive_audio = 0;
-        std::promise<const webrtc::SessionDescriptionInterface *> promise;
-        peer_connection->CreateOffer(CreateSessionDescriptionObserver::Create(
-                                             peer_connection, promise),
-                                     rtc_options);
-
-        // Waiting for offer.
-        std::future<const webrtc::SessionDescriptionInterface *> future =
-                promise.get_future();
-        if (future.wait_for(std::chrono::milliseconds(5000)) ==
-            std::future_status::ready) {
-            // Answer with the created offer.
-            const webrtc::SessionDescriptionInterface *desc = future.get();
-            if (desc) {
-                std::string sdp;
-                desc->ToString(&sdp);
-
-                offer[k_session_description_type_name] = desc->type();
-                offer[k_session_description_sdp_name] = sdp;
-            } else {
-                utility::LogError("Failed to create offer");
-            }
-        } else {
-            utility::LogError("Failed to create offer");
-        }
-    }
-    return offer;
 }
 
 // Auto-answer to a call.
