@@ -146,6 +146,9 @@ install_python_dependencies() {
         TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
     fi
 
+    # TODO: modify other locations to use requirements.txt
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other

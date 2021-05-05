@@ -227,6 +227,9 @@ const int Window::FLAG_HIDDEN = (1 << 0);
 const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
+    Impl() : uid_(GenerateUID()) {}
+    ~Impl() {}
+
     WindowSystem::OSWindow window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
     bool draw_menu_ = true;
@@ -265,6 +268,13 @@ struct Window::Impl {
     bool needs_redraw_ = true;  // set by PostRedraw to defer if already drawing
     bool is_resizing_ = false;
     bool is_drawing_ = false;
+    std::string uid_ = "";
+
+private:
+    std::string GenerateUID() {
+        static size_t count = 0;
+        return "window_" + std::to_string(count++);
+    }
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -446,6 +456,8 @@ void Window::DestroyWindow() {
 
 int Window::GetMouseMods() const { return impl_->mouse_mods_; }
 
+std::string Window::GetUID() const { return impl_->uid_; }
+
 const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
     return impl_->children_;
 }
@@ -576,8 +588,8 @@ void Window::Show(bool vis /*= true*/) {
 
 void Window::Close() {
     if (impl_->on_close_) {
-        bool shouldContinue = impl_->on_close_();
-        if (!shouldContinue) {
+        bool should_close = impl_->on_close_();
+        if (!should_close) {
             Application::GetInstance().GetWindowSystem().CancelUserClose(
                     impl_->window_);
             return;

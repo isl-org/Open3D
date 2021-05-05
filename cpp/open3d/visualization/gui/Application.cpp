@@ -57,6 +57,11 @@
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+#include "open3d/visualization/utility/GLHelper.h"
+
+#ifdef BUILD_WEBRTC
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
+#endif
 
 namespace {
 
@@ -406,6 +411,26 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
+#ifdef BUILD_WEBRTC
+    if (auto webrtc_window_system =
+                std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
+                        impl_->window_system_)) {
+        // Start the WebRTC server at the first run. No-op of the server has
+        // already been started.
+        webrtc_window_system->StartWebRTCServer();
+
+        // A Window() can be attached to multiple WebRTC streams. A
+        // Window's close event will disconnect all of its WebRTC streams.
+        const std::string window_uid = window->GetUID();
+        auto close_window_callback = [window_uid,
+                                      webrtc_window_system]() -> bool {
+            webrtc_window_system->CloseWindowConnections(window_uid);
+            return true;  // Should close Window.
+        };
+        window->SetOnClose(close_window_callback);
+    }
+#endif
+
     window->OnResize();  // so we get an initial resize
     window->Show();
     impl_->windows_.insert(window);
@@ -424,6 +449,26 @@ void Application::RemoveWindow(Window *window) {
     if (impl_->windows_.empty()) {
         impl_->should_quit_ = true;
     }
+}
+
+std::vector<std::string> Application::GetWindowUIDs() const {
+    std::vector<std::string> uids;
+    for (const std::shared_ptr<Window> &window : impl_->windows_) {
+        uids.push_back(window->GetUID());
+    }
+    return uids;
+}
+
+std::shared_ptr<Window> Application::GetWindowByUID(
+        const std::string &uid) const {
+    // This can be optimized by adding a map_uid_to_window, but it may not be
+    // worth it since we typically don't have lots of windows.
+    for (const std::shared_ptr<Window> &window : impl_->windows_) {
+        if (window->GetUID() == uid) {
+            return window;
+        }
+    }
+    return nullptr;
 }
 
 void Application::Quit() {
