@@ -285,7 +285,7 @@ std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
     std::vector<int64_t> result(impl_.bucket_count_);
     thrust::copy(elems_per_bucket.begin(), elems_per_bucket.end(),
                  result.begin());
-    return std::move(result);
+    return result;
 }
 
 template <typename Key, typename Hash>

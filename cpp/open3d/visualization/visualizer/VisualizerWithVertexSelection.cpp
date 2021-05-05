@@ -517,21 +517,21 @@ void VisualizerWithVertexSelection::KeyPressCallback(
             if (action == GLFW_PRESS) {
                 SetPointSize(pick_point_opts_.point_size_ - 1.0);
                 is_redraw_required_ = true;
-                break;
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
                                              mods);
             }
+            break;
         }
         case GLFW_KEY_EQUAL: {
             if (action == GLFW_PRESS) {
                 SetPointSize(pick_point_opts_.point_size_ + 1.0);
                 is_redraw_required_ = true;
-                break;
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
                                              mods);
             }
+            break;
         }
         default:
             Visualizer::KeyPressCallback(window, key, scancode, action, mods);
