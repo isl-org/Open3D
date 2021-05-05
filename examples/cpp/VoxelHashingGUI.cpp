@@ -11,54 +11,6 @@ using namespace open3d::visualization;
 static const Eigen::Vector3d kTangoOrange(0.961, 0.475, 0.000);
 static const Eigen::Vector3d kTangoSkyBlueDark(0.125, 0.290, 0.529);
 
-std::shared_ptr<geometry::LineSet> CreateCameraFrustum(
-        int view_width_px,
-        int view_height_px,
-        const Eigen::Matrix3d& intrinsic,
-        const Eigen::Matrix4d& extrinsic) {
-    Eigen::Matrix4d intrinsic4;
-    intrinsic4 << intrinsic(0, 0), intrinsic(0, 1), intrinsic(0, 2), 0.0,
-            intrinsic(1, 0), intrinsic(1, 1), intrinsic(1, 2), 0.0,
-            intrinsic(2, 0), intrinsic(2, 1), intrinsic(2, 2), 0.0, 0.0, 0.0,
-            0.0, 1.0;
-    Eigen::Matrix4d m = (intrinsic4 * extrinsic).inverse();
-    auto lines = std::make_shared<geometry::LineSet>();
-
-    auto mult = [](const Eigen::Matrix4d& m,
-                   const Eigen::Vector3d& v) -> Eigen::Vector3d {
-        Eigen::Vector4d v4(v.x(), v.y(), v.z(), 1.0);
-        auto result = m * v4;
-        return Eigen::Vector3d{result.x() / result.w(), result.y() / result.w(),
-                               result.z() / result.w()};
-    };
-    double dist = 0.2;
-    double w = double(view_width_px);
-    double h = double(view_height_px);
-    // Matrix m transforms from homogenous pixel coordinates to world
-    // coordinates so x and y need to be multiplied by z. In the case of the
-    // first point, the eye point, z=0, so x and y will be zero, too regardless
-    // of their initial values as the center.
-    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, 0.0}));
-    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, dist}));
-    lines->points_.push_back(mult(m, Eigen::Vector3d{w * dist, 0.0, dist}));
-    lines->points_.push_back(
-            mult(m, Eigen::Vector3d{w * dist, h * dist, dist}));
-    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, h * dist, dist}));
-
-    lines->lines_.push_back({0, 1});
-    lines->lines_.push_back({0, 2});
-    lines->lines_.push_back({0, 3});
-    lines->lines_.push_back({0, 4});
-    lines->lines_.push_back({1, 2});
-    lines->lines_.push_back({2, 3});
-    lines->lines_.push_back({3, 4});
-    lines->lines_.push_back({4, 1});
-
-    lines->PaintUniformColor(kTangoOrange);
-
-    return lines;
-}
-
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
     using Super = gui::VGrid;
@@ -664,8 +616,10 @@ protected:
                 traj->colors_.push_back(kTangoSkyBlueDark);
             }
 
-            frustum = CreateCameraFrustum(color->width_, color->height_,
-                                          K_eigen, T_eigen.inverse());
+            frustum = open3d::geometry::LineSet::CreateCameraVisualization(
+                    color->width_, color->height_, K_eigen, T_eigen.inverse(),
+                    0.2);
+            frustum->PaintUniformColor(kTangoOrange);
 
             // TODO: update support for timages-image conversion
             color = std::make_shared<open3d::geometry::Image>(
@@ -769,29 +723,51 @@ protected:
 };
 
 //------------------------------------------------------------------------------
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("     VoxelHashingGUI [dataset_path]");
+    utility::LogInfo("     Given a sequence of RGBD images, reconstruct point cloud from color and depth images");
+    utility::LogInfo("     [options]");
+    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("     --intrinsic_path [camera_intrinsic.json]");
+    utility::LogInfo("     --device [CUDA:0]");
+    // clang-format on
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
-        utility::LogError("Expected a dataset path as input.");
+        PrintHelp();
+        return 1;
     }
 
     std::string dataset_path = argv[1];
     if (!utility::filesystem::DirectoryExists(dataset_path)) {
-        utility::LogError("Expected an existing directory {}", dataset_path);
+        utility::LogWarning(
+                "Expected an existing directory, but {} does not exist.",
+                dataset_path);
+        return -1;
     }
 
     std::string intrinsic_path = utility::GetProgramOptionAsString(
             argc, argv, "--intrinsics_json", "");
-    std::string device =
+
+    std::string device_code =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");
-    if (device != "CPU:0" && device != "CUDA:0") {
-        utility::LogError("Unrecognized device {}. Expecting CPU:0 or CUDA:0.",
-                          device);
+    if (device_code != "CPU:0" && device_code != "CUDA:0") {
+        utility::LogWarning(
+                "Unrecognized device {}. Expecting CPU:0 or CUDA:0.",
+                device_code);
+        return -1;
     }
-    utility::LogInfo("Using device {}.", device);
+    utility::LogInfo("Using device {}.", device_code);
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, const_cast<const char**>(argv));
     app.AddWindow(std::make_shared<ReconstructionWindow>(
-            dataset_path, intrinsic_path, device));
+            dataset_path, intrinsic_path, device_code));
     app.Run();
 }
