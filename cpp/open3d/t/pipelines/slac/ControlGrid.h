@@ -133,6 +133,8 @@ public:
     std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
     int64_t Size() { return ctr_hashmap_->Size(); }
 
+    core::Device GetDevice() { return device_; }
+
 public:
     /// Anchor grid point index in the regularizor.
     int64_t anchor_idx_ = 0;

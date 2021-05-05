@@ -49,8 +49,8 @@ using TPointCloud = t::geometry::PointCloud;
 // estimate normals, etc).
 static std::vector<std::string> PreprocessPointClouds(
         const std::vector<std::string>& fnames,
-        const SLACOptimizerOption& option) {
-    std::string subdir_name = option.GetSubfolderName();
+        const SLACOptimizerParams& params) {
+    std::string subdir_name = params.GetSubfolderName();
     if (!subdir_name.empty()) {
         utility::filesystem::MakeDirectory(subdir_name);
     }
@@ -67,8 +67,8 @@ static std::vector<std::string> PreprocessPointClouds(
         auto pcd = io::CreatePointCloudFromFile(fname);
 
         // Pre-processing input pointcloud.
-        if (option.voxel_size_ > 0) {
-            pcd = pcd->VoxelDownSample(option.voxel_size_);
+        if (params.voxel_size_ > 0) {
+            pcd = pcd->VoxelDownSample(params.voxel_size_);
             pcd->RemoveStatisticalOutliers(20, 2.0);
             pcd->EstimateNormals();
         } else {
@@ -155,7 +155,9 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
         const core::Tensor& T_i,
         const core::Tensor& T_j,
         const core::Tensor& T_ij,
-        float distance_threshold) {
+        float distance_threshold,
+        float fitness_threshold,
+        bool debug) {
     core::Device device = tpcd_i.GetDevice();
     core::Dtype dtype = tpcd_i.GetPoints().GetDtype();
 
@@ -211,10 +213,12 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     utility::LogDebug("Tij and (Ti, Tj) compatibility ratio = {}.",
                       inlier_ratio);
 
-    if (j != i + 1 && inlier_ratio < 0.3) {
-        VisualizePointCloudCorrespondences(
-                tpcd_i, tpcd_j, correspondence_set,
-                T_j.Inverse().Matmul(T_i).To(device, dtype));
+    if (j != i + 1 && inlier_ratio < fitness_threshold) {
+        if (debug) {
+            VisualizePointCloudCorrespondences(
+                    tpcd_i, tpcd_j, correspondence_set,
+                    T_j.Inverse().Matmul(T_i).To(device, dtype));
+        }
         return core::Tensor();
     }
 
@@ -226,7 +230,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
 void SaveCorrespondencesForPointClouds(
         const std::vector<std::string>& fnames_processed,
         const PoseGraph& pose_graph,
-        const SLACOptimizerOption& option) {
+        const SLACOptimizerParams& params,
+        const SLACDebugOption& debug_option) {
     // Enumerate pose graph edges.
     for (auto& edge : pose_graph.edges_) {
         int i = edge.source_node_id_;
@@ -235,7 +240,7 @@ void SaveCorrespondencesForPointClouds(
         utility::LogInfo("Processing {:02d} -> {:02d}", i, j);
 
         std::string correspondences_fname = fmt::format(
-                "{}/{:03d}_{:03d}.npy", option.GetSubfolderName(), i, j);
+                "{}/{:03d}_{:03d}.npy", params.GetSubfolderName(), i, j);
         if (utility::filesystem::FileExists(correspondences_fname)) continue;
 
         TPointCloud tpcd_i = CreateTPCDFromFile(fnames_processed[i]);
@@ -251,12 +256,11 @@ void SaveCorrespondencesForPointClouds(
         core::Tensor T_ij = core::eigen_converter::EigenMatrixToTensor(
                 edge.transformation_);
 
-        // 0.008 ~ 3.0 / 512 * 1.4
-        float distance_threshold = option.threshold_;
-
         // Get correspondences.
         core::Tensor correspondence_set = GetCorrespondenceSetForPointCloudPair(
-                i, j, tpcd_i, tpcd_j, T_i, T_j, T_ij, distance_threshold);
+                i, j, tpcd_i, tpcd_j, T_i, T_j, T_ij,
+                params.distance_threshold_, params.fitness_threshold_,
+                debug_option.debug_);
 
         if (correspondence_set.GetLength() > 0) {
             correspondence_set.Save(correspondences_fname);
@@ -267,9 +271,8 @@ void SaveCorrespondencesForPointClouds(
 }
 
 static void InitializeControlGrid(ControlGrid& ctr_grid,
-                                  const std::vector<std::string>& fnames,
-                                  const SLACOptimizerOption& option) {
-    core::Device device(option.device_);
+                                  const std::vector<std::string>& fnames) {
+    core::Device device(ctr_grid.GetDevice());
     for (auto& fname : fnames) {
         utility::LogInfo("Initializing grid for {}", fname);
 
@@ -279,9 +282,7 @@ static void InitializeControlGrid(ControlGrid& ctr_grid,
     utility::LogInfo("Initialization finished.");
 }
 
-static void UpdatePoses(PoseGraph& fragment_pose_graph,
-                        core::Tensor& delta,
-                        const SLACOptimizerOption& option) {
+static void UpdatePoses(PoseGraph& fragment_pose_graph, core::Tensor& delta) {
     core::Tensor delta_poses = delta.View({-1, 6}).To(core::Device("CPU:0"));
 
     if (delta_poses.GetLength() != int64_t(fragment_pose_graph.nodes_.size())) {
@@ -304,9 +305,7 @@ static void UpdatePoses(PoseGraph& fragment_pose_graph,
     }
 }
 
-static void UpdateControlGrid(ControlGrid& ctr_grid,
-                              core::Tensor& delta,
-                              const SLACOptimizerOption& option) {
+static void UpdateControlGrid(ControlGrid& ctr_grid, core::Tensor& delta) {
     core::Tensor delta_cgrids = delta.View({-1, 3});
     if (delta_cgrids.GetLength() != int64_t(ctr_grid.Size())) {
         utility::LogError("Dimension Mismatch");
@@ -318,34 +317,32 @@ static void UpdateControlGrid(ControlGrid& ctr_grid,
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fnames,
         const PoseGraph& pose_graph,
-        SLACOptimizerOption& option) {
-    core::Device device(option.device_);
-    if (!option.buffer_folder_.empty()) {
-        utility::filesystem::MakeDirectory(option.buffer_folder_);
+        const SLACOptimizerParams& params,
+        const SLACDebugOption& debug_option) {
+    core::Device device(params.device_);
+    if (!params.slac_folder_.empty()) {
+        utility::filesystem::MakeDirectory(params.slac_folder_);
     }
 
     // First preprocess the point cloud with downsampling and normal
     // estimation.
-    auto fnames_down = PreprocessPointClouds(fnames, option);
+    auto fnames_down = PreprocessPointClouds(fnames, params);
     // Then obtain the correspondences given the pose graph
-    SaveCorrespondencesForPointClouds(fnames_down, pose_graph, option);
+    SaveCorrespondencesForPointClouds(fnames_down, pose_graph, params,
+                                      debug_option);
 
     // First initialize ctr_grid
     ControlGrid ctr_grid(3.0 / 8, 8000, device);
-    InitializeControlGrid(ctr_grid, fnames_down, option);
-    utility::LogInfo("Compactifying");
+    InitializeControlGrid(ctr_grid, fnames_down);
     ctr_grid.Compactify();
-    utility::LogInfo("Compactifying finished");
 
     // Fill-in
     // fragments x 6 (se3) + control_grids x 3 (R^3)
     int64_t num_params = fnames_down.size() * 6 + ctr_grid.Size() * 3;
-    utility::LogInfo("Initializing {}^2 matrices", num_params);
+    utility::LogInfo("Initializing the {}^2 Hessian matrix", num_params);
 
     PoseGraph pose_graph_update(pose_graph);
-    for (int itr = 0; itr < option.max_iterations_; ++itr) {
-        option.debug_enabled_ = option.debug_ && itr >= option.debug_start_itr_;
-
+    for (int itr = 0; itr < params.max_iterations_; ++itr) {
         utility::LogInfo("Iteration {}", itr);
         core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
                                                core::Dtype::Float32, device);
@@ -360,14 +357,15 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         core::Tensor residual_data =
                 core::Tensor::Zeros({1}, core::Dtype::Float32, device);
         FillInSLACAlignmentTerm(AtA, Atb, residual_data, ctr_grid, fnames_down,
-                                pose_graph_update, option);
+                                pose_graph_update, params, debug_option);
 
         utility::LogInfo("Residual Data = {}", residual_data[0].Item<float>());
 
         core::Tensor residual_reg =
                 core::Tensor::Zeros({1}, core::Dtype::Float32, device);
         FillInSLACRegularizerTerm(AtA, Atb, residual_reg, ctr_grid,
-                                  pose_graph_update.nodes_.size(), option);
+                                  pose_graph_update.nodes_.size(), params,
+                                  debug_option);
         utility::LogInfo("Residual Reg = {}", residual_reg[0].Item<float>());
 
         core::Tensor delta = AtA.Solve(Atb.Neg());
@@ -377,8 +375,8 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         core::Tensor delta_cgrids = delta.Slice(
                 0, 6 * pose_graph_update.nodes_.size(), delta.GetLength());
 
-        UpdatePoses(pose_graph_update, delta_poses, option);
-        UpdateControlGrid(ctr_grid, delta_cgrids, option);
+        UpdatePoses(pose_graph_update, delta_poses);
+        UpdateControlGrid(ctr_grid, delta_cgrids);
         VisualizeGridDeformation(ctr_grid);
     }
     return std::make_pair(pose_graph_update, ctr_grid);
@@ -386,28 +384,28 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
 
 PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
                                         const PoseGraph& pose_graph,
-                                        SLACOptimizerOption& option) {
-    core::Device device(option.device_);
-    if (!option.buffer_folder_.empty()) {
-        utility::filesystem::MakeDirectory(option.buffer_folder_);
+                                        const SLACOptimizerParams& params,
+                                        const SLACDebugOption& debug_option) {
+    core::Device device(params.device_);
+    if (!params.slac_folder_.empty()) {
+        utility::filesystem::MakeDirectory(params.slac_folder_);
     }
 
     // First preprocess the point cloud with downsampling and normal
     // estimation.
     std::vector<std::string> fnames_down =
-            PreprocessPointClouds(fnames, option);
+            PreprocessPointClouds(fnames, params);
     // Then obtain the correspondences given the pose graph
-    SaveCorrespondencesForPointClouds(fnames_down, pose_graph, option);
+    SaveCorrespondencesForPointClouds(fnames_down, pose_graph, params,
+                                      debug_option);
 
     // Fill-in
     // fragments x 6 (se3)
     int64_t num_params = fnames_down.size() * 6;
-    utility::LogInfo("Initializing {}^2 Hessian matrix", num_params);
+    utility::LogInfo("Initializing the {}^2 Hessian matrix.", num_params);
 
     PoseGraph pose_graph_update(pose_graph);
-    for (int itr = 0; itr < option.max_iterations_; ++itr) {
-        option.debug_enabled_ = option.debug_ && itr >= option.debug_start_itr_;
-
+    for (int itr = 0; itr < params.max_iterations_; ++itr) {
         utility::LogInfo("Iteration {}", itr);
         core::Tensor AtA = core::Tensor::Zeros({num_params, num_params},
                                                core::Dtype::Float32, device);
@@ -423,11 +421,11 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
                 1e5 * core::Tensor::Ones({}, core::Dtype::Float32, device));
 
         FillInRigidAlignmentTerm(AtA, Atb, residual, fnames_down,
-                                 pose_graph_update, option);
+                                 pose_graph_update, params, debug_option);
         utility::LogInfo("Residual = {}", residual[0].Item<float>());
 
         core::Tensor delta = AtA.Solve(Atb.Neg());
-        UpdatePoses(pose_graph_update, delta, option);
+        UpdatePoses(pose_graph_update, delta);
     }
 
     return pose_graph_update;

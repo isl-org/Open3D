@@ -66,23 +66,25 @@ int main(int argc, char** argv) {
             scene_folder + "/refined_registration_optimized.json";
     auto pose_graph = io::CreatePoseGraphFromFile(pose_graph_fname);
 
-    auto option = t::pipelines::slac::SLACOptimizerOption();
-    option.buffer_folder_ = slac_folder;
-    option.device_ =
+    auto params = t::pipelines::slac::SLACOptimizerParams();
+    params.slac_folder_ = slac_folder;
+    params.device_ =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
-    option.voxel_size_ =
+    params.voxel_size_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
-    option.regularizor_coeff_ =
+    params.regularizor_weight_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--weight", 1);
-    option.threshold_ =
-            utility::GetProgramOptionAsDouble(argc, argv, "--threshold", 0.07);
-    option.max_iterations_ =
-            utility::GetProgramOptionAsInt(argc, argv, "--iterations", 10);
-    option.debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
-    option.debug_start_idx_ =
-            utility::GetProgramOptionAsInt(argc, argv, "--debug_idx", 0);
-    option.debug_start_itr_ =
-            utility::GetProgramOptionAsInt(argc, argv, "--debug_itr", 0);
+    params.distance_threshold_ = utility::GetProgramOptionAsDouble(
+            argc, argv, "--distance_threshold", 0.07);
+    params.fitness_threshold_ = utility::GetProgramOptionAsDouble(
+            argc, argv, "--fitness_threshold", 0.3);
+    params.max_iterations_ =
+            utility::GetProgramOptionAsInt(argc, argv, "--iterations", 5);
+
+    auto debug_option = t::pipelines::slac::SLACDebugOption();
+    debug_option.debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
+    debug_option.debug_start_node_idx_ =
+            utility::GetProgramOptionAsInt(argc, argv, "--debug_node", 0);
 
     std::string method =
             utility::GetProgramOptionAsString(argc, argv, "--method", "slac");
@@ -90,28 +92,29 @@ int main(int argc, char** argv) {
     pipelines::registration::PoseGraph pose_graph_updated;
     if ("rigid" == method) {
         pose_graph_updated = t::pipelines::slac::RunRigidOptimizerForFragments(
-                fragment_fnames, *pose_graph, option);
+                fragment_fnames, *pose_graph, params, debug_option);
     } else if ("slac" == method) {
         t::pipelines::slac::ControlGrid control_grid;
 
         std::tie(pose_graph_updated, control_grid) =
                 t::pipelines::slac::RunSLACOptimizerForFragments(
-                        fragment_fnames, *pose_graph, option);
+                        fragment_fnames, *pose_graph, params, debug_option);
 
         // Write control grids
         auto hashmap = control_grid.GetHashmap();
         core::Tensor active_addrs;
         hashmap->GetActiveIndices(active_addrs);
+        active_addrs = active_addrs.To(core::Dtype::Int64);
         hashmap->GetKeyTensor()
-                .IndexGet({active_addrs.To(core::Dtype::Int64)})
-                .Save(option.GetSubfolderName() + "/ctr_grid_keys.npy");
+                .IndexGet({active_addrs})
+                .Save(params.GetSubfolderName() + "/ctr_grid_keys.npy");
         hashmap->GetValueTensor()
-                .IndexGet({active_addrs.To(core::Dtype::Int64)})
-                .Save(option.GetSubfolderName() + "/ctr_grid_values.npy");
+                .IndexGet({active_addrs})
+                .Save(params.GetSubfolderName() + "/ctr_grid_values.npy");
     }
 
     // Write pose graph
-    io::WritePoseGraph(option.GetSubfolderName() + "/optimized_posegraph_" +
+    io::WritePoseGraph(params.GetSubfolderName() + "/optimized_posegraph_" +
                                method + ".json",
                        pose_graph_updated);
 
@@ -127,7 +130,7 @@ int main(int argc, char** argv) {
             trajectory.parameters_.push_back(param);
         }
     }
-    io::WritePinholeCameraTrajectory(option.GetSubfolderName() +
+    io::WritePinholeCameraTrajectory(params.GetSubfolderName() +
                                              "/optimized_trajectory_" + method +
                                              ".log",
                                      trajectory);

@@ -67,8 +67,9 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
                               Tensor& residual,
                               const std::vector<std::string>& fnames,
                               const PoseGraph& pose_graph,
-                              const SLACOptimizerOption& option) {
-    core::Device device(option.device_);
+                              const SLACOptimizerParams& params,
+                              const SLACDebugOption& debug_option) {
+    core::Device device(params.device_);
 
     // Enumerate pose graph edges
     for (auto& edge : pose_graph.edges_) {
@@ -76,7 +77,7 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
         int j = edge.target_node_id_;
 
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
-                                               option.GetSubfolderName(), i, j);
+                                               params.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
             utility::LogWarning("Correspondence {} {} not processed!", i, j);
             continue;
@@ -99,12 +100,12 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
 
         FillInRigidAlignmentTerm(AtA, Atb, residual, tpcd_i_indexed,
                                  tpcd_j_indexed, Ti, Tj, i, j,
-                                 option.threshold_);
+                                 params.distance_threshold_);
 
-        // if (option.debug_enabled_ && i >= option.debug_start_idx_) {
-        VisualizePointCloudCorrespondences(tpcd_i, tpcd_j, corres_ij,
-                                           Tj.Inverse().Matmul(Ti));
-        //}
+        if (debug_option.debug_ && i >= debug_option.debug_start_node_idx_) {
+            VisualizePointCloudCorrespondences(tpcd_i, tpcd_j, corres_ij,
+                                               Tj.Inverse().Matmul(Ti));
+        }
     }
 }
 
@@ -164,8 +165,9 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
                              ControlGrid& ctr_grid,
                              const std::vector<std::string>& fnames,
                              const PoseGraph& pose_graph,
-                             const SLACOptimizerOption& option) {
-    core::Device device(option.device_);
+                             const SLACOptimizerParams& params,
+                             const SLACDebugOption& debug_option) {
+    core::Device device(params.device_);
     int n_frags = pose_graph.nodes_.size();
 
     // Enumerate pose graph edges.
@@ -173,13 +175,13 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
         int i = edge.source_node_id_;
         int j = edge.target_node_id_;
 
-        std::string correspondences_fname = fmt::format(
-                "{}/{:03d}_{:03d}.npy", option.GetSubfolderName(), i, j);
-        if (!utility::filesystem::FileExists(correspondences_fname)) {
+        std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
+                                               params.GetSubfolderName(), i, j);
+        if (!utility::filesystem::FileExists(corres_fname)) {
             utility::LogWarning("Correspondence {} {} not processed!", i, j);
             continue;
         }
-        Tensor corres_ij = Tensor::Load(correspondences_fname).To(device);
+        Tensor corres_ij = Tensor::Load(corres_fname).To(device);
 
         TPointCloud tpcd_i = CreateTPCDFromFile(fnames[i], device);
         TPointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
@@ -209,16 +211,15 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
         // Fill In.
         FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, tpcd_param_i,
                                 tpcd_param_j, Ti, Tj, i, j, n_frags,
-                                option.threshold_);
+                                params.distance_threshold_);
 
-        if (i == 0 && j == 1) {
+        if (debug_option.debug_ && i >= debug_option.debug_start_node_idx_) {
             VisualizePointCloudCorrespondences(tpcd_i, tpcd_j, corres_ij,
                                                Tj.Inverse().Matmul(Ti));
             VisualizePointCloudEmbedding(tpcd_param_i, ctr_grid);
             VisualizePointCloudDeformation(tpcd_param_i, ctr_grid);
         }
     }
-    VisualizeGridDeformation(ctr_grid);
 }
 
 void FillInSLACRegularizerTerm(Tensor& AtA,
@@ -226,16 +227,21 @@ void FillInSLACRegularizerTerm(Tensor& AtA,
                                Tensor& residual,
                                ControlGrid& ctr_grid,
                                int n_frags,
-                               const SLACOptimizerOption& option) {
+                               const SLACOptimizerParams& params,
+                               const SLACDebugOption& debug_option) {
     Tensor active_addrs, nb_addrs, nb_masks;
     std::tie(active_addrs, nb_addrs, nb_masks) = ctr_grid.GetNeighborGridMap();
 
     Tensor positions_init = ctr_grid.GetInitPositions();
     Tensor positions_curr = ctr_grid.GetCurrPositions();
-    kernel::FillInSLACRegularizerTerm(
-            AtA, Atb, residual, active_addrs, nb_addrs, nb_masks,
-            positions_init, positions_curr, n_frags * option.regularizor_coeff_,
-            n_frags, ctr_grid.anchor_idx_);
+    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
+                                      nb_addrs, nb_masks, positions_init,
+                                      positions_curr,
+                                      n_frags * params.regularizor_weight_,
+                                      n_frags, ctr_grid.anchor_idx_);
+    if (debug_option.debug_) {
+        VisualizeGridDeformation(ctr_grid);
+    }
 }
 
 }  // namespace slac
