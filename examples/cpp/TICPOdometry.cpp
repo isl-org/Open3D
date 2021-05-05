@@ -521,7 +521,7 @@ int main(int argc, const char* argv[]) {
     window_name = window_name + " [" + device_string + "]";
     widget_string = widget_string + device_string;
 
-    visualization::webrtc_server::WebRTCServer::GetInstance().EnableWebRTC();
+    // visualization::webrtc_server::WebRTCServer::GetInstance().EnableWebRTC();
     // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto& app = gui::Application::GetInstance();

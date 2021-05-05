@@ -23,7 +23,7 @@ dataset_path = /home/rey/Datasets/lyft_1000/a004/
 
 # Range of frames is 0 to end_range - 1.
 start_range = 0
-end_range = 600
+end_range = 400
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane
