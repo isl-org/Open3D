@@ -105,7 +105,7 @@ static IceServer GetIceServerFromUrl(const std::string &url) {
     return srv;
 }
 
-webrtc::PeerConnectionFactoryDependencies
+static webrtc::PeerConnectionFactoryDependencies
 CreatePeerConnectionFactoryDependencies() {
     webrtc::PeerConnectionFactoryDependencies dependencies;
     dependencies.network_thread = nullptr;

@@ -172,8 +172,8 @@ class PeerConnectionManager {
     public:
         DataChannelObserver(
                 WebRTCServer* webrtc_server,
-                rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel)
-            : webrtc_server_(webrtc_server), data_channel_(dataChannel) {
+                rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
+            : webrtc_server_(webrtc_server), data_channel_(data_channel) {
             data_channel_->RegisterObserver(this);
         }
         virtual ~DataChannelObserver() { data_channel_->UnregisterObserver(); }
@@ -207,12 +207,12 @@ class PeerConnectionManager {
     public:
         PeerConnectionObserver(
                 WebRTCServer* webrtc_server,
-                PeerConnectionManager* peerConnectionManager,
+                PeerConnectionManager* peer_connection_manager_,
                 const std::string& peerid,
                 const webrtc::PeerConnectionInterface::RTCConfiguration& config,
-                std::unique_ptr<cricket::PortAllocator> portAllocator)
+                std::unique_ptr<cricket::PortAllocator> port_allocator)
             : webrtc_server_(webrtc_server),
-              peer_connection_manager_(peerConnectionManager),
+              peer_connection_manager_(peer_connection_manager_),
               peerid_(peerid),
               local_channel_(nullptr),
               remote_channel_(nullptr),
@@ -220,7 +220,7 @@ class PeerConnectionManager {
               deleting_(false) {
             pc_ = peer_connection_manager_->peer_connection_factory_
                           ->CreatePeerConnection(config,
-                                                 std::move(portAllocator),
+                                                 std::move(port_allocator),
                                                  nullptr, this);
 
             if (pc_.get()) {
