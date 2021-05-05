@@ -177,7 +177,7 @@ def draw(geometry=None,
          on_animation_frame=None,
          on_animation_tick=None):
 
-    uid = _async_event_loop.run_sync(
+    window_uid = _async_event_loop.run_sync(
         functools.partial(o3d.visualization.draw,
                           geometry=geometry,
                           title=title,
@@ -199,7 +199,7 @@ def draw(geometry=None,
                           on_animation_frame=on_animation_frame,
                           on_animation_tick=on_animation_tick,
                           non_blocking_and_return_uid=True))
-    visualizer = o3d.WebVisualizer(window_uid=uid)
+    visualizer = o3d.WebVisualizer(window_uid=window_uid)
     visualizer.show()
 
 
