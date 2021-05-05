@@ -41,7 +41,6 @@
 #include <rtc_base/thread.h>
 
 #include <fstream>
-#include <iostream>
 
 #include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Image.h"
