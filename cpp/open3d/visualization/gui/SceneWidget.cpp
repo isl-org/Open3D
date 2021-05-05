@@ -34,7 +34,6 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
-#include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
@@ -1133,8 +1132,6 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 }
 
 Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
-    // utility::LogInfo("SceneWidget::Mouse");
-
     // Lower render quality while rotating, since we will be redrawing
     // frequently. This will give a snappier feel to mouse movements,
     // especially for point clouds, which are a little slow.

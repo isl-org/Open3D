@@ -148,8 +148,7 @@ void BitmapWindowSystem::WaitEventsTimeout(double timeout_secs) {
         duration = std::chrono::steady_clock::now() - t0;
         dt = duration.count();
         if (!impl_->event_queue_.empty()) {
-            std::shared_ptr<BitmapEvent> event = impl_->event_queue_.front();
-            event->Execute();
+            impl_->event_queue_.front()->Execute();
             impl_->event_queue_.pop();
             break;
         } else {

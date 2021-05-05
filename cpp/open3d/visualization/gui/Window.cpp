@@ -587,22 +587,15 @@ void Window::Show(bool vis /*= true*/) {
 }
 
 void Window::Close() {
-    utility::LogInfo("Window::Close()");
     if (impl_->on_close_) {
-        utility::LogInfo("Calling impl_->on_close_()");
         bool should_close = impl_->on_close_();
-        utility::LogInfo("After calling impl_->on_close_()");
         if (!should_close) {
             Application::GetInstance().GetWindowSystem().CancelUserClose(
                     impl_->window_);
             return;
         }
     }
-    utility::LogInfo(
-            "Before calling Application::GetInstance().RemoveWindow(this);");
     Application::GetInstance().RemoveWindow(this);
-    utility::LogInfo(
-            "After calling Application::GetInstance().RemoveWindow(this);");
 }
 
 void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
