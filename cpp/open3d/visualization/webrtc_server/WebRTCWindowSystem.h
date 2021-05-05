@@ -37,7 +37,8 @@ namespace webrtc_server {
 
 class WebRTCServer;
 
-// TODO (Yixing): Merged this class with WebRTCServer.
+// TODO (Yixing): Merged this class with WebRTCServer. The are all global
+// singletons. Merging them can simplify some APIs.
 class WebRTCWindowSystem : public gui::BitmapWindowSystem {
 public:
     static std::shared_ptr<WebRTCWindowSystem> GetInstance();
