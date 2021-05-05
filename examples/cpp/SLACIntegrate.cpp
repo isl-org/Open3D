@@ -149,15 +149,10 @@ int main(int argc, char** argv) {
             Tensor extrinsic_t = core::eigen_converter::EigenMatrixToTensor(
                     pose.inverse().eval());
 
-            std::shared_ptr<geometry::Image> depth_legacy =
-                    io::CreateImageFromFile(depth_filenames[k]);
-            std::shared_ptr<geometry::Image> color_legacy =
-                    io::CreateImageFromFile(color_filenames[k]);
-
-            t::geometry::Image depth =
-                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
-            t::geometry::Image color =
-                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
+            auto depth =
+                    t::io::CreateImageFromFile(depth_filenames[k])->To(device);
+            auto color =
+                    t::io::CreateImageFromFile(color_filenames[k])->To(device);
             t::geometry::RGBDImage rgbd(color, depth);
 
             utility::Timer timer;
