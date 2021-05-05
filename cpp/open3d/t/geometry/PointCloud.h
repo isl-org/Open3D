@@ -312,8 +312,10 @@ public:
     /// camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
-    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
-    /// / fy\n
+    /// point is:
+    /// - z = d / depth_scale
+    /// - x = (u - cx) * z / fx
+    /// - y = (v - cy) * z / fy
     ///
     /// \param depth The input depth image should be a uint16_t or float image.
     /// \param intrinsics Intrinsic parameters of the camera.
@@ -321,7 +323,12 @@ public:
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
-    /// There is no low pass filtering, so aliasing is possible for stride>1.
+    /// Unless \p with_normals=true, there is no low pass filtering, so aliasing
+    /// is possible for \p stride>1.
+    /// \param with_normals Also compute normals for the point cloud. If
+    /// True, the point cloud will only contain points with valid normals. If
+    /// normals are requested, the depth map is first filtered to ensure smooth
+    /// normals.
     ///
     /// \return Created pointcloud with the 'points' property set. Thus is empty
     /// if the conversion fails.
@@ -332,14 +339,17 @@ public:
                     4, core::Dtype::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
-            int stride = 1);
+            int stride = 1,
+            bool with_normals = false);
 
     /// \brief Factory function to create a pointcloud from an RGB-D image and a
     /// camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
-    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
-    /// / fy\n
+    /// point is:
+    /// - z = d / depth_scale
+    /// - x = (u - cx) * z / fx
+    /// - y = (v - cy) * z / fy
     ///
     /// \param rgbd_image The input RGBD image should have a uint16_t or float
     /// depth image and RGB image with any DType and the same size.
@@ -348,7 +358,12 @@ public:
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
-    /// There is no low pass filtering, so aliasing is possible for stride>1.
+    /// Unless \p with_normals=true, there is no low pass filtering, so aliasing
+    /// is possible for \p stride>1.
+    /// \param with_normals Also compute normals for the point cloud. If True,
+    /// the point cloud will only contain points with valid normals. If
+    /// normals are requested, the depth map is first filtered to ensure smooth
+    /// normals.
     ///
     /// \return Created pointcloud with the 'points' and 'colors' properties
     /// set. This is empty if the conversion fails.
@@ -359,7 +374,8 @@ public:
                     4, core::Dtype::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
-            int stride = 1);
+            int stride = 1,
+            bool with_normals = false);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(

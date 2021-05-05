@@ -248,7 +248,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensor has invlaid input type {}.",
+        utility::LogError("PyHandleToTensor has invalid input type {}.",
                           class_name);
     }
 }
@@ -299,7 +299,7 @@ SizeVector PyHandleToSizeVector(const py::handle& handle) {
         }
     } else {
         utility::LogError(
-                "PyHandleToSizeVector has invlaid input type {}. Only int, "
+                "PyHandleToSizeVector has invalid input type {}. Only int, "
                 "tuple and list are supported.",
                 class_name);
     }
