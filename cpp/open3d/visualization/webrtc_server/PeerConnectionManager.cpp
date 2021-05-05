@@ -581,6 +581,11 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     return answer;
 }
 
+const std::map<std::string, HttpServerRequestHandler::HttpFunction>
+PeerConnectionManager::GetHttpApi() {
+    return func_;
+}
+
 // Get list ICE candidate associated with a PeerConnection.
 const Json::Value PeerConnectionManager::GetIceCandidateList(
         const std::string &peerid) {

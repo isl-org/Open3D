@@ -333,9 +333,7 @@ public:
 
     bool InitializePeerConnection();
     const std::map<std::string, HttpServerRequestHandler::HttpFunction>
-    GetHttpApi() {
-        return func_;
-    };
+    GetHttpApi();
 
     const Json::Value GetIceCandidateList(const std::string& peerid);
     const Json::Value AddIceCandidate(const std::string& peerid,
