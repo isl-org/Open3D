@@ -38,8 +38,7 @@ namespace slac {
 
 void pybind_slac_classes() {
     py::class_<SLACOptimizerParams> slac_optimizer_params(
-            m, "slac_optimizer_params",
-            "Class contraining parameters for SLAC optimzation.");
+            m, "slac_optimizer_params", "SLAC optimzation parameters.");
     py::detail::bind_copy_functions<SLACOptimizerParams>(slac_optimizer_params);
     slac_optimizer_params
             .def_readwrite("max_iterations",
@@ -67,16 +66,15 @@ void pybind_slac_classes() {
                         "SLACOptimizerParams[max_iterations={:d}, "
                         "voxel_size={:e}, distance_threshold={:e}, "
                         "fitness_threshold={:e}, regularizor_weight={:e}, "
-                        "device={}, slac_folder={}",
+                        "device={}, slac_folder={}].",
                         params.max_iterations_, params.max_iterations_,
                         params.voxel_size_, params.distance_threshold_,
                         params.fitness_threshold_, params.regularizor_weight,
                         params.device_.ToString(), params.slac_folder_);
             });
 
-    py::class_<SLACDebugOption> slac_debug_option(
-            m, "slac_debug_option",
-            "Class contraining parameters for SLAC optimzation.");
+    py::class_<SLACDebugOption> slac_debug_option(m, "slac_debug_option",
+                                                  "SLAC debug options.");
     py::detail::bind_copy_functions<SLACDebugOption>(slac_debug_option);
     slac_debug_option
             .def_readwrite("debug", &SLACDebugOption::debug_, "Enable debug.")
@@ -84,11 +82,12 @@ void pybind_slac_classes() {
                            &SLACOptimizerParams::debug_start_node_idx_,
                            "The node id to start debugging with. Smaller nodes "
                            "will be skipped for visualization.")
-            .def("__repr__", [](const SLACDebugOption &debug) {
+            .def("__repr__", [](const SLACDebugOption &debug_option) {
                 return fmt::format(
                         "SLACDebugOption[debug={}, "
-                        "debug_start_node_idx={:d}]",
-                        debug.debug_, debug.debug_start_node_idx_);
+                        "debug_start_node_idx={:d}].",
+                        debug_option.debug_,
+                        debug_option.debug_start_node_idx_);
             });
 }
 
@@ -96,11 +95,15 @@ void pybind_slac_classes() {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"fnames_processed",
+                 "List of filenames (str) for pre-processed pointcloud "
+                 "fragments."},
+                {"fragment_fnames",
                  "List of filenames (str) for pointcloud fragments."},
                 {"fragment_pose_graph", "PoseGraph for pointcloud fragments"},
                 {"params",
                  "slac_optimizer_params containing the configurations."},
-                {"debug", "slac_debug_option containing the debug options."}};
+                {"debug_option",
+                 "slac_debug_option containing the debug options."}};
 
 void pybind_slac_methods(py::module &m) {
     m.def("save_correspondences_for_pointclouds",
@@ -109,7 +112,8 @@ void pybind_slac_methods(py::module &m) {
           "correspondences. Uses aggressive pruning -- reject any suspicious "
           "pair.",
           "fnames_processed"_a, "fragment_pose_graph"_a,
-          "params"_a = SLACOptimizerParams(), "debug"_a = SLACDebugOption());
+          "params"_a = SLACOptimizerParams(),
+          "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "save_correspondences_for_pointclouds",
                                  map_shared_argument_docstrings);
 
@@ -119,17 +123,16 @@ void pybind_slac_methods(py::module &m) {
           "Estimate a shared control grid for all fragments for scene "
           "reconstruction, implemented in "
           "https://github.com/qianyizh/ElasticReconstruction. ",
-          "fnames_processed"_a, "fragment_pose_graph"_a,
-          "params"_a = SLACOptimizerParams(), "debug"_a = SLACDebugOption());
+          "fragment_fnames"_a, "fragment_pose_graph"_a,
+          "params"_a = SLACOptimizerParams(),
+          "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 
     m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
-          "Read pose graph containing loop closures and odometry to compute "
-          "correspondences. Uses aggressive pruning -- reject any suspicious "
-          "pair.",
-          "fnames_processed"_a, "fragment_pose_graph"_a,
-          "params"_a = SLACOptimizerParams(), "debug"_a = SLACDebugOption());
+          "RunRigidOptimizerForFragments.", "fragment_fnames"_a,
+          "fragment_pose_graph"_a, "params"_a = SLACOptimizerParams(),
+          "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "run_rigid_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 }

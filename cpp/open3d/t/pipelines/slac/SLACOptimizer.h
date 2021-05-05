@@ -151,7 +151,7 @@ struct SLACDebugOption {
 ///  \param fragment_pose_graph Legacy PoseGraph for pointcloud
 /// fragments.
 /// \param params SLACOptimizerParams containing the configurations.
-/// \param option SLACDebugOption containing the debug options.
+/// \param debug_option SLACDebugOption containing the debug options.
 void SaveCorrespondencesForPointClouds(
         const std::vector<std::string>& fnames_processed,
         const PoseGraph& fragment_pose_graph,
@@ -166,13 +166,21 @@ void SaveCorrespondencesForPointClouds(
 /// \param fragment_fnames Vector of filenames for pointcloud fragments.
 /// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
 /// \param params SLACOptimizerOption containing the configurations.
-/// \return pair of registraion::PoseGraph and slac::ControlGrid.
+/// \param debug_option SLACDebugOption containing the debug options.
+/// \return pair of optimized registraion::PoseGraph and slac::ControlGrid.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
         const SLACOptimizerParams& params = SLACOptimizerParams(),
         const SLACDebugOption& debug_option = SLACDebugOption());
 
+/// \brief RunRigidOptimizerForFragments
+///
+/// \param fragment_fnames Vector of filenames for pointcloud fragments.
+/// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
+/// \param params SLACOptimizerOption containing the configurations.
+/// \param debug_option SLACDebugOption containing the debug options.
+/// \return optimized registraion::PoseGraph.
 PoseGraph RunRigidOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
