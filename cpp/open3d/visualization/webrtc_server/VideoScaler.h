@@ -112,23 +112,27 @@ public:
 
     void OnFrame(const webrtc::VideoFrame &frame) override {
         if (roi_x_ >= frame.width()) {
-            RTC_LOG(LS_ERROR) << "The ROI position protrudes beyond the right "
-                                 "edge of the image. Ignore roi_x.";
+            utility::LogWarning(
+                    "The ROI position protrudes beyond the right edge of the "
+                    "image. Ignore roi_x.");
             roi_x_ = 0;
         }
         if (roi_y_ >= frame.height()) {
-            RTC_LOG(LS_ERROR) << "The ROI position protrudes beyond the bottom "
-                                 "edge of the image. Ignore roi_y.";
+            utility::LogWarning(
+                    "The ROI position protrudes beyond the right edge of the "
+                    "image. Ignore roi_y_.");
             roi_y_ = 0;
         }
         if (roi_width_ != 0 && (roi_width_ + roi_x_) > frame.width()) {
-            RTC_LOG(LS_ERROR) << "The ROI protrudes beyond the right edge of "
-                                 "the image. Ignore roi_width.";
+            utility::LogWarning(
+                    "The ROI position protrudes beyond the right edge of the "
+                    "image. Ignore roi_width_.");
             roi_width_ = 0;
         }
         if (roi_height_ != 0 && (roi_height_ + roi_y_) > frame.height()) {
-            RTC_LOG(LS_ERROR) << "The ROI protrudes beyond the bottom edge of "
-                                 "the image. Ignore roi_height.";
+            utility::LogWarning(
+                    "The ROI position protrudes beyond the right edge of the "
+                    "image. Ignore roi_height_.");
             roi_height_ = 0;
         }
 
