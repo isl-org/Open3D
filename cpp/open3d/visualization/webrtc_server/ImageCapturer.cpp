@@ -74,18 +74,8 @@ ImageCapturer::ImageCapturer(const std::map<std::string, std::string>& opts)
 
 void ImageCapturer::OnCaptureResult(
         const std::shared_ptr<core::Tensor>& frame) {
-    utility::LogInfoConsole("ImageCapturer::OnCaptureResult: New frame");
     int height = (int)frame->GetShape(0);
     int width = (int)frame->GetShape(1);
-    utility::LogInfo("ImageCapturer got frame height {}, width {}", height,
-                     width);
-    utility::LogInfo("frame shape: {}", frame->GetShape().ToString());
-
-    // static int frame_id = 0;
-    // t::geometry::Image image(frame->Clone());
-    // std::string file_name = fmt::format("im_{:04d}.png", frame_id++);
-    // t::io::WriteImage(file_name, image);
-    // utility::LogInfo("Frame saved to {}", file_name);
 
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);

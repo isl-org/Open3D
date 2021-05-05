@@ -72,8 +72,9 @@
           document.getElementById(id).remove();
         });
 
-        console.log("newWindowIds:", newWindowIds);
-        console.log("staleWindowIds:", staleWindowIds);
+        console.log("!! mediaList:", mediaList);
+        console.log("!! newWindowIds:", newWindowIds);
+        console.log("!! staleWindowIds:", staleWindowIds);
 
         // Append new URLs to the menu bar.
         newWindowIds.forEach(function (windowId) {
