@@ -1088,6 +1088,19 @@ TEST_P(TensorPermuteDevicePairs, IndexSet) {
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 4,  5,  6,  0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 16, 17, 18, 0, 0, 0, 0, 0}));
+
+    // Check with 0-D tensor.
+    dst_t = core::Tensor::Init<float>(0, dst_device);
+    src_t = core::Tensor::Init<int>(4, src_device);
+    indices = {core::Tensor::Init<bool>(true, src_device)};
+    dst_t.IndexSet(indices, src_t);
+    EXPECT_TRUE(dst_t.AllClose(core::Tensor::Init<float>(4, dst_device)));
+
+    dst_t = core::Tensor::Init<float>(0, dst_device);
+    src_t = core::Tensor::Init<int>(4, src_device);
+    indices = {core::Tensor::Init<bool>(false, src_device)};
+    dst_t.IndexSet(indices, src_t);
+    EXPECT_TRUE(dst_t.AllClose(core::Tensor::Init<float>(0, dst_device)));
 }
 
 TEST_P(TensorPermuteDevicePairs, IndexSetBroadcast) {

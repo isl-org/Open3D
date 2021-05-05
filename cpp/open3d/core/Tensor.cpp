@@ -712,6 +712,27 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
+    // Handle 0-D tensor.
+    if (shape_.size() == 0) {
+        if (index_tensors.size() != 1) {
+            utility::LogError(
+                    "Index vector should have only one element for 0-D "
+                    "tensor.");
+            return;
+        }
+        if (src_tensor.NumElements() != 1) {
+            utility::LogError(
+                    "Source should be a single-element tensor for 0-D tensor.");
+            return;
+        }
+        if (index_tensors[0].IsNonZero()) {
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_tensor.GetDtype(), [&]() {
+                Fill(src_tensor.Item<scalar_t>());
+            });
+        }
+        return;
+    }
+
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor pre_processed_dst = aip.GetTensor();
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
