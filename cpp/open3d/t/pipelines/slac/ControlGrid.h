@@ -32,24 +32,29 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 
-/// ControlGrid is a spatially hashed voxel grid used for non-rigid point cloud
-/// registration and TSDF integration.
-/// Each grid stores a R^3 coordinate after non-rigid transformation.
-/// You can imagine a control grid as a jelly that is warped upon perturbation
-/// with its overall shape preserved.
-/// Reference:
-/// https://github.com/qianyizh/ElasticReconstruction/blob/master/FragmentOptimizer/OptApp.cpp
-/// http://vladlen.info/papers/elastic-fragments.pdf
-
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace slac {
+
+/// ControlGrid is a spatially hashed voxel grid used for non-rigid point cloud
+/// registration and TSDF integration.
+/// Each grid stores a map from the initial grid location to the deformed
+/// location.
+/// You can imagine a control grid as a jelly that is warped upon
+/// perturbation with its overall shape preserved.
+/// Reference:
+/// https://github.com/qianyizh/ElasticReconstruction/blob/master/FragmentOptimizer/OptApp.cpp
+/// http://vladlen.info/papers/elastic-fragments.pdf
 class ControlGrid {
 public:
-    static const std::string kAttrNbGridIdx;
-    static const std::string kAttrNbGridPointInterp;
-    static const std::string kAttrNbGridNormalInterp;
+    /// Attributes used to extend the point cloud to support neighbor lookup.
+    /// 8 neighbor grid index per point.
+    static const std::string kGrid8NbIndices;
+    /// 8 neighbor grid interpolation ratio for vertex per point.
+    static const std::string kGrid8NbVertexInterpRatios;
+    /// 8 neighbor grid interpolation ratio for normal per point.
+    static const std::string kGrid8NbNormalInterpRatios;
 
     /// Default constructor.
     ControlGrid() {}
@@ -74,41 +79,46 @@ public:
     /// a contiguous index map.
     void Compactify();
 
-    /// \return A 6-way neighbor grid map for all the active entries.
-    /// - addrs (N, ) Active indices in the buffer
-    /// - addrs_nb (N, 6) Neighbor indices (including non-allocated entries) for
-    /// the active entries.
-    /// - masks_nb (N, 6) corresponding neighbor masks.
+    /// Get the neighbor indices per grid to construct the regularizor.
+    /// \return A 6-way neighbor grid map for all the active entries of shape
+    /// (N, ).
+    /// - addrs Active indices in the buffer of shape (N, )
+    /// - addrs_nb Neighbor indices (including non-allocated entries) for
+    /// the active entries of shape (N, 6).
+    /// - masks_nb Corresponding neighbor masks of shape (N, 6) .
     std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
 
-    /// Parameterize an input point cloud with the control grids via indexing
-    /// and interpolation.
+    /// Parameterize an input point cloud by embedding each point in the grid
+    /// with 8 corners via indexing and interpolation.
     /// \return A PointCloud with parameterization attributes:
-    /// - neighbors: (8, ) Int64, index of 8 neighbor control grid points.
-    /// - ratios: (8, ) Float32, interpolation ratios of 8 neighbor control grid
-    /// points.
+    /// - neighbors: Index of 8 neighbor control grid points of shape (8, ) in
+    /// Int64.
+    /// - ratios: Interpolation ratios of 8 neighbor control grid
+    /// points of shape (8, ) in Float32.
     geometry::PointCloud Parameterize(const geometry::PointCloud& pcd);
 
-    /// Non-rigidly warp a point cloud using the control grid.
-    geometry::PointCloud Warp(const geometry::PointCloud& pcd);
+    /// Non-rigidly deform a point cloud using the control grid.
+    geometry::PointCloud Deform(const geometry::PointCloud& pcd);
 
-    /// Non-rigidly warp a depth image by
-    /// - unprojecting the image to a point cloud;
-    /// - warp the point cloud;
-    /// - project the warped point cloud back to the image.
-    geometry::Image Warp(const geometry::Image& depth,
-                         const core::Tensor& intrinsics,
-                         const core::Tensor& extrinsics,
-                         float depth_scale,
-                         float depth_max);
+    /// Non-rigidly deform a depth image by
+    /// - unprojecting the depth image to a point cloud;
+    /// - deform the point cloud;
+    /// - project the deformed point cloud back to the image.
+    geometry::Image Deform(const geometry::Image& depth,
+                           const core::Tensor& intrinsics,
+                           const core::Tensor& extrinsics,
+                           float depth_scale,
+                           float depth_max);
 
-    std::pair<geometry::Image, geometry::Image> Warp(
-            const geometry::Image& depth,
-            const geometry::Image& color,
-            const core::Tensor& intrinsics,
-            const core::Tensor& extrinsics,
-            float depth_scale,
-            float depth_max);
+    /// Non-rigidly deform an RGBD image by
+    /// - unprojecting the depth image to a point cloud;
+    /// - deform the point cloud;
+    /// - project the deformed point cloud back to the image.
+    geometry::RGBDImage Deform(const geometry::RGBDImage& rgbd,
+                               const core::Tensor& intrinsics,
+                               const core::Tensor& extrinsics,
+                               float depth_scale,
+                               float depth_max);
 
     /// Get control grid original positions directly from tensor keys.
     core::Tensor GetInitPositions() {
@@ -123,9 +133,14 @@ public:
     std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
     int64_t Size() { return ctr_hashmap_->Size(); }
 
+    core::Device GetDevice() { return device_; }
+
+public:
+    /// Anchor grid point index in the regularizor.
     int64_t anchor_idx_ = 0;
 
 private:
+    /// Grid size, typically much larger than the voxel size (e.g. 0.375m).
     float grid_size_;
 
     core::Device device_ = core::Device("CPU:0");

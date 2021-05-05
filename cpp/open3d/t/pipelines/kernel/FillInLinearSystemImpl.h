@@ -37,7 +37,7 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void FillInRigidAlignmentTermCUDA
 #else
 void FillInRigidAlignmentTermCPU
@@ -74,7 +74,7 @@ void FillInRigidAlignmentTermCPU
     const float *Ri_normal_ps_ptr =
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -157,7 +157,7 @@ void FillInRigidAlignmentTermCPU
     Atb.IndexSet({indices}, Atb_sub + Atb_local.View({12, 1}));
 }
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void FillInSLACAlignmentTermCUDA
 #else
 void FillInSLACAlignmentTermCPU
@@ -212,7 +212,7 @@ void FillInSLACAlignmentTermCPU
     const float *cgrid_ratio_qs_ptr =
             static_cast<const float *>(cgrid_ratio_qs.GetDataPtr());
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -277,7 +277,7 @@ void FillInSLACAlignmentTermCPU
         }
 
         // Not optimized; Switch to reduction if necessary.
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
         for (int ki = 0; ki < 60; ++ki) {
             for (int kj = 0; kj < 60; ++kj) {
                 float AtA_ij = J[ki] * J[kj];
@@ -353,16 +353,10 @@ inline void matmul3x3_3x3(float a00,
                           float &c22) {
     matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20,
                   c00, c10, c20);
-    // printf("matmul 0: %f %f %f %f %f %f %f %f %f x %f %f %f => %f %f %f\n",
-    // a00,
-    //        a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20, c00, c10,
-    //        c20);
     matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21,
                   c01, c11, c21);
-    // printf("matmul 1: %f %f %f\n", c01, c11, c21);
     matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b02, b12, b22,
                   c02, c12, c22);
-    // printf("matmul 2: %f %f %f\n", c02, c12, c22);
 }
 
 inline float det3x3(float m00,
@@ -378,7 +372,7 @@ inline float det3x3(float m00,
            m20 * (m01 * m12 - m02 * m11);
 }
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void FillInSLACRegularizerTermCUDA
 #else
 void FillInSLACRegularizerTermCPU
@@ -413,7 +407,7 @@ void FillInSLACRegularizerTermCPU
     const float *positions_curr_ptr =
             static_cast<const float *>(positions_curr.GetDataPtr());
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -449,9 +443,6 @@ void FillInSLACRegularizerTermCPU
                                              positions_curr_ptr[idx_k * 3 + 1],
                                      positions_curr_ptr[idx_i * 3 + 2] -
                                              positions_curr_ptr[idx_k * 3 + 2]};
-            // printf("Diff init: %f %f %f -> Diff curr: %f %f %f\n",
-            //        diff_ik_init[0], diff_ik_init[1], diff_ik_init[2],
-            //        diff_ik_curr[0], diff_ik_curr[1], diff_ik_curr[2]);
 
             // Build linear system by computing XY^T when formulating Y = RX
             // Y: curr
@@ -463,10 +454,6 @@ void FillInSLACRegularizerTermCPU
             }
             ++cnt;
         }
-        // printf("Cov: \n");
-        // printf("%f %f %f\n", cov[0][0], cov[0][1], cov[0][2]);
-        // printf("%f %f %f\n", cov[1][0], cov[1][1], cov[1][2]);
-        // printf("%f %f %f\n", cov[2][0], cov[2][1], cov[2][2]);
 
         if (cnt < 3) {
             return;
@@ -497,17 +484,10 @@ void FillInSLACRegularizerTermCPU
                       R[0][0], R[0][1], R[0][2],
                       R[1][0], R[1][1], R[1][2],
                       R[2][0], R[2][1], R[2][2]);
-        // printf("V:\n %f %f %f\n %f %f %f\n %f %f %f\n", V[0][0], V[0][1],
-        //        V[0][2], V[1][0], V[1][1], V[1][2], V[2][0], V[2][1], V[2][2]);
-        // printf("U:\n %f %f %f\n %f %f %f\n %f %f %f\n", U[0][0], U[0][1],
-        //        U[0][2], U[1][0], U[1][1], U[1][2], U[2][0], U[2][1], U[2][2]);
-        // printf("R:\n %f %f %f\n %f %f %f\n %f %f %f\n", R[0][0], R[0][1],
-        //        R[0][2], R[1][0], R[1][1], R[1][2], R[2][0], R[2][1], R[2][2]);
 
         float d = det3x3(R[0][0], R[0][1], R[0][2],
                          R[1][0], R[1][1], R[1][2],
                          R[2][0], R[2][1], R[2][2]);
-        // printf("det = %f\n", d);
         // clang-format on
 
         if (d < 0) {
@@ -527,10 +507,6 @@ void FillInSLACRegularizerTermCPU
         // Now we have R, we build Hessian and residuals
         // But first, we need to anchor a point
         if (idx_i == anchor_idx) {
-            printf("anchored at %d: (%f %f %f)\n", anchor_idx,
-                   positions_init_ptr[idx_i * 3 + 0],
-                   positions_init_ptr[idx_i * 3 + 1],
-                   positions_init_ptr[idx_i * 3 + 2]);
             R[0][0] = R[1][1] = R[2][2] = 1;
             R[0][1] = R[0][2] = R[1][0] = R[1][2] = R[2][0] = R[2][1] = 0;
         }
@@ -568,23 +544,15 @@ void FillInSLACRegularizerTermCPU
                               R_diff_ik_curr[2]);
                 // clang-format on
 
-                // printf("Diff init: %f %f %f -> Diff curr: %f %f %f\n",
-                //        diff_ik_init[0], diff_ik_init[1], diff_ik_init[2],
-                //        diff_ik_curr[0], diff_ik_curr[1], diff_ik_curr[2]);
-                // printf("R_diff_ik_init: %f %f %f\n", R_diff_ik_curr[0],
-                //        R_diff_ik_curr[1], R_diff_ik_curr[2]);
-
                 float local_r[3];
                 local_r[0] = diff_ik_curr[0] - R_diff_ik_curr[0];
                 local_r[1] = diff_ik_curr[1] - R_diff_ik_curr[1];
                 local_r[2] = diff_ik_curr[2] - R_diff_ik_curr[2];
-                // printf("Regularizor [%ld]: %f %f %f\n", workload_idx,
-                //        local_r[0], local_r[1], local_r[2]);
 
                 int offset_idx_i = 3 * idx_i + 6 * n_frags;
                 int offset_idx_k = 3 * idx_k + 6 * n_frags;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
                 // Update residual
                 atomicAdd(residual_ptr, weight * (local_r[0] * local_r[0] +
                                                   local_r[1] * local_r[1] +

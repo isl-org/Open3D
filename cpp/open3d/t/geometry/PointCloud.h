@@ -386,7 +386,8 @@ public:
     /// Convert to a legacy Open3D PointCloud.
     open3d::geometry::PointCloud ToLegacyPointCloud() const;
 
-    geometry::Image ProjectDepth(
+    /// Project a point cloud to a depth image.
+    geometry::Image ProjectToDepthImage(
             int width,
             int height,
             const core::Tensor &intrinsics,
@@ -395,7 +396,8 @@ public:
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
 
-    std::pair<geometry::Image, geometry::Image> ProjectRGBD(
+    /// Project a point cloud to an RGBD image.
+    geometry::RGBDImage ProjectToRGBDImage(
             int width,
             int height,
             const core::Tensor &intrinsics,

@@ -149,48 +149,21 @@ int main(int argc, char** argv) {
             Tensor extrinsic_t = core::eigen_converter::EigenMatrixToTensor(
                     pose.inverse().eval());
 
-            std::shared_ptr<geometry::Image> depth_legacy =
-                    io::CreateImageFromFile(depth_filenames[k]);
-            std::shared_ptr<geometry::Image> color_legacy =
-                    io::CreateImageFromFile(color_filenames[k]);
-
-            t::geometry::Image depth =
-                    t::geometry::Image::FromLegacyImage(*depth_legacy, device);
-            t::geometry::Image color =
-                    t::geometry::Image::FromLegacyImage(*color_legacy, device);
-
-            utility::LogInfo("Reprojecting");
-            t::geometry::Image depth_reproj, color_reproj;
-            std::tie(depth_reproj, color_reproj) =
-                    ctr_grid.Warp(depth, color, intrinsic_t, extrinsic_local_t,
-                                  depth_scale, max_depth);
-            utility::LogInfo("depth_reproj = {}", depth_reproj.ToString());
-            if (false) {
-                t::geometry::PointCloud pcd =
-                        t::geometry::PointCloud::CreateFromRGBDImage(
-                                t::geometry::RGBDImage(color, depth),
-                                intrinsic_t, extrinsic_t, depth_scale,
-                                max_depth);
-                auto pcd_old_legacy =
-                        std::make_shared<open3d::geometry::PointCloud>(
-                                pcd.ToLegacyPointCloud());
-
-                t::geometry::PointCloud pcd_reproj =
-                        t::geometry::PointCloud::CreateFromRGBDImage(
-                                t::geometry::RGBDImage(color_reproj,
-                                                       depth_reproj),
-                                intrinsic_t, extrinsic_t, depth_scale,
-                                max_depth);
-                auto pcd_legacy =
-                        std::make_shared<open3d::geometry::PointCloud>(
-                                pcd_reproj.ToLegacyPointCloud());
-                visualization::DrawGeometries({pcd_old_legacy, pcd_legacy});
-            }
+            auto depth =
+                    t::io::CreateImageFromFile(depth_filenames[k])->To(device);
+            auto color =
+                    t::io::CreateImageFromFile(color_filenames[k])->To(device);
+            t::geometry::RGBDImage rgbd(color, depth);
 
             utility::Timer timer;
             timer.Start();
-            voxel_grid.Integrate(depth_reproj, color_reproj, intrinsic_t,
-                                 extrinsic_t, depth_scale, max_depth);
+
+            t::geometry::RGBDImage rgbd_projected =
+                    ctr_grid.Deform(rgbd, intrinsic_t, extrinsic_local_t,
+                                    depth_scale, max_depth);
+            voxel_grid.Integrate(rgbd_projected.depth_, rgbd_projected.color_,
+                                 intrinsic_t, extrinsic_t, depth_scale,
+                                 max_depth);
             timer.Stop();
 
             ++k;

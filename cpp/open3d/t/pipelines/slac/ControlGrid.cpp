@@ -33,20 +33,18 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
-const std::string ControlGrid::kAttrNbGridIdx = "nb_grid_indices";
-const std::string ControlGrid::kAttrNbGridPointInterp =
-        "nb_grid_point_interp_ratios";
-const std::string ControlGrid::kAttrNbGridNormalInterp =
-        "nb_grid_normal_interp_ratios";
+const std::string ControlGrid::kGrid8NbIndices = "Grid8NbIndices";
+const std::string ControlGrid::kGrid8NbVertexInterpRatios =
+        "Grid8NbVertexInterpRatios";
+const std::string ControlGrid::kGrid8NbNormalInterpRatios =
+        "Grid8NbNormalInterpRatios";
 
 ControlGrid::ControlGrid(float grid_size,
                          int64_t grid_count,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     core::HashmapBackend backend = core::HashmapBackend::Default;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backend = core::HashmapBackend::Slab;
-    }
+
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
             grid_count, core::Dtype::Int32, core::Dtype::Float32,
             core::SizeVector{3}, core::SizeVector{3}, device, backend);
@@ -58,12 +56,8 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     core::HashmapBackend backend = core::HashmapBackend::Default;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backend = core::HashmapBackend::Slab;
-    }
-
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
+            2 * keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
             core::SizeVector{3}, core::SizeVector{3}, device, backend);
 
     core::Tensor addrs, masks;
@@ -106,10 +100,6 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     core::Tensor addrs, masks;
     ctr_hashmap_->Insert(keys_nb.IndexGet({masks_unique}),
                          vals_nb.IndexGet({masks_unique}), addrs, masks);
-
-    utility::LogInfo("n * 8 = {}, Hashmap size: {}, capacity: {}, bucket: {}",
-                     n * 8, ctr_hashmap_->Size(), ctr_hashmap_->GetCapacity(),
-                     ctr_hashmap_->GetBucketCount());
 }
 
 void ControlGrid::Compactify() {
@@ -141,9 +131,6 @@ void ControlGrid::Compactify() {
     anchor_idx_ =
             active_addrs[active_keys_indexed[active_keys_indexed.size() / 2](3)]
                     .Item<int>();
-    utility::LogInfo("{}",
-                     ctr_hashmap_->GetKeyTensor()[anchor_idx_].ToString());
-    std::cout << anchor_idx_ << "\n";
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
@@ -243,7 +230,7 @@ geometry::PointCloud ControlGrid::Parameterize(
     // (n, 8)
     point_ratios_nb = point_ratios_nb.T().Contiguous();
 
-    /// TODO: allow entries with less than 8 neighbors, probably in a
+    /// TODO(wei): allow entries with less than 8 neighbors, probably in a
     /// kernel. Now we simply discard them and only accepts points with all
     /// 8 neighbors in the control grid map.
     core::Tensor valid_mask =
@@ -251,9 +238,9 @@ geometry::PointCloud ControlGrid::Parameterize(
 
     geometry::PointCloud pcd_with_params = pcd;
     pcd_with_params.SetPoints(pcd.GetPoints().IndexGet({valid_mask}));
-    pcd_with_params.SetPointAttr(kAttrNbGridIdx,
+    pcd_with_params.SetPointAttr(kGrid8NbIndices,
                                  addrs_nb.IndexGet({valid_mask}));
-    pcd_with_params.SetPointAttr(kAttrNbGridPointInterp,
+    pcd_with_params.SetPointAttr(kGrid8NbVertexInterpRatios,
                                  point_ratios_nb.IndexGet({valid_mask}));
 
     if (pcd.HasPointColors()) {
@@ -264,19 +251,19 @@ geometry::PointCloud ControlGrid::Parameterize(
         pcd_with_params.SetPointNormals(
                 pcd.GetPointNormals().IndexGet({valid_mask}));
         normal_ratios_nb = normal_ratios_nb.T().Contiguous();
-        pcd_with_params.SetPointAttr(kAttrNbGridNormalInterp,
+        pcd_with_params.SetPointAttr(kGrid8NbNormalInterpRatios,
                                      normal_ratios_nb.IndexGet({valid_mask}));
     }
 
     return pcd_with_params;
 }
 
-geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
-    if (!pcd.HasPointAttr(kAttrNbGridIdx) ||
-        !pcd.HasPointAttr(kAttrNbGridPointInterp)) {
+geometry::PointCloud ControlGrid::Deform(const geometry::PointCloud& pcd) {
+    if (!pcd.HasPointAttr(kGrid8NbIndices) ||
+        !pcd.HasPointAttr(kGrid8NbVertexInterpRatios)) {
         utility::LogError(
                 "Please use ControlGrid.Parameterize to obtain attributes "
-                "regarding neighbor grids before calling Warp");
+                "regarding neighbor grids before calling Deform");
     }
 
     // N x 3
@@ -285,7 +272,7 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     // N x 8, we have ensured that every neighbor is valid through
     // grid.Parameterize
     core::Tensor nb_grid_indices =
-            pcd.GetPointAttr(kAttrNbGridIdx).To(core::Dtype::Int64);
+            pcd.GetPointAttr(kGrid8NbIndices).To(core::Dtype::Int64);
     core::Tensor nb_grid_positions =
             grid_positions.IndexGet({nb_grid_indices.View({-1})})
                     .View({-1, 8, 3});
@@ -293,7 +280,7 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     // (N, 8, 3) x (N, 8, 1) => Reduce on dim 1 => (N, 3) position
     // interpolation.
     core::Tensor nb_grid_point_interp =
-            pcd.GetPointAttr(kAttrNbGridPointInterp);
+            pcd.GetPointAttr(kGrid8NbVertexInterpRatios);
     core::Tensor interp_positions =
             (nb_grid_positions * nb_grid_point_interp.View({-1, 8, 1}))
                     .Sum({1});
@@ -304,7 +291,7 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
         // (N, 8, 3) x (N, 8, 1) => Reduce on dim 1 => (N, 3) normal
         // interpolation.
         core::Tensor nb_grid_normal_interp =
-                pcd.GetPointAttr(kAttrNbGridNormalInterp);
+                pcd.GetPointAttr(kGrid8NbNormalInterpRatios);
         core::Tensor interp_normals =
                 (nb_grid_positions * nb_grid_normal_interp.View({-1, 8, 1}))
                         .Sum({1});
@@ -320,50 +307,38 @@ geometry::PointCloud ControlGrid::Warp(const geometry::PointCloud& pcd) {
     return interp_pcd;
 }
 
-geometry::Image ControlGrid::Warp(const geometry::Image& depth,
-                                  const core::Tensor& intrinsics,
-                                  const core::Tensor& extrinsics,
-                                  float depth_scale,
-                                  float depth_max) {
+geometry::Image ControlGrid::Deform(const geometry::Image& depth,
+                                    const core::Tensor& intrinsics,
+                                    const core::Tensor& extrinsics,
+                                    float depth_scale,
+                                    float depth_max) {
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max);
 
     geometry::PointCloud pcd_param = Parameterize(pcd);
-    geometry::PointCloud pcd_warped = Warp(pcd_param);
+    geometry::PointCloud pcd_deformed = Deform(pcd_param);
 
-    return geometry::Image(
-            pcd_warped
-                    .ProjectDepth(depth.GetCols(), depth.GetRows(), intrinsics,
-                                  extrinsics, depth_scale, depth_max)
-                    .AsTensor()
-                    .To(core::Dtype::UInt16));
+    return pcd_deformed.ProjectToDepthImage(depth.GetCols(), depth.GetRows(),
+                                            intrinsics, extrinsics, depth_scale,
+                                            depth_max);
 }
 
-std::pair<geometry::Image, geometry::Image> ControlGrid::Warp(
-        const geometry::Image& depth,
-        const geometry::Image& color,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max) {
-    utility::LogInfo("Warp: CreateFromRGBD");
+geometry::RGBDImage ControlGrid::Deform(const geometry::RGBDImage& rgbd,
+                                        const core::Tensor& intrinsics,
+                                        const core::Tensor& extrinsics,
+                                        float depth_scale,
+                                        float depth_max) {
     geometry::PointCloud pcd = geometry::PointCloud::CreateFromRGBDImage(
-            geometry::RGBDImage(color, depth), intrinsics, extrinsics,
-            depth_scale, depth_max);
+            rgbd, intrinsics, extrinsics, depth_scale, depth_max);
 
-    utility::LogInfo("Warp: Parameterize");
     geometry::PointCloud pcd_param = Parameterize(pcd);
-    geometry::PointCloud pcd_warped = Warp(pcd_param);
+    geometry::PointCloud pcd_deformed = Deform(pcd_param);
 
-    utility::LogInfo("Warp: ProjectRGBD");
-    auto rgbd_warped =
-            pcd_warped.ProjectRGBD(depth.GetCols(), depth.GetRows(), intrinsics,
-                                   extrinsics, depth_scale, depth_max);
+    int cols = rgbd.depth_.GetCols();
+    int rows = rgbd.color_.GetRows();
 
-    utility::LogInfo("Warp: Make pair");
-    return std::make_pair(geometry::Image(rgbd_warped.first.AsTensor().To(
-                                  core::Dtype::UInt16)),
-                          geometry::Image(rgbd_warped.second.AsTensor()));
+    return pcd_deformed.ProjectToRGBDImage(cols, rows, intrinsics, extrinsics,
+                                           depth_scale, depth_max);
 }
 
 }  // namespace slac
