@@ -204,8 +204,6 @@ WebRTCServer& WebRTCServer::GetInstance() {
 }
 
 void WebRTCServer::Run() {
-    utility::LogInfo("WebRTCServer::Run()");
-
     // Ensure Application::Initialize() is called before this.
     impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
 
@@ -231,6 +229,7 @@ void WebRTCServer::Run() {
     // running as a standalone application, and is disabled when running in
     // Jupyter.
     if (impl_->http_handshake_enabled_) {
+        utility::LogInfo("WebRTC HTTP server handshake mode enabled.");
         std::vector<std::string> options;
         options.push_back("document_root");
         options.push_back(impl_->web_root_);
@@ -254,13 +253,15 @@ void WebRTCServer::Run() {
                     impl_->peer_connection_manager_->GetHttpApi();
 
             // Main loop for Civet server.
-            utility::LogInfo("HTTP Listen at: {}.", impl_->http_address_);
+            utility::LogInfo("Open3D WebVisualizer is serving at {}.",
+                             impl_->http_address_);
             HttpServerRequestHandler civet_server(func, options);
             thread->Run();
         } catch (const CivetException& ex) {
             utility::LogError("Cannot start Civet server: {}", ex.what());
         }
     } else {
+        utility::LogInfo("WebRTC Jupyter handshake mode enabled.");
         thread->Run();
     }
     rtc::CleanupSSL();
