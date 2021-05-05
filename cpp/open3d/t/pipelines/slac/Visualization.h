@@ -63,6 +63,7 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
                                     ControlGrid& ctr_grid);
 
 void VisualizeGridDeformation(ControlGrid& cgrid);
+
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

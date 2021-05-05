@@ -42,23 +42,23 @@ using PoseGraph = open3d::pipelines::registration::PoseGraph;
 
 struct SLACOptimizerParams {
     /// Number of iterations.
-    int max_iterations_ = 5;
+    int max_iterations_;
 
     /// Voxel size to downsample input point cloud.
-    /// Note: it is not control grid resolution, which is fixed to be 0.375.
-    float voxel_size_ = 0.05;
+    /// Note: it does not control grid resolution, which is fixed to be 0.375.
+    float voxel_size_;
 
     /// Distance threshold to filter inconsistent correspondences.
-    float distance_threshold_ = 0.07;
+    float distance_threshold_;
 
     /// Fitness threshold to filter inconsistent pairs.
-    float fitness_threshold_ = 0.3;
+    float fitness_threshold_;
 
     /// Weight of the regularizor.
-    float regularizor_weight_ = 1;
+    float regularizor_weight_;
 
     /// Device to use.
-    std::string device_ = "CPU:0";
+    core::Device device_;
 
     /// Relative directory to store SLAC results in the dataset folder.
     std::string slac_folder_ = "";
@@ -67,6 +67,42 @@ struct SLACOptimizerParams {
             return fmt::format("{}/original", slac_folder_);
         }
         return fmt::format("{}/{:.3f}", slac_folder_, voxel_size_);
+    }
+
+    /// Default constructor.
+    ///
+    /// \param max_iterations Number of iterations. [Default: 5].
+    /// \param voxel_size Voxel size to downsample input point cloud.
+    /// [Default: 0.05].
+    /// \param distance_threshold Distance threshold to filter inconsistent
+    /// correspondences. [Default: 0.07].
+    /// \param fitness_threshold Fitness threshold to filter inconsistent pairs.
+    /// [Default: 0.3].
+    /// \param regularizor_weight Weight of the regularizor. [Default: 1].
+    /// \param device Device to use. [Default: CPU:0].
+    /// \param slac_folder Relative directory to store SLAC results in the
+    /// dataset folder. [Default: ""].
+    SLACOptimizerParams(int max_iterations = 5,
+                        float voxel_size = 0.05,
+                        float distance_threshold = 0.07,
+                        float fitness_threshold = 0.3,
+                        float regularizor_weight = 1,
+                        core::Device device = core::Device("CPU:0"),
+                        std::string slac_folder = "") {
+        if (fitness_threshold < 0) {
+            utility::LogError("fitness threshold must be positive.");
+        }
+        if (distance_threshold < 0) {
+            utility::LogError("distance threshold must be positive.");
+        }
+
+        max_iterations_ = max_iterations;
+        voxel_size_ = voxel_size;
+        distance_threshold_ = distance_threshold;
+        fitness_threshold_ = fitness_threshold;
+        regularizor_weight_ = regularizor_weight;
+        device_ = device;
+        slac_folder_ = slac_folder;
     }
 };
 
@@ -77,21 +113,50 @@ struct SLACDebugOption {
     /// The node id to start debugging with. Smaller nodes will be skipped for
     /// visualization.
     int debug_start_node_idx_ = 0;
+
+    /// Default Constructor.
+    ///
+    /// \param debug Enable debug. [Default: False].
+    /// \param debug_start_node_idx The node id to start debugging with. Smaller
+    /// nodes will be skipped for visualization. [Default: 0].
+    SLACDebugOption(const bool debug = false,
+                    const int debug_start_node_idx = 0) {
+        if (debug_start_node_idx < 0) {
+            utility::LogError("debug_start_node_idx must be positive integer.");
+        }
+
+        debug_ = debug;
+        debug_start_node_idx_ = debug_start_node_idx;
+    }
+
+    /// Parameterized Constructor.
+    ///
+    /// \param debug_start_node_idx The node id to start debugging with. Smaller
+    /// nodes will be skipped for visualization. Debug is enabled by default.
+    SLACDebugOption(const int debug_start_node_idx) {
+        if (debug_start_node_idx < 0) {
+            utility::LogError("debug_start_node_idx must be positive integer.");
+        }
+
+        debug_ = true;
+        debug_start_node_idx_ = debug_start_node_idx;
+    }
 };
 
 /// \brief Read pose graph containing loop closures and odometry to compute
-/// correspondences. Uses aggressive pruning -- reject any suspicious pair.
+/// putative correspondence between tcpd_i and tpcd_j pointclouds.
 ///
 /// \param fnames_processed Vector of filenames for processed pointcloud
 /// fragments.
 ///  \param fragment_pose_graph Legacy PoseGraph for pointcloud
 /// fragments.
-/// \param option SLACOptimizerParams containing the configurations.
+/// \param params SLACOptimizerParams containing the configurations.
 /// \param option SLACDebugOption containing the debug options.
 void SaveCorrespondencesForPointClouds(
         const std::vector<std::string>& fnames_processed,
         const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerParams& params);
+        const SLACOptimizerParams& params = SLACOptimizerParams(),
+        const SLACDebugOption& debug_option = SLACDebugOption());
 
 /// \brief Simultaneous Localization and Calibration: Self-Calibration of
 /// Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun Estimate a
@@ -100,19 +165,19 @@ void SaveCorrespondencesForPointClouds(
 ///
 /// \param fragment_fnames Vector of filenames for pointcloud fragments.
 /// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
-/// \param option SLACOptimizerOption containing the configurations.
+/// \param params SLACOptimizerOption containing the configurations.
 /// \return pair of registraion::PoseGraph and slac::ControlGrid.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerParams& params,
-        const SLACDebugOption& debug_option);
+        const SLACOptimizerParams& params = SLACOptimizerParams(),
+        const SLACDebugOption& debug_option = SLACDebugOption());
 
 PoseGraph RunRigidOptimizerForFragments(
         const std::vector<std::string>& fragment_fnames,
         const PoseGraph& fragment_pose_graph,
-        const SLACOptimizerParams& params,
-        const SLACDebugOption& debug_option);
+        const SLACOptimizerParams& params = SLACOptimizerParams(),
+        const SLACDebugOption& debug_option = SLACDebugOption());
 
 }  // namespace slac
 }  // namespace pipelines
