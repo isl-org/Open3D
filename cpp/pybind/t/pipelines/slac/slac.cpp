@@ -36,11 +36,17 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
-void pybind_slac_classes() {
+void pybind_slac_classes(py::module &m) {
     py::class_<SLACOptimizerParams> slac_optimizer_params(
             m, "slac_optimizer_params", "SLAC optimzation parameters.");
     py::detail::bind_copy_functions<SLACOptimizerParams>(slac_optimizer_params);
     slac_optimizer_params
+            .def(py::init<const int, const float, const float, const float,
+                          const float, const core::Device, const std::string>(),
+                 "max_iterations"_a = 5, "voxel_size"_a = 0.05,
+                 "distance_threshold"_a = 0.07, "fitness_threshold"_a = 0.3,
+                 "regularizor_weight"_a = 1, "device"_a = core::Device("CPU:0"),
+                 "slac_folder"_a = "")
             .def_readwrite("max_iterations",
                            &SLACOptimizerParams::max_iterations_,
                            "Number of iterations.")
@@ -54,7 +60,7 @@ void pybind_slac_classes() {
                            &SLACOptimizerParams::fitness_threshold_,
                            "Fitness threshold to filter inconsistent pairs.")
             .def_readwrite("regularizor_weight",
-                           &SLACOptimizerParams::regularizor_weight,
+                           &SLACOptimizerParams::regularizor_weight_,
                            "Weight of the regularizor.")
             .def_readwrite("device", &SLACOptimizerParams::device_,
                            "Device to use.")
@@ -69,7 +75,7 @@ void pybind_slac_classes() {
                         "device={}, slac_folder={}].",
                         params.max_iterations_, params.max_iterations_,
                         params.voxel_size_, params.distance_threshold_,
-                        params.fitness_threshold_, params.regularizor_weight,
+                        params.fitness_threshold_, params.regularizor_weight_,
                         params.device_.ToString(), params.slac_folder_);
             });
 
@@ -77,9 +83,12 @@ void pybind_slac_classes() {
                                                   "SLAC debug options.");
     py::detail::bind_copy_functions<SLACDebugOption>(slac_debug_option);
     slac_debug_option
+            .def(py::init<const bool, const int>(), "debug"_a = false,
+                 "debug_start_node_idx"_a = 0)
+            .def(py::init<const int>(), "debug_start_node_idx"_a = 0)
             .def_readwrite("debug", &SLACDebugOption::debug_, "Enable debug.")
             .def_readwrite("debug_start_node_idx",
-                           &SLACOptimizerParams::debug_start_node_idx_,
+                           &SLACDebugOption::debug_start_node_idx_,
                            "The node id to start debugging with. Smaller nodes "
                            "will be skipped for visualization.")
             .def("__repr__", [](const SLACDebugOption &debug_option) {
@@ -97,7 +106,7 @@ static const std::unordered_map<std::string, std::string>
                 {"fnames_processed",
                  "List of filenames (str) for pre-processed pointcloud "
                  "fragments."},
-                {"fragment_fnames",
+                {"fragment_filenames",
                  "List of filenames (str) for pointcloud fragments."},
                 {"fragment_pose_graph", "PoseGraph for pointcloud fragments"},
                 {"params",
@@ -123,14 +132,14 @@ void pybind_slac_methods(py::module &m) {
           "Estimate a shared control grid for all fragments for scene "
           "reconstruction, implemented in "
           "https://github.com/qianyizh/ElasticReconstruction. ",
-          "fragment_fnames"_a, "fragment_pose_graph"_a,
+          "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 
     m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
-          "RunRigidOptimizerForFragments.", "fragment_fnames"_a,
+          "RunRigidOptimizerForFragments.", "fragment_filenames"_a,
           "fragment_pose_graph"_a, "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "run_rigid_optimize_for_fragments",

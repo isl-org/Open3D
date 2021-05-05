@@ -82,13 +82,13 @@ struct SLACOptimizerParams {
     /// \param device Device to use. [Default: CPU:0].
     /// \param slac_folder Relative directory to store SLAC results in the
     /// dataset folder. [Default: ""].
-    SLACOptimizerParams(int max_iterations = 5,
-                        float voxel_size = 0.05,
-                        float distance_threshold = 0.07,
-                        float fitness_threshold = 0.3,
-                        float regularizor_weight = 1,
-                        core::Device device = core::Device("CPU:0"),
-                        std::string slac_folder = "") {
+    SLACOptimizerParams(const int max_iterations = 5,
+                        const float voxel_size = 0.05,
+                        const float distance_threshold = 0.07,
+                        const float fitness_threshold = 0.3,
+                        const float regularizor_weight = 1,
+                        const core::Device device = core::Device("CPU:0"),
+                        const std::string slac_folder = "") {
         if (fitness_threshold < 0) {
             utility::LogError("fitness threshold must be positive.");
         }
@@ -163,26 +163,26 @@ void SaveCorrespondencesForPointClouds(
 /// shared control grid for all fragments for scene reconstruction, implemented
 /// in https://github.com/qianyizh/ElasticReconstruction.
 ///
-/// \param fragment_fnames Vector of filenames for pointcloud fragments.
+/// \param fragment_filenames Vector of filenames for pointcloud fragments.
 /// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
 /// \param params SLACOptimizerOption containing the configurations.
 /// \param debug_option SLACDebugOption containing the debug options.
 /// \return pair of optimized registraion::PoseGraph and slac::ControlGrid.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
-        const std::vector<std::string>& fragment_fnames,
+        const std::vector<std::string>& fragment_filenames,
         const PoseGraph& fragment_pose_graph,
         const SLACOptimizerParams& params = SLACOptimizerParams(),
         const SLACDebugOption& debug_option = SLACDebugOption());
 
 /// \brief RunRigidOptimizerForFragments
 ///
-/// \param fragment_fnames Vector of filenames for pointcloud fragments.
+/// \param fragment_filenames Vector of filenames for pointcloud fragments.
 /// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
 /// \param params SLACOptimizerOption containing the configurations.
 /// \param debug_option SLACDebugOption containing the debug options.
 /// \return optimized registraion::PoseGraph.
 PoseGraph RunRigidOptimizerForFragments(
-        const std::vector<std::string>& fragment_fnames,
+        const std::vector<std::string>& fragment_filenames,
         const PoseGraph& fragment_pose_graph,
         const SLACOptimizerParams& params = SLACOptimizerParams(),
         const SLACDebugOption& debug_option = SLACDebugOption());
