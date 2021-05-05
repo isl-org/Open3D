@@ -255,6 +255,10 @@ void WebRTCServer::Run() {
             // Main loop for Civet server.
             utility::LogInfo("Open3D WebVisualizer is serving at {}.",
                              impl_->http_address_);
+            utility::LogInfo(
+                    "You may set the WEBRTC_IP and WEBRTC_PORT environment "
+                    "variable to change the server address and port.",
+                    impl_->http_address_);
             HttpServerRequestHandler civet_server(func, options);
             thread->Run();
         } catch (const CivetException& ex) {
