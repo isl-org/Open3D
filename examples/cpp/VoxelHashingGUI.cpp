@@ -228,19 +228,19 @@ public:
                                     ->GetScene()
                                     ->AddGeometry("points", pcd_placeholder,
                                                   mat);
-                        });
 
-                this->trajectory_ =
-                        std::make_shared<camera::PinholeCameraTrajectory>();
-                float voxel_size = prop_values_.voxel_size;
-                this->model_ =
-                        std::make_shared<t::pipelines::voxelhashing::Model>(
-                                voxel_size, voxel_size * 6, 16,
-                                prop_values_.bucket_count,
-                                core::Tensor::Eye(4, core::Dtype::Float64,
-                                                  core::Device("CPU:0")),
-                                core::Device(device_str_));
-                this->is_started_ = true;
+                            this->trajectory_ = std::make_shared<
+                                    camera::PinholeCameraTrajectory>();
+                            float voxel_size = prop_values_.voxel_size;
+                            this->model_ = std::make_shared<
+                                    t::pipelines::voxelhashing::Model>(
+                                    voxel_size, voxel_size * 6, 16,
+                                    prop_values_.bucket_count,
+                                    core::Tensor::Eye(4, core::Dtype::Float64,
+                                                      core::Device("CPU:0")),
+                                    core::Device(device_str_));
+                            this->is_started_ = true;
+                        });
             }
             this->is_running_ = !(this->is_running_);
             this->adjustable_props_->SetEnabled(true);
