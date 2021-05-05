@@ -254,7 +254,7 @@ const Json::Value PeerConnectionManager::GetIceServers() {
         Json::Value server;
         Json::Value urlList(Json::arrayValue);
         IceServer srv = GetIceServerFromUrl(ice_server);
-        RTC_LOG(INFO) << "ICE URL:" << srv.url;
+        utility::LogInfo("ICE URL: {}", srv.url);
         urlList.append(srv.url);
         server["urls"] = urlList;
         if (srv.user.length() > 0) server["username"] = srv.user;
@@ -324,8 +324,10 @@ const Json::Value PeerConnectionManager::CreateOffer(
         const std::string &peerid,
         const std::string &window_uid,
         const std::string &options) {
-    RTC_LOG(INFO) << __FUNCTION__ << " video:" << window_uid
-                  << " options:" << options;
+    utility::LogInfo(
+            "[PeerConnectionManager::CreateOffer] peerid: {}, window_uid; {}, "
+            "options: {}",
+            peerid, window_uid, options);
     Json::Value offer;
 
     PeerConnectionObserver *peer_connection_observer =
@@ -384,8 +386,10 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                               const std::string &window_uid,
                                               const std::string &options,
                                               const Json::Value &jmessage) {
-    RTC_LOG(INFO) << __FUNCTION__ << " video:" << window_uid
-                  << " options:" << options;
+    utility::LogInfo(
+            "[PeerConnectionManager::Call] peerid: {}, window_uid; {}, "
+            "options: {}, jmessage: {}.",
+            peerid, window_uid, options, jmessage);
 
     Json::Value answer;
 
