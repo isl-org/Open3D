@@ -183,10 +183,12 @@ class PeerConnectionManager {
 
         // DataChannelObserver interface
         virtual void OnStateChange() {
-            utility::LogInfo("[{}] channel: {}, state: {}.",
-                             __PRETTY_FUNCTION__, data_channel_->label(),
-                             webrtc::DataChannelInterface::DataStateString(
-                                     data_channel_->state()));
+            utility::LogDebug(
+                    "DataChannelObserver::OnStateChange channel: {}, state: "
+                    "{}.",
+                    data_channel_->label(),
+                    webrtc::DataChannelInterface::DataStateString(
+                            data_channel_->state()));
             std::string msg(data_channel_->label() + " " +
                             webrtc::DataChannelInterface::DataStateString(
                                     data_channel_->state()));
@@ -196,8 +198,8 @@ class PeerConnectionManager {
         virtual void OnMessage(const webrtc::DataBuffer& buffer) {
             std::string msg((const char*)buffer.data.data(),
                             buffer.data.size());
-            utility::LogInfo("[{}] channel: {}, msg: {}.", __PRETTY_FUNCTION__,
-                             data_channel_->label(), msg);
+            utility::LogDebug("DataChannelObserver::OnMessage: {}, msg: {}.",
+                              data_channel_->label(), msg);
             webrtc_server_->OnDataChannelMessage(msg);
         }
 
