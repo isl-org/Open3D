@@ -37,10 +37,6 @@ namespace core {
 class Tensor;
 }
 
-namespace geometry {
-class Image;
-}  // namespace geometry
-
 namespace visualization {
 namespace gui {
 
