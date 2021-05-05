@@ -163,18 +163,7 @@ void WebRTCServer::OnDataChannelMessage(const std::string& message) {
 
 void WebRTCServer::OnFrame(const std::string& window_uid,
                            const std::shared_ptr<core::Tensor>& im) {
-    // Get the WebRTC stream that corresponds to the window_uid.
-    rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
-            impl_->peer_connection_manager_->GetVideoTrackSource(window_uid);
-
-    // video_track_source is nullptr if the server is running but no client is
-    // connected.
-    if (video_track_source) {
-        // TODO: this OnFrame(im); is a blocking call. Do we need to handle
-        // OnFrame in a separate thread? e.g. attach to a queue of frames, even
-        // if the queue size is just 1.
-        video_track_source->OnFrame(im);
-    }
+    impl_->peer_connection_manager_->OnFrame(window_uid, im);
 }
 
 void WebRTCServer::SendInitFrames(const std::string& window_uid) {

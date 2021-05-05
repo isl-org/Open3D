@@ -811,6 +811,21 @@ void PeerConnectionManager::CloseWindowConnections(
     }
 }
 
+void PeerConnectionManager::OnFrame(const std::string &window_uid,
+                                    const std::shared_ptr<core::Tensor> &im) {
+    // Get the WebRTC stream that corresponds to the window_uid.
+    // video_track_source is nullptr if the server is running but no client is
+    // connected.
+    rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
+            GetVideoTrackSource(window_uid);
+    if (video_track_source) {
+        // TODO: this OnFrame(im); is a blocking call. Do we need to handle
+        // OnFrame in a separate thread? e.g. attach to a queue of frames, even
+        // if the queue size is just 1.
+        video_track_source->OnFrame(im);
+    }
+}
+
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d
