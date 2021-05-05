@@ -373,7 +373,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                         remote_future = remote_promise.get_future();
                 if (remote_future.wait_for(std::chrono::milliseconds(5000)) ==
                     std::future_status::ready) {
-                    utility::LogInfo("remote_description is ready.");
+                    utility::LogDebug("remote_description is ready.");
                 } else {
                     utility::LogWarning("remote_description is nullptr.");
                 }
@@ -451,7 +451,7 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
         auto it = peerid_to_connection_.find(peerid);
         if (it != peerid_to_connection_.end()) {
             pc_observer = it->second;
-            utility::LogInfo("Remove PeerConnection peerid: {}", peerid);
+            utility::LogDebug("Remove PeerConnection peerid: {}", peerid);
             peerid_to_connection_.erase(it);
         }
         if (peerid_to_window_uid_.count(peerid) != 0) {
@@ -478,15 +478,15 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                 std::string window_uid = stream->id();
                 bool still_used = this->WindowStillUsed(window_uid);
                 if (!still_used) {
-                    utility::LogInfo("HangUp stream is no more used {}.",
-                                     window_uid);
+                    utility::LogDebug("HangUp stream is no more used {}.",
+                                      window_uid);
                     std::lock_guard<std::mutex> mlock(
                             window_uid_to_track_source_mutex_);
                     auto it = window_uid_to_track_source_.find(window_uid);
                     if (it != window_uid_to_track_source_.end()) {
                         window_uid_to_track_source_.erase(it);
                     }
-                    utility::LogInfo("HangUp stream closed {}.", window_uid);
+                    utility::LogDebug("HangUp stream closed {}.", window_uid);
                 }
 
                 peer_connection->RemoveStream(stream);
@@ -511,8 +511,6 @@ PeerConnectionManager::GetHttpApi() {
 // Get list ICE candidate associated with a PeerConnection.
 const Json::Value PeerConnectionManager::GetIceCandidateList(
         const std::string &peerid) {
-    utility::LogInfo("[{}] peerid: {}.", __FUNCTION__, peerid);
-
     Json::Value value;
     std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
     auto it = peerid_to_connection_.find(peerid);
@@ -560,9 +558,9 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     std::unique_ptr<cricket::PortAllocator> port_allocator(
             new cricket::BasicPortAllocator(new rtc::BasicNetworkManager()));
     port_allocator->SetPortRange(min_port, max_port);
-    utility::LogInfo("CreatePeerConnection webrtcPortRange: {}:{}.", min_port,
-                     max_port);
-    utility::LogInfo("CreatePeerConnection peerid: {}.", peerid);
+    utility::LogDebug("CreatePeerConnection webrtcPortRange: {}:{}.", min_port,
+                      max_port);
+    utility::LogDebug("CreatePeerConnection peerid: {}.", peerid);
     PeerConnectionObserver *obs =
             new PeerConnectionObserver(this->webrtc_server_, this, peerid,
                                        config, std::move(port_allocator));
@@ -678,7 +676,7 @@ bool PeerConnectionManager::AddStreams(
                 if (!peer_connection->AddStream(stream)) {
                     utility::LogError("Adding stream to PeerConnection failed");
                 } else {
-                    utility::LogInfo("Stream added to PeerConnection.");
+                    utility::LogDebug("Stream added to PeerConnection.");
                     ret = true;
                 }
             }
@@ -693,9 +691,6 @@ bool PeerConnectionManager::AddStreams(
 // ICE callback.
 void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
         const webrtc::IceCandidateInterface *candidate) {
-    utility::LogInfo("PeerConnectionObserver::OnIceCandidate: {}.",
-                     candidate->sdp_mline_index());
-
     std::string sdp;
     if (!candidate->ToString(&sdp)) {
         utility::LogError("Failed to serialize candidate.");
