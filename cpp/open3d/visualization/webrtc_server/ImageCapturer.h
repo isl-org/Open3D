@@ -94,7 +94,6 @@ public:
     }
 
     void OnFrame(const std::shared_ptr<core::Tensor>& frame) final override {
-        utility::LogInfoConsole("ImageTrackSource::OnFrame called");
         capturer_->OnCaptureResult(frame);
     }
 
