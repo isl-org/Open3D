@@ -204,42 +204,36 @@ WebRTCServer& WebRTCServer::GetInstance() {
 }
 
 void WebRTCServer::Run() {
-    std::cout << "WebRTCServer::Run()" << std::endl;
+    utility::LogInfo("WebRTCServer::Run()");
 
+    // Ensure Application::Initialize() is called before this.
     impl_->web_root_ = Impl::GetEnvWebRTCWebRoot();
-    utility::LogInfo("impl_->web_root_: {}", impl_->web_root_);
-
-    const std::string web_root = impl_->web_root_;
-    const std::string http_address = impl_->http_address_;
-    const std::vector<std::string> stun_urls{"stun:stun.l.google.com:19302"};
 
     // Logging settings.
     // src/rtc_base/logging.h: LS_VERBOSE, LS_ERROR
     rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_ERROR);
-    // rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_VERBOSE);
-    std::cout << "Logger level:" << rtc::LogMessage::GetLogToDebug()
-              << std::endl;
+
     rtc::LogMessage::LogTimestamps();
     rtc::LogMessage::LogThreads();
 
-    // WebRTC server (a PeerConnectionManager).
+    // PeerConnectionManager manages all WebRTC connections.
     rtc::Thread* thread = rtc::Thread::Current();
     rtc::InitializeSSL();
-    std::list<std::string> ice_servers(stun_urls.begin(), stun_urls.end());
+    std::list<std::string> ice_servers{"stun:stun.l.google.com:19302"};
     Json::Value config;
-
     impl_->peer_connection_manager_ = std::make_unique<PeerConnectionManager>(
             this, ice_servers, config["urls"], ".*", "");
-    if (impl_->peer_connection_manager_->InitializePeerConnection()) {
-        std::cout << "InitializePeerConnection() succeeded." << std::endl;
-    } else {
-        throw std::runtime_error("InitializePeerConnection() failed.");
+    if (!impl_->peer_connection_manager_->InitializePeerConnection()) {
+        utility::LogError("InitializePeerConnection() failed.");
     }
-    // CivetWeb http server.
+
+    // CivetWeb server is used for WebRTC handshake. This is enabled when
+    // running as a standalone application, and is disabled when running in
+    // Jupyter.
     if (impl_->http_handshake_enabled_) {
         std::vector<std::string> options;
         options.push_back("document_root");
-        options.push_back(web_root);
+        options.push_back(impl_->web_root_);
         options.push_back("enable_directory_listing");
         options.push_back("no");
         options.push_back("additional_header");
@@ -247,7 +241,7 @@ void WebRTCServer::Run() {
         options.push_back("access_control_allow_origin");
         options.push_back("*");
         options.push_back("listening_ports");
-        options.push_back(http_address);
+        options.push_back(impl_->http_address_);
         options.push_back("enable_keep_alive");
         options.push_back("yes");
         options.push_back("keep_alive_timeout_ms");
@@ -255,24 +249,21 @@ void WebRTCServer::Run() {
         options.push_back("decode_url");
         options.push_back("no");
         try {
-            // PeerConnectionManager provides a set of callback functions for
-            // HttpServerRequestHandler.
+            // PeerConnectionManager provides callbacks for the Civet server.
             std::map<std::string, HttpServerRequestHandler::HttpFunction> func =
                     impl_->peer_connection_manager_->GetHttpApi();
 
-            // Main loop.
-            std::cout << "HTTP Listen at " << http_address << std::endl;
+            // Main loop for Civet server.
+            utility::LogInfo("HTTP Listen at: {}.", impl_->http_address_);
             HttpServerRequestHandler civet_server(func, options);
             thread->Run();
         } catch (const CivetException& ex) {
-            std::cout << "Cannot Initialize start HTTP server exception:"
-                      << ex.what() << std::endl;
+            utility::LogError("Cannot start Civet server: {}", ex.what());
         }
     } else {
         thread->Run();
     }
     rtc::CleanupSSL();
-    std::cout << "Exit" << std::endl;
 }
 
 std::string WebRTCServer::CallHttpRequest(const std::string& entry_point,
