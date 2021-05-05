@@ -182,15 +182,6 @@ PeerConnectionManager::PeerConnectionManager(
         return this->Call(peerid, url, options, in);
     };
 
-    func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
-                                  const Json::Value &in) -> Json::Value {
-        std::string peerid;
-        if (req_info->query_string) {
-            CivetServer::getParam(req_info->query_string, "peerid", peerid);
-        }
-        return this->HangUp(peerid);
-    };
-
     func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
@@ -209,6 +200,15 @@ PeerConnectionManager::PeerConnectionManager(
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
         }
         return this->AddIceCandidate(peerid, in);
+    };
+
+    func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
+                                  const Json::Value &in) -> Json::Value {
+        std::string peerid;
+        if (req_info->query_string) {
+            CivetServer::getParam(req_info->query_string, "peerid", peerid);
+        }
+        return this->HangUp(peerid);
     };
 }
 
