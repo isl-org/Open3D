@@ -64,7 +64,6 @@ public:
         bool ret = false;
         const struct mg_request_info *req_info = mg_get_request_info(conn);
 
-        std::cout << "uri:" << req_info->request_uri << std::endl;
         utility::LogInfoConsole("RequestHandler ##########################");
         utility::LogInfoConsole("request_uri: {}", req_info->request_uri);
         utility::LogInfoConsole("local_uri: {}", req_info->local_uri);
@@ -87,7 +86,7 @@ public:
         // Fill out.
         if (out.isNull() == false) {
             std::string answer(Json::writeString(writer_builder_, out));
-            std::cout << "answer:" << answer << std::endl;
+            utility::LogInfo("Answer: {}", answer);
 
             mg_printf(conn, "HTTP/1.1 200 OK\r\n");
             mg_printf(conn, "Access-Control-Allow-Origin: *\r\n");
@@ -144,8 +143,8 @@ private:
             std::string errors;
             if (!reader->parse(body.c_str(), body.c_str() + body.size(),
                                &json_message, &errors)) {
-                std::cout << "Received unknown message:" << body
-                          << " errors:" << errors << std::endl;
+                utility::LogWarning("Received unknown message: {}, errors: {}.",
+                                    body, errors);
             }
         }
         return json_message;
