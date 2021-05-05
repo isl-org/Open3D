@@ -94,10 +94,10 @@ void EmptyBox() {
                   {{"Load example mesh", new_window_action}});
 }
 
-void BoxWithOjects() {
+void BoxWithObjects() {
     std::shared_ptr<geometry::TriangleMesh> mesh = io::CreateMeshFromFile(
             "../../../examples/test_data/monkey/monkey.obj");
-    AddDrawWindow({mesh}, "Open3D BoxWithOjects", 800, 600);
+    AddDrawWindow({mesh}, "Open3D BoxWithObjects", 800, 600);
 
     // const double pc_rad = 1.0;
     // const double r = 0.4;
@@ -130,7 +130,7 @@ void BoxWithOjects() {
     //         {sphere_unlit, sphere_colored_unlit, sphere_lit,
     //         sphere_colored_lit,
     //          big_bbox, sphere_bbox, lines, lines_colored},
-    //         "Open3D BoxWithOjects", 640, 480);
+    //         "Open3D BoxWithObjects", 640, 480);
 }
 
 int main(int argc, char **argv) {
@@ -146,6 +146,6 @@ int main(int argc, char **argv) {
     // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     EmptyBox();
-    BoxWithOjects();
+    BoxWithObjects();
     visualization::gui::Application::GetInstance().Run();
 }
