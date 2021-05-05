@@ -64,19 +64,6 @@ public:
         bool ret = false;
         const struct mg_request_info *req_info = mg_get_request_info(conn);
 
-        utility::LogInfo("RequestHandler ##########################");
-        utility::LogInfo("request_uri: {}", req_info->request_uri);
-        utility::LogInfo("local_uri: {}", req_info->local_uri);
-        utility::LogInfo("request_method: {}", req_info->request_method);
-        if (req_info->query_string) {
-            utility::LogInfo("query_string: {}", req_info->query_string);
-        } else {
-            utility::LogInfo("query_string: {}", "nullptr");
-        }
-        // utility::LogInfo("remote_addr: {}", req_info->remote_addr);
-        utility::LogInfo("content_length: {}", req_info->content_length);
-        utility::LogInfo("#########################################");
-
         // Read input.
         Json::Value in = this->getInputMessage(req_info, conn);
 
@@ -84,20 +71,25 @@ public:
         Json::Value out(func_(req_info, in));
 
         // Fill out.
+        std::string answer = "";
         if (out.isNull() == false) {
-            std::string answer(Json::writeString(writer_builder_, out));
-            utility::LogInfo("Answer: {}", answer);
-
+            answer = Json::writeString(writer_builder_, out);
             mg_printf(conn, "HTTP/1.1 200 OK\r\n");
             mg_printf(conn, "Access-Control-Allow-Origin: *\r\n");
             mg_printf(conn, "Content-Type: text/plain\r\n");
             mg_printf(conn, "Content-Length: %zd\r\n", answer.size());
             mg_printf(conn, "\r\n");
             mg_write(conn, answer.c_str(), answer.size());
-
             ret = true;
         }
 
+        utility::LogDebug(
+                "request_uri: {}, local_uri: {}, request_method: {}, "
+                "query_string: {}, content_length, answer: {}.",
+                req_info->request_uri, req_info->local_uri,
+                req_info->request_method, req_info->request_method,
+                req_info->query_string ? req_info->query_string : "nullptr",
+                req_info->content_length, answer);
         return ret;
     }
     bool handleGet(CivetServer *server, struct mg_connection *conn) override {
