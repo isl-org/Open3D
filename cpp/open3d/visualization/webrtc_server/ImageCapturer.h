@@ -23,6 +23,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+//
+// This header is private. It shall be hidden from Open3D's public API. Do not
+// put this in Open3D.h.in.
 
 #pragma once
 

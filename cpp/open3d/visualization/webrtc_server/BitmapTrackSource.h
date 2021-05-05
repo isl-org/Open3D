@@ -34,6 +34,9 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 // ----------------------------------------------------------------------------
+//
+// This header is private. It shall be hidden from Open3D's public API. Do not
+// put this in Open3D.h.in.
 
 #pragma once
 

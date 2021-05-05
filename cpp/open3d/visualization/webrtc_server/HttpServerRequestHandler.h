@@ -31,6 +31,10 @@
 // support, and with no warranty, express or implied, as to its usefulness for
 // any purpose.
 // ----------------------------------------------------------------------------
+//
+// This header is private. It shall be hidden from Open3D's public API. Do not
+// put this in Open3D.h.in.
+
 #pragma once
 
 #include <CivetServer.h>
