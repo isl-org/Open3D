@@ -125,7 +125,7 @@ BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
         rendering::EngineInstance::EnableHeadless();
 #else
         utility::LogWarning(
-                "BitmapWindowSystem(): HEADLESS is only supported on Linux");
+                "BitmapWindowSystem(): HEADLESS is only supported on Linux.");
 #endif
     }
 }
