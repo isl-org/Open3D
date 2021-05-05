@@ -100,10 +100,6 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     core::Tensor addrs, masks;
     ctr_hashmap_->Insert(keys_nb.IndexGet({masks_unique}),
                          vals_nb.IndexGet({masks_unique}), addrs, masks);
-
-    utility::LogInfo("n * 8 = {}, Hashmap size: {}, capacity: {}, bucket: {}",
-                     n * 8, ctr_hashmap_->Size(), ctr_hashmap_->GetCapacity(),
-                     ctr_hashmap_->GetBucketCount());
 }
 
 void ControlGrid::Compactify() {

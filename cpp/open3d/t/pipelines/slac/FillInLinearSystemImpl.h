@@ -79,7 +79,7 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                params.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
-            utility::LogWarning("Correspondence {} {} not processed!", i, j);
+            utility::LogWarning("Correspondence {} {} skipped!", i, j);
             continue;
         }
         Tensor corres_ij = Tensor::Load(corres_fname).To(device);
@@ -178,7 +178,7 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
         std::string corres_fname = fmt::format("{}/{:03d}_{:03d}.npy",
                                                params.GetSubfolderName(), i, j);
         if (!utility::filesystem::FileExists(corres_fname)) {
-            utility::LogWarning("Correspondence {} {} not processed!", i, j);
+            utility::LogWarning("Correspondence {} {} skipped!", i, j);
             continue;
         }
         Tensor corres_ij = Tensor::Load(corres_fname).To(device);

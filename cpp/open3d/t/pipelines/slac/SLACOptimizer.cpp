@@ -359,14 +359,15 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         FillInSLACAlignmentTerm(AtA, Atb, residual_data, ctr_grid, fnames_down,
                                 pose_graph_update, params, debug_option);
 
-        utility::LogInfo("Residual Data = {}", residual_data[0].Item<float>());
+        utility::LogInfo("Alignment loss = {}", residual_data[0].Item<float>());
 
         core::Tensor residual_reg =
                 core::Tensor::Zeros({1}, core::Dtype::Float32, device);
         FillInSLACRegularizerTerm(AtA, Atb, residual_reg, ctr_grid,
                                   pose_graph_update.nodes_.size(), params,
                                   debug_option);
-        utility::LogInfo("Residual Reg = {}", residual_reg[0].Item<float>());
+        utility::LogInfo("Regularizor loss = {}",
+                         residual_reg[0].Item<float>());
 
         core::Tensor delta = AtA.Solve(Atb.Neg());
 
@@ -377,7 +378,6 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
 
         UpdatePoses(pose_graph_update, delta_poses);
         UpdateControlGrid(ctr_grid, delta_cgrids);
-        VisualizeGridDeformation(ctr_grid);
     }
     return std::make_pair(pose_graph_update, ctr_grid);
 }
@@ -422,7 +422,7 @@ PoseGraph RunRigidOptimizerForFragments(const std::vector<std::string>& fnames,
 
         FillInRigidAlignmentTerm(AtA, Atb, residual, fnames_down,
                                  pose_graph_update, params, debug_option);
-        utility::LogInfo("Residual = {}", residual[0].Item<float>());
+        utility::LogInfo("Loss = {}", residual[0].Item<float>());
 
         core::Tensor delta = AtA.Solve(Atb.Neg());
         UpdatePoses(pose_graph_update, delta);
