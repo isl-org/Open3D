@@ -105,7 +105,7 @@ Image Image::To(core::Dtype dtype,
             {core::Dtype::UInt16},  {core::Dtype::Int32},
             {core::Dtype::Float32}, {core::Dtype::Float64}};
 
-    [[maybe_unused]] double scale = 1.0;
+    double scale = 1.0;
     if (!scale_.has_value() &&
         (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64)) {
         if (GetDtype() == core::Dtype::UInt8) {
@@ -122,7 +122,7 @@ Image Image::To(core::Dtype dtype,
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
         std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
-        // TODO: Tensor based Op for saturate_cast / LinearTransform
+        // TODO(Sameer): Tensor based Op for saturate_cast / LinearTransform
         // NPP does not expose a useful API, so as a workaround, move data to
         // CPU and use IPP.
         auto device = data_.GetDevice();
@@ -155,6 +155,9 @@ Image Image::To(core::Dtype dtype,
             IPP_CALL(ipp::To, data_, dst_im.data_, scale, offset);
         }
     } else {
+        // Suppress unused-but-set-variable warning if IPPICV is not available
+        (void)scale;
+
         utility::LogError(
                 "Conversion from {} to {} on device {} is not implemented!",
                 GetDtype().ToString(), dtype.ToString(),
@@ -461,10 +464,29 @@ Image Image::PyrDown() const {
     return blur.Resize(0.5, InterpType::Nearest);
 }
 
+Image Image::PyrDownDepth(float diff_threshold, float invalid_fill) const {
+    if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
+        utility::LogError(
+                "Invalid shape, expected a 1 channel image, but got ({}, {}, "
+                "{})",
+                GetRows(), GetCols(), GetChannels());
+    }
+    if (GetDtype() != core::Dtype::Float32) {
+        utility::LogError("Expected a Float32 image, but got {}",
+                          GetDtype().ToString());
+    }
+
+    core::Tensor dst_tensor = core::Tensor::Empty(
+            {GetRows() / 2, GetCols() / 2, 1}, GetDtype(), GetDevice());
+    t::geometry::kernel::image::PyrDownDepth(AsTensor(), dst_tensor,
+                                             diff_threshold, invalid_fill);
+    return t::geometry::Image(dst_tensor);
+}
+
 Image Image::ClipTransform(float scale,
                            float min_value,
                            float max_value,
-                           float clip_fill) {
+                           float clip_fill) const {
     if (GetRows() <= 0 || GetCols() <= 0 || GetChannels() != 1) {
         utility::LogError(
                 "Invalid shape, expected a 1 channel image, but got ({}, {}, "

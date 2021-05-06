@@ -85,7 +85,8 @@ odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
             t::geometry::RGBDImage(raycast_frame.GetDataAsImage("color"),
                                    raycast_frame.GetDataAsImage("depth")),
             raycast_frame.GetIntrinsics(), identity, depth_scale, depth_max,
-            {6, 3, 1}, odometry::Method::PointToPlane,
+            std::vector<odometry::OdometryConvergenceCriteria>{6, 3, 1},
+            odometry::Method::PointToPlane,
             odometry::OdometryLossParams(depth_diff));
 }
 

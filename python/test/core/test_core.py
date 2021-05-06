@@ -223,6 +223,13 @@ def test_tensor_constructor(dtype, device):
     o3_t = o3d.core.Tensor(np_t, o3d.core.Dtype.Bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
+    # Scalar Boolean
+    np_t = np.array(True)
+    o3_t = o3d.core.Tensor(True, dtype=None, device=device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+    o3_t = o3d.core.Tensor(True, dtype=o3d.core.Dtype.Bool, device=device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
 
 @pytest.mark.parametrize("device", list_devices())
 def test_arange(device):
@@ -545,6 +552,13 @@ def test_setitem(device):
     o3_fill_t = o3d.core.Tensor(np_fill_t, device=device)
     np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = np_fill_t
     o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = o3_fill_t
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+
+    # Scalar boolean set item
+    np_t = np.eye(4, dtype=np.bool8)
+    o3_t = o3d.core.Tensor.eye(4, dtype=o3d.core.Dtype.Bool)
+    np_t[2, 2] = False
+    o3_t[2, 2] = False
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
 

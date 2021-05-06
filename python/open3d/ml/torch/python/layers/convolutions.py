@@ -89,14 +89,14 @@ class ContinuousConv(torch.nn.Module):
         coordinate_mapping: The mapping that is applied to the input coordinates.
           One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving',
           'identity'.
+
             * 'ball_to_cube_radial' uses radial stretching to map a sphere to
               a cube.
             * 'ball_to_cube_volume_preserving' is using a more expensive volume
               preserving mapping to map a sphere to a cube.
             * 'identity' no mapping is applied to the coordinates.
 
-        interpolation: One of 'linear', 'linear_border',
-          'nearest_neighbor'.
+        interpolation: One of 'linear', 'linear_border', 'nearest_neighbor'.
             * 'linear' is trilinear interpolation with coordinate clamping.
             * 'linear_border' uses a zero border if outside the range.
             * 'nearest_neighbor' uses the neares neighbor instead of interpolation.
@@ -218,7 +218,6 @@ class ContinuousConv(torch.nn.Module):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point.
 
@@ -259,7 +258,6 @@ class ContinuousConv(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
 
         if isinstance(extents, (float, int)):
@@ -458,7 +456,6 @@ class SparseConv(torch.nn.Module):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point.
 
@@ -481,7 +478,6 @@ class SparseConv(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
         if isinstance(voxel_size, (float, int)):
             voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
@@ -637,7 +633,6 @@ class SparseConvTranspose(torch.nn.Module):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point.
 
@@ -660,7 +655,6 @@ class SparseConvTranspose(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
         if isinstance(voxel_size, (float, int)):
             voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
