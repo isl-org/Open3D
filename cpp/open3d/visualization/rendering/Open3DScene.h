@@ -148,9 +148,7 @@ private:
 private:
     Renderer& renderer_;
     SceneHandle scene_;
-    SceneHandle window_scene_;
     ViewHandle view_;
-    ViewHandle window_view_;
 
     Eigen::Vector4f background_color;
     LOD lod_ = LOD::HIGH_DETAIL;

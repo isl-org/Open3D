@@ -35,6 +35,7 @@ namespace t {
 namespace geometry {
 namespace kernel {
 namespace pointcloud {
+
 void Unproject(const core::Tensor& depth,
                utility::optional<std::reference_wrapper<const core::Tensor>>
                        image_colors,
@@ -45,6 +46,16 @@ void Unproject(const core::Tensor& depth,
                float depth_scale,
                float depth_max,
                int64_t stride);
+
+void Project(
+        core::Tensor& depth,
+        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max);
 
 void UnprojectCPU(
         const core::Tensor& depth,
@@ -58,6 +69,16 @@ void UnprojectCPU(
         float depth_max,
         int64_t stride);
 
+void ProjectCPU(
+        core::Tensor& depth,
+        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max);
+
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
@@ -70,7 +91,18 @@ void UnprojectCUDA(
         float depth_scale,
         float depth_max,
         int64_t stride);
+
+void ProjectCUDA(
+        core::Tensor& depth,
+        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max);
 #endif
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

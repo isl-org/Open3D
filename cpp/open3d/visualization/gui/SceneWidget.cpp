@@ -1139,6 +1139,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         }
 
         impl_->controls_->SetPickNeedsRedraw();
+        ForceRedraw();
     }
 
     // The scene will be rendered to texture, so all we need to do is
