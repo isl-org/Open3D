@@ -90,6 +90,33 @@ Conda
     `the official documentation <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`_.
 
 
+Docker
+------
+
+If you want to install the Open3D Python packages in a docker conatiner you will
+need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/intel-isl/Open3D/issues/3388>`__.
+
+A minimal ``Dockerfile`` looks like this:
+
+.. code-block:: dockerfile
+
+    # This could also be another ubuntu or debian based distributions
+    FROM ubuntu:20.04
+
+    # Install Open3D system dependencies and pip
+    RUN apt-get update && apt-get install --no-install-recommends -y \
+        libgl1 \
+        libgomp1 \
+        libusb-1.0-0 \
+        python3-pip \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Open3D from the pypi repositories
+    RUN python3 -m pip install --no-cache-dir --upgrade open3d
+
+.. note:: If you need ``CUDA`` support, follow these `directions.
+    <https://docs.docker.com/config/containers/resource_constraints/#gpu>`__
+
 Try it
 ------
 
