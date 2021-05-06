@@ -47,7 +47,8 @@ using t::geometry::PointCloud;
 static PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0")) {
-    auto pcd = io::CreatePointCloudFromFile(fname);
+    std::shared_ptr<open3d::geometry::PointCloud> pcd =
+            open3d::io::CreatePointCloudFromFile(fname);
     return PointCloud::FromLegacyPointCloud(*pcd, core::Dtype::Float32, device);
 }
 
