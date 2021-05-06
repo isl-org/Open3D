@@ -74,10 +74,10 @@ void pybind_slac_classes(py::module &m) {
                         "voxel_size={:e}, distance_threshold={:e}, "
                         "fitness_threshold={:e}, regularizor_weight={:e}, "
                         "device={}, slac_folder={}].",
-                        params.max_iterations_, params.max_iterations_,
-                        params.voxel_size_, params.distance_threshold_,
-                        params.fitness_threshold_, params.regularizor_weight_,
-                        params.device_.ToString(), params.slac_folder_);
+                        params.max_iterations_, params.voxel_size_,
+                        params.distance_threshold_, params.fitness_threshold_,
+                        params.regularizor_weight_, params.device_.ToString(),
+                        params.slac_folder_);
             });
 
     py::class_<SLACDebugOption> slac_debug_option(m, "slac_debug_option",
@@ -121,8 +121,9 @@ void pybind_slac_methods(py::module &m) {
           "Read pose graph containing loop closures and odometry to compute "
           "correspondences. Uses aggressive pruning -- reject any suspicious "
           "pair.",
-          "fnames_processed"_a, "fragment_pose_graph"_a, "params"_a,
-          "debug_option"_a);
+          "fnames_processed"_a, "fragment_pose_graph"_a,
+          "params"_a = SLACOptimizerParams(),
+          "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "save_correspondences_for_pointclouds",
                                  map_shared_argument_docstrings);
 
@@ -132,16 +133,18 @@ void pybind_slac_methods(py::module &m) {
           "Estimate a shared control grid for all fragments for scene "
           "reconstruction, implemented in "
           "https://github.com/qianyizh/ElasticReconstruction. ",
-          "fragment_filenames"_a, "fragment_pose_graph"_a, "params"_a,
-          "debug_option"_a);
+          "fragment_filenames"_a, "fragment_pose_graph"_a,
+          "params"_a = SLACOptimizerParams(),
+          "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 
     m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
           "Extended ICP to simultaneously align multiple point clouds with "
           "dense pairwise point-to-plane distances.",
-          "fragment_filenames"_a, "fragment_pose_graph"_a, "params"_a,
-          "debug_option"_a);
+          "fragment_filenames"_a, "fragment_pose_graph"_a,
+          "params"_a = SLACOptimizerParams(),
+          "debug_option"_a = SLACDebugOption());
     docstring::FunctionDocInject(m, "run_rigid_optimize_for_fragments",
                                  map_shared_argument_docstrings);
 }

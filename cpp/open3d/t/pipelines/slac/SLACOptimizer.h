@@ -45,7 +45,7 @@ struct SLACOptimizerParams {
     int max_iterations_;
 
     /// Voxel size to downsample input point cloud.
-    /// Note: it does not control grid resolution, which is fixed to be 0.375.
+    /// Note: it is not control grid resolution, which is fixed to be 0.375.
     float voxel_size_;
 
     /// Distance threshold to filter inconsistent correspondences.
@@ -144,7 +144,7 @@ struct SLACDebugOption {
 };
 
 /// \brief Read pose graph containing loop closures and odometry to compute
-/// putative correspondence between tcpd_i and tpcd_j pointclouds.
+/// putative correspondences between pairs of pointclouds.
 ///
 /// \param fnames_processed Vector of filenames for processed pointcloud
 /// fragments.
