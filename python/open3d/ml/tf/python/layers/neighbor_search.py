@@ -36,7 +36,6 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
     This layer computes the neighbors for a fixed radius on a point cloud.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -53,7 +52,6 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of
@@ -168,7 +166,6 @@ class RadiusSearch(tf.keras.layers.Layer):
     having an individual radius.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -185,7 +182,6 @@ class RadiusSearch(tf.keras.layers.Layer):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of the
@@ -281,7 +277,6 @@ class KNNSearch(tf.keras.layers.Layer):
     This layer computes the k nearest neighbors for each query point.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -302,7 +297,6 @@ class KNNSearch(tf.keras.layers.Layer):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of the
@@ -335,7 +329,6 @@ class KNNSearch(tf.keras.layers.Layer):
         """This function computes the k nearest neighbors for each query point.
 
         Arguments:
-
           points: The 3D positions of the input points. *This argument must be
             given as a positional argument!*
 
