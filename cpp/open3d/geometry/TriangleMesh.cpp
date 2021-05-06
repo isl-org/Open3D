@@ -1495,7 +1495,7 @@ void TriangleMesh::RemoveTrianglesByIndex(
         const std::vector<size_t> &triangle_indices) {
     std::vector<bool> triangle_mask(triangles_.size(), false);
     for (auto tidx : triangle_indices) {
-        if (tidx >= 0 && tidx < triangles_.size()) {
+        if (tidx < triangles_.size()) {
             triangle_mask[tidx] = true;
         } else {
             utility::LogWarning(
@@ -1535,7 +1535,7 @@ void TriangleMesh::RemoveVerticesByIndex(
         const std::vector<size_t> &vertex_indices) {
     std::vector<bool> vertex_mask(vertices_.size(), false);
     for (auto vidx : vertex_indices) {
-        if (vidx >= 0 && vidx < vertices_.size()) {
+        if (vidx < vertices_.size()) {
             vertex_mask[vidx] = true;
         } else {
             utility::LogWarning(
@@ -1606,7 +1606,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
 
     std::vector<int> new_vert_ind(vertices_.size(), -1);
     for (const auto &sel_vidx : indices) {
-        if (sel_vidx < 0 || sel_vidx >= vertices_.size()) {
+        if (sel_vidx >= vertices_.size()) {
             utility::LogWarning(
                     "[SelectByIndex] indices contains index {} out of range. "
                     "It is ignored.",

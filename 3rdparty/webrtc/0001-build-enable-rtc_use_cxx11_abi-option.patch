@@ -1,0 +1,29 @@
+From c47a1b6c0faa2206395647cb83cb1a0542101847 Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Wed, 7 Apr 2021 16:17:39 -0700
+Subject: [PATCH] build: enable rtc_use_cxx11_abi option
+
+---
+ config/BUILDCONFIG.gn | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/config/BUILDCONFIG.gn b/config/BUILDCONFIG.gn
+index 0ef73ab2b..5ab677e27 100644
+--- a/config/BUILDCONFIG.gn
++++ b/config/BUILDCONFIG.gn
+@@ -163,6 +163,12 @@ declare_args() {
+   is_component_build = is_debug && current_os != "ios"
+ }
+ 
++declare_args() {
++  # Set to false to define "_GLIBCXX_USE_CXX11_ABI=0". If set to true, the
++  # default will be used, which corresponds to the new CXX11 ABI.
++  rtc_use_cxx11_abi = true
++}
++
+ assert(!(is_debug && is_official_build), "Can't do official debug builds")
+ 
+ # ==============================================================================
+-- 
+2.17.1
+

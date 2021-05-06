@@ -289,8 +289,6 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
             ASSERT_THROW(im.FilterBilateral(3, 5, 5), std::runtime_error);
         } else {
             im = im.FilterBilateral(3, 5, 5);
-            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {5, 5, 1},
@@ -370,8 +368,6 @@ TEST_P(ImagePermuteDevices, FilterGaussian) {
             ASSERT_THROW(im.FilterGaussian(3), std::runtime_error);
         } else {
             im = im.FilterGaussian(3);
-            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {5, 5, 1},
@@ -464,8 +460,6 @@ TEST_P(ImagePermuteDevices, Filter) {
             ASSERT_THROW(im.Filter(kernel), std::runtime_error);
         } else {
             im = im.Filter(kernel);
-            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {5, 5, 1},
@@ -519,7 +513,6 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
                     output_dx_ref, {5, 5, 1}, core::Dtype::Float32, device)));
             EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
                     output_dy_ref, {5, 5, 1}, core::Dtype::Float32, device)));
-            utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
         }
     }
 
@@ -544,7 +537,6 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
                     core::Tensor(output_dy_ref, {5, 5, 1}, core::Dtype::Float32,
                                  device)
                             .To(core::Dtype::Int16)));
-            utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
         }
     }
 }
@@ -612,7 +604,8 @@ TEST_P(ImagePermuteDevices, Resize) {
         } else {
             t::geometry::Image im_low =
                     im.Resize(0.5, t::geometry::Image::InterpType::Super);
-            utility::LogInfo("{}", im_low.AsTensor().View({3, 3}).ToString());
+            utility::LogInfo("Super: {}",
+                             im_low.AsTensor().View({3, 3}).ToString());
 
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im_low.AsTensor().AllClose(
@@ -626,16 +619,16 @@ TEST_P(ImagePermuteDevices, Resize) {
                 // Check output in the CI to see if other inteprolations works
                 // with other platforms
                 im_low = im.Resize(0.5, t::geometry::Image::InterpType::Linear);
-                utility::LogInfo("Linear: {}",
+                utility::LogInfo("Linear(impl. dependent): {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
 
                 im_low = im.Resize(0.5, t::geometry::Image::InterpType::Cubic);
-                utility::LogInfo("Cubic: {}",
+                utility::LogInfo("Cubic(impl. dependent): {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
 
                 im_low =
                         im.Resize(0.5, t::geometry::Image::InterpType::Lanczos);
-                utility::LogInfo("Lanczos: {}",
+                utility::LogInfo("Lanczos(impl. dependent): {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
             }
         }
@@ -704,8 +697,6 @@ TEST_P(ImagePermuteDevices, PyrDown) {
             ASSERT_THROW(im.PyrDown(), std::runtime_error);
         } else {
             im = im.PyrDown();
-            utility::LogInfo("{}", im.AsTensor().View({3, 3}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {3, 3, 1},

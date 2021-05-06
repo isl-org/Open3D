@@ -23,9 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-"""
-I/O, attributes, and processing for different datasets.
-"""
+"""I/O, attributes, and processing for different datasets."""
 
 import os as _os
 from open3d import _build_config

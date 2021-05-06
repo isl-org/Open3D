@@ -329,6 +329,12 @@ void Application::VerifyIsInitialized() {
             "element.");
 }
 
+bool Application::UsingNativeWindows() const {
+    auto os_ws =
+            std::dynamic_pointer_cast<GLFWWindowSystem>(impl_->window_system_);
+    return (os_ws != nullptr);
+}
+
 WindowSystem &Application::GetWindowSystem() const {
     return *impl_->window_system_;
 }
