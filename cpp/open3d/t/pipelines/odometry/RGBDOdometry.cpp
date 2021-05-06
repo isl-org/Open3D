@@ -146,8 +146,6 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
 
     Tensor intrinsics_pyr = intrinsics;
 
-    core::Tensor intrinsics_pyr = intrinsics;
-
     // Create image pyramid.
     for (int64_t i = 0; i < n_levels; ++i) {
         Image source_vertex_map =
