@@ -90,7 +90,7 @@ static std::vector<std::string> PreprocessPointClouds(
 // Therefore, for target_indexed_correspondences = {2, 3, -1 , 4}.
 // (source, target) correspondences are: {{0, 2}, {1, 3}, {3, 4}}.
 //
-// For convinience to access
+// For convenience to access
 // source and target pointcloud indexed by their correspondences, this
 // function converts {N, 1} shaped target_indices correspondences to {C, 2}
 // shaped CorrespondenceSet, where C is the number of correspondences such that
@@ -331,7 +331,11 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
     SaveCorrespondencesForPointClouds(fnames_down, pose_graph, params,
                                       debug_option);
 
-    // First initialize ctr_grid
+    // First initialize the ctr_grid.
+    // grid size = 3.0 / 8: recommended by the original implementation
+    // https://github.com/qianyizh/ElasticReconstruction
+    // grid count = 8000: empirical value, will be increased dynamically if
+    // exceeded.
     ControlGrid ctr_grid(3.0 / 8, 8000, device);
     InitializeControlGrid(ctr_grid, fnames_down);
     ctr_grid.Compactify();
@@ -366,7 +370,7 @@ std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         FillInSLACRegularizerTerm(AtA, Atb, residual_reg, ctr_grid,
                                   pose_graph_update.nodes_.size(), params,
                                   debug_option);
-        utility::LogInfo("Regularizor loss = {}",
+        utility::LogInfo("Regularizer loss = {}",
                          residual_reg[0].Item<float>());
 
         core::Tensor delta = AtA.Solve(Atb.Neg());

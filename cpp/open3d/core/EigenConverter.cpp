@@ -164,45 +164,6 @@ core::Tensor EigenVector3iVectorToTensor(
     return EigenVector3xVectorToTensor(values, dtype, device);
 }
 
-template <typename T>
-static core::Tensor EigenVector2xVectorToTensor(
-        const std::vector<Eigen::Matrix<T, 2, 1>> &values,
-        core::Dtype dtype,
-        const core::Device &device) {
-    // Unlike TensorToEigenVector3xVector, more types can be supported here. To
-    // keep consistency, we only allow double and int.
-    static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
-                  "Only supports double and int (Vector3d and Vector3i).");
-    // Init CPU Tensor.
-    int64_t num_values = static_cast<int64_t>(values.size());
-    core::Tensor tensor_cpu =
-            core::Tensor::Empty({num_values, 2}, dtype, Device("CPU:0"));
-
-    // Fill Tensor. This takes care of dtype conversion at the same time.
-    core::Indexer indexer({tensor_cpu}, tensor_cpu,
-                          core::DtypePolicy::ALL_SAME);
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        core::kernel::CPULauncher::LaunchIndexFillKernel(
-                indexer, [&](void *ptr, int64_t workload_idx) {
-                    // Fills the flattened tensor tensor_cpu[:] with dtype
-                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
-                    // element's (i%3)-th coordinate value.
-                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
-                            values[workload_idx / 2](workload_idx % 2));
-                });
-    });
-
-    // Copy Tensor to device if necessary.
-    return tensor_cpu.To(device);
-}
-
-core::Tensor EigenVector2iVectorToTensor(
-        const std::vector<Eigen::Vector2i> &values,
-        core::Dtype dtype,
-        const core::Device &device) {
-    return EigenVector2xVectorToTensor(values, dtype, device);
-}
-
 }  // namespace eigen_converter
 }  // namespace core
 }  // namespace open3d

@@ -38,8 +38,13 @@ void PrintHelp() {
     utility::LogInfo(">    SLAC [dataset_folder] [options]");
     utility::LogInfo("--method [default: rigid, optional: slac]");
     utility::LogInfo("--voxel_size [default: 0.05]");
+    utility::LogInfo("--weight [default: 1]");
+    utility::LogInfo("--distance_threshold [default: 0.07]");
+    utility::LogInfo("--fitness_threshold [default: 0.3]");
+    utility::LogInfo("--iterations [default: 5]");
     utility::LogInfo("--device [default: CPU:0]");
     utility::LogInfo("--debug");
+    utility::LogInfo("--debug_node [default: 0]");
     // clang-format on
     utility::LogInfo("");
 }
@@ -51,7 +56,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Color and depth
+    // Expect reconstruction system has finished running
     std::string dataset_folder = std::string(argv[1]);
     std::string fragment_folder = dataset_folder + "/fragments";
     std::string scene_folder = dataset_folder + "/scene";
@@ -60,19 +65,31 @@ int main(int argc, char** argv) {
     std::vector<std::string> fragment_fnames;
     utility::filesystem::ListFilesInDirectoryWithExtension(
             fragment_folder, "ply", fragment_fnames);
+    if (fragment_fnames.size() == 0) {
+        utility::LogError(
+                "No fragment found in {}, please make sure the "
+                "reconstruction_system has "
+                "finished running on the dataset.",
+                fragment_folder);
+    }
     std::sort(fragment_fnames.begin(), fragment_fnames.end());
 
     std::string pose_graph_fname =
             scene_folder + "/refined_registration_optimized.json";
     auto pose_graph = io::CreatePoseGraphFromFile(pose_graph_fname);
+    if (pose_graph == nullptr) {
+        utility::LogError(
+                "{} not found, please make sure the reconstruction_system has "
+                "finished running on the dataset.",
+                pose_graph_fname);
+    }
 
+    // Parameters
     auto params = t::pipelines::slac::SLACOptimizerParams();
     params.slac_folder_ = slac_folder;
-    params.device_ =
-            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
     params.voxel_size_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
-    params.regularizor_weight_ =
+    params.regularizer_weight_ =
             utility::GetProgramOptionAsDouble(argc, argv, "--weight", 1);
     params.distance_threshold_ = utility::GetProgramOptionAsDouble(
             argc, argv, "--distance_threshold", 0.07);
@@ -80,7 +97,10 @@ int main(int argc, char** argv) {
             argc, argv, "--fitness_threshold", 0.3);
     params.max_iterations_ =
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", 5);
+    params.device_ =
+            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
 
+    // Debug
     auto debug_option = t::pipelines::slac::SLACDebugOption();
     debug_option.debug_ = utility::ProgramOptionExists(argc, argv, "--debug");
     debug_option.debug_start_node_idx_ =
@@ -89,6 +109,7 @@ int main(int argc, char** argv) {
     std::string method =
             utility::GetProgramOptionAsString(argc, argv, "--method", "slac");
 
+    // Run the system
     pipelines::registration::PoseGraph pose_graph_updated;
     if ("rigid" == method) {
         pose_graph_updated = t::pipelines::slac::RunRigidOptimizerForFragments(
@@ -118,7 +139,7 @@ int main(int argc, char** argv) {
                                method + ".json",
                        pose_graph_updated);
 
-    // Write trajectory
+    // Write trajectory for SLACIntegrate
     camera::PinholeCameraTrajectory trajectory;
     for (size_t i = 0; i < pose_graph_updated.nodes_.size(); ++i) {
         auto fragment_pose_graph = io::CreatePoseGraphFromFile(fmt::format(

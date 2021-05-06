@@ -57,7 +57,7 @@ public:
     static const std::string kGrid8NbNormalInterpRatios;
 
     /// Default constructor.
-    ControlGrid() {}
+    ControlGrid() = default;
 
     /// Constructor with initial grid size and grid count estimation.
     ControlGrid(float grid_size,
@@ -70,7 +70,6 @@ public:
                 const core::Tensor& keys,
                 const core::Tensor& values,
                 const core::Device& device = core::Device("CPU:0"));
-    ~ControlGrid() {}
 
     /// Allocate control grids in the shared camera space.
     void Touch(const geometry::PointCloud& pcd);
@@ -79,7 +78,7 @@ public:
     /// a contiguous index map.
     void Compactify();
 
-    /// Get the neighbor indices per grid to construct the regularizor.
+    /// Get the neighbor indices per grid to construct the regularizer.
     /// \return A 6-way neighbor grid map for all the active entries of shape
     /// (N, ).
     /// - addrs Active indices in the buffer of shape (N, )
@@ -134,12 +133,12 @@ public:
     int64_t Size() { return ctr_hashmap_->Size(); }
 
     core::Device GetDevice() { return device_; }
-
-public:
-    /// Anchor grid point index in the regularizor.
-    int64_t anchor_idx_ = 0;
+    int64_t GetAnchorIdx() { return anchor_idx_; }
 
 private:
+    /// Anchor grid point index in the regularizer.
+    int64_t anchor_idx_ = 0;
+
     /// Grid size, typically much larger than the voxel size (e.g. 0.375m).
     float grid_size_;
 

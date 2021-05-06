@@ -35,12 +35,12 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    SLAC [dataset_folder] [slac_folder] [options]");
-    utility::LogInfo("     --color_subfolder [default: color]");
+    utility::LogInfo(">    SLACIntegrate [dataset_folder] [slac_folder] [options]");
+    utility::LogInfo("     --color_subfolder [default: color, rgb, image]");
     utility::LogInfo("     --depth_subfolder [default: depth]");
-    utility::LogInfo("     --device [default: CPU:0]");
     utility::LogInfo("     --voxel_size [=0.0058 (m)]");
     utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("     --block_count [=40000]");
     utility::LogInfo("     --depth_scale [=1000.0]");
     utility::LogInfo("     --max_depth [=3.0]");
     utility::LogInfo("     --sdf_trunc [=0.04]");
@@ -54,7 +54,7 @@ void PrintHelp() {
 
 int main(int argc, char** argv) {
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 2) {
+        argc < 3) {
         PrintHelp();
         return 1;
     }
@@ -77,11 +77,21 @@ int main(int argc, char** argv) {
     utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
     std::sort(depth_filenames.begin(), depth_filenames.end());
 
+    if (color_filenames.size() != depth_filenames.size()) {
+        utility::LogError("Number of color and depth files mismatch: {} vs {}.",
+                          color_filenames.size(), depth_filenames.size());
+    }
+
     // Optimized fragment pose graph
     std::string slac_folder = std::string(argv[2]);
     std::string posegraph_path =
             std::string(slac_folder + "/optimized_posegraph_slac.json");
-    auto posegraph = *io::CreatePoseGraphFromFile(posegraph_path);
+    auto posegraph = io::CreatePoseGraphFromFile(posegraph_path);
+    if (posegraph == nullptr) {
+        utility::LogError(
+                "Unable to open {}, please run SLAC before SLACIntegrate.",
+                posegraph_path);
+    }
 
     // Intrinsics
     std::string intrinsic_path = utility::GetProgramOptionAsString(
@@ -93,7 +103,6 @@ int main(int argc, char** argv) {
     } else if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         utility::LogError("Unable to convert json to intrinsics.");
     }
-
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     Tensor intrinsic_t = Tensor::Init<double>(
@@ -101,13 +110,17 @@ int main(int argc, char** argv) {
              {0, focal_length.second, principal_point.second},
              {0, 0, 1}});
 
+    // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
         device_code = utility::GetProgramOptionAsString(argc, argv, "--device");
     }
     core::Device device(device_code);
+    utility::LogInfo("Using device: {}", device.ToString());
+
+    // Voxelgrid options
     int block_count =
-            utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
+            utility::GetProgramOptionAsInt(argc, argv, "--block_count", 40000);
     float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--voxel_size", 3.f / 512.f));
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
@@ -116,26 +129,23 @@ int main(int argc, char** argv) {
             utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
     float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc", 0.04f));
-
-    utility::LogInfo("Using device: {}", device.ToString());
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
                                            {"color", core::Dtype::UInt16}},
                                           voxel_size, sdf_trunc, 16,
                                           block_count, device);
 
+    // Load control grid
     core::Tensor ctr_grid_keys =
             core::Tensor::Load(slac_folder + "/ctr_grid_keys.npy");
     core::Tensor ctr_grid_values =
             core::Tensor::Load(slac_folder + "/ctr_grid_values.npy");
-
-    utility::LogInfo("Control grid: {}", device.ToString());
     t::pipelines::slac::ControlGrid ctr_grid(3.0 / 8, ctr_grid_keys.To(device),
                                              ctr_grid_values.To(device),
                                              device);
 
     int k = 0;
-    for (size_t i = 0; i < posegraph.nodes_.size(); ++i) {
+    for (size_t i = 0; i < posegraph->nodes_.size(); ++i) {
         utility::LogInfo("Fragment: {}", i);
         auto fragment_pose_graph = *io::CreatePoseGraphFromFile(fmt::format(
                 "{}/fragment_optimized_{:03d}.json", fragment_folder, i));
@@ -145,7 +155,7 @@ int main(int argc, char** argv) {
                     core::eigen_converter::EigenMatrixToTensor(
                             pose_local.inverse().eval());
 
-            Eigen::Matrix4d pose = posegraph.nodes_[i].pose_ * node.pose_;
+            Eigen::Matrix4d pose = posegraph->nodes_[i].pose_ * node.pose_;
             Tensor extrinsic_t = core::eigen_converter::EigenMatrixToTensor(
                     pose.inverse().eval());
 
@@ -167,7 +177,7 @@ int main(int argc, char** argv) {
             timer.Stop();
 
             ++k;
-            utility::LogInfo("{}: Integration takes {}", k,
+            utility::LogInfo("{}: Deformation + Integration takes {}", k,
                              timer.GetDuration());
 
             if (k % 10 == 0) {

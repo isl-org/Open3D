@@ -54,6 +54,7 @@ INSTANTIATE_TEST_SUITE_P(
         ControlGridPermuteDevicePairs,
         testing::ValuesIn(ControlGridPermuteDevicePairs::TestCases()));
 
+// TODO(wei): more well-designed test cases
 TEST_P(ControlGridPermuteDevices, Touch) {
     core::Device device = GetParam();
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
@@ -63,9 +64,6 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     cgrid.Touch(pcd);
 
     t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
-    // t::pipelines::slac::VisualizePointCloudEmbedding(pcd_param, cgrid,
-    // false); t::pipelines::slac::VisualizePointCloudEmbedding(pcd_param,
-    // cgrid, true);
 }
 
 TEST_P(ControlGridPermuteDevices, Deform) {
@@ -79,17 +77,14 @@ TEST_P(ControlGridPermuteDevices, Deform) {
 
     t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
 
-    // int64_t n = cgrid.Size();
     core::Tensor prev = cgrid.GetInitPositions();
     core::Tensor curr = cgrid.GetCurrPositions();
     curr[0][0] += 0.5;
     curr[1][2] -= 0.5;
     curr[2][1] += 0.5;
-
-    // t::pipelines::slac::VisualizeDeform(pcd_param, cgrid);
 }
 
-TEST_P(ControlGridPermuteDevices, Regularizor) {
+TEST_P(ControlGridPermuteDevices, Regularizer) {
     core::Device device = GetParam();
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
@@ -102,8 +97,6 @@ TEST_P(ControlGridPermuteDevices, Regularizor) {
     curr[0][0] += 0.2;
     curr[1][2] -= 0.2;
     curr[2][1] += 0.2;
-
-    // t::pipelines::slac::VisualizeGridDeformation(cgrid);
 }
 
 }  // namespace tests

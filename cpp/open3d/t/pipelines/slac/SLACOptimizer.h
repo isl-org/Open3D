@@ -54,8 +54,8 @@ struct SLACOptimizerParams {
     /// Fitness threshold to filter inconsistent pairs.
     float fitness_threshold_ = 0.3;
 
-    /// Weight of the regularizor.
-    float regularizor_weight_ = 1;
+    /// Weight of the regularizer.
+    float regularizer_weight_ = 1;
 
     /// Device to use.
     std::string device_ = "CPU:0";
