@@ -65,8 +65,13 @@ public:
           relative_fitness_(relative_fitness) {}
 
 public:
+    /// Maximum iteration before iteration stops.
     int max_iteration_;
+    /// If relative change (difference) of inliner RMSE score is lower than
+    /// `relative_rmse`, the iteration stops.
     double relative_rmse_;
+    /// If relative change (difference) of fitness score is lower than
+    /// `relative_fitness`, the iteration stops.
     double relative_fitness_;
 };
 
@@ -89,8 +94,12 @@ public:
     ~OdometryResult() {}
 
 public:
+    /// The estimated transformation matrix of dtype Float64 on CPU device.
     core::Tensor transformation_;
+    /// RMSE of all inlier. Lower is better.
     double inlier_rmse_;
+    /// The overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
     double fitness_;
 };
 
@@ -122,6 +131,7 @@ public:
     }
 
 public:
+    /// Depth difference threshold used to filter projective associations.
     float depth_outlier_trunc_;
     float depth_huber_delta_;
     float intensity_huber_delta_;
