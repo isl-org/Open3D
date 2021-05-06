@@ -39,10 +39,6 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
-t::geometry::PointCloud CreateTPCDFromFile(
-        const std::string& fname,
-        const core::Device& device = core::Device("CPU:0"));
-
 /// \brief Visualize pairs with correspondences.
 ///
 /// \param tpcd_i, source point cloud.

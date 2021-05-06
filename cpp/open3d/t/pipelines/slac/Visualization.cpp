@@ -37,7 +37,7 @@ static const Eigen::Vector3d kSourceColor = Eigen::Vector3d(0, 1, 0);
 static const Eigen::Vector3d kTargetColor = Eigen::Vector3d(1, 0, 0);
 static const Eigen::Vector3d kCorresColor = Eigen::Vector3d(0, 0, 1);
 
-inline Eigen::Vector3d Jet(double v, double vmin, double vmax) {
+static Eigen::Vector3d Jet(double v, double vmin, double vmax) {
     Eigen::Vector3d c(1, 1, 1);
     double dv;
 
@@ -60,13 +60,6 @@ inline Eigen::Vector3d Jet(double v, double vmin, double vmax) {
     }
 
     return c;
-}
-
-t::geometry::PointCloud CreateTPCDFromFile(const std::string& fname,
-                                           const core::Device& device) {
-    auto pcd = io::CreatePointCloudFromFile(fname);
-    return t::geometry::PointCloud::FromLegacyPointCloud(
-            *pcd, core::Dtype::Float32, device);
 }
 
 void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
@@ -256,6 +249,7 @@ void VisualizeGridDeformation(ControlGrid& cgrid) {
                 "Grid Deformation");
     }
 }
+
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t
