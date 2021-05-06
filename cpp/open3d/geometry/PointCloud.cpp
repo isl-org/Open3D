@@ -479,11 +479,9 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        size_t nb_neighbors = kdtree.SearchHybrid(points_[i],
-                                                  search_radius,
-                                                  int(nb_points) + 1,
-                                                  tmp_indices,
-                                                  dist);
+        size_t nb_neighbors = kdtree.SearchHybrid(
+                points_[i], search_radius, static_cast<int>(nb_points) + 1,
+                tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
     }
     std::vector<size_t> indices;
