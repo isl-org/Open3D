@@ -46,7 +46,8 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
+            o3d.pipelines.registration.RANSACConvergenceCriteria(
+                1000000, 0.999))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
