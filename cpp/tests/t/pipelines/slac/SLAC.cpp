@@ -74,7 +74,7 @@ static bool IsPointCloudSimilar(t::geometry::PointCloud source,
     return false;
 }
 
-TEST_P(SLACPermuteDevices, RunSLACOptimizerForFragments) {
+TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
@@ -184,7 +184,7 @@ TEST_P(SLACPermuteDevices, RunSLACOptimizerForFragments) {
                                              trajectory);
 }
 
-TEST_P(SLACPermuteDevices, SLACIntegrate) {
+TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
