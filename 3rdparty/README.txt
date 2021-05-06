@@ -110,3 +110,7 @@ https://github.com/zeromq/libzmq
 cppzmq                      4.6.0                                    MIT license
 Header-only C++ binding for libzmq
 https://github.com/zeromq/cppzmq
+--------------------------------------------------------------------------------
+moderngpu                   2b39855                            moderngpu license
+A C++ header-only for general-purpose computing on GPUs
+https://github.com/moderngpu/moderngpu

@@ -95,38 +95,74 @@ protected:
     Tensor hash_table_index_;
 };
 
+/// \class NeighborSearchAllocator
+/// The object must implement functions
+///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
+/// \brief A helper class that allocate output arrays for nearest neighbor range
+/// search.
 template <class T>
 class NeighborSearchAllocator {
 public:
+    /// Constructor.
+    ///
+    /// \param device Device on which output arrays are allocated.
     NeighborSearchAllocator(Device device) : device_(device) {}
 
+    /// Allocate array for neighbor indices.
+    ///
+    /// \param ptr pointer to output array
+    /// \param num The number of element to allocate
     void AllocIndices(int64_t** ptr, size_t num) {
         indices_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
         *ptr = indices_.GetDataPtr<int64_t>();
     }
 
+    /// Allocate array for neighbor indices.
+    ///
+    /// \param ptr pointer to output array
+    /// \param num The number of element to allocate
+    /// \param value The default value to initialize array
     void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
         indices_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
         *ptr = indices_.GetDataPtr<int64_t>();
     }
 
+    /// Allocate array for neighbor distances.
+    ///
+    /// \param ptr pointer to output array
+    /// \param num The number of element to allocate
+    ///
     void AllocDistances(T** ptr, size_t num) {
         distances_ =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
         *ptr = distances_.GetDataPtr<T>();
     }
 
+    /// Allocate array for neighbor distances.
+    ///
+    /// \param ptr pointer to output array
+    /// \param num The number of element to allocate
+    /// \param value The default value to initialize array
     void AllocDistances(T** ptr, size_t num, T value) {
         distances_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<T>(),
                                   device_);
         *ptr = distances_.GetDataPtr<T>();
     }
 
+    /// Get indices pointer.
     const int64_t* IndicesPtr() const { return indices_.GetDataPtr<int64_t>(); }
 
+    /// Get distances pointer.
     const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
 
+    /// Get indices tensor.
     const Tensor& NeighborsIndex() const { return indices_; }
+    /// Get distances tensor.
     const Tensor& NeighborsDistance() const { return distances_; }
 
 private:
