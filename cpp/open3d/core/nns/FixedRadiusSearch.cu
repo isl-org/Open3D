@@ -997,7 +997,6 @@ void FixedRadiusSearchCUDA(void* temp,
                     num_points, inv_voxel_size, radius, metric, true);
         }
     }
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 //// Hybrid Search

@@ -37,17 +37,16 @@
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
 
-// Test data.
-static const std::string source_filename =
-        fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR));
-static const std::string target_filename =
-        fmt::format("{}/ICP/cloud_bin_1.pcd", std::string(TEST_DATA_DIR));
-
 namespace open3d {
 namespace benchmarks {
 
 std::pair<core::Tensor, core::Tensor> PrepareInput(const core::Device& device,
                                                    const core::Dtype& dtype) {
+    // Test data.
+    static const std::string source_filename =
+            fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR));
+    static const std::string target_filename =
+            fmt::format("{}/ICP/cloud_bin_1.pcd", std::string(TEST_DATA_DIR));
     // Load test point cloud data.
     t::geometry::PointCloud dataset_pc;
     t::geometry::PointCloud query_pc;
@@ -62,10 +61,6 @@ std::pair<core::Tensor, core::Tensor> PrepareInput(const core::Device& device,
     core::Tensor query_points =
             query_pc.GetPoints().To(device, dtype, /*copy*/ true);
 
-    //     utility::LogInfo("Source point cloud size: {}",
-    //                      dataset_points.GetShape()[0]);
-    //     utility::LogInfo("Target point cloud size: {}",
-    //     query_points.GetShape()[0]);
     return std::make_pair(dataset_points, query_points);
 }
 
@@ -79,17 +74,21 @@ static void BM_TestNNS_Hybrid(benchmark::State& state,
     core::Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
             PrepareInput(device, core::Dtype::Float32);
+    int64_t num_query_points = query_points.GetShape()[0];
 
     // Setup NNS.
     core::nns::NearestNeighborSearch nns(dataset_points);
     nns.HybridIndex(radius);
 
     // Search.
+    float avg_num_neighbors;
     core::Tensor indices, distances;
     for (auto _ : state) {
         std::tie(indices, distances) =
                 nns.HybridSearch(query_points, radius, max_knn);
+        avg_num_neighbors = indices.GetShape()[0] / (float)num_query_points;
     }
+    utility::LogDebug("Avg num neighbors: {}", avg_num_neighbors);
 }
 
 static void BM_TestNNS_Radius(benchmark::State& state,
@@ -115,7 +114,7 @@ static void BM_TestNNS_Radius(benchmark::State& state,
                 nns.FixedRadiusSearch(query_points, radius);
         avg_num_neighbors = indices.GetShape()[0] / (float)num_query_points;
     }
-    utility::LogInfo("Avg num neighbors: {}", avg_num_neighbors);
+    utility::LogDebug("Avg num neighbors: {}", avg_num_neighbors);
 }
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({100, 1})
