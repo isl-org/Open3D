@@ -1,6 +1,6 @@
-# Currently this meta file is created manaully. We can also generate this meta
+# Currently this meta file is created manually. We can also generate this meta
 # file with `conda skeleton pypi open3d`. The main difference is that
-# the this manaully create meta.yaml uses the shared objects in the local
+# the this manually create meta.yaml uses the shared objects in the local
 # `pip_package` folder, while the auto generated meta uses the PyPI source
 # distribution during Conda package creation.
 
@@ -15,11 +15,13 @@ requirements:
     build:
         - python {{ python }}
         - setuptools
+        - ipywidgets
+        - jupyter-packaging
+        - jupyterlab
     run:
         - python
-        - ipywidgets
-        - jupyter_packaging
         - jupyterlab
+        - jupyter
         - addict # Open3D-ML deps starts here (https://github.com/intel-isl/Open3D-ML/blob/master/requirements.txt)
         - pandas
         - plyfile
