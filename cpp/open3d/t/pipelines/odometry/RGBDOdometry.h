@@ -227,10 +227,10 @@ OdometryResult ComputeOdometryResultPointToPlane(
 /// \param target_intensity (rows, cols, channels=1) Float32 target intensity
 /// image obtained by RGBToGray before calling this function.
 /// \param target_intensity_dx (rows, cols, channels=1) Float32 target intensity
-/// gradient image at x-axis obtained by FilterSobel before calling this
+/// gradient image along x-axis obtained by FilterSobel before calling this
 /// function.
 /// \param target_intensity_dy (rows, cols, channels=1) Float32 target intensity
-/// gradient image at y-axis obtained by FilterSobel before calling this
+/// gradient image along y-axis obtained by FilterSobel before calling this
 /// function.
 /// \param source_vertex_map (rows, cols, channels=3) Float32 source vertex
 /// image obtained by CreateVertexMap before calling this function.
@@ -275,19 +275,19 @@ OdometryResult ComputeOdometryResultIntensity(
 /// image obtained by RGBToGray before calling this function.
 /// \param target_intensity (rows, cols, channels=1) Float32 target intensity
 /// image obtained by RGBToGray before calling this function.
-/// \param source_depth_dx (rows, cols, channels=1) Float32 source depth
-/// gradient image at x-axis obtained by FilterSobel before calling this
+/// \param target_depth_dx (rows, cols, channels=1) Float32 target depth
+/// gradient image along x-axis obtained by FilterSobel before calling this
 /// function.
-/// \param source_depth_dy (rows, cols, channels=1) Float32 source depth
-/// gradient image at y-axis obtained by FilterSobel before calling this
+/// \param target_depth_dy (rows, cols, channels=1) Float32 target depth
+/// gradient image along y-axis obtained by FilterSobel before calling this
 /// function.
-/// \param source_intensity_dx (rows, cols, channels=1) Float32 source intensity
-/// gradient image at x-axis obtained by FilterSobel before calling this
+/// \param target_intensity_dx (rows, cols, channels=1) Float32 target intensity
+/// gradient image along x-axis obtained by FilterSobel before calling this
 /// function.
-/// \param source_intensity_dy (rows, cols, channels=1) Float32 source intensity
-/// gradient image at y-axis obtained by FilterSobel before calling this
+/// \param target_intensity_dy (rows, cols, channels=1) Float32 target intensity
+/// gradient image along y-axis obtained by FilterSobel before calling this
 /// function.
-/// \param target_vertex_map (rows, cols, channels=3) Float32 target vertex
+/// \param source_vertex_map (rows, cols, channels=3) Float32 source vertex
 /// image obtained by CreateVertexMap before calling this function.
 /// \param intrinsics (3, 3) intrinsic matrix for projection.
 /// \param init_source_to_target (4, 4) initial transformation matrix from
@@ -303,11 +303,11 @@ OdometryResult ComputeOdometryResultHybrid(
         const core::Tensor& target_depth,
         const core::Tensor& source_intensity,
         const core::Tensor& target_intensity,
-        const core::Tensor& source_depth_dx,
-        const core::Tensor& source_depth_dy,
-        const core::Tensor& source_intensity_dx,
-        const core::Tensor& source_intensity_dy,
-        const core::Tensor& target_vertex_map,
+        const core::Tensor& target_depth_dx,
+        const core::Tensor& target_depth_dy,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
         const core::Tensor& intrinsics,
         const core::Tensor& init_source_to_target,
         const float depth_outlier_trunc,

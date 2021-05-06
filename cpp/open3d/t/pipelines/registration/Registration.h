@@ -158,10 +158,11 @@ RegistrationResult RegistrationICP(
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param voxel_sizes VectorDouble of voxel scales of type double.
-/// \param criterias Vector of ICPConvergenceCriteria objects for each scale.
-/// \param max_correspondence_distances VectorDouble of maximum correspondence
-/// points-pair distances of type double, for each iteration. Must be of same
-/// length as voxel_sizes and criterias.
+/// \param criteria_list Vector of ICPConvergenceCriteria objects for each
+/// scale.
+/// \param max_correspondence_distances VectorDouble of maximum
+/// correspondence points-pair distances of type double, for each iteration.
+/// Must be of same length as voxel_sizes and criterias.
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
@@ -169,7 +170,7 @@ RegistrationResult RegistrationMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
-        const std::vector<ICPConvergenceCriteria> &criterias,
+        const std::vector<ICPConvergenceCriteria> &criteria_list,
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0")),

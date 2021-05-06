@@ -204,7 +204,7 @@ static const std::unordered_map<std::string, std::string>
                  "pair of Tensors that stores indices of "
                  "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
-                {"scale_criteria",
+                {"criteria_list",
                  "List of Convergence criteria for each scale of multi-scale "
                  "icp."},
                 {"estimation_method",
@@ -247,7 +247,7 @@ void pybind_registration_methods(py::module &m) {
 
     m.def("registration_multi_scale_icp", &RegistrationMultiScaleICP,
           "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
-          "voxel_sizes"_a, "criterias"_a, "max_correspondence_distances"_a,
+          "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
                                                         core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint());
