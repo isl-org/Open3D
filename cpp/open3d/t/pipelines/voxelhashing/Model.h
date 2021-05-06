@@ -73,7 +73,8 @@ public:
     void SynthesizeModelFrame(Frame& raycast_frame,
                               float depth_scale,
                               float depth_min,
-                              float depth_max);
+                              float depth_max,
+                              bool enable_color = true);
 
     /// Track using PointToPlane depth odometry.
     /// TODO(wei): support hybrid or intensity methods.
@@ -106,8 +107,8 @@ public:
     t::geometry::PointCloud ExtractPointCloud(int estimated_number = -1,
                                               float weight_threshold = 3.0f);
 
-    /// Helper function to check current volumetric grid's size.
-    int64_t GetHashmapSize();
+    /// Get block hashmap int the TSDFVoxelGrid.
+    core::Hashmap GetHashmap();
 
 public:
     /// Maintained volumetric map.

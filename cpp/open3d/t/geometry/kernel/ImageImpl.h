@@ -36,6 +36,11 @@ namespace geometry {
 namespace kernel {
 namespace image {
 
+#ifndef __CUDACC__
+using std::isinf;
+using std::isnan;
+#endif
+
 #ifdef __CUDACC__
 void ClipTransformCUDA
 #else
