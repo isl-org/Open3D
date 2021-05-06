@@ -32,6 +32,17 @@
 
 using namespace open3d;
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    RegistrationColoredICP source_pcd target_pcd [--visualize]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 void VisualizeRegistration(const open3d::geometry::PointCloud &source,
                            const open3d::geometry::PointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
@@ -50,10 +61,8 @@ int main(int argc, char *argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 3 || argc > 7) {
-        utility::LogInfo(
-                "Usage : RegistrationColoredICP path_to_first_point_cloud "
-                "path_to_second_point_cloud [--visualize]");
+    if (argc < 3) {
+        PrintHelp();
         return 1;
     }
 
@@ -67,15 +76,14 @@ int main(int argc, char *argv[]) {
             open3d::io::CreatePointCloudFromFile(argv[1]);
     std::shared_ptr<geometry::PointCloud> target =
             open3d::io::CreatePointCloudFromFile(argv[2]);
+    if (source == nullptr || target == nullptr) {
+        utility::LogWarning("Unable to load source or target file.");
+        return -1;
+    }
 
     std::vector<double> voxel_sizes = {0.05, 0.05 / 2, 0.05 / 4};
     std::vector<int> iterations = {50, 30, 14};
-
     Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
-    trans << 0.60949996, 0.49802465, -0.61683162, 0.15081973, -0.57239243,
-            0.81477382, 0.09225254, -0.21454357, 0.5485223, 0.29684183,
-            0.78167015, -0.05018587, 0, 0, 0, 1;
-
     for (int i = 0; i < 3; ++i) {
         float voxel_size = voxel_sizes[i];
 
@@ -95,12 +103,14 @@ int main(int argc, char *argv[]) {
                                                                 iterations[i]));
         trans = result.transformation_;
 
-        std::cout << trans << "\n";
-
         if (visualize) {
             VisualizeRegistration(*source, *target, trans);
         }
     }
+
+    std::stringstream ss;
+    ss << trans;
+    utility::LogInfo("Final transformation = \n{}", ss.str());
 
     return 0;
 }

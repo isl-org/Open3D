@@ -209,7 +209,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
-    utility::LogInfo("active grids: {}", block_hashmap_->Size());
 }
 
 std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor>

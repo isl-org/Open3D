@@ -46,7 +46,7 @@ void pybind_slac_classes(py::module &m) {
                           const float, const core::Device, const std::string>(),
                  "max_iterations"_a = 5, "voxel_size"_a = 0.05,
                  "distance_threshold"_a = 0.07, "fitness_threshold"_a = 0.3,
-                 "regularizor_weight"_a = 1, "device"_a = core::Device("CPU:0"),
+                 "regularizer_weight"_a = 1, "device"_a = core::Device("CPU:0"),
                  "slac_folder"_a = "")
             .def_readwrite("max_iterations",
                            &SLACOptimizerParams::max_iterations_,
@@ -60,9 +60,9 @@ void pybind_slac_classes(py::module &m) {
             .def_readwrite("fitness_threshold",
                            &SLACOptimizerParams::fitness_threshold_,
                            "Fitness threshold to filter inconsistent pairs.")
-            .def_readwrite("regularizor_weight",
-                           &SLACOptimizerParams::regularizor_weight_,
-                           "Weight of the regularizor.")
+            .def_readwrite("regularizer_weight",
+                           &SLACOptimizerParams::regularizer_weight_,
+                           "Weight of the regularizer.")
             .def_readwrite("device", &SLACOptimizerParams::device_,
                            "Device to use.")
             .def_readwrite("slac_folder", &SLACOptimizerParams::slac_folder_,
@@ -72,11 +72,11 @@ void pybind_slac_classes(py::module &m) {
                 return fmt::format(
                         "SLACOptimizerParams[max_iterations={:d}, "
                         "voxel_size={:e}, distance_threshold={:e}, "
-                        "fitness_threshold={:e}, regularizor_weight={:e}, "
+                        "fitness_threshold={:e}, regularizer_weight={:e}, "
                         "device={}, slac_folder={}].",
                         params.max_iterations_, params.voxel_size_,
                         params.distance_threshold_, params.fitness_threshold_,
-                        params.regularizor_weight_, params.device_.ToString(),
+                        params.regularizer_weight_, params.device_.ToString(),
                         params.slac_folder_);
             });
 

@@ -244,8 +244,8 @@ void FillInSLACRegularizerTerm(Tensor& AtA,
     kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
                                       nb_addrs, nb_masks, positions_init,
                                       positions_curr,
-                                      n_frags * params.regularizor_weight_,
-                                      n_frags, ctr_grid.anchor_idx_);
+                                      n_frags * params.regularizer_weight_,
+                                      n_frags, ctr_grid.GetAnchorIdx());
     if (debug_option.debug_) {
         VisualizeGridDeformation(ctr_grid);
     }

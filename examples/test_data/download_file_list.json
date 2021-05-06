@@ -18,5 +18,9 @@
         "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/cube.obj",
         "path": "tests/cube.obj",
         "sha256": "a72ae892b566c1204cfaaf676884c763442fce9f9c5be97017e7e7ffcd3c7066"
+    },
+    "tests/reconstruction_system": {
+	    "url": "https://github.com/intel-isl/open3d_downloads/tree/master/tests/reconstruction_system",
+	    "path": "tests/reconstruction_system"
     }
 }

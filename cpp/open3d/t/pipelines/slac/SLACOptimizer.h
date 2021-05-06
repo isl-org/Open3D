@@ -54,8 +54,8 @@ struct SLACOptimizerParams {
     /// Fitness threshold to filter inconsistent pairs.
     float fitness_threshold_;
 
-    /// Weight of the regularizor.
-    float regularizor_weight_;
+    /// Weight of the regularizer.
+    float regularizer_weight_;
 
     /// Device to use.
     core::Device device_;
@@ -78,7 +78,7 @@ struct SLACOptimizerParams {
     /// correspondences. [Default: 0.07].
     /// \param fitness_threshold Fitness threshold to filter inconsistent pairs.
     /// [Default: 0.3].
-    /// \param regularizor_weight Weight of the regularizor. [Default: 1].
+    /// \param regularizer_weight_ Weight of the regularizer. [Default: 1].
     /// \param device Device to use. [Default: CPU:0].
     /// \param slac_folder Relative directory to store SLAC results in the
     /// dataset folder. [Default: ""].
@@ -86,7 +86,7 @@ struct SLACOptimizerParams {
                         const float voxel_size = 0.05,
                         const float distance_threshold = 0.07,
                         const float fitness_threshold = 0.3,
-                        const float regularizor_weight = 1,
+                        const float regularizer_weight = 1,
                         const core::Device device = core::Device("CPU:0"),
                         const std::string slac_folder = "") {
         if (fitness_threshold < 0) {
@@ -100,7 +100,7 @@ struct SLACOptimizerParams {
         voxel_size_ = voxel_size;
         distance_threshold_ = distance_threshold;
         fitness_threshold_ = fitness_threshold;
-        regularizor_weight_ = regularizor_weight;
+        regularizer_weight_ = regularizer_weight;
         device_ = device;
         slac_folder_ = slac_folder;
     }
