@@ -38,44 +38,50 @@ namespace t {
 namespace pipelines {
 namespace odometry {
 
-core::Tensor RGBDOdometryMultiScalePointToPlane(
-        const t::geometry::RGBDImage& source,
-        const t::geometry::RGBDImage& target,
-        core::Tensor& intrinsics,
-        core::Tensor& trans,
-        float depth_scale,
-        float depth_max,
-        float depth_diff,
-        const std::vector<int>& iterations);
+using core::Tensor;
+using t::geometry::Image;
+using t::geometry::RGBDImage;
 
-core::Tensor RGBDOdometryMultiScaleIntensity(
-        const t::geometry::RGBDImage& source,
-        const t::geometry::RGBDImage& target,
-        core::Tensor& intrinsic,
-        core::Tensor& trans,
-        float depth_scale,
-        float depth_max,
-        float depth_diff,
-        const std::vector<int>& iterations);
+OdometryResult RGBDOdometryMultiScalePointToPlane(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsics,
+        const Tensor& trans,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params);
 
-core::Tensor RGBDOdometryMultiScaleHybrid(const t::geometry::RGBDImage& source,
-                                          const t::geometry::RGBDImage& target,
-                                          core::Tensor& intrinsics,
-                                          core::Tensor& trans,
-                                          float depth_scale,
-                                          float depth_max,
-                                          float depth_diff,
-                                          const std::vector<int>& iterations);
+OdometryResult RGBDOdometryMultiScaleIntensity(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsic,
+        const Tensor& trans,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params);
 
-core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
-                                    const t::geometry::RGBDImage& target,
-                                    const core::Tensor& intrinsics,
-                                    const core::Tensor& init_source_to_target,
-                                    float depth_scale,
-                                    float depth_max,
-                                    float depth_diff,
-                                    const std::vector<int>& iterations,
-                                    const Method method) {
+OdometryResult RGBDOdometryMultiScaleHybrid(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsics,
+        const Tensor& trans,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params);
+
+OdometryResult RGBDOdometryMultiScale(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsics,
+        const Tensor& init_source_to_target,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const Method method,
+        const OdometryLossParams& params) {
     // TODO (wei): more device check
     core::Device device = source.depth_.GetDevice();
     if (target.depth_.GetDevice() != device) {
@@ -86,129 +92,152 @@ core::Tensor RGBDOdometryMultiScale(const t::geometry::RGBDImage& source,
 
     // 4x4 transformations are always float64 and stay on CPU.
     core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Clone();
-    core::Tensor trans_d =
+    Tensor intrinsics_d = intrinsics.To(host, core::Dtype::Float64).Clone();
+    Tensor trans_d =
             init_source_to_target.To(host, core::Dtype::Float64).Clone();
 
-    t::geometry::Image source_depth = source.depth_;
-    t::geometry::Image target_depth = target.depth_;
+    Image source_depth = source.depth_;
+    Image target_depth = target.depth_;
 
-    t::geometry::Image source_depth_processed =
+    Image source_depth_processed =
             source_depth.ClipTransform(depth_scale, 0, depth_max, NAN);
-    t::geometry::Image target_depth_processed =
+    Image target_depth_processed =
             target_depth.ClipTransform(depth_scale, 0, depth_max, NAN);
 
-    t::geometry::RGBDImage source_processed(source.color_,
-                                            source_depth_processed);
-    t::geometry::RGBDImage target_processed(target.color_,
-                                            target_depth_processed);
+    RGBDImage source_processed(source.color_, source_depth_processed);
+    RGBDImage target_processed(target.color_, target_depth_processed);
 
     if (method == Method::PointToPlane) {
         return RGBDOdometryMultiScalePointToPlane(
                 source_processed, target_processed, intrinsics_d, trans_d,
-                depth_scale, depth_max, depth_diff, iterations);
+                depth_scale, depth_max, criteria, params);
     } else if (method == Method::Intensity) {
         return RGBDOdometryMultiScaleIntensity(
                 source_processed, target_processed, intrinsics_d, trans_d,
-                depth_scale, depth_max, depth_diff, iterations);
+                depth_scale, depth_max, criteria, params);
     } else if (method == Method::Hybrid) {
         return RGBDOdometryMultiScaleHybrid(source_processed, target_processed,
                                             intrinsics_d, trans_d, depth_scale,
-                                            depth_max, depth_diff, iterations);
+                                            depth_max, criteria, params);
     } else {
         utility::LogError("Odometry method not implemented.");
     }
 
-    return trans_d;
+    return OdometryResult(trans_d);
 }
 
-core::Tensor RGBDOdometryMultiScalePointToPlane(
-        const t::geometry::RGBDImage& source,
-        const t::geometry::RGBDImage& target,
-        core::Tensor& intrinsics,
-        core::Tensor& trans,
-        float depth_scale,
-        float depth_max,
-        float depth_diff,
-        const std::vector<int>& iterations) {
-    int64_t n_levels = int64_t(iterations.size());
-    std::vector<core::Tensor> source_vertex_maps(n_levels);
-    std::vector<core::Tensor> target_vertex_maps(n_levels);
-    std::vector<core::Tensor> target_normal_maps(n_levels);
-    std::vector<core::Tensor> intrinsic_matrices(n_levels);
+OdometryResult RGBDOdometryMultiScalePointToPlane(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsics,
+        const Tensor& trans,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params) {
+    int64_t n_levels = int64_t(criteria.size());
+    std::vector<Tensor> source_vertex_maps(n_levels);
+    std::vector<Tensor> target_vertex_maps(n_levels);
+    std::vector<Tensor> target_normal_maps(n_levels);
+    std::vector<Tensor> intrinsic_matrices(n_levels);
 
-    t::geometry::Image source_depth_curr = source.depth_;
-    t::geometry::Image target_depth_curr = target.depth_;
+    Image source_depth_curr = source.depth_;
+    Image target_depth_curr = target.depth_;
+
+    Tensor intrinsics_pyr = intrinsics;
 
     // Create image pyramid.
     for (int64_t i = 0; i < n_levels; ++i) {
-        t::geometry::Image source_vertex_map =
-                source_depth_curr.CreateVertexMap(intrinsics, NAN);
-        t::geometry::Image target_vertex_map =
-                target_depth_curr.CreateVertexMap(intrinsics, NAN);
-        t::geometry::Image target_normal_map =
-                target_vertex_map.CreateNormalMap(NAN);
+        Image source_vertex_map =
+                source_depth_curr.CreateVertexMap(intrinsics_pyr, NAN);
+        Image target_vertex_map =
+                target_depth_curr.CreateVertexMap(intrinsics_pyr, NAN);
+
+        Image target_depth_curr_smooth =
+                target_depth_curr.FilterBilateral(5, 5, 10);
+        Image target_vertex_map_smooth =
+                target_depth_curr_smooth.CreateVertexMap(intrinsics_pyr, NAN);
+        Image target_normal_map = target_vertex_map_smooth.CreateNormalMap(NAN);
 
         source_vertex_maps[n_levels - 1 - i] = source_vertex_map.AsTensor();
         target_vertex_maps[n_levels - 1 - i] = target_vertex_map.AsTensor();
         target_normal_maps[n_levels - 1 - i] = target_normal_map.AsTensor();
 
-        intrinsic_matrices[n_levels - 1 - i] = intrinsics.Clone();
+        intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
 
         if (i != n_levels - 1) {
-            source_depth_curr =
-                    source_depth_curr.PyrDownDepth(depth_diff * 2, NAN);
-            target_depth_curr =
-                    target_depth_curr.PyrDownDepth(depth_diff * 2, NAN);
+            source_depth_curr = source_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
+            target_depth_curr = target_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
 
-            intrinsics /= 2;
-            intrinsics[-1][-1] = 1;
+            intrinsics_pyr /= 2;
+            intrinsics_pyr[-1][-1] = 1;
         }
     }
 
+    OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < iterations[i]; ++iter) {
-            core::Tensor delta_source_to_target = ComputePosePointToPlane(
+        for (int iter = 0; iter < criteria[i].iterations_; ++iter) {
+            auto delta_result = ComputeOdometryResultPointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
-                    target_normal_maps[i], intrinsic_matrices[i], trans,
-                    depth_diff);
-            trans = delta_source_to_target.Matmul(trans).Contiguous();
+                    target_normal_maps[i], intrinsic_matrices[i],
+                    result.transformation_, params.depth_outlier_trunc_,
+                    params.depth_huber_delta_);
+            result.transformation_ =
+                    delta_result.transformation_.Matmul(result.transformation_);
+            utility::LogDebug("level {}, iter {}: rmse = {}, fitness = {}", i,
+                              iter, delta_result.inlier_rmse_,
+                              delta_result.fitness_);
+
+            if (std::abs(result.fitness_ - delta_result.fitness_) /
+                                result.fitness_ <
+                        criteria[i].relative_fitness_ &&
+                std::abs(result.inlier_rmse_ - delta_result.inlier_rmse_) /
+                                result.inlier_rmse_ <
+                        criteria[i].relative_rmse_) {
+                utility::LogDebug("Early exit at level {}, iter {}", i, iter);
+                break;
+            }
+            result.inlier_rmse_ = delta_result.inlier_rmse_;
+            result.fitness_ = delta_result.fitness_;
         }
     }
 
-    return trans;
+    return result;
 }
 
-core::Tensor RGBDOdometryMultiScaleIntensity(
-        const t::geometry::RGBDImage& source,
-        const t::geometry::RGBDImage& target,
-        core::Tensor& intrinsics,
-        core::Tensor& trans,
-        float depth_scale,
-        float depth_max,
-        float depth_diff,
-        const std::vector<int>& iterations) {
-    int64_t n_levels = int64_t(iterations.size());
-    std::vector<core::Tensor> source_intensity(n_levels);
-    std::vector<core::Tensor> target_intensity(n_levels);
+OdometryResult RGBDOdometryMultiScaleIntensity(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsics,
+        const Tensor& trans,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params) {
+    int64_t n_levels = int64_t(criteria.size());
+    std::vector<Tensor> source_intensity(n_levels);
+    std::vector<Tensor> target_intensity(n_levels);
 
-    std::vector<core::Tensor> source_depth(n_levels);
-    std::vector<core::Tensor> target_depth(n_levels);
-    std::vector<core::Tensor> target_intensity_dx(n_levels);
-    std::vector<core::Tensor> target_intensity_dy(n_levels);
+    std::vector<Tensor> source_depth(n_levels);
+    std::vector<Tensor> target_depth(n_levels);
+    std::vector<Tensor> target_intensity_dx(n_levels);
+    std::vector<Tensor> target_intensity_dy(n_levels);
 
-    std::vector<core::Tensor> source_vertex_maps(n_levels);
+    std::vector<Tensor> source_vertex_maps(n_levels);
 
-    std::vector<core::Tensor> intrinsic_matrices(n_levels);
+    std::vector<Tensor> intrinsic_matrices(n_levels);
 
-    t::geometry::Image source_depth_curr = source.depth_;
-    t::geometry::Image target_depth_curr = target.depth_;
+    Image source_depth_curr = source.depth_;
+    Image target_depth_curr = target.depth_;
 
-    t::geometry::Image source_intensity_curr =
+    Image source_intensity_curr =
             source.color_.RGBToGray().To(core::Dtype::Float32);
-    t::geometry::Image target_intensity_curr =
+    Image target_intensity_curr =
             target.color_.RGBToGray().To(core::Dtype::Float32);
+
+    Tensor intrinsics_pyr = intrinsics;
 
     // Create image pyramid
     for (int64_t i = 0; i < n_levels; ++i) {
@@ -220,8 +249,8 @@ core::Tensor RGBDOdometryMultiScaleIntensity(
         target_intensity[n_levels - 1 - i] =
                 target_intensity_curr.AsTensor().Clone();
 
-        t::geometry::Image source_vertex_map =
-                source_depth_curr.CreateVertexMap(intrinsics, NAN);
+        Image source_vertex_map =
+                source_depth_curr.CreateVertexMap(intrinsics_pyr, NAN);
         source_vertex_maps[n_levels - 1 - i] = source_vertex_map.AsTensor();
 
         auto target_intensity_grad = target_intensity_curr.FilterSobel();
@@ -230,68 +259,88 @@ core::Tensor RGBDOdometryMultiScaleIntensity(
         target_intensity_dy[n_levels - 1 - i] =
                 target_intensity_grad.second.AsTensor();
 
-        intrinsic_matrices[n_levels - 1 - i] = intrinsics.Clone();
+        intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
 
         if (i != n_levels - 1) {
-            source_depth_curr =
-                    source_depth_curr.PyrDownDepth(depth_diff * 2, NAN);
-            target_depth_curr =
-                    target_depth_curr.PyrDownDepth(depth_diff * 2, NAN);
+            source_depth_curr = source_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
+            target_depth_curr = target_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
             source_intensity_curr = source_intensity_curr.PyrDown();
             target_intensity_curr = target_intensity_curr.PyrDown();
 
-            intrinsics /= 2;
-            intrinsics[-1][-1] = 1;
+            intrinsics_pyr /= 2;
+            intrinsics_pyr[-1][-1] = 1;
         }
     }
 
     // Odometry
+    OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < iterations[i]; ++iter) {
-            core::Tensor delta_source_to_target = ComputePoseIntensity(
+        for (int iter = 0; iter < criteria[i].iterations_; ++iter) {
+            auto delta_result = ComputeOdometryResultIntensity(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_intensity_dx[i],
                     target_intensity_dy[i], source_vertex_maps[i],
-                    intrinsic_matrices[i], trans, depth_diff);
-            trans = delta_source_to_target.Matmul(trans);
+                    intrinsic_matrices[i], result.transformation_,
+                    params.depth_outlier_trunc_, params.intensity_huber_delta_);
+            result.transformation_ =
+                    delta_result.transformation_.Matmul(result.transformation_);
+            utility::LogDebug("level {}, iter {}: rmse = {}, fitness = {}", i,
+                              iter, delta_result.inlier_rmse_,
+                              delta_result.fitness_);
+
+            if (std::abs(result.fitness_ - delta_result.fitness_) /
+                                result.fitness_ <
+                        criteria[i].relative_fitness_ &&
+                std::abs(result.inlier_rmse_ - delta_result.inlier_rmse_) /
+                                result.inlier_rmse_ <
+                        criteria[i].relative_rmse_) {
+                utility::LogDebug("Early exit at level {}, iter {}", i, iter);
+                break;
+            }
+            result.inlier_rmse_ = delta_result.inlier_rmse_;
+            result.fitness_ = delta_result.fitness_;
         }
     }
 
-    return trans;
+    return result;
 }
 
-core::Tensor RGBDOdometryMultiScaleHybrid(const t::geometry::RGBDImage& source,
-                                          const t::geometry::RGBDImage& target,
-                                          core::Tensor& intrinsics,
-                                          core::Tensor& trans,
-                                          float depth_scale,
-                                          float depth_max,
-                                          float depth_diff,
-                                          const std::vector<int>& iterations) {
-    int64_t n_levels = int64_t(iterations.size());
-    std::vector<core::Tensor> source_intensity(n_levels);
-    std::vector<core::Tensor> target_intensity(n_levels);
+OdometryResult RGBDOdometryMultiScaleHybrid(
+        const RGBDImage& source,
+        const RGBDImage& target,
+        const Tensor& intrinsics,
+        const Tensor& trans,
+        const float depth_scale,
+        const float depth_max,
+        const std::vector<OdometryConvergenceCriteria>& criteria,
+        const OdometryLossParams& params) {
+    int64_t n_levels = int64_t(criteria.size());
+    std::vector<Tensor> source_intensity(n_levels);
+    std::vector<Tensor> target_intensity(n_levels);
 
-    std::vector<core::Tensor> source_depth(n_levels);
-    std::vector<core::Tensor> target_depth(n_levels);
-    std::vector<core::Tensor> target_intensity_dx(n_levels);
-    std::vector<core::Tensor> target_intensity_dy(n_levels);
+    std::vector<Tensor> source_depth(n_levels);
+    std::vector<Tensor> target_depth(n_levels);
+    std::vector<Tensor> target_intensity_dx(n_levels);
+    std::vector<Tensor> target_intensity_dy(n_levels);
 
-    std::vector<core::Tensor> target_depth_dx(n_levels);
-    std::vector<core::Tensor> target_depth_dy(n_levels);
+    std::vector<Tensor> target_depth_dx(n_levels);
+    std::vector<Tensor> target_depth_dy(n_levels);
 
-    std::vector<core::Tensor> source_vertex_maps(n_levels);
+    std::vector<Tensor> source_vertex_maps(n_levels);
 
-    std::vector<core::Tensor> intrinsic_matrices(n_levels);
+    std::vector<Tensor> intrinsic_matrices(n_levels);
 
-    t::geometry::Image source_depth_curr(source.depth_);
-    t::geometry::Image target_depth_curr(target.depth_);
+    Image source_depth_curr(source.depth_);
+    Image target_depth_curr(target.depth_);
 
-    t::geometry::Image source_intensity_curr =
+    Image source_intensity_curr =
             source.color_.RGBToGray().To(core::Dtype::Float32);
-    t::geometry::Image target_intensity_curr =
+    Image target_intensity_curr =
             target.color_.RGBToGray().To(core::Dtype::Float32);
 
+    Tensor intrinsics_pyr = intrinsics;
     // Create image pyramid
     for (int64_t i = 0; i < n_levels; ++i) {
         source_depth[n_levels - 1 - i] = source_depth_curr.AsTensor().Clone();
@@ -302,8 +351,8 @@ core::Tensor RGBDOdometryMultiScaleHybrid(const t::geometry::RGBDImage& source,
         target_intensity[n_levels - 1 - i] =
                 target_intensity_curr.AsTensor().Clone();
 
-        t::geometry::Image source_vertex_map =
-                source_depth_curr.CreateVertexMap(intrinsics, NAN);
+        Image source_vertex_map =
+                source_depth_curr.CreateVertexMap(intrinsics_pyr, NAN);
         source_vertex_maps[n_levels - 1 - i] = source_vertex_map.AsTensor();
 
         auto target_intensity_grad = target_intensity_curr.FilterSobel();
@@ -316,95 +365,137 @@ core::Tensor RGBDOdometryMultiScaleHybrid(const t::geometry::RGBDImage& source,
         target_depth_dx[n_levels - 1 - i] = target_depth_grad.first.AsTensor();
         target_depth_dy[n_levels - 1 - i] = target_depth_grad.second.AsTensor();
 
-        intrinsic_matrices[n_levels - 1 - i] = intrinsics.Clone();
-
+        intrinsic_matrices[n_levels - 1 - i] = intrinsics_pyr.Clone();
         if (i != n_levels - 1) {
-            source_depth_curr =
-                    source_depth_curr.PyrDownDepth(depth_diff * 2, NAN);
-            target_depth_curr =
-                    target_depth_curr.PyrDownDepth(depth_diff * 2, NAN);
+            source_depth_curr = source_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
+            target_depth_curr = target_depth_curr.PyrDownDepth(
+                    params.depth_outlier_trunc_ * 2, NAN);
             source_intensity_curr = source_intensity_curr.PyrDown();
             target_intensity_curr = target_intensity_curr.PyrDown();
 
-            intrinsics /= 2;
-            intrinsics[-1][-1] = 1;
+            intrinsics_pyr /= 2;
+            intrinsics_pyr[-1][-1] = 1;
         }
     }
 
     // Odometry
+    OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < iterations[i]; ++iter) {
-            core::Tensor delta_source_to_target = ComputePoseHybrid(
+        for (int iter = 0; iter < criteria[i].iterations_; ++iter) {
+            auto delta_result = ComputeOdometryResultHybrid(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_depth_dx[i], target_depth_dy[i],
                     target_intensity_dx[i], target_intensity_dy[i],
-                    source_vertex_maps[i], intrinsic_matrices[i], trans,
-                    depth_diff);
-            trans = delta_source_to_target.Matmul(trans);
+                    source_vertex_maps[i], intrinsic_matrices[i],
+                    result.transformation_, params.depth_outlier_trunc_,
+                    params.depth_huber_delta_, params.intensity_huber_delta_);
+            result.transformation_ =
+                    delta_result.transformation_.Matmul(result.transformation_);
+            utility::LogDebug("level {}, iter {}: rmse = {}, fitness = {}", i,
+                              iter, delta_result.inlier_rmse_,
+                              delta_result.fitness_);
+
+            if (std::abs(result.fitness_ - delta_result.fitness_) /
+                                result.fitness_ <
+                        criteria[i].relative_fitness_ &&
+                std::abs(result.inlier_rmse_ - delta_result.inlier_rmse_) /
+                                result.inlier_rmse_ <
+                        criteria[i].relative_rmse_) {
+                utility::LogDebug("Early exit at level {}, iter {}", i, iter);
+                break;
+            }
+            result.inlier_rmse_ = delta_result.inlier_rmse_;
+            result.fitness_ = delta_result.fitness_;
         }
     }
-    return trans;
+
+    return result;
 }
 
-core::Tensor ComputePosePointToPlane(const core::Tensor& source_vertex_map,
-                                     const core::Tensor& target_vertex_map,
-                                     const core::Tensor& target_normal_map,
-                                     const core::Tensor& intrinsics,
-                                     const core::Tensor& init_source_to_target,
-                                     float depth_diff) {
+OdometryResult ComputeOdometryResultPointToPlane(
+        const Tensor& source_vertex_map,
+        const Tensor& target_vertex_map,
+        const Tensor& target_normal_map,
+        const Tensor& intrinsics,
+        const Tensor& init_source_to_target,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta) {
     // Delta target_to_source on host.
-    core::Tensor se3_delta;
-    core::Tensor residual;
-    kernel::odometry::ComputePosePointToPlane(
+    Tensor se3_delta;
+    float inlier_residual;
+    int inlier_count;
+    kernel::odometry::ComputeOdometryResultPointToPlane(
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
-            init_source_to_target, se3_delta, residual, depth_diff);
+            init_source_to_target, se3_delta, inlier_residual, inlier_count,
+            depth_outlier_trunc, depth_huber_delta);
 
-    return pipelines::kernel::PoseToTransformation(se3_delta);
+    return OdometryResult(
+            pipelines::kernel::PoseToTransformation(se3_delta),
+            inlier_residual / inlier_count,
+            double(inlier_count) / double(source_vertex_map.GetShape()[0] *
+                                          source_vertex_map.GetShape()[1]));
 }
 
-core::Tensor ComputePoseIntensity(const core::Tensor& source_depth,
-                                  const core::Tensor& target_depth,
-                                  const core::Tensor& source_intensity,
-                                  const core::Tensor& target_intensity,
-                                  const core::Tensor& target_intensity_dx,
-                                  const core::Tensor& target_intensity_dy,
-                                  const core::Tensor& source_vertex_map,
-                                  const core::Tensor& intrinsics,
-                                  const core::Tensor& init_source_to_target,
-                                  float depth_diff) {
+OdometryResult ComputeOdometryResultIntensity(
+        const Tensor& source_depth,
+        const Tensor& target_depth,
+        const Tensor& source_intensity,
+        const Tensor& target_intensity,
+        const Tensor& target_intensity_dx,
+        const Tensor& target_intensity_dy,
+        const Tensor& source_vertex_map,
+        const Tensor& intrinsics,
+        const Tensor& init_source_to_target,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta) {
     // Delta target_to_source on host.
-    core::Tensor se3_delta;
-    core::Tensor residual;
-    kernel::odometry::ComputePoseIntensity(
+    Tensor se3_delta;
+    float inlier_residual;
+    int inlier_count;
+    kernel::odometry::ComputeOdometryResultIntensity(
             source_depth, target_depth, source_intensity, target_intensity,
             target_intensity_dx, target_intensity_dy, source_vertex_map,
-            intrinsics, init_source_to_target, se3_delta, residual, depth_diff);
+            intrinsics, init_source_to_target, se3_delta, inlier_residual,
+            inlier_count, depth_outlier_trunc, intensity_huber_delta);
 
-    return pipelines::kernel::PoseToTransformation(se3_delta);
+    return OdometryResult(
+            pipelines::kernel::PoseToTransformation(se3_delta),
+            inlier_residual / inlier_count,
+            double(inlier_count) / double(source_vertex_map.GetShape()[0] *
+                                          source_vertex_map.GetShape()[1]));
 }
 
-core::Tensor ComputePoseHybrid(const core::Tensor& source_depth,
-                               const core::Tensor& target_depth,
-                               const core::Tensor& source_intensity,
-                               const core::Tensor& target_intensity,
-                               const core::Tensor& target_depth_dx,
-                               const core::Tensor& target_depth_dy,
-                               const core::Tensor& target_intensity_dx,
-                               const core::Tensor& target_intensity_dy,
-                               const core::Tensor& source_vertex_map,
-                               const core::Tensor& intrinsics,
-                               const core::Tensor& init_source_to_target,
-                               float depth_diff) {
+OdometryResult ComputeOdometryResultHybrid(const Tensor& source_depth,
+                                           const Tensor& target_depth,
+                                           const Tensor& source_intensity,
+                                           const Tensor& target_intensity,
+                                           const Tensor& target_depth_dx,
+                                           const Tensor& target_depth_dy,
+                                           const Tensor& target_intensity_dx,
+                                           const Tensor& target_intensity_dy,
+                                           const Tensor& source_vertex_map,
+                                           const Tensor& intrinsics,
+                                           const Tensor& init_source_to_target,
+                                           const float depth_outlier_trunc,
+                                           const float depth_huber_delta,
+                                           const float intensity_huber_delta) {
     // Delta target_to_source on host.
-    core::Tensor se3_delta;
-    core::Tensor residual;
-    kernel::odometry::ComputePoseHybrid(
+    Tensor se3_delta;
+    float inlier_residual;
+    int inlier_count;
+    kernel::odometry::ComputeOdometryResultHybrid(
             source_depth, target_depth, source_intensity, target_intensity,
             target_depth_dx, target_depth_dy, target_intensity_dx,
             target_intensity_dy, source_vertex_map, intrinsics,
-            init_source_to_target, se3_delta, residual, depth_diff);
+            init_source_to_target, se3_delta, inlier_residual, inlier_count,
+            depth_outlier_trunc, depth_huber_delta, intensity_huber_delta);
 
-    return pipelines::kernel::PoseToTransformation(se3_delta);
+    return OdometryResult(
+            pipelines::kernel::PoseToTransformation(se3_delta),
+            inlier_residual / inlier_count,
+            double(inlier_count) / double(source_vertex_map.GetShape()[0] *
+                                          source_vertex_map.GetShape()[1]));
 }
 
 }  // namespace odometry
