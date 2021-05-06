@@ -114,8 +114,8 @@ A minimal ``Dockerfile`` looks like this:
     # Install Open3D from the pypi repositories
     RUN python3 -m pip install --no-cache-dir --upgrade open3d
 
-.. note:: If you need ``CUDA`` support, follow these directions
-    <https://docs.docker.com/config/containers/resource_constraints/#gpu>__
+.. note:: If you need ``CUDA`` support, follow these `directions.
+    <https://docs.docker.com/config/containers/resource_constraints/#gpu>`__
 
 Try it
 ------
