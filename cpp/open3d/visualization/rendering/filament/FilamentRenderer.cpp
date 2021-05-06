@@ -371,7 +371,7 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
     buffer_renderers_.insert(renderer);
-    return std::move(renderer);
+    return renderer;
 }
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {

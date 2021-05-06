@@ -42,7 +42,7 @@ def main():
     render.scene.add_geometry("sphere", sphere, yellow)
     render.scene.add_geometry("box", box, grey)
     render.scene.add_geometry("solid", solid, white)
-    render.scene.camera.look_at([0, 0, 0], [0, 10, 0], [0, 0, 1])
+    render.setup_camera(60.0, [0, 0, 0], [0, 10, 0], [0, 0, 1])
     render.scene.scene.set_sun_light([0.707, 0.0, -.707], [1.0, 1.0, 1.0],
                                      75000)
     render.scene.scene.enable_sun_light(True)
@@ -51,7 +51,7 @@ def main():
     img = render.render_to_image()
     o3d.io.write_image("/tmp/test.png", img, 9)
 
-    render.scene.camera.look_at([0, 0, 0], [-10, 0, 0], [0, 0, 1])
+    render.setup_camera(60.0, [0, 0, 0], [0, 10, 0], [0, 0, 1])
     img = render.render_to_image()
     o3d.io.write_image("/tmp/test2.png", img, 9)
 

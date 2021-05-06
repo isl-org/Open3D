@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -154,6 +154,54 @@ bool MouseEvent::FromJson(const Json::Value& value) {
     }
 
     return true;
+}
+
+MouseEvent MouseEvent::MakeMoveEvent(const Type type,
+                                     const int x,
+                                     const int y,
+                                     const int modifiers,
+                                     const int buttons) {
+    MouseEvent me;
+    me.type = type;
+    me.x = x;
+    me.y = y;
+    me.modifiers = modifiers;
+    me.move.buttons = buttons;
+    return me;
+}
+
+MouseEvent MouseEvent::MakeButtonEvent(const Type type,
+                                       const int x,
+                                       const int y,
+                                       const int modifiers,
+                                       const MouseButton button,
+                                       const int count) {
+    MouseEvent me;
+    me.type = type;
+    me.x = x;
+    me.y = y;
+    me.modifiers = modifiers;
+    me.button.button = button;
+    me.button.count = count;
+    return me;
+}
+
+MouseEvent MouseEvent::MakeWheelEvent(const Type type,
+                                      const int x,
+                                      const int y,
+                                      const int modifiers,
+                                      const float dx,
+                                      const float dy,
+                                      const bool isTrackpad) {
+    MouseEvent me;
+    me.type = type;
+    me.x = x;
+    me.y = y;
+    me.modifiers = modifiers;
+    me.wheel.dx = dx;
+    me.wheel.dy = dy;
+    me.wheel.isTrackpad = isTrackpad;
+    return me;
 }
 
 }  // namespace gui

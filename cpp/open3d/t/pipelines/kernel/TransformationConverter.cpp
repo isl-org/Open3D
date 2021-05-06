@@ -123,7 +123,8 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
 
 void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        core::Tensor &delta,
-                       core::Tensor &residual) {
+                       float &inlier_residual,
+                       int &inlier_count) {
     const core::Device host(core::Device("CPU:0"));
     core::Tensor A_1x29_host = A_reduction.To(host, core::Dtype::Float64);
     double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
@@ -143,15 +144,18 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
         }
     }
 
-    residual = core::Tensor::Init<double>({A_1x29_ptr[27]}, host);
-
     // Solve on CPU with double to ensure precision.
-    delta = AtA.Solve(Atb.Neg());
-
-    const int count = static_cast<int>(A_1x29_ptr[28]);
-    utility::LogDebug("avg loss = {}, residual = {}, count = {}",
-                      residual.Item<double>() / count, residual.Item<double>(),
-                      count);
+    try {
+        delta = AtA.Solve(Atb.Neg());
+        inlier_residual = A_1x29_ptr[27];
+        inlier_count = static_cast<int>(A_1x29_ptr[28]);
+    } catch (const std::runtime_error &) {
+        utility::LogError(
+                "Singular 6x6 linear system detected, tracking failed.");
+        delta.Fill(0);
+        inlier_residual = 0;
+        inlier_count = 0;
+    }
 }
 
 }  // namespace kernel

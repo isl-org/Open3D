@@ -80,8 +80,9 @@ own dataset, use an appropriate camera intrinsic and visualize a depth image
 (likewise :ref:`/tutorial/geometry/rgbd_image.ipynb`) prior to using the system.
 
 .. note:: ``"python_multi_threading": true`` utilizes ``joblib`` to parallelize
-the system using every CPU cores. With this option, Mac users may encounter an
-unexpected program termination. To avoid this issue, set this flag to ``false``.
+    the system using every CPU cores. With this option, Mac users may encounter
+    an unexpected program termination. To avoid this issue, set this flag to
+    ``false``.
 
 
 Capture your own dataset

@@ -17,44 +17,50 @@ function(open3d_show_and_abort_on_warning trgt)
             /wd4267        # conversion from size_t to smaller type (FixedRadiusSearchCUDA, tests)
             /wd4305        # conversion to smaller type in initialization or constructor argument (examples, tests)
             )
+    set(DISABLE_GNU_CLANG_INTEL_WARNINGS
+            -Wno-unused-parameter               # (many places in Open3D code)
+            )
 
     if (BUILD_CUDA_MODULE)
-        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
+        # General NVCC flags
+        set(DISABLE_NVCC_WARNINGS
+                550            # variable was set but never used (Eigen)
+                940            # missing return statement at end of non-void function (Eigen)
+                2809           # ignoring return value from routine declared with "nodiscard" attribute (Eigen)
+                )
+        string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
 
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
-            if (MSVC)
-                string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX")
-            else()
-                string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Werror")
-            endif()
-        else()
+        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
+        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.2")
             string(APPEND CUDA_FLAGS " --Werror all-warnings")
-            if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
-                string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
-            endif()
+        endif()
+        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
+            string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
+        endif()
+        string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
+        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.2")
+            string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
+        else()
+            string(APPEND CUDA_FLAGS " -Xcudafe --diag_suppress=[${DISABLE_NVCC_WARNINGS}]")
         endif()
 
+        # Host compiler flags
         if (MSVC)
             set(CUDA_DISABLE_MSVC_WARNINGS ${DISABLE_MSVC_WARNINGS})
-            set(DISABLE_NVCC_WARNINGS
-                    550            # variable was set but never used (Eigen)
-                    940            # missing return statement at end of non-void function (Eigen)
-                    2809           # ignoring return value from routine declared with "nodiscard" attribute (Eigen)
-                    )
             if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.1")
                 list(APPEND CUDA_DISABLE_MSVC_WARNINGS /wd4515) # namespace uses itself (thrust)
             endif()
             string(REPLACE ";" "," CUDA_DISABLE_MSVC_WARNINGS "${CUDA_DISABLE_MSVC_WARNINGS}")
-            string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
-            string(APPEND CUDA_FLAGS " -Xcompiler ${CUDA_DISABLE_MSVC_WARNINGS}")
-            string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
-            if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.2")
-                string(APPEND CUDA_FLAGS " -Xcudafe --diag_suppress=[${DISABLE_NVCC_WARNINGS}]")
-            else()
-                string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
-            endif()
+
+            string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX,${CUDA_DISABLE_MSVC_WARNINGS}")
         else()
+            # reorder breaks builds on Windows, so only enable for other platforms
             string(APPEND CUDA_FLAGS " --Werror reorder")
+
+            set(CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS ${DISABLE_GNU_CLANG_INTEL_WARNINGS})
+            string(REPLACE ";" "," CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS "${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
+
+            string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Wextra,-Werror,${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
         endif()
     else()
         set(CUDA_FLAGS "")
@@ -62,9 +68,9 @@ function(open3d_show_and_abort_on_warning trgt)
 
     target_compile_options(${trgt} PRIVATE
         $<$<COMPILE_LANG_AND_ID:C,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
-        $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Werror>
+        $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Wextra -Werror ${DISABLE_GNU_CLANG_INTEL_WARNINGS}>
         $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Werror>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Wextra -Werror ${DISABLE_GNU_CLANG_INTEL_WARNINGS}>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
     )
 endfunction()
