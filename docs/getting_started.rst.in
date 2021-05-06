@@ -87,7 +87,7 @@ Conda
     `open3d <https://anaconda.org/open3d-admin/open3d>`_. Currently, the
     ``open3d`` package is distributed under the ``open3d-admin`` channel. To
     setup Conda, please see
-    `the official documentation <https://conda.io/docs/user-guide/install/index.html>`_.
+    `the official documentation <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`_.
 
 
 Try it

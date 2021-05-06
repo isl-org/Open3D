@@ -29,7 +29,7 @@ Dos
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Follow the :ref:`style_guide` and install the required tools                                           |
 +-------------------------------------------------------------------------------------------------------------+
-| [DO] Use C++11 features when contributing C++ code. Use C++14 and C++17 features only when required         |
+| [DO] Use C++14 features when contributing C++ code                                                          |
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Remember to provide Python bindings when adding new C++ core functionalities                           |
 +-------------------------------------------------------------------------------------------------------------+
@@ -222,9 +222,9 @@ Case 1: When documenting C++ code
 Case 2: When documenting Python bindings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* First, complete the Python binding code following the guides from `Pybind11 Docs <https://pybind11.readthedocs.io/en/stable/basics.html>`_. Make sure to write the high-level docstrings for the classes and functions. Also use "param_name"_a to denote function parameters.
-* Use the `docstring::ClassMethodDocInject()` or `docstring::FunctionDocInject()` to insert parameter docs.
-* Example binding and docstrings for the `Calculator` class:
+* First, complete the Python binding code following the guides from `Pybind11 Docs <https://pybind11.readthedocs.io/en/stable/basics.html>`_. Make sure to write the high-level docstrings for the classes and functions. Also use ``"param_name"_a`` to denote function parameters.
+* Use the ``docstring::ClassMethodDocInject()`` or ``docstring::FunctionDocInject()`` to insert parameter docs.
+* Example binding and docstrings for the ``Calculator`` class:
 
 ..  code:: cpp
 
@@ -233,8 +233,8 @@ Case 2: When documenting Python bindings
                 "Calculator class performs numerical computations.");
     calculator.def("add", &Calculator::Add,
                    "Performs ``a`` plus ``b``. Unlike "
-                   ":meth:`open3d.Calculator.sub`, "
-                   ":meth:`open3d.Calculator.add` is "
+                   ":math:`open3d.Calculator.sub`, "
+                   ":math:`open3d.Calculator.add` is "
                    "commutative.",
                                 "a"_a, "b"_a);
     calculator.def("sub", &Calculator::Add, "Subtracts ``b`` from ``a``", "a"_a,
@@ -250,7 +250,7 @@ Case 2: When documenting Python bindings
 Case 3: When documenting pure Python code (no bindings)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Use standard docstring syntax as explained `here <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_ and `there <https://www.python.org/dev/peps/pep-0257/>`_.
+* Use standard docstring syntax (`Google style <https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings>`__) as explained `here <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_ and `there <https://www.python.org/dev/peps/pep-0257/>`_.
 
 
 Case 4: When adding a Python tutorial
