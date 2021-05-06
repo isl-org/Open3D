@@ -366,8 +366,8 @@ void GLFWWindowSystem::MouseMoveCallback(GLFWwindow* window,
     int iy = int(std::ceil(y * scaling));
 
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
-    MouseEvent me = {type, ix, iy, w->GetMouseMods()};
-    me.button.button = MouseButton(buttons);
+    MouseEvent me = MouseEvent::MakeButtonEvent(type, ix, iy, w->GetMouseMods(),
+                                                MouseButton(buttons), 1);
 
     w->OnMouseEvent(me);
 }
@@ -388,9 +388,9 @@ void GLFWWindowSystem::MouseButtonCallback(GLFWwindow* window,
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
-    MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
-    me.button.button = MouseButton(MouseButtonFromGLFW(button));
-    me.button.count = 1;
+    MouseEvent me = MouseEvent::MakeButtonEvent(
+            type, ix, iy, KeymodsFromGLFW(mods),
+            MouseButton(MouseButtonFromGLFW(button)), 1);
 
     double now = Application::GetInstance().Now();
     if (g_last_button_down == me.button.button) {
@@ -419,22 +419,21 @@ void GLFWWindowSystem::MouseScrollCallback(GLFWwindow* window,
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
+    // GLFW doesn't give us any information about whether this scroll event
+    // came from a mousewheel or a trackpad two-finger scroll.
+#if __APPLE__
+    bool isTrackpad = true;
+#else
+    bool isTrackpad = false;
+#endif  // __APPLE__
+
     // Note that although pixels are integers, the trackpad value needs to
     // be a float, since macOS trackpads produce fractional values when
     // scrolling slowly. These fractional values need to be passed all the way
     // down to the MatrixInteractorLogic::Dolly() in order for dollying to
     // feel buttery smooth with the trackpad.
-    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->GetMouseMods()};
-    me.wheel.dx = dx;
-    me.wheel.dy = dy;
-
-    // GLFW doesn't give us any information about whether this scroll event
-    // came from a mousewheel or a trackpad two-finger scroll.
-#if __APPLE__
-    me.wheel.isTrackpad = true;
-#else
-    me.wheel.isTrackpad = false;
-#endif  // __APPLE__
+    MouseEvent me = MouseEvent::MakeWheelEvent(
+            MouseEvent::WHEEL, ix, iy, w->GetMouseMods(), dx, dy, isTrackpad);
 
     w->OnMouseEvent(me);
 }

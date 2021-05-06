@@ -98,21 +98,27 @@ void RotationInteractorLogic::UpdateCameraFarPlane() {
     // interactor's matrix.
     // Also, the far plane needs to be able to show the
     // axis if it is visible, so we need the far plane to include
-    // the origin. (See also SceneWidget::SetupCamera())
-    auto pos = camera_->GetModelMatrix().translation().cast<double>();
-    auto far1 = model_bounds_.GetMinBound().norm();
-    auto far2 = model_bounds_.GetMaxBound().norm();
-    auto far3 = pos.norm();
-    auto model_size = 2.0 * model_bounds_.GetExtent().norm();
-    auto far = std::max(min_far_plane_,
-                        std::max(std::max(far1, far2), far3) + model_size);
-    float aspect = 1.0f;
-    if (view_height_ > 0) {
-        aspect = float(view_width_) / float(view_height_);
+    // the origin.
+    auto far = Camera::CalcFarPlane(*camera_, model_bounds_);
+    auto proj = camera_->GetProjection();
+    if (proj.is_intrinsic) {
+        Eigen::Matrix3d intrinsic;
+        intrinsic << proj.proj.intrinsics.fx, 0.0, proj.proj.intrinsics.cx, 0.0,
+                proj.proj.intrinsics.fy, proj.proj.intrinsics.cy, 0.0, 0.0, 1.0;
+        camera_->SetProjection(intrinsic, proj.proj.intrinsics.near_plane, far,
+                               proj.proj.intrinsics.width,
+                               proj.proj.intrinsics.height);
+    } else if (proj.is_ortho) {
+        camera_->SetProjection(proj.proj.ortho.projection, proj.proj.ortho.left,
+                               proj.proj.ortho.right, proj.proj.ortho.bottom,
+                               proj.proj.ortho.top, proj.proj.ortho.near_plane,
+                               far);
+    } else {
+        camera_->SetProjection(proj.proj.perspective.fov,
+                               proj.proj.perspective.aspect,
+                               proj.proj.perspective.near_plane, far,
+                               proj.proj.perspective.fov_type);
     }
-    camera_->SetProjection(camera_->GetFieldOfView(), aspect,
-                           camera_->GetNear(), far,
-                           camera_->GetFieldOfViewType());
 }
 
 }  // namespace rendering

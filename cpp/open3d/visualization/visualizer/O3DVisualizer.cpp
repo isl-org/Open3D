@@ -1051,6 +1051,23 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
+    void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
+                     const Eigen::Matrix4d &extrinsic) {
+        scene_->SetupCamera(intrinsic, extrinsic,
+                            scene_->GetScene()->GetBoundingBox());
+        scene_->ForceRedraw();
+    }
+
+    void SetupCamera(const Eigen::Matrix3d &intrinsic,
+                     const Eigen::Matrix4d &extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px) {
+        scene_->SetupCamera(intrinsic, extrinsic, intrinsic_width_px,
+                            intrinsic_height_px,
+                            scene_->GetScene()->GetBoundingBox());
+        scene_->ForceRedraw();
+    }
+
     void ResetCameraToDefault() {
         auto scene = scene_->GetScene();
         scene_->SetupCamera(60.0f, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
@@ -1986,7 +2003,20 @@ void O3DVisualizer::SetupCamera(float fov,
                                 const Eigen::Vector3f &center,
                                 const Eigen::Vector3f &eye,
                                 const Eigen::Vector3f &up) {
-    return impl_->SetupCamera(fov, center, eye, up);
+    impl_->SetupCamera(fov, center, eye, up);
+}
+
+void O3DVisualizer::SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
+                                const Eigen::Matrix4d &extrinsic) {
+    impl_->SetupCamera(intrinsic, extrinsic);
+}
+
+void O3DVisualizer::SetupCamera(const Eigen::Matrix3d &intrinsic,
+                                const Eigen::Matrix4d &extrinsic,
+                                int intrinsic_width_px,
+                                int intrinsic_height_px) {
+    impl_->SetupCamera(intrinsic, extrinsic, intrinsic_width_px,
+                       intrinsic_height_px);
 }
 
 void O3DVisualizer::ResetCameraToDefault() {
