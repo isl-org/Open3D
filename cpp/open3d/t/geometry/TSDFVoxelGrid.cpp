@@ -213,7 +213,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
 std::unordered_map<TSDFVoxelGrid::SurfaceMaskCode, core::Tensor>
 TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
-
                        const core::Tensor &extrinsics,
                        int width,
                        int height,
