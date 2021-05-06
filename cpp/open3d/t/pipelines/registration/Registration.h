@@ -132,8 +132,8 @@ RegistrationResult EvaluateRegistration(
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param init_source_to_target Initial transformation estimation of type
-/// Float64 on CPU. 
-/// \param estimation Estimation method. 
+/// Float64 on CPU.
+/// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
 RegistrationResult RegistrationICP(
         const geometry::PointCloud &source,
@@ -163,7 +163,7 @@ RegistrationResult RegistrationICP(
 /// points-pair distances of type double, for each iteration. Must be of same
 /// length as voxel_sizes and criterias.
 /// \param init_source_to_target Initial transformation estimation of type
-/// Float64 on CPU. 
+/// Float64 on CPU.
 /// \param estimation Estimation method.
 RegistrationResult RegistrationMultiScaleICP(
         const geometry::PointCloud &source,
