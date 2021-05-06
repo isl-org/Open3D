@@ -44,7 +44,7 @@ void pybind_odometry_classes(py::module &m) {
     // open3d.t.pipelines.odometry.OdometryConvergenceCriteria
     py::class_<OdometryConvergenceCriteria> odometry_convergence_criteria(
             m, "OdometryConvergenceCriteria",
-            "Class that defines the convergence criteria of odometry. "
+            "Convergence criteria of odometry. "
             "Odometry algorithm stops if the relative change of fitness and "
             "rmse hit ``relative_fitness`` and ``relative_rmse`` individually, "
             "or the iteration number exceeds ``max_iteration``.");
@@ -68,16 +68,15 @@ void pybind_odometry_classes(py::module &m) {
                     "than ``relative_fitness``, the iteration stops.")
             .def("__repr__", [](const OdometryConvergenceCriteria &c) {
                 return fmt::format(
-                        "ICPConvergenceCriteria class "
-                        "with max_iteration={:d}, relative_rmse={:e}, "
-                        "relative_fitness={:e}.",
+                        "OdometryConvergenceCriteria[max_iteration={:d}, "
+                        "relative_rmse={:e}, relative_fitness={:e}].",
                         c.max_iteration_, c.relative_rmse_,
                         c.relative_fitness_);
             });
 
     // open3d.t.pipelines.odometry.OdometryResult
-    py::class_<OdometryResult> odometry_result(
-            m, "OdometryResult", "Class that contains the odometry results.");
+    py::class_<OdometryResult> odometry_result(m, "OdometryResult",
+                                               "Odometry results.");
     py::detail::bind_copy_functions<OdometryResult>(odometry_result);
     odometry_result
             .def(py::init<core::Tensor, double, double>(),
@@ -96,17 +95,14 @@ void pybind_odometry_classes(py::module &m) {
                     "/ # of points in target). Higher is better.")
             .def("__repr__", [](const OdometryResult &odom_result) {
                 return fmt::format(
-                        "OdometryResult with "
-                        "fitness={:e}, "
-                        "inlier_rmse={:e} "
+                        "OdometryResult[fitness={:e}, inlier_rmse={:e}]."
                         "\nAccess transformation to get result.",
                         odom_result.fitness_, odom_result.inlier_rmse_);
             });
 
     // open3d.t.pipelines.odometry.OdometryLossParams
     py::class_<OdometryLossParams> odometry_loss_params(
-            m, "OdometryLossParams",
-            "Class that contains the odometry loss parameters.");
+            m, "OdometryLossParams", "Odometry loss parameters.");
     py::detail::bind_copy_functions<OdometryLossParams>(odometry_loss_params);
     odometry_loss_params
             .def(py::init<double, double, double>(),
@@ -125,10 +121,8 @@ void pybind_odometry_classes(py::module &m) {
                     "float: Huber norm parameter used in intensity loss.")
             .def("__repr__", [](const OdometryLossParams &olp) {
                 return fmt::format(
-                        "OdometryLossParams with "
-                        "depth_outlier_trunc={:e}, "
-                        "depth_huber_delta={:e}, "
-                        "intensity_huber_delta={:e} ",
+                        "OdometryLossParams[depth_outlier_trunc={:e}, "
+                        "depth_huber_delta={:e}, intensity_huber_delta={:e}].",
                         olp.depth_outlier_trunc_, olp.depth_huber_delta_,
                         olp.intensity_huber_delta_);
             });
@@ -158,45 +152,51 @@ static const std::unordered_map<std::string, std::string>
                 {"params", "Odometry loss parameters."},
                 {"source", "The source RGBD image."},
                 {"source_depth",
-                 "(H, W, 1) Float32 source depth image obtained by "
-                 "PreprocessDepth before calling this function."},
+                 "(row, col, channel = 1) Float32 source depth image obtained "
+                 "by PreprocessDepth before calling this function."},
                 {"source_depth_dx",
-                 "(H, W, 1) Float32 source depth gradient image at x-axis "
-                 "obtained by FilterSobel before calling this function."},
+                 "(row, col, channel = 1) Float32 source depth gradient image "
+                 "at x-axis obtained by FilterSobel before calling this "
+                 "function."},
                 {"source_depth_dy",
-                 "(H, W, 1) Float32 source depth gradient image at y-axis "
-                 "obtained by FilterSobel before calling this function."},
+                 "(row, col, channel = 1) Float32 source depth gradient image "
+                 "at y-axis obtained by FilterSobel before calling this "
+                 "function."},
                 {"source_intensity",
-                 "(H, W, 1) Float32 source intensity image obtained by "
-                 "RGBToGray before calling this function"},
+                 "(row, col, channel = 1) Float32 source intensity image "
+                 "obtained by RGBToGray before calling this function"},
                 {"source_intensity_dx",
-                 "(H, W, 1) Float32 source intensity gradient image at x-axis "
+                 "(row, col, channel = 1) Float32 source intensity gradient "
+                 "image along x-axis "
                  "obtained by FilterSobel before calling this function."},
                 {"source_intensity_dy",
-                 "(H, W, 1) Float32 source intensity gradient image at y-axis "
+                 "(row, col, channel = 1) Float32 source intensity gradient "
+                 "image along y-axis "
                  "obtained by FilterSobel before calling this function."},
                 {"source_vertex_map",
-                 "(H, W, 3) Float32 source vertex image obtained by "
-                 "CreateVertexMap before calling this function."},
+                 "(row, col, channel = 3) Float32 source vertex image obtained "
+                 "by CreateVertexMap before calling this function."},
                 {"target", "The target RGBD image."},
                 {"target_depth",
-                 "(H, W, 1) Float32 target depth image obtained by "
-                 "PreprocessDepth before calling this function."},
+                 "(row, col, channel = 1) Float32 target depth image obtained "
+                 "by PreprocessDepth before calling this function."},
                 {"target_intensity",
-                 "(H, W, 1) Float32 target intensity image obtained by "
-                 "RGBToGray before calling this function"},
+                 "(row, col, channel = 1) Float32 target intensity image "
+                 "obtained by RGBToGray before calling this function"},
                 {"target_intensity_dx",
-                 "(H, W, 1) Float32 target intensity gradient image at x-axis "
-                 "obtained by FilterSobel before calling this function."},
+                 "(row, col, channel = 1) Float32 target intensity gradient "
+                 "image along x-axis obtained by FilterSobel before calling "
+                 "this function."},
                 {"target_intensity_dy",
-                 "(H, W, 1) Float32 target intensity gradient image at y-axis "
-                 "obtained by FilterSobel before calling this function."},
+                 "(row, col, channel = 1) Float32 target intensity gradient "
+                 "image along y-axis obtained by FilterSobel before calling "
+                 "this function."},
                 {"target_normal_map",
-                 "(H, W, 3) Float32 target normal image obtained by "
-                 "CreateNormalMap before calling this function."},
+                 "(row, col, channel = 3) Float32 target normal image obtained "
+                 "by CreateNormalMap before calling this function."},
                 {"target_vertex_map",
-                 "(H, W, 3) Float32 target vertex image obtained by "
-                 "CreateVertexMap before calling this function."}};
+                 "(row, col, channel = 3) Float32 target vertex image obtained "
+                 "by CreateVertexMap before calling this function."}};
 
 void pybind_odometry_methods(py::module &m) {
     m.def("rgbd_odometry_multi_scale", &RGBDOdometryMultiScale,

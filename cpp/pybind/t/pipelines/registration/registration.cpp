@@ -66,7 +66,7 @@ void pybind_registration_classes(py::module &m) {
     // open3d.t.pipelines.registration.ICPConvergenceCriteria
     py::class_<ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria",
-            "Class that defines the convergence criteria of ICP. "
+            "Convergence criteria of ICP. "
             "ICP algorithm stops if the relative change of fitness and rmse "
             "hit ``relative_fitness`` and ``relative_rmse`` individually, "
             "or the iteration number exceeds ``max_iteration``.");
@@ -89,17 +89,15 @@ void pybind_registration_classes(py::module &m) {
                            "Maximum iteration before iteration stops.")
             .def("__repr__", [](const ICPConvergenceCriteria &c) {
                 return fmt::format(
-                        "ICPConvergenceCriteria class "
-                        "with relative_fitness={:e}, relative_rmse={:e}, "
-                        "and max_iteration={:d}",
+                        "ICPConvergenceCriteria[relative_fitness_={:e}, "
+                        "relative_rmse={:e}, max_iteration_={:d}].",
                         c.relative_fitness_, c.relative_rmse_,
                         c.max_iteration_);
             });
 
     // open3d.t.pipelines.registration.RegistrationResult
-    py::class_<RegistrationResult> registration_result(
-            m, "RegistrationResult",
-            "Class that contains the registration results.");
+    py::class_<RegistrationResult> registration_result(m, "RegistrationResult",
+                                                       "Registration results.");
     py::detail::bind_default_constructor<RegistrationResult>(
             registration_result);
     py::detail::bind_copy_functions<RegistrationResult>(registration_result);
@@ -127,10 +125,8 @@ void pybind_registration_classes(py::module &m) {
                     "/ # of points in target). Higher is better.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
-                        "RegistrationResult with "
-                        "fitness={:e}"
-                        ", inlier_rmse={:e}"
-                        ", and correspondence_set size of {:d}"
+                        "RegistrationResult[fitness_={:e}, "
+                        "inlier_rmse={:e}, correspondences={:d}]."
                         "\nAccess transformation to get result.",
                         rr.fitness_, rr.inlier_rmse_,
                         rr.correspondence_set_.second.GetLength());
@@ -208,8 +204,9 @@ static const std::unordered_map<std::string, std::string>
                  "pair of Tensors that stores indices of "
                  "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
-                {"criterias",
-                 "List of Convergence criteria for multi-scale icp."},
+                {"scale_criteria",
+                 "List of Convergence criteria for each scale of multi-scale "
+                 "icp."},
                 {"estimation_method",
                  "Estimation method. One of "
                  "(``TransformationEstimationPointToPoint``, "
