@@ -62,10 +62,8 @@ static Eigen::Vector3d Jet(double v, double vmin, double vmax) {
     return c;
 }
 
-void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
-                                        const t::geometry::PointCloud& tpcd_j,
-                                        const core::Tensor correspondences,
-                                        const core::Tensor& T_ij) {
+t::geometry::PointCloud CreateTPCDFromFile(const std::string& fname,
+                                           const core::Device& device) {
     Eigen::Matrix4d flip;
     flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
 
@@ -249,7 +247,10 @@ void VisualizeGridDeformation(ControlGrid& cgrid) {
                 "Grid Deformation");
     }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 221313b7e8dfe6dc0790b3ba2d2abe6084604a30
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t
